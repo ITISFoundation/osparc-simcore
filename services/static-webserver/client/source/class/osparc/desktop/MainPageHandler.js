@@ -64,12 +64,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + osparc.product.Utils.getStudyAlias());
       this.showLoadingPage();
 
-      const params = {
-        url: {
-          "studyId": studyId
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getOne", params)
+      osparc.store.Study.getInstance().getOne(studyId)
         .then(studyData => {
           if (!studyData) {
             const msg = qx.locale.Manager.tr("Project not found");
@@ -88,17 +83,15 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       // check if it's locked
       let locked = false;
-      let lockedBy = false;
-      if ("state" in studyData && "locked" in studyData["state"]) {
-        locked = studyData["state"]["locked"]["value"];
-        lockedBy = studyData["state"]["locked"]["owner"];
+      let lockedBy = [];
+      if ("state" in studyData) {
+        const state = studyData["state"];
+        locked = osparc.study.Utils.state.isProjectLocked(state);
+        const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
+        lockedBy = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
       }
-      if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
-        const msg = `${studyAlias} ${qx.locale.Manager.tr("is already open by")} ${ // it will be replaced "userName"
-          "first_name" in lockedBy && lockedBy["first_name"] != null ?
-            lockedBy["first_name"] :
-            qx.locale.Manager.tr("another user.")
-        }`;
+      if (locked && lockedBy.length) {
+        const msg = `${studyAlias} ${qx.locale.Manager.tr("is already open by another user.")}`;
         throw new Error(msg);
       }
 

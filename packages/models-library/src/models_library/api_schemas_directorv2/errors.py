@@ -1,14 +1,16 @@
+from typing import Annotated
+
 from pydantic import BaseModel, Field
 
 
 class Error(BaseModel):
-    code: str | None = Field(None, description="Server Exception")
+    code: Annotated[str | None, Field(description="Server Exception")] = None
 
 
 class ErrorType(BaseModel):
-    message: str = Field(..., description="Error message")
+    message: Annotated[str, Field(description="Error message")]
+    status: Annotated[int, Field(description="Error code")]
     errors: list[Error] | None = None
-    status: int = Field(..., description="Error code")
 
 
 class ErrorEnveloped(BaseModel):

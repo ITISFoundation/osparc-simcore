@@ -332,17 +332,29 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           }
           case "openFunction": {
             // this is the MetaModeling service trying to show function/template information
-            if (data["message"] && data["message"]["functionId"]) {
-              const templateId = data["message"]["functionId"];
-              osparc.store.Templates.fetchTemplate(templateId)
-                .then(templateData => {
-                  templateData["resourceType"] = "template";
-                  const resourceDetails = new osparc.dashboard.ResourceDetails(templateData).set({
-                    showOpenButton: false,
-                  });
-                  osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
-                })
-                .catch(() => osparc.FlashMessenger.logError(this.tr("Function not found")));
+            let functionData = null;
+            if (data["message"] && data["message"]["uuid"]) {
+              // new version, the uuid is from the function
+              functionData = {
+                "uuid": data["message"]["uuid"],
+                "resourceType": "function",
+              };
+            } else if (data["message"] && data["message"]["functionId"]) {
+              // old version, the uuid is from the template
+              functionData = {
+                "uuid": data["message"]["functionId"],
+                "resourceType": "functionedTemplate",
+              };
+            }
+            if (functionData) {
+              const {
+                resourceDetails,
+                window,
+              } = osparc.dashboard.ResourceDetails.popUpInWindow(functionData);
+              resourceDetails.set({
+                showOpenButton: false,
+              });
+              window.setCaption("Function Details");
             }
             break;
           }

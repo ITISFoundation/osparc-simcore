@@ -28,12 +28,12 @@ from helpers.shared_comp_utils import (
 )
 from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.clusters import ClusterAuthentication
+from models_library.products import ProductName
 from models_library.projects import (
     Node,
     NodesDict,
     ProjectAtDB,
     ProjectID,
-    ProjectIDStr,
 )
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
@@ -69,6 +69,7 @@ from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
+from simcore_service_director_v2._meta import APP_NAME
 from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     RCloneSettings,
@@ -164,6 +165,7 @@ async def minimal_configuration(
     ensure_swarm_and_networks: None,
     minio_s3_settings_envs: EnvVarsDict,
     current_user: dict[str, Any],
+    with_product: dict[str, Any],
     osparc_product_name: str,
 ) -> AsyncIterator[None]:
     await wait_for_catalog_service(current_user["id"], osparc_product_name)
@@ -260,14 +262,45 @@ def current_user(create_registered_user: Callable) -> dict[str, Any]:
 @pytest.fixture
 async def current_study(
     current_user: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     fake_dy_workbench: dict[str, Any],
+    sleeper_service: dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
+    dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
     async_client: httpx.AsyncClient,
     osparc_product_name: str,
     osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
+    grant_service_access_rights: Callable[..., dict[str, Any]],
 ) -> ProjectAtDB:
-    project_at_db = await project(current_user, workbench=fake_dy_workbench)
+    # 1. grant current_user execution access to services in this study
+    grant_service_access_rights(
+        group_id=current_user["primary_gid"],
+        service_key=sleeper_service["schema"]["key"],
+        service_version=sleeper_service["schema"]["version"],
+        product_name=osparc_product_name,
+    )
+    grant_service_access_rights(
+        group_id=current_user["primary_gid"],
+        service_key=dy_static_file_server_dynamic_sidecar_service["schema"]["key"],
+        service_version=dy_static_file_server_dynamic_sidecar_service["schema"][
+            "version"
+        ],
+        product_name=osparc_product_name,
+    )
+    grant_service_access_rights(
+        group_id=current_user["primary_gid"],
+        service_key=dy_static_file_server_dynamic_sidecar_compose_spec_service[
+            "schema"
+        ]["key"],
+        service_version=dy_static_file_server_dynamic_sidecar_compose_spec_service[
+            "schema"
+        ]["version"],
+        product_name=osparc_product_name,
+    )
+
+    # create project for this user
+    project_at_db = await create_project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
     await create_pipeline(
@@ -294,7 +327,7 @@ def workbench_dynamic_services(
 
 @pytest.fixture
 async def db_manager(sqlalchemy_async_engine: AsyncEngine) -> DBManager:
-    return DBManager(sqlalchemy_async_engine)
+    return DBManager(sqlalchemy_async_engine, application_name=APP_NAME)
 
 
 def _is_docker_r_clone_plugin_installed() -> bool:
@@ -477,7 +510,7 @@ async def _get_mapped_nodeports_values(
     for node_uuid in workbench:
         PORTS: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
-            project_id=ProjectIDStr(project_id),
+            project_id=project_id,
             node_uuid=TypeAdapter(NodeIDStr).validate_python(node_uuid),
             db_manager=db_manager,
         )
@@ -884,6 +917,13 @@ async def _assert_retrieve_completed(
                 assert (
                     _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs
                 ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
+
+
+def product_name(osparc_product_name: ProductName) -> ProductName:
+    """
+    override the product name to be used in these tests
+    """
+    return osparc_product_name
 
 
 @pytest.mark.flaky(max_runs=3)

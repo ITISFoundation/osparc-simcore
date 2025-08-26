@@ -50,6 +50,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "text-darker": "rgba(20, 20, 20, 1)",
     "contrasted-text-dark": "rgba(20, 20, 20, 1)",
     "contrasted-text-light": "rgba(40, 40, 40, 1)",
+    "text-complementary": "rgba(216, 216, 216, 1)",
     "link": "rgba(10, 182, 255, 1)",
 
     // shadows
@@ -58,7 +59,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
-    // OM here
     "window-popup-background": "rgba(225, 225, 225, 1)",
     "window-caption-background": "background-main",
     "window-caption-background-active": "background-main-3",

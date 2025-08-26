@@ -26,17 +26,22 @@ qx.Class.define("osparc.jobs.JobsButton", {
     osparc.utils.Utils.setIdToWidget(this, "jobsButton");
 
     this.set({
-      width: 30,
-      alignX: "center",
-      cursor: "pointer",
       toolTipText: this.tr("Activity Center"),
     });
 
-    this.addListener("tap", () => osparc.jobs.ActivityCenterWindow.openWindow(), this);
+    this.addListener("tap", () => {
+      osparc.jobs.ActivityCenterWindow.openWindow();
+      this.__fetchNJobs();
+    }, this);
 
-    const jobsStore = osparc.store.Jobs.getInstance();
-    jobsStore.addListener("changeJobsActive", e => this.__updateJobsButton(e.getData()), this);
-    jobsStore.fetchJobsLatest();
+    this.__fetchNJobs();
+
+    const socket = osparc.wrapper.WebSocket.getInstance();
+    if (socket.isConnected()) {
+      this.__attachSocketListener();
+    } else {
+      socket.addListener("connect", () => this.__attachSocketListener());
+    }
   },
 
   members: {
@@ -45,40 +50,91 @@ qx.Class.define("osparc.jobs.JobsButton", {
       switch (id) {
         case "icon": {
           control = new qx.ui.basic.Image("@FontAwesome5Solid/tasks/22");
-
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
-          }));
+          })).set({
+            paddingLeft: 5,
+          });
           logoContainer.add(control);
-
           this._add(logoContainer, {
             height: "100%"
           });
           break;
         }
-        case "number":
-          control = new qx.ui.basic.Label().set({
-            backgroundColor: "background-main-1",
-            font: "text-12"
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "4px"
+        case "is-active-icon-outline":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/12").set({
+            textColor: osparc.navigation.NavigationBar.BG_COLOR,
           });
           this._add(control, {
-            bottom: 8,
-            right: 4
+            bottom: -4,
+            right: -4,
+          });
+          break;
+        case "is-active-icon":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/8").set({
+            textColor: "strong-main",
+          });
+          this._add(control, {
+            bottom: -2,
+            right: -2,
           });
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    __updateJobsButton: function(nActiveJobs) {
-      this.getChildControl("icon");
-      const number = this.getChildControl("number");
+    __fetchNJobs: function() {
+      const jobsStore = osparc.store.Jobs.getInstance();
+      const runningOnly = true;
+      const offset = 0;
+      const limit = 1;
+      const orderBy = undefined; // use default order
+      const filters = undefined; // use default filters
+      const resolveWResponse = true;
+      jobsStore.fetchJobsLatest(runningOnly, offset, limit, orderBy, filters, resolveWResponse)
+        .then(resp => {
+          // here we have the real number of jobs running
+          this.__updateJobsButton(Boolean(resp["_meta"]["total"]));
+        });
+    },
 
-      const nJobs = nActiveJobs > osparc.store.Jobs.SERVER_MAX_LIMIT ? (osparc.store.Jobs.SERVER_MAX_LIMIT + "+") : nActiveJobs;
-      number.setValue(nJobs.toString());
+    __attachSocketListener: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      socket.on("projectStateUpdated", data => {
+        if (osparc.study.Utils.state.isPipelineRunning(data["data"])) {
+          this.__updateJobsButton(true);
+        }
+      }, this);
+    },
+
+    __updateJobsButton: function(isActive) {
+      this.getChildControl("icon");
+      [
+        this.getChildControl("is-active-icon-outline"),
+        this.getChildControl("is-active-icon"),
+      ].forEach(control => {
+        control.set({
+          visibility: isActive ? "visible" : "excluded"
+        });
+      });
+
+      // Start or restart timer when isActive is true
+      if (isActive) {
+        this.__startRefreshTimer();
+      }
+    },
+
+    __startRefreshTimer: function() {
+      // Stop existing timer if running
+      if (this.__refreshTimer) {
+        this.__refreshTimer.stop();
+        this.__refreshTimer.dispose();
+      }
+
+      this.__refreshTimer = new qx.event.Timer(20000);
+      this.__refreshTimer.addListener("interval", () => this.__fetchNJobs(), this);
+      this.__refreshTimer.start();
     },
   }
 });

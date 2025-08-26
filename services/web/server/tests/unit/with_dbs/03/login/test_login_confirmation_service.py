@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from aiohttp.test_utils import make_mocked_request
 from aiohttp.web import Application
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.login import _confirmation_service, _confirmation_web
 from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login.settings import LoginOptions

@@ -15,7 +15,8 @@ from models_library.wallets import WalletID, WalletInfo
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.exception_utils import suppress_exceptions
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
@@ -23,11 +24,11 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 
 from ..application_settings import get_application_settings
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from ..products import products_service
 from ..products.models import Product
 from ..projects import projects_wallets_service
-from ..users import preferences_api as user_preferences_service
+from ..user_preferences import user_preferences_service
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as wallets_service
 from ._client import DirectorV2RestClient
@@ -79,7 +80,7 @@ async def create_or_update_pipeline(
 
     except DirectorV2ServiceError as exc:
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 f"Could not create pipeline from project {project_id}",
                 error=exc,
                 error_context={**body, "backend_url": backend_url},
@@ -112,7 +113,6 @@ async def is_pipeline_running(
 async def get_computation_task(
     app: web.Application, user_id: UserID, project_id: ProjectID
 ) -> ComputationTask | None:
-
     try:
         dv2_computation = await DirectorV2RestClient(app).get_computation(
             project_id=project_id, user_id=user_id
@@ -131,7 +131,17 @@ async def get_computation_task(
         return None
 
 
+def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
+    assert isinstance(exception, DirectorV2ServiceError)  # nosec
+    return exception.status == status.HTTP_404_NOT_FOUND
+
+
 @log_decorator(logger=_logger)
+@suppress_exceptions(
+    (DirectorV2ServiceError,),
+    reason="silence in case the pipeline does not exist",
+    predicate=_skip_if_pipeline_not_found,
+)
 async def stop_pipeline(
     app: web.Application, *, user_id: PositiveInt, project_id: ProjectID
 ):
@@ -267,7 +277,7 @@ async def get_group_properties(
     product_name: ProductName,
     user_id: UserID,
 ) -> GroupExtraProperties:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
             conn, user_id=user_id, product_name=product_name
         )

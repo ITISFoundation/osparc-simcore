@@ -8,7 +8,7 @@ from servicelib.utils_meta import PackageInfo
 info: Final = PackageInfo(package_name="simcore-service-autoscaling")
 __version__: Final[VersionStr] = info.__version__
 
-APP_NAME: Final[str] = info.project_name
+APP_NAME: Final[str] = info.app_name
 API_VERSION: Final[VersionStr] = info.__version__
 VERSION: Final[Version] = info.version
 API_VTAG: Final[VersionTag] = TypeAdapter(VersionTag).validate_python(

@@ -1,8 +1,10 @@
+from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.rabbit import RabbitSettings
@@ -60,6 +62,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DASK_SIDECAR_RABBITMQ: Annotated[
         RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
     ]
+
+    @cached_property
+    def log_level(self) -> LogLevelInt:
+        return cast(LogLevelInt, self.DASK_SIDECAR_LOGLEVEL)
 
     @field_validator("DASK_SIDECAR_LOGLEVEL", mode="before")
     @classmethod

@@ -50,14 +50,15 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       TITLE: 2,
       SPACER: 3,
       PROGRESS: 4,
-      TAGS: 5,
-      ICONS_LAYOUT: 6,
-      OWNER: 7,
-      SHARED: 8,
-      LAST_CHANGE: 9,
-      TSR: 10,
-      HITS: 11,
-      OPTIONS: 12
+      AVATAR_GROUP: 5,
+      TAGS: 6,
+      ICONS_LAYOUT: 7,
+      OWNER: 8,
+      SHARED: 9,
+      LAST_CHANGE: 10,
+      TSR: 11,
+      HITS: 12,
+      OPTIONS: 13,
     }
   },
 

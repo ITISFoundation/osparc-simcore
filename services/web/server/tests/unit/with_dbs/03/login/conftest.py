@@ -14,7 +14,7 @@ from faker import Faker
 from models_library.basic_types import IDStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.login._login_repository_legacy import (
@@ -74,11 +74,6 @@ def app_environment(
     )
 
     return {**app_environment, **envs_plugins, **envs_login, **envs_twilio}
-
-
-@pytest.fixture
-def user_phone_number(faker: Faker) -> str:
-    return faker.phone_number()
 
 
 @pytest.fixture

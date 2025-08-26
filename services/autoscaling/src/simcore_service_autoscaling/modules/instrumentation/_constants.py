@@ -20,7 +20,7 @@ CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
         "Number of EC2-backed docker nodes which are drained",
         EC2_INSTANCE_LABELS,
     ),
-    "buffer_drained_nodes": (
+    "hot_buffer_drained_nodes": (
         "Number of EC2-backed docker nodes which are drained and in buffer/reserve",
         EC2_INSTANCE_LABELS,
     ),
@@ -32,7 +32,7 @@ CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
         "Number of EC2 instances that failed joining the cluster",
         EC2_INSTANCE_LABELS,
     ),
-    "buffer_ec2s": (
+    "warm_buffer_ec2s": (
         "Number of buffer EC2 instances prepared, stopped, and ready to be activated",
         EC2_INSTANCE_LABELS,
     ),
@@ -54,7 +54,7 @@ CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
     ),
 }
 
-BUFFER_POOLS_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
+WARM_BUFFER_POOLS_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
     "ready_instances": (
         "Number of EC2 buffer instances that are ready for use",
         EC2_INSTANCE_LABELS,

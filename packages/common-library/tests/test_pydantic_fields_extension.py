@@ -1,13 +1,14 @@
-from typing import Any, Callable, Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 import pytest
 from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class MyModel(BaseModel):
     a: int
-    b: float | None = Field(...)
+    b: float | None
     c: str = "bla"
     d: bool | None = None
     e: Literal["bla"]

@@ -11,21 +11,23 @@ from collections.abc import Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import pytest
 import sqlalchemy as sa
+from _pytest.mark.structures import ParameterSet
 from aiohttp.test_utils import TestClient
 from models_library.folders import FolderID
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.users import UserID
 from pydantic import BaseModel, PositiveInt
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
 from pytest_simcore.helpers.webserver_projects import create_project
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
@@ -34,13 +36,21 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
 
-def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
-    all_roles = standard_role_response()
+def standard_user_role() -> tuple[str, list[ParameterSet]]:
+    parameters, all_roles_expected_responses = standard_role_response()
+    standard_user, standard_user_expected_response = all_roles_expected_responses[2]
 
-    return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard_user_role")])
+    return (
+        parameters,
+        [
+            pytest.param(
+                standard_user, standard_user_expected_response, id="standard_user_role"
+            )
+        ],
+    )
 
 
-def standard_and_tester_user_roles() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
+def standard_and_tester_user_roles() -> tuple[str, list[ParameterSet]]:
     all_roles = standard_role_response()
 
     return (
@@ -58,6 +68,7 @@ async def _new_project(
     product_name: str,
     tests_data_dir: Path,
     project_data: dict[str, Any],
+    *,
     as_template: bool = False,
 ):
     """returns a project for the given user"""
@@ -89,7 +100,7 @@ def _assert_response_data(
 
 def _pick_random_substring(text, length):
     length = min(length, len(text))
-    start_index = random.randint(0, len(text) - length)
+    start_index = random.randint(0, len(text) - length)  # noqa: S311
     end_index = start_index + length
     return text[start_index:end_index]
 
@@ -101,7 +112,8 @@ class _ProjectInfo(BaseModel):
 
 
 @pytest.mark.parametrize(*standard_user_role())
-async def test_list_projects_with_search_parameter(
+async def test_list_projects_with_search_parameter(  # noqa: PLR0915
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserDict,
     expected: ExpectedResponse,
@@ -112,27 +124,27 @@ async def test_list_projects_with_search_parameter(
 ):
     projects_info = [
         _ProjectInfo(
-            uuid="d4d0eca3-d210-4db6-84f9-63670b07176b",
+            uuid=ProjectID("d4d0eca3-d210-4db6-84f9-63670b07176b"),
             name="Name 1",
             description="Description 1",
         ),
         _ProjectInfo(
-            uuid="2f3ef868-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("2f3ef868-fe1b-11ed-b038-cdb13a78a6f3"),
             name="Name 2",
             description="Description 2",
         ),
         _ProjectInfo(
-            uuid="9cd66c12-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("9cd66c12-fe1b-11ed-b038-cdb13a78a6f3"),
             name="Name 3",
             description="Description 3",
         ),
         _ProjectInfo(
-            uuid="b9e32426-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("b9e32426-fe1b-11ed-b038-cdb13a78a6f3"),
             name="Yoda 4",
             description="Description 4",
         ),
         _ProjectInfo(
-            uuid="bc57aff6-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("bc57aff6-fe1b-11ed-b038-cdb13a78a6f3"),
             name="Name 5",
             description="Yoda 5",
         ),
@@ -291,6 +303,7 @@ _alphabetically_ordered_list = ["a", "b", "c", "d", "e"]
 
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_with_order_by_parameter(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserDict,
     expected: ExpectedResponse,
@@ -301,27 +314,27 @@ async def test_list_projects_with_order_by_parameter(
 ):
     projects_info = [
         _ProjectInfo(
-            uuid="aaa0eca3-d210-4db6-84f9-63670b07176b",
+            uuid=ProjectID("aaa0eca3-d210-4db6-84f9-63670b07176b"),
             name="d",
             description="c",
         ),
         _ProjectInfo(
-            uuid="cccef868-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("cccef868-fe1b-11ed-b038-cdb13a78a6f3"),
             name="b",
             description="e",
         ),
         _ProjectInfo(
-            uuid="eee66c12-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("eee66c12-fe1b-11ed-b038-cdb13a78a6f3"),
             name="a",
             description="a",
         ),
         _ProjectInfo(
-            uuid="ddd32426-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("ddd32426-fe1b-11ed-b038-cdb13a78a6f3"),
             name="c",
             description="b",
         ),
         _ProjectInfo(
-            uuid="bbb7aff6-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("bbb7aff6-fe1b-11ed-b038-cdb13a78a6f3"),
             name="e",
             description="d",
         ),
@@ -412,7 +425,9 @@ def setup_folders_db(
             )
             .returning(folders_v2.c.folder_id)
         )
-        _folder_id = result.fetchone()[0]
+        row = result.fetchone()
+        assert row is not None
+        _folder_id = row[0]
 
         con.execute(
             projects_to_folders.insert().values(
@@ -422,7 +437,7 @@ def setup_folders_db(
             )
         )
 
-        yield FolderID(_folder_id)
+        yield _folder_id
 
         con.execute(projects_to_folders.delete())
         con.execute(folders_v2.delete())
@@ -430,6 +445,7 @@ def setup_folders_db(
 
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_for_specific_folder_id(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserDict,
     expected: ExpectedResponse,
@@ -441,17 +457,17 @@ async def test_list_projects_for_specific_folder_id(
 ):
     projects_info = [
         _ProjectInfo(
-            uuid="d4d0eca3-d210-4db6-84f9-63670b07176b",
+            uuid=ProjectID("d4d0eca3-d210-4db6-84f9-63670b07176b"),
             name="Name 1",
             description="Description 1",
         ),
         _ProjectInfo(
-            uuid="2f3ef868-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("2f3ef868-fe1b-11ed-b038-cdb13a78a6f3"),
             name="Name 2",
             description="Description 2",
         ),
         _ProjectInfo(
-            uuid="9cd66c12-fe1b-11ed-b038-cdb13a78a6f3",
+            uuid=ProjectID("9cd66c12-fe1b-11ed-b038-cdb13a78a6f3"),
             name="Name 3",
             description="Description 3",
         ),
@@ -511,7 +527,8 @@ async def test_list_projects_for_specific_folder_id(
 
 
 @pytest.mark.parametrize(*standard_and_tester_user_roles())
-async def test_list_and_patch_projects_with_template_type(
+async def test_list_and_patch_projects_with_template_type(  # noqa: PLR0915
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserDict,
     expected: ExpectedResponse,

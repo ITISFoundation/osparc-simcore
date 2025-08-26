@@ -10,7 +10,6 @@ from models_library.api_schemas_webserver.projects import (
     ProjectPatch,
 )
 from models_library.generics import Envelope
-from models_library.projects_state import ProjectLocked
 from models_library.rest_ordering import OrderBy
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp import status
@@ -29,11 +28,12 @@ from servicelib.redis import get_project_locked_state
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
+from ...models import ClientSessionHeaderParams
 from ...redis import get_redis_lock_manager_client_sdk
 from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ...security import security_web
 from ...security.decorators import permission_required
-from ...users.api import get_user_fullname
+from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _crud_api_create, _crud_api_read, _projects_service
 from .._permalink_service import update_or_pop_permalink_in_project
@@ -97,11 +97,12 @@ async def create_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
+        _crud_api_create.create_project.__name__,
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
-        request=request,
+        request_url=request.url,
+        request_headers=dict(request.headers),
         new_project_was_hidden_before_data_was_copied=query_params.hidden,
         from_study=query_params.from_study,
         as_template=query_params.as_template,
@@ -158,7 +159,7 @@ async def list_projects(request: web.Request):
     )
 
     projects = await _rest_utils.aggregate_data_to_projects_from_request(
-        request, projects
+        request.app, request.url, dict(request.headers), projects
     )
 
     return _rest_utils.create_page_response(
@@ -187,6 +188,8 @@ async def list_projects_full_search(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         trashed=query_params.filters.trashed,
+        filter_by_project_type=query_params.project_type,
+        filter_by_template_type=query_params.template_type,
         search_by_multi_columns=query_params.text,
         search_by_project_name=query_params.filters.search_by_project_name,
         offset=query_params.offset,
@@ -195,7 +198,7 @@ async def list_projects_full_search(request: web.Request):
     )
 
     projects = await _rest_utils.aggregate_data_to_projects_from_request(
-        request, projects
+        request.app, request.url, dict(request.headers), projects
     )
 
     return _rest_utils.create_page_response(
@@ -245,7 +248,9 @@ async def get_active_project(request: web.Request) -> web.Response:
         )
 
         # updates project's permalink field
-        await update_or_pop_permalink_in_project(request, project)
+        await update_or_pop_permalink_in_project(
+            request.app, request.url, dict(request.headers), project
+        )
 
         data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
 
@@ -278,7 +283,9 @@ async def get_project(request: web.Request):
     )
 
     # Adds permalink
-    await update_or_pop_permalink_in_project(request, project)
+    await update_or_pop_permalink_in_project(
+        request.app, request.url, dict(request.headers), project
+    )
 
     data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
     return envelope_json_response(data)
@@ -311,13 +318,15 @@ async def patch_project(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
-    await _projects_service.patch_project(
+    await _projects_service.patch_project_for_user(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
         project_patch=project_patch,
         product_name=req_ctx.product_name,
+        client_session_id=header_params.client_session_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -360,26 +369,25 @@ async def delete_project(request: web.Request):
     # that project is still in use
     if req_ctx.user_id in project_users:
         raise web.HTTPForbidden(
-            reason="Project is still open in another tab/browser."
+            text="Project is still open in another tab/browser."
             "It cannot be deleted until it is closed."
         )
     if project_users:
         other_user_names = {
-            f"{await get_user_fullname(request.app, user_id=uid)}"
+            f"{await users_service.get_user_fullname(request.app, user_id=uid)}"
             for uid in project_users
         }
         raise web.HTTPForbidden(
-            reason=f"Project is open by {other_user_names}. "
+            text=f"Project is open by {other_user_names}. "
             "It cannot be deleted until the project is closed."
         )
 
-    project_locked_state: ProjectLocked | None
     if project_locked_state := await get_project_locked_state(
         get_redis_lock_manager_client_sdk(request.app),
         project_uuid=path_params.project_id,
     ):
         raise web.HTTPConflict(
-            reason=f"Project {path_params.project_id} is locked: {project_locked_state=}"
+            text=f"Project {path_params.project_id} is locked: {project_locked_state=}"
         )
 
     await _projects_service.submit_delete_project_task(
@@ -412,11 +420,12 @@ async def clone_project(request: web.Request):
 
     return await start_long_running_task(
         request,
-        _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
+        _crud_api_create.create_project.__name__,
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
-        request=request,
+        request_url=request.url,
+        request_headers=dict(request.headers),
         new_project_was_hidden_before_data_was_copied=False,
         from_study=path_params.project_id,
         as_template=False,

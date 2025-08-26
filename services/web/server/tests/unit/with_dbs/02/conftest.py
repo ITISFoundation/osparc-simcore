@@ -16,6 +16,7 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects_nodes import Node, NodeID
@@ -29,12 +30,21 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
 from simcore_service_webserver.projects.models import ProjectDict
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> dict[str, str]:
+    # NOTE: overrides app_environment
+    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
+    return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
 
 
 @pytest.fixture
@@ -242,17 +252,6 @@ def assert_get_same_project_caller() -> Callable:
         return data
 
     return _assert_it
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
-    envs_plugins = setenvs_from_dict(
-        monkeypatch,
-        {"WEBSERVER_DEV_FEATURES_ENABLED": "1"},
-    )
-    return app_environment | envs_plugins
 
 
 @pytest.fixture
@@ -487,3 +486,41 @@ def workbench_db_column() -> dict[str, Any]:
 def workbench(workbench_db_column: dict[str, Any]) -> dict[NodeID, Node]:
     # convert to  model
     return TypeAdapter(dict[NodeID, Node]).validate_python(workbench_db_column)
+
+
+@pytest.fixture
+def max_number_of_user_sessions(faker: Faker) -> int:
+    return faker.pyint(min_value=1, max_value=5)
+
+
+@pytest.fixture
+def with_enabled_rtc_collaboration(
+    app_environment: EnvVarsDict,
+    with_dev_features_enabled: None,
+    monkeypatch: pytest.MonkeyPatch,
+    max_number_of_user_sessions: int,
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
+                {"RTC_MAX_NUMBER_OF_USERS": max_number_of_user_sessions}
+            )
+        },
+    )
+
+
+@pytest.fixture
+def with_enabled_rtc_collaboration_limited_to_1_user(
+    app_environment: EnvVarsDict,
+    with_dev_features_enabled: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
+                {"RTC_MAX_NUMBER_OF_USERS": 1}
+            )
+        },
+    )

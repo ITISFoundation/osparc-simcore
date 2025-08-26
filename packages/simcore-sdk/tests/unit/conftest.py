@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
 from random import randint
 from typing import Any
 from uuid import uuid4
@@ -32,7 +32,8 @@ async def mock_db_manager(
     monkeypatch,
     project_id: str,
     node_uuid: str,
-) -> AsyncIterator[Callable]:
+    mock_app_name: str,
+) -> Callable[[dict[str, Any]], DBManager]:
     def _mock_db_manager(port_cfg: dict[str, Any]) -> DBManager:
         async def mock_get_ports_configuration_from_node_uuid(*args, **kwargs) -> str:
             return json.dumps(port_cfg)
@@ -55,7 +56,6 @@ async def mock_db_manager(
             mock_write_ports_configuration,
         )
 
-        db_manager = DBManager()
-        return db_manager
+        return DBManager(application_name=mock_app_name)
 
     return _mock_db_manager

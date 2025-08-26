@@ -27,20 +27,22 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       UPDATE_BUTTON: Object.keys(osparc.metadata.ServicesInStudy.GRID_POS).length+2
     },
 
-    colorVersionLabel: function(versionLabel, metadata) {
+    paintChip: function(versionChip, metadata) {
       const isDeprecated = osparc.service.Utils.isDeprecated(metadata);
       const isRetired = osparc.service.Utils.isRetired(metadata);
       if (isDeprecated) {
-        versionLabel.set({
-          textColor: "text-on-warning", // because the background is always yellow
-          backgroundColor: osparc.service.StatusUI.getColor("deprecated"),
+        versionChip.set({
+          statusColor: osparc.ui.basic.Chip.STATUS.WARNING,
           toolTipText: qx.locale.Manager.tr("This service is deprecated. Please update.")
         });
       } else if (isRetired) {
-        versionLabel.set({
-          textColor: "text-on-warning", // because the background is always red
-          backgroundColor: osparc.service.StatusUI.getColor("retired"),
+        versionChip.set({
+          statusColor: osparc.ui.basic.Chip.STATUS.ERROR,
           toolTipText: qx.locale.Manager.tr("This service has been retired. Please update.")
+        });
+      } else {
+        versionChip.set({
+          statusColor: osparc.ui.basic.Chip.STATUS.SUCCESS,
         });
       }
     }
@@ -157,16 +159,18 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         i++;
         const node = workbench[nodeId];
         const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
-        const currentVersionLabel = new qx.ui.basic.Label(osparc.service.Utils.extractVersionDisplay(metadata)).set({
+        const currentVersionChip = new osparc.ui.basic.Chip(osparc.service.Utils.extractVersionDisplay(metadata));
+        currentVersionChip.getChildControl("label").set({
           font: "text-14"
         });
-        this.self().colorVersionLabel(currentVersionLabel, metadata);
-        this._servicesGrid.add(currentVersionLabel, {
+        this.self().paintChip(currentVersionChip, metadata);
+        this._servicesGrid.add(currentVersionChip, {
           row: i,
           column: this.self().GRID_POS.CURRENT_VERSION
         });
 
-        const compatibleVersionLabel = new qx.ui.basic.Label().set({
+        const compatibleVersionChip = new osparc.ui.basic.Chip();
+        compatibleVersionChip.getChildControl("label").set({
           font: "text-14"
         });
         const latestCompatible = osparc.store.Services.getLatestCompatible(node["key"], node["version"]);
@@ -178,16 +182,18 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
               if (node["key"] !== latestMetadata["key"]) {
                 label = latestMetadata["name"] + ":" + label;
               }
-              compatibleVersionLabel.setValue(label);
+              compatibleVersionChip.setLabel(label);
+              this.self().paintChip(compatibleVersionChip, latestMetadata);
             })
             .catch(err => console.error(err));
         } else if (metadata) {
           // up to date
-          compatibleVersionLabel.setValue(metadata["version"]);
+          compatibleVersionChip.setLabel(metadata["version"]);
+            this.self().paintChip(compatibleVersionChip, metadata);
         } else {
-          compatibleVersionLabel.setValue(this.tr("Unknown"));
+          compatibleVersionChip.setLabel(this.tr("Unknown"));
         }
-        this._servicesGrid.add(compatibleVersionLabel, {
+        this._servicesGrid.add(compatibleVersionChip, {
           row: i,
           column: this.self().GRID_POS.COMPATIBLE_VERSION
         });

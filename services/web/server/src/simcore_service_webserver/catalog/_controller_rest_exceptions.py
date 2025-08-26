@@ -4,9 +4,10 @@ import logging
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.user_messages import user_message
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
@@ -63,7 +64,7 @@ async def _handler_catalog_client_errors(
         # Log for further investigation
         oec = create_error_code(exception)
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_msg,
                 error=exception,
                 error_code=oec,
@@ -85,22 +86,35 @@ async def _handler_catalog_client_errors(
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     RemoteMethodNotRegisteredError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        MSG_CATALOG_SERVICE_UNAVAILABLE,
+        user_message(
+            "The catalog service is temporarily unavailable. Please try again later.",
+            _version=2,
+        ),
     ),
     CatalogForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Forbidden catalog access",
+        user_message(
+            "Access denied: You don't have permission to view this catalog item.",
+            _version=2,
+        ),
     ),
     CatalogItemNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Catalog item not found",
+        user_message(
+            "This catalog item does not exist or has been removed.", _version=2
+        ),
     ),
     DefaultPricingPlanNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Default pricing plan not found",
+        user_message(
+            "No default pricing plan is available for this operation.", _version=2
+        ),
     ),
     DefaultPricingUnitForServiceNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND, "Default pricing unit not found"
+        status.HTTP_404_NOT_FOUND,
+        user_message(
+            "No default pricing unit is defined for this service.", _version=2
+        ),
     ),
 }
 

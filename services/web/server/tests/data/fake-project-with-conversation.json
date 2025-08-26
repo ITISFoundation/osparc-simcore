@@ -1,0 +1,89 @@
+{
+  "accessRights": {},
+  "uuid": "de2578c5-431e-6257-a462-d7bf73b76c0c",
+  "name": "fake-project-name",
+  "description": "anim sint pariatur do dolore",
+  "prjOwner": "foo@foo.com",
+  "creationDate": "1865-11-30T04:00:14.000Z",
+  "lastChangeDate": "7364-11-30T10:04:52.000Z",
+  "thumbnail": "https://some_fake_project_thumbnail.com/fake",
+  "tags": [],
+  "classifiers": [],
+  "workbench": {
+    "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf": {
+      "key": "simcore/services/frontend/file-picker",
+      "version": "1.0.0",
+      "label": "File Picker 0D",
+      "inputs": {},
+      "inputNodes": [],
+      "outputs": {},
+      "position": {
+        "x": 50,
+        "y": 150
+      }
+    },
+    "5739e377-17f7-4f09-a6ad-62659fb7fdec": {
+      "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
+      "version": "1.0.0",
+      "label": "DBP-Clancy-Rabbit-Single-Cell solver",
+      "inputAccess": {
+        "Na": "ReadAndWrite",
+        "Kr": "ReadOnly",
+        "BCL": "ReadAndWrite",
+        "NBeats": "ReadOnly",
+        "Ligand": "Invisible",
+        "cAMKII": "Invisible"
+      },
+      "inputs": {
+        "Na": 0,
+        "Kr": 0,
+        "BCL": 200,
+        "NBeats": 5,
+        "Ligand": 0,
+        "cAMKII": "WT",
+        "initfile": {
+          "nodeUuid": "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf",
+          "output": "outFile"
+        }
+      },
+      "inputNodes": [
+        "b4b20476-e7c0-47c2-8cc4-f66ac21a13bf"
+      ],
+      "outputs": {},
+      "position": {
+        "x": 300,
+        "y": 150
+      }
+    },
+    "351fd505-1ee3-466d-ad6c-ea2915ffd364": {
+      "key": "simcore/services/dynamic/raw-graphs",
+      "version": "2.10.4",
+      "label": "2D plot",
+      "inputs": {},
+      "outputs": {},
+      "position": {
+        "x": 1073,
+        "y": 307
+      },
+      "progress": 100
+    }
+  },
+  "ui": {
+    "annotations": {
+      "b8a7e8e2-1c2d-4f3a-9c5e-123456789abc": {
+        "type": "conversation",
+        "attributes": {
+          "conversationId": 2,
+          "x": 415,
+          "y": 100,
+          "title": "My chat"
+        }
+      }
+    }
+  },
+  "quality": {},
+  "dev": {},
+  "workspaceId": null,
+  "type": "STANDARD",
+  "templateType": null
+}

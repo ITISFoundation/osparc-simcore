@@ -1,22 +1,25 @@
+import contextlib
 import logging
 from typing import Final
 
 import networkx as nx
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from models_library.computations import CollectionRunID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
-from servicelib.exception_utils import silence_exceptions
+from servicelib.exception_utils import suppress_exceptions
 from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ...core.errors import ComputationalRunNotFoundError
 from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
-from ...utils.rabbitmq import publish_project_log
+from ...utils.rabbitmq import publish_pipeline_scheduling_state, publish_project_log
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
@@ -43,6 +46,7 @@ async def run_new_pipeline(
     project_id: ProjectID,
     run_metadata: RunMetadataDict,
     use_on_demand_clusters: bool,
+    collection_run_id: CollectionRunID,
 ) -> None:
     """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
@@ -57,12 +61,25 @@ async def run_new_pipeline(
         )
         return
 
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        # if the run already exists and is scheduled, do not schedule again.
+        last_run = await CompRunsRepository.instance(db_engine).get(
+            user_id=user_id, project_id=project_id
+        )
+        if last_run.result.is_running():
+            _logger.warning(
+                "run for project %s is already running. not scheduling it again.",
+                f"{project_id=}",
+            )
+            return
+
     new_run = await CompRunsRepository.instance(db_engine).create(
         user_id=user_id,
         project_id=project_id,
         metadata=run_metadata,
         use_on_demand_clusters=use_on_demand_clusters,
         dag_adjacency_list=comp_pipeline_at_db.dag_adjacency_list,
+        collection_run_id=collection_run_id,
     )
 
     tasks_to_run = await _get_pipeline_tasks_at_db(db_engine, project_id, dag)
@@ -91,6 +108,9 @@ async def run_new_pipeline(
         project_id,
         log=f"Project pipeline scheduled using {'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
         log_level=logging.INFO,
+    )
+    await publish_pipeline_scheduling_state(
+        rabbitmq_client, user_id, project_id, new_run.result
     )
 
 
@@ -128,8 +148,7 @@ async def _get_pipeline_at_db(
     project_id: ProjectID, db_engine: AsyncEngine
 ) -> CompPipelineAtDB:
     comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
-    pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
-    return pipeline_at_db
+    return await comp_pipeline_repo.get_pipeline(project_id)
 
 
 async def _get_pipeline_tasks_at_db(
@@ -191,7 +210,10 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
 
 async def setup_manager(app: FastAPI) -> None:
     app.state.scheduler_manager = create_periodic_task(
-        silence_exceptions((CouldNotAcquireLockError,))(schedule_all_pipelines),
+        suppress_exceptions(
+            (CouldNotAcquireLockError,),
+            reason="Multiple instances of the periodic task `computational scheduler manager` are running.",
+        )(schedule_all_pipelines),
         interval=SCHEDULER_INTERVAL,
         task_name=MODULE_NAME_SCHEDULER,
         app=app,

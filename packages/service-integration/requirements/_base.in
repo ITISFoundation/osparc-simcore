@@ -13,5 +13,5 @@ jinja2_time
 jsonschema # pytest-plugin
 pytest # pytest-plugin
 pyyaml
-typer[all]
+typer
 yarl

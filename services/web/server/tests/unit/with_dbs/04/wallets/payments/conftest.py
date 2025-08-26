@@ -32,13 +32,14 @@ from models_library.wallets import WalletID
 from pydantic import EmailStr, HttpUrl
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.payments._methods_api import (
     _fake_cancel_creation_of_wallet_payment_method,
     _fake_delete_wallet_payment_method,
@@ -320,7 +321,10 @@ def mock_rpc_payments_service_api(
 
 @pytest.fixture
 def setup_user_pre_registration_details_db(
-    postgres_db: sa.engine.Engine, logged_user: UserInfoDict, faker: Faker
+    postgres_db: sa.engine.Engine,
+    logged_user: UserInfoDict,
+    faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ) -> Iterator[int]:
     with postgres_db.connect() as con:
         result = con.execute(
@@ -330,7 +334,7 @@ def setup_user_pre_registration_details_db(
                 pre_email=faker.email(),
                 pre_first_name=faker.first_name(),
                 pre_last_name=faker.last_name(),
-                pre_phone=faker.phone_number(),
+                pre_phone=user_phone_number,
                 institution=faker.company(),
                 address=faker.address().replace("\n", ", "),
                 city=faker.city(),

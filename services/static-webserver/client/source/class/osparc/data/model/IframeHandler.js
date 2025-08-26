@@ -30,6 +30,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     });
 
     this.__initLoadingPage();
+    this.__initLockedPage();
     this.__initIFrame();
   },
 
@@ -44,11 +45,19 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     node: {
       check: "osparc.data.model.Node",
       init: null,
-      nullable: false
+      nullable: false,
+      event: "changeNode",
+      apply: "__applyNode",
     },
 
     loadingPage: {
       check: "osparc.ui.message.Loading",
+      init: null,
+      nullable: true
+    },
+
+    lockedPage: {
+      check: "osparc.ui.message.NodeLockedPage",
       init: null,
       nullable: true
     },
@@ -61,7 +70,19 @@ qx.Class.define("osparc.data.model.IframeHandler", {
   },
 
   events: {
-    "iframeChanged": "qx.event.type.Event"
+    "iframeStateChanged": "qx.event.type.Event"
+  },
+
+  statics: {
+    evalShowToolbar: function(loadingPage, study) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
+        loadingPage.setShowToolbar(false);
+      } else {
+        study.getUi().bind("mode", loadingPage, "showToolbar", {
+          converter: mode => mode !== "standalone"
+        });
+      }
+    },
   },
 
   members: {
@@ -89,16 +110,14 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       }
     },
 
+    __applyNode: function(node) {
+      node.getStatus().getLockState().addListener("changeLocked", () => this.fireEvent("iframeStateChanged"), this);
+    },
+
     __initIFrame: function() {
       const iframe = new osparc.widget.PersistentIframe();
       osparc.utils.Utils.setIdToWidget(iframe.getIframe(), "iframe_"+this.getNode().getNodeId());
-      if (osparc.product.Utils.isProduct("s4llite")) {
-        iframe.setShowToolbar(false);
-      } else {
-        this.getStudy().getUi().bind("mode", iframe, "showToolbar", {
-          converter: mode => mode !== "standalone"
-        });
-      }
+      this.self().evalShowToolbar(iframe, this.getStudy());
       iframe.addListener("restart", () => this.restartIFrame(), this);
       iframe.getDiskUsageIndicator().setCurrentNode(this.getNode())
       this.setIFrame(iframe);
@@ -108,16 +127,11 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const loadingPage = new osparc.ui.message.Loading().set({
         header: this.__getLoadingPageHeader()
       });
-      if (osparc.product.Utils.isProduct("s4llite")) {
-        loadingPage.setShowToolbar(false);
-      } else {
-        this.getStudy().getUi().bind("mode", loadingPage, "showToolbar", {
-          converter: mode => mode !== "standalone"
-        });
-      }
+
+      this.self().evalShowToolbar(loadingPage, this.getStudy());
 
       const node = this.getNode();
-      const thumbnail = node.getMetaData()["thumbnail"];
+      const thumbnail = node.getMetadata()["thumbnail"];
       if (thumbnail) {
         loadingPage.setLogo(thumbnail);
       }
@@ -141,9 +155,16 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         status = node.getStatus().getInteractive();
       }
       const statusText = status ? (status.charAt(0).toUpperCase() + status.slice(1)) : this.tr("Starting");
-      const metadata = node.getMetaData();
+      const metadata = node.getMetadata();
       const versionDisplay = osparc.service.Utils.extractVersionDisplay(metadata);
       return statusText + " " + node.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + versionDisplay + "</sub></span>";
+    },
+
+    __initLockedPage: function() {
+      const lockedPage = new osparc.ui.message.NodeLockedPage();
+      this.self().evalShowToolbar(lockedPage, this.getStudy());
+      this.bind("node", lockedPage, "node");
+      this.setLockedPage(lockedPage);
     },
 
     __nodeState: function() {
@@ -381,7 +402,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         if (this.getIFrame()) {
           this.getIFrame().resetSource();
         }
-        this.fireEvent("iframeChanged");
+        this.fireEvent("iframeStateChanged");
       }
     },
 
@@ -418,7 +439,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
         // fire event to force switching to iframe's content:
         // it is required in those cases where the native 'load' event isn't triggered (voila)
-        this.fireEvent("iframeChanged");
+        this.fireEvent("iframeStateChanged");
       }
     }
   }

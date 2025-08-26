@@ -19,12 +19,8 @@ Build() {
     --tag "$IMAGE_NAME" \
     - <<EOF
 FROM python:${PYTHON_VERSION}-slim-bookworm
-RUN pip --no-cache-dir install --upgrade \
-  pip \
-  wheel \
-  setuptools
 
-RUN pip install \
+RUN uv pip install \
   pyupgrade
 
 ENTRYPOINT ["pyupgrade", \

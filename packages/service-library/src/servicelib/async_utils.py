@@ -1,9 +1,7 @@
 import asyncio
-import contextlib
-import datetime
 import logging
 from collections import deque
-from collections.abc import Awaitable, Callable, Coroutine
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
@@ -212,40 +210,3 @@ def run_sequentially_in_context(
         return wrapper
 
     return decorator
-
-
-def delayed_start(
-    delay: datetime.timedelta,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-]:
-    def _decorator(
-        func: Callable[P, Coroutine[Any, Any, R]],
-    ) -> Callable[P, Coroutine[Any, Any, R]]:
-        @wraps(func)
-        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            await asyncio.sleep(delay.total_seconds())
-            return await func(*args, **kwargs)
-
-        return _wrapper
-
-    return _decorator
-
-
-async def cancel_wait_task(
-    task: asyncio.Task,
-    *,
-    max_delay: float | None = None,
-) -> None:
-    """Cancel a asyncio.Task and waits for it to finish.
-
-    :param task: task to be canceled
-    :param max_delay: duration (in seconds) to wait before giving
-        up the cancellation. If None it waits forever.
-    :raises TimeoutError: raised if cannot cancel the task.
-    """
-
-    task.cancel()
-    async with asyncio.timeout(max_delay):
-        with contextlib.suppress(asyncio.CancelledError):
-            await task

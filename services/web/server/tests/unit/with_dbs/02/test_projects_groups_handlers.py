@@ -6,6 +6,7 @@
 
 
 from http import HTTPStatus
+from unittest import mock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -13,7 +14,7 @@ from models_library.api_schemas_webserver.projects_access_rights import (
     ProjectShareAccepted,
 )
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -24,6 +25,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 )
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_projects_groups_full_workflow(  # noqa: PLR0915
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -237,6 +239,7 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_share_project(
+    with_dev_features_enabled: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -303,6 +306,7 @@ async def test_share_project(
     ],
 )
 async def test_share_project_with_roles(
+    with_dev_features_enabled: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -311,7 +315,7 @@ async def test_share_project_with_roles(
 ):
     assert client.app
 
-    assert logged_user["role"] == user_role.value
+    assert logged_user["role"] == user_role
 
     # Attempt to share the project
     url = client.app.router["share_project"].url_for(

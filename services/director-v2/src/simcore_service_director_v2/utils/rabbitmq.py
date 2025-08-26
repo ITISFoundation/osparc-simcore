@@ -5,6 +5,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
+    ComputationalPipelineStatusMessage,
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
@@ -195,5 +196,19 @@ async def publish_project_log(
         node_id=None,
         messages=[log],
         log_level=log_level,
+    )
+    await rabbitmq_client.publish(message.channel_name, message)
+
+
+async def publish_pipeline_scheduling_state(
+    rabbitmq_client: RabbitMQClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    state: RunningState,
+) -> None:
+    message = ComputationalPipelineStatusMessage.model_construct(
+        user_id=user_id,
+        project_id=project_id,
+        run_result=state,
     )
     await rabbitmq_client.publish(message.channel_name, message)

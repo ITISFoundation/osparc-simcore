@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.auth import (
@@ -15,7 +15,7 @@ from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError, Log
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.login._controller.rest.auth import (
+from simcore_service_webserver.login._controller.rest.auth_schemas import (
     LoginBody,
     LoginNextPage,
     LoginTwoFactorAuthBody,
@@ -30,7 +30,7 @@ from simcore_service_webserver.login._controller.rest.confirmation import (
     PhoneConfirmationBody,
     ResetPasswordConfirmation,
 )
-from simcore_service_webserver.login._controller.rest.registration import (
+from simcore_service_webserver.login._controller.rest.registration_schemas import (
     InvitationCheck,
     InvitationInfo,
     RegisterBody,
@@ -153,17 +153,15 @@ async def logout(_body: LogoutBody):
 
 @router.get(
     "/auth:check",
-    operation_id="check_authentication",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": EnvelopedError,
-            "description": "unauthorized reset due to invalid token code",
         }
     },
 )
 async def check_auth():
-    """checks if user is authenticated in the platform"""
+    """checks whether user request is authenticated"""
 
 
 @router.post(
@@ -211,13 +209,16 @@ async def change_email(_body: ChangeEmailBody):
 
 
 class PasswordCheckSchema(BaseModel):
-    strength: confloat(ge=0.0, le=1.0) = Field(  # type: ignore
-        ...,
-        description="The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)",
-    )
-    rating: str | None = Field(
-        None, description="Human readable rating from infinitely weak to very strong"
-    )
+    strength: Annotated[
+        confloat(ge=0.0, le=1.0),
+        Field(
+            description="The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)",
+        ),
+    ]
+    rating: Annotated[
+        str | None,
+        Field(description="Human readable rating from infinitely weak to very strong"),
+    ] = None
     improvements: Any | None = None
 
 

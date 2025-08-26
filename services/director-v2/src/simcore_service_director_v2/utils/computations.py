@@ -3,7 +3,7 @@ import logging
 from typing import Any
 
 import arrow
-from models_library.projects_state import RunningState
+from models_library.projects_state import RUNNING_STATE_COMPLETED_STATES, RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.services_regex import SERVICE_KEY_RE
 from models_library.users import UserID
@@ -15,7 +15,7 @@ from ..modules.db.tables import NodeClass
 
 _logger = logging.getLogger(__name__)
 
-_COMPLETED_STATES = (RunningState.ABORTED, RunningState.FAILED, RunningState.SUCCESS)
+
 _RUNNING_STATES = (RunningState.STARTED,)
 _TASK_TO_PIPELINE_CONVERSIONS = {
     # tasks are initially in NOT_STARTED state, then they transition to published
@@ -50,16 +50,16 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
         RunningState.NOT_STARTED,
     ): RunningState.NOT_STARTED,
     # if there are only completed states with FAILED --> FAILED
-    (*_COMPLETED_STATES,): RunningState.FAILED,
+    (*RUNNING_STATE_COMPLETED_STATES,): RunningState.FAILED,
     # if there are only completed states with FAILED and not started ones --> NOT_STARTED
     (
-        *_COMPLETED_STATES,
+        *RUNNING_STATE_COMPLETED_STATES,
         RunningState.NOT_STARTED,
     ): RunningState.NOT_STARTED,
     # the generic case where we have a combination of completed states, running states,
     # or published/pending tasks, not_started is a started pipeline
     (
-        *_COMPLETED_STATES,
+        *RUNNING_STATE_COMPLETED_STATES,
         *_RUNNING_STATES,
         RunningState.PUBLISHED,
         RunningState.PENDING,

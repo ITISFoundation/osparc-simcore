@@ -8,7 +8,6 @@
 import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, cast
-from uuid import uuid4
 
 import arrow
 import pytest
@@ -17,16 +16,17 @@ from _helpers import CompRunSnapshotTaskAtDBGet, PublishedProject, RunningProjec
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from faker import Faker
 from fastapi.encoders import jsonable_encoder
+from models_library.computations import CollectionRunID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from pydantic.main import BaseModel
-from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
+from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_run_snapshot_tasks import (
     comp_run_snapshot_tasks,
 )
 from simcore_postgres_database.models.comp_runs import comp_runs
-from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import (
     CompRunsAtDB,
@@ -40,46 +40,19 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 @pytest.fixture
 async def create_pipeline(
-    sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[Callable[..., Awaitable[CompPipelineAtDB]]]:
-    created_pipeline_ids: list[str] = []
-
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+) -> Callable[..., Awaitable[CompPipelineAtDB]]:
     async def _(**pipeline_kwargs) -> CompPipelineAtDB:
-        pipeline_config = {
-            "project_id": f"{uuid4()}",
-            "dag_adjacency_list": {},
-            "state": StateType.NOT_STARTED,
-        }
-        pipeline_config.update(**pipeline_kwargs)
-        async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                comp_pipeline.insert()
-                .values(**pipeline_config)
-                .returning(sa.literal_column("*"))
-            )
-            assert result
+        created_pipeline_dict = await create_pipeline(**pipeline_kwargs)
+        return CompPipelineAtDB.model_validate(created_pipeline_dict)
 
-            new_pipeline = CompPipelineAtDB.model_validate(result.first())
-            created_pipeline_ids.append(f"{new_pipeline.project_id}")
-            return new_pipeline
-
-    yield _
-
-    # cleanup
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            comp_pipeline.delete().where(
-                comp_pipeline.c.project_id.in_(created_pipeline_ids)
-            )
-        )
+    return _
 
 
 @pytest.fixture
-async def create_tasks(
-    sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[Callable[..., Awaitable[list[CompTaskAtDB]]]]:
-    created_task_ids: list[int] = []
-
+async def create_tasks_from_project(
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+) -> Callable[..., Awaitable[list[CompTaskAtDB]]]:
     async def _(
         user: dict[str, Any], project: ProjectAtDB, **overrides_kwargs
     ) -> list[CompTaskAtDB]:
@@ -131,24 +104,12 @@ async def create_tasks(
                 ),
             }
             task_config.update(**overrides_kwargs)
-            async with sqlalchemy_async_engine.begin() as conn:
-                result = await conn.execute(
-                    comp_tasks.insert()
-                    .values(**task_config)
-                    .returning(sa.literal_column("*"))
-                )
-                new_task = CompTaskAtDB.model_validate(result.first())
-                created_tasks.append(new_task)
-            created_task_ids.extend([t.task_id for t in created_tasks if t.task_id])
+            task_dict = await create_comp_task(**task_config)
+            new_task = CompTaskAtDB.model_validate(task_dict)
+            created_tasks.append(new_task)
         return created_tasks
 
-    yield _
-
-    # cleanup
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
-        )
+    return _
 
 
 @pytest.fixture
@@ -185,8 +146,15 @@ def run_metadata(
 
 
 @pytest.fixture
+def fake_collection_run_id(faker: Faker) -> CollectionRunID:
+    return CollectionRunID(f"{faker.uuid4(cast_to=None)}")
+
+
+@pytest.fixture
 async def create_comp_run(
-    sqlalchemy_async_engine: AsyncEngine, run_metadata: RunMetadataDict
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
 ) -> AsyncIterator[Callable[..., Awaitable[CompRunsAtDB]]]:
     created_run_ids: list[int] = []
 
@@ -201,6 +169,7 @@ async def create_comp_run(
             "metadata": jsonable_encoder(run_metadata),
             "use_on_demand_clusters": False,
             "dag_adjacency_list": {},
+            "collection_run_id": faker.uuid4(),
         }
         run_config.update(**run_kwargs)
         async with sqlalchemy_async_engine.begin() as conn:
@@ -284,6 +253,7 @@ async def create_comp_run_snapshot_tasks(
                     project_id=project.uuid,
                     node_id=NodeID(node_id),
                 ),
+                "state": StateType.PUBLISHED.value,
             }
             task_config.update(**overrides_kwargs)
             async with sqlalchemy_async_engine.begin() as conn:
@@ -315,16 +285,18 @@ async def create_comp_run_snapshot_tasks(
 @pytest.fixture
 async def publish_project(
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> Callable[[], Awaitable[PublishedProject]]:
     user = create_registered_user()
 
     async def _() -> PublishedProject:
-        created_project = await project(user, workbench=fake_workbench_without_outputs)
+        created_project = await create_project(
+            user, workbench=fake_workbench_without_outputs
+        )
         return PublishedProject(
             user=user,
             project=created_project,
@@ -332,7 +304,7 @@ async def publish_project(
                 project_id=f"{created_project.uuid}",
                 dag_adjacency_list=fake_workbench_adjacency,
             ),
-            tasks=await create_tasks(
+            tasks=await create_tasks_from_project(
                 user=user, project=created_project, state=StateType.PUBLISHED
             ),
         )
@@ -342,6 +314,7 @@ async def publish_project(
 
 @pytest.fixture
 async def published_project(
+    with_product: dict[str, Any],
     publish_project: Callable[[], Awaitable[PublishedProject]],
 ) -> PublishedProject:
     return await publish_project()
@@ -349,10 +322,11 @@ async def published_project(
 
 @pytest.fixture
 async def running_project(
+    with_product: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     create_comp_run_snapshot_tasks: Callable[
         ..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]
@@ -361,7 +335,9 @@ async def running_project(
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
     user = create_registered_user()
-    created_project = await project(user, workbench=fake_workbench_without_outputs)
+    created_project = await create_project(
+        user, workbench=fake_workbench_without_outputs
+    )
     now_time = arrow.utcnow().datetime
     _comp_run = await create_comp_run(
         user=user,
@@ -377,7 +353,7 @@ async def running_project(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=await create_tasks(
+        tasks=await create_tasks_from_project(
             user=user,
             project=created_project,
             state=StateType.RUNNING,
@@ -400,18 +376,21 @@ async def running_project(
 @pytest.fixture
 async def running_project_mark_for_cancellation(
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     create_comp_run_snapshot_tasks: Callable[
         ..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]
     ],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
+    with_product: dict[str, Any],
 ) -> RunningProject:
     user = create_registered_user()
-    created_project = await project(user, workbench=fake_workbench_without_outputs)
+    created_project = await create_project(
+        user, workbench=fake_workbench_without_outputs
+    )
     now_time = arrow.utcnow().datetime
     _comp_run = await create_comp_run(
         user=user,
@@ -428,7 +407,7 @@ async def running_project_mark_for_cancellation(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=await create_tasks(
+        tasks=await create_tasks_from_project(
             user=user,
             project=created_project,
             state=StateType.RUNNING,

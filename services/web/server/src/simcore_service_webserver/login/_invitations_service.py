@@ -23,7 +23,7 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from simcore_postgres_database.models.users import UserStatus
@@ -40,16 +40,17 @@ from ..invitations.errors import (
     InvitationsServiceUnavailableError,
 )
 from ..products.models import Product
-from . import _confirmation_service
-from ._constants import (
-    MSG_EMAIL_ALREADY_REGISTERED,
-    MSG_INVITATIONS_CONTACT_SUFFIX,
-    MSG_USER_DISABLED,
-)
+from ..users import users_service
+from . import _auth_service, _confirmation_service
 from ._login_repository_legacy import (
     AsyncpgStorage,
     BaseConfirmationTokenDict,
     ConfirmationTokenDict,
+)
+from .constants import (
+    MSG_EMAIL_ALREADY_REGISTERED,
+    MSG_INVITATIONS_CONTACT_SUFFIX,
+    MSG_USER_DISABLED,
 )
 from .settings import LoginOptions
 
@@ -102,7 +103,7 @@ async def _raise_if_registered_in_product(app: web.Application, user_email, prod
         app, user_email=user_email, group_id=product.group_id
     ):
         raise web.HTTPConflict(
-            reason=MSG_EMAIL_ALREADY_REGISTERED,
+            text=MSG_EMAIL_ALREADY_REGISTERED,
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
@@ -114,8 +115,9 @@ async def check_other_registrations(
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
+
     # An account is already registered with this email
-    if user := await db.get_user({"email": email}):
+    if user := await _auth_service.get_user_or_none(app, email=email):
         user_status = UserStatus(user["status"])
         match user_status:
 
@@ -143,10 +145,12 @@ async def check_other_registrations(
                 )
                 if drop_previous_registration:
                     if not _confirmation:
-                        await db.delete_user(user=dict(user))
+                        await users_service.delete_user_without_projects(
+                            app, user_id=user["id"], clean_cache=False
+                        )
                     else:
                         await db.delete_confirmation_and_user(
-                            user=dict(user), confirmation=_confirmation
+                            user_id=user["id"], confirmation=_confirmation
                         )
 
                     _logger.warning(
@@ -163,7 +167,7 @@ async def check_other_registrations(
                     UserStatus.DELETED,
                 )
                 raise web.HTTPConflict(
-                    reason=MSG_USER_DISABLED.format(
+                    text=MSG_USER_DISABLED.format(
                         support_email=current_product.support_email
                     ),
                     content_type=MIMETYPE_APPLICATION_JSON,
@@ -222,7 +226,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
         user_error_msg = f"Invalid invitation. {MSG_INVITATIONS_CONTACT_SUFFIX}"
 
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_code=error_code,
@@ -230,7 +234,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
             )
         )
         raise web.HTTPForbidden(
-            reason=user_error_msg,
+            text=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
@@ -239,7 +243,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
         user_error_msg = "Unable to process your invitation since the invitations service is currently unavailable"
 
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_code=error_code,
@@ -247,7 +251,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
             )
         )
         raise web.HTTPServiceUnavailable(
-            reason=user_error_msg,
+            text=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
@@ -323,7 +327,7 @@ async def check_and_consume_invitation(
             _logger.info("Invitation with %s was consumed", f"{confirmation_token=}")
 
     raise web.HTTPForbidden(
-        reason=(
+        text=(
             "Invalid invitation code."
             "Your invitation was already used or might have expired."
             + MSG_INVITATIONS_CONTACT_SUFFIX

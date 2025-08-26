@@ -1,7 +1,12 @@
 import logging
+from typing import Final
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.lifespan_utils import Lifespan
+from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -11,7 +16,6 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import config_all_loggers
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.entrypoints import api_router
@@ -48,6 +52,13 @@ from .events import on_shutdown, on_startup
 from .settings import AppSettings
 
 _logger = logging.getLogger(__name__)
+
+_NOISY_LOGGERS: Final[tuple[str, ...]] = (
+    "aio_pika",
+    "aiormq",
+    "httpcore",
+    "httpx",
+)
 
 
 def _set_exception_handlers(app: FastAPI):
@@ -94,56 +105,65 @@ def _set_exception_handlers(app: FastAPI):
     )
 
 
-_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-_NOISY_LOGGERS = (
-    "aio_pika",
-    "aiormq",
-    "httpcore",
-)
+def create_app_lifespan(logging_lifespan: Lifespan | None = None) -> LifespanManager:
+    app_lifespan = LifespanManager()
+    if logging_lifespan:
+        app_lifespan.add(logging_lifespan)
+    return app_lifespan
 
 
-def create_base_app(settings: AppSettings | None = None) -> FastAPI:
-    if settings is None:
-        settings = AppSettings.create_from_envs()
-    assert settings  # nosec
+def create_base_app(
+    app_settings: AppSettings | None = None,
+) -> FastAPI:
+    if app_settings is None:
+        app_settings = AppSettings.create_from_envs()
 
-    logging.basicConfig(level=settings.LOG_LEVEL.value)
-    logging.root.setLevel(settings.LOG_LEVEL.value)
-    config_all_loggers(
-        log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
-        tracing_settings=settings.DIRECTOR_V2_TRACING,
-    )
-    _logger.debug(settings.model_dump_json(indent=2))
-
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    logging_shutdown_event = create_logging_shutdown_event(
+        log_format_local_dev_enabled=app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=app_settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
+        tracing_settings=app_settings.DIRECTOR_V2_TRACING,
+        log_base_level=app_settings.log_level,
+        noisy_loggers=_NOISY_LOGGERS,
     )
 
-    for name in _NOISY_LOGGERS:
-        logging.getLogger(name).setLevel(quiet_level)
+    _logger.info(
+        "Application settings: %s",
+        json_dumps(app_settings, indent=2, sort_keys=True),
+    )
 
-    assert settings.SC_BOOT_MODE  # nosec
+    assert app_settings  # nosec
+
+    assert app_settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE.is_devel_mode(),
+        debug=app_settings.SC_BOOT_MODE.is_devel_mode(),
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
+        **get_common_oas_options(
+            is_devel_mode=app_settings.SC_BOOT_MODE.is_devel_mode()
+        ),
     )
     override_fastapi_openapi_method(app)
-    app.state.settings = settings
+    app.state.settings = app_settings
 
     app.include_router(api_router)
+
+    app.add_event_handler("shutdown", logging_shutdown_event)
+
     return app
 
 
-def init_app(settings: AppSettings | None = None) -> FastAPI:
+def create_app(  # noqa: C901, PLR0912
+    settings: AppSettings | None = None,
+) -> FastAPI:
     app = create_base_app(settings)
     if settings is None:
         settings = app.state.settings
+        _logger.info(
+            "Application settings: %s",
+            json_dumps(settings, indent=2, sort_keys=True),
+        )
     assert settings  # nosec
 
     substitutions.setup(app)

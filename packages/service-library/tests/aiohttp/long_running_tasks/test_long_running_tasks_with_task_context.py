@@ -27,7 +27,12 @@ from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.long_running_tasks.models import TaskGet, TaskId
 from servicelib.long_running_tasks.task import TaskContext
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 # WITH TASK CONTEXT
 # NOTE: as the long running task framework may be used in any number of services
 # in some cases there might be specific so-called task contexts.
@@ -61,7 +66,10 @@ def task_context_decorator(task_context: TaskContext):
 
 @pytest.fixture
 def app_with_task_context(
-    server_routes: web.RouteTableDef, task_context_decorator
+    server_routes: web.RouteTableDef,
+    task_context_decorator,
+    use_in_memory_redis: RedisSettings,
+    rabbit_service: RabbitSettings,
 ) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
@@ -69,6 +77,9 @@ def app_with_task_context(
     append_rest_middlewares(app, api_version="")
     long_running_tasks.server.setup(
         app,
+        redis_settings=use_in_memory_redis,
+        rabbit_settings=rabbit_service,
+        lrt_namespace="test",
         router_prefix="/futures_with_task_context",
         task_request_context_decorator=task_context_decorator,
     )
@@ -151,7 +162,7 @@ async def test_get_task_result(
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
     # calling with context should find the task
     resp = await client_with_task_context.get(f"{result_url.with_query(task_context)}")
-    await assert_status(resp, status.HTTP_201_CREATED)
+    await assert_status(resp, status.HTTP_200_OK)
 
 
 async def test_cancel_task(
@@ -161,7 +172,7 @@ async def test_cancel_task(
 ):
     assert client_with_task_context.app
     task_id = await start_long_running_task(client_with_task_context)
-    cancel_url = client_with_task_context.app.router["cancel_and_delete_task"].url_for(
+    cancel_url = client_with_task_context.app.router["remove_task"].url_for(
         task_id=task_id
     )
     # calling cancel without task context should find nothing

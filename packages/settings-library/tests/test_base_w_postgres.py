@@ -5,6 +5,7 @@
 
 import os
 from collections.abc import Callable
+from typing import Annotated
 
 import pytest
 from pydantic import AliasChoices, Field, ValidationError, __version__
@@ -53,17 +54,20 @@ def model_classes_factory() -> Callable:
             POSTGRES_USER: str
             POSTGRES_PASSWORD: str
 
-            POSTGRES_DB: str = Field(...)
+            POSTGRES_DB: str
+            POSTGRES_MINSIZE: Annotated[int, Field(ge=2)] = 2
+            POSTGRES_MAXSIZE: Annotated[int, Field(ge=2)] = 50
 
-            POSTGRES_MINSIZE: int = Field(1, ge=1)
-            POSTGRES_MAXSIZE: int = Field(50, ge=1)
-
-            POSTGRES_CLIENT_NAME: str | None = Field(
-                None,
-                validation_alias=AliasChoices(
-                    "HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"
+            POSTGRES_CLIENT_NAME: Annotated[
+                str | None,
+                Field(
+                    validation_alias=AliasChoices(
+                        "POSTGRES_CLIENT_NAME",
+                        "HOST",
+                        "HOSTNAME",
+                    ),
                 ),
-            )
+            ] = None
 
         #
         # Different constraints on WEBSERVER_POSTGRES subsettings
@@ -77,15 +81,17 @@ def model_classes_factory() -> Callable:
 
         class S3(BaseCustomSettings):
             # cannot be disabled!!
-            WEBSERVER_POSTGRES_DEFAULT_ENV: _FakePostgresSettings = Field(
-                json_schema_extra={"auto_default_from_env": True}
-            )
+            WEBSERVER_POSTGRES_DEFAULT_ENV: Annotated[
+                _FakePostgresSettings,
+                Field(json_schema_extra={"auto_default_from_env": True}),
+            ]
 
         class S4(BaseCustomSettings):
             # defaults enabled but if cannot be resolved, it disables
-            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV: _FakePostgresSettings | None = (
-                Field(json_schema_extra={"auto_default_from_env": True})
-            )
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV: Annotated[
+                _FakePostgresSettings | None,
+                Field(json_schema_extra={"auto_default_from_env": True}),
+            ]
 
         class S5(BaseCustomSettings):
             # defaults disabled but only explicit enabled
@@ -194,7 +200,7 @@ def test_parse_from_individual_envs(
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
             "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_MINSIZE": 2,
             "POSTGRES_CLIENT_NAME": None,
         }
     }
@@ -209,7 +215,7 @@ def test_parse_from_individual_envs(
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
             "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_MINSIZE": 2,
             "POSTGRES_CLIENT_NAME": None,
         }
     }
@@ -256,7 +262,7 @@ def test_parse_compact_env(
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
                 "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MINSIZE": 2,
                 "POSTGRES_CLIENT_NAME": None,
             }
         }
@@ -366,7 +372,7 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
                 "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MINSIZE": 2,
                 "POSTGRES_CLIENT_NAME": None,
             }
         }

@@ -22,7 +22,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.api_keys import _repository, api_keys_service
 from simcore_service_webserver.api_keys.models import ApiKey
@@ -248,7 +248,7 @@ async def test_create_api_key_with_expiration(
         "/v0/auth/api-keys",
         json={
             "displayName": expected_api_key,
-            "expiration": expiration_interval.seconds,
+            "expiration": expiration_interval.total_seconds(),
         },
     )
 
@@ -264,7 +264,9 @@ async def test_create_api_key_with_expiration(
         assert [d["displayName"] for d in data] == [expected_api_key]
 
         # wait for api-key for it to expire and force-run scheduled task
-        await asyncio.sleep(EXPIRATION_WAIT_FACTOR * expiration_interval.seconds)
+        await asyncio.sleep(
+            EXPIRATION_WAIT_FACTOR * expiration_interval.total_seconds()
+        )
 
         deleted = await api_keys_service.prune_expired_api_keys(client.app)
         assert deleted == [expected_api_key]

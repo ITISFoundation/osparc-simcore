@@ -1,9 +1,6 @@
 from aiohttp.web import HTTPInternalServerError, Request, StreamResponse, middleware
-from servicelib.mimetype_constants import (
-    MIMETYPE_APPLICATION_JSON,
-    MIMETYPE_APPLICATION_ND_JSON,
-)
 
+from ..mimetype_constants import MIMETYPE_APPLICATION_JSON, MIMETYPE_APPLICATION_ND_JSON
 from ..utils_profiling_middleware import _is_profiling, _profiler, append_profile
 
 
@@ -13,7 +10,7 @@ async def profiling_middleware(request: Request, handler):
         try:
             if _profiler.is_running or (_profiler.last_session is not None):
                 raise HTTPInternalServerError(
-                    reason="Profiler is already running. Only a single request can be profiled at any given time.",
+                    text="Profiler is already running. Only a single request can be profiled at any given time.",
                     headers={},
                 )
             _profiler.reset()
@@ -24,7 +21,7 @@ async def profiling_middleware(request: Request, handler):
 
             if response.content_type != MIMETYPE_APPLICATION_JSON:
                 raise HTTPInternalServerError(
-                    reason=f"Profiling middleware is not compatible with {response.content_type=}",
+                    text=f"Profiling middleware is not compatible with {response.content_type=}",
                     headers={},
                 )
 

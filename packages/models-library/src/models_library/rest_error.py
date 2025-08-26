@@ -126,6 +126,7 @@ class ErrorGet(BaseModel):
 
 
 class EnvelopedError(Envelope[None]):
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/443
     error: ErrorGet
 
     model_config = ConfigDict(

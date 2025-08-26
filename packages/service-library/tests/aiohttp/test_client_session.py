@@ -6,7 +6,7 @@ import json
 from collections.abc import Callable, Iterator
 from typing import Any
 
-import pytest
+import pytest_asyncio
 from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.test_utils import TestServer
@@ -18,8 +18,8 @@ from servicelib.aiohttp.client_session import (
 )
 
 
-@pytest.fixture
-def server(event_loop, aiohttp_server: Callable) -> Iterator[TestServer]:
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def server(aiohttp_server: Callable) -> Iterator[TestServer]:
     async def echo(request):
         got = await request.json()
         return web.json_response(data=got)
@@ -31,7 +31,7 @@ def server(event_loop, aiohttp_server: Callable) -> Iterator[TestServer]:
 
     assert not app.get(APP_CLIENT_SESSION_KEY)
 
-    test_server = event_loop.run_until_complete(aiohttp_server(app))
+    test_server = await aiohttp_server(app)
 
     assert isinstance(app[APP_CLIENT_SESSION_KEY], ClientSession)
     assert not app[APP_CLIENT_SESSION_KEY].closed

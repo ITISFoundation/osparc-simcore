@@ -18,7 +18,7 @@ from aiohttp_session import get_session
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT, products
@@ -214,6 +214,7 @@ async def client(
     ],
     app_routes: RouteTableDef,
     mock_env_devel_environment: EnvVarsDict,
+    mocked_db_setup_in_setup_security: MockType,
 ):
     app = web.Application()
     app.router.add_routes(app_routes)
@@ -227,7 +228,9 @@ async def client(
         return_value=session_settings,
     )
 
+    assert not mocked_db_setup_in_setup_security.called
     setup_security(app)
+    assert mocked_db_setup_in_setup_security.called
 
     # mocks 'setup_products': patch to avoid database
     set_products_in_app_state(app, app_products)

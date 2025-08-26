@@ -4,10 +4,15 @@ import logging
 import asyncpg
 from aiohttp import web
 from pydantic import ValidationError
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_setup import (
+    ModuleCategory,
+    app_module_setup,
+    ensure_single_setup,
+)
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
+from .._meta import APP_NAME
 from ..constants import (
     APP_PUBLIC_CONFIG_PER_PRODUCT,
     APP_SETTINGS_KEY,
@@ -18,21 +23,22 @@ from ..db.settings import get_plugin_settings as get_db_plugin_settings
 from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
+from ..login_accounts.plugin import setup_login_account
+from ..login_auth.plugin import setup_login_auth
 from ..products import products_service
 from ..products.models import ProductName
 from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
-from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from ._controller.rest import (
     auth,
     change,
     confirmation,
-    preregistration,
     registration,
     twofa,
 )
 from ._login_repository_legacy import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
+from .constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from .settings import (
     APP_LOGIN_OPTIONS_KEY,
     LoginOptions,
@@ -51,7 +57,7 @@ async def _setup_login_storage_ctx(app: web.Application):
     settings: PostgresSettings = get_db_plugin_settings(app)
 
     async with asyncpg.create_pool(
-        dsn=settings.dsn_with_query,
+        dsn=settings.dsn_with_query(f"{APP_NAME}-login", suffix="asyncpg"),
         min_size=settings.POSTGRES_MINSIZE,
         max_size=settings.POSTGRES_MAXSIZE,
         loop=asyncio.get_event_loop(),
@@ -61,11 +67,13 @@ async def _setup_login_storage_ctx(app: web.Application):
         yield  # ----------------
 
 
+@ensure_single_setup(f"{__name__}.storage", logger=log)
 def setup_login_storage(app: web.Application):
     if _setup_login_storage_ctx not in app.cleanup_ctx:
         app.cleanup_ctx.append(_setup_login_storage_ctx)
 
 
+@ensure_single_setup(f"{__name__}.login_options", logger=log)
 def _setup_login_options(app: web.Application):
     settings: SMTPSettings = get_email_plugin_settings(app)
 
@@ -139,9 +147,11 @@ def setup_login(app: web.Application):
     # routes
 
     app.router.add_routes(auth.routes)
+    setup_login_auth(app)
+    setup_login_account(app)
+
     app.router.add_routes(confirmation.routes)
     app.router.add_routes(registration.routes)
-    app.router.add_routes(preregistration.routes)
     app.router.add_routes(change.routes)
     app.router.add_routes(twofa.routes)
 

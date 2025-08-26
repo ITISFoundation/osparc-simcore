@@ -36,7 +36,7 @@ from servicelib.common_headers import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_service_director_v2.core.application import init_app
+from simcore_service_director_v2.core.application import create_app
 from simcore_service_director_v2.core.settings import AppSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -97,9 +97,11 @@ def user_id(user_db: dict[str, Any]) -> UserID:
 
 @pytest.fixture
 async def project_id(
-    user_db: dict[str, Any], project: Callable[..., Awaitable[ProjectAtDB]]
+    user_db: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    with_product: dict[str, Any],
 ) -> str:
-    prj = await project(user=user_db)
+    prj = await create_project(user=user_db)
     return f"{prj.uuid}"
 
 
@@ -195,7 +197,7 @@ async def director_v2_client(
 
     settings = AppSettings.create_from_envs()
 
-    app = init_app(settings)
+    app = create_app(settings)
 
     async with TestClient(app) as client:
         yield client
@@ -274,11 +276,13 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
 async def key_version_expected(
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_service: dict,
-    docker_registry_image_injector: Callable,
+    docker_registry_image_injector: Callable[
+        [str, str, str | None], Awaitable[dict[str, Any]]
+    ],
 ) -> list[tuple[ServiceKeyVersion, bool]]:
     results: list[tuple[ServiceKeyVersion, bool]] = []
 
-    sleeper_service = docker_registry_image_injector(
+    sleeper_service = await docker_registry_image_injector(
         "itisfoundation/sleeper", "2.1.1", "user@e.mail"
     )
 

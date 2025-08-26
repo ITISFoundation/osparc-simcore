@@ -12,11 +12,11 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.workspaces import WorkspaceGet
 from models_library.rest_ordering import OrderDirection
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict

@@ -4,7 +4,6 @@ import logging
 from aws_library.ec2 import Resources
 from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from fastapi import FastAPI
-from models_library.docker import StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Task as DockerTask
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
@@ -15,6 +14,7 @@ from models_library.rabbitmq_messages import (
     ProgressType,
     RabbitAutoscalingStatusMessage,
 )
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from models_library.users import UserID
 from servicelib.logging_utils import log_catch
 
@@ -27,7 +27,7 @@ _logger = logging.getLogger(__name__)
 
 def _get_task_ids(task: DockerTask | DaskTask) -> tuple[UserID, ProjectID, NodeID]:
     if isinstance(task, DockerTask):
-        labels = StandardSimcoreDockerLabels.from_docker_task(task)
+        labels = SimcoreContainerLabels.from_docker_task(task)
         return labels.user_id, labels.project_id, labels.node_id
     _service_key, _service_version, user_id, project_id, node_id = parse_dask_job_id(
         task.task_id
@@ -151,9 +151,9 @@ async def _create_autoscaling_status_message(
     total_nodes = (
         len(cluster.active_nodes)
         + len(cluster.drained_nodes)
-        + len(cluster.buffer_drained_nodes)
+        + len(cluster.hot_buffer_drained_nodes)
     )
-    drained_nodes = len(cluster.drained_nodes) + len(cluster.buffer_drained_nodes)
+    drained_nodes = len(cluster.drained_nodes) + len(cluster.hot_buffer_drained_nodes)
 
     return RabbitAutoscalingStatusMessage.model_construct(
         origin=origin,

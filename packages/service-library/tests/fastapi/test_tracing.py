@@ -4,7 +4,7 @@
 import importlib
 import random
 import string
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
@@ -21,7 +21,11 @@ from servicelib.fastapi.tracing import (
     get_tracing_instrumentation_lifespan,
     initialize_fastapi_app_tracing,
 )
-from servicelib.tracing import _OSPARC_TRACE_ID_HEADER
+from servicelib.tracing import (
+    _OSPARC_TRACE_ID_HEADER,
+    _PROFILE_ATTRIBUTE_NAME,
+    with_profiled_span,
+)
 from settings_library.tracing import TracingSettings
 
 
@@ -68,9 +72,9 @@ def set_and_clean_settings_env_vars(
 )
 async def test_valid_tracing_settings(
     mocked_app: FastAPI,
+    mock_otel_collector: InMemorySpanExporter,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
-    uninstrument_opentelemetry: Iterator[None],
 ):
     tracing_settings = TracingSettings()
     async for _ in get_tracing_instrumentation_lifespan(
@@ -102,9 +106,9 @@ async def test_valid_tracing_settings(
 )
 async def test_invalid_tracing_settings(
     mocked_app: FastAPI,
+    mock_otel_collector: InMemorySpanExporter,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
-    uninstrument_opentelemetry: Iterator[None],
 ):
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
@@ -157,9 +161,9 @@ def manage_package(request):
 )
 async def test_tracing_setup_package_detection(
     mocked_app: FastAPI,
+    mock_otel_collector: InMemorySpanExporter,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
-    uninstrument_opentelemetry: Iterator[None],
     manage_package,
 ):
     package_name = manage_package
@@ -196,7 +200,6 @@ async def test_trace_id_in_response_header(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in: Callable,
-    uninstrument_opentelemetry: Iterator[None],
     server_response: PlainTextResponse | HTTPException,
 ) -> None:
     tracing_settings = TracingSettings()
@@ -225,3 +228,59 @@ async def test_trace_id_in_response_header(
         trace_id = response.headers[_OSPARC_TRACE_ID_HEADER]
         assert len(trace_id) == 32  # Ensure trace ID is a 32-character hex string
         assert trace_id == handler_data[_OSPARC_TRACE_ID_HEADER]
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318),
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "server_response",
+    [
+        PlainTextResponse("ok"),
+        HTTPException(status_code=400, detail="error"),
+    ],
+)
+async def test_with_profile_span(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in: Callable,
+    server_response: PlainTextResponse | HTTPException,
+):
+    tracing_settings = TracingSettings()
+
+    handler_data = dict()
+
+    @with_profiled_span
+    async def handler(handler_data: dict):
+        current_span = trace.get_current_span()
+        handler_data[_OSPARC_TRACE_ID_HEADER] = format(
+            current_span.get_span_context().trace_id, "032x"
+        )
+        if isinstance(server_response, HTTPException):
+            raise server_response
+        return server_response
+
+    mocked_app.get("/")(partial(handler, handler_data))
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_settings=tracing_settings,
+        service_name="Mock-OpenTelemetry-Pytest",
+    )(app=mocked_app):
+        initialize_fastapi_app_tracing(mocked_app, add_response_trace_id_header=True)
+        client = TestClient(mocked_app)
+        _ = client.get("/")
+        trace_id = handler_data.get(_OSPARC_TRACE_ID_HEADER)
+        assert trace_id is not None
+
+        spans = mock_otel_collector.get_finished_spans()
+        assert any(
+            span.context.trace_id == int(trace_id, 16)
+            and _PROFILE_ATTRIBUTE_NAME in span.attributes.keys()
+            for span in spans
+            if span.context is not None and span.attributes is not None
+        )

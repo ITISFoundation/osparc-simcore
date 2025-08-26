@@ -165,6 +165,8 @@ class CompTasksRepository(BaseRepository):
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with self.db_engine.begin() as conn:
             list_of_comp_tasks_in_project: list[CompTaskAtDB] = (
+                # WARNING: this is NOT a real repository method, it is a utility function
+                # that calls backend services to generate the tasks list!! Refactoring needed!!
                 await _utils.generate_tasks_list_from_project(
                     project=project,
                     catalog_client=catalog_client,

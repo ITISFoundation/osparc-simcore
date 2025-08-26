@@ -18,7 +18,7 @@ openapi.json: .env
 	@set -o allexport; \
 	source .env; \
 	set +o allexport; \
-	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(app_factory().openapi(), indent=2) )" > $@
 
 
 DOCKER_API_VERSION ?= 1.41
@@ -65,7 +65,7 @@ down down-extra:  ## stops extra stack
 
 run-devel: .env up-extra  ## starts app with extra stack
 	# start app (within $<) in devel mode
-	uvicorn $(APP_PACKAGE_NAME).__main__:the_app \
+	uvicorn --factory $(APP_PACKAGE_NAME).__main__:app_factory \
 		--reload --reload-dir $(SRC_DIR) \
 		--port=8000 --host=0.0.0.0
 

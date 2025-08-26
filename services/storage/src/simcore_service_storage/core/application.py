@@ -32,41 +32,21 @@ from .._meta import (
     APP_WORKER_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_rest_api_routes
-from ..api.rpc.routes import setup_rpc_api_routes
+from ..api.rpc.routes import setup_rpc_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
-from ..modules.celery import setup_celery_client
+from ..modules.celery import setup_task_manager
 from ..modules.db import setup_db
-from ..modules.long_running_tasks import setup_rest_api_long_running_tasks_for_uploads
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
 from ..modules.s3 import setup_s3
 from .settings import ApplicationSettings
 
-_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-_NOISY_LOGGERS = (
-    "aio_pika",
-    "aiobotocore",
-    "aiormq",
-    "botocore",
-    "httpcore",
-    "urllib3",
-    "werkzeug",
-)
 _logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
-    )
-    for name in _NOISY_LOGGERS:
-        logging.getLogger(name).setLevel(quiet_level)
-
-    _logger.info("app settings: %s", settings.model_dump_json(indent=1))
-
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
@@ -88,13 +68,15 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
 
     setup_db(app)
     setup_s3(app)
-    setup_client_session(app)
+    setup_client_session(app, tracing_settings=settings.STORAGE_TRACING)
 
-    if not settings.STORAGE_WORKER_MODE:
+    if settings.STORAGE_CELERY and not settings.STORAGE_WORKER_MODE:
         setup_rabbitmq(app)
-        setup_rpc_api_routes(app)
-        setup_celery_client(app)
-    setup_rest_api_long_running_tasks_for_uploads(app)
+
+        setup_task_manager(app, celery_settings=settings.STORAGE_CELERY)
+
+        setup_rpc_routes(app)
+
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
 

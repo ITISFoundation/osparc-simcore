@@ -7,7 +7,6 @@ import copy
 import random
 from collections import deque
 from dataclasses import dataclass
-from datetime import timedelta
 from time import time
 from typing import Any
 
@@ -15,7 +14,6 @@ import pytest
 from faker import Faker
 from servicelib.async_utils import (
     _sequential_jobs_contexts,
-    delayed_start,
     run_sequentially_in_context,
 )
 
@@ -225,20 +223,3 @@ async def test_different_contexts(
             assert i == await test_multiple_context_calls(i)
 
     assert len(_sequential_jobs_contexts) == RETRIES
-
-
-async def test_with_delay():
-    @delayed_start(timedelta(seconds=0.2))
-    async def decorated_awaitable() -> int:
-        return 42
-
-    assert await decorated_awaitable() == 42
-
-    async def another_awaitable() -> int:
-        return 42
-
-    decorated_another_awaitable = delayed_start(timedelta(seconds=0.2))(
-        another_awaitable
-    )
-
-    assert await decorated_another_awaitable() == 42

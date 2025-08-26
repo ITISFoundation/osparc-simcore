@@ -22,7 +22,7 @@ fastapi-pagination
 orjson
 packaging
 parse
-pydantic[dotenv]
+pydantic
 pyyaml
 tenacity
 typer

@@ -10,7 +10,7 @@ from ..logging_utils import log_context
 _logger = logging.getLogger(__name__)
 
 
-class _TerminateTaskGroupError(Exception):
+class _ClientDisconnectedError(Exception):
     pass
 
 
@@ -21,9 +21,9 @@ async def _message_poller(
         message = await receive()
         if message["type"] == "http.disconnect":
             _logger.debug(
-                "client disconnected, terminating request to %s!", request.url
+                "client disconnected the request to %s!", request.url, stacklevel=2
             )
-            raise _TerminateTaskGroupError
+            raise _ClientDisconnectedError
 
         # Puts the message in the queue
         await queue.put(message)
@@ -72,9 +72,9 @@ class RequestCancellationMiddleware:
                     )
                     await handler_task
                     poller_task.cancel()
-            except* _TerminateTaskGroupError:
+            except* _ClientDisconnectedError:
                 if not handler_task.done():
                     _logger.info(
-                        "The client disconnected. request to %s was cancelled.",
+                        "The client disconnected. The request to %s was cancelled.",
                         request.url,
                     )

@@ -256,9 +256,9 @@ qx.Class.define("osparc.file.FileDrop", {
         this._add(this.__dropMe);
         const svgLayer = this.__svgLayer;
         if (svgLayer.getReady()) {
-          this.__dropMe.rect = svgLayer.drawDashedRect(boxWidth, boxHeight);
+          this.__dropMe["rect"] = svgLayer.drawDashedRect(boxWidth, boxHeight);
         } else {
-          svgLayer.addListenerOnce("SvgWidgetReady", () => this.__dropMe.rect = svgLayer.drawDashedRect(boxWidth, boxHeight), this);
+          svgLayer.addListenerOnce("SvgWidgetReady", () => this.__dropMe["rect"] = svgLayer.drawDashedRect(boxWidth, boxHeight), this);
         }
       }
       const dropMe = this.__dropMe;
@@ -269,10 +269,10 @@ qx.Class.define("osparc.file.FileDrop", {
         top: posY - parseInt(dropMeBounds.height/2)- parseInt(boxHeight/2)
       });
       if ("rect" in dropMe) {
-        dropMe.rect.stroke({
+        dropMe["rect"].stroke({
           width: 1
         });
-        osparc.wrapper.Svg.updateItemPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
+        osparc.wrapper.Svg.updateItemPos(dropMe["rect"], posX - boxWidth, posY - boxHeight);
       }
     },
 
@@ -280,7 +280,7 @@ qx.Class.define("osparc.file.FileDrop", {
       const dropMe = this.__dropMe;
       if (dropMe) {
         if ("rect" in dropMe) {
-          dropMe.rect.stroke({
+          dropMe["rect"].stroke({
             width: 0
           });
         }

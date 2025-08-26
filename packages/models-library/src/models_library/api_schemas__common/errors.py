@@ -1,5 +1,5 @@
 import http
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -7,12 +7,10 @@ from ..basic_types import IDStr
 
 
 class DefaultApiError(BaseModel):
-    name: IDStr = Field(
-        ...,
-        description="Error identifier as a code or a name. "
-        "Mainly for machine-machine communication purposes.",
+    name: Annotated[IDStr, Field(description="Exception's class name")]
+    detail: Annotated[Any | None, Field(description="Human readable error message")] = (
+        None
     )
-    detail: Any | None = Field(default=None, description="Human readable error message")
 
     @classmethod
     def from_status_code(

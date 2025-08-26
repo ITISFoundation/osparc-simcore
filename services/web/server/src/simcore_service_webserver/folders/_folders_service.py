@@ -13,7 +13,7 @@ from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScop
 from pydantic import NonNegativeInt
 
 from ..projects._projects_service import delete_project_by_user
-from ..users.api import get_user
+from ..users.users_service import get_user
 from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
@@ -70,7 +70,7 @@ async def create_folder(
         if workspace_id and parent_folder_db.workspace_id != workspace_id:
             # Check parent folder id exists inside the same workspace
             raise WorkspaceAccessForbiddenError(
-                reason=f"Folder {parent_folder_id} does not exists in workspace {workspace_id}."
+                details=f"Folder {parent_folder_id} does not exists in workspace {workspace_id}."
             )
 
     folder_db = await _folders_repository.create(
@@ -291,7 +291,7 @@ async def update_folder(
         )
         if parent_folder_id in _child_folders:
             raise FolderValueNotPermittedError(
-                reason="Parent folder id should not be one of children"
+                details="Parent folder id should not be one of children"
             )
 
     folder_db = await _folders_repository.update(

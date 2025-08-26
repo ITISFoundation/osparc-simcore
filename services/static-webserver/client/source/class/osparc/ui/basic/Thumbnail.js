@@ -83,7 +83,7 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
     __applySource: function(val) {
       const image = this.getChildControl("image");
       if (val) {
-        if (osparc.utils.Utils.isValidHttpUrl(val)) {
+        if (!val.startsWith("osparc/") && osparc.utils.Utils.isValidHttpUrl(val)) {
           osparc.utils.Utils.setUrlSourceToImage(image, val);
         } else {
           image.setSource(val);

@@ -40,7 +40,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       check: [null, "create", "warning", "delete"],
       init: null,
       nullable: true,
-      apply: "__applyConfirmAppearance"
+      event: "changeConfirmAction",
     },
 
     confirmed: {
@@ -50,7 +50,6 @@ qx.Class.define("osparc.ui.window.Confirmation", {
   },
 
   members: {
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -64,6 +63,20 @@ qx.Class.define("osparc.ui.window.Confirmation", {
             this.setConfirmed(true);
             this.close(1);
           }, this);
+          this.bind("confirmAction", control, "appearance", {
+            converter: value => {
+              switch (value) {
+                case "create":
+                  return "strong-button";
+                case "warning":
+                  return "warning-button";
+                case "delete":
+                  return "danger-button";
+                default:
+                  return "strong-button";
+              }
+            }
+          });
           const command = new qx.ui.command.Command("Enter");
           control.setCommand(command);
           const btnsLayout = this.getChildControl("buttons-layout");
@@ -81,23 +94,5 @@ qx.Class.define("osparc.ui.window.Confirmation", {
     getCancelButton: function() {
       return this.getChildControl("cancel-button");
     },
-
-    __applyConfirmAppearance: function(confirmationAction) {
-      const confirmButton = this.getChildControl("confirm-button");
-      switch (confirmationAction) {
-        case "create":
-          confirmButton.setAppearance("strong-button");
-          break;
-        case "warning":
-          confirmButton.setAppearance("warning-button");
-          break;
-        case "delete":
-          confirmButton.setAppearance("danger-button");
-          break;
-        default:
-          confirmButton.resetAppearance();
-          break;
-      }
-    }
   }
 });

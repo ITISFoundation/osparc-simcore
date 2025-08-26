@@ -35,7 +35,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
 
   events: {
     "templatesContext": "qx.event.type.Event",
-    "publicContext": "qx.event.type.Event",
+    "publicTemplatesContext": "qx.event.type.Event",
+    "functionsContext": "qx.event.type.Event",
     "trashContext": "qx.event.type.Event",
     "changeTab": "qx.event.type.Data",
     "trashStudyRequested": "qx.event.type.Data",
@@ -50,6 +51,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     __workspacesAndFoldersTree: null,
     __templatesButton: null,
     __publicProjectsButton: null,
+    __functionsButton: null,
     __trashButton: null,
     __sharedWithButtons: null,
     __tagButtons: null,
@@ -65,6 +67,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
           }
           if (osparc.product.Utils.showPublicProjects()) {
             this._add(this.__createPublicProjects());
+          }
+          if (osparc.product.Utils.showFunctions()) {
+            this._add(this.__createFunctions());
           }
           this._add(this.__createTrashBin());
           this._add(filtersSpacer);
@@ -100,9 +105,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       });
       this.__workspacesAndFoldersTree.contextChanged(context);
 
-      this.__templatesButton.setValue(context === "templates");
-      this.__publicProjectsButton.setValue(context === "public");
-      this.__trashButton.setValue(context === "trash");
+      if (this.__templatesButton) {
+        this.__templatesButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES);
+      }
+      if (this.__publicProjectsButton) {
+        this.__publicProjectsButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES);
+      }
+      if (this.__functionsButton) {
+        this.__functionsButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS);
+      }
+      if (this.__trashButton) {
+        this.__trashButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TRASH);
+      }
     },
 
     /* WORKSPACES AND FOLDERS */
@@ -158,10 +172,28 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       publicProjectsButton.addListener("changeValue", e => {
         const templatesEnabled = e.getData();
         if (templatesEnabled) {
-          this.fireEvent("publicContext");
+          this.fireEvent("publicTemplatesContext");
         }
       });
       return publicProjectsButton;
+    },
+
+    __createFunctions: function() {
+      const functionsButton = this.__functionsButton = new qx.ui.toolbar.RadioButton().set({
+        value: false,
+        appearance: "filter-toggle-button",
+        label: this.tr("Functions"),
+        icon: "@MaterialIcons/functions/20",
+        paddingLeft: 10, // align it with the context
+      });
+      osparc.utils.Utils.setIdToWidget(functionsButton, "functionsFilterItem");
+      functionsButton.addListener("changeValue", e => {
+        const functionsEnabled = e.getData();
+        if (functionsEnabled) {
+          this.fireEvent("functionsContext");
+        }
+      });
+      return functionsButton;
     },
 
     /* TRASH BIN */
@@ -247,7 +279,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         }
       };
       Promise.all([
-        osparc.data.Resources.fetch("studies", "getPageTrashed", studiesParams),
+        osparc.store.Study.getInstance().getPageTrashed(studiesParams),
         osparc.data.Resources.fetch("folders", "getPageTrashed", foldersParams),
         osparc.data.Resources.fetch("workspaces", "getPageTrashed", workspacesParams),
       ])

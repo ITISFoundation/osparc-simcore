@@ -21,7 +21,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.garbage_collector._core_orphans import (
     remove_orphaned_services,
 )
-from simcore_service_webserver.resource_manager.registry import UserSessionDict
+from simcore_service_webserver.resource_manager.registry import UserSession
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 
 MODULE_GC_CORE_ORPHANS: Final[str] = (
@@ -36,7 +36,7 @@ def project_id(faker: Faker) -> ProjectID:
 
 @pytest.fixture
 def client_session_id(faker: Faker) -> str:
-    return faker.uuid4(cast_to=None)
+    return faker.uuid4(cast_to=str)
 
 
 @pytest.fixture
@@ -44,9 +44,9 @@ def mock_registry(
     user_id: UserID, project_id: ProjectID, client_session_id: str
 ) -> mock.AsyncMock:
     async def _fake_get_all_resource_keys() -> (
-        tuple[list[UserSessionDict], list[UserSessionDict]]
+        tuple[list[UserSession], list[UserSession]]
     ):
-        return ([{"user_id": user_id, "client_session_id": client_session_id}], [])
+        return ([UserSession(user_id=user_id, client_session_id=client_session_id)], [])
 
     registry = mock.AsyncMock()
     registry.get_all_resource_keys = mock.AsyncMock(
@@ -124,7 +124,7 @@ async def test_remove_orphaned_services_with_no_running_services_does_nothing(
 def faker_dynamic_service_get() -> Callable[[], DynamicServiceGet]:
     def _() -> DynamicServiceGet:
         return DynamicServiceGet.model_validate(
-            DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
+            DynamicServiceGet.model_json_schema()["examples"][1]
         )
 
     return _
@@ -156,7 +156,9 @@ async def mock_get_user_role(
     mocker: MockerFixture, user_role: UserRole
 ) -> mock.AsyncMock:
     return mocker.patch(
-        f"{MODULE_GC_CORE_ORPHANS}.get_user_role", autospec=True, return_value=user_role
+        f"{MODULE_GC_CORE_ORPHANS}.users_service.get_user_role",
+        autospec=True,
+        return_value=user_role,
     )
 
 

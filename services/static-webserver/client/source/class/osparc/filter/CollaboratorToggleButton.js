@@ -24,34 +24,38 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
       appearance: "tagbutton"
     });
 
-    if (collaborator["collabType"] === 0) {
-      this.setLabel(this.tr("Public"));
-    } else {
-      let label = collaborator.getLabel();
-      if ("getEmail" in collaborator && collaborator.getEmail()) {
-        label += ` (${collaborator.getEmail()})`;
-      }
-      this.setLabel(label);
-    }
-
-    if (collaborator.getDescription()) {
-      const ttt = collaborator.getLabel() + "<br>" + collaborator.getDescription();
-      this.setToolTipText(ttt);
-    }
-
     let iconPath = null;
+    let label = null;
+    let toolTipText = "";
     switch (collaborator["collabType"]) {
       case 0:
         iconPath = "@FontAwesome5Solid/globe/14";
+        label = this.tr("Public");
+        toolTipText = this.tr("Public to all users");
         break;
       case 1:
         iconPath = "@FontAwesome5Solid/users/14";
+        label = collaborator.getLabel();
+        toolTipText = collaborator.getDescription();
         break;
-      case 2:
+      case 2: {
         iconPath = "@FontAwesome5Solid/user/14";
+        label = collaborator.getLabel();
+        if (collaborator.getEmail()) {
+          toolTipText += collaborator.getEmail() + "<br>";
+        }
+        if (collaborator.getFirstName()) {
+          toolTipText += [collaborator.getFirstName(), collaborator.getLastName()].join(" ").trim();
+        }
         break;
+      }
     }
     this.setIcon(iconPath);
+    this.setLabel(label);
+    if (toolTipText) {
+      const infoButton = new osparc.ui.hint.InfoHint(toolTipText);
+      this._add(infoButton);
+    }
 
     this.getChildControl("check");
   },

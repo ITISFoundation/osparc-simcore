@@ -1,5 +1,6 @@
 from ..basic_types import IDStr
 from ..groups import GroupID
+from ..projects import ProjectID
 from ..users import UserID
 
 
@@ -15,3 +16,7 @@ class SocketIORoomStr(IDStr):
     @classmethod
     def from_user_id(cls, user_id: UserID) -> "SocketIORoomStr":
         return cls(f"user:{user_id}")
+
+    @classmethod
+    def from_project_id(cls, project_id: ProjectID) -> "SocketIORoomStr":
+        return cls(f"project:{project_id}")

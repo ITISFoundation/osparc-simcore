@@ -1,6 +1,9 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+
 
 import asyncio
 import json
@@ -14,12 +17,13 @@ from aiohttp.test_utils import TestClient, TestServer
 from cryptography import fernet
 from faker import Faker
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import NewUser
+from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.constants import APP_SETTINGS_KEY
 from simcore_service_webserver.db.models import UserStatus
-from simcore_service_webserver.login._constants import (
+from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_LOGGED_IN,
     MSG_UNKNOWN_EMAIL,
@@ -29,6 +33,25 @@ from simcore_service_webserver.login._constants import (
     MSG_WRONG_PASSWORD,
 )
 from simcore_service_webserver.session.settings import get_plugin_settings
+
+
+@pytest.mark.parametrize(
+    "user_role", [role for role in UserRole if role >= UserRole.USER]
+)
+async def test_check_auth(client: TestClient, logged_user: UserInfoDict):
+    assert client.app
+
+    url = client.app.router["check_auth"].url_for()
+    assert url.path == "/v0/auth:check"
+
+    response = await client.get("/v0/auth:check")
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
+
+    response = await client.post("/v0/auth/logout")
+    await assert_status(response, status.HTTP_200_OK)
+
+    response = await client.get("/v0/auth:check")
+    await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 
 
 def test_login_plugin_setup_succeeded(client: TestClient):

@@ -13,7 +13,7 @@ from unittest import mock
 
 import arrow
 import pytest
-from servicelib.async_utils import cancel_wait_task
+from common_library.async_tools import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
@@ -23,13 +23,6 @@ from tenacity import (
     stop_after_delay,
     wait_fixed,
 )
-
-pytest_simcore_core_services_selection = [
-    "redis",
-]
-pytest_simcore_ops_services_selection = [
-    "redis-commander",
-]
 
 
 @pytest.fixture

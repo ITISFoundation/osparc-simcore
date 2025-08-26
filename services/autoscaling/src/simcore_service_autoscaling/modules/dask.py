@@ -21,7 +21,7 @@ from ..core.errors import (
     DaskWorkerNotFoundError,
 )
 from ..models import AssociatedInstance, DaskTask, DaskTaskId
-from ..utils.auto_scaling_core import (
+from ..utils.utils_ec2 import (
     node_host_name_from_ec2_private_dns,
     node_ip_from_ec2_private_dns,
 )
@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _wrap_client_async_routine(
-    client_coroutine: Coroutine[Any, Any, Any] | Any | None
+    client_coroutine: Coroutine[Any, Any, Any] | Any | None,
 ) -> Any:
     """Dask async behavior does not go well with Pylance as it returns
     a union of types. this wrapper makes both mypy and pylance happy"""
@@ -96,7 +96,7 @@ def _dask_worker_from_ec2_instance(
 
     # dict is of type dask_worker_address: worker_details
     def _find_by_worker_host(
-        dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails]
+        dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails],
     ) -> bool:
         _, details = dask_worker
         if match := re.match(DASK_NAME_PATTERN, details["name"]):
@@ -173,9 +173,9 @@ async def list_unrunnable_tasks(
         }
 
     async with _scheduler_client(scheduler_url, authentication) as client:
-        list_of_tasks: dict[
-            dask.typing.Key, DaskTaskResources
-        ] = await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
+        list_of_tasks: dict[dask.typing.Key, DaskTaskResources] = (
+            await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
+        )
         _logger.debug("found unrunnable tasks: %s", list_of_tasks)
         return [
             DaskTask(
@@ -207,10 +207,10 @@ async def list_processing_tasks_per_worker(
         return worker_to_processing_tasks
 
     async with _scheduler_client(scheduler_url, authentication) as client:
-        worker_to_tasks: dict[
-            str, list[tuple[dask.typing.Key, DaskTaskResources]]
-        ] = await _wrap_client_async_routine(
-            client.run_on_scheduler(_list_processing_tasks)
+        worker_to_tasks: dict[str, list[tuple[dask.typing.Key, DaskTaskResources]]] = (
+            await _wrap_client_async_routine(
+                client.run_on_scheduler(_list_processing_tasks)
+            )
         )
         _logger.debug("found processing tasks: %s", worker_to_tasks)
         tasks_per_worker = defaultdict(list)
@@ -276,12 +276,12 @@ async def get_worker_used_resources(
         _logger.debug("looking for processing tasks for %s", f"{worker_url=}")
 
         # now get the used resources
-        worker_processing_tasks: list[
-            tuple[dask.typing.Key, DaskTaskResources]
-        ] = await _wrap_client_async_routine(
-            client.run_on_scheduler(
-                _list_processing_tasks_on_worker, worker_url=worker_url
-            ),
+        worker_processing_tasks: list[tuple[dask.typing.Key, DaskTaskResources]] = (
+            await _wrap_client_async_routine(
+                client.run_on_scheduler(
+                    _list_processing_tasks_on_worker, worker_url=worker_url
+                ),
+            )
         )
 
         total_resources_used: collections.Counter[str] = collections.Counter()

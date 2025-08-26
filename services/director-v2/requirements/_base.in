@@ -25,7 +25,7 @@ aiodocker
 networkx
 ordered-set
 orjson
-pydantic[dotenv]
+pydantic
 python-socketio
 redis
 rich

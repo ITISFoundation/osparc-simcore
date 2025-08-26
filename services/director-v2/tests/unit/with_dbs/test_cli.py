@@ -23,6 +23,8 @@ from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.long_running_tasks.models import ProgressCallback
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_service_director_v2.cli import DEFAULT_NODE_SAVE_ATTEMPTS, main
 from simcore_service_director_v2.cli._close_and_save_service import (
     ThinDV2LocalhostClient,
@@ -31,6 +33,8 @@ from typer.testing import CliRunner
 
 pytest_simcore_core_services_selection = [
     "postgres",
+    "rabbit",
+    "redis",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
@@ -41,8 +45,11 @@ pytest_simcore_ops_services_selection = [
 def minimal_configuration(
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
+    redis_service: RedisSettings,
+    rabbit_service: RabbitSettings,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
+    with_product: dict[str, Any],
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
@@ -62,11 +69,12 @@ def cli_runner(minimal_configuration: None) -> CliRunner:
 @pytest.fixture
 async def project_at_db(
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    with_product: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
 ) -> ProjectAtDB:
     user = create_registered_user()
-    return await project(user, workbench=fake_workbench_without_outputs)
+    return await create_project(user, workbench=fake_workbench_without_outputs)
 
 
 @pytest.fixture

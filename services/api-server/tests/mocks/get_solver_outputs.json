@@ -1,258 +1,259 @@
 [
- {
-  "name": "GET /projects/0f5f114f-c2bf-4807-914f-2f4df2604223",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/0f5f114f-c2bf-4807-914f-2f4df2604223')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "pattern": null,
-      "format": "uuid",
-      "exclusiveMinimum": null,
-      "minimum": null,
-      "anyOf": null,
-      "allOf": null,
-      "oneOf": null
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "uuid": "0f5f114f-c2bf-4807-914f-2f4df2604223",
-    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/0f5f114f-c2bf-4807-914f-2f4df2604223",
-    "description": "Study associated to solver job:\n{\n  \"id\": \"0f5f114f-c2bf-4807-914f-2f4df2604223\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/0f5f114f-c2bf-4807-914f-2f4df2604223\",\n  \"inputs_checksum\": \"88e3aa0cf82491572d5978fa359bad9d100ef247492020efb4dbcc9c5ee09b45\",\n  \"created_at\": \"2024-01-18T12:33:56.883048+00:00\"\n}",
-    "thumbnail": "https://via.placeholder.com/170x120.png",
-    "creationDate": "2024-01-18T12:33:56.952Z",
-    "lastChangeDate": "2024-01-18T12:34:13.002Z",
-    "workspaceId": 2,
-    "type": "STANDARD",
-    "templateType": null,
-    "folderId": 2,
-    "trashedAt": null,
-    "trashedBy": null,
-    "workbench": {
-     "df42d273-b6f0-509c-bfb5-4abbc5bb0581": {
-      "key": "simcore/services/comp/itis/sleeper",
-      "version": "2.0.2",
-      "label": "sleeper",
-      "progress": 100.0,
-      "runHash": "10042fe8aa6ba3140532ba27dbbb1ba6c25d3e60a75c1d142f55a53dbecb5ead",
-      "inputs": {
-       "input_1": {
-        "store": 0,
-        "path": "api/45c97ed8-191d-300c-89be-c5f83148a391/input.txt",
-        "label": "input.txt",
-        "eTag": "eccbc87e4b5ce2fe28308fd9f2a7baf3"
-       },
-       "input_2": 3,
-       "input_3": false,
-       "input_4": 4
-      },
-      "inputsUnits": {},
-      "inputNodes": [],
-      "outputs": {
-       "output_1": {
-        "store": 0,
-        "path": "0f5f114f-c2bf-4807-914f-2f4df2604223/df42d273-b6f0-509c-bfb5-4abbc5bb0581/single_number.txt",
-        "eTag": "c81e728d9d4c2f636f067f89cc14862c"
-       },
-       "output_2": 6
-      },
-      "state": {
-       "modified": false,
-       "dependencies": [],
-       "currentStatus": "SUCCESS",
-       "progress": 1.0
+  {
+    "name": "GET /projects/0f5f114f-c2bf-4807-914f-2f4df2604223",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/0f5f114f-c2bf-4807-914f-2f4df2604223')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "pattern": null,
+            "format": "uuid",
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "uuid": "0f5f114f-c2bf-4807-914f-2f4df2604223",
+        "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/0f5f114f-c2bf-4807-914f-2f4df2604223",
+        "description": "Study associated to solver job:\n{\n  \"id\": \"0f5f114f-c2bf-4807-914f-2f4df2604223\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/0f5f114f-c2bf-4807-914f-2f4df2604223\",\n  \"inputs_checksum\": \"88e3aa0cf82491572d5978fa359bad9d100ef247492020efb4dbcc9c5ee09b45\",\n  \"created_at\": \"2024-01-18T12:33:56.883048+00:00\"\n}",
+        "thumbnail": "https://via.placeholder.com/170x120.png",
+        "creationDate": "2024-01-18T12:33:56.952Z",
+        "lastChangeDate": "2024-01-18T12:34:13.002Z",
+        "workspaceId": 2,
+        "type": "STANDARD",
+        "templateType": null,
+        "folderId": 2,
+        "trashedAt": null,
+        "trashedBy": null,
+        "workbench": {
+          "df42d273-b6f0-509c-bfb5-4abbc5bb0581": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.0.2",
+            "label": "sleeper",
+            "progress": 100.0,
+            "runHash": "10042fe8aa6ba3140532ba27dbbb1ba6c25d3e60a75c1d142f55a53dbecb5ead",
+            "inputs": {
+              "input_1": {
+                "store": 0,
+                "path": "api/45c97ed8-191d-300c-89be-c5f83148a391/input.txt",
+                "label": "input.txt",
+                "eTag": "eccbc87e4b5ce2fe28308fd9f2a7baf3"
+              },
+              "input_2": 3,
+              "input_3": false,
+              "input_4": 4
+            },
+            "inputsUnits": {},
+            "inputNodes": [],
+            "outputs": {
+              "output_1": {
+                "store": 0,
+                "path": "0f5f114f-c2bf-4807-914f-2f4df2604223/df42d273-b6f0-509c-bfb5-4abbc5bb0581/single_number.txt",
+                "eTag": "c81e728d9d4c2f636f067f89cc14862c"
+              },
+              "output_2": 6
+            },
+            "state": {
+              "modified": false,
+              "dependencies": [],
+              "currentStatus": "SUCCESS",
+              "progress": 1.0
+            }
+          }
+        },
+        "prjOwner": "greenrichard@example.org",
+        "accessRights": {
+          "3": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "tags": [],
+        "classifiers": [],
+        "state": {
+          "shareState": {
+            "locked": false,
+            "status": "CLOSED",
+            "currentUserGroupids": []
+          },
+          "state": {
+            "value": "SUCCESS"
+          }
+        },
+        "ui": {
+          "workbench": {
+            "df42d273-b6f0-509c-bfb5-4abbc5bb0581": {
+              "position": {
+                "x": 633,
+                "y": 229
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "df42d273-b6f0-509c-bfb5-4abbc5bb0581",
+          "annotations": {}
+        },
+        "quality": {},
+        "dev": {}
       }
-     }
     },
-    "prjOwner": "greenrichard@example.org",
-    "accessRights": {
-     "3": {
-      "read": true,
-      "write": true,
-      "delete": true
-     }
+    "status_code": 200
+  },
+  {
+    "name": "GET /credits-price",
+    "description": "<Request('GET', 'http://webserver:8080/v0/credits-price')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/credits-price",
+      "path_parameters": []
     },
-    "tags": [],
-    "classifiers": [],
-    "state": {
-     "locked": {
-      "value": false,
-      "status": "CLOSED"
-     },
-     "state": {
-      "value": "SUCCESS"
-     }
-    },
-    "ui": {
-     "workbench": {
-      "df42d273-b6f0-509c-bfb5-4abbc5bb0581": {
-       "position": {
-        "x": 633,
-        "y": 229
-       }
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "productName": "osparc",
+        "usdPerCredit": 10.0,
+        "minPaymentAmountUsd": 5
       }
-     },
-     "slideshow": {},
-     "currentNodeId": "df42d273-b6f0-509c-bfb5-4abbc5bb0581",
-     "annotations": {}
     },
-    "quality": {},
-    "dev": {}
-   }
+    "status_code": 200
   },
-  "status_code": 200
- },
- {
-  "name": "GET /credits-price",
-  "description": "<Request('GET', 'http://webserver:8080/v0/credits-price')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/credits-price",
-   "path_parameters": []
+  {
+    "name": "GET /projects/0f5f114f-c2bf-4807-914f-2f4df2604223/wallet",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/0f5f114f-c2bf-4807-914f-2f4df2604223/wallet')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}/wallet",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "pattern": null,
+            "format": "uuid",
+            "exclusiveMinimum": null,
+            "minimum": null,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "walletId": 1,
+        "name": "Derek Nguyen",
+        "description": "Credits purchased by Bisgaard end up in here",
+        "owner": 3,
+        "thumbnail": null,
+        "status": "ACTIVE",
+        "created": "2024-01-18T09:32:58.042380+00:00",
+        "modified": "2024-01-18T09:32:58.042380+00:00"
+      }
+    },
+    "status_code": 200
   },
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "productName": "osparc",
-    "usdPerCredit": 10.0,
-    "minPaymentAmountUsd": 5
-   }
+  {
+    "name": "GET /wallets/1",
+    "description": "<Request('GET', 'http://webserver:8080/v0/wallets/1')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/wallets/{wallet_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "wallet_id",
+          "required": true,
+          "schema": {
+            "title": "Wallet Id",
+            "type": "int",
+            "pattern": null,
+            "format": null,
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "anyOf": null,
+            "allOf": null,
+            "oneOf": null
+          },
+          "response_value": "wallets"
+        }
+      ]
+    },
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "walletId": 1,
+        "name": "Eric Hunter",
+        "description": "Credits purchased by Bisgaard end up in here",
+        "owner": 3,
+        "thumbnail": null,
+        "status": "ACTIVE",
+        "created": "2024-01-18T09:32:58.042380+00:00",
+        "modified": "2024-01-18T09:32:58.042380+00:00",
+        "availableCredits": 0.0
+      }
+    },
+    "status_code": 200
   },
-  "status_code": 200
- },
- {
-  "name": "GET /projects/0f5f114f-c2bf-4807-914f-2f4df2604223/wallet",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/0f5f114f-c2bf-4807-914f-2f4df2604223/wallet')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}/wallet",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "pattern": null,
-      "format": "uuid",
-      "exclusiveMinimum": null,
-      "minimum": null,
-      "anyOf": null,
-      "allOf": null,
-      "oneOf": null
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "walletId": 1,
-    "name": "Derek Nguyen",
-    "description": "Credits purchased by Bisgaard end up in here",
-    "owner": 3,
-    "thumbnail": null,
-    "status": "ACTIVE",
-    "created": "2024-01-18T09:32:58.042380+00:00",
-    "modified": "2024-01-18T09:32:58.042380+00:00"
-   }
-  },
-  "status_code": 200
- },
- {
-  "name": "GET /wallets/1",
-  "description": "<Request('GET', 'http://webserver:8080/v0/wallets/1')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/wallets/{wallet_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "wallet_id",
-     "required": true,
-     "schema": {
-      "title": "Wallet Id",
-      "type": "int",
-      "pattern": null,
-      "format": null,
-      "exclusiveMinimum": true,
-      "minimum": 0,
-      "anyOf": null,
-      "allOf": null,
-      "oneOf": null
-     },
-     "response_value": "wallets"
-    }
-   ]
-  },
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "walletId": 1,
-    "name": "Eric Hunter",
-    "description": "Credits purchased by Bisgaard end up in here",
-    "owner": 3,
-    "thumbnail": null,
-    "status": "ACTIVE",
-    "created": "2024-01-18T09:32:58.042380+00:00",
-    "modified": "2024-01-18T09:32:58.042380+00:00",
-    "availableCredits": 0.0
-   }
-  },
-  "status_code": 200
- },
- {
-  "name": "POST /simcore-s3/files/metadata:search",
-  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?kind=owned&user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d')>",
-  "method": "POST",
-  "host": "storage",
-  "path": {
-   "path": "/v0/simcore-s3/files/metadata:search",
-   "path_parameters": []
-  },
-  "query": "kind=owned&user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d",
-  "request_payload": null,
-  "response_body": {
-   "data": [
-    {
-     "file_uuid": "api/4ea24645-fd8c-339b-9621-ae045d45d94d/single_number.txt",
-     "location_id": 0,
-     "project_name": null,
-     "node_name": null,
-     "file_name": "single_number.txt",
-     "file_id": "api/4ea24645-fd8c-339b-9621-ae045d45d94d/single_number.txt",
-     "created_at": "2024-01-18T12:33:58.399872",
-     "last_modified": "2024-01-18T12:34:12+00:00",
-     "file_size": 1,
-     "entity_tag": "c81e728d9d4c2f636f067f89cc14862c",
-     "is_soft_link": true,
-     "is_directory": false,
-     "sha256_checksum": null
-    }
-   ]
-  },
-  "status_code": 200
- }
+  {
+    "name": "POST /simcore-s3/files/metadata:search",
+    "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?kind=owned&user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d')>",
+    "method": "POST",
+    "host": "storage",
+    "path": {
+      "path": "/v0/simcore-s3/files/metadata:search",
+      "path_parameters": []
+    },
+    "query": "kind=owned&user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d",
+    "request_payload": null,
+    "response_body": {
+      "data": [
+        {
+          "file_uuid": "api/4ea24645-fd8c-339b-9621-ae045d45d94d/single_number.txt",
+          "location_id": 0,
+          "project_name": null,
+          "node_name": null,
+          "file_name": "single_number.txt",
+          "file_id": "api/4ea24645-fd8c-339b-9621-ae045d45d94d/single_number.txt",
+          "created_at": "2024-01-18T12:33:58.399872",
+          "last_modified": "2024-01-18T12:34:12+00:00",
+          "file_size": 1,
+          "entity_tag": "c81e728d9d4c2f636f067f89cc14862c",
+          "is_soft_link": true,
+          "is_directory": false,
+          "sha256_checksum": null
+        }
+      ]
+    },
+    "status_code": 200
+  }
 ]

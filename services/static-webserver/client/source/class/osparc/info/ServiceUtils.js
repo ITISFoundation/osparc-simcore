@@ -20,6 +20,13 @@ qx.Class.define("osparc.info.ServiceUtils", {
   type: "static",
 
   statics: {
+    RESOURCES_INFO: {
+      "limit": {
+        label: qx.locale.Manager.tr("Limit"),
+        tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
+      }
+    },
+
     /**
       * @param label {String} label
       */
@@ -99,15 +106,17 @@ qx.Class.define("osparc.info.ServiceUtils", {
         wrap: true,
         maxWidth: 220,
       });
-      authors.set({
-        value: serviceData["authors"].map(author => author["name"]).join(", "),
-      });
-      serviceData["authors"].forEach(author => {
-        const oldTTT = authors.getToolTipText();
+      if (serviceData["authors"]) {
         authors.set({
-          toolTipText: (oldTTT ? oldTTT : "") + `${author["email"]} - ${author["affiliation"]}<br>`
+          value: serviceData["authors"].map(author => author["name"]).join(", "),
         });
-      });
+        serviceData["authors"].forEach(author => {
+          const oldTTT = authors.getToolTipText();
+          authors.set({
+            toolTipText: (oldTTT ? oldTTT : "") + `${author["email"]} - ${author["affiliation"]}<br>`
+          });
+        });
+      }
       return authors;
     },
 
@@ -115,20 +124,27 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     createAccessRights: function(serviceData) {
-      let permissions = "";
-      const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = serviceData["accessRights"];
-      if (myGID in ar) {
-        if (ar[myGID]["write"]) {
-          permissions = qx.locale.Manager.tr("Write");
-        } else if (ar[myGID]["execute"]) {
-          permissions = qx.locale.Manager.tr("Execute");
+      const allMyGIds = osparc.store.Groups.getInstance().getAllMyGroupIds();
+      const accessRights = serviceData["accessRights"];
+      const permissions = new Set();
+      allMyGIds.forEach(gId => {
+        if (gId in accessRights) {
+          if (accessRights[gId]["write"]) {
+            permissions.add("write");
+          } else if (accessRights[gId]["execute"]) {
+            permissions.add("read");
+          }
         }
+      });
+      const accessRightsLabel = new qx.ui.basic.Label();
+      if (permissions.has("write")) {
+        accessRightsLabel.setValue(osparc.data.Roles.SERVICES["write"].label);
+      } else if (permissions.has("read")) {
+        accessRightsLabel.setValue(osparc.data.Roles.SERVICES["read"].label);
       } else {
-        permissions = qx.locale.Manager.tr("Public");
+        accessRightsLabel.setValue(qx.locale.Manager.tr("Public"));
       }
-      const accessRights = new qx.ui.basic.Label(permissions);
-      return accessRights;
+      return accessRightsLabel;
     },
 
     /**
@@ -168,18 +184,8 @@ qx.Class.define("osparc.info.ServiceUtils", {
 
     /**
       * @param serviceData {Object} Serialized Service Object
-      * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(serviceData) {
-      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
-        alignY: "middle"
-      }));
-
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
-        font: "text-13"
-      });
-      descriptionLayout.add(label);
-
       const description = new osparc.ui.markdown.Markdown();
       // display markdown link content if that's the case
       if (
@@ -197,19 +203,15 @@ qx.Class.define("osparc.info.ServiceUtils", {
             console.error(err);
             description.setValue(serviceData["description"]);
           });
-      } else {
+      } else if (serviceData["description"]) {
         description.setValue(serviceData["description"]);
+      } else {
+        description.setValue(this.tr("No description"));
       }
-      descriptionLayout.add(description);
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(description);
 
-      return descriptionLayout;
-    },
-
-    RESOURCES_INFO: {
-      "limit": {
-        label: qx.locale.Manager.tr("Limit"),
-        tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
-      }
+      return scrollContainer;
     },
 
     createResourcesInfo: function() {

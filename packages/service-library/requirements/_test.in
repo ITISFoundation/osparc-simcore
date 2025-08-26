@@ -17,6 +17,7 @@ botocore
 coverage
 docker
 faker
+fakeredis[lua]
 flaky
 numpy
 openapi-spec-validator
@@ -41,3 +42,4 @@ types_aiofiles
 types_tqdm
 types-psutil
 types-psycopg2
+uvloop

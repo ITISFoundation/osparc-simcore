@@ -1,8 +1,10 @@
 import datetime
-from typing import Annotated
+from functools import cached_property
+from typing import Annotated, cast
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import AliasChoices, Field, SecretStr, TypeAdapter, field_validator
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -104,6 +106,10 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             ),
         ),
     ] = False
+
+    @cached_property
+    def log_level(self) -> LogLevelInt:
+        return cast(LogLevelInt, self.DYNAMIC_SCHEDULER_LOGLEVEL)
 
     @field_validator("DYNAMIC_SCHEDULER_LOGLEVEL", mode="before")
     @classmethod

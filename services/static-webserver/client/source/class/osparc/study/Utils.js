@@ -71,10 +71,7 @@ qx.Class.define("osparc.study.Utils", {
               });
               return;
             }
-            const params = {
-              data: minStudyData
-            };
-            osparc.study.Utils.createStudyAndPoll(params)
+            osparc.study.Utils.createStudyAndPoll(minStudyData)
               .then(studyData => resolve(studyData["uuid"]))
               .catch(err => reject(err));
           })
@@ -82,15 +79,12 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
-    createStudyAndPoll: function(params) {
+    createStudyAndPoll: function(studyData) {
       return new Promise((resolve, reject) => {
-        const options = {
-          pollTask: true
-        };
-        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
+        const pollPromise = osparc.store.Study.getInstance().createStudy(studyData);
         const pollTasks = osparc.store.PollTasks.getInstance();
         const interval = 1000;
-        pollTasks.createPollingTask(fetchPromise, interval)
+        pollTasks.createPollingTask(pollPromise, interval)
           .then(task => {
             task.addListener("resultReceived", e => {
               const resultData = e.getData();
@@ -122,19 +116,10 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["name"] = templateData["name"];
             minStudyData["description"] = templateData["description"];
             minStudyData["thumbnail"] = templateData["thumbnail"];
-            const params = {
-              url: {
-                templateId: templateData["uuid"]
-              },
-              data: minStudyData
-            };
-            const options = {
-              pollTask: true
-            };
-            const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
+            const pollPromise = osparc.store.Study.getInstance().createStudyFromTemplate(templateData["uuid"], minStudyData);
             const pollTasks = osparc.store.PollTasks.getInstance();
             const interval = 1000;
-            pollTasks.createPollingTask(fetchPromise, interval)
+            pollTasks.createPollingTask(pollPromise, interval)
               .then(task => {
                 const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
                 const progressSequence = new osparc.widget.ProgressSequence(title).set({
@@ -191,17 +176,9 @@ qx.Class.define("osparc.study.Utils", {
       const text = qx.locale.Manager.tr("Duplicate process started and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
 
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        }
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
+      const pollPromise = osparc.store.Study.getInstance().duplicateStudy(studyData["uuid"]);
       const pollTasks = osparc.store.PollTasks.getInstance();
-      return pollTasks.createPollingTask(fetchPromise)
+      return pollTasks.createPollingTask(pollPromise)
     },
 
     createTemplateTypeSB: function() {
@@ -250,6 +227,22 @@ qx.Class.define("osparc.study.Utils", {
       return Array.from(services);
     },
 
+    extractComputationalServices: function(workbench) {
+      const computationals = Object.values(workbench).filter(node => {
+        const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
+        return metadata && osparc.data.model.Node.isComputational(metadata);
+      });
+      return computationals;
+    },
+
+    extractDynamicServices: function(workbench) {
+      const dynamics = Object.values(workbench).filter(node => {
+        const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
+        return metadata && osparc.data.model.Node.isDynamic(metadata);
+      });
+      return dynamics;
+    },
+
     extractFilePickers: function(workbench) {
       const parameters = Object.values(workbench).filter(srv => srv["key"].includes("simcore/services/frontend/file-picker"));
       return parameters;
@@ -277,20 +270,28 @@ qx.Class.define("osparc.study.Utils", {
       return parameters;
     },
 
-    canCreateFunction: function(workbench) {
+    isPotentialFunction: function(workbench) {
       // in order to create a function, the pipeline needs:
-      // - at least one parameter (or file-picker (file type parameter))
-      // - at least one probe
+      // - at least one parameter or one probe
+      //   - for now, only float types are allowed
+      // - at least one computational service
+      // - no dynamic services
 
       // const filePickers = osparc.study.Utils.extractFilePickers(workbench);
       // const parameters = osparc.study.Utils.extractParameters(workbench);
       // const probes = osparc.study.Utils.extractProbes(workbench);
       // return (filePickers.length + parameters.length) && probes.length;
 
-      // - for now, only float types are allowed
       const parameters = osparc.study.Utils.extractFunctionableParameters(workbench);
       const probes = osparc.study.Utils.extractFunctionableProbes(workbench);
-      return parameters.length && probes.length;
+      const computationals = osparc.study.Utils.extractComputationalServices(workbench);
+      const dynamics = osparc.study.Utils.extractDynamicServices(workbench);
+
+      return (
+        (parameters.length || probes.length) &&
+        computationals.length > 0 &&
+        dynamics.length === 0
+      );
     },
 
     getCantReadServices: function(studyServices = []) {
@@ -344,7 +345,26 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isInDebt: function(studyData) {
-      return Boolean("debt" in studyData && studyData["debt"] < 0);
+      return osparc.store.Study.getInstance().isStudyInDebt(studyData["uuid"]);
+    },
+
+    extractDebtFromError: function(studyId, err) {
+      const msg = err["message"];
+      // The backend might have thrown a 402 because the wallet was negative
+      const match = msg.match(/last transaction of\s([-]?\d+(\.\d+)?)\sresulted/);
+      let debt = null;
+      if ("debtAmount" in err) {
+        // the study has some debt that needs to be paid
+        debt = err["debtAmount"];
+      } else if (match) {
+        // the study has some debt that needs to be paid
+        debt = parseFloat(match[1]); // Convert the captured string to a number
+      }
+      if (debt) {
+        // if get here, it means that the 402 was thrown due to the debt
+        osparc.store.Study.getInstance().setStudyDebt(studyId, debt);
+      }
+      return debt;
     },
 
     getUiMode: function(studyData) {
@@ -352,6 +372,71 @@ qx.Class.define("osparc.study.Utils", {
         return studyData["ui"]["mode"];
       }
       return null;
+    },
+
+    state: {
+      getProjectStatus: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "status" in state["shareState"]
+        ) {
+          return state["shareState"]["status"];
+        }
+        return null;
+      },
+
+      isProjectLocked: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "locked" in state["shareState"]
+        ) {
+          return state["shareState"]["locked"];
+        }
+        return false;
+      },
+
+      getCurrentGroupIds: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "currentUserGroupids" in state["shareState"]
+        ) {
+          return state["shareState"]["currentUserGroupids"];
+        }
+
+        return [];
+      },
+
+      getPipelineState: function(state) {
+        if (
+          state &&
+          "state" in state &&
+          "value" in state["state"]
+        ) {
+          return state["state"]["value"];
+        }
+        return undefined;
+      },
+
+      PIPELINE_RUNNING_STATES: [
+        "PUBLISHED",
+        "PENDING",
+        "WAITING_FOR_RESOURCES",
+        "WAITING_FOR_CLUSTER",
+        "STARTED",
+        "STOPPING",
+        "RETRY",
+      ],
+
+      isPipelineRunning: function(state) {
+        const pipelineState = this.getPipelineState(state);
+        if (pipelineState) {
+          return this.PIPELINE_RUNNING_STATES.includes(pipelineState);
+        }
+        return false;
+      },
     },
 
     __getBlockedState: function(studyData) {
@@ -364,7 +449,7 @@ qx.Class.define("osparc.study.Utils", {
           return "UNKNOWN_SERVICES";
         }
       }
-      if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
+      if (studyData["state"] && studyData["state"]["shareState"] && studyData["state"]["shareState"]["locked"]) {
         return "IN_USE";
       }
       if (this.isInDebt(studyData)) {
@@ -375,6 +460,9 @@ qx.Class.define("osparc.study.Utils", {
 
     canBeOpened: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        return ["IN_USE", false].includes(blocked);
+      }
       return [false].includes(blocked);
     },
 
@@ -400,6 +488,9 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowPreview: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        return ["IN_USE", false].includes(blocked);
+      }
       return [false].includes(blocked);
     },
 
@@ -443,7 +534,7 @@ qx.Class.define("osparc.study.Utils", {
           resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
         } else {
           const productIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
-          const wbServices = this.self().getNonFrontendNodes(studyData);
+          const wbServices = this.getNonFrontendNodes(studyData);
           if (wbServices.length === 1) {
             const wbService = wbServices[0];
             osparc.store.Services.getService(wbService.key, wbService.version)

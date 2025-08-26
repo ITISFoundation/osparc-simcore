@@ -23,19 +23,35 @@ from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.long_running_tasks.models import TaskGet, TaskId, TaskStatus
 from servicelib.long_running_tasks.task import TaskContext
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
 
 @pytest.fixture
-def app(server_routes: web.RouteTableDef) -> web.Application:
+def app(
+    server_routes: web.RouteTableDef,
+    use_in_memory_redis: RedisSettings,
+    rabbit_service: RabbitSettings,
+) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
     # this adds enveloping and error middlewares
     append_rest_middlewares(app, api_version="")
-    long_running_tasks.server.setup(app, router_prefix="/futures")
+    long_running_tasks.server.setup(
+        app,
+        redis_settings=use_in_memory_redis,
+        rabbit_settings=rabbit_service,
+        lrt_namespace="test",
+        router_prefix="/futures",
+    )
 
     return app
 
@@ -97,7 +113,7 @@ async def test_workflow(
     # now get the result
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
-    task_result, error = await assert_status(result, status.HTTP_201_CREATED)
+    task_result, error = await assert_status(result, status.HTTP_200_OK)
     assert task_result
     assert not error
     assert task_result == [f"{x}" for x in range(10)]
@@ -111,7 +127,7 @@ async def test_workflow(
     [
         ("GET", "get_task_status"),
         ("GET", "get_task_result"),
-        ("DELETE", "cancel_and_delete_task"),
+        ("DELETE", "remove_task"),
     ],
 )
 async def test_get_task_wrong_task_id_raises_not_found(
@@ -127,6 +143,7 @@ async def test_failing_task_returns_error(
     client: TestClient,
     start_long_running_task: Callable[[TestClient, Any], Awaitable[TaskId]],
     wait_for_task: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
+    caplog: pytest.LogCaptureFixture,
 ):
     assert client.app
     task_id = await start_long_running_task(client, fail=f"{True}")
@@ -138,10 +155,17 @@ async def test_failing_task_returns_error(
     data, error = await assert_status(result, status.HTTP_500_INTERNAL_SERVER_ERROR)
     assert not data
     assert error
-    assert "errors" in error
-    assert len(error["errors"]) == 1
-    assert error["errors"][0]["code"] == "RuntimeError"
-    assert error["errors"][0]["message"] == "We were asked to fail!!"
+
+    # The error should contain a supportId field for tracking
+    assert "supportId" in error
+    assert isinstance(error["supportId"], str)
+    assert len(error["supportId"]) > 0
+
+    # The actual error details should be logged, not returned in response
+    log_messages = caplog.text
+    assert "OEC" in log_messages
+    assert "_TestingError" in log_messages
+    assert "We were asked to fail!!" in log_messages
 
 
 async def test_get_results_before_tasks_finishes_returns_404(
@@ -164,7 +188,7 @@ async def test_cancel_task(
     task_id = await start_long_running_task(client)
 
     # cancel the task
-    delete_url = client.app.router["cancel_and_delete_task"].url_for(task_id=task_id)
+    delete_url = client.app.router["remove_task"].url_for(task_id=task_id)
     result = await client.delete(f"{delete_url}")
     data, error = await assert_status(result, status.HTTP_204_NO_CONTENT)
     assert not data
@@ -216,7 +240,9 @@ async def test_list_tasks(
 
     # the task name is properly formatted
     assert all(
-        task.task_name == "POST /long_running_task:start?num_strings=10&sleep_time=0.2"
+        task.task_name.startswith(
+            "POST /long_running_task:start?num_strings=10&sleep_time="
+        )
         for task in list_of_tasks
     )
     # now wait for them to finish

@@ -11,25 +11,27 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_webserver.projects import (
+    ProjectShareStateOutputSchema,
+    ProjectStateOutputSchema,
+)
 from models_library.basic_types import IdInt
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.products import ProductName
 from models_library.projects_state import (
-    ProjectLocked,
     ProjectRunningState,
-    ProjectState,
     ProjectStatus,
     RunningState,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.postgres_tags import create_tag, delete_tag
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_projects import assert_get_same_project
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.db.plugin import get_database_engine_legacy
 from simcore_service_webserver.products._service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -80,9 +82,11 @@ async def test_tags_to_studies(
     # check the tags are in
     user_project["tags"] = [tag["id"] for tag in added_tags]
     user_project["state"] = jsonable_encoder(
-        ProjectState(
-            locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
-            state=ProjectRunningState(value=RunningState.UNKNOWN),
+        ProjectStateOutputSchema(
+            share_state=ProjectShareStateOutputSchema(
+                locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+            ),
+            state=ProjectRunningState(value=RunningState.NOT_STARTED),
         ),
         exclude_unset=True,
     )
@@ -121,7 +125,7 @@ async def test_tags_to_studies(
 @pytest.fixture
 async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
     assert client.app
-    engine = get_database_engine(client.app)
+    engine = get_database_engine_legacy(client.app)
     assert engine
 
     async with engine.acquire() as conn:

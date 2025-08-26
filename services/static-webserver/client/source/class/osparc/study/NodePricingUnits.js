@@ -92,7 +92,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
               this.set({
                 pricingPlanId: pricingPlanData["pricingPlanId"]
               });
-              osparc.store.Study.getSelectedPricingUnit(studyId, nodeId)
+              osparc.store.Study.getInstance().getSelectedPricingUnit(studyId, nodeId)
                 .then(selectedPricingUnit => {
                   if (pricingPlanData && "pricingUnits" in pricingPlanData && pricingPlanData["pricingUnits"].length) {
                     const pricingUnitsData = pricingPlanData["pricingUnits"];
@@ -109,7 +109,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                       if (this.isPatchNode()) {
                         pricingUnitTiers.setEnabled(false);
                         const pricingPlanId = this.getPricingPlanId();
-                        osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, pricingPlanId, newSelectedPricingUnit)
+                        osparc.store.Study.getInstance().updateSelectedPricingUnit(studyId, nodeId, pricingPlanId, newSelectedPricingUnit)
                           .then(() => pricingUnitTiers.setSelectedUnitId(newSelectedPricingUnit.getPricingUnitId()))
                           .catch(err => osparc.FlashMessenger.logError(err, this.tr("Cannot change Tier")))
                           .finally(() => pricingUnitTiers.setEnabled(true));

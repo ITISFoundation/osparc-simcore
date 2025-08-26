@@ -13,7 +13,7 @@ from aiohttp_security.abc import (  # type: ignore[import-untyped]
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
 from sqlalchemy.exc import DatabaseError as SQLAlchemyDatabaseError
 
@@ -51,7 +51,7 @@ def _handle_exceptions_as_503():
         yield
     except (AiopgDatabaseError, SQLAlchemyDatabaseError) as err:
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 "Auth unavailable due to database error",
                 error=err,
                 tip="Check database connection",

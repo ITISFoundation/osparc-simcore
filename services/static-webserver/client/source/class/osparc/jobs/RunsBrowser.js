@@ -24,6 +24,8 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    const reloadButton = this.getChildControl("reload-button");
+    reloadButton.addListener("execute", () => this.reloadRuns());
     this.getChildControl("intro-label");
     const jobsFilter = this.getChildControl("jobs-filter");
     const runningCB = this.getChildControl("running-only-cb");
@@ -35,8 +37,6 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
     });
 
     runningCB.bind("value", runsTable, "runningOnly");
-
-    this.__reloadInterval = setInterval(() => this.reloadRuns(), 10*1000);
   },
 
   events: {
@@ -49,13 +49,19 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "header-filter":
+        case "header-toolbar":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._add(control);
           break;
+        case "reload-button":
+          control = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14");
+          this.getChildControl("header-toolbar").add(control);
+          break;
         case "intro-label":
-          control = new qx.ui.basic.Label(this.tr("Select a Run to check the details"));
-          this.getChildControl("header-filter").add(control);
+          control = new qx.ui.basic.Label(this.tr("Select a Run to check the details")).set({
+            alignY: "middle",
+          });
+          this.getChildControl("header-toolbar").add(control);
           break;
         case "jobs-filter":
           control = new osparc.filter.TextFilter("text", "jobsList").set({
@@ -66,7 +72,7 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
             placeholder: qx.locale.Manager.tr("Filter by name or ID"),
           });
           control.hide(); // @matusdrobuliak66: remove this when the backend is ready
-          this.getChildControl("header-filter").add(control, {
+          this.getChildControl("header-toolbar").add(control, {
             flex: 1
           });
           break;
@@ -75,13 +81,12 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
             value: true,
             label: qx.locale.Manager.tr("Active only"),
           });
-          this.getChildControl("header-filter").add(control);
+          this.getChildControl("header-toolbar").add(control);
           break;
         case "runs-table": {
           const projectUuid = null;
-          const includeChildren = false;
           const runningOnly = true;
-          control = new osparc.jobs.RunsTable(projectUuid, includeChildren, runningOnly);
+          control = new osparc.jobs.RunsTable(projectUuid, runningOnly);
           control.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
           this._add(control);
           break;
@@ -94,12 +99,6 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
     reloadRuns: function() {
       const runsTable = this.getChildControl("runs-table");
       runsTable.reloadRuns();
-    },
-
-    stopInterval: function() {
-      if (this.__reloadInterval) {
-        clearInterval(this.__reloadInterval);
-      }
     },
   }
 })

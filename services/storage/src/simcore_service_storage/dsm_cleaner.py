@@ -23,8 +23,8 @@ import logging
 from datetime import timedelta
 from typing import cast
 
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
 

@@ -338,7 +338,7 @@ async def get(
         row = result.first()
         if row is None:
             raise FolderAccessForbiddenError(
-                reason=f"Folder {folder_id} does not exist.",
+                details=f"Folder {folder_id} does not exist.",
             )
         return FolderDB.model_validate(row)
 
@@ -369,7 +369,7 @@ async def get_for_user_or_workspace(
         row = await result.first()
         if row is None:
             raise FolderAccessForbiddenError(
-                reason=f"User does not have access to the folder {folder_id}. Or folder does not exist.",
+                details=f"User does not have access to the folder {folder_id}. Or folder does not exist.",
             )
         return FolderDB.model_validate(row)
 
@@ -421,7 +421,7 @@ async def update(
         result = await conn.stream(query)
         row = await result.first()
         if row is None:
-            raise FolderNotFoundError(reason=f"Folder {folders_id_or_ids} not found.")
+            raise FolderNotFoundError(details=f"Folder {folders_id_or_ids} not found.")
         return FolderDB.model_validate(row)
 
 

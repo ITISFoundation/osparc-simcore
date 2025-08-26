@@ -213,6 +213,8 @@ class RuntimeConfig(BaseModel):
 
     paths_mapping: PathMappingsLabel | None = None
 
+    is_collaborative: bool = False
+
     user_preferences_path: Path | None = None
     boot_options: BootOptions | None = None
     min_visible_inputs: NonNegativeInt | None = None

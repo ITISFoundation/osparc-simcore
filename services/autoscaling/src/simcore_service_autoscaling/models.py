@@ -47,8 +47,7 @@ class AssociatedInstance(_BaseInstance):
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class NonAssociatedInstance(_BaseInstance):
-    ...
+class NonAssociatedInstance(_BaseInstance): ...
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -68,9 +67,9 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             "description": "This is a EC2-backed docker node which is drained (cannot accept tasks)"
         }
     )
-    buffer_drained_nodes: list[AssociatedInstance] = field(
+    hot_buffer_drained_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2-backed docker node which is drained in the reserve if this is enabled (with no tasks)"
+            "description": "This is a EC2-backed docker node which is drained in the reserve if this is enabled (with no tasks, a.k.a. hot buffer)"
         }
     )
     pending_ec2s: list[NonAssociatedInstance] = field(
@@ -83,9 +82,9 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             "description": "This is an existing EC2 instance that never properly joined the cluster and is deemed as broken and will be terminated"
         }
     )
-    buffer_ec2s: list[NonAssociatedInstance] = field(
+    warm_buffer_ec2s: list[NonAssociatedInstance] = field(
         metadata={
-            "description": "This is a prepared stopped EC2 instance, not yet associated to a docker node, ready to be used"
+            "description": "This is a prepared stopped EC2 instance, not yet associated to a docker node, ready to be used (a.k.a. warm buffer)"
         }
     )
     disconnected_nodes: list[Node] = field(
@@ -121,7 +120,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             len(self.active_nodes)
             + len(self.pending_nodes)
             + len(self.drained_nodes)
-            + len(self.buffer_drained_nodes)
+            + len(self.hot_buffer_drained_nodes)
             + len(self.pending_ec2s)
             + len(self.broken_ec2s)
             + len(self.terminating_nodes)
@@ -138,10 +137,10 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             f"Cluster(active-nodes: count={len(self.active_nodes)} {_get_instance_ids(self.active_nodes)}, "
             f"pending-nodes: count={len(self.pending_nodes)} {_get_instance_ids(self.pending_nodes)}, "
             f"drained-nodes: count={len(self.drained_nodes)} {_get_instance_ids(self.drained_nodes)}, "
-            f"reserve-drained-nodes: count={len(self.buffer_drained_nodes)} {_get_instance_ids(self.buffer_drained_nodes)}, "
+            f"hot-buffer-drained-nodes: count={len(self.hot_buffer_drained_nodes)} {_get_instance_ids(self.hot_buffer_drained_nodes)}, "
             f"pending-ec2s: count={len(self.pending_ec2s)} {_get_instance_ids(self.pending_ec2s)}, "
             f"broken-ec2s: count={len(self.broken_ec2s)} {_get_instance_ids(self.broken_ec2s)}, "
-            f"buffer-ec2s: count={len(self.buffer_ec2s)} {_get_instance_ids(self.buffer_ec2s)}, "
+            f"warm-buffer-ec2s: count={len(self.warm_buffer_ec2s)} {_get_instance_ids(self.warm_buffer_ec2s)}, "
             f"disconnected-nodes: count={len(self.disconnected_nodes)}, "
             f"terminating-nodes: count={len(self.terminating_nodes)} {_get_instance_ids(self.terminating_nodes)}, "
             f"retired-nodes: count={len(self.retired_nodes)} {_get_instance_ids(self.retired_nodes)}, "
@@ -159,7 +158,7 @@ class DaskTask:
 
 
 @dataclass(kw_only=True, slots=True)
-class BufferPool:
+class WarmBufferPool:
     ready_instances: set[EC2InstanceData] = field(default_factory=set)
     pending_instances: set[EC2InstanceData] = field(default_factory=set)
     waiting_to_pull_instances: set[EC2InstanceData] = field(default_factory=set)
@@ -170,7 +169,7 @@ class BufferPool:
 
     def __repr__(self) -> str:
         return (
-            f"BufferPool(ready-count={len(self.ready_instances)}, "
+            f"WarmBufferPool(ready-count={len(self.ready_instances)}, "
             f"pending-count={len(self.pending_instances)}, "
             f"waiting-to-pull-count={len(self.waiting_to_pull_instances)}, "
             f"waiting-to-stop-count={len(self.waiting_to_stop_instances)}, "
@@ -213,20 +212,20 @@ class BufferPool:
 
 
 @dataclass
-class BufferPoolManager:
-    buffer_pools: dict[InstanceTypeType, BufferPool] = field(
-        default_factory=lambda: defaultdict(BufferPool)
+class WarmBufferPoolManager:
+    buffer_pools: dict[InstanceTypeType, WarmBufferPool] = field(
+        default_factory=lambda: defaultdict(WarmBufferPool)
     )
 
     def __repr__(self) -> str:
-        return f"BufferPoolManager({dict(self.buffer_pools)})"
+        return f"WarmBufferPoolManager({dict(self.buffer_pools)})"
 
-    def flatten_buffer_pool(self) -> BufferPool:
+    def flatten_buffer_pool(self) -> WarmBufferPool:
         """returns a flattened buffer pool with all the EC2InstanceData"""
-        flat_pool = BufferPool()
+        flat_pool = WarmBufferPool()
 
         for buffer_pool in self.buffer_pools.values():
-            for f in fields(BufferPool):
+            for f in fields(WarmBufferPool):
                 getattr(flat_pool, f.name).update(getattr(buffer_pool, f.name))
 
         return flat_pool

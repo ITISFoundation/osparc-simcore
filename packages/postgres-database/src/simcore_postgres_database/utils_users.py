@@ -5,17 +5,21 @@ i.e. models.users main table and all its relations
 import re
 import secrets
 import string
+from dataclasses import dataclass, fields
 from datetime import datetime
 from typing import Any, Final
 
 import sqlalchemy as sa
-from common_library.async_tools import maybe_await
 from sqlalchemy import Column
+from sqlalchemy.engine.result import Row
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
+from sqlalchemy.sql import Select
 
-from ._protocols import DBConnection
-from .aiopg_errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
+from .models.users_secrets import users_secrets
+from .utils_repos import pass_or_acquire_connection, transaction_context
 
 
 class BaseUserRepoError(Exception):
@@ -52,74 +56,124 @@ def generate_alternative_username(username: str) -> str:
     return f"{username}_{_generate_random_chars()}"
 
 
+@dataclass(frozen=True)
+class UserRow:
+    id: int
+    name: str
+    email: str
+    role: UserRole
+    status: UserStatus
+    first_name: str | None = None
+    last_name: str | None = None
+    phone: str | None = None
+
+    @classmethod
+    def from_row(cls, row: Row) -> "UserRow":
+        return cls(**{f.name: getattr(row, f.name) for f in fields(cls)})
+
+
 class UsersRepo:
-    @staticmethod
+    _user_columns = (
+        users.c.id,
+        users.c.name,
+        users.c.email,
+        users.c.role,
+        users.c.status,
+        users.c.first_name,
+        users.c.last_name,
+        users.c.phone,
+    )
+
+    def __init__(self, engine: AsyncEngine):
+        self._engine = engine
+
+    async def _get_scalar_or_raise(
+        self,
+        query: Select,
+        connection: AsyncConnection | None = None,
+    ) -> Any:
+        """Execute a scalar query and raise UserNotFoundInRepoError if no value found."""
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            value = await conn.scalar(query)
+            if value is not None:
+                return value
+            raise UserNotFoundInRepoError
+
     async def new_user(
-        conn: DBConnection,
+        self,
+        connection: AsyncConnection | None = None,
+        *,
         email: str,
         password_hash: str,
         status: UserStatus,
         expires_at: datetime | None,
-    ) -> Any:
-        data: dict[str, Any] = {
+        role: UserRole = UserRole.USER,
+    ) -> UserRow:
+        user_data: dict[str, Any] = {
             "name": _generate_username_from_email(email),
             "email": email,
-            "password_hash": password_hash,
             "status": status,
-            "role": UserRole.USER,
+            "role": role,
             "expires_at": expires_at,
         }
 
         user_id = None
         while user_id is None:
             try:
-                user_id = await conn.scalar(
-                    users.insert().values(**data).returning(users.c.id)
-                )
-            except UniqueViolation:
-                data["name"] = generate_alternative_username(data["name"])
+                async with transaction_context(self._engine, connection) as conn:
+                    # Insert user record
+                    user_id = await conn.scalar(
+                        users.insert().values(**user_data).returning(users.c.id)
+                    )
 
-        result = await conn.execute(
-            sa.select(
-                users.c.id,
-                users.c.name,
-                users.c.email,
-                users.c.role,
-                users.c.status,
-            ).where(users.c.id == user_id)
-        )
-        return await maybe_await(result.first())
+                    # Insert password hash into users_secrets table
+                    await conn.execute(
+                        users_secrets.insert().values(
+                            user_id=user_id,
+                            password_hash=password_hash,
+                        )
+                    )
+            except IntegrityError:
+                user_data["name"] = generate_alternative_username(user_data["name"])
+                user_id = None  # Reset to retry with new username
 
-    @staticmethod
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            result = await conn.execute(
+                sa.select(*self._user_columns).where(users.c.id == user_id)
+            )
+            return UserRow.from_row(result.one())
+
     async def link_and_update_user_from_pre_registration(
-        conn: DBConnection,
+        self,
+        connection: AsyncConnection | None = None,
         *,
         new_user_id: int,
         new_user_email: str,
-        update_user: bool = True,
     ) -> None:
         """After a user is created, it can be associated with information provided during invitation
 
-        WARNING: Use ONLY upon new user creation. It might override user_details.user_id, users.first_name, users.last_name etc if already applied
-        or changes happen in users table
+        Links ALL pre-registrations for the given email to the user, regardless of product_name.
+
+        WARNING: Use ONLY upon new user creation. It might override user_details.user_id,
+        users.first_name, users.last_name etc if already applied or changes happen in users table
         """
         assert new_user_email  # nosec
         assert new_user_id > 0  # nosec
 
-        # link both tables first
-        result = await conn.execute(
-            users_pre_registration_details.update()
-            .where(users_pre_registration_details.c.pre_email == new_user_email)
-            .values(user_id=new_user_id)
-        )
+        async with transaction_context(self._engine, connection) as conn:
+            # Link ALL pre-registrations for this email to the user
+            result = await conn.execute(
+                users_pre_registration_details.update()
+                .where(users_pre_registration_details.c.pre_email == new_user_email)
+                .values(user_id=new_user_id)
+            )
 
-        if update_user:
             # COPIES some pre-registration details to the users table
             pre_columns = (
                 users_pre_registration_details.c.pre_first_name,
                 users_pre_registration_details.c.pre_last_name,
-                # NOTE: pre_phone is not copied since it has to be validated. Otherwise, if
-                # phone is wrong, currently user won't be able to login!
+                # NOTE: pre_phone is not copied since it has to be validated.
+                # Otherwise, if phone is wrong, currently user won't be able to login!
             )
 
             assert {c.name for c in pre_columns} == {  # nosec
@@ -133,103 +187,162 @@ class UsersRepo:
                 and c.name.startswith("pre_")
             }, "Different pre-cols detected. This code might need an update update"
 
+            # Get the most recent pre-registration data to copy to users table
             result = await conn.execute(
-                sa.select(*pre_columns).where(
-                    users_pre_registration_details.c.pre_email == new_user_email
-                )
+                sa.select(*pre_columns)
+                .where(users_pre_registration_details.c.pre_email == new_user_email)
+                .order_by(users_pre_registration_details.c.created.desc())
+                .limit(1)
             )
-            if pre_registration_details_data := result.first():
-                # NOTE: could have many products! which to use?
+            if pre_registration_details_data := result.one_or_none():
                 await conn.execute(
                     users.update()
                     .where(users.c.id == new_user_id)
                     .values(
-                        first_name=pre_registration_details_data.pre_first_name,  # type: ignore[union-attr]
-                        last_name=pre_registration_details_data.pre_last_name,  # type: ignore[union-attr]
+                        first_name=pre_registration_details_data.pre_first_name,
+                        last_name=pre_registration_details_data.pre_last_name,
                     )
                 )
 
-    @staticmethod
-    def get_billing_details_query(user_id: int):
-        return (
-            sa.select(
-                users.c.first_name,
-                users.c.last_name,
-                users_pre_registration_details.c.institution,
-                users_pre_registration_details.c.address,
-                users_pre_registration_details.c.city,
-                users_pre_registration_details.c.state,
-                users_pre_registration_details.c.country,
-                users_pre_registration_details.c.postal_code,
-                users.c.phone,
-            )
-            .select_from(
-                users.join(
-                    users_pre_registration_details,
-                    users.c.id == users_pre_registration_details.c.user_id,
-                )
-            )
-            .where(users.c.id == user_id)
+    async def get_role(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> UserRole:
+        value = await self._get_scalar_or_raise(
+            sa.select(users.c.role).where(users.c.id == user_id),
+            connection=connection,
         )
+        assert isinstance(value, UserRole)  # nosec
+        return UserRole(value)
 
-    @staticmethod
-    async def get_billing_details(conn: DBConnection, user_id: int) -> Any | None:
-        result = await conn.execute(
-            UsersRepo.get_billing_details_query(user_id=user_id)
+    async def get_email(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> str:
+        value = await self._get_scalar_or_raise(
+            sa.select(users.c.email).where(users.c.id == user_id),
+            connection=connection,
         )
-        return await maybe_await(result.fetchone())
+        assert isinstance(value, str)  # nosec
+        return value
 
-    @staticmethod
-    async def get_role(conn: DBConnection, user_id: int) -> UserRole:
-        value: UserRole | None = await conn.scalar(
-            sa.select(users.c.role).where(users.c.id == user_id)
-        )
-        if value:
-            assert isinstance(value, UserRole)  # nosec
-            return UserRole(value)
-
-        raise UserNotFoundInRepoError
-
-    @staticmethod
-    async def get_email(conn: DBConnection, user_id: int) -> str:
-        value: str | None = await conn.scalar(
-            sa.select(users.c.email).where(users.c.id == user_id)
-        )
-        if value:
-            assert isinstance(value, str)  # nosec
-            return value
-
-        raise UserNotFoundInRepoError
-
-    @staticmethod
-    async def get_active_user_email(conn: DBConnection, user_id: int) -> str:
-        value: str | None = await conn.scalar(
+    async def get_active_user_email(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> str:
+        value = await self._get_scalar_or_raise(
             sa.select(users.c.email).where(
                 (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
+            ),
+            connection=connection,
+        )
+        assert isinstance(value, str)  # nosec
+        return value
+
+    async def get_password_hash(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> str:
+        value = await self._get_scalar_or_raise(
+            sa.select(users_secrets.c.password_hash).where(
+                users_secrets.c.user_id == user_id
+            ),
+            connection=connection,
+        )
+        assert isinstance(value, str)  # nosec
+        return value
+
+    async def get_user_by_email_or_none(
+        self, connection: AsyncConnection | None = None, *, email: str
+    ) -> UserRow | None:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            result = await conn.execute(
+                sa.select(*self._user_columns).where(users.c.email == email.lower())
             )
-        )
-        if value is not None:
-            assert isinstance(value, str)  # nosec
-            return value
+            row = result.one_or_none()
+            return UserRow.from_row(row) if row else None
 
-        raise UserNotFoundInRepoError
-
-    @staticmethod
-    async def is_email_used(conn: DBConnection, email: str) -> bool:
-        email = email.lower()
-
-        registered = await conn.scalar(
-            sa.select(users.c.id).where(users.c.email == email)
-        )
-        if registered:
-            return True
-
-        pre_registered = await conn.scalar(
-            sa.select(users_pre_registration_details.c.user_id).where(
-                users_pre_registration_details.c.pre_email == email
+    async def get_user_by_id_or_none(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> UserRow | None:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            result = await conn.execute(
+                sa.select(*self._user_columns).where(users.c.id == user_id)
             )
-        )
-        return bool(pre_registered)
+            row = result.one_or_none()
+            return UserRow.from_row(row) if row else None
+
+    async def update_user_phone(
+        self, connection: AsyncConnection | None = None, *, user_id: int, phone: str
+    ) -> None:
+        async with transaction_context(self._engine, connection) as conn:
+            await conn.execute(
+                users.update().where(users.c.id == user_id).values(phone=phone)
+            )
+
+    async def update_user_password_hash(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        user_id: int,
+        password_hash: str,
+    ) -> None:
+        async with transaction_context(self._engine, connection) as conn:
+            await self.get_password_hash(
+                connection=conn, user_id=user_id
+            )  # ensure user exists
+            await conn.execute(
+                users_secrets.update()
+                .where(users_secrets.c.user_id == user_id)
+                .values(password_hash=password_hash)
+            )
+
+    async def is_email_used(
+        self, connection: AsyncConnection | None = None, *, email: str
+    ) -> bool:
+
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+
+            email = email.lower()
+
+            registered = await conn.scalar(
+                sa.select(users.c.id).where(users.c.email == email)
+            )
+            if registered:
+                return True
+
+            # Check if email exists in pre-registration, regardless of user_id status
+            pre_registered = await conn.scalar(
+                sa.select(users_pre_registration_details.c.id).where(
+                    users_pre_registration_details.c.pre_email == email
+                )
+            )
+            return bool(pre_registered)
+
+    async def get_billing_details(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> Any | None:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            result = await conn.execute(
+                sa.select(
+                    users.c.first_name,
+                    users.c.last_name,
+                    users_pre_registration_details.c.institution,
+                    users_pre_registration_details.c.address,
+                    users_pre_registration_details.c.city,
+                    users_pre_registration_details.c.state,
+                    users_pre_registration_details.c.country,
+                    users_pre_registration_details.c.postal_code,
+                    users.c.phone,
+                )
+                .select_from(
+                    users.join(
+                        users_pre_registration_details,
+                        users.c.id == users_pre_registration_details.c.user_id,
+                    )
+                )
+                .where(users.c.id == user_id)
+                .order_by(users_pre_registration_details.c.created.desc())
+                .limit(1)
+                # NOTE: might want to copy billing details to users table??
+            )
+            return result.one_or_none()
 
 
 #

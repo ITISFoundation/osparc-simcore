@@ -17,10 +17,11 @@ from opentelemetry.instrumentation.aiohttp_server import (
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from servicelib.logging_utils import log_context
-from servicelib.tracing import get_trace_id_header
 from settings_library.tracing import TracingSettings
 from yarl import URL
+
+from ..logging_utils import log_context
+from ..tracing import get_trace_id_header
 
 _logger = logging.getLogger(__name__)
 try:
@@ -37,6 +38,13 @@ try:
     HAS_AIOPG = True
 except ImportError:
     HAS_AIOPG = False
+try:
+    from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
+
+    HAS_ASYNCPG = True
+except ImportError:
+    HAS_ASYNCPG = False
+
 try:
     from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
@@ -56,11 +64,11 @@ def _create_span_processor(tracing_destination: str) -> SpanProcessor:
     otlp_exporter = OTLPSpanExporterHTTP(
         endpoint=tracing_destination,
     )
-    span_processor = BatchSpanProcessor(otlp_exporter)
-    return span_processor
+    return BatchSpanProcessor(otlp_exporter)
 
 
 def _startup(
+    *,
     app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
@@ -130,6 +138,13 @@ def _startup(
             msg="Attempting to add aio-pg opentelemetry autoinstrumentation...",
         ):
             AiopgInstrumentor().instrument()
+    if HAS_ASYNCPG:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
+        ):
+            AsyncPGInstrumentor().instrument()
     if HAS_BOTOCORE:
         with log_context(
             _logger,
@@ -163,7 +178,7 @@ async def response_trace_id_header_middleware(request: web.Request, handler):
     except web.HTTPException as exc:
         if headers:
             exc.headers.update(headers)
-        raise exc
+        raise
     if headers:
         response.headers.update(headers)
     return response
@@ -180,6 +195,11 @@ def _shutdown() -> None:
             AiopgInstrumentor().uninstrument()
         except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument AiopgInstrumentor")
+    if HAS_ASYNCPG:
+        try:
+            AsyncPGInstrumentor().uninstrument()
+        except Exception:  # pylint:disable=broad-exception-caught
+            _logger.exception("Failed to uninstrument AsyncPGInstrumentor")
     if HAS_BOTOCORE:
         try:
             BotocoreInstrumentor().uninstrument()

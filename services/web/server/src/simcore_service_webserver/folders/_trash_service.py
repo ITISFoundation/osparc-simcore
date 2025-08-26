@@ -280,7 +280,7 @@ async def delete_trashed_folder(
         raise FolderNotTrashedError(
             folder_id=folder_id,
             user_id=user_id,
-            reason="Cannot delete trashed folder since it does not fit current criteria",
+            details="Cannot delete trashed folder since it does not fit current criteria",
         )
 
     # NOTE: this function deletes folder AND its content recursively!

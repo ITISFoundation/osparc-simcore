@@ -43,7 +43,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
       this._add(resourcesLayout);
 
       const node = this.getNode();
-      osparc.store.Study.getNodeResources(node.getStudy().getUuid(), node.getNodeId())
+      osparc.store.Study.getInstance().getNodeResources(node.getStudy().getUuid(), node.getNodeId())
         .then(serviceResources => {
           resourcesLayout.show();
           const gridLayout = resourcesLayout.getChildren()[1];
@@ -139,7 +139,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
         }
       });
       const node = this.getNode();
-      osparc.store.Study.updateNodeResources(node.getStudy().getUuid(), node.getNodeId(), updatedResources)
+      osparc.store.Study.getInstance().updateNodeResources(node.getStudy().getUuid(), node.getNodeId(), updatedResources)
         .then(() => osparc.FlashMessenger.logAs(this.tr("Limits have been successfully updated")))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while updating the limits")))
         .finally(() => {

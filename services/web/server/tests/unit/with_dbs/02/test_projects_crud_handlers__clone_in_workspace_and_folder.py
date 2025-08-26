@@ -14,8 +14,8 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.workspaces import WorkspaceID
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.workspaces import workspaces

@@ -1,5 +1,0 @@
-black
-httpx[http2]
-pydantic[email,dotenv]
-pylint
-typer[all]

@@ -63,7 +63,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "8",
+        "11",
         "--appendonly",
         "yes",
         "--requirepass",
@@ -82,13 +82,16 @@ services:
         scheduled_maintenance:redis:6379:3:${TEST_REDIS_PASSWORD},
         user_notifications:redis:6379:4:${TEST_REDIS_PASSWORD},
         announcements:redis:6379:5:${TEST_REDIS_PASSWORD},
-        distributed_identifiers:redis:6379:6:${TEST_REDIS_PASSWORD},
-        deferred_tasks:redis:6379:7:${TEST_REDIS_PASSWORD}
+        long_running_tasks:redis:6379:6:${TEST_REDIS_PASSWORD},
+        deferred_tasks:redis:6379:7:${TEST_REDIS_PASSWORD},
+        dynamic_services:redis:6379:8:${TEST_REDIS_PASSWORD},
+        celery_tasks:redis:6379:9:${TEST_REDIS_PASSWORD},
+        documents:redis:6379:10:${TEST_REDIS_PASSWORD}
     ports:
       - "18081:8081"
 
   rabbit:
-    image: itisfoundation/rabbitmq:3.13.7-management
+    image: itisfoundation/rabbitmq:4.1.2-management
     init: true
     environment:
       - RABBITMQ_DEFAULT_USER=admin

@@ -8,6 +8,7 @@ import asyncio
 import re
 import urllib.parse
 from typing import Any
+from unittest import mock
 
 import pytest
 import simcore_service_webserver.studies_dispatcher
@@ -15,22 +16,32 @@ import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
-from models_library.projects_state import ProjectLocked, ProjectStatus
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
+from common_library.users_enums import UserRole
+from models_library.projects_state import ProjectShareState, ProjectStatus
 from pydantic import BaseModel, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from pytest_simcore.pydantic_models import (
     assert_validation_model,
     walk_model_examples_in_package,
 )
 from servicelib.aiohttp import status
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
 from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
 from sqlalchemy.sql import text
 from yarl import URL
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 #
 # FIXTURES OVERRIDES
@@ -75,7 +86,25 @@ def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
 
 
 @pytest.fixture
-def web_server(redis_service: RedisSettings, web_server: TestServer) -> TestServer:
+def app_environment(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    rabbit_service: RabbitSettings,
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_RABBITMQ": json_dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            )
+        },
+    )
+
+
+@pytest.fixture
+def web_server(
+    redis_service: RedisSettings, rabbit_service: RabbitSettings, web_server: TestServer
+) -> TestServer:
     #
     # Extends web_server to start redis_service
     #
@@ -298,8 +327,10 @@ def mocks_on_projects_api(mocker) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects._projects_service._get_project_lock_state",
-        return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
+        "simcore_service_webserver.projects._projects_service._get_project_share_state",
+        return_value=ProjectShareState(
+            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+        ),
     )
 
 
@@ -385,6 +416,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
 
 
 async def test_dispatch_study_anonymously(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     redirect_url: URL,
     redirect_type: str,
@@ -423,7 +455,7 @@ async def test_dispatch_study_anonymously(
 
         # guest user only a copy of the template project
         url = client.app.router["list_projects"].url_for()
-        response = await client.get(f'{url.with_query(type="user")}')
+        response = await client.get(f"{url.with_query(type='user')}")
 
         payload = await response.json()
         assert response.status == 200, payload
@@ -448,6 +480,7 @@ async def test_dispatch_study_anonymously(
     ],
 )
 async def test_dispatch_logged_in_user(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     redirect_url: URL,
     redirect_type: str,
@@ -480,7 +513,7 @@ async def test_dispatch_logged_in_user(
 
     # guest user only a copy of the template project
     url = client.app.router["list_projects"].url_for()
-    response = await client.get(f'{url.with_query(type="user")}')
+    response = await client.get(f"{url.with_query(type='user')}")
 
     payload = await response.json()
     assert response.status == 200, payload

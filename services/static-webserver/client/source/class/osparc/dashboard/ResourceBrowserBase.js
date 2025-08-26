@@ -121,12 +121,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
       if (walletsEnabled) {
-        const params = {
-          url: {
-            studyId
-          }
-        };
-        osparc.data.Resources.fetch("studies", "getWallet", params)
+        osparc.store.Study.getInstance().getWallet(studyId)
           .then(wallet => {
             if (
               isStudyCreation ||
@@ -164,8 +159,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             } else {
               openStudy();
             }
-          })
-          .catch(err => osparc.FlashMessenger.logError(err));
+          });
       } else {
         openStudy();
       }
@@ -288,6 +282,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourcesContainer.addListener("updateTutorial", e => this._updateTutorialData(e.getData()));
+      resourcesContainer.addListener("updateFunction", e => this._updateFunctionData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
       resourcesContainer.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
@@ -671,10 +666,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         const arCopy = osparc.utils.Utils.deepCloneObject(templateData["accessRights"]);
         // remove collaborator
         delete arCopy[myGid];
-        operationPromise = osparc.store.Study.patchStudyData(templateData, "accessRights", arCopy);
+        operationPromise = osparc.store.Study.getInstance().patchStudyData(templateData, "accessRights", arCopy);
       } else {
         // delete study
-        operationPromise = osparc.store.Store.getInstance().deleteStudy(templateData.uuid);
+        operationPromise = osparc.store.Study.getInstance().deleteStudy(templateData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromTemplateList(templateData.uuid))
@@ -698,7 +693,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    updateTutorialData: function(tutorialData) {
+    _updateTutorialData: function(tutorialData) {
+      throw new Error("Abstract method called!");
+    },
+
+    _updateFunctionData: function(functionData) {
       throw new Error("Abstract method called!");
     },
 
@@ -754,12 +753,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               };
               const cancelCB = () => {
                 this._hideLoadingPage();
-                const params = {
-                  url: {
-                    studyId
-                  }
-                };
-                osparc.data.Resources.fetch("studies", "delete", params);
+                osparc.store.Study.getInstance().deleteStudy(studyId);
               };
 
               const promises = [];
@@ -788,7 +782,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                   const nodeId = nodesIdsListed[idx];
                   const pricingPlanId = nodePricingUnits.getPricingPlanId();
                   const selectedUnit = nodePricingUnits.getPricingUnits().getSelectedUnit();
-                  promises.push(osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, pricingPlanId, selectedUnit));
+                  promises.push(osparc.store.Study.getInstance().updateSelectedPricingUnit(studyId, nodeId, pricingPlanId, selectedUnit));
                 }
               });
 
@@ -811,12 +805,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             const openCB = () => this._hideLoadingPage();
             const cancelCB = () => {
               this._hideLoadingPage();
-              const params = {
-                url: {
-                  studyId
-                }
-              };
-              osparc.data.Resources.fetch("studies", "delete", params);
+              osparc.store.Study.getInstance().deleteStudy(studyId);
             };
             const isStudyCreation = true;
             this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
@@ -841,12 +830,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
             this._hideLoadingPage();
-            const params = {
-              url: {
-                studyId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "delete", params);
+            osparc.store.Study.getInstance().deleteStudy(studyId);
           };
           const isStudyCreation = true;
           this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
@@ -939,19 +923,23 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _openResourceDetails: function(resourceData) {
-      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
-      const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+      const {
+        resourceDetails,
+        window,
+      } = osparc.dashboard.ResourceDetails.popUpInWindow(resourceData);
+
       resourceDetails.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourceDetails.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourceDetails.addListener("updateTutorial", e => this._updateTutorialData(e.getData()));
+      resourceDetails.addListener("updateFunction", e => this._updateFunctionData(e.getData()));
       resourceDetails.addListener("updateService", e => this._updateServiceData(e.getData()));
       resourceDetails.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourceDetails.addListener("publishTemplate", e => {
-        win.close();
+        window.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
       resourceDetails.addListener("openStudy", e => {
-        const openCB = () => win.close();
+        const openCB = () => window.close();
         const studyId = e.getData()["uuid"];
         const isStudyCreation = false;
         this._startStudyById(studyId, openCB, null, isStudyCreation);
@@ -962,13 +950,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         "openHypertool",
       ].forEach(eventName => {
         resourceDetails.addListener(eventName, e => {
-          win.close();
+          window.close();
           const templateData = e.getData();
           this._createStudyFromTemplate(templateData);
         });
       });
       resourceDetails.addListener("openService", e => {
-        win.close();
+        window.close();
         const openServiceData = e.getData();
         this._createStudyFromService(openServiceData["key"], openServiceData["version"]);
       });

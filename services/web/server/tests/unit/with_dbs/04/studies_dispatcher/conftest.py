@@ -4,19 +4,18 @@
 # pylint: disable=too-many-arguments
 
 
-import logging
-
 import pytest
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.studies_dispatcher.settings import (
     StudiesDispatcherSettings,
 )
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,
         {
@@ -48,14 +47,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "STUDIES_ACCESS_ANONYMOUS_ALLOWED": "1",
             "STUDIES_GUEST_ACCOUNT_LIFETIME": "2 1:10:00",  # 2 days 1h and 10 mins
         },
-    )
-
-    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(
-        level=logging.DEBUG,
-        log_format_local_dev_enabled=True,
-        logger_filter_mapping={},
-        tracing_settings=None,
     )
 
     plugin_settings = StudiesDispatcherSettings.create_from_envs()

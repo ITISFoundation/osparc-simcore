@@ -22,6 +22,7 @@ from simcore_service_webserver.projects.utils import (
     "test_data_file_name",
     [
         "fake-project.json",
+        "fake-project-with-conversation.json",
         "fake-template-projects.hack08.notebooks.json",
         "fake-template-projects.isan.2dplot.json",
         "fake-template-projects.isan.matward.json",
@@ -50,6 +51,13 @@ def test_clone_project_document(
     node_ids = original_project["workbench"].keys()
     for clone_node_id in clone["workbench"]:
         assert clone_node_id not in node_ids
+
+    # checks no conversation have been copied
+    if "ui" in clone and "annotations" in clone["ui"]:
+        assert not any(
+            annotation["type"] == "conversation"
+            for annotation in clone["ui"]["annotations"].values()
+        )
 
     # Here we do not use anymore jsonschema.validator since ...
     #

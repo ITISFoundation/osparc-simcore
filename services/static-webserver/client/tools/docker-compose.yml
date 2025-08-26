@@ -9,6 +9,8 @@ services:
     ports:
       - '8080:8080'
     working_dir: /project
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=5120"
     command: >
       qx serve --set qx.allowUrlSettings=true
         --set-env osparc.vcsOriginUrl="${VCS_URL}"

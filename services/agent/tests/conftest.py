@@ -12,9 +12,11 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from settings_library.r_clone import S3Provider
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.aws_server",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.logging",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
 ]

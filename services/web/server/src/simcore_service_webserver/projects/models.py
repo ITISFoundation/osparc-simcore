@@ -72,10 +72,16 @@ class ProjectDBGet(BaseModel):
     )
 
 
+class ProjectWithWorkbenchDBGet(ProjectDBGet):
+    # This model is used to read the project with its workbench
+    workbench: NodesDict
+
+
 class ProjectJobDBGet(ProjectDBGet):
     workbench: NodesDict
 
     job_parent_resource_name: str
+    storage_assets_deleted: bool
 
 
 class ProjectWithTrashExtra(ProjectDBGet):
@@ -112,7 +118,7 @@ class ProjectPatchInternalExtended(ProjectPatch):
     trashed_by: UserID | None
     trashed_explicitly: bool
 
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(validate_by_name=True, extra="forbid")
 
     def to_domain_model(self) -> dict[str, Any]:
         return remap_keys(

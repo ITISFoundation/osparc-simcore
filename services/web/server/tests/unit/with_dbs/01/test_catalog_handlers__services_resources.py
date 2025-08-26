@@ -16,7 +16,7 @@ from models_library.services_resources import (
 from pydantic import TypeAdapter
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.catalog.settings import get_plugin_settings

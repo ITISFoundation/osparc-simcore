@@ -16,9 +16,10 @@ async def request_pipeline_scheduling(
     project_id: ProjectID,
     iteration: Iteration,
 ) -> None:
-    # NOTE: we should use the transaction and the asyncpg engine here to ensure 100% consistency
-    # https://github.com/ITISFoundation/osparc-simcore/issues/6818
-    # async with transaction_context(get_asyncpg_engine(app)) as connection:
+    # NOTE: it is important that the DB is set up first before scheduling, in case the worker already schedules before we change the DB
+    await CompRunsRepository.instance(db_engine).mark_for_scheduling(
+        user_id=user_id, project_id=project_id, iteration=iteration
+    )
     await rabbitmq_client.publish(
         SchedulePipelineRabbitMessage.get_channel_name(),
         SchedulePipelineRabbitMessage(
@@ -26,7 +27,4 @@ async def request_pipeline_scheduling(
             project_id=project_id,
             iteration=iteration,
         ),
-    )
-    await CompRunsRepository.instance(db_engine).mark_for_scheduling(
-        user_id=user_id, project_id=project_id, iteration=iteration
     )

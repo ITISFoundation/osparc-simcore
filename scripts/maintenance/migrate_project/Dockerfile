@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG UV_VERSION="0.6"
+ARG UV_VERSION="0.7"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
 FROM python:3.11.9-buster

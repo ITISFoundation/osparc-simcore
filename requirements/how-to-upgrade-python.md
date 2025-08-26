@@ -17,16 +17,7 @@ Both python and pip version are specified:
     ARG PYTHON_VERSION="3.9.12"
     FROM python:${PYTHON_VERSION}-slim-bookworm as base
   ```
-- in the CI ``.github/workflows/ci-testing-deploy.yml``
-  ```yaml
-  jobs:
-  ... :
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.9"]
-  ```
-  and in ``ci/helpers/ensure_python_pip.bash``
+- in ``.python-version``
 
 
 

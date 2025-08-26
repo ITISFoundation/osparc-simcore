@@ -84,21 +84,31 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createAccessRights: function(study) {
-      const accessRights = new qx.ui.basic.Label();
-      let permissions = "";
-      const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = study.getAccessRights();
-      if (myGID in ar) {
-        if (ar[myGID]["delete"]) {
-          permissions = qx.locale.Manager.tr("Owner");
-        } else if (ar[myGID]["write"]) {
-          permissions = qx.locale.Manager.tr("Editor");
-        } else if (ar[myGID]["read"]) {
-          permissions = qx.locale.Manager.tr("User");
+      const allMyGIds = osparc.store.Groups.getInstance().getAllMyGroupIds();
+      const accessRights = study.getAccessRights();
+      const permissions = new Set();
+      allMyGIds.forEach(gId => {
+        if (gId in accessRights) {
+          if (accessRights[gId]["delete"]) {
+            permissions.add("delete");
+          } else if (accessRights[gId]["write"]) {
+            permissions.add("write");
+          } else if (accessRights[gId]["read"]) {
+            permissions.add("read");
+          }
         }
+      });
+      const accessRightsLabel = new qx.ui.basic.Label();
+      if (permissions.has("delete")) {
+        accessRightsLabel.setValue(osparc.data.Roles.STUDY["delete"].label);
+      } else if (permissions.has("write")) {
+        accessRightsLabel.setValue(osparc.data.Roles.STUDY["write"].label);
+      } else if (permissions.has("read")) {
+        accessRightsLabel.setValue(osparc.data.Roles.STUDY["read"].label);
+      } else {
+        accessRightsLabel.setValue(qx.locale.Manager.tr("Public"));
       }
-      accessRights.setValue(permissions);
-      return accessRights;
+      return accessRightsLabel;
     },
 
     /**
@@ -179,7 +189,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       * @param maxHeight {Number} description's maxHeight
       */
-    createDescriptionMD: function(study, maxHeight) {
+    createDescription: function(study, maxHeight) {
       const description = new osparc.ui.markdown.Markdown();
       study.bind("description", description, "value", {
         converter: desc => desc ? desc : "No description"
@@ -240,148 +250,6 @@ qx.Class.define("osparc.info.StudyUtils", {
       addTags(study);
 
       return tagsContainer;
-    },
-
-    infoElementsToLayout: function(extraInfos) {
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const decorateAction = action => {
-          action.button.set({
-            alignY: "middle",
-          });
-          action.button.addListener("execute", () => {
-            const cb = action.callback;
-            if (typeof cb === "string") {
-              action.ctx.fireEvent(cb);
-            } else {
-              cb.call(action.ctx);
-            }
-          }, this);
-      };
-
-      if ("TITLE" in extraInfos) {
-        const extraInfo = extraInfos["TITLE"];
-        const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-        if (extraInfo.action && extraInfo.action.button) {
-          decorateAction(extraInfo.action);
-          titleLayout.add(extraInfo.action.button);
-        }
-
-        if (extraInfo.view) {
-          titleLayout.add(extraInfo.view, {
-            flex: 1,
-          });
-        }
-
-        container.add(titleLayout);
-      }
-
-
-      const centerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-      if ("THUMBNAIL" in extraInfos) {
-        const extraInfo = extraInfos["THUMBNAIL"];
-        const thumbnailLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
-
-        if (extraInfo.action && extraInfo.action.button) {
-          decorateAction(extraInfo.action);
-          thumbnailLayout.add(extraInfo.action.button);
-        }
-
-        if (extraInfo.view) {
-          thumbnailLayout.add(extraInfo.view, {
-            flex: 1,
-          });
-        }
-
-        centerLayout.add(thumbnailLayout);
-      }
-
-      const positions = {
-        AUTHOR: {
-          row: 0,
-        },
-        ACCESS_RIGHTS: {
-          row: 1,
-        },
-        CREATED: {
-          row: 2,
-        },
-        MODIFIED: {
-          row: 3,
-        },
-        TAGS: {
-          row: 4,
-        },
-        LOCATION: {
-          row: 5,
-        },
-      };
-
-      const grid = new qx.ui.layout.Grid(6, 6);
-      grid.setColumnAlign(0, "right", "middle"); // titles
-      const gridLayout = new qx.ui.container.Composite(grid);
-
-      Object.keys(positions).forEach(key => {
-        if (key in extraInfos) {
-          const extraInfo = extraInfos[key];
-          const gridInfo = positions[key];
-
-          let col = 0;
-          if (extraInfo.label) {
-            const title = new qx.ui.basic.Label(extraInfo.label).set({
-              alignX: "right",
-            });
-            gridLayout.add(title, {
-              row: gridInfo.row,
-              column: col + 0,
-            });
-          }
-          col++;
-
-          if (extraInfo.action && extraInfo.action.button) {
-            decorateAction(extraInfo.action);
-            gridLayout.add(extraInfo.action.button, {
-              row: gridInfo.row,
-              column: col + 1,
-            });
-          }
-          col++;
-
-          if (extraInfo.view) {
-            gridLayout.add(extraInfo.view, {
-              row: gridInfo.row,
-              column: col + 2,
-            });
-          }
-          col++;
-        }
-      });
-      centerLayout.add(gridLayout, {
-        flex: 1,
-      });
-      container.add(centerLayout);
-
-      if ("DESCRIPTION" in extraInfos) {
-        const extraInfo = extraInfos["DESCRIPTION"];
-        const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-        if (extraInfo.action && extraInfo.action.button) {
-          decorateAction(extraInfo.action);
-          descriptionLayout.add(extraInfo.action.button);
-        }
-
-        if (extraInfo.view) {
-          descriptionLayout.add(extraInfo.view, {
-            flex: 1,
-          });
-        }
-
-        container.add(descriptionLayout);
-      }
-
-      return container;
     },
 
     /**

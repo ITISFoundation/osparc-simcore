@@ -24,7 +24,9 @@ from ..utils.versioning import as_version, is_patch_release
 
 _logger = logging.getLogger(__name__)
 
-_LEGACY_SERVICES_DATE: datetime = datetime(year=2020, month=8, day=19, tzinfo=UTC)
+_OLD_SERVICES_CUTOFF_DATETIME: datetime = datetime(
+    year=2020, month=8, day=19, tzinfo=UTC
+)
 
 
 class InheritedData(TypedDict):
@@ -37,15 +39,42 @@ def _is_frontend_service(service: ServiceMetaDataPublished) -> bool:
 
 
 async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bool:
+    #
     # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/6003#discussion_r1658200909
-    # get service build date
-    client = get_director_client(app)
+    #
+    service_extras = await get_director_client(app).get_service_extras(
+        service.key, service.version
+    )
 
-    data = await client.get_service_extras(service.key, service.version)
-    if not data or data.service_build_details is None:
+    # 1. w/o build details
+    has_no_build_data = (
+        not service_extras or service_extras.service_build_details is None
+    )
+    if has_no_build_data:
+        _logger.debug(
+            "Service %s:%s is considered legacy because it has no build details",
+            service.key,
+            service.version,
+        )
         return True
-    service_build_data = arrow.get(data.service_build_details.build_date).datetime
-    return bool(service_build_data < _LEGACY_SERVICES_DATE)
+
+    # 2. check if built before cutoff date
+    assert service_extras.service_build_details
+    service_build_datetime = arrow.get(
+        service_extras.service_build_details.build_date
+    ).datetime
+
+    is_older_than_cutoff = service_build_datetime < _OLD_SERVICES_CUTOFF_DATETIME
+    if is_older_than_cutoff:
+        _logger.debug(
+            "Service %s:%s is considered legacy because it was built before %s",
+            service.key,
+            service.version,
+            _OLD_SERVICES_CUTOFF_DATETIME,
+        )
+        return True
+
+    return False
 
 
 async def evaluate_default_service_ownership_and_rights(

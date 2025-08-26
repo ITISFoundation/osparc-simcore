@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import socket
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable
 from typing import cast
 
 import arrow
@@ -61,10 +61,10 @@ def get_unused_port() -> Callable[[], int]:
 
 
 @pytest.fixture
-def mock_otel_collector(mocker: MockerFixture) -> Iterator[InMemorySpanExporter]:
+def mock_otel_collector(mocker: MockerFixture) -> InMemorySpanExporter:
     memory_exporter = InMemorySpanExporter()
     span_processor = SimpleSpanProcessor(memory_exporter)
     mocker.patch(
         "servicelib.fastapi.tracing._create_span_processor", return_value=span_processor
     )
-    yield memory_exporter
+    return memory_exporter

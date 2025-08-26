@@ -22,4 +22,4 @@ packaging
 python-jose
 python-multipart
 python-socketio # notifier
-typer[all]
+typer

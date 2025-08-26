@@ -1,5 +1,6 @@
 from typing import Annotated, Any, TypeAlias
 
+from models_library.computations import CollectionRunID
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -12,7 +13,7 @@ from pydantic import (
 
 from ..basic_types import IDStr
 from ..projects import ProjectID
-from ..projects_nodes_io import NodeID
+from ..projects_nodes_io import NodeID, SimcoreS3FileID
 from ..projects_pipeline import ComputationTask
 from ..users import UserID
 from ..wallets import WalletInfo
@@ -72,6 +73,12 @@ class ComputationCreate(BaseModel):
             description="contains information about the wallet used to bill the running service"
         ),
     ] = None
+    collection_run_id: Annotated[
+        CollectionRunID | None,
+        Field(
+            description="In case start_pipeline is True, this is the collection run id to which the comp run belongs."
+        ),
+    ] = None
 
     @field_validator("product_name")
     @classmethod
@@ -80,6 +87,20 @@ class ComputationCreate(BaseModel):
     ):
         if info.data.get("start_pipeline") and v is None:
             msg = "product_name must be set if computation shall start!"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("collection_run_id")
+    @classmethod
+    def _ensure_collection_run_id_dependency_on_start_pipeline(
+        cls, v, info: ValidationInfo
+    ):
+        start_pipeline = info.data.get("start_pipeline")
+        if start_pipeline and v is None:
+            msg = "collection_run_id must be provided when start_pipeline is True!"
+            raise ValueError(msg)
+        if not start_pipeline and v is not None:
+            msg = "collection_run_id must be None when start_pipeline is False!"
             raise ValueError(msg)
         return v
 
@@ -103,6 +124,30 @@ class TaskLogFileGet(BaseModel):
         AnyUrl | None,
         Field(description="Presigned link for log file or None if still not available"),
     ] = None
+
+
+class TaskLogFileIdGet(BaseModel):
+    task_id: NodeID
+    file_id: SimcoreS3FileID | None
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/3fa85f64-5717-4562-b3fc-2c963f66afa6/logs/task_logs.txt",
+                },
+                {
+                    "task_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/6ba7b810-9dad-11d1-80b4-00c04fd430c8/logs/debug.log",
+                },
+                {
+                    "task_id": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+                    "file_id": None,
+                },
+            ]
+        }
+    )
 
 
 class TasksSelection(BaseModel):

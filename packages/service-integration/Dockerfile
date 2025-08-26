@@ -2,7 +2,7 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.6"
+ARG UV_VERSION="0.7"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base-arm64
@@ -50,7 +50,8 @@ ENV LANG=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1 \
   VIRTUAL_ENV=/home/scu/.venv
 # https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
+ENV UV_COMPILE_BYTECODE=1 \
+  UV_LINK_MODE=copy
 
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
@@ -73,13 +74,6 @@ COPY --from=uv_build /uv /uvx /bin/
 # packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
-
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv pip install --upgrade \
-  pip~=24.0  \
-  wheel \
-  setuptools
 
 WORKDIR /build/packages/service-integration
 

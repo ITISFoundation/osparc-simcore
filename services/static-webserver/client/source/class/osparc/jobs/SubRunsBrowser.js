@@ -66,15 +66,15 @@ qx.Class.define("osparc.jobs.SubRunsBrowser", {
       return titleLayout;
     },
 
-    setProject: function(project) {
+    setCollectionRun: function(collectionRunData) {
       if (this.__subRunsTable) {
         this._remove(this.__subRunsTable);
         this.__subRunsTable = null;
       }
 
-      this.__titleLabel.setValue(project["projectName"])
+      this.__titleLabel.setValue(collectionRunData["name"])
 
-      const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(project["projectUuid"]);
+      const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(collectionRunData["collectionRunId"]);
       this._add(subRunsTable, {
         flex: 1
       });

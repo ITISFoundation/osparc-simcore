@@ -40,8 +40,8 @@ class SlideshowUI(TypedDict):
 
 
 class AnnotationUI(BaseModel):
-    type: Literal["note", "rect", "text"]
-    color: Annotated[Color, PlainSerializer(Color.as_hex)]
+    type: Literal["note", "rect", "text", "conversation"]
+    color: Annotated[Color | None, PlainSerializer(Color.as_hex)] = None
     attributes: Annotated[dict, Field(description="svg attributes")]
 
     @staticmethod
@@ -71,6 +71,15 @@ class AnnotationUI(BaseModel):
                         "color": "#0000FF",
                         "attributes": {"x": 415, "y": 100, "text": "Hey!"},
                     },
+                    {
+                        "type": "conversation",
+                        "attributes": {
+                            "conversationId": 2,
+                            "x": 415,
+                            "y": 100,
+                            "title": "My chat",
+                        },
+                    },
                 ]
             },
         )
@@ -82,13 +91,14 @@ class AnnotationUI(BaseModel):
 
 class StudyUI(OutputSchema):
     # Model fully controlled by the UI and stored under `projects.ui`
-    icon: HttpUrl | None = None
+    icon: HttpUrl | None = None  # <-- Deprecated
 
     workbench: dict[NodeIDStr, WorkbenchUI] | None = None
     slideshow: dict[NodeIDStr, SlideshowUI] | None = None
     current_node_id: NodeID | None = None
     annotations: dict[NodeIDStr, AnnotationUI] | None = None
-    template_type: Literal["hypertool"] | None = None
+    template_type: Literal["hypertool"] | None = None  # <-- Deprecated
+    mode: Literal["workbench", "app", "guided", "standalone", "pipeline"] | None = None
 
     _empty_is_none = field_validator("*", mode="before")(
         empty_str_to_none_pre_validator
@@ -167,6 +177,15 @@ class StudyUI(OutputSchema):
                                     "text": "pppoo",
                                     "color": "#E9AEAB",
                                     "fontSize": 12,
+                                },
+                            },
+                            "cf94f068-259c-4192-89f9-b2a56d51249d": {
+                                "type": "conversation",
+                                "attributes": {
+                                    "conversationId": 2,
+                                    "x": 119,
+                                    "y": 223,
+                                    "title": "My chat",
                                 },
                             },
                         },

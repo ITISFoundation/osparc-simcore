@@ -20,4 +20,4 @@ aiocache
 packaging
 prometheus_api_client
 shortuuid
-typer[all]
+typer

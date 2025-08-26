@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
@@ -28,11 +29,15 @@ _logger = logging.getLogger(__name__)
 _TRASH_ERRORS: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please stop all services first and try again",
+        user_message(
+            "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please stop all services first and try again"
+        ),
     ),
     ProjectStoppingError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        "Something went wrong while stopping services before trashing. Aborting trash.",
+        user_message(
+            "Something went wrong while stopping services before trashing. Aborting trash."
+        ),
     ),
 }
 

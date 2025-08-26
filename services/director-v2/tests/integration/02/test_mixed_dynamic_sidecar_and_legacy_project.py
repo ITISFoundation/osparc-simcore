@@ -139,7 +139,8 @@ def user_dict(create_registered_user: Callable) -> dict[str, Any]:
 async def dy_static_file_server_project(
     minimal_configuration: None,
     user_dict: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    with_product: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     dy_static_file_server_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
@@ -154,7 +155,7 @@ async def dy_static_file_server_project(
             "label": label,
         }
 
-    return await project(
+    return await create_project(
         user=user_dict,
         workbench={
             uuid_legacy: _assemble_node_data(

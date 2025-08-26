@@ -25,8 +25,10 @@ from starlette import status
 from starlette.testclient import TestClient
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.logging",
     "pytest_simcore.repository_paths",
     "pytest_simcore.pytest_global_environs",
 ]
@@ -69,9 +71,9 @@ def pennsieve_mock_dataset_packages(mocks_dir: Path) -> dict[str, Any]:
 def minimal_app(
     app_environment: None,
 ) -> FastAPI:
-    from simcore_service_datcore_adapter.main import the_app
+    from simcore_service_datcore_adapter.main import app_factory
 
-    return the_app
+    return app_factory()
 
 
 @pytest.fixture()

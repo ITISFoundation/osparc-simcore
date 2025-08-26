@@ -98,7 +98,7 @@ async def test_handling_exceptions_decorating_a_route(
     app.add_routes(routes)
 
     # 3. testing from the client side
-    client: TestClient = await aiohttp_client(app)
+    client = await aiohttp_client(app)
 
     # success
     resp = await client.post("/ok")

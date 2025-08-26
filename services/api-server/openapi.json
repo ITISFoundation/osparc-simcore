@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.9.0"
+    "version": "0.12.0"
   },
   "paths": {
     "/v0/meta": {
@@ -2761,6 +2761,138 @@
         }
       }
     },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/assets": {
+      "delete": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Delete Job Assets",
+        "description": "Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable\n\nNew in *version 0.12*",
+        "operationId": "delete_job_assets",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "solver_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job/wallet/pricing details not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:start": {
       "post": {
         "tags": [
@@ -2918,6 +3050,16 @@
           },
           "406": {
             "description": "Cluster not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Job assets missing",
             "content": {
               "application/json": {
                 "schema": {
@@ -3752,6 +3894,16 @@
           },
           "504": {
             "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Job assets missing",
             "content": {
               "application/json": {
                 "schema": {
@@ -5305,7 +5457,7 @@
           "function_jobs"
         ],
         "summary": "List Function Jobs",
-        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
+        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
         "operationId": "list_function_jobs",
         "security": [
           {
@@ -5335,6 +5487,66 @@
               "default": 0,
               "title": "Offset"
             }
+          },
+          {
+            "name": "function_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function ID pattern",
+              "title": "Function Id"
+            },
+            "description": "Filter by function ID pattern"
+          },
+          {
+            "name": "function_job_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function job IDs",
+              "title": "Function Job Ids"
+            },
+            "description": "Filter by function job IDs"
+          },
+          {
+            "name": "function_job_collection_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function job collection ID",
+              "title": "Function Job Collection Id"
+            },
+            "description": "Filter by function job collection ID"
           }
         ],
         "responses": {
@@ -5669,13 +5881,73 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     },
                     {
                       "type": "null"
                     }
                   ],
                   "title": "Response Function Job Outputs V0 Function Jobs  Function Job Id  Outputs Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/function_jobs/{function_job_id}/log": {
+      "post": {
+        "tags": [
+          "function_jobs"
+        ],
+        "summary": "Get Function Job Logs Task",
+        "description": "Get function job logs task\n\nNew in *version 0.11.0*",
+        "operationId": "get_function_job_logs_task",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskGet"
                 }
               }
             }
@@ -5995,6 +6267,169 @@
                     }
                   },
                   "title": "Response Function Job Collection List Function Jobs V0 Function Job Collections  Function Job Collection Id  Function Jobs Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function job collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/function_job_collections/{function_job_collection_id}/function_jobs/page": {
+      "get": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "Function Job Collection List Function Jobs Page",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.11.0*",
+        "operationId": "function_job_collection_list_function_jobs_page",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_job_collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Collection Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function job collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/function_job_collections/{function_job_collection_id}/function_jobs/list": {
+      "get": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "Function Job Collection List Function Jobs List",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.11.0*",
+        "operationId": "function_job_collection_list_function_jobs_list",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_job_collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
+                      },
+                      {
+                        "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
+                      },
+                      {
+                        "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
+                      }
+                    ],
+                    "discriminator": {
+                      "propertyName": "function_class",
+                      "mapping": {
+                        "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                        "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                        "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
+                      }
+                    }
+                  },
+                  "title": "Response Function Job Collection List Function Jobs List V0 Function Job Collections  Function Job Collection Id  Function Jobs List Get"
                 }
               }
             }
@@ -7529,7 +7964,8 @@
               "schema": {
                 "anyOf": [
                   {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                   },
                   {
                     "type": "null"
@@ -7649,7 +8085,8 @@
               "schema": {
                 "anyOf": [
                   {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                   },
                   {
                     "type": "null"
@@ -7783,7 +8220,8 @@
                 "items": {
                   "anyOf": [
                     {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     },
                     {
                       "type": "null"
@@ -7829,10 +8267,253 @@
           }
         }
       }
+    },
+    "/v0/tasks": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List Tasks",
+        "description": "List all tasks\n\nNew in *version 0.10-rc1*",
+        "operationId": "list_tasks",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiServerEnvelope_list_TaskGet__"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Get Task Status",
+        "description": "Get task status\n\nNew in *version 0.10-rc1*",
+        "operationId": "get_task_status",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskStatus"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/tasks/{task_id}:cancel": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Cancel Task",
+        "description": "Cancel task\n\nNew in *version 0.10-rc1*",
+        "operationId": "cancel_task",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/tasks/{task_id}/result": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Get Task Result",
+        "description": "Get task result\n\nNew in *version 0.10-rc1*",
+        "operationId": "get_task_result",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task result not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Task is cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ApiServerEnvelope_list_TaskGet__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TaskGet"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApiServerEnvelope[list[TaskGet]]"
+      },
       "Body_abort_multipart_upload_v0_files__file_id__abort_post": {
         "properties": {
           "client_file": {
@@ -7977,6 +8658,18 @@
             "items": {},
             "type": "array",
             "title": "Errors"
+          },
+          "support_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "OEC:([a-fA-F0-9]{12})-(\\d{13,14})"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Id"
           }
         },
         "type": "object",
@@ -8237,6 +8930,7 @@
       "JSONFunctionInputSchema": {
         "properties": {
           "schema_content": {
+            "additionalProperties": true,
             "type": "object",
             "title": "JSON Schema",
             "description": "JSON Schema",
@@ -8255,6 +8949,7 @@
       "JSONFunctionOutputSchema": {
         "properties": {
           "schema_content": {
+            "additionalProperties": true,
             "type": "object",
             "title": "JSON Schema",
             "description": "JSON Schema",
@@ -9982,6 +10677,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10025,6 +10721,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10036,6 +10733,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10114,6 +10812,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10156,6 +10855,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10167,6 +10867,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10278,6 +10979,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10296,6 +10998,11 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "modified_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Modified At"
+          },
           "project_id": {
             "type": "string",
             "format": "uuid",
@@ -10309,6 +11016,7 @@
           "default_inputs",
           "uid",
           "created_at",
+          "modified_at",
           "project_id"
         ],
         "title": "RegisteredProjectFunction"
@@ -10333,6 +11041,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10344,6 +11053,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10434,6 +11144,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10452,6 +11163,11 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "modified_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Modified At"
+          },
           "code_url": {
             "type": "string",
             "title": "Code Url"
@@ -10464,6 +11180,7 @@
           "default_inputs",
           "uid",
           "created_at",
+          "modified_at",
           "code_url"
         ],
         "title": "RegisteredPythonCodeFunction"
@@ -10488,6 +11205,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10499,6 +11217,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10583,6 +11302,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10600,6 +11320,11 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "modified_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Modified At"
           },
           "solver_key": {
             "type": "string",
@@ -10619,6 +11344,7 @@
           "default_inputs",
           "uid",
           "created_at",
+          "modified_at",
           "solver_key",
           "solver_version"
         ],
@@ -10644,6 +11370,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10655,6 +11382,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10700,18 +11428,18 @@
         "type": "string",
         "enum": [
           "UNKNOWN",
-          "PUBLISHED",
           "NOT_STARTED",
+          "PUBLISHED",
           "PENDING",
+          "WAITING_FOR_CLUSTER",
           "WAITING_FOR_RESOURCES",
           "STARTED",
           "SUCCESS",
           "FAILED",
-          "ABORTED",
-          "WAITING_FOR_CLUSTER"
+          "ABORTED"
         ],
         "title": "RunningState",
-        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
+        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state\n\n# Computational backend states explained:\n- UNKNOWN - The backend doesn't know about the task anymore, it has disappeared from the system or it was never created (eg. when we are asking for the task)\n- NOT_STARTED - Default state when the task is created\n- PUBLISHED - The task has been submitted to the computational backend (click on \"Run\" button in the UI)\n- PENDING - Task has been transferred to the Dask scheduler and is waiting for a worker to pick it up (director-v2 --> Dask scheduler)\n   - But! it is also transition state (ex. PENDING -> WAITING_FOR_CLUSTER -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED)\n- WAITING_FOR_CLUSTER - No cluster (Dask scheduler) is available to run the task; waiting for one to become available\n- WAITING_FOR_RESOURCES - No worker (Dask worker) is available to run the task; waiting for one to become available\n- STARTED - A worker has picked up the task and is executing it\n- SUCCESS - Task finished successfully\n- FAILED - Task finished with an error\n- ABORTED - Task was aborted before completion"
       },
       "ServicePricingPlanGetLegacy": {
         "properties": {
@@ -10895,6 +11623,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10944,6 +11673,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10955,6 +11685,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11003,6 +11734,7 @@
           "content_schema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11086,6 +11818,7 @@
           "content_schema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11113,6 +11846,126 @@
           "key": "f763658f-a89a-4a90-ace4-c44631290f12",
           "kind": "input"
         }
+      },
+      "TaskGet": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "status_href": {
+            "type": "string",
+            "title": "Status Href"
+          },
+          "result_href": {
+            "type": "string",
+            "title": "Result Href"
+          },
+          "abort_href": {
+            "type": "string",
+            "title": "Abort Href"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "status_href",
+          "result_href",
+          "abort_href"
+        ],
+        "title": "TaskGet"
+      },
+      "TaskProgress": {
+        "properties": {
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          },
+          "percent": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Percent",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "TaskProgress",
+        "description": "Helps the user to keep track of the progress. Progress is expected to be\ndefined as a float bound between 0.0 and 1.0"
+      },
+      "TaskResult": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "result",
+          "error"
+        ],
+        "title": "TaskResult"
+      },
+      "TaskStatus": {
+        "properties": {
+          "task_progress": {
+            "$ref": "#/components/schemas/TaskProgress"
+          },
+          "done": {
+            "type": "boolean",
+            "title": "Done"
+          },
+          "started": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_progress",
+          "done",
+          "started"
+        ],
+        "title": "TaskStatus"
       },
       "UnitExtraInfoTier": {
         "properties": {
@@ -11249,7 +12102,6 @@
           },
           "workspace_path": {
             "type": "string",
-            "pattern": "^workspace/.*",
             "format": "path",
             "title": "Workspace Path",
             "description": "The file's relative path within the job's workspace directory. E.g. 'workspace/myfile.txt'"

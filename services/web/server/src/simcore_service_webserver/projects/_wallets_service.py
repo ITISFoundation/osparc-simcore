@@ -16,7 +16,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..users import api as users_service
+from ..users import users_service
 from ..wallets import _api as wallets_service
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
@@ -26,7 +26,7 @@ from .exceptions import (
 )
 
 
-async def get_project_wallet(app, project_id: ProjectID):
+async def get_project_wallet(app, project_id: ProjectID) -> WalletGet | None:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     wallet_db: WalletDB | None = await db.get_project_wallet(project_uuid=project_id)

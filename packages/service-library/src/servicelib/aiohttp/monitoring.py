@@ -1,6 +1,5 @@
 """Enables monitoring of some quantities needed for diagnostics"""
 
-import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from time import perf_counter
@@ -26,7 +25,7 @@ from ..prometheus_metrics import (
 )
 from .typing_extension import Handler
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _PROMETHEUS_METRICS: Final[str] = f"{__name__}.prometheus_metrics"  # noqa: N816
 
@@ -60,17 +59,15 @@ def middleware_factory(
     async def middleware_handler(request: web.Request, handler: Handler):
         # See https://prometheus.io/docs/concepts/metric_types
 
-        log_exception: BaseException | None = None
-        resp: web.StreamResponse = web.HTTPInternalServerError(
-            reason="Unexpected exception"
-        )
+        response: web.StreamResponse = web.HTTPInternalServerError()
+
         canonical_endpoint = request.path
         if request.match_info.route.resource:
             canonical_endpoint = request.match_info.route.resource.canonical
         start_time = perf_counter()
         try:
             if enter_middleware_cb:
-                with log_catch(logger=log, reraise=False):
+                with log_catch(logger=_logger, reraise=False):
                     await enter_middleware_cb(request)
 
             metrics = request.app[_PROMETHEUS_METRICS]
@@ -86,29 +83,19 @@ def middleware_factory(
                 endpoint=canonical_endpoint,
                 user_agent=user_agent,
             ):
-                resp = await handler(request)
+                response = await handler(request)
 
             assert isinstance(  # nosec
-                resp, web.StreamResponse
+                response, web.StreamResponse
             ), "Forgot envelope middleware?"
 
         except web.HTTPServerError as exc:
-            resp = exc
-            log_exception = exc
-            raise resp from exc
+            response = exc
+            raise
+
         except web.HTTPException as exc:
-            resp = exc
-            log_exception = None
-            raise resp from exc
-        except asyncio.CancelledError as exc:
-            resp = web.HTTPInternalServerError(text=f"{exc}")
-            log_exception = exc
-            raise resp from exc
-        except Exception as exc:  # pylint: disable=broad-except
-            resp = web.HTTPInternalServerError(text=f"{exc}")
-            resp.__cause__ = exc
-            log_exception = exc
-            raise resp from exc
+            response = exc
+            raise
 
         finally:
             response_latency_seconds = perf_counter() - start_time
@@ -118,29 +105,15 @@ def middleware_factory(
                 method=request.method,
                 endpoint=canonical_endpoint,
                 user_agent=user_agent,
-                http_status=resp.status,
+                http_status=response.status,
                 response_latency_seconds=response_latency_seconds,
             )
 
             if exit_middleware_cb:
-                with log_catch(logger=log, reraise=False):
-                    await exit_middleware_cb(request, resp)
+                with log_catch(logger=_logger, reraise=False):
+                    await exit_middleware_cb(request, response)
 
-            if log_exception:
-                log.error(
-                    'Unexpected server error "%s" from access: %s "%s %s" done '
-                    "in %3.2f secs. Responding with status %s",
-                    type(log_exception),
-                    request.remote,
-                    request.method,
-                    request.path,
-                    response_latency_seconds,
-                    resp.status,
-                    exc_info=log_exception,
-                    stack_info=True,
-                )
-
-        return resp
+        return response
 
     setattr(  # noqa: B010
         middleware_handler, "__middleware_name__", f"{__name__}.monitor_{app_name}"

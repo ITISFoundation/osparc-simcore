@@ -406,6 +406,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
+    is_collaborative: bool = False
+
     user_preferences_path: Path | None = None
     callbacks_mapping: Annotated[CallbacksMapping, Field(default_factory=dict)]
 
@@ -513,6 +515,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "product_name": service.product_name,
             "product_api_base_url": service.product_api_base_url,
             "paths_mapping": simcore_service_labels.paths_mapping,
+            "is_collaborative": simcore_service_labels.is_collaborative,
             "callbacks_mapping": simcore_service_labels.callbacks_mapping,
             "compose_spec": json_dumps(simcore_service_labels.compose_spec),
             "container_http_entry": simcore_service_labels.container_http_entry,

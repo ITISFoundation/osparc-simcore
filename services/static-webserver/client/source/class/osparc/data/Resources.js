@@ -142,20 +142,12 @@ qx.Class.define("osparc.data.Resources", {
           getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&tag_ids={tagIds}&order_by={orderBy}"
+            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}&type=user"
           },
           getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
-          },
-          postToTemplate: {
-            method: "POST",
-            url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}&hidden={hidden}"
-          },
-          open: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:open"
+            url: statics.API + "/projects:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}&type=user"
           },
           getWallet: {
             useCache: false,
@@ -169,14 +161,6 @@ qx.Class.define("osparc.data.Resources", {
           payDebt: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/wallet/{walletId}:pay-debt"
-          },
-          openDisableAutoStart: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"
-          },
-          close: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:close"
           },
           duplicate: {
             method: "POST",
@@ -200,14 +184,6 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/projects/{studyId}"
-          },
-          trash: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:trash"
-          },
-          untrash: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:untrash"
           },
           delete: {
             method: "DELETE",
@@ -256,11 +232,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/pricing-plan/{pricingPlanId}/pricing-unit/{pricingUnitId}"
           },
-          checkShareePermissions: {
-            useCache: false,
-            method: "GET",
-            url: statics.API + "/projects/{studyId}/nodes/-/services:access?for_gid={gid}"
-          },
           postAccessRights: {
             useCache: false,
             method: "POST",
@@ -275,10 +246,6 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "PUT",
             url: statics.API + "/projects/{studyId}/groups/{gId}"
-          },
-          shareWithEmail: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:share"
           },
           addTag: {
             useCache: false,
@@ -307,18 +274,51 @@ qx.Class.define("osparc.data.Resources", {
             method: "PATCH",
             url: statics.API + "/projects/{studyId}/metadata"
           },
+          open: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:open"
+          },
+          openDisableAutoStart: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"
+          },
+          close: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:close"
+          },
+          shareWithEmail: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:share"
+          },
+          checkShareePermissions: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/-/services:access?for_gid={gid}"
+          },
+          trash: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:trash"
+          },
+          untrash: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:untrash"
+          },
         }
       },
-      "conversations": {
-        useCache: false,
+      "conversationsStudies": {
+        useCache: false, // It has its own cache handler
         endpoints: {
-          addConversation: {
+          postConversation: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/conversations"
           },
           getConversationsPage: {
             method: "GET",
             url: statics.API + "/projects/{studyId}/conversations?offset={offset}&limit={limit}"
+          },
+          getConversation: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}"
           },
           renameConversation: {
             method: "PUT",
@@ -328,9 +328,17 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}"
           },
-          addMessage: {
+          postMessage: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages"
+          },
+          editMessage: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages/{messageId}"
+          },
+          deleteMessage: {
+            method: "DELETE",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages/{messageId}"
           },
           getMessagesPage: {
             method: "GET",
@@ -356,11 +364,11 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}&filters={filters}"
+            url: statics.API + "/computation-collection-runs?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}"
           },
           getPageHistory: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
+            url: statics.API + "/computation-collection-runs?offset={offset}&limit={limit}&order_by={orderBy}&filter_by_root_project_id={projectId}"
           },
         }
       },
@@ -369,7 +377,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
+            url: statics.API + "/computation-collection-runs/{collectionRunId}/tasks?offset={offset}&limit={limit}&order_by={orderBy}"
           },
         }
       },
@@ -602,7 +610,15 @@ qx.Class.define("osparc.data.Resources", {
           },
           getPageFilteredSorted: {
             method: "GET",
-            url: statics.API + "/projects?type=template&template_type={templateType}&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/projects?type=template&offset={offset}&limit={limit}&order_by={orderBy}&template_type={templateType}"
+          },
+          getPageSearchFilteredSorted: {
+            method: "GET",
+            url: statics.API + "/projects:search?type=template&offset={offset}&limit={limit}&order_by={orderBy}&template_type={templateType}&text={text}"
+          },
+          postToTemplate: {
+            method: "POST",
+            url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}&hidden={hidden}"
           },
         }
       },
@@ -612,10 +628,36 @@ qx.Class.define("osparc.data.Resources", {
       "functions": {
         useCache: false,
         endpoints: {
+          getOne: {
+            method: "GET",
+            url: statics.API + "/functions/{functionId}?include_extras=true"
+          },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}"
+          },
+          getPageSearch: {
+            method: "GET",
+            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}&search={text}"
+          },
           create: {
             method: "POST",
             url: statics.API + "/functions"
-          }
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/functions/{functionId}?include_extras=true"
+          },
+          putAccessRights: {
+            useCache: false,
+            method: "PUT",
+            url: statics.API + "/functions/{functionId}/groups/{gId}"
+          },
+          deleteAccessRights: {
+            useCache: false,
+            method: "DELETE",
+            url: statics.API + "/functions/{functionId}/groups/{gId}"
+          },
         }
       },
       /*
@@ -1441,7 +1483,52 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/wallets/{walletId}/licensed-items-checkouts?offset={offset}&limit={limit}"
           },
         }
-      }
+      },
+
+      /*
+       * SUPPORT CONVERSATIONS
+       */
+      "conversationsSupport": {
+        useCache: false, // It has its own cache handler
+        endpoints: {
+          postConversation: {
+            method: "POST",
+            url: statics.API + "/conversations"
+          },
+          getConversationsPage: {
+            method: "GET",
+            url: statics.API + "/conversations?type=SUPPORT&offset={offset}&limit={limit}"
+          },
+          getConversation: {
+            method: "GET",
+            url: statics.API + "/conversations/{conversationId}"
+          },
+          renameConversation: {
+            method: "PATCH",
+            url: statics.API + "/conversations/{conversationId}"
+          },
+          deleteConversation: {
+            method: "DELETE",
+            url: statics.API + "/conversations/{conversationId}"
+          },
+          postMessage: {
+            method: "POST",
+            url: statics.API + "/conversations/{conversationId}/messages"
+          },
+          editMessage: {
+            method: "PUT",
+            url: statics.API + "/conversations/{conversationId}/messages/{messageId}"
+          },
+          deleteMessage: {
+            method: "DELETE",
+            url: statics.API + "/conversations/{conversationId}/messages/{messageId}"
+          },
+          getMessagesPage: {
+            method: "GET",
+            url: statics.API + "/conversations/{conversationId}/messages?offset={offset}&limit={limit}"
+          },
+        }
+      },
     };
   },
 

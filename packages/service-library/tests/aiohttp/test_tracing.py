@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import importlib
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
@@ -55,10 +55,10 @@ def set_and_clean_settings_env_vars(
     indirect=True,
 )
 async def test_valid_tracing_settings(
+    mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in,
-    uninstrument_opentelemetry: Iterator[None],
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
@@ -79,10 +79,10 @@ async def test_valid_tracing_settings(
     indirect=True,
 )
 async def test_invalid_tracing_settings(
+    mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in,
-    uninstrument_opentelemetry: Iterator[None],
 ) -> TestClient:
     with pytest.raises(ValidationError):
         TracingSettings()
@@ -128,11 +128,11 @@ def manage_package(request):
     indirect=True,
 )
 async def test_tracing_setup_package_detection(
+    mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
     manage_package,
-    uninstrument_opentelemetry: Iterator[None],
 ):
     package_name = manage_package
     importlib.import_module(package_name)
@@ -169,7 +169,6 @@ async def test_trace_id_in_response_header(
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in,
-    uninstrument_opentelemetry: Iterator[None],
     server_response: web.Response | web.HTTPException,
 ) -> None:
     app = web.Application()

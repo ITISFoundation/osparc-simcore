@@ -17,7 +17,7 @@ from ..projects.api import (
     delete_project_group_without_checking_permissions,
 )
 from ..projects.exceptions import ProjectNotFoundError
-from ..users.api import get_user, get_user_id_from_gid, get_users_in_group
+from ..users import users_service
 from ..users.exceptions import UserNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -34,15 +34,17 @@ async def _fetch_new_project_owner_from_groups(
     # go through user_to_groups table and fetch all uid for matching gid
     for group_gid in standard_groups:
         # remove the current owner from the bunch
-        target_group_users = await get_users_in_group(app=app, gid=int(group_gid)) - {
-            user_id
-        }
+        target_group_users = await users_service.get_users_in_group(
+            app=app, gid=int(group_gid)
+        ) - {user_id}
         _logger.info("Found group users '%s'", target_group_users)
 
         for possible_user_id in target_group_users:
             # check if the possible_user is still present in the db
             try:
-                possible_user = await get_user(app=app, user_id=possible_user_id)
+                possible_user = await users_service.get_user(
+                    app=app, user_id=possible_user_id
+                )
                 return int(possible_user["primary_gid"])
             except UserNotFoundError:  # noqa: PERF203
                 _logger.warning(
@@ -130,7 +132,7 @@ async def replace_current_owner(
     project: dict,
 ) -> None:
     try:
-        new_project_owner_id = await get_user_id_from_gid(
+        new_project_owner_id = await users_service.get_user_id_from_gid(
             app=app, primary_gid=new_project_owner_gid
         )
 

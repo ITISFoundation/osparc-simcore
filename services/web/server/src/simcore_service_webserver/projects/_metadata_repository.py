@@ -16,6 +16,7 @@ from simcore_postgres_database.utils_projects_metadata import (
     DBProjectInvalidParentNodeError,
     DBProjectInvalidParentProjectError,
     DBProjectNotFoundError,
+    ProjectMetadata,
 )
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
@@ -93,6 +94,19 @@ async def get_project_custom_metadata(
         )
         # NOTE: if no metadata in table, it returns None  -- which converts here to --> {}
         return TypeAdapter(MetadataDict).validate_python(metadata.custom or {})
+
+
+@_handle_projects_metadata_exceptions
+async def get_project_metadata_or_none(
+    engine: Engine, project_uuid: ProjectID
+) -> ProjectMetadata | None:
+    async with engine.acquire() as connection:
+        try:
+            return await utils_projects_metadata.get(
+                connection, project_uuid=project_uuid
+            )
+        except DBProjectNotFoundError:
+            return None
 
 
 @_handle_projects_metadata_exceptions

@@ -18,7 +18,7 @@ from pydantic import (
 from .._utils_pydantic import UriSchema
 from ..domain.files import File as DomainFile
 from ..domain.files import FileName
-from ._base import ApiServerInputSchema, ApiServerOutputSchema
+from .base import ApiServerInputSchema, ApiServerOutputSchema
 
 
 class UserFile(ApiServerInputSchema):

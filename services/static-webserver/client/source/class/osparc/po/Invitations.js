@@ -78,7 +78,8 @@ qx.Class.define("osparc.po.Invitations", {
               "guest": form.getItems()["email"].getValue()
             }
           };
-          if (form.getItems()["credits"] > 0) {
+          const extraCreditsInUsd = form.getItems()["credits"].getValue();
+          if (extraCreditsInUsd > 0) {
             params.data["extraCreditsInUsd"] = extraCreditsInUsd;
           }
           if (form.getItems()["withExpiration"].getValue()) {

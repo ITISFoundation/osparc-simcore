@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 from pydantic import BaseModel, ConfigDict, SecretStr, ValidationInfo
 
-from ._constants import MSG_PASSWORD_MISMATCH
+from .constants import MSG_PASSWORD_MISMATCH
 
 
 class InputSchema(BaseModel):

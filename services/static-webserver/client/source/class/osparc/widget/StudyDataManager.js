@@ -34,15 +34,15 @@ qx.Class.define("osparc.widget.StudyDataManager", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param studyId {String} StudyId
+    * @param studyData {Object} Study Data
     * @param nodeId {String} NodeId
     */
-  construct: function(studyId, nodeId) {
+  construct: function(studyData, nodeId) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.setStudyId(studyId);
+    this.setStudyData(studyData);
 
     if (nodeId) {
       this.setNodeId(nodeId);
@@ -53,8 +53,8 @@ qx.Class.define("osparc.widget.StudyDataManager", {
   },
 
   statics: {
-    popUpInWindow: function(studyId, nodeId, title) {
-      const studyDataManager = new osparc.widget.StudyDataManager(studyId, nodeId);
+    popUpInWindow: function(studyData, nodeId, title) {
+      const studyDataManager = new osparc.widget.StudyDataManager(studyData, nodeId);
       if (!title) {
         title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + qx.locale.Manager.tr(" Files");
       }
@@ -63,8 +63,8 @@ qx.Class.define("osparc.widget.StudyDataManager", {
   },
 
   properties: {
-    studyId: {
-      check: "String",
+    studyData: {
+      check: "Object",
       init: null,
       nullable: false
     },
@@ -82,6 +82,10 @@ qx.Class.define("osparc.widget.StudyDataManager", {
       switch (id) {
         case "tree-folder-view":
           control = new osparc.file.TreeFolderView();
+          control
+            .getChildControl("folder-viewer")
+            .getChildControl("selected-file-layout")
+            .setDeleteEnabled(osparc.data.model.Study.canIDelete(this.getStudyData()["accessRights"]));
           this._add(control, {
             flex: 1
           });
@@ -102,14 +106,15 @@ qx.Class.define("osparc.widget.StudyDataManager", {
     __reloadTree: function() {
       const treeFolderView = this.getChildControl("tree-folder-view");
 
+      const studyId = this.getStudyData()["uuid"];
       const foldersTree = treeFolderView.getChildControl("folder-tree");
       foldersTree.resetCache();
       if (this.getNodeId()) {
-        foldersTree.populateNodeTree(this.getStudyId(), this.getNodeId());
-        treeFolderView.requestSize(this.getStudyId(), this.getNodeId());
-      } else if (this.getStudyId()) {
-        foldersTree.populateStudyTree(this.getStudyId());
-        treeFolderView.requestSize(this.getStudyId());
+        foldersTree.populateNodeTree(studyId, this.getNodeId());
+        treeFolderView.requestSize(studyId, this.getNodeId());
+      } else if (studyId) {
+        foldersTree.populateStudyTree(studyId);
+        treeFolderView.requestSize(studyId);
       }
 
       const folderViewer = treeFolderView.getChildControl("folder-viewer");

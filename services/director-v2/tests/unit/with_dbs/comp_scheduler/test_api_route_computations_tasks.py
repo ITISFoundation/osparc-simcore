@@ -117,14 +117,15 @@ async def project_id(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     user: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    with_product: dict[str, Any],
 ) -> ProjectID:
     """project uuid of a saved project (w/ tasks up-to-date)"""
 
     # insert project -> db
-    proj = await project(user, workbench=fake_workbench_without_outputs)
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
 
     # insert pipeline  -> comp_pipeline
     await create_pipeline(
@@ -132,7 +133,8 @@ async def project_id(
         dag_adjacency_list=fake_workbench_adjacency,
     )
     # insert tasks -> comp_tasks
-    comp_tasks = await create_tasks(user=user, project=proj)
+    comp_tasks = await create_tasks_from_project(user=user, project=proj)
+    assert comp_tasks
 
     return proj.uuid
 
@@ -166,7 +168,7 @@ async def test_get_all_tasks_log_files(
     assert resp.status_code == status.HTTP_200_OK
     log_files = TypeAdapter(list[TaskLogFileGet]).validate_json(resp.text)
     assert log_files
-    assert all(l.download_link for l in log_files)
+    assert all(file.download_link for file in log_files)
 
 
 async def test_get_task_logs_file(

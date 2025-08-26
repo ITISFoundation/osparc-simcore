@@ -3,9 +3,9 @@ from asyncio import Task
 from datetime import timedelta
 from typing import Final
 
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.healthchecks import IsResponsive, LivenessResult
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.db_asyncpg_utils import check_postgres_liveness
 from servicelib.fastapi.db_asyncpg_engine import get_engine

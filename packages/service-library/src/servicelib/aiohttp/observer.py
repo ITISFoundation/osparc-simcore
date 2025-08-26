@@ -9,6 +9,7 @@ from collections.abc import Callable
 
 from aiohttp import web
 
+from ..aiohttp.application_setup import ensure_single_setup
 from ..utils import logged_gather
 
 log = logging.getLogger(__name__)
@@ -17,10 +18,10 @@ log = logging.getLogger(__name__)
 _APP_OBSERVER_EVENTS_REGISTRY_KEY = "{__name__}.event_registry"
 
 
-class ObserverRegistryNotFoundError(RuntimeError):
-    ...
+class ObserverRegistryNotFoundError(RuntimeError): ...
 
 
+@ensure_single_setup(__name__, logger=log)
 def setup_observer_registry(app: web.Application):
     # only once
     app.setdefault(_APP_OBSERVER_EVENTS_REGISTRY_KEY, defaultdict(list))

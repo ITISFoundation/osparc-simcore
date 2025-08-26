@@ -1,19 +1,19 @@
 import logging
 from collections import deque
-from typing import Any, cast
+from typing import Any
 
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.basic_types import EnvVarKey, PortInt
 from models_library.boot_options import BootOption
 from models_library.docker import (
     DockerPlacementConstraint,
-    to_simcore_runtime_docker_label_key,
 )
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
 )
+from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from models_library.services_resources import (
     CPU_100_PERCENT,
     DEFAULT_SINGLE_SERVICE_NAME,
@@ -495,9 +495,7 @@ async def merge_settings_before_use(
 
     # merge the settings from the all the involved services
     for compose_spec_key, service_labels in labels_for_involved_services.items():
-        service_settings: SimcoreServiceSettingsLabel = cast(
-            SimcoreServiceSettingsLabel, service_labels.settings
-        )
+        service_settings: SimcoreServiceSettingsLabel = service_labels.settings
         settings.extend(
             # inject compose spec key, used to target container specific services
             _add_compose_destination_containers_to_settings_entries(

@@ -4,6 +4,7 @@ disable-default-queries: false
 
 paths:
   - packages/aws-library/src
+  - packages/celery-library/src
   - packages/dask-task-models-library/src
   - packages/models-library/src/models_library
   - packages/postgres-database/src/simcore_postgres_database

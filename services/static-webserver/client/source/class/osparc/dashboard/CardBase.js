@@ -41,6 +41,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateTutorial": "qx.event.type.Data",
+    "updateFunction": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
@@ -147,10 +148,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
             return false;
           }
           case "shared-with-everyone": {
-            const everyoneGroupIds = [
-              groupsStore.getEveryoneProductGroup().getGroupId(),
-              groupsStore.getEveryoneGroup().getGroupId(),
-            ];
+            const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
             const found = Object.keys(checks).some(gId => everyoneGroupIds.includes(parseInt(gId)));
             // show those that are shared with "1" or product everyone's groupId
             return !found;
@@ -189,13 +187,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
       // Icon
       const groupsStore = osparc.store.Groups.getInstance();
-      const groupEveryone = groupsStore.getEveryoneGroup();
-      const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+      const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
       const organizationIds = Object.keys(organizations).map(key => parseInt(key));
-      if (gids.includes(groupEveryone.getGroupId()) || gids.includes(groupProductEveryone.getGroupId())) {
+      if (gids.some(gid => everyoneGroupIds.includes(gid))) {
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
       } else if (organizationIds.filter(value => gids.includes(value)).length) { // find intersection
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
@@ -219,16 +216,21 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.addHintFromGids(shareIcon, gids);
     },
 
+    populateMyAccessRightsIcon: function(shareIcon, myAccessRights) {
+      const canIWrite = Boolean(myAccessRights["write"]);
+      shareIcon.set({
+        source: canIWrite ? osparc.dashboard.CardBase.SHARE_ICON : osparc.dashboard.CardBase.SHARED_USER,
+        toolTipText: canIWrite ? "" : qx.locale.Manager.tr("Shared"),
+      });
+    },
+
     addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
-      const groupEveryone = groupsStore.getEveryoneGroup();
-      const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+      const everyoneGroups = groupsStore.getEveryoneGroups();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
-      const groups = [];
-      groups.push(groupEveryone);
-      groups.push(groupProductEveryone);
+      const groups = everyoneGroups.slice();
       groups.push(...Object.values(organizations));
       const sharedGrps = [];
       groups.forEach(group => {
@@ -266,7 +268,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
               break;
             }
             let sharedGrpLabel = sharedGrps[i].getLabel();
-            if ([groupEveryone, groupProductEveryone].includes(sharedGrps[i])) {
+            if (everyoneGroups.includes(sharedGrps[i])) {
               sharedGrpLabel = "Public";
             }
             if (!sharedGrpLabels.includes(sharedGrpLabel)) {
@@ -326,6 +328,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: [
         "study",
         "template",
+        "function",
         "tutorial",
         "hypertool",
         "service",
@@ -508,12 +511,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       return (
         this.getBlocked() === true || // It could be blocked by IN_USE or UNKNOWN_SERVICE
-        (this.isResourceType("study") && (studyBrowserContext === "trash")) // It could a trashed study
+        (this.isResourceType("study") && (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.TRASH)) // It could a trashed study
       );
     },
 
     __applyResourceData: function(resourceData) {
       let uuid = null;
+      let title = "";
       let owner = null;
       let workbench = null;
       let defaultHits = null;
@@ -524,11 +528,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
         case "tutorial":
         case "hypertool":
           uuid = resourceData.uuid ? resourceData.uuid : null;
+          title = resourceData.name,
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
+          workbench = resourceData.workbench ? resourceData.workbench : {};
+          break;
+        case "function":
+          uuid = resourceData.uuid ? resourceData.uuid : null;
+          title = resourceData.title,
+          owner = "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
+          title = resourceData.name,
           owner = resourceData.owner ? resourceData.owner : resourceData.contact;
           icon = resourceData["icon"] || osparc.dashboard.CardBase.PRODUCT_ICON;
           defaultHits = 0;
@@ -538,7 +550,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.set({
         resourceType: resourceData.resourceType,
         uuid,
-        title: resourceData.name,
+        title,
         description: resourceData.description,
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
@@ -555,26 +567,35 @@ qx.Class.define("osparc.dashboard.CardBase", {
         workbench
       });
 
-      if ([
-        "study",
-        "template",
-        "tutorial",
-        "hypertool"
-      ].includes(resourceData["resourceType"])) {
-        osparc.store.Services.getStudyServices(resourceData.uuid)
-          .then(resp => {
-            const services = resp["services"];
-            resourceData["services"] = services;
-            this.setServices(services);
-          })
-          .catch(err => {
-            resourceData["services"] = null;
-            this.setServices(null);
-            console.error(err);
-          });
+      switch (resourceData["resourceType"]) {
+        case "study":
+        case "template":
+        case "tutorial":
+        case "hypertool": {
+          osparc.store.Services.getStudyServices(resourceData.uuid)
+            .then(resp => {
+              const services = resp["services"];
+              resourceData["services"] = services;
+              this.setServices(services);
+            })
+            .catch(err => {
+              resourceData["services"] = null;
+              this.setServices(null);
+              console.error(err);
+            });
 
-        osparc.study.Utils.guessIcon(resourceData)
-          .then(iconSource => this.setIcon(iconSource));
+          osparc.study.Utils.guessIcon(resourceData)
+            .then(iconSource => this.setIcon(iconSource));
+
+          break;
+        }
+        case "function":
+          if (resourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
+            this.setIcon(osparc.data.model.StudyUI.PIPELINE_ICON);
+          } else {
+            this.setIcon(osparc.dashboard.CardBase.PRODUCT_ICON);
+          }
+          break;
       }
     },
 
@@ -768,35 +789,38 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyState: function(state) {
-      let lockInUse = false;
-      if ("locked" in state && "value" in state["locked"]) {
-        lockInUse = state["locked"]["value"];
-      }
-      this.setBlocked(lockInUse ? "IN_USE" : false);
-      if (lockInUse) {
-        this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
+      const projectLocked = osparc.study.Utils.state.isProjectLocked(state);
+      const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
+      const pipelineState = osparc.study.Utils.state.getPipelineState(state);
+
+      this.__showCurrentUserGroupIds(currentUserGroupIds);
+
+      this.setBlocked(projectLocked ? "IN_USE" : false);
+      if (projectLocked) {
+        this.__showBlockedCardFromStatus("IN_USE", state);
       }
 
-      const pipelineState = ("state" in state) ? state["state"]["value"] : undefined;
       if (pipelineState) {
-        this.__applyPipelineState(state["state"]["value"]);
+        this.__applyPipelineState(pipelineState);
       }
     },
 
     __applyDebt: function(debt) {
       this.setBlocked(debt ? "IN_DEBT" : false);
       if (debt) {
-        this.__showBlockedCardFromStatus("IN_DEBT", debt);
+        this.__showBlockedCardFromStatus("IN_DEBT");
       }
     },
 
-    // pipelineState: ["NOT_STARTED", "STARTED", "SUCCESS", "ABORTED", "FAILED", "UNKNOWN"]
+    // pipelineState: ["NOT_STARTED", "PUBLISHED", "STOPPING", "STARTED", "SUCCESS", "ABORTED", "FAILED", "UNKNOWN"]
     __applyPipelineState: function(pipelineState) {
       let iconSource;
       let toolTipText;
       let borderColor;
       switch (pipelineState) {
+        case "PUBLISHED":
         case "STARTED":
+        case "STOPPING":
           iconSource = "@FontAwesome5Solid/spinner/10";
           toolTipText = this.tr("Running");
           borderColor = "info";
@@ -852,48 +876,70 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
     },
 
-    __showBlockedCardFromStatus: function(reason, moreInfo) {
+    __showCurrentUserGroupIds: function(currentUserGroupIds) {
+      const avatarGroup = this.getChildControl("avatar-group");
+      avatarGroup.setUserGroupIds(currentUserGroupIds);
+    },
+
+    __showBlockedCardFromStatus: function(reason, state) {
       switch (reason) {
         case "IN_USE":
-          this.__blockedInUse(moreInfo);
+          this.__blockedInUse(state);
           break;
         case "IN_DEBT":
-          this.__blockedInDebt(moreInfo);
+          this.__blockedInDebt();
           break;
       }
     },
 
-    __blockedInUse: function(lockedStatus) {
-      const status = lockedStatus["status"];
-      const owner = lockedStatus["owner"];
-      let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"] || this.tr("A user"), owner["last_name"] || ""); // it will be replaced by "userName"
+    __blockedInUse: function(state) {
+      const projectStatus = osparc.study.Utils.state.getProjectStatus(state);
+      const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
+      const usersStore = osparc.store.Users.getInstance();
+      const userPromises = currentUserGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
+      const usernames = [];
+      let toolTip = "";
       let image = null;
-      switch (status) {
-        case "CLOSING":
-          image = "@FontAwesome5Solid/key/";
-          toolTip += this.tr(" is closing it...");
-          break;
-        case "CLONING":
-          image = "@FontAwesome5Solid/clone/";
-          toolTip += this.tr(" is cloning it...");
-          break;
-        case "EXPORTING":
-          image = osparc.task.Export.ICON+"/";
-          toolTip += this.tr(" is exporting it...");
-          break;
-        case "OPENING":
-          image = "@FontAwesome5Solid/key/";
-          toolTip += this.tr(" is opening it...");
-          break;
-        case "OPENED":
-          image = "@FontAwesome5Solid/lock/";
-          toolTip += this.tr(" is using it.");
-          break;
-        default:
-          image = "@FontAwesome5Solid/lock/";
-          break;
-      }
-      this.__showBlockedCard(image, toolTip);
+      Promise.all(userPromises)
+        .then(usersResult => {
+          usersResult.forEach(user => {
+            usernames.push(user.getUsername());
+          });
+        })
+        .catch(error => {
+          console.error("Failed to fetch user data for avatars:", error);
+        })
+        .finally(() => {
+          switch (projectStatus) {
+            case "CLOSING":
+              image = "@FontAwesome5Solid/key/";
+              toolTip += this.tr("Closing...");
+              break;
+            case "CLONING":
+              image = "@FontAwesome5Solid/clone/";
+              toolTip += this.tr("Cloning...");
+              break;
+            case "EXPORTING":
+              image = osparc.task.Export.ICON+"/";
+              toolTip += this.tr("Exporting...");
+              break;
+            case "OPENING":
+              image = "@FontAwesome5Solid/key/";
+              toolTip += this.tr("Opening...");
+              break;
+            case "OPENED":
+              image = "@FontAwesome5Solid/lock/";
+              toolTip += this.tr("In use...");
+              break;
+            default:
+              image = "@FontAwesome5Solid/lock/";
+              break;
+          }
+          usernames.forEach(username => {
+            toolTip += "<br>" + username;
+          });
+          this.__showBlockedCard(image, toolTip);
+        });
     },
 
     __blockedInDebt: function() {
@@ -1024,28 +1070,32 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __openResourceDetails: function(openWindowCB) {
       const resourceData = this.getResourceData();
-      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      const {
+        resourceDetails,
+        window,
+      } = osparc.dashboard.ResourceDetails.popUpInWindow(resourceData);
+
       resourceDetails.addListenerOnce("pagesAdded", () => {
         if (openWindowCB in resourceDetails) {
           resourceDetails[openWindowCB]();
         }
-      })
-      const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+      });
       [
         "updateStudy",
         "updateTemplate",
         "updateTutorial",
+        "updateFunction",
         "updateService",
         "updateHypertool",
       ].forEach(ev => {
         resourceDetails.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
       });
       resourceDetails.addListener("publishTemplate", e => {
-        win.close();
+        window.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
       resourceDetails.addListener("openStudy", e => {
-        const openCB = () => win.close();
+        const openCB = () => window.close();
         const studyId = e.getData()["uuid"];
         const isStudyCreation = false;
         this._startStudyById(studyId, openCB, null, isStudyCreation);
@@ -1059,7 +1109,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     openData: function() {
       const resourceData = this.getResourceData();
-      osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]);
+      osparc.widget.StudyDataManager.popUpInWindow(resourceData);
     },
 
     openBilling: function() {

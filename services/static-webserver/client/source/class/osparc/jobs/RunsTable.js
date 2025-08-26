@@ -19,16 +19,16 @@
 qx.Class.define("osparc.jobs.RunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(projectUuid = null, includeChildren = false, runningOnly = true) {
+  construct: function(projectId = null, runningOnly = true) {
     this.base(arguments);
 
     this.set({
-      projectUuid,
+      projectId,
       runningOnly,
     });
 
-    const model = new osparc.jobs.RunsTableModel(projectUuid, includeChildren);
-    this.bind("projectUuid", model, "projectUuid");
+    const model = new osparc.jobs.RunsTableModel(projectId);
+    this.bind("projectId", model, "projectId");
     this.bind("runningOnly", model, "runningOnly");
     this.setTableModel(model);
 
@@ -39,27 +39,47 @@ qx.Class.define("osparc.jobs.RunsTable", {
     });
 
     const columnModel = this.getTableColumnModel();
-    columnModel.setColumnVisible(this.self().COLS.PROJECT_UUID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.COLLECTION_RUN_ID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.PROJECT_IDS.column, false);
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
     const iconPathStop = "osparc/icons/circle-xmark-text.svg";
-    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop);
+    const shouldShowCancel = cellInfo => {
+      if (cellInfo && cellInfo.rowData && cellInfo.rowData["state"]) {
+        return [
+          "Running",
+        ].includes(cellInfo.rowData["state"]);
+      }
+      return false;
+    }
+    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop, shouldShowCancel);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
 
     const iconPathInfo = "osparc/icons/circle-info-text.svg";
-    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
+    const jobsStore =osparc.store.Jobs.getInstance();
+    const shouldShowInfo = cellInfo => {
+      if (cellInfo && cellInfo.rowData && cellInfo.rowData["collectionRunId"]) {
+        const job = jobsStore.getJob(cellInfo.rowData["collectionRunId"]);
+        if (!job) {
+          return false;
+        }
+        return Object.keys(job.getInfo()).length > 0;
+      }
+      return false;
+    }
+    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo, shouldShowInfo);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_INFO.column, fontButtonRendererInfo);
 
     this.__attachHandlers();
   },
 
   properties: {
-    projectUuid: {
+    projectId: {
       check: "String",
       init: null,
       nullable: true,
-      event: "changeProjectUuid",
+      event: "changeProjectId",
     },
 
     runningOnly: {
@@ -76,54 +96,60 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
   statics: {
     COLS: {
-      PROJECT_UUID: {
-        id: "projectUuid",
+      COLLECTION_RUN_ID: {
+        id: "collectionRunId",
         column: 0,
-        label: qx.locale.Manager.tr("Project Id"),
+        label: qx.locale.Manager.tr("Collection Run Id"),
         width: 200
       },
-      PROJECT_NAME: {
-        id: "projectName",
+      PROJECT_IDS: {
+        id: "projectIds",
         column: 1,
-        label: qx.locale.Manager.tr("Project"),
+        label: qx.locale.Manager.tr("Project Ids"),
+        width: 200
+      },
+      NAME: {
+        id: "name",
+        column: 2,
+        label: qx.locale.Manager.tr("Name"),
         width: 150,
       },
       STATE: {
         id: "state",
-        column: 2,
+        column: 3,
         label: qx.locale.Manager.tr("Status"),
         width: 150,
       },
       SUBMIT: {
         id: "submit",
-        column: 3,
+        column: 4,
         label: qx.locale.Manager.tr("Queued"),
         width: 130,
         sortableMap: "submitted_at",
       },
       START: {
         id: "start",
-        column: 4,
+        column: 5,
         label: qx.locale.Manager.tr("Started"),
         width: 130,
         sortableMap: "started_at",
       },
       END: {
         id: "end",
-        column: 5,
+        column: 6,
         label: qx.locale.Manager.tr("Ended"),
         width: 130,
         sortableMap: "ended_at",
       },
       ACTION_CANCEL: {
         id: "action_cancel",
-        column: 6,
+        column: 7,
         label: qx.locale.Manager.tr("Cancel"),
         width: 50
       },
       ACTION_INFO: {
         id: "action_info",
-        column: 7,
+        column: 8,
         label: qx.locale.Manager.tr("Info"),
         width: 50
       },
@@ -163,21 +189,18 @@ qx.Class.define("osparc.jobs.RunsTable", {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          const job = osparc.store.Jobs.getInstance().getJob(rowData["projectUuid"]);
+          const job = osparc.store.Jobs.getInstance().getJob(rowData["collectionRunId"]);
           if (!job) {
             return;
           }
-          const allInfo = {
-            "image": job.getInfo() ? osparc.utils.Utils.deepCloneObject(job.getInfo()) : {},
-            "customMetadata": job.getCustomMetadata() ? osparc.utils.Utils.deepCloneObject(job.getCustomMetadata()) : {},
-          }
-          const runInfo = new osparc.jobs.Info(allInfo);
+          const info = job.getInfo() ? osparc.utils.Utils.deepCloneObject(job.getInfo()) : {}
+          const runInfo = new osparc.jobs.Info(info);
           const win = osparc.jobs.Info.popUpInWindow(runInfo);
-          win.setCaption(rowData["projectName"]);
+          win.setCaption(rowData["name"]);
           break;
         }
         case "cancel": {
-          this.__cancelRun(rowData);
+          this.__cancelRunCollection(rowData);
           break;
         }
         default:
@@ -185,8 +208,8 @@ qx.Class.define("osparc.jobs.RunsTable", {
       }
     },
 
-    __cancelRun: function(rowData) {
-      const msg = this.tr("Are you sure you want to cancel") + " <b>" + rowData["projectName"] + "</b>?";
+    __cancelRunCollection: function(rowData) {
+      const msg = this.tr("Are you sure you want to cancel") + " <b>" + rowData["name"] + "</b>?";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Cancel Run"),
         confirmText: this.tr("Cancel"),
@@ -199,13 +222,17 @@ qx.Class.define("osparc.jobs.RunsTable", {
       confirmationWin.open();
       confirmationWin.addListener("close", () => {
         if (confirmationWin.getConfirmed()) {
-          const params = {
-            url: {
-              "studyId": rowData["projectUuid"],
-            },
-          };
-          osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
-            .then(() => osparc.FlashMessenger.logAs(this.tr("Stopping pipeline"), "INFO"))
+          const promises = [];
+          rowData["projectIds"].forEach(projectId => {
+            const params = {
+              url: {
+                "studyId": projectId,
+              },
+            };
+            promises.push(osparc.data.Resources.fetch("runPipeline", "stopPipeline", params))
+          });
+          Promise.all(promises)
+            .then(() => osparc.FlashMessenger.logAs(this.tr("Stopping Run"), "INFO"))
             .catch(err => osparc.FlashMessenger.logError(err));
         }
       }, this);

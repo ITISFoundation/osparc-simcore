@@ -35,7 +35,7 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
             'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
             min_length=44,
             validation_alias=AliasChoices(
-                "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
+                "WEBSERVER_SESSION_SECRET_KEY", "SESSION_SECRET_KEY"
             ),
         ),
     ]
@@ -65,9 +65,7 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
     LOG_LEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("API_SERVER_LOGLEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
 

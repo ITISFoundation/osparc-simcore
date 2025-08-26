@@ -27,27 +27,10 @@ from .events import (
 )
 from .settings import ApplicationSettings
 
-LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-NOISY_LOGGERS = (
-    "aiocache",
-    "botocore",
-    "hpack",
-)
-
 _logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
-    )
-
-    for name in NOISY_LOGGERS:
-        logging.getLogger(name).setLevel(quiet_level)
-
-    _logger.debug("App settings:\n%s", settings.model_dump_json(indent=1))
-
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],

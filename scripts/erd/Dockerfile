@@ -8,7 +8,7 @@
 #
 
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.6"
+ARG UV_VERSION="0.7"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
@@ -28,10 +28,6 @@ RUN apt-get update \
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
 COPY --from=uv_build /uv /uvx /bin/
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv pip install --upgrade \
-  wheel \
-  setuptools
 
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/uv \

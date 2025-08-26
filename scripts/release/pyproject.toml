@@ -8,7 +8,7 @@ version = "1.2.3"
 authors = [{name="Matus Drobuliak", email="drobuliak@itis.swiss" }]
 description = "Helper script for monitoring releases"
 readme = "README.md"
-dependencies = ["arrow", "python-dotenv","pydantic", "pydantic-settings", "typer[all]>=0.9", "rich", "requests"]
+dependencies = ["arrow", "python-dotenv","pydantic", "pydantic-settings", "typer>=0.9", "rich", "requests"]
 requires-python = ">=3.10"
 
 [project.scripts]

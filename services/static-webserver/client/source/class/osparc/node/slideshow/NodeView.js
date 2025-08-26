@@ -38,13 +38,6 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
 
   statics: {
     LOGGER_HEIGHT: 28,
-
-    isPropsFormShowable: function(node) {
-      if (node && ("getPropsForm" in node) && node.getPropsForm()) {
-        return node.getPropsForm().hasVisibleInputs();
-      }
-      return false;
-    },
   },
 
   members: {
@@ -55,12 +48,23 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       this._settingsLayout.removeAll();
 
       const node = this.getNode();
-      const propsForm = node.getPropsForm();
-      if (propsForm && node.hasInputs()) {
-        propsForm.addListener("changeChildVisibility", () => this.__checkSettingsVisibility(), this);
-        this._settingsLayout.add(propsForm);
+      if (
+        node.isComputational() &&
+        node.hasInputs() &&
+        "getPropsForm" in node &&
+        node.getPropsForm() &&
+        node.getPropsForm().hasVisibleInputs()
+      ) {
+        this._settingsLayout.add(node.getPropsForm());
+
+        // lock the inputs if the node is locked
+        node.getStatus().getLockState().bind("locked", node.getPropsForm(), "enabled", {
+          converter: locked => !locked
+        });
       }
-      this.__checkSettingsVisibility();
+
+      const showSettings = node.isComputational();
+      this._settingsLayout.setVisibility(showSettings ? "visible" : "excluded");
 
       this._mainView.add(this._settingsLayout);
     },
@@ -72,10 +76,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       const loadingPage = this.getNode().getLoadingPage();
       const iFrame = this.getNode().getIFrame();
       if (loadingPage && iFrame) {
-        const node = this.getNode();
-        node.getIframeHandler().addListener("iframeChanged", () => this.__iFrameChanged(), this);
-        iFrame.addListener("load", () => this.__iFrameChanged());
-        this.__iFrameChanged();
+        osparc.desktop.WorkbenchView.listenToIframeStateChanges(this.getNode(), this._iFrameLayout);
       } else {
         // This will keep what comes after at the bottom
         this._iFrameLayout.add(new qx.ui.core.Spacer(), {
@@ -99,7 +100,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
         this._outputsLayout.add(outputsForm);
       }
 
-      this._outputsBtn.set({
+      this.getOutputsButton().set({
         value: false,
         enabled: this.getNode().hasOutputs() > 0
       });
@@ -128,33 +129,5 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
     _applyNode: function(node) {
       this.base(arguments, node);
     },
-
-    __checkSettingsVisibility: function() {
-      const isSettingsGroupShowable = this.isSettingsGroupShowable();
-      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
-    },
-
-    isSettingsGroupShowable: function() {
-      const node = this.getNode();
-      if (node.isComputational()) {
-        return this.self().isPropsFormShowable(node);
-      }
-      return false;
-    },
-
-    __iFrameChanged: function() {
-      this._iFrameLayout.removeAll();
-
-      const node = this.getNode();
-      if (node && node.getIFrame()) {
-        const loadingPage = node.getLoadingPage();
-        const iFrame = node.getIFrame();
-        const src = iFrame.getSource();
-        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-        this._iFrameLayout.add(iFrameView, {
-          flex: 1
-        });
-      }
-    }
   }
 });

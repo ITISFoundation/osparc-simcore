@@ -1,18 +1,19 @@
 # mypy: disable-error-code=truthy-function
 from typing import Annotated, Any, Literal, TypeAlias
 
-from models_library.groups import GroupID
-from models_library.projects import ProjectID
-from models_library.services_history import ServiceRelease
 from pydantic import ConfigDict, Field
+from pydantic.config import JsonDict
 
 from ..access_rights import ExecutableAccessRights
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
+from ..groups import GroupID
+from ..projects import ProjectID
 from ..projects_nodes import InputID, InputsDict, PartialNode
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
+from ..services_history import ServiceRelease
 from ..services_resources import ServiceResourcesDict
 from ._base import InputSchemaWithoutCamelCase, OutputSchema
 
@@ -163,14 +164,20 @@ class NodeGetIdle(OutputSchema):
     def from_node_id(cls, node_id: NodeID) -> "NodeGetIdle":
         return cls(service_state="idle", service_uuid=node_id)
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "service_state": "idle",
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "service_state": "idle",
+                    }
+                ]
             }
-        }
-    )
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 class NodeGetUnknown(OutputSchema):

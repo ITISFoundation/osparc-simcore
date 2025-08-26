@@ -6,7 +6,9 @@ from typing import Final
 
 from aiohttp import web
 from models_library.groups import GroupID
+from models_library.projects_state import RUNNING_STATE_COMPLETED_STATES
 from models_library.rabbitmq_messages import (
+    ComputationalPipelineStatusMessage,
     EventRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
@@ -18,16 +20,15 @@ from models_library.socketio import SocketMessageDict
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather, logged_gather
 
-from ..projects import _projects_service
-from ..projects.exceptions import ProjectNotFoundError
+from ..projects import _nodes_service, _projects_service
 from ..rabbitmq import get_rabbitmq_client
 from ..socketio.messages import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
-    SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
+    send_message_to_project_room,
     send_message_to_standard_group,
     send_message_to_user,
 )
@@ -42,30 +43,15 @@ APP_WALLET_SUBSCRIPTIONS_KEY: Final[str] = "wallet_subscriptions"
 APP_WALLET_SUBSCRIPTION_LOCK_KEY: Final[str] = "wallet_subscription_lock"
 
 
-async def _convert_to_node_update_event(
+async def _notify_comp_node_progress(
     app: web.Application, message: ProgressRabbitMessageNode
-) -> SocketMessageDict | None:
-    try:
-        project = await _projects_service.get_project_for_user(
-            app, f"{message.project_id}", message.user_id
-        )
-        if f"{message.node_id}" in project["workbench"]:
-            # update the project node progress with the latest value
-            project["workbench"][f"{message.node_id}"].update(
-                {"progress": round(message.report.percent_value * 100.0)}
-            )
-            return SocketMessageDict(
-                event_type=SOCKET_IO_NODE_UPDATED_EVENT,
-                data={
-                    "project_id": message.project_id,
-                    "node_id": message.node_id,
-                    "data": project["workbench"][f"{message.node_id}"],
-                },
-            )
-        _logger.warning("node not found: '%s'", message.model_dump())
-    except ProjectNotFoundError:
-        _logger.warning("project not found: '%s'", message.model_dump())
-    return None
+) -> None:
+    project = await _projects_service.get_project_for_user(
+        app, f"{message.project_id}", message.user_id, include_state=True
+    )
+    await _projects_service.notify_project_node_update(
+        app, project, message.node_id, None
+    )
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
@@ -79,22 +65,56 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
         message = WebSocketProjectProgress.from_rabbit_message(
             rabbit_message
         ).to_socket_dict()
-
     elif rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
-        message = await _convert_to_node_update_event(app, rabbit_message)
-
+        await _notify_comp_node_progress(app, rabbit_message)
     else:
         message = WebSocketNodeProgress.from_rabbit_message(
             rabbit_message
         ).to_socket_dict()
 
     if message:
-        await send_message_to_user(
+        await send_message_to_project_room(
             app,
-            rabbit_message.user_id,
+            project_id=rabbit_message.project_id,
             message=message,
-            ignore_queue=True,
         )
+    return True
+
+
+def _is_computational_node(node_key: str) -> bool:
+    return "/comp/" in node_key
+
+
+async def _computational_pipeline_status_message_parser(
+    app: web.Application, data: bytes
+) -> bool:
+    rabbit_message = ComputationalPipelineStatusMessage.model_validate_json(data)
+    project = await _projects_service.get_project_for_user(
+        app,
+        f"{rabbit_message.project_id}",
+        rabbit_message.user_id,
+        include_state=True,
+    )
+    if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
+        # the pipeline finished, the frontend needs to update all computational nodes
+        computational_node_ids = (
+            n.node_id
+            for n in await _nodes_service.get_project_nodes(
+                app, project_uuid=project["uuid"]
+            )
+            if _is_computational_node(n.key)
+        )
+        await limited_gather(
+            *[
+                _projects_service.notify_project_node_update(
+                    app, project, n_id, errors=None
+                )
+                for n_id in computational_node_ids
+            ],
+            limit=10,  # notify 10 nodes at a time
+        )
+    await _projects_service.notify_project_state_update(app, project)
+
     return True
 
 
@@ -107,7 +127,6 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
             event_type=SOCKET_IO_LOG_EVENT,
             data=rabbit_message.model_dump(exclude={"user_id", "channel_name"}),
         ),
-        ignore_queue=True,
     )
     return True
 
@@ -124,7 +143,6 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
                 "node_id": f"{rabbit_message.node_id}",
             },
         ),
-        ignore_queue=True,
     )
     return True
 
@@ -174,13 +192,19 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...]] = (
         _osparc_credits_message_parser,
         {"topics": []},
     ),
+    SubcribeArgumentsTuple(
+        ComputationalPipelineStatusMessage.get_channel_name(),
+        _computational_pipeline_status_message_parser,
+        {"topics": []},
+    ),
 )
 
 
 async def _unsubscribe_from_rabbitmq(app) -> None:
-    with log_context(
-        _logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"
-    ), log_catch(_logger, reraise=False):
+    with (
+        log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"),
+        log_catch(_logger, reraise=False),
+    ):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
             *(

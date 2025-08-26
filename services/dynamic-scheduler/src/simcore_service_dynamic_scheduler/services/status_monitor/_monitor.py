@@ -5,10 +5,10 @@ from functools import cached_property
 from typing import Final
 
 import arrow
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
@@ -79,9 +79,9 @@ class Monitor:
 
         # NOTE: this worker runs on only once across all instances of the scheduler
 
-        models: dict[
-            NodeID, TrackedServiceModel
-        ] = await service_tracker.get_all_tracked_services(self.app)
+        models: dict[NodeID, TrackedServiceModel] = (
+            await service_tracker.get_all_tracked_services(self.app)
+        )
 
         to_remove: list[NodeID] = []
         to_start: list[NodeID] = []

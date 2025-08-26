@@ -1,18 +1,27 @@
 """Free helper functions for AWS API"""
 
 import logging
+import re
 from collections import OrderedDict
 from collections.abc import Callable
 from textwrap import dedent
+from typing import Final
 
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
+from aws_library.ec2._models import EC2InstanceData
 from common_library.json_serialization import json_dumps
 
 from .._meta import VERSION
-from ..core.errors import ConfigurationError, TaskBestFittingInstanceNotFoundError
+from ..core.errors import (
+    ConfigurationError,
+    Ec2InvalidDnsNameError,
+    TaskBestFittingInstanceNotFoundError,
+)
 from ..core.settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+_EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+)\..+$")
 
 
 def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
@@ -105,3 +114,30 @@ def find_best_fitting_ec2_instance(
         raise TaskBestFittingInstanceNotFoundError(needed_resources=resources)
 
     return instance
+
+
+def node_host_name_from_ec2_private_dns(
+    ec2_instance_data: EC2InstanceData,
+) -> str:
+    """returns the node host name 'ip-10-2-3-22' from the ec2 private dns
+    Raises:
+        Ec2InvalidDnsNameError: if the dns name does not follow the expected pattern
+    """
+    if match := re.match(_EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns):
+        host_name: str = match.group("host_name")
+        return host_name
+    raise Ec2InvalidDnsNameError(aws_private_dns_name=ec2_instance_data.aws_private_dns)
+
+
+def node_ip_from_ec2_private_dns(
+    ec2_instance_data: EC2InstanceData,
+) -> str:
+    """returns the node ipv4 from the ec2 private dns string
+    Raises:
+        Ec2InvalidDnsNameError: if the dns name does not follow the expected pattern
+    """
+    return (
+        node_host_name_from_ec2_private_dns(ec2_instance_data)
+        .removeprefix("ip-")
+        .replace("-", ".")
+    )

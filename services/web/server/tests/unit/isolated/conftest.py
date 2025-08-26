@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
@@ -19,7 +19,7 @@ def dir_with_random_content(tmpdir, faker: Faker) -> Path:
     def make_files_in_dir(dir_path: Path, file_count: int) -> None:
         for _ in range(file_count):
             (dir_path / f"{faker.file_name(extension='bin')}").write_bytes(
-                os.urandom(random.randint(1, 10))
+                os.urandom(random.randint(1, 10))  # noqa: S311
             )
 
     def ensure_dir(path_to_ensure: Path) -> Path:
@@ -30,13 +30,13 @@ def dir_with_random_content(tmpdir, faker: Faker) -> Path:
         subdir_name = ensure_dir(subdir_name)
         make_files_in_dir(
             dir_path=subdir_name,
-            file_count=random.randint(1, max_file_count),
+            file_count=random.randint(1, max_file_count),  # noqa: S311
         )
 
     def make_subdirectories_with_content(
         subdir_name: Path, max_subdirectories_count: int, max_file_count: int
     ) -> None:
-        subdirectories_count = random.randint(1, max_subdirectories_count)
+        subdirectories_count = random.randint(1, max_subdirectories_count)  # noqa: S311
         for _ in range(subdirectories_count):
             make_subdirectory_with_content(
                 subdir_name=subdir_name / f"{faker.word()}",
@@ -241,19 +241,32 @@ def mocked_login_required(mocker: MockerFixture):
     # patches @login_required decorator
     # avoids having to start database etc...
     mocker.patch(
-        "simcore_service_webserver.login.decorators.security_web.check_user_authorized",
+        "simcore_service_webserver.login_auth.decorators.security_web.check_user_authorized",
         spec=True,
         return_value=user_id,
     )
 
     mocker.patch(
-        "simcore_service_webserver.login.decorators.security_web.check_user_permission",
+        "simcore_service_webserver.login_auth.decorators.security_web.check_user_permission",
         spec=True,
         return_value=None,
     )
 
     mocker.patch(
-        "simcore_service_webserver.login.decorators.products_web.get_product_name",
+        "simcore_service_webserver.login_auth.decorators.products_web.get_product_name",
         spec=True,
         return_value="osparc",
+    )
+
+
+@pytest.fixture
+def mocked_db_setup_in_setup_security(mocker: MockerFixture) -> MockType:
+    """Mocking avoids setting up a full db"""
+    import simcore_service_webserver.security.plugin
+
+    return mocker.patch.object(
+        simcore_service_webserver.security.plugin,
+        "setup_db",
+        autospec=True,
+        return_value=True,
     )

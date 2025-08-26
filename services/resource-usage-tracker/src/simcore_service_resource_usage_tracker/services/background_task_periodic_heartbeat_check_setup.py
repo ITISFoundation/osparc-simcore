@@ -3,8 +3,8 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import TypedDict
 
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
 

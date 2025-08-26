@@ -15,6 +15,7 @@ from aiohttp import web
 from aiohttp_jinja2 import render_string
 from settings_library.email import EmailProtocol, SMTPSettings
 
+from ..products import products_web
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -223,6 +224,10 @@ def _render_template(
         html_body = body
 
     return subject, html_body
+
+
+async def get_template_path(request: web.Request, filename: str) -> Path:
+    return await products_web.get_product_template_path(request, filename)
 
 
 async def send_email_from_template(

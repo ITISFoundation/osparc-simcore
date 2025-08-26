@@ -18,5 +18,5 @@
 nicegui
 packaging
 python-socketio
-typer[all]
+typer
 u-msgpack-python

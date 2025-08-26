@@ -17,6 +17,11 @@ class BaseBackEndError(ApiServerBaseError):
         )
 
 
+class BackendTimeoutError(BaseBackEndError):
+    msg_template = "Backend request timed out"
+    status_code = status.HTTP_504_GATEWAY_TIMEOUT
+
+
 class InvalidInputError(BaseBackEndError):
     msg_template = "Invalid input"
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -49,6 +54,11 @@ class ProgramOrSolverOrStudyNotFoundError(BaseBackEndError):
 
 class ServiceForbiddenAccessError(BaseBackEndError):
     msg_template = "Forbidden access to program/solver/study {name}:{version}"
+    status_code = status.HTTP_403_FORBIDDEN
+
+
+class JobForbiddenAccessError(BaseBackEndError):
+    msg_template = "Forbidden access to job {project_id}"
     status_code = status.HTTP_403_FORBIDDEN
 
 
@@ -130,3 +140,8 @@ class CanNotCheckoutServiceIsNotRunningError(BaseBackEndError):
 class LicensedItemCheckoutNotFoundError(BaseBackEndError):
     msg_template = "Licensed item checkout {licensed_item_checkout_id} not found."
     status_code = status.HTTP_404_NOT_FOUND
+
+
+class JobAssetsMissingError(BaseBackEndError):
+    msg_template = "Job assets missing for job {job_id}"
+    status_code = status.HTTP_409_CONFLICT

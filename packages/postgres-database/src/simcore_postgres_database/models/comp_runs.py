@@ -105,6 +105,13 @@ comp_runs = sa.Table(
         server_default=sa.text("'{}'::jsonb"),
         nullable=False,
     ),
+    sa.Column(
+        "collection_run_id",
+        sa.String,
+        nullable=False,
+    ),
     sa.UniqueConstraint("project_uuid", "user_id", "iteration"),
     sa.Index("ix_comp_runs_user_id", "user_id"),
+    sa.Index("ix_comp_runs_collection_run_id", "collection_run_id"),
+    sa.UniqueConstraint("project_uuid", "collection_run_id"),
 )

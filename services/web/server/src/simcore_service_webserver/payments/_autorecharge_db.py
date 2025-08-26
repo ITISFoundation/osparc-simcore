@@ -9,7 +9,7 @@ from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, PositiveInt
 from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStmts
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from .errors import InvalidPaymentMethodError
 
 _logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ async def get_wallet_autorecharge(
     *,
     wallet_id: WalletID,
 ) -> PaymentsAutorechargeDB | None:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         stmt = AutoRechargeStmts.get_wallet_autorecharge(wallet_id)
         result = await conn.execute(stmt)
         row = await result.first()
@@ -51,7 +51,7 @@ async def replace_wallet_autorecharge(
         InvalidPaymentMethodError: if `new` includes some invalid 'primary_payment_method_id'
 
     """
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         stmt = AutoRechargeStmts.is_valid_payment_method(
             user_id=user_id,
             wallet_id=new.wallet_id,

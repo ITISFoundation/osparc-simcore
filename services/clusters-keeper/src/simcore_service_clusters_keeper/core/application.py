@@ -26,26 +26,10 @@ from ..modules.ssm import setup as setup_ssm
 from ..rpc.rpc_routes import setup_rpc_routes
 from .settings import ApplicationSettings
 
-_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-_NOISY_LOGGERS = (
-    "aiobotocore",
-    "aio_pika",
-    "aiormq",
-    "botocore",
-    "werkzeug",
-)
-
 _logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
-    )
-    for name in _NOISY_LOGGERS:
-        logging.getLogger(name).setLevel(quiet_level)
-
     _logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
     app = FastAPI(

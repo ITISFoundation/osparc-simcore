@@ -170,6 +170,7 @@ def test_sleepers(
             RunningState.WAITING_FOR_CLUSTER,
             RunningState.WAITING_FOR_RESOURCES,
             RunningState.STARTED,
+            RunningState.SUCCESS,
         ),
         timeout_ms=_WAITING_FOR_PIPELINE_TO_CHANGE_STATE,
     )
@@ -182,6 +183,7 @@ def test_sleepers(
         expected_states=(
             RunningState.WAITING_FOR_RESOURCES,
             RunningState.STARTED,
+            RunningState.SUCCESS,
         ),
         timeout_ms=_WAITING_FOR_CLUSTER_MAX_WAITING_TIME,
     )
@@ -191,7 +193,10 @@ def test_sleepers(
         current_state,
         websocket=log_in_and_out,
         if_in_states=(RunningState.WAITING_FOR_RESOURCES,),
-        expected_states=(RunningState.STARTED,),
+        expected_states=(
+            RunningState.STARTED,
+            RunningState.SUCCESS,
+        ),
         timeout_ms=_WAITING_FOR_STARTED_MAX_WAITING_TIME,
     )
 

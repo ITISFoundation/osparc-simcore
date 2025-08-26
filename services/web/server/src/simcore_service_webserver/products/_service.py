@@ -95,7 +95,7 @@ async def get_credit_amount(
     if price_info is None or not price_info.usd_per_credit:
         # '0 or None' should raise
         raise ProductPriceNotDefinedError(
-            reason=f"Product {product_name} usd_per_credit is either not defined or zero"
+            details=f"Product {product_name} usd_per_credit is either not defined or zero"
         )
 
     if dollar_amount < price_info.min_payment_amount_usd:

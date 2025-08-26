@@ -1,7 +1,4 @@
-""" Basic healthckeck and configuration handles to the rest API
-
-
-"""
+"""Basic healthckeck and configuration handles to the rest API"""
 
 import datetime
 import logging
@@ -40,7 +37,7 @@ async def healthcheck_liveness_probe(request: web.Request):
         health_report = await healthcheck.run(request.app)
     except HealthCheckError as err:
         _logger.warning("%s", err)
-        raise web.HTTPServiceUnavailable(reason="unhealthy") from err
+        raise web.HTTPServiceUnavailable(text="unhealthy") from err
 
     return web.json_response(data={"data": health_report})
 

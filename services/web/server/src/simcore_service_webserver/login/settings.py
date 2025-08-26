@@ -10,7 +10,7 @@ from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
-from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
+from .constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 
 _DAYS: Final[float] = 1.0  # in days
 _MINUTES: Final[float] = 1.0 / 24.0 / 60.0  # in days

@@ -9,6 +9,7 @@ from models_library.osparc_variable_identifier import (
     replace_osparc_variable_identifier,
 )
 from models_library.service_settings_nat_rule import NATRule
+from models_library.utils.types import get_types_from_annotated_union
 from pydantic import TypeAdapter
 
 SUPPORTED_TEMPLATES: set[str] = {
@@ -111,13 +112,13 @@ def test_______(replace_with_value: Any):
     a_var = TypeAdapter(OsparcVariableIdentifier).validate_python(
         "$OSPARC_VARIABLE_some_var"
     )
-    assert isinstance(a_var, OsparcVariableIdentifier)
+    assert isinstance(a_var, get_types_from_annotated_union(OsparcVariableIdentifier))
 
     replaced_var = replace_osparc_variable_identifier(
         a_var, {"OSPARC_VARIABLE_some_var": replace_with_value}
     )
     # NOTE: after replacement the original reference still points
-    assert isinstance(a_var, OsparcVariableIdentifier)
+    assert isinstance(a_var, get_types_from_annotated_union(OsparcVariableIdentifier))
     assert replaced_var == replace_with_value
 
 
@@ -154,7 +155,7 @@ def test_replace_an_instance_of_osparc_variable_identifier(
         formatted_template = var_template
 
     a_var = TypeAdapter(OsparcVariableIdentifier).validate_python(formatted_template)
-    assert isinstance(a_var, OsparcVariableIdentifier)
+    assert isinstance(a_var, get_types_from_annotated_union(OsparcVariableIdentifier))
 
     replace_with_identifier_default = identifier_has_default and replace_with_default
     replacement_content = (
@@ -162,7 +163,7 @@ def test_replace_an_instance_of_osparc_variable_identifier(
     )
     replaced_var = replace_osparc_variable_identifier(a_var, replacement_content)
     # NOTE: after replacement the original reference still points
-    assert isinstance(a_var, OsparcVariableIdentifier)
+    assert isinstance(a_var, get_types_from_annotated_union(OsparcVariableIdentifier))
     if replace_with_identifier_default:
         assert replaced_var == default_value
     else:

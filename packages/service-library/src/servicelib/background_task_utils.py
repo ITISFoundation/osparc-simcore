@@ -3,11 +3,10 @@ import functools
 from collections.abc import Callable, Coroutine
 from typing import Any, ParamSpec, TypeVar
 
-from servicelib.exception_utils import silence_exceptions
-from servicelib.redis._errors import CouldNotAcquireLockError
-
 from .background_task import periodic
+from .exception_utils import suppress_exceptions
 from .redis import RedisClientSDK, exclusive
+from .redis._errors import CouldNotAcquireLockError
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -39,10 +38,11 @@ def exclusive_periodic(
         coro: Callable[P, Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
         @periodic(interval=retry_after)
-        @silence_exceptions(
+        @suppress_exceptions(
             # Replicas will raise CouldNotAcquireLockError
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/7574
-            (CouldNotAcquireLockError,)
+            (CouldNotAcquireLockError,),
+            reason=f"Multiple instances of the periodic task `{coro.__module__}.{coro.__name__}` are running.",
         )
         @exclusive(
             redis_client,
@@ -53,6 +53,8 @@ def exclusive_periodic(
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
             return await coro(*args, **kwargs)
 
+        # Marks with an identifier (mostly to assert a function has been decorated with this decorator)
+        setattr(_wrapper, "__exclusive_periodic__", True)  # noqa: B010
         return _wrapper
 
     return _decorator

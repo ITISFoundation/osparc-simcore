@@ -1,6 +1,7 @@
 from abc import abstractmethod
-from typing import Any, ClassVar, Final, cast
+from typing import Annotated, Any, ClassVar, Final, cast
 
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field, StrictStr
 
@@ -10,20 +11,23 @@ from .utils import column_generator, ensure_correct_instance
 
 
 class RRIDEntry(BaseModel):
-    rrid_term: StrictStr = Field(..., description="Associated tools or resources used")
-    rrid_identifier: StrictStr = Field(
-        ..., description="Associated tools or resources identifier (with 'RRID:')"
-    )
+    rrid_term: Annotated[
+        StrictStr, Field(description="Associated tools or resources used")
+    ]
+    rrid_identifier: Annotated[
+        StrictStr,
+        Field(description="Associated tools or resources identifier (with 'RRID:')"),
+    ]
     # the 2 items below are not enabled for now
-    ontological_term: StrictStr = Field(
-        "", description="Associated ontological term (human-readable)"
-    )
-    ontological_identifier: StrictStr = Field(
-        "",
-        description=(
-            "Associated ontological identifier from SciCrunch https://scicrunch.org/sawg"
+    ontological_term: Annotated[
+        StrictStr, Field(description="Associated ontological term (human-readable)")
+    ] = ""
+    ontological_identifier: Annotated[
+        StrictStr,
+        Field(
+            description="Associated ontological identifier from SciCrunch https://scicrunch.org/sawg"
         ),
-    )
+    ] = ""
 
 
 class TSREntry(BaseModel):
@@ -33,99 +37,117 @@ class TSREntry(BaseModel):
 
 
 class CodeDescriptionModel(BaseModel):
-    rrid_entires: list[RRIDEntry] = Field(
-        default_factory=list, description="composed from the classifiers"
-    )
+    rrid_entires: Annotated[
+        list[RRIDEntry],
+        Field(default_factory=list, description="composed from the classifiers"),
+    ] = DEFAULT_FACTORY
 
     # TSR
-    tsr_entries: dict[str, TSREntry] = Field(
-        default_factory=dict, description="list of rules to generate tsr"
-    )
+    tsr_entries: Annotated[
+        dict[str, TSREntry],
+        Field(default_factory=dict, description="list of rules to generate tsr"),
+    ] = DEFAULT_FACTORY
 
 
 class InputsEntryModel(BaseModel):
-    service_alias: StrictStr = Field(
-        ..., description="Name of the service containing this input, given by the user"
-    )
-    service_name: StrictStr = Field(
-        ..., description="Name of the service containing this input"
-    )
-    service_key: ServiceKey = Field(
-        ..., description="Key of the service containing this input"
-    )
-    service_version: ServiceVersion = Field(
-        ..., description="Version of the service containing this input"
-    )
-    input_name: StrictStr = Field(
-        "", description="An input field to the MSoP submission"
-    )
-    input_parameter_description: StrictStr = Field(
-        "", description="Description of what the parameter represents"
-    )
-    input_data_type: StrictStr = Field(
-        "", description="Data type for the input field (in plain text)"
-    )
-    input_data_units: StrictStr = Field(
-        "", description="Units of data for the input field, if applicable"
-    )
-    input_data_default_value: StrictStr = Field(
-        "",
-        description="Default value for the input field, if applicable (doi or value)",
-    )
-    input_data_constraints: StrictStr = Field(
-        "",
-        description="Range [min, max] of acceptable parameter values, or other constraints as formulas / sets",
-    )
+    service_alias: Annotated[
+        StrictStr,
+        Field(
+            description="Name of the service containing this input, given by the user"
+        ),
+    ]
+    service_name: Annotated[
+        StrictStr, Field(description="Name of the service containing this input")
+    ]
+    service_key: Annotated[
+        ServiceKey, Field(description="Key of the service containing this input")
+    ]
+    service_version: Annotated[
+        ServiceVersion,
+        Field(description="Version of the service containing this input"),
+    ]
+    input_name: Annotated[
+        StrictStr, Field(description="An input field to the MSoP submission")
+    ] = ""
+    input_parameter_description: Annotated[
+        StrictStr, Field(description="Description of what the parameter represents")
+    ] = ""
+    input_data_type: Annotated[
+        StrictStr, Field(description="Data type for the input field (in plain text)")
+    ] = ""
+    input_data_units: Annotated[
+        StrictStr, Field(description="Units of data for the input field, if applicable")
+    ] = ""
+    input_data_default_value: Annotated[
+        StrictStr,
+        Field(
+            description="Default value for the input field, if applicable (doi or value)"
+        ),
+    ] = ""
+    input_data_constraints: Annotated[
+        StrictStr,
+        Field(
+            description="Range [min, max] of acceptable parameter values, or other constraints as formulas / sets"
+        ),
+    ] = ""
 
 
 class OutputsEntryModel(BaseModel):
-    service_alias: StrictStr = Field(
-        ..., description="Name of the service producing this output, given by the user"
-    )
-    service_name: StrictStr = Field(
-        ..., description="Name of the service containing this output"
-    )
-    service_key: ServiceKey = Field(
-        ..., description="Key of the service containing this output"
-    )
-    service_version: ServiceVersion = Field(
-        ..., description="Version of the service containing this output"
-    )
-    output_name: StrictStr = Field(
-        "", description="An output field to the MSoP submission"
-    )
-    output_parameter_description: StrictStr = Field(
-        "", description="Description of what the parameter represents"
-    )
-    output_data_ontology_identifier: StrictStr = Field(
-        "",
-        description=(
-            "Ontology identifier for the input field, if applicable , "
-            "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term"
+    service_alias: Annotated[
+        StrictStr,
+        Field(
+            description="Name of the service producing this output, given by the user"
         ),
-    )
-    output_data_type: StrictStr = Field(
-        "", description="Data type for the output field"
-    )
-    output_data_units: StrictStr = Field(
-        "", description="Units of data for the output field, if applicable"
-    )
-    output_data_constraints: StrictStr = Field(
-        "",
-        description="Range [min, max] of acceptable parameter values, or other constraints as formulas / sets",
-    )
+    ]
+    service_name: Annotated[
+        StrictStr, Field(description="Name of the service containing this output")
+    ]
+    service_key: Annotated[
+        ServiceKey, Field(description="Key of the service containing this output")
+    ]
+    service_version: Annotated[
+        ServiceVersion,
+        Field(description="Version of the service containing this output"),
+    ]
+    output_name: Annotated[
+        StrictStr, Field(description="An output field to the MSoP submission")
+    ] = ""
+    output_parameter_description: Annotated[
+        StrictStr, Field(description="Description of what the parameter represents")
+    ] = ""
+    output_data_ontology_identifier: Annotated[
+        StrictStr,
+        Field(
+            description="Ontology identifier for the input field, if applicable , https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term"
+        ),
+    ] = ""
+    output_data_type: Annotated[
+        StrictStr, Field(description="Data type for the output field")
+    ] = ""
+    output_data_units: Annotated[
+        StrictStr,
+        Field(description="Units of data for the output field, if applicable"),
+    ] = ""
+    output_data_constraints: Annotated[
+        StrictStr,
+        Field(
+            description="Range [min, max] of acceptable parameter values, or other constraints as formulas / sets"
+        ),
+    ] = ""
 
 
 class CodeDescriptionParams(BaseModel):
-    code_description: CodeDescriptionModel = Field(
-        ..., description="code description data"
-    )
-    inputs: list[InputsEntryModel] = Field(
-        default_factory=list, description="List of inputs, if any"
-    )
-    outputs: list[OutputsEntryModel] = Field(
-        default_factory=list, description="List of outputs, if any"
-    )
+    code_description: Annotated[
+        CodeDescriptionModel, Field(description="code description data")
+    ]
+    inputs: Annotated[
+        list[InputsEntryModel],
+        Field(default_factory=list, description="List of inputs, if any"),
+    ] = DEFAULT_FACTORY
+    outputs: Annotated[
+        list[OutputsEntryModel],
+        Field(default_factory=list, description="List of outputs, if any"),
+    ] = DEFAULT_FACTORY
 
 
 def _include_ports_from_this_service(service_key: ServiceKey) -> bool:

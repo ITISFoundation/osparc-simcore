@@ -16,7 +16,6 @@ from pydantic import AnyHttpUrl, BaseModel, PositiveInt, TypeAdapter
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
-from simcore_service_director_v2.modules.catalog import CatalogClient
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random_exponential
@@ -25,6 +24,7 @@ from ..core.application import create_base_app
 from ..core.settings import AppSettings
 from ..models.dynamic_services_scheduler import DynamicSidecarNamesHelper
 from ..modules import db, director_v0, dynamic_sidecar
+from ..modules.catalog import CatalogClient
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.dynamic_sidecar import api_client
 from ..modules.projects_networks import requires_dynamic_sidecar

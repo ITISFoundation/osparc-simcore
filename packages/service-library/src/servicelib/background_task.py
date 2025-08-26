@@ -6,10 +6,10 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from typing import Any, Final, ParamSpec, TypeVar
 
+from common_library.async_tools import cancel_wait_task, delayed_start
 from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
 
-from .async_utils import cancel_wait_task, delayed_start
 from .logging_utils import log_catch, log_context
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def periodic(
 ) -> Callable[
     [Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]
 ]:
-    """Calls the function periodically with a given interval.
+    """Calls the function periodically with a given interval or triggered by an early wake-up event.
 
     Arguments:
         interval -- the interval between calls
@@ -58,7 +58,7 @@ def periodic(
     """
 
     def _decorator(
-        func: Callable[P, Coroutine[Any, Any, None]],
+        async_fun: Callable[P, Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
         class _InternalTryAgain(TryAgain):
             # Local exception to prevent reacting to similarTryAgain exceptions raised by the wrapped func
@@ -82,10 +82,10 @@ def periodic(
             ),
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
-        @functools.wraps(func)
+        @functools.wraps(async_fun)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
             with log_catch(_logger, reraise=True):
-                await func(*args, **kwargs)
+                await async_fun(*args, **kwargs)
             raise _InternalTryAgain
 
         return _wrapper
@@ -142,4 +142,4 @@ async def periodic_task(
         if asyncio_task is not None:
             # NOTE: this stopping is shielded to prevent the cancellation to propagate
             # into the stopping procedure
-            await asyncio.shield(cancel_wait_task(asyncio_task, max_delay=stop_timeout))
+            await cancel_wait_task(asyncio_task, max_delay=stop_timeout)

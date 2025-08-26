@@ -13,8 +13,8 @@ from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from models_library.services_types import ServiceKey
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-from ...models.schemas._base import BaseService
 from ..api_resources import compose_resource_name
+from .base import BaseService
 
 # NOTE:
 # - API does NOT impose prefix (simcore)/(services)/comp because does not know anything about registry deployed. This constraint

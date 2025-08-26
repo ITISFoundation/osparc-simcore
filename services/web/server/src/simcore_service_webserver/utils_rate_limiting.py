@@ -6,6 +6,7 @@ from math import ceil
 from typing import Final, NamedTuple
 
 from aiohttp.web_exceptions import HTTPTooManyRequests
+from common_library.user_messages import user_message
 from models_library.rest_error import EnvelopedError, ErrorGet
 from servicelib.aiohttp import status
 
@@ -15,7 +16,7 @@ class RateLimitSetup(NamedTuple):
     interval_seconds: float
 
 
-MSG_TOO_MANY_REQUESTS: Final[str] = (
+MSG_TOO_MANY_REQUESTS: Final[str] = user_message(
     "Requests are being made too frequently. Please wait a moment before trying again."
 )
 

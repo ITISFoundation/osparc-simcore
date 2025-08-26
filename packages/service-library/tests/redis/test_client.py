@@ -110,7 +110,7 @@ async def test_redis_client_sdk_setup_shutdown(
     # setup
     redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
     client = RedisClientSDK(redis_resources_dns, client_name="pytest")
-    assert client
+    await client.setup()
     assert client.redis_dsn == redis_resources_dns
 
     # ensure health check task sets the health to True

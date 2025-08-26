@@ -39,7 +39,7 @@ def create_fake_association(
 ):
     fake_node_to_instance_map = {}
 
-    async def _fake_node_creator(
+    def _fake_node_creator(
         _nodes: list[Node], ec2_instances: list[EC2InstanceData]
     ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
         def _create_fake_node_with_labels(instance: EC2InstanceData) -> Node:

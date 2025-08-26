@@ -1,10 +1,12 @@
 import datetime
 import warnings
+from functools import cached_property
 from typing import cast
 
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from pydantic import AliasChoices, Field, NonNegativeInt, PositiveInt, field_validator
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_registry import RegistrySettings
@@ -27,7 +29,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     )
     DIRECTOR_REMOTE_DEBUG_PORT: PortInt = 3000
 
-    DIRECTOR_LOGLEVEL: LogLevel = Field(
+    DIRECTOR_LOG_LEVEL: LogLevel = Field(
         ..., validation_alias=AliasChoices("DIRECTOR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL")
     )
     DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
@@ -143,10 +145,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
         return v
 
-    @field_validator("DIRECTOR_LOGLEVEL", mode="before")
-    @classmethod
-    def _valid_log_level(cls, value: str) -> str:
-        return cls.validate_log_level(value)
+    @cached_property
+    def log_level(self) -> LogLevelInt:
+        """override"""
+        return cast(LogLevelInt, self.DIRECTOR_LOG_LEVEL)
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:

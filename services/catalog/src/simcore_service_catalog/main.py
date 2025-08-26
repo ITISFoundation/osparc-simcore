@@ -1,24 +1,40 @@
-"""Main application to be deployed in for example uvicorn.
-"""
+"""Main application to be deployed in for example uvicorn."""
 
 import logging
+from typing import Final
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from servicelib.logging_utils import config_all_loggers
+from servicelib.fastapi.logging_lifespan import create_logging_lifespan
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
 
-_the_settings = ApplicationSettings.create_from_envs()
+_logger = logging.getLogger(__name__)
 
-# SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
-logging.basicConfig(level=_the_settings.log_level)  # NOSONAR
-logging.root.setLevel(_the_settings.log_level)
-config_all_loggers(
-    log_format_local_dev_enabled=_the_settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED,
-    logger_filter_mapping=_the_settings.CATALOG_LOG_FILTER_MAPPING,
-    tracing_settings=_the_settings.CATALOG_TRACING,
+
+_NOISY_LOGGERS: Final[tuple[str, ...]] = (
+    "aio_pika",
+    "aiobotocore",
+    "aiormq",
+    "botocore",
+    "httpcore",
+    "werkzeug",
 )
 
 
-# SINGLETON FastAPI app
-the_app: FastAPI = create_app()
+def app_factory() -> FastAPI:
+    app_settings = ApplicationSettings.create_from_envs()
+    logging_lifespan = create_logging_lifespan(
+        log_format_local_dev_enabled=app_settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=app_settings.CATALOG_LOG_FILTER_MAPPING,
+        tracing_settings=app_settings.CATALOG_TRACING,
+        log_base_level=app_settings.log_level,
+        noisy_loggers=_NOISY_LOGGERS,
+    )
+
+    _logger.info(
+        "Application settings: %s",
+        json_dumps(app_settings, indent=2, sort_keys=True),
+    )
+
+    return create_app(settings=app_settings, logging_lifespan=logging_lifespan)

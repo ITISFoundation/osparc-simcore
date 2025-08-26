@@ -50,10 +50,17 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       paddingLeft: 10,
       paddingRight: 10,
       height: this.self().HEIGHT,
-      backgroundColor: "background-main-1",
+      backgroundColor: this.self().BG_COLOR,
     });
 
     osparc.utils.Utils.setIdToWidget(this, "navigationBar");
+
+    const socket = osparc.wrapper.WebSocket.getInstance();
+    if (socket.isConnected()) {
+      this.__listenToProjectStateUpdated();
+    } else {
+      socket.addListener("connect", () => this.__listenToProjectStateUpdated());
+    }
   },
 
   events: {
@@ -72,6 +79,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   statics: {
+    BG_COLOR: "background-main-1",
     HEIGHT: 50,
     SMALL_SCREEN_BREAKPOINT: 800,
 
@@ -80,6 +88,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       allowGrowY: false,
       minWidth: 30,
       minHeight: 30
+    },
+
+    RIGHT_BUTTON_OPTS: {
+      cursor: "pointer",
+      alignX: "center",
+      alignY: "middle",
+      allowGrowX: false,
+      allowGrowY: false,
+      padding: 4,
     },
   },
 
@@ -112,10 +129,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         converter: s => s ? "visible" : "excluded"
       });
 
+      this.getChildControl("saving-study-icon");
+
       // center-items
       this.getChildControl("read-only-info");
 
       // right-items
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        this.getChildControl("avatar-group");
+      }
       this.getChildControl("tasks-button");
       if (osparc.product.Utils.showComputationalActivity()) {
         this.getChildControl("jobs-button");
@@ -135,26 +157,24 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       switch (id) {
         case "left-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
+            alignX: "left",
             alignY: "middle",
-            alignX: "left"
           }));
-          this._addAt(control, 0);
+          this._addAt(control, 0, { flex: 1 });
           break;
         case "center-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignX: "center",
             alignY: "middle",
-            alignX: "center"
           }));
-          this._addAt(control, 1, {
-            flex: 1
-          });
+          this._addAt(control, 1);
           break;
         case "right-items":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
+            alignX: "right",
             alignY: "middle",
-            alignX: "right"
           }));
-          this._addAt(control, 2);
+          this._addAt(control, 2, { flex: 1 });
           break;
         case "logo":
           control = osparc.navigation.LogoOnOff.getInstance().set({
@@ -202,6 +222,16 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control.addListener("openLogger", () => this.fireEvent("openLogger"));
           this.getChildControl("left-items").add(control);
           break;
+        case "saving-study-icon":
+          control = new qx.ui.basic.Atom().set({
+            icon: "@FontAwesome5Solid/cloud-upload-alt/14",
+            label: this.tr("Saving..."),
+            font: "text-12",
+            opacity: 0.8,
+            visibility: "excluded",
+          });
+          this.getChildControl("left-items").add(control);
+          break;
         case "read-only-info": {
           control = new qx.ui.basic.Atom().set({
             label: this.tr("Read only"),
@@ -221,16 +251,33 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
+        case "avatar-group": {
+          const maxWidth = osparc.WindowSizeTracker.getInstance().isCompactVersion() ? 80 : 150;
+          control = new osparc.ui.basic.AvatarGroup(26, "right", maxWidth).set({
+            hideMyself: true,
+            alignY: "middle",
+            visibility: "excluded",
+          });
+          this.getChildControl("right-items").add(control);
+          break;
+        }
         case "tasks-button":
-          control = new osparc.task.TasksButton();
+          control = new osparc.task.TasksButton().set({
+            visibility: "excluded",
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "jobs-button":
-          control = new osparc.jobs.JobsButton();
+          control = new osparc.jobs.JobsButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "notifications-button":
-          control = new osparc.notification.NotificationsButton();
+          control = new osparc.notification.NotificationsButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "expiration-icon": {
@@ -260,13 +307,16 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "help":
-          control = this.__createHelpMenuBtn();
-          control.set(this.self().BUTTON_OPTIONS);
+          control = this.__createHelpMenuBtn().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           osparc.utils.Utils.setIdToWidget(control, "helpNavigationBtn");
           this.getChildControl("right-items").add(control);
           break;
         case "credits-button":
-          control = new osparc.desktop.credits.CreditsIndicatorButton();
+          control = new osparc.desktop.credits.CreditsIndicatorButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "log-in-button": {
@@ -297,16 +347,33 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       return control || this.base(arguments, id);
     },
 
+    __listenToProjectStateUpdated: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      socket.on("projectStateUpdated", data => {
+        if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+          if (this.getStudy() && data["project_uuid"] === this.getStudy().getUuid()) {
+            const projectState = data["data"];
+            const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(projectState);
+            const avatarGroup = this.getChildControl("avatar-group");
+            avatarGroup.setUserGroupIds(currentUserGroupIds);
+          }
+        }
+      }, this);
+    },
+
     __createHelpMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         position: "top-right",
         appearance: "menu-wider",
       });
-      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/22", menu).set({
+      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/24", menu).set({
         backgroundColor: "transparent"
       });
 
       osparc.utils.Utils.setIdToWidget(menu, "helpNavigationMenu");
+
+      // add support conversations
+      osparc.store.Support.addSupportConversationsToMenu(menu);
 
       // quick starts and manuals
       osparc.store.Support.addQuickStartToMenu(menu);
@@ -337,14 +404,29 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __applyStudy: function(study) {
-      const readOnlyInfo = this.getChildControl("read-only-info")
+      const savingStudyIcon = this.getChildControl("saving-study-icon");
+      const readOnlyInfo = this.getChildControl("read-only-info");
       if (study) {
         this.getChildControl("study-title-options").setStudy(study);
+        study.bind("savePending", savingStudyIcon, "visibility", {
+          converter: value => value && ["workbench", "pipeline"].includes(study.getUi().getMode()) ? "visible" : "excluded"
+        });
         study.bind("readOnly", readOnlyInfo, "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
       } else {
+        savingStudyIcon.exclude();
         readOnlyInfo.exclude();
+      }
+
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        const avatarGroup = this.getChildControl("avatar-group");
+        if (study) {
+          avatarGroup.show();
+        } else {
+          avatarGroup.exclude();
+          avatarGroup.setUserGroupIds([]);
+        }
       }
     },
 

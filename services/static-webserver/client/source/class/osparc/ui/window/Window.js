@@ -36,8 +36,10 @@ qx.Class.define("osparc.ui.window.Window", {
       );
       if (modalFrame) {
         modalFrame.addEventListener("click", () => {
-          if (this.isModal() && this.isClickAwayClose() &&
-            parseInt(modalFrame.style.zIndex) === parseInt(thisDom.style.zIndex) - 1) {
+          if (
+            this.isClickAwayClose() &&
+            parseInt(modalFrame.style.zIndex) === parseInt(thisDom.style.zIndex) - 1
+          ) {
             this.close();
           }
         });
@@ -73,8 +75,8 @@ qx.Class.define("osparc.ui.window.Window", {
         showMinimize: false,
         showMaximize: false,
         resizable: true,
-        width: width,
-        minHeight: minHeight,
+        width,
+        minHeight,
         maxHeight: Math.max(minHeight, document.documentElement.clientHeight),
         modal: true,
         clickAwayClose: true
@@ -116,6 +118,8 @@ qx.Class.define("osparc.ui.window.Window", {
             }
           }
         }, 1);
+        // keep it centered
+        window.addEventListener("resize", () => this.center());
       } else {
         this.base(arguments);
       }

@@ -12,6 +12,7 @@ import logging
 import random
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
+from functools import partial
 from pathlib import Path
 from typing import Any, Final, cast
 
@@ -24,6 +25,8 @@ from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
+from celery.worker.worker import WorkController
+from celery_library.signals import on_worker_init, on_worker_shutdown
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -43,6 +46,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, StorageFileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
@@ -60,6 +64,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
@@ -71,12 +76,6 @@ from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.datcore_dsm import DatCoreDataManager
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
-from simcore_service_storage.modules.celery.signals import (
-    on_worker_init,
-    on_worker_shutdown,
-)
-from simcore_service_storage.modules.celery.utils import get_celery_worker
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy import literal_column
@@ -89,6 +88,7 @@ from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",
@@ -98,6 +98,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
+    "pytest_simcore.logging",
     "pytest_simcore.openapi_specs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
@@ -106,6 +107,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_storage_data_models",
     "pytest_simcore.simcore_storage_datcore_adapter",
     "pytest_simcore.simcore_storage_service",
+    "pytest_simcore.tracing",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -190,6 +192,15 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 
 
 @pytest.fixture
+def enable_tracing(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    setup_tracing_fastapi: InMemorySpanExporter,
+):
+    monkeypatch.setenv("STORAGE_TRACING", "{}")
+
+
+@pytest.fixture
 def enabled_rabbitmq(
     app_environment: EnvVarsDict, rabbit_service: RabbitSettings
 ) -> RabbitSettings:
@@ -204,6 +215,7 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def app_settings(
+    enable_tracing,
     app_environment: EnvVarsDict,
     enabled_rabbitmq: RabbitSettings,
     sqlalchemy_async_engine: AsyncEngine,
@@ -365,7 +377,7 @@ def upload_file(
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     create_file_of_size: Callable[[ByteSize, str | None], Path],
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: TestWorkController,
 ) -> Callable[
     [ByteSize, str, SimcoreS3FileID | None], Awaitable[tuple[Path, SimcoreS3FileID]]
 ]:
@@ -480,7 +492,7 @@ async def create_empty_directory(
     create_simcore_file_id: Callable[[ProjectID, NodeID, str], SimcoreS3FileID],
     create_upload_file_link_v2: Callable[..., Awaitable[FileUploadSchema]],
     client: httpx.AsyncClient,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: TestWorkController,
 ) -> Callable[[str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]]:
     async def _directory_creator(
         dir_name: str, project_id: ProjectID, node_id: NodeID
@@ -977,10 +989,7 @@ def celery_config() -> dict[str, Any]:
 def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Celery:
     celery_app = Celery(**celery_config)
 
-    for module in (
-        "simcore_service_storage.modules.celery._common.create_app",
-        "simcore_service_storage.modules.celery.create_app",
-    ):
+    for module in ("simcore_service_storage.modules.celery.create_app",):
         mocker.patch(module, return_value=celery_app)
 
     return celery_app
@@ -996,20 +1005,30 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
-async def with_storage_celery_worker_controller(
+async def with_storage_celery_worker(
     app_environment: EnvVarsDict,
     celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     # Signals must be explicitily connected
-    worker_init.connect(on_worker_init)
+    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
+    app_settings = ApplicationSettings.create_from_envs()
+
+    app_server = FastAPIAppServer(app=create_app(app_settings))
+
+    def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
+        assert app_settings.STORAGE_CELERY  # nosec
+        return partial(on_worker_init, app_server, app_settings.STORAGE_CELERY)(
+            sender, **_kwargs
+        )
+
+    worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)
 
     setup_worker_tasks(celery_app)
     register_celery_tasks(celery_app)
 
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     with start_worker(
         celery_app,
         pool="threads",
@@ -1019,14 +1038,6 @@ async def with_storage_celery_worker_controller(
         queues="default,cpu_bound",
     ) as worker:
         yield worker
-
-
-@pytest.fixture
-def with_storage_celery_worker(
-    with_storage_celery_worker_controller: TestWorkController,
-) -> CeleryTaskWorker:
-    assert isinstance(with_storage_celery_worker_controller.app, Celery)
-    return get_celery_worker(with_storage_celery_worker_controller.app)
 
 
 @pytest.fixture

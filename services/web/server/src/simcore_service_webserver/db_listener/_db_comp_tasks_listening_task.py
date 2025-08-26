@@ -22,7 +22,7 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from ..projects import _projects_service, exceptions
 from ..projects.nodes_utils import update_node_outputs
 from ._models import CompTaskNotificationPayload
@@ -52,12 +52,18 @@ async def _update_project_state(
     node_errors: list[ErrorDict] | None,
 ) -> None:
     project = await _projects_service.update_project_node_state(
-        app, user_id, project_uuid, node_uuid, new_state
+        app,
+        user_id,
+        project_uuid,
+        node_uuid,
+        new_state,
+        client_session_id=None,  # <-- The trigger for this update is not from the UI (its db listener)
     )
 
     await _projects_service.notify_project_node_update(
         app, project, node_uuid, node_errors
     )
+
     await _projects_service.notify_project_state_update(app, project)
 
 
@@ -94,6 +100,7 @@ async def _handle_db_notification(
                 changed_row.run_hash,
                 node_errors=changed_row.errors,
                 ui_changed_keys=None,
+                client_session_id=None,  # <-- The trigger for this update is not from the UI (its db listener)
             )
 
         if "state" in payload.changes and (changed_row.state is not None):
@@ -126,7 +133,7 @@ async def _handle_db_notification(
 
 async def _listen(app: web.Application) -> NoReturn:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-    db_engine = get_database_engine(app)
+    db_engine = get_database_engine_legacy(app)
     async with db_engine.acquire() as conn:
         assert conn.connection  # nosec
         await conn.execute(listen_query)

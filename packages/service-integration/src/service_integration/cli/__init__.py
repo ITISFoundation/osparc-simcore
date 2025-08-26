@@ -7,7 +7,7 @@ import typer
 
 from .._meta import __version__
 from ..settings import AppSettings
-from . import _compose_spec, _metadata, _run_creator, _test
+from . import _compose_spec, _escaping, _metadata, _run_creator, _test
 from ._config import config_app
 
 app = typer.Typer()
@@ -72,6 +72,7 @@ def main(
 app.command("compose")(_compose_spec.create_compose)
 app.add_typer(config_app, name="config", help="Manage osparc config files")
 app.command("test")(_test.run_tests)
+app.command("legacy-escape")(_escaping.legacy_escape)
 # legacy
 app.command("bump-version")(_metadata.bump_version)
 app.command("get-version")(_metadata.get_version)

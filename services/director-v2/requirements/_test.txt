@@ -66,7 +66,7 @@ charset-normalizer==3.4.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.1.8
+click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -98,6 +98,8 @@ exceptiongroup==1.3.0
 execnet==2.1.1
     # via pytest-xdist
 faker==37.3.0
+    # via -r requirements/_test.in
+fakeredis==2.30.3
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -159,6 +161,8 @@ locket==1.0.0
     #   -c requirements/_base.txt
     #   distributed
     #   partd
+lupa==2.5
+    # via fakeredis
 mako==1.3.10
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -180,7 +184,7 @@ multidict==6.4.4
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -210,10 +214,14 @@ partd==1.4.2
     # via
     #   -c requirements/_base.txt
     #   dask
+pathspec==0.12.1
+    # via mypy
 pillow==11.2.1
     # via bokeh
 pluggy==1.6.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
 propcache==0.3.1
@@ -225,7 +233,11 @@ psutil==7.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-pytest==8.3.5
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -234,19 +246,19 @@ pytest==8.3.5
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-xdist
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.1.1
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-docker==3.2.1
+pytest-docker==3.2.3
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
-pytest-xdist==3.6.1
+pytest-xdist==3.8.0
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via
@@ -263,7 +275,12 @@ pyyaml==6.0.2
     #   bokeh
     #   dask
     #   distributed
-requests==2.32.3
+redis==6.1.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fakeredis
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
@@ -285,6 +302,7 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/_base.txt
     #   distributed
+    #   fakeredis
 sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -314,7 +332,7 @@ types-psycopg2==2.9.21.20250516
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250516
     # via -r requirements/_test.in
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   alembic
@@ -326,7 +344,7 @@ tzdata==2025.2
     # via
     #   faker
     #   pandas
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

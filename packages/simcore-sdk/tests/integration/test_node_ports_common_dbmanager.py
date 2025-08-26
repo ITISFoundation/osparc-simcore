@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from simcore_sdk.node_ports_common.dbmanager import DBManager
@@ -21,8 +21,9 @@ async def test_db_manager_read_config(
     node_uuid: str,
     node_ports_config: None,
     default_configuration: dict,
+    mock_app_name: str,
 ):
-    db_manager = DBManager()
+    db_manager = DBManager(application_name=mock_app_name)
     ports_configuration_str = await db_manager.get_ports_configuration_from_node_uuid(
         project_id, node_uuid
     )
@@ -35,15 +36,16 @@ async def test_db_manager_write_config(
     project_id: str,
     node_uuid: str,
     node_ports_config: None,
-    create_special_configuration: Callable,
+    create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     default_configuration_file: Path,
+    mock_app_name: str,
 ):
     # create an empty config
-    create_special_configuration()
+    await create_special_configuration()
     # read the default config
     json_configuration = default_configuration_file.read_text()
     # write the default config to the database
-    db_manager = DBManager()
+    db_manager = DBManager(application_name=mock_app_name)
     await db_manager.write_ports_configuration(
         json_configuration, project_id, node_uuid
     )

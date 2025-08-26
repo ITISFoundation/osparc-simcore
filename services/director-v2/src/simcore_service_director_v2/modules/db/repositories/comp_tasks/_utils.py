@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Any, Final, cast
+from typing import Any, Final
 
 import arrow
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
@@ -19,7 +19,6 @@ from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
-    SimcoreServiceSettingsLabel,
 )
 from models_library.services import (
     ServiceKey,
@@ -118,7 +117,7 @@ _VALID_ENV_VALUE_NUM_PARTS: Final[int] = 2
 
 def _compute_node_envs(node_labels: SimcoreServiceLabels) -> ContainerEnvsDict:
     node_envs = {}
-    for service_setting in cast(SimcoreServiceSettingsLabel, node_labels.settings):
+    for service_setting in node_labels.settings:
         if service_setting.name == "env":
             for complete_env in service_setting.value:
                 parts = complete_env.split("=")

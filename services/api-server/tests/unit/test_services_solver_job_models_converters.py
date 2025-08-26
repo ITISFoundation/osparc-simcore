@@ -6,7 +6,8 @@ import pytest
 from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
-from pydantic import HttpUrl, RootModel, TypeAdapter, create_model
+from pydantic import RootModel, TypeAdapter, create_model
+from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -182,9 +183,10 @@ def test_create_job_from_project(faker: Faker):
             "quality": {},
             "tags": [],
             "state": {
-                "locked": {
-                    "value": False,
+                "share_state": {
                     "status": "CLOSED",
+                    "locked": False,
+                    "current_user_groupids": [],
                 },
                 "state": {"value": "SUCCESS"},
             },
@@ -207,8 +209,11 @@ def test_create_job_from_project(faker: Faker):
     solver_key = "simcore/services/comp/itis/sleeper"
     solver_version = "2.0.2"
 
-    def fake_url_for(*args, **kwargs) -> HttpUrl:
-        return HttpUrl(faker.url())
+    fake_job_links = JobLinks(
+        url_template=faker.url() + "/{job_id}",
+        runner_url_template=faker.url(),
+        outputs_url_template=faker.url() + "/{job_id}",
+    )
 
     solver = Solver(
         id=solver_key,
@@ -220,13 +225,17 @@ def test_create_job_from_project(faker: Faker):
     )
 
     job = create_job_from_project(
-        solver_or_program=solver, project=project, url_for=fake_url_for
+        solver_or_program=solver,
+        project=project,
+        job_links=fake_job_links,
     )
 
     assert job.id == project.uuid
 
+    field_names = Job.model_fields.keys()
+
     non_propagated_fields = {
-        name for name in job.model_fields if name.endswith("url")
+        name for name in field_names if name.endswith("url")
     }.union({"name"})
     assert all(getattr(job, _) for _ in non_propagated_fields)
 

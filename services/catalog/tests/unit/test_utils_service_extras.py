@@ -6,7 +6,9 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from models_library.api_schemas_directorv2.services import ServiceExtras
+from models_library.api_schemas_directorv2.services import (
+    ServiceExtras,
+)
 from pydantic import TypeAdapter
 from respx import MockRouter
 

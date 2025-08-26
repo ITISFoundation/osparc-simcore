@@ -195,8 +195,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
         const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
         if (
-          studyBrowserContext === "search" ||
-          studyBrowserContext === "workspaces"
+          studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS ||
+          studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES
         ) {
           const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
           editButton.addListener("execute", () => {
@@ -221,7 +221,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
           trashButton.addListener("execute", () => this.__trashWorkspaceRequested(), this);
           menu.add(trashButton);
-        } else if (studyBrowserContext === "trash") {
+        } else if (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
           const restoreButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
           restoreButton.addListener("execute", () => this.fireDataEvent("untrashWorkspaceRequested", this.getWorkspace()), this);
           menu.add(restoreButton);
@@ -287,7 +287,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     __itemSelected: function() {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       // do not allow selecting workspace
-      if (studyBrowserContext !== "trash") {
+      if (studyBrowserContext !== osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
         this.fireDataEvent("workspaceSelected", this.getWorkspaceId());
       }
     },

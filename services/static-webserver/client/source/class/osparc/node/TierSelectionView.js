@@ -59,7 +59,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
             });
             const studyId = node.getStudy().getUuid();
             const nodeId = node.getNodeId();
-            osparc.store.Study.getSelectedPricingUnit(studyId, nodeId)
+            osparc.store.Study.getInstance().getSelectedPricingUnit(studyId, nodeId)
               .then(selectedPricingUnit => {
                 if (selectedPricingUnit && selectedPricingUnit["pricingUnitId"]) {
                   const tierFound = tierBox.getSelectables().find(t => t.getModel() === selectedPricingUnit["pricingUnitId"]);
@@ -97,7 +97,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
                     tierBox.setEnabled(false);
                     const selectedUnitId = selection[0].getModel();
                     const selectedUnit = pricingUnits.find(pUnit => pUnit.getPricingUnitId() === selectedUnitId)
-                    osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, pricingPlans["pricingPlanId"], selectedUnit)
+                    osparc.store.Study.getInstance().updateSelectedPricingUnit(studyId, nodeId, pricingPlans["pricingPlanId"], selectedUnit)
                       .finally(() => {
                         tierBox.setEnabled(true);
                         showSelectedTier(selectedUnitId);

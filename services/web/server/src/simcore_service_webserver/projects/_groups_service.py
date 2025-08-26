@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel, EmailStr, TypeAdapter
 
-from ..users import api as users_service
+from ..users import users_service
 from . import _groups_repository
 from ._access_rights_service import check_user_project_permission
 from ._groups_models import ProjectGroupGetDB
@@ -121,7 +121,7 @@ async def replace_project_group(
             raise ProjectInvalidRightsError(
                 user_id=user_id,
                 project_uuid=project_id,
-                reason=f"User does not have access to modify owner project group in project {project_id}",
+                details=f"User does not have access to modify owner project group in project {project_id}",
             )
 
     project_group_db: ProjectGroupGetDB = (
@@ -168,7 +168,7 @@ async def delete_project_group(
         raise ProjectInvalidRightsError(
             user_id=user_id,
             project_uuid=project_id,
-            reason=f"User does not have access to modify owner project group in project {project_id}",
+            details=f"User does not have access to modify owner project group in project {project_id}",
         )
 
     await _groups_repository.delete_project_group(
@@ -252,3 +252,20 @@ async def create_project_group_without_checking_permissions(
         write=write,
         delete=delete,
     )
+
+
+async def list_project_groups_by_project_without_checking_permissions(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+) -> list[ProjectGroupGet]:
+    project_groups_db: list[ProjectGroupGetDB] = (
+        await _groups_repository.list_project_groups(app=app, project_id=project_id)
+    )
+
+    project_groups_api: list[ProjectGroupGet] = [
+        ProjectGroupGet.model_validate(group.model_dump())
+        for group in project_groups_db
+    ]
+
+    return project_groups_api

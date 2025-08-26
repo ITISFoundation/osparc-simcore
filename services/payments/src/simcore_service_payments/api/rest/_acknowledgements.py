@@ -6,7 +6,7 @@ from models_library.api_schemas_payments.errors import (
     PaymentMethodNotFoundError,
     PaymentNotFoundError,
 )
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_context
 
 from ..._constants import ACKED, PGDB
@@ -80,7 +80,7 @@ async def acknowledge_payment(
     if ack.saved:
         if ack.saved.payment_method_id is None or not ack.saved.success:
             _logger.error(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     f"Got ack that {payment_id=} was completed but failed to save the payment-method used for the payment as requested.",
                     error=RuntimeError("Failed to save payment-method after payment"),
                     error_context={

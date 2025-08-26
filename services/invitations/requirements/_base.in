@@ -16,4 +16,4 @@
 
 cryptography
 packaging
-typer[all]
+typer

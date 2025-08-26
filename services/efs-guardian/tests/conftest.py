@@ -14,6 +14,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
@@ -23,6 +24,7 @@ pytest_plugins = [
     "pytest_simcore.faker_users_data",
     "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_projects_data",
+    "pytest_simcore.logging",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",

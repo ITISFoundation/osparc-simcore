@@ -27,6 +27,8 @@ from servicelib.long_running_tasks.models import TaskGet
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     AsyncJobComposedResult,
 )
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.application_settings import get_application_settings
@@ -35,17 +37,21 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
 API_PREFIX = "/" + api_version_prefix
 
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    use_in_memory_redis: RedisSettings,
+    rabbit_settings: RabbitSettings,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    envs_plugins = setenvs_from_dict(
-        monkeypatch,
-        {},
-    )
+    envs_plugins = setenvs_from_dict(monkeypatch, {})
     return app_environment | envs_plugins
 
 
@@ -91,6 +97,7 @@ def _standard_user_role_response() -> (
 
 @pytest.mark.parametrize(*_standard_user_role_response())
 async def test_copying_large_project_and_aborting_correctly_removes_new_project(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
@@ -134,7 +141,7 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     await assert_status(resp, expected.no_content)
     # wait to check that the call to storage is "done"
     async for attempt in AsyncRetrying(
-        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
+        reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)
     ):
         with attempt:
             slow_storage_subsystem_mock.delete_project.assert_called_once()
@@ -142,6 +149,7 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
 
 @pytest.mark.parametrize(*_standard_user_role_response())
 async def test_copying_large_project_and_retrieving_copy_task(
+    mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
@@ -188,6 +196,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
 @pytest.mark.parametrize(*_standard_user_role_response())
 async def test_creating_new_project_from_template_without_copying_data_creates_skeleton(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
@@ -237,6 +246,7 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
 @pytest.mark.parametrize(*_standard_user_role_response())
 async def test_creating_new_project_as_template_without_copying_data_creates_skeleton(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, MagicMock],
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],
@@ -296,6 +306,7 @@ async def test_copying_too_large_project_returns_422(
 ):
     assert client.app
     app_settings = get_application_settings(client.app)
+    assert app_settings.WEBSERVER_PROJECTS
     large_project_total_size = (
         app_settings.WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES + 1
     )

@@ -469,7 +469,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
             .catch(err => osparc.FlashMessenger.logError(err, this.tr("There was an issue while updating the Quality Assessment.")))
             .finally(() => btn.setFetching(false));
         } else {
-          osparc.store.Study.patchStudyData(this.__resourceData, "quality", newQuality)
+          osparc.store.Study.getInstance().patchStudyData(this.__resourceData, "quality", newQuality)
             .then(() => {
               this.__initResourceData(this.__resourceData);
               this.fireDataEvent("updateQuality", this.__resourceData);

@@ -14,8 +14,8 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.workspaces import WorkspaceGet
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import create_project
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -23,10 +23,6 @@ from simcore_service_webserver.projects.models import ProjectDict
 
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
-    mocker.patch(
-        "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
-        autospec=True,
-    )
     mocker.patch(
         "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
         autospec=True,
@@ -43,6 +39,7 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_workspaces_full_workflow_deletion(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

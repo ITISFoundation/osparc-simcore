@@ -81,6 +81,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
 
     this.__updatingStudy = 0;
+    this.__throttledPatchPending = false;
   },
 
   events: {
@@ -105,7 +106,48 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   statics: {
     AUTO_SAVE_INTERVAL: 3000,
+    DIFF_CHECK_INTERVAL: 300,
+    THROTTLE_PATCH_TIME: 500,
     READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved."),
+
+    curateBackendProjectDocument: function(projectDocument) {
+      // ignore the ``state`` property, it has its own channel
+      [
+        "state",
+      ].forEach(prop => {
+        delete projectDocument[prop];
+      });
+      // in order to pair it the with frontend's node serialization
+      // remove null entries
+      // remove state entries
+      Object.keys(projectDocument["workbench"]).forEach(nodeId => {
+        const node = projectDocument["workbench"][nodeId];
+        Object.keys(node).forEach(nodeProp => {
+          if (nodeProp === "state") {
+            delete node[nodeProp];
+          }
+          if (node[nodeProp] === null) {
+            delete node[nodeProp];
+          }
+        });
+      });
+      delete projectDocument["ui"]["icon"];
+      delete projectDocument["ui"]["templateType"];
+    },
+
+    curateFrontendProjectDocument: function(myStudy) {
+      // the updatedStudy model doesn't contain the following properties
+      [
+        "accessRights",
+        "creationDate",
+        "folderId",
+        "prjOwner",
+        "tags",
+        "trashedBy",
+      ].forEach(prop => {
+        delete myStudy[prop];
+      });
+    }
   },
 
   members: {
@@ -114,11 +156,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __workbenchView: null,
     __slideshowView: null,
     __autoSaveTimer: null,
+    __savingTimer: null,
     __studyEditorIdlingTracker: null,
-    __studyDataInBackend: null,
+    __lastSyncedProjectDocument: null,
+    __lastSyncedProjectVersion: null,
+    __pendingProjectData: null,
+    __applyProjectDocumentTimer: null,
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
+    __throttledPatchPending: null,
+    __blockUpdates: null,
 
     setStudyData: function(studyData) {
       if (this.__settingStudy) {
@@ -129,12 +177,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this._showLoadingPage(this.tr("Starting") + " " + studyData.name);
 
       // Before starting a study, make sure the latest version is fetched
-      const params = {
-        url: {
-          "studyId": studyData.uuid
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getOne", params)
+      osparc.store.Study.getInstance().getOne(studyData.uuid)
         .then(latestStudyData => {
           const study = new osparc.data.model.Study(latestStudyData);
           this.setStudy(study);
@@ -153,7 +196,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.openStudy()
         .then(studyData => {
-          this.__setStudyDataInBackend(studyData);
+          this.__setLastSyncedProjectDocument(studyData);
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
@@ -179,20 +222,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if ("status" in err && err["status"]) {
             if (err["status"] == 402) {
               msg = err["message"];
-              // The backend might have thrown a 402 because the wallet was negative
-              const match = msg.match(/last transaction of\s([-]?\d+(\.\d+)?)\sresulted/);
-              let debt = null;
-              if ("debtAmount" in err) {
-                // the study has some debt that needs to be paid
-                debt = err["debtAmount"];
-              } else if (match) {
-                // the study has some debt that needs to be paid
-                debt = parseFloat(match[1]); // Convert the captured string to a number
-              }
-              if (debt) {
-                // if get here, it means that the 402 was thrown due to the debt
-                osparc.store.Store.getInstance().setStudyDebt(study.getUuid(), debt);
-              }
+              osparc.study.Utils.extractDebtFromError(study.getUuid(), err);
             } else if (err["status"] == 409) { // max_open_studies_per_user
               msg = err["message"];
             } else if (err["status"] == 423) { // Locked
@@ -239,6 +269,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
         this.__startAutoSaveTimer();
+        this.__startSavingTimer();
       } else {
         const msg = this.self().READ_ONLY_TEXT;
         osparc.FlashMessenger.logAs(msg, "WARNING");
@@ -261,17 +292,26 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.nodeSelected(nodeId);
       }, this);
 
-      workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
-      workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        study.listenToChanges(); // this includes the listener on the workbench and ui
+        study.addListener("projectDocumentChanged", e => this.projectDocumentChanged(e.getData()), this);
+      } else {
+        workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
+        workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
+      }
+
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        this.__listenToProjectDocument();
+      }
     },
 
-    __setStudyDataInBackend: function(studyData) {
-      this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
+    __setLastSyncedProjectDocument: function(studyData) {
+      this.__lastSyncedProjectDocument = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
 
-      // remove the runHash, this.__studyDataInBackend is only used for diff comparison and the frontend doesn't keep it
-      Object.keys(this.__studyDataInBackend["workbench"]).forEach(nodeId => {
-        if ("runHash" in this.__studyDataInBackend["workbench"][nodeId]) {
-          delete this.__studyDataInBackend["workbench"][nodeId]["runHash"];
+      // remove the runHash, this.__lastSyncedProjectDocument is only used for diff comparison and the frontend doesn't keep it
+      Object.keys(this.__lastSyncedProjectDocument["workbench"]).forEach(nodeId => {
+        if ("runHash" in this.__lastSyncedProjectDocument["workbench"][nodeId]) {
+          delete this.__lastSyncedProjectDocument["workbench"][nodeId]["runHash"];
         }
       });
     },
@@ -286,6 +326,104 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToEvent();
       this.__listenToServiceStatus();
       this.__listenToStatePorts();
+    },
+
+    __listenToProjectDocument: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("projectDocument:updated")) {
+        socket.on("projectDocument:updated", data => {
+          if (data["projectId"] === this.getStudy().getUuid()) {
+            if (data["clientSessionId"] && data["clientSessionId"] === osparc.utils.Utils.getClientSessionID()) {
+              // ignore my own updates
+              console.debug("ProjectDocument Discarded: My own", data);
+              return;
+            }
+            this.__projectDocumentReceived(data);
+          }
+        }, this);
+      }
+    },
+
+    __projectDocumentReceived: function(data) {
+      const documentVersion = data["version"];
+
+      // Ignore outdated updates
+      if (this.__lastSyncedProjectVersion && documentVersion <= this.__lastSyncedProjectVersion) {
+        // ignore old updates
+        console.debug("ProjectDocument Discarded: Ignoring old", data);
+        return;
+      }
+
+      // Always keep the latest version in pending buffer
+      if (!this.__pendingProjectData || documentVersion > (this.__pendingProjectData.version || 0)) {
+        this.__pendingProjectData = data;
+      }
+
+      // Reset the timer if it's already running
+      if (this.__applyProjectDocumentTimer) {
+        console.debug("ProjectDocument Discarded: Resetting applyProjectDocument timer");
+        clearTimeout(this.__applyProjectDocumentTimer);
+      }
+
+      // Throttle applying updates
+      this.__applyProjectDocumentTimer = setTimeout(() => {
+        if (!this.__pendingProjectData) {
+          return;
+        }
+        this.__applyProjectDocumentTimer = null;
+
+        // Apply the latest buffered project document
+        const latestData = this.__pendingProjectData;
+        this.__pendingProjectData = null;
+
+        this.__applyProjectDocument(latestData);
+      }, 3*this.self().THROTTLE_PATCH_TIME);
+      // make it 3 times longer.
+      // when another client adds a node:
+      // - there is a POST call
+      // - then (after the throttle) a PATCH on its position
+      // without waiting for it 3 times, this client might place it on the default 0,0
+    },
+
+    __applyProjectDocument: function(data) {
+      console.debug("ProjectDocument applying:", data);
+      this.__lastSyncedProjectVersion = data["version"];
+      const updatedProjectDocument = data["document"];
+
+      // curate projectDocument:updated document
+      this.self().curateBackendProjectDocument(updatedProjectDocument);
+
+      const myStudy = this.getStudy().serialize();
+      // curate myStudy
+      this.self().curateFrontendProjectDocument(myStudy);
+
+      this.__blockUpdates = true;
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedProjectDocument);
+      const jsonPatches = osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatches(delta);
+      const uiPatches = [];
+      const workbenchPatches = [];
+      const studyPatches = [];
+      for (const jsonPatch of jsonPatches) {
+        if (jsonPatch.path.startsWith('/ui/')) {
+          uiPatches.push(jsonPatch);
+        } else if (jsonPatch.path.startsWith('/workbench/')) {
+          workbenchPatches.push(jsonPatch);
+        } else {
+          studyPatches.push(jsonPatch);
+        }
+      }
+      if (workbenchPatches.length > 0) {
+        this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches, uiPatches);
+      }
+      if (uiPatches.length > 0) {
+        this.getStudy().getUi().updateUiFromPatches(uiPatches);
+      }
+      if (studyPatches.length > 0) {
+        this.getStudy().updateStudyFromPatches(studyPatches);
+      }
+
+      this.__blockUpdates = false;
     },
 
     __listenToLogger: function() {
@@ -640,17 +778,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__reloadSnapshotsAndIterations();
         }
         this.getStudyLogger().info(null, "Pipeline started");
-        /* If no projectStateUpdated comes in 60 seconds, client must
-        check state of pipeline and update button accordingly. */
-        const timer = setTimeout(() => {
-          osparc.store.Store.getInstance().getStudyState(pipelineId);
-        }, 60000);
-        const socket = osparc.wrapper.WebSocket.getInstance();
-        socket.getSocket().once("projectStateUpdated", ({ "project_uuid": projectUuid }) => {
-          if (projectUuid === pipelineId) {
-            clearTimeout(timer);
-          }
-        });
       }
     },
 
@@ -807,6 +934,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
     },
 
+    // ------------------ IDLING TRACKER ------------------
     __startIdlingTracker: function() {
       if (this.__studyEditorIdlingTracker) {
         this.__studyEditorIdlingTracker.stop();
@@ -823,8 +951,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__studyEditorIdlingTracker = null;
       }
     },
+    // ------------------ IDLING TRACKER ------------------
 
+    // ------------------ AUTO SAVER ------------------
     __startAutoSaveTimer: function() {
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        // If event driven patch is enabled, auto save is not needed
+        return;
+      }
+
       // Save every 3 seconds
       const timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
       timer.addListener("interval", () => {
@@ -848,10 +983,37 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__autoSaveTimer.restart();
       }
     },
+    // ------------------ AUTO SAVER ------------------
+
+    // ---------------- SAVING TIMER ------------------
+    __startSavingTimer: function() {
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        // If event driven patch is enabled, saving timer indicator is not needed
+        return;
+      }
+
+      const timer = this.__savingTimer = new qx.event.Timer(this.self().DIFF_CHECK_INTERVAL);
+      timer.addListener("interval", () => {
+        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
+          return;
+        }
+        this.getStudy().setSavePending(this.didStudyChange());
+      }, this);
+      timer.start();
+    },
+
+    __stopSavingTimer: function() {
+      if (this.__savingTimer && this.__savingTimer.isEnabled()) {
+        this.__savingTimer.stop();
+        this.__savingTimer.setEnabled(false);
+      }
+    },
+    // ---------------- SAVING TIMER ------------------
 
     __stopTimers: function() {
       this.__stopIdlingTracker();
       this.__stopAutoSaveTimer();
+      this.__stopSavingTimer();
     },
 
     __getStudyDiffs: function() {
@@ -860,7 +1022,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         sourceStudy,
         delta: {},
       }
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__studyDataInBackend, sourceStudy);
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__lastSyncedProjectDocument, sourceStudy);
       if (delta) {
         // lastChangeDate and creationDate should not be taken into account as data change
         delete delta["creationDate"];
@@ -870,9 +1032,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return studyDiffs;
     },
 
+    // didStudyChange takes around 0.5ms
     didStudyChange: function() {
       const studyDiffs = this.__getStudyDiffs();
-      return Boolean(Object.keys(studyDiffs.delta).length);
+      const changed = Boolean(Object.keys(studyDiffs.delta).length);
+      this.getStudy().setSavePending(changed);
+      return changed;
     },
 
     __checkStudyChanges: function() {
@@ -886,6 +1051,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    /**
+     * @param {JSON Patch} data It will soon be used to patch the project document https://datatracker.ietf.org/doc/html/rfc6902
+     */
+    projectDocumentChanged: function(patchData) {
+      patchData["userGroupId"] = osparc.auth.Data.getInstance().getGroupId();
+      // avoid echo loop
+      if (this.__blockUpdates) {
+        return;
+      }
+
+      this.getStudy().setSavePending(true);
+      // throttling: do not update study document right after a change, wait for THROTTLE_PATCH_TIME
+      if (!this.__throttledPatchPending) {
+        this.__throttledPatchPending = true;
+
+        setTimeout(() => {
+          this.updateStudyDocument();
+          this.__throttledPatchPending = false;
+        }, this.self().THROTTLE_PATCH_TIME);
+      }
+    },
+
     updateStudyDocument: function() {
       if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
@@ -893,10 +1080,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
       }
 
+      this.getStudy().setSavePending(true);
       this.__updatingStudy++;
       const studyDiffs = this.__getStudyDiffs();
-      return this.getStudy().patchStudyDelayed(studyDiffs.delta, studyDiffs.sourceStudy)
-        .then(studyData => this.__setStudyDataInBackend(studyData))
+      return this.getStudy().patchStudyDiffs(studyDiffs.delta, studyDiffs.sourceStudy)
+        .then(studyData => this.__setLastSyncedProjectDocument(studyData))
         .catch(error => {
           if ("status" in error && error.status === 409) {
             console.log("Flash message blocked"); // Workaround for osparc-issues #1189
@@ -908,6 +1096,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           throw error;
         })
         .finally(() => {
+          this.getStudy().setSavePending(false);
           this.__updatingStudy--;
           if (this.__updateThrottled && this.__updatingStudy === 0) {
             this.__updateThrottled = false;
@@ -917,13 +1106,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __closeStudy: function() {
-      const params = {
-        url: {
-          "studyId": this.getStudy().getUuid()
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
-      osparc.data.Resources.fetch("studies", "close", params)
+      osparc.store.Study.getInstance().closeStudy(this.getStudy().getUuid())
         .catch(err => console.error(err));
     },
 

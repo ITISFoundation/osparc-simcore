@@ -14,7 +14,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
 
-from ..users.api import get_user
+from ..users import users_service
 from . import _groups_repository
 from .exceptions import GroupsError
 
@@ -154,12 +154,18 @@ async def delete_standard_group(
 #
 
 
-async def list_group_members(
+async def list_group_members_with_caller_check(
     app: web.Application, user_id: UserID, group_id: GroupID
 ) -> list[GroupMember]:
-    return await _groups_repository.list_users_in_group(
-        app, caller_id=user_id, group_id=group_id
+    return await _groups_repository.list_users_in_group_with_caller_check(
+        app, caller_user_id=user_id, group_id=group_id
     )
+
+
+async def list_group_members(
+    app: web.Application, group_id: GroupID
+) -> list[GroupMember]:
+    return await _groups_repository.list_users_in_group(app, group_id=group_id)
 
 
 async def get_group_member(
@@ -219,7 +225,7 @@ async def is_user_by_email_in_group(
 
 
 async def auto_add_user_to_groups(app: web.Application, user_id: UserID) -> None:
-    user: dict = await get_user(app, user_id)
+    user: dict = await users_service.get_user(app, user_id)
     return await _groups_repository.auto_add_user_to_groups(app, user=user)
 
 
@@ -246,7 +252,6 @@ async def add_user_in_group(
     new_by_user_id: UserID | None = None,
     new_by_user_name: IDStr | None = None,
     new_by_user_email: EmailStr | None = None,
-    # payload
     access_rights: AccessRightsDict | None = None,
 ) -> None:
     """Adds new_user (either by id or email) in group (with gid) owned by user_id
@@ -259,11 +264,16 @@ async def add_user_in_group(
         msg = "Invalid method call, required one of these: user id, username or user email, none provided"
         raise GroupsError(msg=msg)
 
+    # get target user to add to group
     if new_by_user_email:
         user = await _groups_repository.get_user_from_email(
             app, email=new_by_user_email, caller_id=user_id
         )
         new_by_user_id = user.id
+
+    if new_by_user_id is not None:
+        new_user = await users_service.get_user(app, new_by_user_id)
+        new_by_user_name = new_user["name"]
 
     return await _groups_repository.add_new_user_in_group(
         app,

@@ -2,8 +2,8 @@ import json
 import logging
 from collections.abc import Awaitable, Callable
 
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.redis import exclusive
 

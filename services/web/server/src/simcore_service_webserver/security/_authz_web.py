@@ -6,7 +6,7 @@ from aiohttp import web
 from models_library.users import UserID
 
 from ._authz_access_model import AuthContextDict, OptionalContext
-from ._constants import PERMISSION_PRODUCT_LOGIN_KEY
+from ._constants import MSG_UNAUTHORIZED, PERMISSION_PRODUCT_LOGIN_KEY
 
 assert PERMISSION_PRODUCT_LOGIN_KEY  # nosec
 
@@ -28,7 +28,7 @@ async def check_user_authorized(request: web.Request) -> UserID:
     # NOTE: Same as aiohttp_security.api.check_authorized
     user_id: UserID | None = await aiohttp_security.api.authorized_userid(request)
     if user_id is None:
-        raise web.HTTPUnauthorized
+        raise web.HTTPUnauthorized(text=MSG_UNAUTHORIZED)
     return user_id
 
 
@@ -53,4 +53,4 @@ async def check_user_permission(
             msg += f" {context.get('product_name')}"
         else:
             msg += f" {permission}"
-        raise web.HTTPForbidden(reason=msg)
+        raise web.HTTPForbidden(text=msg)

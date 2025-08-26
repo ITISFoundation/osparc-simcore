@@ -25,13 +25,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const params = {
-      url: {
-        studyId
-      },
-      data: osparc.utils.Utils.getClientSessionID()
-    };
-    osparc.data.Resources.fetch("studies", "open", params)
+    osparc.store.Study.getInstance().openStudy(studyId)
       .then(studyData => {
         // create study
         const study = new osparc.data.model.Study(studyData);
@@ -47,7 +41,11 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           }, this);
         }
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        osparc.FlashMessenger.logError(err);
+        qx.core.Init.getApplication().logout();
+      });
   },
 
   properties: {
@@ -80,28 +78,10 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       const iframeHandler = node.getIframeHandler();
       if (iframeHandler) {
         iframeHandler.checkState();
-        iframeHandler.addListener("iframeChanged", () => this.__iFrameChanged(), this);
-        iframeHandler.getIFrame().addListener("load", () => this.__iFrameChanged(), this);
-        this.__iFrameChanged();
-
+        osparc.desktop.WorkbenchView.listenToIframeStateChanges(node, this);
         this.__attachSocketEventHandlers();
       } else {
         console.error(node.getLabel() + " iframe handler not ready");
-      }
-    },
-
-    __iFrameChanged: function() {
-      this._removeAll();
-
-      if (this.getNode() && this.getNode().getIframeHandler()) {
-        const iframeHandler = this.getNode().getIframeHandler();
-        const loadingPage = iframeHandler.getLoadingPage();
-        const iFrame = iframeHandler.getIFrame();
-        const src = iFrame.getSource();
-        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-        this._add(iFrameView, {
-          flex: 1
-        });
       }
     },
 

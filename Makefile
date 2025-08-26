@@ -89,7 +89,31 @@ export DOCKER_REGISTRY  ?= itisfoundation
 
 MAKEFILES_WITH_OPENAPI_SPECS := $(shell find . -mindepth 2 -type f -name 'Makefile' -not -path '*/.*' -exec grep -l '^openapi-specs:' {} \; | xargs realpath)
 
+# WSL 2 tricks
+define _check_wsl_mirroring
+$(shell \
+    if [ "$(IS_WSL2)" = "WSL2" ]; then \
+        win_user=$$(powershell.exe '$$env:UserName' | tr -d '\r' | tail -n 1 | xargs); \
+        config_path="/mnt/c/Users/$$win_user/.wslconfig"; \
+        if [ -f "$$config_path" ] && grep -q "networkingMode.*=.*mirrored" "$$config_path" 2>/dev/null; then \
+            echo "true"; \
+        else \
+            echo "false"; \
+        fi; \
+    else \
+        echo "false"; \
+    fi \
+)
+endef
+
+WSL_MIRRORED := $(_check_wsl_mirroring)
+
+
+ifeq ($(WSL_MIRRORED),true)
+get_my_ip := 127.0.0.1
+else
 get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
+endif
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
 ifeq ($(IS_WSL2),WSL2)
@@ -378,8 +402,8 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
@@ -389,8 +413,8 @@ ifeq ($(target),)
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
 else
 	# deploys ONLY $(target) service
 	@docker compose --file $< up --detach $(target)
@@ -502,11 +526,6 @@ push-version: tag-version
 .venv: .check-uv-installed
 	@uv venv $@
 	@echo "# upgrading tools to latest version in" && $@/bin/python --version
-	@uv pip --quiet install --upgrade \
-		pip~=24.0 \
-		wheel \
-		setuptools \
-		uv
 	@uv pip list
 
 devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
@@ -676,6 +695,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 					sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
 					echo restarting engine... &&\
 					sudo service docker restart &&\
+					sleep 5 &&\
 					echo done)
 
 	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
@@ -687,7 +707,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 							--publish 5000:5000 \
 							--volume $(LOCAL_REGISTRY_VOLUME):/var/lib/registry \
 							--name $(LOCAL_REGISTRY_HOSTNAME) \
-							registry:2)
+							registry:3)
 
 	# WARNING: environment file .env is now setup to use local registry on port 5000 without any security (take care!)...
 	@echo REGISTRY_AUTH=False >> .env

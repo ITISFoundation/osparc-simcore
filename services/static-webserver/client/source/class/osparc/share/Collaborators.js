@@ -185,7 +185,7 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __canIShare: function() {
-      if (this._resourceType === "study" && this._serializedDataCopy["workspaceId"]) {
+      if (this._serializedDataCopy["workspaceId"] && this._resourceType === "study") {
         // Access Rights are set at workspace level
         return false;
       }
@@ -197,6 +197,9 @@ qx.Class.define("osparc.share.Collaborators", {
         case "tutorial":
         case "hypertool":
           canIShare = osparc.data.model.Study.canIWrite(this._serializedDataCopy["accessRights"]);
+          break;
+        case "function":
+          canIShare = osparc.data.model.Function.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
         case "service":
           canIShare = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
@@ -224,6 +227,9 @@ qx.Class.define("osparc.share.Collaborators", {
         case "hypertool":
           fullOptions = osparc.data.model.Study.canIDelete(this._serializedDataCopy["accessRights"]);
           break;
+        case "function":
+          fullOptions = osparc.data.model.Function.canIWrite(this._serializedDataCopy["accessRights"]);
+          break;
         case "service":
           fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
@@ -244,16 +250,17 @@ qx.Class.define("osparc.share.Collaborators", {
         case "template":
         case "tutorial":
         case "hypertool":
+        case "tag":
           rolesLayout = osparc.data.Roles.createRolesStudyInfo();
+          break;
+        case "function":
+          rolesLayout = osparc.data.Roles.createRolesFunctionInfo();
           break;
         case "service":
           rolesLayout = osparc.data.Roles.createRolesServicesInfo();
           break;
         case "workspace":
           rolesLayout = osparc.data.Roles.createRolesWorkspaceInfo();
-          break;
-        case "tag":
-          rolesLayout = osparc.data.Roles.createRolesStudyInfo();
           break;
       }
       return rolesLayout;
@@ -286,10 +293,13 @@ qx.Class.define("osparc.share.Collaborators", {
     __createCollaboratorsListSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const label = new qx.ui.basic.Label(this.tr("Shared with"));
-      label.set({allowGrowX: true});
+      const label = new qx.ui.basic.Label(this.tr("Shared with:"));
+      label.set({
+        allowGrowX: true,
+        alignY: "middle",
+      });
       header.add(label, {
         flex: 1
       });
@@ -306,7 +316,8 @@ qx.Class.define("osparc.share.Collaborators", {
         decorator: "no-border",
         spacing: 3,
         width: 150,
-        padding: 0
+        padding: 0,
+        backgroundColor: "transparent",
       });
 
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();
@@ -348,7 +359,12 @@ qx.Class.define("osparc.share.Collaborators", {
           item.addListener("removeMember", e => {
             const orgMember = e.getData();
             if (
-              ["study", "template", "tutorial", "hypertool"].includes(this._resourceType) &&
+              [
+                "study",
+                "template",
+                "tutorial",
+                "hypertool",
+              ].includes(this._resourceType) &&
               !osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, orgMember["gid"])
             ) {
               let msg = this.tr("Collaborator can't be removed:");
@@ -376,7 +392,12 @@ qx.Class.define("osparc.share.Collaborators", {
     __getLeaveStudyButton: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (
-        ["study", "template", "tutorial", "hypertool"].includes(this._resourceType) &&
+        [
+          "study",
+          "template",
+          "tutorial",
+          "hypertool",
+        ].includes(this._resourceType) &&
         osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, myGid)
       ) {
         const leaveText = this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
@@ -413,16 +434,13 @@ qx.Class.define("osparc.share.Collaborators", {
       // reload list
       this.__collaboratorsModel.removeAll();
 
+      const usersStore = osparc.store.Users.getInstance();
       const groupsStore = osparc.store.Groups.getInstance();
-      const everyoneGIds = [
-        groupsStore.getEveryoneProductGroup().getGroupId(),
-        groupsStore.getEveryoneGroup().getGroupId()
-      ];
+      const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
+      const allGroups = groupsStore.getAllGroups();
+      const showOptions = this.__canIChangePermissions();
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
-      const showOptions = this.__canIChangePermissions();
-      const allGroups = groupsStore.getAllGroups();
-      const usersStore = osparc.store.Users.getInstance();
       for (let i=0; i<Object.keys(accessRights).length; i++) {
         const gid = parseInt(Object.keys(accessRights)[i]);
         let collab = null;
@@ -441,7 +459,7 @@ qx.Class.define("osparc.share.Collaborators", {
           };
           if (!("getUserId" in collab)) {
             // organization
-            if (everyoneGIds.includes(parseInt(gid))) {
+            if (everyoneGroupIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
             } else if (!collaborator["thumbnail"]) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/users/26";

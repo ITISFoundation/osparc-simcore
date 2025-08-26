@@ -20,10 +20,9 @@ from typing import Any, Final
 from uuid import uuid4
 
 import arrow
-import faker
 from faker import Faker
 
-DEFAULT_FAKER: Final = faker.Faker()
+DEFAULT_FAKER: Final = Faker()
 
 
 def random_icon_url(fake: Faker):
@@ -32,6 +31,15 @@ def random_icon_url(fake: Faker):
 
 def random_thumbnail_url(fake: Faker):
     return fake.image_url(width=32, height=32)
+
+
+def random_phone_number(fake: Faker = DEFAULT_FAKER) -> str:
+    # NOTE: faker.phone_number() does not validate with `phonenumbers` library.
+    phone = fake.random_element(
+        ["+41763456789", "+19104630364", "+13013044567", "+34 950 453 837"]
+    )
+    tail = f"{fake.pyint(100, 999)}"
+    return phone[: -len(tail)] + tail  # ensure phone keeps its length
 
 
 def _compute_hash(password: str) -> str:
@@ -55,9 +63,7 @@ DEFAULT_TEST_PASSWORD = "password-with-at-least-12-characters"  # noqa: S105
 _DEFAULT_HASH = _compute_hash(DEFAULT_TEST_PASSWORD)
 
 
-def random_user(
-    fake: Faker = DEFAULT_FAKER, password: str | None = None, **overrides
-) -> dict[str, Any]:
+def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     from simcore_postgres_database.models.users import users
     from simcore_postgres_database.webserver_models import UserStatus
 
@@ -67,11 +73,34 @@ def random_user(
         # NOTE: ensures user name is unique to avoid flaky tests
         "name": f"{fake.user_name()}_{fake.uuid4()}",
         "email": f"{fake.uuid4()}_{fake.email().lower()}",
-        "password_hash": _DEFAULT_HASH,
         "status": UserStatus.ACTIVE,
     }
 
+    data.update(overrides)
     assert set(data.keys()).issubset({c.name for c in users.columns})
+
+    return data
+
+
+def random_user_secrets(
+    fake: Faker = DEFAULT_FAKER,
+    *,
+    # foreign keys
+    user_id: int,
+    password: str | None = None,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.users_secrets import users_secrets
+
+    assert fake  # nosec
+
+    assert set(overrides.keys()).issubset({c.name for c in users_secrets.columns})
+
+    data = {
+        "user_id": user_id,
+        "password_hash": _DEFAULT_HASH,
+    }
+    assert set(data.keys()).issubset({c.name for c in users_secrets.columns})
 
     # transform password in hash
     if password:
@@ -105,7 +134,7 @@ def random_pre_registration_details(
         "pre_first_name": fake.first_name(),
         "pre_last_name": fake.last_name(),
         "pre_email": fake.email(),
-        "pre_phone": fake.phone_number(),
+        "pre_phone": random_phone_number(fake),
         "institution": fake.company(),
         "address": fake.address().replace("\n", ", "),
         "city": fake.city(),

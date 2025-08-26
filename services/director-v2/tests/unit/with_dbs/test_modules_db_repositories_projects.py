@@ -69,39 +69,40 @@ def workbench() -> dict[str, Any]:
 
 
 @pytest.fixture()
-async def project(
+async def with_project(
     mock_env: EnvVarsDict,
     create_registered_user: Callable[..., dict],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    with_product: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     workbench: dict[str, Any],
 ) -> ProjectAtDB:
-    return await project(create_registered_user(), workbench=workbench)
+    return await create_project(create_registered_user(), workbench=workbench)
 
 
 async def test_is_node_present_in_workbench(
-    initialized_app: FastAPI, project: ProjectAtDB, faker: Faker
+    initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker
 ):
     project_repository = get_repository(initialized_app, ProjectsRepository)
 
-    for node_uuid in project.workbench:
+    for node_uuid in with_project.workbench:
         assert (
             await project_repository.is_node_present_in_workbench(
-                project_id=project.uuid, node_uuid=NodeID(node_uuid)
+                project_id=with_project.uuid, node_uuid=NodeID(node_uuid)
             )
             is True
         )
 
     not_existing_node = faker.uuid4(cast_to=None)
-    assert not_existing_node not in project.workbench
+    assert not_existing_node not in with_project.workbench
     assert (
         await project_repository.is_node_present_in_workbench(
-            project_id=project.uuid, node_uuid=not_existing_node
+            project_id=with_project.uuid, node_uuid=not_existing_node
         )
         is False
     )
 
     not_existing_project = faker.uuid4(cast_to=None)
-    assert not_existing_project != project.uuid
+    assert not_existing_project != with_project.uuid
     assert (
         await project_repository.is_node_present_in_workbench(
             project_id=not_existing_project, node_uuid=not_existing_node
@@ -111,13 +112,13 @@ async def test_is_node_present_in_workbench(
 
 
 async def test_get_project_id_from_node(
-    initialized_app: FastAPI, project: ProjectAtDB, faker: Faker
+    initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker
 ):
     project_repository = get_repository(initialized_app, ProjectsRepository)
-    for node_uuid in project.workbench:
+    for node_uuid in with_project.workbench:
         assert (
             await project_repository.get_project_id_from_node(NodeID(node_uuid))
-            == project.uuid
+            == with_project.uuid
         )
 
     not_existing_node_id = faker.uuid4(cast_to=None)

@@ -2,6 +2,11 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.computations import (
+    ComputationCollectionRunListQueryParams,
+    ComputationCollectionRunPathParams,
+    ComputationCollectionRunRestGet,
+    ComputationCollectionRunTaskListQueryParams,
+    ComputationCollectionRunTaskRestGet,
     ComputationRunIterationsLatestListQueryParams,
     ComputationRunIterationsListQueryParams,
     ComputationRunPathParams,
@@ -23,6 +28,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from servicelib.tracing import with_profiled_span
 
 from ..._meta import API_VTAG as VTAG
 from ...constants import RQ_PRODUCT_KEY
@@ -183,6 +189,107 @@ async def list_computations_latest_iteration_tasks(
             request_url=request.url,
         )
     )
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+####  NEW:
+
+
+@routes.get(
+    f"/{VTAG}/computation-collection-runs",
+    name="list_computation_collection_runs",
+)
+@login_required
+@with_profiled_span
+@permission_required("services.pipeline.*")
+@permission_required("project.read")
+async def list_computation_collection_runs(request: web.Request) -> web.Response:
+    req_ctx = ComputationsRequestContext.model_validate(request)
+    query_params: ComputationCollectionRunListQueryParams = (
+        parse_request_query_parameters_as(
+            ComputationCollectionRunListQueryParams, request
+        )
+    )
+
+    total, items = await _computations_service.list_computation_collection_runs(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        # filters
+        filter_by_root_project_id=query_params.filter_by_root_project_id,
+        filter_only_running=query_params.filter_only_running,
+        # pagination
+        offset=query_params.offset,
+        limit=query_params.limit,
+    )
+
+    page = Page[ComputationCollectionRunRestGet].model_validate(
+        paginate_data(
+            chunk=[
+                ComputationCollectionRunRestGet.model_validate(
+                    run, from_attributes=True
+                )
+                for run in items
+            ],
+            total=total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+            request_url=request.url,
+        )
+    )
+
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+@routes.get(
+    f"/{VTAG}/computation-collection-runs/{{collection_run_id}}/tasks",
+    name="list_computation_collection_run_tasks",
+)
+@login_required
+@permission_required("services.pipeline.*")
+@permission_required("project.read")
+async def list_computation_collection_run_tasks(request: web.Request) -> web.Response:
+    req_ctx = ComputationsRequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(
+        ComputationCollectionRunPathParams, request
+    )
+    query_params: ComputationCollectionRunTaskListQueryParams = (
+        parse_request_query_parameters_as(
+            ComputationCollectionRunTaskListQueryParams, request
+        )
+    )
+
+    total, items = await _computations_service.list_computation_collection_run_tasks(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        collection_run_id=path_params.collection_run_id,
+        # pagination
+        offset=query_params.offset,
+        limit=query_params.limit,
+    )
+
+    page = Page[ComputationCollectionRunTaskRestGet].model_validate(
+        paginate_data(
+            chunk=[
+                ComputationCollectionRunTaskRestGet.model_validate(
+                    run, from_attributes=True
+                )
+                for run in items
+            ],
+            total=total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+            request_url=request.url,
+        )
+    )
+
     return web.Response(
         text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,

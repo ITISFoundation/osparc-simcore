@@ -3,10 +3,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
+import contextlib
 import json
 import logging
-import random
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
@@ -19,14 +18,19 @@ import simcore_service_webserver
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
-from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.projects import (
+    ProjectGet,
+    ProjectStateOutputSchema,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import ProjectState
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.faker_factories import random_phone_number
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.common_headers import (
@@ -39,6 +43,7 @@ from simcore_service_webserver.application_settings_utils import (
     convert_to_environ_vars,
 )
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.projects._crud_api_create import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
@@ -64,6 +69,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 # imports the fixtures for the integration tests
 pytest_plugins = [
     "aiohttp.pytest_plugin",
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.db_entries_mocks",
     "pytest_simcore.docker_compose",
@@ -72,6 +78,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.hypothesis_type_strategies",
+    "pytest_simcore.logging",
     "pytest_simcore.openapi_specs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
@@ -86,6 +93,13 @@ pytest_plugins = [
     "pytest_simcore.simcore_webserver_groups_fixtures",
     "pytest_simcore.socketio_client",
 ]
+
+
+@pytest.fixture
+async def exit_stack() -> AsyncIterator[contextlib.AsyncExitStack]:
+    """Provides an AsyncExitStack that gets cleaned up after each test"""
+    async with contextlib.AsyncExitStack() as stack:
+        yield stack
 
 
 @pytest.fixture(scope="session")
@@ -134,6 +148,11 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
 
 
 @pytest.fixture
+def user_phone_number(faker: Faker) -> PhoneNumberStr:
+    return TypeAdapter(PhoneNumberStr).validate_python(random_phone_number(faker))
+
+
+@pytest.fixture
 async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
     async with NewUser(
         user_data={
@@ -146,7 +165,10 @@ async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
 
 @pytest.fixture
 async def logged_user(
-    client: TestClient, user_role: UserRole, faker: Faker
+    client: TestClient,
+    user_role: UserRole,
+    faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ) -> AsyncIterator[UserInfoDict]:
     """adds a user in db and logs in with client
 
@@ -158,8 +180,7 @@ async def logged_user(
             "role": user_role.name,
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
-            "phone": faker.phone_number()
-            + f"{random.randint(1000, 9999)}",  # noqa: S311
+            "phone": user_phone_number,
         },
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:
@@ -207,7 +228,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
     created_project_uuids = []
     used_clients = []
 
-    async def _setup(
+    async def _setup(  # noqa: C901
         client: TestClient,
         *,
         project: dict | None = None,
@@ -294,7 +315,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             }
         return url, project_data, expected_data, headers
 
-    async def _creator(
+    async def _creator(  # noqa: PLR0915
         client: TestClient,
         expected_accepted_response: HTTPStatus,
         expected_creation_response: HTTPStatus,
@@ -408,9 +429,9 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         # now check returned is as expected
         if new_project:
             # has project state
-            assert not ProjectState(
+            assert not ProjectStateOutputSchema(
                 **new_project.get("state", {})
-            ).locked.value, "Newly created projects should be unlocked"
+            ).share_state.locked, "Newly created projects should be unlocked"
 
             # updated fields
             assert expected_data["uuid"] != new_project["uuid"]
@@ -482,8 +503,12 @@ def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-async def loop(
-    event_loop: asyncio.AbstractEventLoop,
-) -> asyncio.AbstractEventLoop:
-    """Override the event loop inside pytest-aiohttp with the one from pytest-asyncio."""
-    return event_loop
+def with_dev_features_enabled(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+        },
+    )

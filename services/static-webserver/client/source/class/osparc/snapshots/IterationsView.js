@@ -71,12 +71,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
           if (iterations.length) {
             const iterationPromises = [];
             iterations.forEach(iteration => {
-              const params = {
-                url: {
-                  "studyId": iteration["workcopy_project_id"]
-                }
-              };
-              iterationPromises.push(osparc.data.Resources.fetch("studies", "getOne", params));
+              iterationPromises.push(osparc.store.Study.getInstance().getOne(iteration["workcopy_project_id"]));
             });
             Promise.all(iterationPromises)
               .then(values => {
@@ -138,7 +133,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
       const iteration = new osparc.data.model.Study(iterationData);
       iteration.setReadOnly(true);
       iteration.nodeUpdated(dataUpdate);
-      const iterationDataUpdated = iteration.serialize(false);
+      const iterationDataUpdated = iteration.serialize();
       this.__iterations.splice(idx, 1, iterationDataUpdated);
 
       // update maximum once every 2"
@@ -185,7 +180,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
         this.__iterationsSection.remove(this.__iterationsTable);
       }
 
-      const iterationsTable = this.__iterationsTable = new osparc.snapshots.Iterations(this.__study.serialize(false));
+      const iterationsTable = this.__iterationsTable = new osparc.snapshots.Iterations(this.__study.serialize());
       iterationsTable.populateTable(this.__iterations);
       iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();
@@ -199,12 +194,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
     },
 
     __reloadIteration: function(iterationId) {
-      const params = {
-        url: {
-          "studyId": iterationId
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getOne", params)
+      osparc.store.Study.getInstance().getOne(iterationId)
         .then(data => {
           const studyData = this.__study.serialize();
           studyData["workbench"] = data["workbench"];

@@ -92,10 +92,12 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
               .then(serviceData => {
                 if (serviceData) {
                   serviceData["resourceType"] = "service";
-                  const resourceDetails = new osparc.dashboard.ResourceDetails(serviceData).set({
+                  const {
+                    resourceDetails,
+                  } = osparc.dashboard.ResourceDetails.popUpInWindow(serviceData);
+                  resourceDetails.set({
                     showOpenButton: false
                   });
-                  osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
                 }
               });
           });

@@ -23,7 +23,7 @@ flask==3.1.1
     #   flask-cors
     #   flask-login
     #   locust
-flask-cors==6.0.0
+flask-cors==6.0.1
     # via locust
 flask-login==0.6.3
     # via locust
@@ -67,13 +67,13 @@ psycogreen==1.0.2
     # via locust-plugins
 psycopg2-binary==2.9.10
     # via locust-plugins
-pydantic==2.11.5
+pydantic==2.11.7
     # via
     #   -r requirements/_test.in
     #   pydantic-settings
 pydantic-core==2.33.2
     # via pydantic
-pydantic-settings==2.9.1
+pydantic-settings==2.10.1
     # via -r requirements/_test.in
 python-dotenv==1.1.0
     # via pydantic-settings
@@ -83,7 +83,7 @@ python-socketio==5.13.0
     # via locust-cloud
 pyzmq==26.4.0
     # via locust
-requests==2.32.3
+requests==2.32.4
     # via
     #   locust
     #   python-socketio
@@ -96,7 +96,7 @@ simple-websocket==1.1.0
     # via python-engineio
 tenacity==9.1.2
     # via -r requirements/_test.in
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   locust-plugins
     #   pydantic
@@ -106,7 +106,7 @@ typing-inspection==0.4.1
     # via
     #   pydantic
     #   pydantic-settings
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   geventhttpclient
     #   requests

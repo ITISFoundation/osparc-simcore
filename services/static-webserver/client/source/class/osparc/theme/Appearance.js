@@ -129,6 +129,10 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "pb-function": {
+      include: "pb-template",
+    },
+
     "pb-hypertool": {
       include: "pb-template",
     },
@@ -235,6 +239,20 @@ qx.Theme.define("osparc.theme.Appearance", {
         }
       }
     },
+
+    /*
+    ---------------------------------------------------------------------------
+      TABLE
+    ---------------------------------------------------------------------------
+    */
+
+   "table-header-cell": {
+      style: function() {
+        return {
+          font: "text-13", // override the default theme's bold font
+        }
+      }
+   },
 
     /*
     ---------------------------------------------------------------------------
@@ -429,6 +447,21 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "selectbox/list",
       style: () => ({
         padding: 0
+      })
+    },
+
+    "selectbox/arrow": {
+      style: () => ({
+        // keep the original source
+        source: osparc.theme.common.Image.URLS["arrow-down"],
+        // keep the original paddings
+        paddingRight: 0,
+        paddingLeft: 2,
+        paddingTop: -3,
+        // ensure the arrow has explicit size
+        width: 16,
+        height: 16,
+        scale: true,
       })
     },
 
@@ -850,13 +883,11 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor = "default-button-focus-background";
         }
         if (states.selected || states.checked) {
-          textColor = "default-button-disabled";
+          textColor = "white";
           cursor = "default";
           decorator = "form-button-checked";
-          backgroundColor = "default-button-disabled-background";
+          backgroundColor = "product-color";
         }
-
-        decorator;
 
         return {
           textColor: textColor,
@@ -1192,8 +1223,8 @@ qx.Theme.define("osparc.theme.Appearance", {
         padding: [5, 10],
         // showTimeout is themeable so it can be tuned
         // it was defaulted to 700 which was too short
-        showTimeout: 2000,
-        hideTimeout: 6000,
+        showTimeout: 1400,
+        hideTimeout: 5000,
       })
     },
 

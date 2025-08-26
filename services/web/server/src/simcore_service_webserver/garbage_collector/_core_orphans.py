@@ -7,10 +7,9 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed, limited_gather
 
@@ -21,7 +20,8 @@ from ..projects._projects_service import (
 )
 from ..projects.api import has_user_project_access_rights
 from ..resource_manager.registry import RedisResourceRegistry
-from ..users.api import get_user_role
+from ..resource_manager.service import list_opened_project_ids
+from ..users import users_service
 from ..users.exceptions import UserNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -38,17 +38,21 @@ async def _remove_service(
         save_service_state = False
     else:
         try:
-            if await get_user_role(app, user_id=service.user_id) <= UserRole.GUEST:
-                save_service_state = False
-            else:
-                save_service_state = await has_user_project_access_rights(
+            user_role: UserRole = await users_service.get_user_role(
+                app, user_id=service.user_id
+            )
+        except (UserNotFoundError, ValueError):
+            save_service_state = False
+        else:
+            save_service_state = (
+                user_role > UserRole.GUEST
+                and await has_user_project_access_rights(
                     app,
                     project_id=service.project_id,
                     user_id=service.user_id,
                     permission="write",
                 )
-        except (UserNotFoundError, ValueError):
-            save_service_state = False
+            )
 
     with log_catch(_logger, reraise=False), log_context(
         _logger,
@@ -65,16 +69,6 @@ async def _remove_service(
                 save_state=save_service_state,
             ),
         )
-
-
-async def _list_opened_project_ids(registry: RedisResourceRegistry) -> list[ProjectID]:
-    opened_projects: list[ProjectID] = []
-    all_session_alive, _ = await registry.get_all_resource_keys()
-    for alive_session in all_session_alive:
-        resources = await registry.get_resources(alive_session)
-        if "project_id" in resources:
-            opened_projects.append(ProjectID(resources["project_id"]))
-    return opened_projects
 
 
 async def remove_orphaned_services(
@@ -101,7 +95,7 @@ async def remove_orphaned_services(
         service.node_uuid: service for service in running_services
     }
 
-    known_opened_project_ids = await _list_opened_project_ids(registry)
+    known_opened_project_ids = await list_opened_project_ids(registry)
 
     # NOTE: Always skip orphan repmoval when `list_node_ids_in_project` raises an error.
     # Why? If a service is running but the nodes form the correspondign project cannot be listed,
@@ -119,7 +113,7 @@ async def remove_orphaned_services(
             potentially_running_service_ids.append(project_nodes)
         except BaseException as e:  # pylint:disable=broad-exception-caught
             _logger.warning(
-                create_troubleshotting_log_kwargs(
+                create_troubleshootting_log_kwargs(
                     (
                         "Skipping orpahn services removal, call to "
                         "`list_node_ids_in_project` raised"

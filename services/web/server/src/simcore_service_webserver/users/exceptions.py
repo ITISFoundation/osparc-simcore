@@ -75,3 +75,15 @@ class PendingPreRegistrationNotFoundError(UsersBaseError):
         super().__init__(**ctx)
         self.email = email
         self.product_name = product_name
+
+
+class PhoneRegistrationPendingNotFoundError(UsersBaseError):
+    msg_template = "No pending phone registration found"
+
+
+class PhoneRegistrationSessionInvalidError(UsersBaseError):
+    msg_template = "Invalid phone registration session"
+
+
+class PhoneRegistrationCodeInvalidError(UsersBaseError):
+    msg_template = "Invalid confirmation code"

@@ -11,7 +11,6 @@ from urllib.parse import quote
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from fastapi_pagination.cursor import CursorPage
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskResult,
@@ -54,8 +53,9 @@ from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
+from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     submit,
@@ -138,7 +138,7 @@ async def test_list_storage_paths(
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
     if not error:
-        TypeAdapter(CursorPage[PathMetaDataGet]).validate_python(data)
+        TypeAdapter(CustomizedPathsCursorPage[PathMetaDataGet]).validate_python(data)
 
 
 _faker = Faker()
@@ -485,7 +485,7 @@ async def test_export_data(
     )
 
     _body = DataExportPost(
-        paths=[f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"]
+        paths=[Path(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")]
     )
     response = await client.post(
         f"/{API_VERSION}/storage/locations/0/export-data", data=_body.model_dump_json()

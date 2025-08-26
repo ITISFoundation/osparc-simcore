@@ -1,22 +1,6 @@
--- SQL script to create a read-only user and grant privileges
-
-
---Create the read-only user with a password
 CREATE USER ${POSTGRES_READONLY_USER} WITH PASSWORD '${POSTGRES_READONLY_PASSWORD}';
 
---Grant CONNECT privilege to the database (e.g., 'foo' is the database name)
-GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_READONLY_USER};
+-- Grant read-only role (privilages) to the user
+GRANT ${POSTGRES_DB}_readonly TO ${POSTGRES_READONLY_USER};
 
---Grant USAGE privilege on the **public** schema
-GRANT USAGE ON SCHEMA public TO ${POSTGRES_READONLY_USER};
-
---Grant SELECT privilege on all existing tables and sequencies in the **public** schema
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${POSTGRES_READONLY_USER};
-GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${POSTGRES_READONLY_USER};
-
---Ensure that future tables created in the public schema and sequencies will have SELECT privilege for the read-only user
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ${POSTGRES_READONLY_USER};
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON SEQUENCES TO ${POSTGRES_READONLY_USER};
-
--- Listing all users
-SELECT * FROM pg_roles;
+SELECT * FROM pg_roles WHERE rolname NOT LIKE 'pg_%';

@@ -9,8 +9,8 @@ from servicelib.aiohttp.observer import register_observer, setup_observer_regist
 
 from ..products import products_service
 from ..resource_usage.service import add_credits_to_wallet
-from ..users import preferences_api
-from ..users.api import get_user_display_and_id_names
+from ..user_preferences import user_preferences_service
+from ..users import users_service
 from ._api import any_wallet_owned_by_user, create_wallet
 
 _WALLET_NAME_TEMPLATE = "{} Credits"
@@ -19,6 +19,7 @@ _WALLET_DESCRIPTION_TEMPLATE = "Credits purchased by {} end up in here"
 
 async def _auto_add_default_wallet(
     app: web.Application,
+    *,
     user_id: UserID,
     product_name: ProductName,
     extra_credits_in_usd: PositiveInt | None = None,
@@ -26,7 +27,7 @@ async def _auto_add_default_wallet(
     if not await any_wallet_owned_by_user(
         app, user_id=user_id, product_name=product_name
     ):
-        user = await get_user_display_and_id_names(app, user_id=user_id)
+        user = await users_service.get_user_display_and_id_names(app, user_id=user_id)
         product = products_service.get_product(app, product_name)
 
         wallet = await create_wallet(
@@ -53,9 +54,9 @@ async def _auto_add_default_wallet(
             )
 
         preference_id = (
-            preferences_api.PreferredWalletIdFrontendUserPreference().preference_identifier
+            user_preferences_service.PreferredWalletIdFrontendUserPreference().preference_identifier
         )
-        await preferences_api.set_frontend_user_preference(
+        await user_preferences_service.set_frontend_user_preference(
             app,
             user_id=user_id,
             product_name=product_name,

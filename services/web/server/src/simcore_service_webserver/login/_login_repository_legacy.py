@@ -49,44 +49,6 @@ class AsyncpgStorage:
         self.confirm_tbl = confirmation_table_name
 
     #
-    # CRUD user
-    #
-
-    async def get_user(self, with_data: dict[str, Any]) -> asyncpg.Record | None:
-        async with self.pool.acquire() as conn:
-            return await _login_repository_legacy_sql.find_one(
-                conn, self.user_tbl, with_data
-            )
-
-    async def create_user(self, data: dict[str, Any]) -> dict[str, Any]:
-        async with self.pool.acquire() as conn:
-            user_id = await _login_repository_legacy_sql.insert(
-                conn, self.user_tbl, data
-            )
-            new_user = await _login_repository_legacy_sql.find_one(
-                conn, self.user_tbl, {"id": user_id}
-            )
-            assert new_user  # nosec
-            data.update(
-                id=new_user["id"],
-                created_at=new_user["created_at"],
-                primary_gid=new_user["primary_gid"],
-            )
-        return data
-
-    async def update_user(self, user: dict[str, Any], updates: dict[str, Any]) -> None:
-        async with self.pool.acquire() as conn:
-            await _login_repository_legacy_sql.update(
-                conn, self.user_tbl, {"id": user["id"]}, updates
-            )
-
-    async def delete_user(self, user: dict[str, Any]) -> None:
-        async with self.pool.acquire() as conn:
-            await _login_repository_legacy_sql.delete(
-                conn, self.user_tbl, {"id": user["id"]}
-            )
-
-    #
     # CRUD confirmation
     #
     async def create_confirmation(
@@ -142,14 +104,14 @@ class AsyncpgStorage:
     #
 
     async def delete_confirmation_and_user(
-        self, user: dict[str, Any], confirmation: ConfirmationTokenDict
+        self, user_id: int, confirmation: ConfirmationTokenDict
     ):
         async with self.pool.acquire() as conn, conn.transaction():
             await _login_repository_legacy_sql.delete(
                 conn, self.confirm_tbl, {"code": confirmation["code"]}
             )
             await _login_repository_legacy_sql.delete(
-                conn, self.user_tbl, {"id": user["id"]}
+                conn, self.user_tbl, {"id": user_id}
             )
 
     async def delete_confirmation_and_update_user(
