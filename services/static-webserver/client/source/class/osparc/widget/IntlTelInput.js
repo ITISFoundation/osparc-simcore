@@ -63,9 +63,7 @@ qx.Class.define("osparc.widget.IntlTelInput", {
       }
     });
 
-    const feedbackCheck = this.__feedbackCheck = new qx.ui.basic.Image().set({
-      paddingTop: 3
-    });
+    const feedbackCheck = this.__feedbackCheck = new qx.ui.basic.Image();
     feedbackCheck.exclude();
     this._add(feedbackCheck);
   },
@@ -96,8 +94,9 @@ qx.Class.define("osparc.widget.IntlTelInput", {
       const isValid = this.isValidNumber();
       this.__feedbackCheck.set({
         toolTipText: "E.164: " + this.getNumber(),
-        source: isValid ? "@FontAwesome5Solid/check/18" : "@FontAwesome5Solid/exclamation-triangle/18",
-        textColor: isValid ? "text" : "failed-red"
+        source: isValid ? "@FontAwesome5Solid/check/16" : "@FontAwesome5Solid/exclamation-triangle/16",
+        textColor: isValid ? "text" : "failed-red",
+        alignY: "middle",
       });
       this.__feedbackCheck.show();
       if (!isValid) {
