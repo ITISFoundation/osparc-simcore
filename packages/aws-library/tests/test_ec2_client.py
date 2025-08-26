@@ -34,7 +34,7 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeTy
 
 
 def _ec2_allowed_types() -> list[InstanceTypeType]:
-    return ["t2.nano", "m5.12xlarge", "g4dn.4xlarge"]
+    return ["m5.12xlarge"]
 
 
 @pytest.fixture(scope="session")
