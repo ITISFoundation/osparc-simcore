@@ -32,10 +32,6 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
   },
 
   members: {
-    __validateCodeField: null,
-    __validateCodeBtn: null,
-    __sendViaEmail: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -75,72 +71,65 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             center: true,
             minWidth: 80
           });
+          control.addListener("execute", () => this.__verifyPhoneNumber());
           this.getChildControl("phone-number-layout").add(control);
+          break;
+        case "validation-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+            zIndex: 1 // the countries list that goes on top has a z-index of 2
+          });
+          this.add(control);
+          break;
+        case "validate-code-field":
+          control = new qx.ui.form.TextField().set({
+            placeholder: this.tr("Type the SMS code"),
+            enabled: false
+          });
+          control.addListener("input", e => this.getChildControl("validate-code-button").setEnabled(Boolean(e.getData())));
+          this.getChildControl("validation-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "validate-code-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Validate")).set({
+            appearance: "strong-button",
+            center: true,
+            enabled: false,
+            minWidth: 80,
+          });
+          control.addListener("execute", () => this.__validateCodeRegister());
+          this.getChildControl("validation-layout").add(control);
+          break;
+        case "send-via-email-button":
+          control = new osparc.ui.form.FetchButton().set({
+            label: this.tr("Skip phone registration and send code via email"),
+            textColor: "text",
+            zIndex: 1 // the countries list that goes on top has a z-index of 2
+          });
+          control.addListener("execute", () => this.__requestCodeViaEmail(), this);
+          this.add(control);
           break;
       }
       return control || this.base(arguments, id);
     },
 
     _buildPage: function() {
-      this.__buildVerificationLayout();
-      const validationLayout = this.__createValidationLayout().set({
-        zIndex: 1 // the countries list that goes on top has a z-index of 2
-      });
-      this.add(validationLayout);
-      const sendViaEmailBtn = this.__createSendViaEmailButton().set({
-        zIndex: 1 // the countries list that goes on top has a z-index of 2
-      });
-      this.add(sendViaEmailBtn);
-      this.__attachHandlers();
-    },
-
-    __buildVerificationLayout: function() {
       this.getChildControl("title");
       this.getChildControl("intro-text");
 
       this.getChildControl("intl-tel-input");
       this.getChildControl("verify-number-button");
-    },
 
-    __createValidationLayout: function() {
-      const smsValidationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const validateCodeTF = this.__validateCodeField = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Type the SMS code"),
-        enabled: false
-      });
-      smsValidationLayout.add(validateCodeTF, {
-        flex: 1
-      });
-      const validateCodeBtn = this.__validateCodeBtn = new osparc.ui.form.FetchButton(this.tr("Validate")).set({
-        appearance: "strong-button",
-        center: true,
-        minWidth: 80
-      });
-      validateCodeBtn.setEnabled(false);
-      validateCodeTF.addListener("input", e => validateCodeBtn.setEnabled(Boolean(e.getData())));
-      smsValidationLayout.add(validateCodeBtn);
-      return smsValidationLayout;
-    },
+      this.getChildControl("validate-code-field");
+      this.getChildControl("validate-code-button");
 
-    __createSendViaEmailButton: function() {
-      const txt = this.tr("Skip phone registration and send code via email");
-      const sendViaEmail = this.__sendViaEmail = new osparc.ui.form.FetchButton(txt).set({
-        textColor: "text",
-        zIndex: 1 // the countries list that goes on top has a z-index of 2
-      });
-      return sendViaEmail;
-    },
-
-    __attachHandlers: function() {
-      const verifyPhoneNumberBtn = this.getChildControl("verify-number-button");
-      verifyPhoneNumberBtn.addListener("execute", () => this.__verifyPhoneNumber());
-      this.__validateCodeBtn.addListener("execute", () => this.__validateCodeRegister());
-      this.__sendViaEmail.addListener("execute", () => this.__requestCodeViaEmail(), this);
+      this.getChildControl("send-via-email-button");
     },
 
     __verifyPhoneNumber: function() {
       const itiInput = this.getChildControl("intl-tel-input");
       const verifyPhoneNumberBtn = this.getChildControl("verify-number-button");
+      const validateCodeBtn = this.getChildControl("validate-code-button");
       itiInput.verifyPhoneNumber();
       const isValid = itiInput.isValidNumber();
       if (isValid) {
@@ -151,10 +140,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             osparc.FlashMessenger.logAs(resp.message, "INFO");
             verifyPhoneNumberBtn.setFetching(false);
             // enable, focus and listen to Enter
-            this.__validateCodeField.setEnabled(true);
-            this.__validateCodeField.focus();
-            this.__validateCodeField.activate();
-            this.__enableEnterCommand(this.__validateCodeBtn);
+            const validateCodeField = this.getChildControl("validate-code-field");
+            validateCodeField.setEnabled(true);
+            validateCodeField.focus();
+            validateCodeField.activate();
+            this.__enableEnterCommand(validateCodeBtn);
           })
           .catch(err => {
             osparc.FlashMessenger.logError(err);
@@ -165,23 +155,26 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     },
 
     __validateCodeRegister: function() {
-      this.__validateCodeBtn.setFetching(true);
+      const validateCodeField = this.getChildControl("validate-code-field");
+      const validateCodeBtn = this.getChildControl("validate-code-button");
+
+      validateCodeBtn.setFetching(true);
 
       const loginFun = log => {
         osparc.FlashMessenger.logAs(log.message, "INFO");
-        this.__validateCodeBtn.setFetching(false);
-        this.__validateCodeField.setEnabled(false);
-        this.__validateCodeBtn.setEnabled(false);
-        this.__validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
+        validateCodeField.setEnabled(false);
+        validateCodeBtn.setFetching(false);
+        validateCodeBtn.setEnabled(false);
+        validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
         this.fireDataEvent("done", log.message);
       };
 
       const failFun = err => {
         osparc.FlashMessenger.logError(err);
-        this.__validateCodeBtn.setFetching(false);
+        validateCodeBtn.setFetching(false);
         // TODO: can get field info from response here
         err = String(err) || this.tr("Invalid code");
-        this.__validateCodeField.set({
+        validateCodeField.set({
           invalidMessage: err,
           valid: false
         });
@@ -189,11 +182,12 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
       const manager = osparc.auth.Manager.getInstance();
       const itiInput = this.getChildControl("intl-tel-input");
-      manager.validateCodeRegister(this.getUserEmail(), itiInput.getNumber(), this.__validateCodeField.getValue(), loginFun, failFun, this);
+      manager.validateCodeRegister(this.getUserEmail(), itiInput.getNumber(), validateCodeField.getValue(), loginFun, failFun, this);
     },
 
     __requestCodeViaEmail: function() {
-      this.__sendViaEmail.setFetching(true);
+      const sendViaEmail = this.getChildControl("send-via-email-button");
+      sendViaEmail.setFetching(true);
       osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
         .then(data => {
           const message = osparc.auth.core.Utils.extractMessage(data);
@@ -206,7 +200,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           });
         })
         .catch(err => osparc.FlashMessenger.logError(err))
-        .finally(() => this.__sendViaEmail.setFetching(false));
+        .finally(() => sendViaEmail.setFetching(false));
     },
 
     __enableEnterCommand: function(onBtn) {
@@ -219,7 +213,9 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     __disableCommands: function() {
       const verifyPhoneNumberBtn = this.getChildControl("verify-number-button");
       verifyPhoneNumberBtn.setCommand(null);
-      this.__validateCodeBtn.setCommand(null);
+
+      const validateCodeBtn = this.getChildControl("validate-code-button");
+      validateCodeBtn.setCommand(null);
     },
 
     _onAppear: function() {
