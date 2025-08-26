@@ -1,5 +1,3 @@
-"""Handles requests to the Rest API"""
-
 import logging
 from dataclasses import asdict
 
@@ -12,18 +10,13 @@ from pydantic import (
     ConfigDict,
     Field,
     TypeAdapter,
-    ValidationError,
     field_validator,
 )
 from pydantic.networks import HttpUrl
 
-from .._meta import API_VTAG
-from ..products import products_web
-from ..utils_aiohttp import envelope_json_response
-from ._catalog import ServiceMetaData, iter_latest_product_services
-from ._controller_rest_redirects import ViewerQueryParams
-from ._core import list_viewers_info
-from ._models import ViewerInfo
+from ..._catalog import ServiceMetaData
+from ..._models import ViewerInfo
+from .redirects_schemas import ViewerQueryParams
 
 _logger = logging.getLogger(__name__)
 
@@ -149,55 +142,3 @@ class ServiceGet(BaseModel):
             }
         }
     )
-
-
-#
-# API Handlers
-#
-
-
-routes = web.RouteTableDef()
-
-
-@routes.get(f"/{API_VTAG}/services", name="list_latest_services")
-async def list_latest_services(request: Request):
-    """Returns a list latest version of services"""
-    product_name = products_web.get_product_name(request)
-
-    services = []
-    async for service_data in iter_latest_product_services(
-        request.app, product_name=product_name
-    ):
-        try:
-            service = ServiceGet.create(service_data, request)
-            services.append(service)
-        except ValidationError as err:
-            _logger.debug("Invalid %s: %s", f"{service_data=}", err)
-
-    return envelope_json_response(services)
-
-
-@routes.get(f"/{API_VTAG}/viewers", name="list_viewers")
-async def list_viewers(request: Request):
-    # filter: file_type=*
-    file_type: str | None = request.query.get("file_type", None)
-
-    viewers = [
-        Viewer.create(request, viewer).model_dump()
-        for viewer in await list_viewers_info(request.app, file_type=file_type)
-    ]
-    return envelope_json_response(viewers)
-
-
-@routes.get(f"/{API_VTAG}/viewers/default", name="list_default_viewers")
-async def list_default_viewers(request: Request):
-    # filter: file_type=*
-    file_type: str | None = request.query.get("file_type", None)
-
-    viewers = [
-        Viewer.create(request, viewer).model_dump()
-        for viewer in await list_viewers_info(
-            request.app, file_type=file_type, only_default=True
-        )
-    ]
-    return envelope_json_response(viewers)

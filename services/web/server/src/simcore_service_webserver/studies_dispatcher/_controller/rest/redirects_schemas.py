@@ -4,7 +4,7 @@ from typing import TypeAlias
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from ._models import FileParams, ServiceParams, ViewerInfo
+from ..._models import FileParams, ServiceParams, ViewerInfo
 
 
 class ServiceQueryParams(ServiceParams):
