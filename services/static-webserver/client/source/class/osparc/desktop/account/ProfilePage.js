@@ -119,6 +119,10 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           [pos.LAST_NAME]: createImage(this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon),
           [pos.EMAIL]: createImage(this.__userPrivacyModel.getHideEmail() ? hiddenIcon : visibleIcon),
         };
+        if (osparc.store.StaticInfo.isUpdatePhoneNumberEnabled()) {
+          const updatePhoneNumberButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12");
+          widgets[pos.PHONE] = updatePhoneNumberButton;
+        }
         this.__userProfileRenderer.setWidgets(widgets);
       }
       this.__updatePrivacyBtn.setEnabled(false);

@@ -98,6 +98,10 @@ qx.Class.define("osparc.store.StaticInfo", {
       return false;
     },
 
+    isUpdatePhoneNumberEnabled: function() {
+      return osparc.store.StaticsInfo.isDevFeaturesEnabled() && osparc.store.StaticsInfo.is2FARequired();
+    },
+
     getCountries: function() {
       const staticKey = "countries";
       const metadata = this.getValue(staticKey);

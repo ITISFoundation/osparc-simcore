@@ -54,10 +54,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       return Boolean(osparc.store.StaticInfo.getValue("isPaymentEnabled"));
     },
 
-    isUpdatePhoneNumberEnabled: function() {
-      return osparc.store.isDevFeaturesEnabled();
-    },
-
     getNoWriteAccessInformationLabel: function() {
       return new qx.ui.basic.Label().set({
         value: qx.locale.Manager.tr("You can't access this information"),
