@@ -3,6 +3,7 @@ import logging
 import redis.asyncio as aioredis
 from settings_library.redis import RedisDatabase, RedisSettings
 
+from ..logging_utils import log_context
 from ..redis._client import RedisClientSDK
 from .models import LRTNamespace
 
@@ -36,10 +37,10 @@ class LongRunningClientHelper:
         keys_to_remove: list[str] = [
             x async for x in self._redis.scan_iter(f"{lrt_namespace}*")
         ]
-        _logger.debug(
-            "Removing keys='%s' from Redis for namespace '%s'",
-            keys_to_remove,
-            lrt_namespace,
-        )
-        if len(keys_to_remove) > 0:
-            await self._redis.delete(*keys_to_remove)
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Removing {keys_to_remove=} from Redis for {lrt_namespace=}",
+        ):
+            if len(keys_to_remove) > 0:
+                await self._redis.delete(*keys_to_remove)
