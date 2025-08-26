@@ -6,7 +6,7 @@
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import fields
-from typing import Any, cast, get_args
+from typing import Any, Final, cast, get_args
 
 import botocore.exceptions
 import pytest
@@ -15,6 +15,7 @@ from aws_library.ec2._errors import (
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
     EC2InsufficientCapacityError,
+    EC2SubnetsNotEnoughIPsError,
     EC2TooManyInstancesError,
 )
 from aws_library.ec2._models import (
@@ -841,6 +842,9 @@ async def test_launch_instances_partial_capacity_then_insufficient_capacity(
     )
 
 
+_RESERVED_IPS: Final[int] = 5  # AWS reserves 5 IPs in each subnet
+
+
 @pytest.fixture
 async def with_small_subnet(
     create_aws_subnet_id: Callable[..., Awaitable[str]],
@@ -849,7 +853,10 @@ async def with_small_subnet(
     single_ip_cidr = (
         "10.0.11.0/29"  # /29 is the minimum allowed by AWS, gives 8 addresses
     )
-    return (await create_aws_subnet_id(single_ip_cidr), 8 - 5)  # 5 are reserved by AWS
+    return (
+        await create_aws_subnet_id(single_ip_cidr),
+        8 - _RESERVED_IPS,
+    )  # 5 are reserved by AWS
 
 
 async def test_launch_instances_with_small_subnet(
@@ -901,4 +908,89 @@ async def test_launch_instances_with_small_subnet(
         ec2_instance_config,
         min_number_of_instances=1,
         number_of_instances=1,
+    )
+
+
+async def test_launch_instances_raises_ec2_subnets_not_enough_ips_error(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    create_aws_subnet_id: Callable[..., Awaitable[str]],
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    mocker: MockerFixture,
+) -> None:
+    """Test that EC2SubnetsNotEnoughIPsError is raised when subnets don't have enough IPs."""
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional small subnets
+    subnet1_id = await create_aws_subnet_id("10.0.200.0/29")  # 3 usable IPs
+    subnet2_id = await create_aws_subnet_id("10.0.201.0/29")  # 3 usable IPs
+
+    ec2_instance_config = EC2InstanceConfig(
+        type=fake_ec2_instance_type,
+        tags=faker.pydict(allowed_types=(str,)),
+        startup_script=faker.pystr(),
+        ami_id=aws_ami_id,
+        key_name=faker.pystr(),
+        security_group_ids=[aws_security_group_id],
+        subnet_ids=[subnet1_id, subnet2_id],
+        iam_instance_profile="",
+    )
+
+    with pytest.raises(EC2SubnetsNotEnoughIPsError) as exc_info:
+        await simcore_ec2_api.launch_instances(
+            ec2_instance_config,
+            min_number_of_instances=7,
+            number_of_instances=7,
+        )
+
+    error = exc_info.value
+    assert error.subnet_ids == [subnet1_id, subnet2_id]  # type: ignore
+    assert error.instance_type == fake_ec2_instance_type.name  # type: ignore
+    assert error.available_ips == 6  # type: ignore
+
+
+async def test_launch_instances_distributes_instances_among_subnets(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    create_aws_subnet_id: Callable[..., Awaitable[str]],
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    mocker: MockerFixture,
+) -> None:
+    """Test that EC2SubnetsNotEnoughIPsError is raised when subnets don't have enough IPs."""
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional small subnets
+    subnet1_id = await create_aws_subnet_id("10.0.200.0/29")  # 3 usable IPs
+    subnet2_id = await create_aws_subnet_id("10.0.201.0/29")  # 3 usable IPs
+
+    ec2_instance_config = EC2InstanceConfig(
+        type=fake_ec2_instance_type,
+        tags=faker.pydict(allowed_types=(str,)),
+        startup_script=faker.pystr(),
+        ami_id=aws_ami_id,
+        key_name=faker.pystr(),
+        security_group_ids=[aws_security_group_id],
+        subnet_ids=[subnet1_id, subnet2_id],
+        iam_instance_profile="",
+    )
+
+    await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=5,
+        number_of_instances=5,
+    )
+
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=5,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
     )
