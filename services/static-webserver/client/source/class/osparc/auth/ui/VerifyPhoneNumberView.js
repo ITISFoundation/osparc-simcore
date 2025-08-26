@@ -150,6 +150,9 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             const msg = (resp && resp.message) ? resp.message : "A verification code has been sent via SMS";
             osparc.FlashMessenger.logAs(msg, "INFO");
             verifyPhoneNumberBtn.setFetching(false);
+            verifyPhoneNumberBtn.setEnabled(false);
+            const resendCodeTimeout = 10000;
+            setTimeout(() => verifyPhoneNumberBtn.setEnabled(true), resendCodeTimeout);
             // enable, focus and listen to Enter
             const validateCodeField = this.getChildControl("validate-code-field");
             validateCodeField.setEnabled(true);
@@ -172,12 +175,13 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       validateCodeBtn.setFetching(true);
 
       const loginFun = log => {
-        osparc.FlashMessenger.logAs(log.message, "INFO");
+        const msg = (log && log.message) ? log.message : "The phone number was updated successfully";
+        osparc.FlashMessenger.logAs(msg, "INFO");
         validateCodeField.setEnabled(false);
         validateCodeBtn.setFetching(false);
         validateCodeBtn.setEnabled(false);
         validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
-        this.fireDataEvent("done", log.message);
+        this.fireDataEvent("done", msg);
       };
 
       const failFun = err => {
