@@ -226,7 +226,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
-      const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
+      const everyoneGroupIds = groupsStore.getEveryoneGroups();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 

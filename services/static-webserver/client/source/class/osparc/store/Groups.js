@@ -162,14 +162,19 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getEveryoneGroupIds: function() {
-      const everyoneGroupIds = [];
+      const everyoneGroupIds = this.getEveryoneGroups().map(g => g.getGroupId());
+      return everyoneGroupIds;
+    },
+
+    getEveryoneGroups: function() {
+      const everyoneGroups = [];
       if (this.getEveryoneProductGroup()) {
-        everyoneGroupIds.push(this.getEveryoneProductGroup().getGroupId());
+        everyoneGroups.push(this.getEveryoneProductGroup());
       }
       if (this.getEveryoneGroup()) {
-        everyoneGroupIds.push(this.getEveryoneGroup().getGroupId());
+        everyoneGroups.push(this.getEveryoneGroup());
       }
-      return everyoneGroupIds;
+      return everyoneGroups;
     },
 
     getGroup: function(groupId) {
