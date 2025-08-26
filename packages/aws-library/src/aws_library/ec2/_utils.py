@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, cast
 
 from types_aiobotocore_ec2.type_defs import InstanceTypeDef
 
-from ._models import EC2InstanceData, EC2Tags
+from ._errors import EC2TooManyInstancesError
+from ._models import EC2InstanceConfig, EC2InstanceData, EC2Tags
 
 if TYPE_CHECKING:
     from ._client import SimcoreEC2API
@@ -43,3 +44,20 @@ async def ec2_instance_data_from_aws_instance(
         resources=ec2_instance_types[0].resources,
         tags=cast(EC2Tags, {tag["Key"]: tag["Value"] for tag in instance["Tags"]}),
     )
+
+
+async def check_max_number_of_instances_not_exceeded(
+    ec2_client: "SimcoreEC2API",
+    instance_config: EC2InstanceConfig,
+    *,
+    required_number_instances: int,
+    max_total_number_of_instances: int,
+) -> None:
+    current_instances = await ec2_client.get_instances(
+        key_names=[instance_config.key_name], tags=instance_config.tags
+    )
+    if (
+        len(current_instances) + required_number_instances
+        > max_total_number_of_instances
+    ):
+        raise EC2TooManyInstancesError(num_instances=max_total_number_of_instances)

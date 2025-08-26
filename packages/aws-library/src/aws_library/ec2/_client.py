@@ -19,7 +19,6 @@ from ._error_handler import ec2_exception_handler
 from ._errors import (
     EC2InstanceNotFoundError,
     EC2InsufficientCapacityError,
-    EC2TooManyInstancesError,
 )
 from ._models import (
     AWSTagKey,
@@ -29,7 +28,11 @@ from ._models import (
     EC2Tags,
     Resources,
 )
-from ._utils import compose_user_data, ec2_instance_data_from_aws_instance
+from ._utils import (
+    check_max_number_of_instances_not_exceeded,
+    compose_user_data,
+    ec2_instance_data_from_aws_instance,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -127,11 +130,9 @@ class SimcoreEC2API:
 
         Arguments:
             instance_config -- The EC2 instance configuration
-            min_number_of_instances -- the minimal number of instances needed (fails if this amount cannot be reached)
+            min_number_of_instances -- the minimal number of instances required (fails if this amount cannot be reached)
             number_of_instances -- the ideal number of instances needed (it it cannot be reached AWS will return a number >=min_number_of_instances)
-
-        Keyword Arguments:
-            max_total_number_of_instances -- The total maximum allowed number of instances for this given instance_config (default: {10})
+            max_total_number_of_instances -- The total maximum allowed number of instances for this given instance_config
 
         Raises:
             EC2TooManyInstancesError:
@@ -139,22 +140,19 @@ class SimcoreEC2API:
         Returns:
             The created instance data infos
         """
+
         with log_context(
             _logger,
             logging.INFO,
             msg=f"launch {number_of_instances} AWS instance(s) {instance_config.type.name} with {instance_config.tags=}",
         ):
             # first check the max amount is not already reached
-            current_instances = await self.get_instances(
-                key_names=[instance_config.key_name], tags=instance_config.tags
+            await check_max_number_of_instances_not_exceeded(
+                self,
+                instance_config,
+                required_number_instances=number_of_instances,
+                max_total_number_of_instances=max_total_number_of_instances,
             )
-            if (
-                len(current_instances) + number_of_instances
-                > max_total_number_of_instances
-            ):
-                raise EC2TooManyInstancesError(
-                    num_instances=max_total_number_of_instances
-                )
 
             resource_tags: list[TagTypeDef] = [
                 {"Key": tag_key, "Value": tag_value}
@@ -215,9 +213,7 @@ class SimcoreEC2API:
                         continue
                     # For any other ClientError, re-raise to let the decorator handle it
                     raise
-                except Exception:
-                    # For any other error (not AWS-related), fail immediately
-                    raise
+
             else:
                 # All subnets failed with capacity errors
                 _logger.error(
@@ -231,32 +227,25 @@ class SimcoreEC2API:
                     instance_type=instance_config.type.name,
                 )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]
-            _logger.info(
-                "%s New instances launched: %s, waiting for them to start now...",
-                len(instance_ids),
-                instance_ids,
-            )
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"{len(instance_ids)} instances: {instance_ids=} launched. Wait to reach pending state",
+            ):
+                # wait for the instance to be in a pending state
+                # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
+                waiter = self.client.get_waiter("instance_exists")
+                await waiter.wait(InstanceIds=instance_ids)
 
-            # wait for the instance to be in a pending state
-            # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
-            waiter = self.client.get_waiter("instance_exists")
-            await waiter.wait(InstanceIds=instance_ids)
-            _logger.debug("instances %s exists now.", instance_ids)
-
-            # NOTE: waiting for pending ensure we get all the IPs back
+            # NOTE: waiting for pending ensures we get all the IPs back
             described_instances = await self.client.describe_instances(
                 InstanceIds=instance_ids
             )
             assert "Instances" in described_instances["Reservations"][0]  # nosec
-            instance_datas = [
+            return [
                 await ec2_instance_data_from_aws_instance(self, i)
                 for i in described_instances["Reservations"][0]["Instances"]
             ]
-            _logger.info(
-                "%s are pending now",
-                f"{instance_ids=}",
-            )
-            return instance_datas
 
     @ec2_exception_handler(_logger)
     async def get_instances(
