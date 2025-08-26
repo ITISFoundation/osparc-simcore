@@ -154,6 +154,33 @@ class SimcoreEC2API:
                 max_total_number_of_instances=max_total_number_of_instances,
             )
 
+            subnet_descriptions = await self.client.describe_subnets(
+                SubnetIds=instance_config.subnet_ids
+            )
+            # check available IPs in subnets to give early feedback
+            subnet_id_to_available_ips: dict[str, int] = {}
+            for subnet in subnet_descriptions["Subnets"]:
+                if "SubnetId" in subnet and "AvailableIpAddressCount" in subnet:
+                    subnet_id_to_available_ips[subnet["SubnetId"]] = subnet[
+                        "AvailableIpAddressCount"
+                    ]
+            total_available_ips = sum(subnet_id_to_available_ips.values())
+            if total_available_ips < min_number_of_instances:
+                raise EC2InsufficientCapacityError(
+                    subnet_id=", ".join(instance_config.subnet_ids),
+                    instance_type=instance_config.type.name,
+                    details=(
+                        f"Not enough available IPs in subnets {subnet_id_to_available_ips}. "
+                        f"Total available IPs={total_available_ips} < min required instances={min_number_of_instances}"
+                    ),
+                )
+            # now let's not try to run instances in subnets that have not enough IPs
+            subnet_ids_with_capacity = [
+                subnet_id
+                for subnet_id, capacity in subnet_id_to_available_ips.items()
+                if capacity >= min_number_of_instances
+            ]
+
             resource_tags: list[TagTypeDef] = [
                 {"Key": tag_key, "Value": tag_value}
                 for tag_key, tag_value in instance_config.tags.items()
@@ -161,7 +188,7 @@ class SimcoreEC2API:
 
             # Try each subnet in order until one succeeds
             last_error = None
-            for subnet_id in instance_config.subnet_ids:
+            for subnet_id in subnet_ids_with_capacity:
                 try:
                     _logger.debug(
                         "Attempting to launch instances in subnet %s", subnet_id

@@ -839,3 +839,66 @@ async def test_launch_instances_partial_capacity_then_insufficient_capacity(
         expected_tags=ec2_instance_config.tags,
         expected_state="running",
     )
+
+
+@pytest.fixture
+async def with_small_subnet(
+    create_aws_subnet_id: Callable[..., Awaitable[str]],
+) -> tuple[str, int]:
+    """Creates a subnet with a single IP address to simulate InsufficientInstanceCapacity"""
+    single_ip_cidr = (
+        "10.0.11.0/29"  # /29 is the minimum allowed by AWS, gives 8 addresses
+    )
+    return (await create_aws_subnet_id(single_ip_cidr), 8 - 5)  # 5 are reserved by AWS
+
+
+async def test_launch_instances_with_small_subnet(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    with_small_subnet: tuple[str, int],
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    mocker: MockerFixture,
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+    small_subnet_id, capacity = with_small_subnet
+    # Create a config with a single subnet (as requested)
+    ec2_instance_config = EC2InstanceConfig(
+        type=fake_ec2_instance_type,
+        tags=faker.pydict(allowed_types=(str,)),
+        startup_script=faker.pystr(),
+        ami_id=aws_ami_id,
+        key_name=faker.pystr(),
+        security_group_ids=[aws_security_group_id],
+        subnet_ids=[small_subnet_id, aws_subnet_id],
+        iam_instance_profile="",
+    )
+
+    # first call shall work in the first subnet
+    instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=capacity,
+        number_of_instances=capacity,
+    )
+
+    # Verify we got 2 instances (partial capacity)
+    assert len(instances) == capacity
+
+    # Verify instances were created
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=capacity,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+
+    instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=1,
+        number_of_instances=1,
+    )

@@ -87,12 +87,12 @@ async def create_aws_subnet_id(
     aws_vpc_id: str,
     ec2_client: EC2Client,
     create_subnet_cidr_block: Callable[[], str],
-) -> AsyncIterator[Callable[[], Awaitable[str]]]:
+) -> AsyncIterator[Callable[..., Awaitable[str]]]:
     created_subnet_ids: set[str] = set()
 
-    async def _() -> str:
+    async def _(cidr_override: str | None = None) -> str:
         subnet = await ec2_client.create_subnet(
-            CidrBlock=create_subnet_cidr_block(), VpcId=aws_vpc_id
+            CidrBlock=cidr_override or create_subnet_cidr_block(), VpcId=aws_vpc_id
         )
         assert "Subnet" in subnet
         assert "SubnetId" in subnet["Subnet"]
