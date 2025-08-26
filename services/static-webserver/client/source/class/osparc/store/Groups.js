@@ -28,12 +28,12 @@ qx.Class.define("osparc.store.Groups", {
   properties: {
     everyoneGroup: {
       check: "osparc.data.model.Group",
-      init: {}
+      init: null // this will stay null for guest users
     },
 
     everyoneProductGroup: {
       check: "osparc.data.model.Group",
-      init: {}
+      init: null // this will stay null for guest users
     },
 
     organizations: {
@@ -120,10 +120,14 @@ qx.Class.define("osparc.store.Groups", {
       const allGroupsAndUsers = {};
 
       const groupEveryone = this.getEveryoneGroup();
-      allGroupsAndUsers[groupEveryone.getGroupId()] = groupEveryone;
+      if (groupEveryone) {
+        allGroupsAndUsers[groupEveryone.getGroupId()] = groupEveryone;
+      }
 
       const groupProductEveryone = this.getEveryoneProductGroup();
-      allGroupsAndUsers[groupProductEveryone.getGroupId()] = groupProductEveryone;
+      if (groupProductEveryone) {
+        allGroupsAndUsers[groupProductEveryone.getGroupId()] = groupProductEveryone;
+      }
 
       const groupMe = this.getGroupMe();
       allGroupsAndUsers[groupMe.getGroupId()] = groupMe;
@@ -157,6 +161,17 @@ qx.Class.define("osparc.store.Groups", {
       return allMyGroupIds;
     },
 
+    getEveryoneGroupIds: function() {
+      const everyoneGroupIds = [];
+      if (this.getEveryoneProductGroup()) {
+        everyoneGroupIds.push(this.getEveryoneProductGroup().getGroupId());
+      }
+      if (this.getEveryoneGroup()) {
+        everyoneGroupIds.push(this.getEveryoneGroup().getGroupId());
+      }
+      return everyoneGroupIds;
+    },
+
     getGroup: function(groupId) {
       const groups = [];
 
@@ -177,12 +192,16 @@ qx.Class.define("osparc.store.Groups", {
       });
 
       const groupProductEveryone = this.getEveryoneProductGroup();
-      groupProductEveryone["collabType"] = 0;
-      groups.push(groupProductEveryone);
+      if (groupProductEveryone) {
+        groupProductEveryone["collabType"] = 0;
+        groups.push(groupProductEveryone);
+      }
 
       const groupEveryone = this.getEveryoneGroup();
-      groupEveryone["collabType"] = 0;
-      groups.push(groupEveryone);
+      if (groupEveryone) {
+        groupEveryone["collabType"] = 0;
+        groups.push(groupEveryone);
+      }
       const idx = groups.findIndex(group => group.getGroupId() === parseInt(groupId));
       if (idx > -1) {
         return groups[idx];
