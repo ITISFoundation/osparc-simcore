@@ -328,6 +328,9 @@ async def run_function(  # noqa: PLR0913
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     function_inputs: FunctionInputs,
     function_service: Annotated[FunctionService, Depends(get_function_service)],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> TaskGet:
@@ -344,6 +347,10 @@ async def run_function(  # noqa: PLR0913
     )
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
+
+    job_inputs = await function_job_service.run_function_pre_check(
+        function=to_run_function, function_inputs=function_inputs
+    )
 
     job_filter = AsyncJobFilter(
         user_id=user_identity.user_id,
@@ -362,7 +369,7 @@ async def run_function(  # noqa: PLR0913
         task_filter=task_filter,
         user_identity=user_identity,
         function=to_run_function,
-        function_inputs=function_inputs,
+        job_inputs=job_inputs,
         pricing_spec=pricing_spec,
         job_links=job_links,
         x_simcore_parent_project_uuid=parent_project_uuid,

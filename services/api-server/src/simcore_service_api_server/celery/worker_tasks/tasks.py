@@ -16,13 +16,14 @@ from servicelib.logging_utils import log_context
 
 from ...api.dependencies.authentication import Identity
 from ...models.api_resources import JobLinks
-from ...models.schemas.jobs import JobPricingSpecification
+from ...models.schemas.jobs import JobInputs, JobPricingSpecification
 from .functions_tasks import run_function
 
 _logger = logging.getLogger(__name__)
 
 pydantic_types_to_register = (
     Identity,
+    JobInputs,
     JobLinks,
     JobPricingSpecification,
     RegisteredProjectFunction,

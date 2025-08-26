@@ -160,17 +160,12 @@ class FunctionJobService:
             job_status=new_job_status,
         )
 
-    async def run_function(
+    async def run_function_pre_check(
         self,
         *,
         function: RegisteredFunction,
         function_inputs: FunctionInputs,
-        pricing_spec: JobPricingSpecification | None,
-        job_links: JobLinks,
-        x_simcore_parent_project_uuid: NodeID | None,
-        x_simcore_parent_node_id: NodeID | None,
-    ) -> RegisteredFunctionJob:
-
+    ) -> JobInputs:
         user_api_access_rights = (
             await self._web_rpc_client.get_functions_user_api_access_rights(
                 user_id=self.user_id, product_name=self.product_name
@@ -206,9 +201,24 @@ class FunctionJobService:
             if not is_valid:
                 raise FunctionInputsValidationError(error=validation_str)
 
+        return JobInputs(
+            values=joined_inputs or {},
+        )
+
+    async def run_function(
+        self,
+        *,
+        function: RegisteredFunction,
+        job_inputs: JobInputs,
+        pricing_spec: JobPricingSpecification | None,
+        job_links: JobLinks,
+        x_simcore_parent_project_uuid: NodeID | None,
+        x_simcore_parent_node_id: NodeID | None,
+    ) -> RegisteredFunctionJob:
+
         if cached_function_jobs := await self._web_rpc_client.find_cached_function_jobs(
             function_id=function.uid,
-            inputs=joined_inputs,
+            inputs=job_inputs.values,
             user_id=self.user_id,
             product_name=self.product_name,
         ):
@@ -223,7 +233,7 @@ class FunctionJobService:
         if function.function_class == FunctionClass.PROJECT:
             study_job = await self._job_service.create_studies_job(
                 study_id=function.project_id,
-                job_inputs=JobInputs(values=joined_inputs or {}),
+                job_inputs=job_inputs,
                 hidden=True,
                 job_links=job_links,
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
@@ -239,7 +249,7 @@ class FunctionJobService:
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=joined_inputs,
+                    inputs=job_inputs.values,
                     outputs=None,
                     project_job_id=study_job.id,
                 ),
@@ -251,7 +261,7 @@ class FunctionJobService:
             solver_job = await self._job_service.create_solver_job(
                 solver_key=function.solver_key,
                 version=function.solver_version,
-                inputs=JobInputs(values=joined_inputs or {}),
+                inputs=job_inputs,
                 job_links=job_links,
                 hidden=True,
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
@@ -268,7 +278,7 @@ class FunctionJobService:
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=joined_inputs,
+                    inputs=job_inputs.values,
                     outputs=None,
                     solver_job_id=solver_job.id,
                 ),
@@ -291,16 +301,24 @@ class FunctionJobService:
         x_simcore_parent_node_id: NodeID | None,
     ) -> RegisteredFunctionJobCollection:
 
+        job_inputs = [
+            await self.run_function_pre_check(
+                function=function,
+                function_inputs=inputs,
+            )
+            for inputs in function_inputs_list
+        ]
+
         function_jobs = [
             await self.run_function(
                 function=function,
-                function_inputs=function_inputs,
+                job_inputs=inputs,
                 pricing_spec=pricing_spec,
                 job_links=job_links,
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,
             )
-            for function_inputs in function_inputs_list
+            for inputs in job_inputs
         ]
 
         function_job_collection_description = f"Function job collection of map of function {function.uid} with {len(function_inputs_list)} inputs"

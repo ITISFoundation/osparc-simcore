@@ -31,7 +31,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.functions import (
     FunctionClass,
     FunctionID,
-    FunctionInputs,
     FunctionJobID,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
@@ -42,7 +41,7 @@ from models_library.functions import (
 )
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pytest_mock import MockType
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata, TasksQueue
 from servicelib.common_headers import (
@@ -50,10 +49,14 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server._service_function_jobs import FunctionJobService
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.api.dependencies.celery import (
     ASYNC_JOB_CLIENT_NAME,
     get_task_manager,
+)
+from simcore_service_api_server.api.dependencies.services import (
+    get_function_job_service,
 )
 from simcore_service_api_server.api.routes.functions_routes import get_function
 from simcore_service_api_server.celery.worker_tasks.functions_tasks import (
@@ -62,6 +65,7 @@ from simcore_service_api_server.celery.worker_tasks.functions_tasks import (
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.schemas.jobs import (
+    JobInputs,
     JobPricingSpecification,
     NodeID,
 )
@@ -112,7 +116,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
         *,
         user_identity: Identity,
         function: RegisteredFunction,
-        function_inputs: FunctionInputs,
+        job_inputs: JobInputs,
         pricing_spec: JobPricingSpecification | None,
         job_links: JobLinks,
         x_simcore_parent_project_uuid: NodeID | None,
@@ -122,7 +126,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
             title=_faker.sentence(),
             description=_faker.paragraph(),
             function_uid=FunctionID(_faker.uuid4()),
-            inputs=function_inputs,
+            inputs=job_inputs.values,
             outputs=None,
             function_class=FunctionClass.PROJECT,
             uid=FunctionJobID(_faker.uuid4()),
@@ -149,19 +153,9 @@ async def test_with_fake_run_function(
     app: FastAPI,
     client: AsyncClient,
     auth: BasicAuth,
+    mocker: MockerFixture,
     with_api_server_celery_worker: TestWorkController,
 ):
-    app.dependency_overrides[get_function] = (
-        lambda: RegisteredProjectFunction.model_validate(
-            RegisteredProjectFunction.model_config.get("json_schema_extra", {}).get(
-                "examples", []
-            )[0]
-        )
-    )
-
-    headers = {}
-    headers[X_SIMCORE_PARENT_PROJECT_UUID] = "null"
-    headers[X_SIMCORE_PARENT_NODE_ID] = "null"
 
     body = {
         "input_1": _faker.uuid4(),
@@ -174,6 +168,25 @@ async def test_with_fake_run_function(
             for _ in range(_faker.pyint(min_value=5, max_value=100))
         ],
     }
+
+    async def mock_get_function_job_service() -> FunctionJobService:
+        mock = mocker.AsyncMock(spec=FunctionJobService)
+        mock.run_function_pre_check.return_value = JobInputs(values=body)
+        return mock
+
+    app.dependency_overrides[get_function_job_service] = mock_get_function_job_service
+
+    app.dependency_overrides[get_function] = (
+        lambda: RegisteredProjectFunction.model_validate(
+            RegisteredProjectFunction.model_config.get("json_schema_extra", {}).get(
+                "examples", []
+            )[0]
+        )
+    )
+
+    headers = {}
+    headers[X_SIMCORE_PARENT_PROJECT_UUID] = "null"
+    headers[X_SIMCORE_PARENT_NODE_ID] = "null"
 
     response = await client.post(
         f"/{API_VTAG}/functions/{_faker.uuid4()}:run",

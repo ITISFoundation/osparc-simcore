@@ -50,6 +50,7 @@ from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.celery.worker_tasks import functions_tasks
 from simcore_service_api_server.models.api_resources import JobLinks
+from simcore_service_api_server.models.schemas.jobs import JobInputs
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 _faker = Faker()
@@ -478,7 +479,7 @@ async def test_run_project_function(
         task_id=TaskID(_faker.uuid4()),
         user_identity=user_identity,
         function=mock_registered_project_function,
-        function_inputs={},
+        job_inputs=JobInputs(values={}),
         pricing_spec=None,
         job_links=job_links,
         x_simcore_parent_project_uuid=None,
