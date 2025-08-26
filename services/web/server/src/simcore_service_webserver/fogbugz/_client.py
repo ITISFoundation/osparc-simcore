@@ -36,6 +36,17 @@ class FogbugzRestClient:
         self._api_token = api_token
         self._base_url = base_url
 
+    async def _make_api_request(self, json_payload: dict) -> dict:
+        """Make a request to Fogbugz API with common formatting"""
+        # Fogbugz requires multipart/form-data with stringified JSON
+        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
+
+        url = f"{self._base_url}/f/api/0/jsonapi"
+
+        response = await self._client.post(url, files=files)
+        response.raise_for_status()
+        return response.json()
+
     async def create_case(self, data: FogbugzCaseCreate) -> str:
         """Create a new case in Fogbugz"""
         json_payload = {
@@ -46,14 +57,7 @@ class FogbugzRestClient:
             "sEvent": data.description,
         }
 
-        # Fogbugz requires multipart/form-data with stringified JSON
-        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
-
-        url = f"{self._base_url}/f/api/0/jsonapi"
-
-        response = await self._client.post(url, files=files)
-        response.raise_for_status()
-        response_data = response.json()
+        response_data = await self._make_api_request(json_payload)
 
         # Fogbugz API returns case ID in the response
         case_id = response_data.get("data", {}).get("case", {}).get("ixBug", None)
@@ -71,14 +75,7 @@ class FogbugzRestClient:
             "ixBug": case_id,
         }
 
-        # Fogbugz requires multipart/form-data with stringified JSON
-        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
-
-        url = f"{self._base_url}/f/api/0/jsonapi"
-
-        response = await self._client.post(url, files=files)
-        response.raise_for_status()
-        response_data = response.json()
+        response_data = await self._make_api_request(json_payload)
 
         # Check if the operation was successful
         if response_data.get("error"):
@@ -95,14 +92,7 @@ class FogbugzRestClient:
             "cols": "sStatus",
         }
 
-        # Fogbugz requires multipart/form-data with stringified JSON
-        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
-
-        url = f"{self._base_url}/f/api/0/jsonapi"
-
-        response = await self._client.post(url, files=files)
-        response.raise_for_status()
-        response_data = response.json()
+        response_data = await self._make_api_request(json_payload)
 
         # Check if the operation was successful
         if response_data.get("error"):
@@ -156,14 +146,7 @@ class FogbugzRestClient:
             "ixPersonAssignedTo": assigned_fogbugz_person_id,
         }
 
-        # Fogbugz requires multipart/form-data with stringified JSON
-        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
-
-        url = f"{self._base_url}/f/api/0/jsonapi"
-
-        response = await self._client.post(url, files=files)
-        response.raise_for_status()
-        response_data = response.json()
+        response_data = await self._make_api_request(json_payload)
 
         # Check if the operation was successful
         if response_data.get("error"):
