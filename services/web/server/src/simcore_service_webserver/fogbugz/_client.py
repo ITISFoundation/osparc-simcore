@@ -6,16 +6,18 @@
 import json
 import logging
 
-import aiohttp
+import httpx
 from aiohttp import web
 from pydantic import BaseModel, Field
-from servicelib.aiohttp.client_session import get_client_session
 
 from ..products import products_service
 from ..products.models import Product
 from .settings import FogbugzSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
+_JSON_CONTENT_TYPE = "application/json"
+_UNKNOWN_ERROR_MESSAGE = "Unknown error occurred"
 
 
 class FogbugzCaseCreate(BaseModel):
@@ -27,8 +29,10 @@ class FogbugzCaseCreate(BaseModel):
 class FogbugzRestClient:
     """REST client for Fogbugz API"""
 
-    def __init__(self, app: web.Application, api_token: str, base_url: str) -> None:
-        self._app = app
+    def __init__(
+        self, client: httpx.AsyncClient, api_token: str, base_url: str
+    ) -> None:
+        self._client = client
         self._api_token = api_token
         self._base_url = base_url
 
@@ -43,25 +47,21 @@ class FogbugzRestClient:
         }
 
         # Fogbugz requires multipart/form-data with stringified JSON
-        form_data = aiohttp.FormData()
-        form_data.add_field(
-            "request", json.dumps(json_payload), content_type="application/json"
-        )
+        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
 
-        session = get_client_session(self._app)
         url = f"{self._base_url}/f/api/0/jsonapi"
 
-        async with session.post(url, data=form_data) as response:
-            response.raise_for_status()
-            response_data = await response.json()
+        response = await self._client.post(url, files=files)
+        response.raise_for_status()
+        response_data = response.json()
 
-            # Fogbugz API returns case ID in the response
-            case_id = response_data.get("data", {}).get("case", {}).get("ixBug", None)
-            if case_id is None:
-                msg = "Failed to create case in Fogbugz"
-                raise ValueError(msg)
+        # Fogbugz API returns case ID in the response
+        case_id = response_data.get("data", {}).get("case", {}).get("ixBug", None)
+        if case_id is None:
+            msg = "Failed to create case in Fogbugz"
+            raise ValueError(msg)
 
-            return str(case_id)
+        return str(case_id)
 
     async def resolve_case(self, case_id: str) -> None:
         """Resolve a case in Fogbugz"""
@@ -72,23 +72,19 @@ class FogbugzRestClient:
         }
 
         # Fogbugz requires multipart/form-data with stringified JSON
-        form_data = aiohttp.FormData()
-        form_data.add_field(
-            "request", json.dumps(json_payload), content_type="application/json"
-        )
+        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
 
-        session = get_client_session(self._app)
         url = f"{self._base_url}/f/api/0/jsonapi"
 
-        async with session.post(url, data=form_data) as response:
-            response.raise_for_status()
-            response_data = await response.json()
+        response = await self._client.post(url, files=files)
+        response.raise_for_status()
+        response_data = response.json()
 
-            # Check if the operation was successful
-            if response_data.get("error"):
-                error_msg = response_data.get("error", "Unknown error occurred")
-                msg = f"Failed to resolve case in Fogbugz: {error_msg}"
-                raise ValueError(msg)
+        # Check if the operation was successful
+        if response_data.get("error"):
+            error_msg = response_data.get("error", _UNKNOWN_ERROR_MESSAGE)
+            msg = f"Failed to resolve case in Fogbugz: {error_msg}"
+            raise ValueError(msg)
 
     async def get_case_status(self, case_id: str) -> str:
         """Get the status of a case in Fogbugz"""
@@ -100,48 +96,44 @@ class FogbugzRestClient:
         }
 
         # Fogbugz requires multipart/form-data with stringified JSON
-        form_data = aiohttp.FormData()
-        form_data.add_field(
-            "request", json.dumps(json_payload), content_type="application/json"
-        )
+        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
 
-        session = get_client_session(self._app)
         url = f"{self._base_url}/f/api/0/jsonapi"
 
-        async with session.post(url, data=form_data) as response:
-            response.raise_for_status()
-            response_data = await response.json()
+        response = await self._client.post(url, files=files)
+        response.raise_for_status()
+        response_data = response.json()
 
-            # Check if the operation was successful
-            if response_data.get("error"):
-                error_msg = response_data.get("error", "Unknown error occurred")
-                msg = f"Failed to get case status from Fogbugz: {error_msg}"
-                raise ValueError(msg)
+        # Check if the operation was successful
+        if response_data.get("error"):
+            error_msg = response_data.get("error", _UNKNOWN_ERROR_MESSAGE)
+            msg = f"Failed to get case status from Fogbugz: {error_msg}"
+            raise ValueError(msg)
 
-            # Extract the status from the search results
-            cases = response_data.get("data", {}).get("cases", [])
-            if not cases:
-                msg = f"Case {case_id} not found in Fogbugz"
-                raise ValueError(msg)
+        # Extract the status from the search results
+        cases = response_data.get("data", {}).get("cases", [])
+        if not cases:
+            msg = f"Case {case_id} not found in Fogbugz"
+            raise ValueError(msg)
 
-            # Find the case with matching ixBug
-            target_case = None
-            for case in cases:
-                if str(case.get("ixBug")) == str(case_id):
-                    target_case = case
-                    break
+        # Find the case with matching ixBug
+        target_case = None
+        for case in cases:
+            if str(case.get("ixBug")) == str(case_id):
+                target_case = case
+                break
 
-            if target_case is None:
-                msg = f"Case {case_id} not found in search results"
-                raise ValueError(msg)
+        if target_case is None:
+            msg = f"Case {case_id} not found in search results"
+            raise ValueError(msg)
 
-            # Get the status from the found case
-            status = target_case.get("sStatus", "")
-            if not status:
-                msg = f"Status not found for case {case_id}"
-                raise ValueError(msg)
+        # Get the status from the found case
+        status = target_case.get("sStatus", "")
+        if not status:
+            msg = f"Status not found for case {case_id}"
+            raise ValueError(msg)
 
-            return status
+        return status
 
     async def reopen_case(self, case_id: str, assigned_fogbugz_person_id: str) -> None:
         """Reopen a case in Fogbugz (uses reactivate for resolved cases, reopen for closed cases)"""
@@ -165,23 +157,19 @@ class FogbugzRestClient:
         }
 
         # Fogbugz requires multipart/form-data with stringified JSON
-        form_data = aiohttp.FormData()
-        form_data.add_field(
-            "request", json.dumps(json_payload), content_type="application/json"
-        )
+        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
 
-        session = get_client_session(self._app)
         url = f"{self._base_url}/f/api/0/jsonapi"
 
-        async with session.post(url, data=form_data) as response:
-            response.raise_for_status()
-            response_data = await response.json()
+        response = await self._client.post(url, files=files)
+        response.raise_for_status()
+        response_data = response.json()
 
-            # Check if the operation was successful
-            if response_data.get("error"):
-                error_msg = response_data.get("error", "Unknown error occurred")
-                msg = f"Failed to reopen case in Fogbugz: {error_msg}"
-                raise ValueError(msg)
+        # Check if the operation was successful
+        if response_data.get("error"):
+            error_msg = response_data.get("error", _UNKNOWN_ERROR_MESSAGE)
+            msg = f"Failed to reopen case in Fogbugz: {error_msg}"
+            raise ValueError(msg)
 
 
 _APP_KEY = f"{__name__}.{FogbugzRestClient.__name__}"
@@ -217,8 +205,9 @@ async def setup_fogbugz_rest_client(app: web.Application) -> None:
                 product.name,
             )
 
+    httpx_client = httpx.AsyncClient()
     client = FogbugzRestClient(
-        app=app,
+        client=httpx_client,
         api_token=settings.FOGBUGZ_API_TOKEN,
         base_url=settings.FOGBUGZ_URL,
     )
