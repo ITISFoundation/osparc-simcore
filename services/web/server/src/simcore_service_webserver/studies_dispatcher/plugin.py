@@ -6,8 +6,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from ..login.decorators import login_required
 from ..products.plugin import setup_products
 from . import _rest_handlers
+from ._controller_rest_redirects import get_redirection_to_viewer
 from ._projects_permalinks import setup_projects_permalinks
-from ._redirects_handlers import get_redirection_to_viewer
 from ._studies_access import get_redirection_to_study_page
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 

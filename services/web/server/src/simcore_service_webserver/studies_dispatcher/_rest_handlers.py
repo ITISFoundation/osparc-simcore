@@ -21,9 +21,9 @@ from .._meta import API_VTAG
 from ..products import products_web
 from ..utils_aiohttp import envelope_json_response
 from ._catalog import ServiceMetaData, iter_latest_product_services
+from ._controller_rest_redirects import ViewerQueryParams
 from ._core import list_viewers_info
 from ._models import ViewerInfo
-from ._redirects_handlers import ViewerQueryParams
 
 _logger = logging.getLogger(__name__)
 

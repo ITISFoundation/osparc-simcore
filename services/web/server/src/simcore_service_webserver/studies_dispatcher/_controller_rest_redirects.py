@@ -2,8 +2,6 @@
 
 import functools
 import logging
-import urllib.parse
-from typing import TypeAlias
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
@@ -11,8 +9,7 @@ from common_library.user_messages import user_message
 from models_library.function_services_catalog._utils import ServiceNotFound
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
+from pydantic import ValidationError
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -25,6 +22,12 @@ from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
 from ._catalog import ValidService, validate_requested_service
 from ._constants import MSG_UNEXPECTED_DISPATCH_ERROR
+from ._controller_rest_redirects_schemas import (
+    FileQueryParams,
+    RedirectionQueryParams,
+    ServiceAndFileParams,
+    ServiceQueryParams,
+)
 from ._core import validate_requested_file, validate_requested_viewer
 from ._errors import (
     FileToLargeError,
@@ -34,7 +37,7 @@ from ._errors import (
     InvalidRedirectionParamsError,
     ProjectWorkbenchMismatchError,
 )
-from ._models import FileParams, ServiceInfo, ServiceParams, ViewerInfo
+from ._models import ServiceInfo, ViewerInfo
 from ._projects import (
     get_or_create_project_with_file,
     get_or_create_project_with_file_and_service,
@@ -216,64 +219,6 @@ def _handle_errors_with_error_page(handler: Handler):
             ) from err
 
     return wrapper
-
-
-#
-# API ScheMAS
-#
-
-
-class ServiceQueryParams(ServiceParams):
-    model_config = ConfigDict(extra="forbid")
-
-
-class FileQueryParams(FileParams):
-    model_config = ConfigDict(extra="forbid")
-
-    @field_validator("file_type")
-    @classmethod
-    def _ensure_extension_upper_and_dotless(cls, v):
-        # NOTE: see filetype constraint-check
-        if v and isinstance(v, str):
-            w = urllib.parse.unquote(v)
-            return w.upper().lstrip(".")
-        return v
-
-
-class ServiceAndFileParams(FileQueryParams, ServiceParams): ...
-
-
-class ViewerQueryParams(BaseModel):
-    file_type: str | None = None
-    viewer_key: ServiceKey
-    viewer_version: ServiceVersion
-
-    @staticmethod
-    def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
-        # can safely construct w/o validation from a viewer
-        return ViewerQueryParams.model_construct(
-            file_type=viewer.filetype,
-            viewer_key=viewer.key,
-            viewer_version=viewer.version,
-        )
-
-    @field_validator("file_type")
-    @classmethod
-    def _ensure_extension_upper_and_dotless(cls, v):
-        # NOTE: see filetype constraint-check
-        if v and isinstance(v, str):
-            w = urllib.parse.unquote(v)
-            return w.upper().lstrip(".")
-        return v
-
-
-RedirectionQueryParams: TypeAlias = (
-    # NOTE: Extra.forbid in FileQueryParams, ServiceQueryParams avoids bad casting when
-    # errors in ServiceAndFileParams
-    ServiceAndFileParams
-    | FileQueryParams
-    | ServiceQueryParams
-)
 
 
 #
