@@ -5,6 +5,7 @@
 
 import json
 import logging
+from typing import Any
 
 import httpx
 from aiohttp import web
@@ -36,7 +37,7 @@ class FogbugzRestClient:
         self._api_token = api_token
         self._base_url = base_url
 
-    async def _make_api_request(self, json_payload: dict) -> dict:
+    async def _make_api_request(self, json_payload: dict[str, Any]) -> dict[str, Any]:
         """Make a request to Fogbugz API with common formatting"""
         # Fogbugz requires multipart/form-data with stringified JSON
         files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
@@ -45,7 +46,8 @@ class FogbugzRestClient:
 
         response = await self._client.post(url, files=files)
         response.raise_for_status()
-        return response.json()
+        response_data: dict[str, Any] = response.json()
+        return response_data
 
     async def create_case(self, data: FogbugzCaseCreate) -> str:
         """Create a new case in Fogbugz"""
