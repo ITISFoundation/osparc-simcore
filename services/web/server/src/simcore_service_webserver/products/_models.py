@@ -297,6 +297,8 @@ class Product(BaseModel):
                         },
                         "group_id": 12345,
                         "support_standard_group_id": 67890,
+                        "support_assigned_fogbugz_person_id": 112,
+                        "support_assigned_fogbugz_project_id": 72,
                         "is_payment_enabled": False,
                     },
                 ]

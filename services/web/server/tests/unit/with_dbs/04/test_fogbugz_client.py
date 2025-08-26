@@ -3,46 +3,17 @@ from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.aiohttp import status
 from simcore_service_webserver.fogbugz._client import (
     FogbugzCaseCreate,
     get_fogbugz_rest_client,
 )
 from simcore_service_webserver.fogbugz.settings import FogbugzSettings
 
-# @pytest.fixture(scope="session")
-# def fake_api_base_url() -> str:
-#     return "https://testserver-itis-vip.xyz"
-
-
-# @pytest.fixture
-# def mock_fogbugz_api(
-#     faker: Faker, fake_api_base_url: str
-# ) -> Iterator[respx.MockRouter]:
-#     response_data = {
-#         "msg": 0,
-#         "availableDownloads": [
-#             random_itis_vip_available_download_item(
-#                 identifier=i,
-#                 features_functionality="Posable",
-#                 fake=faker,
-#             )
-#             for i in range(8)
-#         ],
-#     }
-
-#     with respx.mock(base_url=fake_api_base_url) as mock:
-#         mock.post(path__regex=r"/getDownloadableItems/(?P<category>\w+)").respond(
-#             status_code=200, json=response_data
-#         )
-#         yield mock
-
 
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    # fake_api_base_url: str,
     mocker: MockerFixture,
 ):
     return app_environment | setenvs_from_dict(
@@ -56,7 +27,6 @@ def app_environment(
 
 async def test_testit(
     app_environment: EnvVarsDict,
-    # mock_fogbugz_api: respx.MockRouter,
     client: TestClient,
 ):
     assert client.app
