@@ -22,7 +22,7 @@ from tenacity import (
 
 from ..background_task import create_periodic_task
 from ..logging_errors import create_troubleshootting_log_kwargs
-from ..logging_utils import log_context
+from ..logging_utils import log_catch, log_context
 from ..redis import RedisClientSDK, exclusive
 from ._redis_store import RedisStore
 from ._serialization import dumps
@@ -214,12 +214,13 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         # stopping only tasks that are handled by this manager
         # otherwise it will cancel long running tasks that were running in diffierent processes
         async def _remove_local_task(task_data: TaskData) -> None:
-            await self.remove_task(
-                task_data.task_id,
-                task_data.task_context,
-                wait_for_removal=False,
-            )
-            await self._attempt_to_remove_local_task(task_data.task_id)
+            with log_catch(_logger, reraise=False):
+                await self.remove_task(
+                    task_data.task_id,
+                    task_data.task_context,
+                    wait_for_removal=False,
+                )
+                await self._attempt_to_remove_local_task(task_data.task_id)
 
         await limited_gather(
             *[
