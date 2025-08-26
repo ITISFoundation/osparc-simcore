@@ -1,7 +1,7 @@
 """preparation for osparc.io migration
 
 Revision ID: 47dc5c0a138e
-Revises: 4f6fd2586491
+Revises: b566f1b29012
 Create Date: 2025-05-19 14:55:15.889813+00:00
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "47dc5c0a138e"
-down_revision = "4f6fd2586491"
+down_revision = "b566f1b29012"
 branch_labels = None
 depends_on = None
 
