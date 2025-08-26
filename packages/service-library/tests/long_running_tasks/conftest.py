@@ -11,10 +11,10 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 from servicelib.logging_utils import log_catch
-from servicelib.long_running_tasks.models import LRTNamespace, TaskContext
-from servicelib.long_running_tasks.server_long_running_manager import (
-    ServerLongRunningManager,
+from servicelib.long_running_tasks.manager import (
+    LongRunningManager,
 )
+from servicelib.long_running_tasks.models import LRTNamespace, TaskContext
 from servicelib.long_running_tasks.task import TasksManager
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
@@ -24,7 +24,7 @@ from utils import TEST_CHECK_STALE_INTERVAL_S
 _logger = logging.getLogger(__name__)
 
 
-class _TestingLongRunningManager(ServerLongRunningManager):
+class _TestingLongRunningManager(LongRunningManager):
     @staticmethod
     def get_task_context(request) -> TaskContext:
         _ = request
@@ -37,16 +37,16 @@ async def get_long_running_manager(
 ) -> AsyncIterator[
     Callable[
         [RedisSettings, RabbitSettings, LRTNamespace | None],
-        Awaitable[ServerLongRunningManager],
+        Awaitable[LongRunningManager],
     ]
 ]:
-    managers: list[ServerLongRunningManager] = []
+    managers: list[LongRunningManager] = []
 
     async def _(
         redis_settings: RedisSettings,
         rabbit_settings: RabbitSettings,
         lrt_namespace: LRTNamespace | None,
-    ) -> ServerLongRunningManager:
+    ) -> LongRunningManager:
         manager = _TestingLongRunningManager(
             stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
             stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
