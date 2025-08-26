@@ -123,6 +123,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           const updatePhoneNumberButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
             padding: [2, 6],
           });
+          updatePhoneNumberButton.addListener("execute", this.__openPhoneNumberUpdater);
           widgets[pos.PHONE] = updatePhoneNumberButton;
         }
         this.__userProfileRenderer.setWidgets(widgets);
@@ -592,6 +593,17 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       box.add(deleteBtn);
 
       return box;
-    }
+    },
+
+    __openPhoneNumberUpdater: function() {
+      const verifyPhoneNumberView = new osparc.auth.ui.VerifyPhoneNumberView().set({
+        userEmail: osparc.auth.Data.getInstance().getEmail()
+      });
+      osparc.ui.window.Window.popUpInWindow(verifyPhoneNumberView, this.tr("Update Phone Number"), 350, 135).set({
+        clickAwayClose: false,
+        resizable: false,
+        showClose: true
+      });
+    },
   }
 });
