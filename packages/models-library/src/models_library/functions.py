@@ -13,6 +13,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field
+from servicelib.celery.models import TaskID
 
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
@@ -196,20 +197,38 @@ class RegisteredFunctionJobBase(FunctionJobBase):
 
 class ProjectFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
-    project_job_id: ProjectID
+    project_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
 class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase):
     pass
 
 
+class RegisteredProjectFunctionJobPatch(BaseModel):
+    function_class: FunctionClass
+    title: str | None
+    description: str | None
+    project_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
+
+
 class SolverFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
-    solver_job_id: ProjectID
+    solver_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
 class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
     pass
+
+
+class RegisteredSolverFunctionJobPatch(BaseModel):
+    function_class: FunctionClass
+    title: str | None
+    description: str | None
+    solver_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
 class PythonCodeFunctionJob(FunctionJobBase):
@@ -218,6 +237,12 @@ class PythonCodeFunctionJob(FunctionJobBase):
 
 class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):
     pass
+
+
+class RegisteredPythonCodeFunctionJobPatch(BaseModel):
+    function_class: FunctionClass
+    title: str | None
+    description: str | None
 
 
 FunctionJob: TypeAlias = Annotated[
@@ -229,6 +254,13 @@ RegisteredFunctionJob: TypeAlias = Annotated[
     RegisteredProjectFunctionJob
     | RegisteredPythonCodeFunctionJob
     | RegisteredSolverFunctionJob,
+    Field(discriminator="function_class"),
+]
+
+RegisteredFunctionJobPatch = Annotated[
+    RegisteredProjectFunctionJobPatch
+    | RegisteredPythonCodeFunctionJobPatch
+    | RegisteredSolverFunctionJobPatch,
     Field(discriminator="function_class"),
 ]
 
