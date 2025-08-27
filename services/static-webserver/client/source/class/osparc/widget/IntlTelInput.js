@@ -23,11 +23,13 @@
 
 qx.Class.define("osparc.widget.IntlTelInput", {
   extend: qx.ui.core.Widget,
+  implement: [qx.ui.form.IForm, qx.ui.form.IStringForm],
+  include: [qx.ui.form.MForm, qx.ui.form.MModelProperty],
 
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(5));
+    this._setLayout(new qx.ui.layout.HBox());
 
     this.getContentElement().setStyles({
       "overflow": "visible" // needed for countries dropdown menu
@@ -68,6 +70,16 @@ qx.Class.define("osparc.widget.IntlTelInput", {
     this._add(feedbackCheck);
   },
 
+  properties: {
+    // Form-compatible property
+    value: {
+      check: "String",
+      nullable: true,
+      event: "changeValue",
+      apply: "_applyValue"
+    }
+  },
+
   statics: {
     updateStyle: function(itiInput, checkIcon) {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
@@ -87,8 +99,25 @@ qx.Class.define("osparc.widget.IntlTelInput", {
     __itiInput: null,
     __feedbackCheck: null,
 
-    getNumber: function() {
-      return this.__itiInput ? this.__itiInput.getNumber() : "";
+    // IStringForm interface implementation
+    getValue: function() {
+      return this.__itiInput ? this.__itiInput.getNumber() : null;
+    },
+
+    setValue: function(value) {
+      if (this.__itiInput && value) {
+        // intlTelInput doesn't have a full setter for raw numbers
+        this.__itiInput.setNumber(value);
+      }
+      this._applyValue(value);
+    },
+
+    resetValue: function() {
+      this.setValue(null);
+    },
+
+    _applyValue: function(value) {
+      this.fireDataEvent("changeValue", value);
     },
 
     isValidNumber: function() {
@@ -98,7 +127,7 @@ qx.Class.define("osparc.widget.IntlTelInput", {
     verifyPhoneNumber: function() {
       const isValid = this.isValidNumber();
       this.__feedbackCheck.set({
-        toolTipText: "E.164: " + this.getNumber(),
+        toolTipText: "E.164: " + this.getValue(),
         source: isValid ? "@FontAwesome5Solid/check/16" : "@FontAwesome5Solid/exclamation-triangle/16",
         textColor: isValid ? "text" : "failed-red",
         alignY: "middle",
@@ -112,7 +141,7 @@ qx.Class.define("osparc.widget.IntlTelInput", {
           2: this.tr("Number too short"),
           3: this.tr("Number too long")
         };
-        const errorMsg = validationError in errorMap ? errorMap[validationError] : "Invalid number";
+        const errorMsg = errorMap[validationError] || "Invalid number";
         this.__feedbackCheck.set({
           toolTipText: errorMsg + ". " + this.__feedbackCheck.getToolTipText()
         });
