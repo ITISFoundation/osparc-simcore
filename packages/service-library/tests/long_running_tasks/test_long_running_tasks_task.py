@@ -397,7 +397,7 @@ async def test_get_result_finished_with_error(
 
 
 async def test_get_result_finished_with_unpicklable_error(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
