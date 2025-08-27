@@ -134,12 +134,14 @@ class FunctionJobService:
             function.function_class == FunctionClass.PROJECT
             and function_job.function_class == FunctionClass.PROJECT
         ):
+            assert function_job.project_job_id is not None  # nosec
             job_status = await self._job_service.inspect_study_job(
                 job_id=function_job.project_job_id,
             )
         elif (function.function_class == FunctionClass.SOLVER) and (
             function_job.function_class == FunctionClass.SOLVER
         ):
+            assert function_job.solver_job_id is not None  # nosec
             job_status = await self._job_service.inspect_solver_job(
                 solver_key=function.solver_key,
                 version=function.solver_version,
