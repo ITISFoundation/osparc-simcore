@@ -77,15 +77,28 @@ qx.Class.define("osparc.store.Support", {
 
     addManualsToMenu: function(menu) {
       const manuals = osparc.store.Support.getManuals();
-
-      manuals.forEach(manual => {
-        const manualBtn = new qx.ui.menu.Button(manual.label, "@FontAwesome5Solid/book/14");
-        manualBtn.getChildControl("label").set({
-          rich: true
+      const addManuals = mn => {
+        manuals.forEach(manual => {
+          const manualBtn = new qx.ui.menu.Button(manual.label, "@FontAwesome5Solid/book/14");
+          manualBtn.getChildControl("label").set({
+            rich: true
+          });
+          manualBtn.addListener("execute", () => window.open(manual.url), this);
+          mn.add(manualBtn);
         });
-        manualBtn.addListener("execute", () => window.open(manual.url), this);
-        menu.add(manualBtn);
-      });
+      };
+      if (manuals.length > 1) {
+        // if there are more than 1 manuals, add them in their own menu
+        const ownMenu = new qx.ui.menu.Menu().set({
+          appearance: "menu-wider",
+        });
+        const manualsBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Manuals"), "@FontAwesome5Solid/book/14");
+        manualsBtn.setMenu(ownMenu);
+        menu.add(manualsBtn);
+        addManuals(ownMenu);
+      } else {
+        addManuals(menu);
+      }
     },
 
     addSupportButtonsToMenu: function(menu, menuButton) {
