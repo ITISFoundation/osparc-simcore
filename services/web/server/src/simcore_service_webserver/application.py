@@ -32,6 +32,7 @@ from .director_v2.plugin import setup_director_v2
 from .dynamic_scheduler.plugin import setup_dynamic_scheduler
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
+from .fogbugz.plugin import setup_fogbugz
 from .folders.plugin import setup_folders
 from .functions.plugin import setup_functions
 from .garbage_collector.plugin import setup_garbage_collector
@@ -166,6 +167,7 @@ def create_application() -> web.Application:
 
     # conversations
     setup_conversations(app)
+    setup_fogbugz(app)  # Needed for support conversations
 
     # licenses
     setup_licenses(app)
