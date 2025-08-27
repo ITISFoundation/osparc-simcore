@@ -13,11 +13,11 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field
-from servicelib.celery.models import TaskID
 
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
 
+TaskID: TypeAlias = str
 FunctionID: TypeAlias = UUID
 FunctionJobID: TypeAlias = UUID
 FileID: TypeAlias = UUID
