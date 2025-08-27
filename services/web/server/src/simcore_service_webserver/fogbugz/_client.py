@@ -158,6 +158,9 @@ class FogbugzRestClient:
 
 
 _APP_KEY = f"{__name__}.{FogbugzRestClient.__name__}"
+_FOGBUGZ_TIMEOUT: float = Field(
+    default=45.0, description="API request timeout in seconds"
+)
 
 
 async def setup_fogbugz_rest_client(app: web.Application) -> None:
@@ -190,7 +193,7 @@ async def setup_fogbugz_rest_client(app: web.Application) -> None:
                 product.name,
             )
 
-    httpx_client = httpx.AsyncClient()
+    httpx_client = httpx.AsyncClient(timeout=_FOGBUGZ_TIMEOUT)
     client = FogbugzRestClient(
         client=httpx_client,
         api_token=settings.FOGBUGZ_API_TOKEN,
