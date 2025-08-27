@@ -9,7 +9,7 @@ from typing import Any
 
 import httpx
 from aiohttp import web
-from pydantic import BaseModel, Field
+from pydantic import AnyUrl, BaseModel, Field, SecretStr
 
 from ..products import products_service
 from ..products.models import Product
@@ -19,6 +19,10 @@ _logger = logging.getLogger(__name__)
 
 _JSON_CONTENT_TYPE = "application/json"
 _UNKNOWN_ERROR_MESSAGE = "Unknown error occurred"
+
+_FOGBUGZ_TIMEOUT: float = Field(
+    default=45.0, description="API request timeout in seconds"
+)
 
 
 class FogbugzCaseCreate(BaseModel):
@@ -30,10 +34,8 @@ class FogbugzCaseCreate(BaseModel):
 class FogbugzRestClient:
     """REST client for Fogbugz API"""
 
-    def __init__(
-        self, client: httpx.AsyncClient, api_token: str, base_url: str
-    ) -> None:
-        self._client = client
+    def __init__(self, api_token: SecretStr, base_url: AnyUrl) -> None:
+        self._client = httpx.AsyncClient(timeout=_FOGBUGZ_TIMEOUT)
         self._api_token = api_token
         self._base_url = base_url
 
@@ -53,7 +55,7 @@ class FogbugzRestClient:
         """Create a new case in Fogbugz"""
         json_payload = {
             "cmd": "new",
-            "token": self._api_token,
+            "token": self._api_token.get_secret_value(),
             "ixProject": data.fogbugz_project_id,
             "sTitle": data.title,
             "sEvent": data.description,
@@ -73,7 +75,7 @@ class FogbugzRestClient:
         """Resolve a case in Fogbugz"""
         json_payload = {
             "cmd": "resolve",
-            "token": self._api_token,
+            "token": self._api_token.get_secret_value(),
             "ixBug": case_id,
         }
 
@@ -89,7 +91,7 @@ class FogbugzRestClient:
         """Get the status of a case in Fogbugz"""
         json_payload = {
             "cmd": "search",
-            "token": self._api_token,
+            "token": self._api_token.get_secret_value(),
             "q": case_id,
             "cols": "sStatus",
         }
@@ -143,7 +145,7 @@ class FogbugzRestClient:
 
         json_payload = {
             "cmd": cmd,
-            "token": self._api_token,
+            "token": self._api_token.get_secret_value(),
             "ixBug": case_id,
             "ixPersonAssignedTo": assigned_fogbugz_person_id,
         }
@@ -158,9 +160,6 @@ class FogbugzRestClient:
 
 
 _APP_KEY = f"{__name__}.{FogbugzRestClient.__name__}"
-_FOGBUGZ_TIMEOUT: float = Field(
-    default=45.0, description="API request timeout in seconds"
-)
 
 
 async def setup_fogbugz_rest_client(app: web.Application) -> None:
@@ -193,9 +192,7 @@ async def setup_fogbugz_rest_client(app: web.Application) -> None:
                 product.name,
             )
 
-    httpx_client = httpx.AsyncClient(timeout=_FOGBUGZ_TIMEOUT)
     client = FogbugzRestClient(
-        client=httpx_client,
         api_token=settings.FOGBUGZ_API_TOKEN,
         base_url=settings.FOGBUGZ_URL,
     )
