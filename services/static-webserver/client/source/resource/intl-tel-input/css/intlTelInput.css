@@ -942,3 +942,14 @@
 
 .iti__flag.iti__np {
   background-color: transparent; }
+
+.iti input {
+  border: none !important;
+  border-bottom: 1px solid var(--q-color-border, green) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.iti input:focus {
+  border-bottom: 1px solid var(--q-color-focus, red) !important;
+}

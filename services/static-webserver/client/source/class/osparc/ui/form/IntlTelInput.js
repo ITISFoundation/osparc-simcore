@@ -167,24 +167,24 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
-      const height = isCompact ? 23 : 25;
+      const height = isCompact ? 24 : 25;
 
+      phoneNumber.set({
+        minWidth: 185,
+        maxHeight: height,
+        margin: 0,
+        marginTop: 2,
+      });
       if (isCompact) {
         phoneNumber.set({
-          margin: 0,
           marginLeft: -1,
         });
       } else {
         phoneNumber.set({
-          marginTop: 2,
           marginLeft: 2,
           marginRight: 2,
         })
       }
-      phoneNumber.set({
-        minWidth: 185,
-        maxHeight: height,
-      });
 
       if (itiInput) {
         itiInput.a.style["width"] = feedbackIcon.isVisible() ? "185px" : "215px";
