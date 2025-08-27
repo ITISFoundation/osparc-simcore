@@ -6,17 +6,7 @@ from servicelib.long_running_tasks.errors import TaskAlreadyRunningError
 from servicelib.long_running_tasks.models import LRTNamespace, TaskId
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
-from ..modules.long_running_tasks import (
-    task_containers_restart,
-    task_create_service_containers,
-    task_ports_inputs_pull,
-    task_ports_outputs_pull,
-    task_ports_outputs_push,
-    task_pull_user_servcices_docker_images,
-    task_restore_state,
-    task_runs_docker_compose_down,
-    task_save_state,
-)
+from ..modules import long_running_tasks
 
 
 def _get_task_id_from_error(e: TaskAlreadyRunningError) -> str:
@@ -30,7 +20,7 @@ async def pull_user_services_docker_images(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            task_pull_user_servcices_docker_images.__name__,
+            long_running_tasks.task_pull_user_servcices_docker_images.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
@@ -46,7 +36,7 @@ async def create_service_containers_task(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            task_create_service_containers.__name__,
+            long_running_tasks.task_create_service_containers.__name__,
             unique=True,
             containers_create=containers_create,
         )
@@ -61,7 +51,7 @@ async def runs_docker_compose_down_task(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            task_runs_docker_compose_down.__name__,
+            long_running_tasks.task_runs_docker_compose_down.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
@@ -75,7 +65,7 @@ async def state_restore_task(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            task_restore_state.__name__,
+            long_running_tasks.task_restore_state.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
@@ -89,7 +79,7 @@ async def state_save_task(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            task_save_state.__name__,
+            long_running_tasks.task_save_state.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
@@ -105,7 +95,7 @@ async def ports_inputs_pull_task(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            task_ports_inputs_pull.__name__,
+            long_running_tasks.task_ports_inputs_pull.__name__,
             unique=True,
             port_keys=port_keys,
         )
@@ -122,7 +112,7 @@ async def ports_outputs_pull_task(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            task_ports_outputs_pull.__name__,
+            long_running_tasks.task_ports_outputs_pull.__name__,
             unique=True,
             port_keys=port_keys,
         )
@@ -135,7 +125,10 @@ async def ports_outputs_push_task(
 ) -> TaskId:
     try:
         return await lrt_api.start_task(
-            rpc_client, lrt_namespace, task_ports_outputs_push.__name__, unique=True
+            rpc_client,
+            lrt_namespace,
+            long_running_tasks.task_ports_outputs_push.__name__,
+            unique=True,
         )
     except TaskAlreadyRunningError as e:
         return _get_task_id_from_error(e)
@@ -148,7 +141,7 @@ async def containers_restart_task(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            task_containers_restart.__name__,
+            long_running_tasks.task_containers_restart.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
