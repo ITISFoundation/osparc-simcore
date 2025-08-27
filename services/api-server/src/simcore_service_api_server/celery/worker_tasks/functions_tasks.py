@@ -107,6 +107,7 @@ async def run_function(
     )
 
     return await function_job_service.run_function(
+        job_creation_task_id=task_id,
         function=function,
         job_inputs=job_inputs,
         pricing_spec=pricing_spec,

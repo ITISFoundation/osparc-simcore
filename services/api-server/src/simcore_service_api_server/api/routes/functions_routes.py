@@ -17,12 +17,13 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
+from models_library.functions import FunctionClass
 from models_library.functions_errors import FunctionJobCacheNotFoundError
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from servicelib.celery.models import TaskFilter, TaskMetadata, TasksQueue
+from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata, TasksQueue
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 
 from ..._service_function_jobs import FunctionJobService
@@ -347,10 +348,10 @@ async def run_function(  # noqa: PLR0913
     )
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
-
     job_inputs = await function_job_service.create_function_job_inputs(
         function=to_run_function, function_inputs=function_inputs
     )
+
     try:
         # checks access rights
         return await function_job_service.get_cached_function_job(
@@ -398,10 +399,8 @@ async def run_function(  # noqa: PLR0913
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
         function_job_id=pre_registered_function_job_id,
-        registered_function_job_patch=RegisteredFunctionJobPatch(
-            status=RunningState.RUNNING,
-            task_id=task_uuid,
-        ),
+        function_class=FunctionClass.PROJECT,
+        job_creation_task_id=TaskID(task_uuid),
     )
 
 

@@ -295,6 +295,17 @@ class FunctionJobService:
         function_job_id: FunctionJobID,
         function_class: FunctionClass,
         job_creation_task_id: TaskID | None,
+    ) -> RegisteredFunctionJob: ...
+
+    @overload
+    async def patch_registered_function_job(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_id: FunctionJobID,
+        function_class: FunctionClass,
+        job_creation_task_id: TaskID | None,
         project_job_id: ProjectID | None,
     ) -> RegisteredFunctionJob: ...
 
@@ -354,6 +365,7 @@ class FunctionJobService:
     async def run_function(
         self,
         *,
+        job_creation_task_id: TaskID | None,
         function: RegisteredFunction,
         job_inputs: JobInputs,
         pricing_spec: JobPricingSpecification | None,
@@ -377,18 +389,13 @@ class FunctionJobService:
                 job_id=study_job.id,
                 pricing_spec=pricing_spec,
             )
-            return await self._web_rpc_client.register_function_job(
-                function_job=ProjectFunctionJob(
-                    function_uid=function.uid,
-                    title=f"Function job of function {function.uid}",
-                    description=function.description,
-                    inputs=job_inputs.values,
-                    outputs=None,
-                    project_job_id=study_job.id,
-                    job_creation_task_id=None,
-                ),
+            return await self.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
+                function_job_id=study_job.id,
+                function_class=FunctionClass.PROJECT,
+                job_creation_task_id=job_creation_task_id,
+                project_job_id=study_job.id,
             )
 
         if function.function_class == FunctionClass.SOLVER:
@@ -407,18 +414,13 @@ class FunctionJobService:
                 job_id=solver_job.id,
                 pricing_spec=pricing_spec,
             )
-            return await self._web_rpc_client.register_function_job(
-                function_job=SolverFunctionJob(
-                    function_uid=function.uid,
-                    title=f"Function job of function {function.uid}",
-                    description=function.description,
-                    inputs=job_inputs.values,
-                    outputs=None,
-                    solver_job_id=solver_job.id,
-                    job_creation_task_id=None,
-                ),
+            return await self.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
+                function_job_id=solver_job.id,
+                function_class=FunctionClass.SOLVER,
+                job_creation_task_id=job_creation_task_id,
+                solver_job_id=solver_job.id,
             )
 
         raise UnsupportedFunctionClassError(
