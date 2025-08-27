@@ -180,6 +180,7 @@ def mock_project_function_job(
         "outputs": None,
         "project_job_id": f"{uuid4()}",
         "function_class": FunctionClass.PROJECT,
+        "job_creation_task_id": None,
     }
     return ProjectFunctionJob(**mock_function_job)
 
@@ -209,6 +210,7 @@ def mock_solver_function_job(
         outputs=None,
         function_class=FunctionClass.SOLVER,
         solver_job_id=ProjectID(f"{uuid4()}"),
+        job_creation_task_id=None,
     )
 
 
