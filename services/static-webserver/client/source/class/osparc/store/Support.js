@@ -75,11 +75,9 @@ qx.Class.define("osparc.store.Support", {
       }
     },
 
-    addManualButtonsToMenu: function(menu, menuButton) {
+    addManualsToMenu: function(menu) {
       const manuals = osparc.store.Support.getManuals();
-      if (menuButton) {
-        menuButton.setVisibility(manuals && manuals.length ? "visible" : "excluded");
-      }
+
       manuals.forEach(manual => {
         const manualBtn = new qx.ui.menu.Button(manual.label, "@FontAwesome5Solid/book/14");
         manualBtn.getChildControl("label").set({

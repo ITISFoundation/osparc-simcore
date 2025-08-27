@@ -378,7 +378,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       // quick starts and manuals
       osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addGuidedToursToMenu(menu);
-      osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
+      osparc.store.Support.addManualsToMenu(menu);
       menu.addSeparator();
 
       // feedback
