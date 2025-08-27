@@ -167,6 +167,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
+      const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
       const height = isCompact ? 24 : 25;
 
       phoneNumber.set({
@@ -196,6 +197,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
       document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
       document.documentElement.style.setProperty('--country-list-dropdown-text', textColor);
+      document.documentElement.style.setProperty('--border-bottom-color-focused', productColor);
     },
 
     __convertInputToPhoneInput: function() {

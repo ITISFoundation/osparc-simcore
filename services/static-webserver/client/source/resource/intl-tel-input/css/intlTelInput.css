@@ -943,13 +943,18 @@
 .iti__flag.iti__np {
   background-color: transparent; }
 
+/* osparc */
 .iti input {
   border: none !important;
-  border-bottom: 1px solid var(--q-color-border, green) !important;
+  border-bottom: 1px solid var(--border-bottom-color, rgb(9, 89, 122)) !important;
   outline: none !important;
   box-shadow: none !important;
 }
 
 .iti input:focus {
-  border-bottom: 1px solid var(--q-color-focus, red) !important;
+  border-bottom: 1px solid var(--border-bottom-color-focused) !important;
+}
+
+.iti input:invalid {
+  border-bottom: 1px solid red !important;
 }
