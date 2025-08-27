@@ -24,7 +24,6 @@ from servicelib.long_running_tasks.errors import (
     GenericClientError,
     TaskClientTimeoutError,
     TaskExceptionError,
-    TaskNotFoundError,
 )
 from servicelib.long_running_tasks.models import (
     ProgressMessage,
@@ -48,9 +47,7 @@ TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 async def _assert_task_removed(
     base_client: HttpClient, task_id: TaskId, router_prefix: str
 ) -> None:
-    with pytest.raises(
-        (GenericClientError, TaskNotFoundError), match=f"No task with {task_id} found"
-    ):
+    with pytest.raises(GenericClientError, match=f"No task with {task_id} found"):
         await base_client.get_task_status(task_id)
 
 
