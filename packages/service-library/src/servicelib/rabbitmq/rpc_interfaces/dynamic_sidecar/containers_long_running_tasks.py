@@ -28,7 +28,8 @@ async def pull_user_services_docker_images_task(
         ),
         lrt_namespace=lrt_namespace,
     )
-    return TaskId(result)
+    assert isinstance(result, TaskId)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -46,7 +47,8 @@ async def create_service_containers_task(
         lrt_namespace=lrt_namespace,
         containers_create=containers_create,
     )
-    return TaskId(result)
+    assert isinstance(result, TaskId)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -62,7 +64,8 @@ async def runs_docker_compose_down_task(
         TypeAdapter(RPCMethodName).validate_python("runs_docker_compose_down_task"),
         lrt_namespace=lrt_namespace,
     )
-    return TaskId(result)
+    assert isinstance(result, TaskId)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -78,7 +81,8 @@ async def state_restore_task(
         TypeAdapter(RPCMethodName).validate_python("state_restore_task"),
         lrt_namespace=lrt_namespace,
     )
-    return TaskId(result)
+    assert isinstance(result, TaskId)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -94,7 +98,8 @@ async def state_save_task(
         TypeAdapter(RPCMethodName).validate_python("state_save_task"),
         lrt_namespace=lrt_namespace,
     )
-    return TaskId(result)
+    assert isinstance(result, TaskId)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -112,7 +117,8 @@ async def ports_inputs_pull_task(
         lrt_namespace=lrt_namespace,
         port_keys=port_keys,
     )
-    return TaskId(result)
+    assert isinstance(result, TaskId)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -130,7 +136,8 @@ async def ports_outputs_pull_task(
         lrt_namespace=lrt_namespace,
         port_keys=port_keys,
     )
-    return TaskId(result)
+    assert isinstance(result, TaskId)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -146,7 +153,8 @@ async def ports_outputs_push_task(
         TypeAdapter(RPCMethodName).validate_python("ports_outputs_push_task"),
         lrt_namespace=lrt_namespace,
     )
-    return TaskId(result)
+    assert isinstance(result, TaskId)  # nosec
+    return result
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -162,4 +170,5 @@ async def containers_restart_task(
         TypeAdapter(RPCMethodName).validate_python("containers_restart_task"),
         lrt_namespace=lrt_namespace,
     )
-    return TaskId(result)
+    assert isinstance(result, TaskId)  # nosec
+    return result
