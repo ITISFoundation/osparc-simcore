@@ -151,7 +151,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
           2: this.tr("Number too short"),
           3: this.tr("Number too long")
         };
-        const errorMsg = errorMap[validationError] || "Invalid number";
+        const errorMsg = errorMap[validationError] || this.tr("Invalid number");
         feedbackIcon.set({
           toolTipText: errorMsg + ". " + feedbackIcon.getToolTipText()
         });
