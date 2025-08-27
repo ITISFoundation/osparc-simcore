@@ -25,6 +25,7 @@ from models_library.functions import (
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
+    FunctionJobPatchModelIncompatibleError,
     FunctionJobReadAccessDeniedError,
     FunctionJobsReadApiAccessDeniedError,
     FunctionJobWriteAccessDeniedError,
@@ -538,6 +539,71 @@ async def test_patch_registered_function_jobs(
         assert registered_job.function_class == FunctionClass.SOLVER
         assert registered_job.job_creation_task_id == patch.job_creation_task_id
         assert registered_job.solver_job_id == patch.solver_job_id
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+@pytest.mark.parametrize(
+    "function_job, patch",
+    [
+        (
+            ProjectFunctionJob(
+                function_uid=_faker.uuid4(),
+                title="Test Function Job",
+                description="A test function job",
+                project_job_id=None,
+                inputs=None,
+                outputs=None,
+                job_creation_task_id=None,
+            ),
+            RegisteredSolverFunctionJobPatch(
+                title=_faker.word(),
+                description=_faker.sentence(),
+                job_creation_task_id=TaskID(_faker.uuid4()),
+                inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
+                outputs={"output1": _faker.word()},
+                solver_job_id=_faker.uuid4(),
+            ),
+        ),
+    ],
+)
+async def test_incompatible_patch_model_error(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    add_user_function_api_access_rights: None,
+    logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    mock_function_factory: Callable[[FunctionClass], Function],
+    clean_functions: None,
+    function_job: RegisteredFunctionJob,
+    patch: RegisteredFunctionJobPatch,
+):
+    function = mock_function_factory(function_job.function_class)
+
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client,
+        function=function,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    function_job.function_uid = registered_function.uid
+    registered_job = await functions_rpc.register_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    with pytest.raises(FunctionJobPatchModelIncompatibleError):
+        registered_job = await functions_rpc.patch_registered_function_job(
+            rabbitmq_rpc_client=rpc_client,
+            user_id=logged_user["id"],
+            function_job_uuid=registered_job.uid,
+            product_name=osparc_product_name,
+            registered_function_job_patch=patch,
+        )
 
 
 @pytest.mark.parametrize(

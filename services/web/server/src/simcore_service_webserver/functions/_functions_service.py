@@ -34,6 +34,7 @@ from models_library.functions import (
     RegisteredSolverFunctionJob,
 )
 from models_library.functions_errors import (
+    FunctionJobPatchModelIncompatibleError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
@@ -47,7 +48,6 @@ from servicelib.rabbitmq import RPCRouter
 from . import _functions_repository
 from ._functions_exceptions import (
     FunctionGroupAccessRightsNotFoundError,
-    IncompatiblePatchModelError,
 )
 
 router = RPCRouter()
@@ -114,7 +114,7 @@ async def patch_registered_function_job(
         function_job_id=function_job_uuid,
     )
     if job.function_class != registered_function_job_patch.function_class:
-        raise IncompatiblePatchModelError(
+        raise FunctionJobPatchModelIncompatibleError(
             function_id=job.function_uuid,
             product_name=product_name,
         )

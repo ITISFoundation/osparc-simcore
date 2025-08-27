@@ -30,6 +30,7 @@ from models_library.functions_errors import (
     FunctionJobCollectionsWriteApiAccessDeniedError,
     FunctionJobCollectionWriteAccessDeniedError,
     FunctionJobIDNotFoundError,
+    FunctionJobPatchModelIncompatibleError,
     FunctionJobReadAccessDeniedError,
     FunctionJobsReadApiAccessDeniedError,
     FunctionJobsWriteApiAccessDeniedError,
@@ -93,6 +94,7 @@ async def register_function_job(
     reraise_if_error_type=(
         UnsupportedFunctionJobClassError,
         FunctionJobsWriteApiAccessDeniedError,
+        FunctionJobPatchModelIncompatibleError,
     )
 )
 async def patch_registered_function_job(
