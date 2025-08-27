@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
@@ -94,6 +95,13 @@ async def periodic_task_result(
     raises: the original expcetion the task raised, if any
     raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
+
+    warnings.warn(
+        "This context manager is deprecated and will be removed in future releases. "
+        "Please use the `servicelib.long_running_tasks.lrt_api` instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     progress_manager = _ProgressManager(progress_callback)
 
