@@ -17,7 +17,6 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
-from models_library.functions import FunctionClass
 from models_library.functions_errors import FunctionJobCacheNotFoundError
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -399,7 +398,7 @@ async def run_function(  # noqa: PLR0913
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
         function_job_id=pre_registered_function_job_id,
-        function_class=FunctionClass.PROJECT,
+        function_class=to_run_function.function_class,
         job_creation_task_id=TaskID(task_uuid),
     )
 
