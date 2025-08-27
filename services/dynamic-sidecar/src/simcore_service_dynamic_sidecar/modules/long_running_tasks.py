@@ -651,51 +651,51 @@ def setup_long_running_tasks(app: FastAPI) -> None:
 
         task_context.update(
             {
-                task_pull_user_servcices_docker_images: dict(
-                    shared_store=shared_store,
-                    app=app,
-                ),
-                task_create_service_containers: dict(
-                    app=app,
-                    settings=settings,
-                    shared_store=shared_store,
-                    application_health=application_health,
-                ),
-                task_runs_docker_compose_down: dict(
-                    app=app,
-                    settings=settings,
-                    shared_store=shared_store,
-                    mounted_volumes=mounted_volumes,
-                ),
-                task_restore_state: dict(
-                    app=app,
-                    settings=settings,
-                    mounted_volumes=mounted_volumes,
-                ),
-                task_save_state: dict(
-                    app=app,
-                    settings=settings,
-                    mounted_volumes=mounted_volumes,
-                ),
-                task_ports_inputs_pull: dict(
-                    app=app,
-                    settings=settings,
-                    mounted_volumes=mounted_volumes,
-                    inputs_state=inputs_state,
-                ),
-                task_ports_outputs_pull: dict(
-                    app=app,
-                    mounted_volumes=mounted_volumes,
-                ),
-                task_ports_outputs_push: dict(
-                    app=app,
-                    outputs_manager=outputs_manager,
-                ),
-                task_containers_restart: dict(
-                    app=app,
-                    settings=settings,
-                    shared_store=shared_store,
-                ),
+                task_pull_user_servcices_docker_images: {
+                    "shared_store": shared_store,
+                    "app": app,
+                },
+                task_create_service_containers: {
+                    "app": app,
+                    "settings": settings,
+                    "shared_store": shared_store,
+                    "application_health": application_health,
+                },
+                task_runs_docker_compose_down: {
+                    "app": app,
+                    "settings": settings,
+                    "shared_store": shared_store,
+                    "mounted_volumes": mounted_volumes,
+                },
+                task_restore_state: {
+                    "app": app,
+                    "settings": settings,
+                    "mounted_volumes": mounted_volumes,
+                },
+                task_save_state: {
+                    "app": app,
+                    "settings": settings,
+                    "mounted_volumes": mounted_volumes,
+                },
+                task_ports_inputs_pull: {
+                    "app": app,
+                    "settings": settings,
+                    "mounted_volumes": mounted_volumes,
+                    "inputs_state": inputs_state,
+                },
+                task_ports_outputs_pull: {
+                    "app": app,
+                    "mounted_volumes": mounted_volumes,
+                },
+                task_ports_outputs_push: {
+                    "app": app,
+                    "outputs_manager": outputs_manager,
+                },
+                task_containers_restart: {
+                    "app": app,
+                    "settings": settings,
+                    "shared_store": shared_store,
+                },
             }
         )
 

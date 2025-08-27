@@ -37,7 +37,10 @@ from models_library.services_creation import CreateServiceMetricsAdditionalParam
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.fastapi.long_running_tasks.client import (
+    HttpClient,
+    periodic_task_result,
+)
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
@@ -140,8 +143,10 @@ async def httpx_async_client(
 @pytest.fixture
 async def client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
-) -> Client:
-    return Client(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
+) -> HttpClient:
+    return HttpClient(
+        app=app, async_client=httpx_async_client, base_url=f"{backend_url}"
+    )
 
 
 @pytest.fixture
@@ -229,7 +234,7 @@ async def test_service_starts_and_closes_as_expected(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    client: HttpClient,
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -282,7 +287,7 @@ async def test_user_services_fail_to_start(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    client: HttpClient,
     compose_spec: str,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     with_compose_down: bool,
@@ -321,7 +326,7 @@ async def test_user_services_fail_to_stop_or_save_data(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    client: HttpClient,
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -418,7 +423,7 @@ async def test_user_services_crash_when_running(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    client: HttpClient,
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,

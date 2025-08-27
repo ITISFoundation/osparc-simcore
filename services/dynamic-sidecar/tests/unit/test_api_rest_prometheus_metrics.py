@@ -21,7 +21,10 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.fastapi.long_running_tasks.client import (
+    HttpClient,
+    periodic_task_result,
+)
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.models import TaskId
 from settings_library.rabbit import RabbitSettings
@@ -100,8 +103,10 @@ async def httpx_async_client(
 @pytest.fixture
 def client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
-) -> Client:
-    return Client(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
+) -> HttpClient:
+    return HttpClient(
+        app=app, async_client=httpx_async_client, base_url=f"{backend_url}"
+    )
 
 
 @pytest.fixture
@@ -157,7 +162,7 @@ async def test_metrics_enabled_containers_will_start(
     enable_prometheus_metrics: None,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    client: HttpClient,
     compose_spec: str,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):

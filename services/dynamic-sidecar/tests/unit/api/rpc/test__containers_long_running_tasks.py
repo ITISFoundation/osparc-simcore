@@ -1,12 +1,12 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
 # pylint: disable=no-member
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
 
 import asyncio
 import json
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
-from contextlib import asynccontextmanager, contextmanager
-from inspect import getmembers, isfunction
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
@@ -16,11 +16,8 @@ import faker
 import pytest
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
-from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
-from httpx import ASGITransport, AsyncClient
 from models_library.api_schemas_directorv2.dynamic_services import (
     ContainersComposeSpec,
     ContainersCreate,
@@ -30,24 +27,29 @@ from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
     ProgressPercent,
 )
+from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.client import (
-    HttpClient,
+    BaseClient,
+    RPCClient,
     periodic_task_result,
 )
-from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
-from servicelib.long_running_tasks.models import TaskId
+from servicelib.long_running_tasks.models import LRTNamespace, TaskId
 from servicelib.long_running_tasks.task import TaskRegistry
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar import (
+    containers,
+    containers_long_running_tasks,
+)
 from settings_library.rabbit import RabbitSettings
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
-from simcore_service_dynamic_sidecar._meta import API_VTAG
-from simcore_service_dynamic_sidecar.api.rest import containers_long_running_tasks
 from simcore_service_dynamic_sidecar.core.validation import InvalidComposeSpecError
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules import long_running_tasks as sidecar_lrts
 from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
@@ -62,9 +64,8 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
-FAST_STATUS_POLL: Final[float] = 0.1
-CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
-DEFAULT_COMMAND_TIMEOUT: Final[int] = 5
+_FAST_STATUS_POLL: Final[float] = 0.1
+_CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
 
 
 class ContainerTimes(NamedTuple):
@@ -73,49 +74,13 @@ class ContainerTimes(NamedTuple):
     finished_at: Any
 
 
-# UTILS
-
-
-def _print_routes(app: FastAPI) -> None:
-    endpoints = [route.path for route in app.routes if isinstance(route, APIRoute)]
-    print("ROUTES\n", json.dumps(endpoints, indent=2))
-
-
-def _get_dynamic_sidecar_network_name() -> str:
-    return "entrypoint_container_network"
-
-
-@contextmanager
-def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
-    async def _just_log_task(*args, **kwargs) -> None:
-        print(f"Called mocked function with {args}, {kwargs}")
-
-    TaskRegistry.register(_just_log_task)
-
-    # searching by name since all start with _task
-    tasks_names = [
-        x[0]
-        for x in getmembers(containers_long_running_tasks, isfunction)
-        if x[0].startswith("task")
-    ]
-
-    for task_name in tasks_names:
-        mocker.patch.object(
-            containers_long_running_tasks, task_name, new=_just_log_task
-        )
-
-    yield None
-
-    TaskRegistry.unregister(_just_log_task)
-
-
 @asynccontextmanager
-async def auto_remove_task(client: HttpClient, task_id: TaskId) -> AsyncIterator[None]:
+async def auto_remove_task(client: BaseClient, task_id: TaskId) -> AsyncIterator[None]:
     """clenup pending tasks"""
     try:
         yield
     finally:
-        await client.remove_task(task_id, timeout=10)
+        await client.remove_task(task_id)
 
 
 async def _get_container_timestamps(
@@ -136,8 +101,33 @@ async def _get_container_timestamps(
 
 
 @pytest.fixture
+def mock_sidecar_lrts(mocker: MockerFixture) -> Iterator[None]:
+    async def _just_log_task(*args, **kwargs) -> None:
+        print(f"Called mocked function with {args}, {kwargs}")
+
+    TaskRegistry.register(_just_log_task)
+
+    for task_name in [
+        sidecar_lrts.task_pull_user_servcices_docker_images.__name__,
+        sidecar_lrts.task_create_service_containers.__name__,
+        sidecar_lrts.task_runs_docker_compose_down.__name__,
+        sidecar_lrts.task_restore_state.__name__,
+        sidecar_lrts.task_save_state.__name__,
+        sidecar_lrts.task_ports_inputs_pull.__name__,
+        sidecar_lrts.task_ports_outputs_pull.__name__,
+        sidecar_lrts.task_ports_outputs_push.__name__,
+        sidecar_lrts.task_containers_restart.__name__,
+    ]:
+        mocker.patch.object(sidecar_lrts, task_name, new=_just_log_task)
+
+    yield None
+
+    TaskRegistry.unregister(_just_log_task)
+
+
+@pytest.fixture
 def dynamic_sidecar_network_name() -> str:
-    return _get_dynamic_sidecar_network_name()
+    return "entrypoint_container_network"
 
 
 @pytest.fixture(
@@ -148,7 +138,7 @@ def dynamic_sidecar_network_name() -> str:
                 "first-box": {
                     "image": "alpine:latest",
                     "networks": {
-                        _get_dynamic_sidecar_network_name(): None,
+                        "entrypoint_container_network": None,
                     },
                 },
                 "second-box": {
@@ -156,7 +146,7 @@ def dynamic_sidecar_network_name() -> str:
                     "command": ["sh", "-c", "sleep 100000"],
                 },
             },
-            "networks": {_get_dynamic_sidecar_network_name(): None},
+            "networks": {"entrypoint_container_network": None},
         },
         {
             "version": "3",
@@ -172,11 +162,6 @@ def dynamic_sidecar_network_name() -> str:
 def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
     spec_dict: dict[str, Any] = request.param  # type: ignore
     return json.dumps(spec_dict)
-
-
-@pytest.fixture
-def backend_url() -> AnyHttpUrl:
-    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
 
 
 @pytest.fixture
@@ -197,46 +182,32 @@ def mock_environment(
 
 
 @pytest.fixture
-async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
-    # add the client setup to the same application
-    # this is only required for testing, in reality
-    # this will be in a different process
-    client_setup(app)
-    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
-        _print_routes(app)
-        yield app
-
-
-@pytest.fixture
-async def httpx_async_client(
-    app: FastAPI,
-    backend_url: AnyHttpUrl,
+async def rpc_client(
+    rpc_client: RabbitMQRPCClient,
     ensure_external_volumes: tuple[DockerVolume],
     cleanup_containers: None,
     ensure_shared_store_dir: Path,
-) -> AsyncIterable[AsyncClient]:
+) -> RabbitMQRPCClient:
     # crete dir here
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url=f"{backend_url}",
-        headers={"Content-Type": "application/json"},
-    ) as client:
-        yield client
+    return rpc_client
+
+
+@pytest.fixture
+def lrt_namespace(app: FastAPI) -> LRTNamespace:
+    long_running_manager: FastAPILongRunningManager = app.state.long_running_manager
+    return long_running_manager.lrt_namespace
 
 
 @pytest.fixture
 def client(
-    app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
-) -> HttpClient:
-    return HttpClient(
-        app=app, async_client=httpx_async_client, base_url=f"{backend_url}"
-    )
+    app: FastAPI, rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
+) -> BaseClient:
+    return RPCClient(rpc_client, lrt_namespace)
 
 
 @pytest.fixture
-def shared_store(httpx_async_client: AsyncClient) -> SharedStore:
-    # pylint: disable=protected-access
-    return httpx_async_client._transport.app.state.shared_store  # noqa: SLF001
+def shared_store(app: FastAPI) -> SharedStore:
+    return app.state.shared_store
 
 
 @pytest.fixture
@@ -275,17 +246,17 @@ def mock_nodeports(mocker: MockerFixture) -> None:
     ]
 )
 async def mock_port_keys(
-    request: pytest.FixtureRequest, client: HttpClient
+    request: pytest.FixtureRequest, app: FastAPI
 ) -> list[str] | None:
-    outputs_context: OutputsContext = client.app.state.outputs_context
+    outputs_context: OutputsContext = app.state.outputs_context
     if request.param is not None:
         await outputs_context.set_file_type_port_keys(request.param)
     return request.param
 
 
 @pytest.fixture
-def outputs_manager(client: HttpClient) -> OutputsManager:
-    return client.app.state.outputs_manager
+def outputs_manager(app: FastAPI) -> OutputsManager:
+    return app.state.outputs_manager
 
 
 @pytest.fixture
@@ -304,17 +275,22 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
     )
 
 
-async def _get_task_id_pull_user_servcices_docker_images(
-    httpx_async_client: AsyncClient, *args, **kwargs
+async def _get_task_id_pull_user_services_docker_images_task(
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    *args,
+    **kwargs,
 ) -> TaskId:
-    response = await httpx_async_client.post(f"/{API_VTAG}/containers/images:pull")
-    task_id: TaskId = response.json()
-    assert isinstance(task_id, str)
-    return task_id
+    return await containers_long_running_tasks.pull_user_services_docker_images_task(
+        rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
+    )
 
 
-async def _get_task_id_create_service_containers(
-    httpx_async_client: AsyncClient,
+async def _get_task_id_create_service_containers_task(
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
     compose_spec: DockerComposeYamlStr,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     *args,
@@ -323,89 +299,104 @@ async def _get_task_id_create_service_containers(
     containers_compose_spec = ContainersComposeSpec(
         docker_compose_yaml=compose_spec,
     )
-    await httpx_async_client.post(
-        f"/{API_VTAG}/containers/compose-spec",
-        json=containers_compose_spec.model_dump(),
+    await containers.store_compose_spec(
+        rpc_client, node_id=node_id, containers_compose_spec=containers_compose_spec
     )
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers", json=containers_create.model_dump()
+    return await containers_long_running_tasks.create_service_containers_task(
+        rpc_client,
+        node_id=node_id,
+        lrt_namespace=lrt_namespace,
+        containers_create=containers_create,
     )
-    task_id: TaskId = response.json()
-    assert isinstance(task_id, str)
-    return task_id
 
 
-async def _get_task_id_docker_compose_down(
-    httpx_async_client: AsyncClient, *args, **kwargs
+async def _get_task_id_runs_docker_compose_down_task(
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    *args,
+    **kwargs,
 ) -> TaskId:
-    response = await httpx_async_client.post(f"/{API_VTAG}/containers:down")
-    task_id: TaskId = response.json()
-    assert isinstance(task_id, str)
-    return task_id
-
-
-async def _get_task_id_state_restore(
-    httpx_async_client: AsyncClient, *args, **kwargs
-) -> TaskId:
-    response = await httpx_async_client.post(f"/{API_VTAG}/containers/state:restore")
-    task_id: TaskId = response.json()
-    assert isinstance(task_id, str)
-    return task_id
-
-
-async def _get_task_id_state_save(
-    httpx_async_client: AsyncClient, *args, **kwargs
-) -> TaskId:
-    response = await httpx_async_client.post(f"/{API_VTAG}/containers/state:save")
-    task_id: TaskId = response.json()
-    assert isinstance(task_id, str)
-    return task_id
-
-
-async def _get_task_id_task_ports_inputs_pull(
-    httpx_async_client: AsyncClient, port_keys: list[str] | None, *args, **kwargs
-) -> TaskId:
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/ports/inputs:pull", json=port_keys
+    return await containers_long_running_tasks.runs_docker_compose_down_task(
+        rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
     )
-    task_id: TaskId = response.json()
-    assert isinstance(task_id, str)
-    return task_id
 
 
-async def _get_task_id_task_ports_outputs_pull(
-    httpx_async_client: AsyncClient, port_keys: list[str] | None, *args, **kwargs
+async def _get_task_id_state_restore_task(
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    *args,
+    **kwargs,
 ) -> TaskId:
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/ports/outputs:pull", json=port_keys
+    return await containers_long_running_tasks.state_restore_task(
+        rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
     )
-    task_id: TaskId = response.json()
-    assert isinstance(task_id, str)
-    return task_id
 
 
-async def _get_task_id_task_ports_outputs_push(
-    httpx_async_client: AsyncClient, *args, **kwargs
+async def _get_task_id_state_save_task(
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    *args,
+    **kwargs,
 ) -> TaskId:
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/ports/outputs:push"
+    return await containers_long_running_tasks.state_save_task(
+        rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
     )
-    task_id: TaskId = response.json()
-    assert isinstance(task_id, str)
-    return task_id
 
 
-async def _get_task_id_task_containers_restart(
-    httpx_async_client: AsyncClient, command_timeout: int, *args, **kwargs
+async def _get_task_id_ports_inputs_pull_task(
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    port_keys: list[str] | None,
+    *args,
+    **kwargs,
 ) -> TaskId:
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers:restart",
-        params={"command_timeout": command_timeout},
+    return await containers_long_running_tasks.ports_inputs_pull_task(
+        rpc_client, node_id=node_id, lrt_namespace=lrt_namespace, port_keys=port_keys
     )
-    task_id: TaskId = response.json()
-    assert isinstance(task_id, str)
-    return task_id
+
+
+async def _get_task_id_ports_outputs_pull_task(
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    port_keys: list[str] | None,
+    *args,
+    **kwargs,
+) -> TaskId:
+    return await containers_long_running_tasks.ports_outputs_pull_task(
+        rpc_client, node_id=node_id, lrt_namespace=lrt_namespace, port_keys=port_keys
+    )
+
+
+async def _get_task_id_ports_outputs_push_task(
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    *args,
+    **kwargs,
+) -> TaskId:
+    return await containers_long_running_tasks.ports_outputs_push_task(
+        rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
+    )
+
+
+async def _get_task_id_task_containers_restart_task(
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    *args,
+    **kwargs,
+) -> TaskId:
+    return await containers_long_running_tasks.containers_restart_task(
+        rpc_client,
+        node_id=node_id,
+        lrt_namespace=lrt_namespace,
+    )
 
 
 async def _debug_progress(
@@ -429,8 +420,10 @@ async def _assert_progress_finished(
 
 
 async def test_create_containers_task(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -448,11 +441,11 @@ async def test_create_containers_task(
 
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
+        task_id=await _get_task_id_create_service_containers_task(
+            rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=create_progress,
     ) as result:
         assert shared_store.container_names == result
@@ -461,8 +454,10 @@ async def test_create_containers_task(
 
 
 async def test_pull_user_servcices_docker_images(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -480,11 +475,11 @@ async def test_pull_user_servcices_docker_images(
 
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
+        task_id=await _get_task_id_create_service_containers_task(
+            rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=create_progress,
     ) as result:
         assert shared_store.container_names == result
@@ -493,11 +488,11 @@ async def test_pull_user_servcices_docker_images(
 
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_pull_user_servcices_docker_images(
-            httpx_async_client, compose_spec, mock_metrics_params
+        task_id=await _get_task_id_pull_user_services_docker_images_task(
+            rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert result is None
@@ -505,19 +500,21 @@ async def test_pull_user_servcices_docker_images(
 
 
 async def test_create_containers_task_invalid_yaml_spec(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
     with pytest.raises(InvalidComposeSpecError) as exec_info:
         async with periodic_task_result(
             client=client,
-            task_id=await _get_task_id_create_service_containers(
-                httpx_async_client, "", mock_metrics_params
+            task_id=await _get_task_id_create_service_containers_task(
+                rpc_client, node_id, lrt_namespace, "", mock_metrics_params
             ),
-            task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-            status_poll_interval=FAST_STATUS_POLL,
+            task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+            status_poll_interval=_FAST_STATUS_POLL,
             progress_callback=_debug_progress,
         ):
             pass
@@ -527,54 +524,59 @@ async def test_create_containers_task_invalid_yaml_spec(
 @pytest.mark.parametrize(
     "get_task_id_callable",
     [
-        _get_task_id_pull_user_servcices_docker_images,
-        _get_task_id_create_service_containers,
-        _get_task_id_docker_compose_down,
-        _get_task_id_state_restore,
-        _get_task_id_state_save,
-        _get_task_id_task_ports_inputs_pull,
-        _get_task_id_task_ports_outputs_pull,
-        _get_task_id_task_ports_outputs_push,
-        _get_task_id_task_containers_restart,
+        _get_task_id_pull_user_services_docker_images_task,
+        _get_task_id_create_service_containers_task,
+        _get_task_id_runs_docker_compose_down_task,
+        _get_task_id_state_restore_task,
+        _get_task_id_state_save_task,
+        _get_task_id_ports_inputs_pull_task,
+        _get_task_id_ports_outputs_pull_task,
+        _get_task_id_ports_outputs_push_task,
+        _get_task_id_task_containers_restart_task,
     ],
 )
 async def test_same_task_id_is_returned_if_task_exists(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    mock_sidecar_lrts: None,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     mocker: MockerFixture,
-    get_task_id_callable: Callable[..., Awaitable],
+    get_task_id_callable: Callable[..., Awaitable[TaskId]],
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     compose_spec: str,
 ) -> None:
-    def _get_awaitable() -> Awaitable:
+    def _get_awaitable() -> Awaitable[TaskId]:
         return get_task_id_callable(
-            httpx_async_client=httpx_async_client,
+            rpc_client=rpc_client,
+            node_id=node_id,
+            lrt_namespace=lrt_namespace,
             compose_spec=compose_spec,
             mock_metrics_params=mock_metrics_params,
             port_keys=None,
-            command_timeout=0,
         )
 
-    with mock_tasks(mocker):
-        task_id = await _get_awaitable()
-        assert task_id.endswith("unique")
-        async with auto_remove_task(client, task_id):
-            assert await _get_awaitable() == task_id
+    task_id = await _get_awaitable()
+    assert task_id.endswith("unique")
+    async with auto_remove_task(client, task_id):
+        assert await _get_awaitable() == task_id
 
-        # since the previous task was already removed it is again possible
-        # to create a task and it will share the same task_id
-        new_task_id = await _get_awaitable()
-        assert new_task_id.endswith("unique")
-        assert new_task_id == task_id
-        async with auto_remove_task(client, task_id):
-            pass
+    # since the previous task was already removed it is again possible
+    # to create a task and it will share the same task_id
+    new_task_id = await _get_awaitable()
+    assert new_task_id.endswith("unique")
+    assert new_task_id == task_id
+    async with auto_remove_task(client, task_id):
+        pass
 
 
 async def test_containers_down_after_starting(
     mock_ensure_read_permissions_on_user_service_data: None,
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -585,11 +587,11 @@ async def test_containers_down_after_starting(
     # start containers
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
+        task_id=await _get_task_id_create_service_containers_task(
+            rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert shared_store.container_names == result
@@ -597,24 +599,30 @@ async def test_containers_down_after_starting(
     # put down containers
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_docker_compose_down(httpx_async_client),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_id=await _get_task_id_runs_docker_compose_down_task(
+            rpc_client, node_id, lrt_namespace
+        ),
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
 
 async def test_containers_down_missing_spec(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     caplog_info_debug: pytest.LogCaptureFixture,
 ):
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_docker_compose_down(httpx_async_client),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_id=await _get_task_id_runs_docker_compose_down_task(
+            rpc_client, node_id, lrt_namespace
+        ),
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert result is None
@@ -622,26 +630,36 @@ async def test_containers_down_missing_spec(
 
 
 async def test_container_restore_state(
-    httpx_async_client: AsyncClient, client: HttpClient, mock_data_manager: None
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
+    mock_data_manager: None,
 ):
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_state_restore(httpx_async_client),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_id=await _get_task_id_state_restore_task(
+            rpc_client, node_id, lrt_namespace
+        ),
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert isinstance(result, int)
 
 
 async def test_container_save_state(
-    httpx_async_client: AsyncClient, client: HttpClient, mock_data_manager: None
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
+    mock_data_manager: None,
 ):
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_state_save(httpx_async_client),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_id=await _get_task_id_state_save_task(rpc_client, node_id, lrt_namespace),
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert isinstance(result, int)
@@ -649,8 +667,10 @@ async def test_container_save_state(
 
 @pytest.mark.parametrize("inputs_pulling_enabled", [True, False])
 async def test_container_pull_input_ports(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     inputs_pulling_enabled: bool,
     app: FastAPI,
     mock_port_keys: list[str] | None,
@@ -661,55 +681,61 @@ async def test_container_pull_input_ports(
 
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_task_ports_inputs_pull(
-            httpx_async_client, mock_port_keys
+        task_id=await _get_task_id_ports_inputs_pull_task(
+            rpc_client, node_id, lrt_namespace, mock_port_keys
         ),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert result == (42 if inputs_pulling_enabled else 0)
 
 
 async def test_container_pull_output_ports(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_task_ports_outputs_pull(
-            httpx_async_client, mock_port_keys
+        task_id=await _get_task_id_ports_outputs_pull_task(
+            rpc_client, node_id, lrt_namespace, mock_port_keys
         ),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert result == 42
 
 
 async def test_container_push_output_ports(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_task_ports_outputs_push(
-            httpx_async_client, mock_port_keys
+        task_id=await _get_task_id_ports_outputs_push_task(
+            rpc_client, node_id, lrt_namespace, mock_port_keys
         ),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert result is None
 
 
 async def test_container_push_output_ports_missing_node(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     mock_port_keys: list[str] | None,
     missing_node_uuid: str,
     mock_node_missing: None,
@@ -721,11 +747,11 @@ async def test_container_push_output_ports_missing_node(
     async def _test_code() -> None:
         async with periodic_task_result(
             client=client,
-            task_id=await _get_task_id_task_ports_outputs_push(
-                httpx_async_client, mock_port_keys
+            task_id=await _get_task_id_ports_outputs_push_task(
+                rpc_client, node_id, lrt_namespace, mock_port_keys
             ),
-            task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-            status_poll_interval=FAST_STATUS_POLL,
+            task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+            status_poll_interval=_FAST_STATUS_POLL,
             progress_callback=_debug_progress,
         ):
             pass
@@ -739,8 +765,10 @@ async def test_container_push_output_ports_missing_node(
 
 
 async def test_containers_restart(
-    httpx_async_client: AsyncClient,
-    client: HttpClient,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    lrt_namespace: LRTNamespace,
+    client: BaseClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -748,11 +776,11 @@ async def test_containers_restart(
 ):
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_create_service_containers(
-            httpx_async_client, compose_spec, mock_metrics_params
+        task_id=await _get_task_id_create_service_containers_task(
+            rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as container_names:
         assert shared_store.container_names == container_names
@@ -763,11 +791,11 @@ async def test_containers_restart(
 
     async with periodic_task_result(
         client=client,
-        task_id=await _get_task_id_task_containers_restart(
-            httpx_async_client, DEFAULT_COMMAND_TIMEOUT
+        task_id=await _get_task_id_task_containers_restart_task(
+            rpc_client, node_id, lrt_namespace
         ),
-        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
-        status_poll_interval=FAST_STATUS_POLL,
+        task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
         assert result is None
