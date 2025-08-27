@@ -971,7 +971,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     invalidateFunctions: function() {
-      osparc.store.Functions.invalidateFunctions();
       this.__resetStudiesList();
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
