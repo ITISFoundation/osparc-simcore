@@ -382,7 +382,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       menu.addSeparator();
 
       // feedback
-      osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
+      osparc.store.Support.addSupportButtonsToMenu(menu);
       osparc.store.Support.addReleaseNotesToMenu(menu);
 
       return menuButton;

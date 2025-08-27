@@ -101,12 +101,9 @@ qx.Class.define("osparc.store.Support", {
       }
     },
 
-    addSupportButtonsToMenu: function(menu, menuButton) {
+    addSupportButtonsToMenu: function(menu) {
       const issues = osparc.store.VendorInfo.getIssues();
       const supports = osparc.store.VendorInfo.getSupports();
-      if (menuButton) {
-        menuButton.setVisibility(issues.length || supports.length ? "visible" : "excluded");
-      }
       issues.forEach(issueInfo => {
         const label = issueInfo["label"];
         const issueButton = new qx.ui.menu.Button(label, "@FontAwesome5Solid/comments/14");
