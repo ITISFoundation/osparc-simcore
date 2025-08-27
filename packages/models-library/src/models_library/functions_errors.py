@@ -158,3 +158,8 @@ class FunctionJobCollectionsExecuteApiAccessDeniedError(FunctionBaseError):
         "User {user_id} does not have the permission to execute function job collections"
     )
     status_code: int = 403  # Forbidden
+
+
+class FunctionJobPatchModelIncompatibleError(FunctionBaseError):
+    msg_template = "Incompatible patch model for Function '{function_id}' in product '{product_name}'."
+    status_code: int = 422
