@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 import datetime
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -16,6 +16,7 @@ from models_library.functions import (
     FunctionClass,
     FunctionJobCollection,
     FunctionJobStatus,
+    RegisteredProjectFunctionJobPatch,
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
@@ -24,7 +25,9 @@ from models_library.functions_errors import (
     FunctionJobWriteAccessDeniedError,
 )
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from pytest_simcore.helpers.webserver_users import UserInfoDict
+from servicelib.celery.models import TaskID
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface as functions_rpc,
@@ -474,30 +477,25 @@ async def test_patch_registered_function_jobs(
         product_name=osparc_product_name,
     )
 
-    added_data = {"job_creation_task_id": f"{uuid4()}"}
+    patch = RegisteredProjectFunctionJobPatch(
+        title=_faker.word(),
+        description=_faker.sentence(),
+        project_job_id=ProjectID(_faker.uuid4()),
+        job_creation_task_id=TaskID(_faker.uuid4()),
+    )
 
     registered_job = await functions_rpc.patch_registered_function_job(
         rabbitmq_rpc_client=rpc_client,
         user_id=logged_user["id"],
         function_job_uuid=registered_job.uid,
         product_name=osparc_product_name,
-        job_creation_task_id=added_data["job_creation_task_id"],
+        registered_function_job_patch=patch,
     )
     assert registered_job.function_class == FunctionClass.PROJECT
-    assert registered_job.job_creation_task_id == added_data["job_creation_task_id"]
-
-    added_data.update(project_job_id=f"{uuid4()}")
-
-    registered_job = await functions_rpc.patch_registered_function_job(
-        rabbitmq_rpc_client=rpc_client,
-        user_id=logged_user["id"],
-        function_job_uuid=registered_job.uid,
-        product_name=osparc_product_name,
-        project_job_id=added_data["project_job_id"],
-    )
-    assert registered_job.function_class == FunctionClass.PROJECT
-    assert registered_job.job_creation_task_id == added_data["job_creation_task_id"]
-    assert registered_job.project_job_id == UUID(added_data["project_job_id"])
+    assert registered_job.title == patch.title
+    assert registered_job.description == patch.description
+    assert registered_job.job_creation_task_id == patch.job_creation_task_id
+    assert registered_job.project_job_id == patch.project_job_id
 
 
 @pytest.mark.parametrize(

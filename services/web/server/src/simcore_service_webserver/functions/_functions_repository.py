@@ -255,7 +255,7 @@ async def patch_function_job(  # noqa: PLR0913
         )
         result = await transaction.execute(
             function_jobs_table.update()
-            .where(function_jobs_table.c.uuid == registered_function_job_db.uuid)
+            .where(function_jobs_table.c.uuid == f"{registered_function_job_db.uuid}")
             .values(
                 inputs=registered_function_job_db.inputs,
                 outputs=registered_function_job_db.outputs,

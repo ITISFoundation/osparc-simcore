@@ -121,16 +121,13 @@ async def patch_registered_function_job(
 
     patched_job = _patch_functionjob(job, registered_function_job_patch)
 
-    await _functions_repository.patch_function_job(
+    result = await _functions_repository.patch_function_job(
         app=app,
-        function_job_uuid=function_job_uuid,
         user_id=user_id,
         product_name=product_name,
-        title=title,
-        description=description,
-        class_specific_data=class_specific_data,
+        registered_function_job_db=patched_job,
     )
-    return _decode_functionjob(job)
+    return _decode_functionjob(result)
 
 
 async def register_function_job_collection(
@@ -762,7 +759,7 @@ def _decode_functionjob(
         return RegisteredProjectFunctionJob(
             uid=functionjob_db.uuid,
             title=functionjob_db.title,
-            description="",
+            description=functionjob_db.description,
             function_uid=functionjob_db.function_uuid,
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
@@ -777,7 +774,7 @@ def _decode_functionjob(
         return RegisteredSolverFunctionJob(
             uid=functionjob_db.uuid,
             title=functionjob_db.title,
-            description="",
+            description=functionjob_db.description,
             function_uid=functionjob_db.function_uuid,
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
@@ -809,10 +806,16 @@ def _patch_functionjob(
             outputs=function_job_db.outputs,
             created=function_job_db.created,
             class_specific_data=FunctionClassSpecificData(
-                project_job_id=patch.project_job_id
-                or function_job_db.class_specific_data.get("project_job_id"),
-                job_creation_task_id=patch.job_creation_task_id
-                or function_job_db.class_specific_data.get("job_creation_task_id"),
+                project_job_id=(
+                    f"{patch.project_job_id}"
+                    if patch.project_job_id
+                    else function_job_db.class_specific_data.get("project_job_id")
+                ),
+                job_creation_task_id=(
+                    f"{patch.job_creation_task_id}"
+                    if patch.job_creation_task_id
+                    else function_job_db.class_specific_data.get("job_creation_task_id")
+                ),
             ),
         )
     elif function_job_db.function_class == FunctionClass.SOLVER:
@@ -827,10 +830,16 @@ def _patch_functionjob(
             outputs=function_job_db.outputs,
             created=function_job_db.created,
             class_specific_data=FunctionClassSpecificData(
-                solver_job_id=patch.solver_job_id
-                or function_job_db.class_specific_data.get("solver_job_id"),
-                job_creation_task_id=patch.job_creation_task_id
-                or function_job_db.class_specific_data.get("job_creation_task_id"),
+                solver_job_id=(
+                    f"{patch.solver_job_id}"
+                    if patch.solver_job_id
+                    else function_job_db.class_specific_data.get("solver_job_id")
+                ),
+                job_creation_task_id=(
+                    f"{patch.job_creation_task_id}"
+                    if patch.job_creation_task_id
+                    else function_job_db.class_specific_data.get("job_creation_task_id")
+                ),
             ),
         )
     elif function_job_db.function_class == FunctionClass.PYTHON_CODE:
