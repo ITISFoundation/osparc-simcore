@@ -13,11 +13,11 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field
-from servicelib.celery.models import TaskID
 
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
 
+TaskID: TypeAlias = str
 FunctionID: TypeAlias = UUID
 FunctionJobID: TypeAlias = UUID
 FileID: TypeAlias = UUID
@@ -206,9 +206,11 @@ class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase
 
 
 class RegisteredProjectFunctionJobPatch(BaseModel):
-    function_class: FunctionClass
+    function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
     title: str | None
     description: str | None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
     project_job_id: ProjectID | None
     job_creation_task_id: TaskID | None
 
@@ -224,9 +226,11 @@ class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
 
 
 class RegisteredSolverFunctionJobPatch(BaseModel):
-    function_class: FunctionClass
+    function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
     title: str | None
     description: str | None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
     solver_job_id: ProjectID | None
     job_creation_task_id: TaskID | None
 
@@ -240,8 +244,10 @@ class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJ
 
 
 class RegisteredPythonCodeFunctionJobPatch(BaseModel):
-    function_class: FunctionClass
+    function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
     title: str | None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
     description: str | None
 
 

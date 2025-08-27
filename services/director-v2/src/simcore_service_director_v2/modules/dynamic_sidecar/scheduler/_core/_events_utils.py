@@ -65,6 +65,7 @@ from ....db.repositories.user_preferences_frontend import (
     UserPreferencesFrontendRepository,
 )
 from ....director_v0 import DirectorV0Client
+from ....long_running_tasks import get_long_running_client_helper
 from ....osparc_variables._api_auth_rpc import delete_api_key_by_key
 from ...api_client import (
     SidecarsClient,
@@ -220,6 +221,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await task_progress.update(
         message="removing dynamic sidecar stack", percent=ProgressPercent(0.1)
     )
+
     await remove_dynamic_sidecar_stack(
         node_uuid=scheduler_data.node_uuid,
         swarm_stack_name=swarm_stack_name,
@@ -287,6 +289,15 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await task_progress.update(
         message="finished removing resources", percent=ProgressPercent(1)
     )
+
+    await _cleanup_long_running_tasks(app, scheduler_data.node_uuid)
+
+
+async def _cleanup_long_running_tasks(app: FastAPI, node_id: NodeID) -> None:
+    long_running_client_helper = get_long_running_client_helper(app)
+
+    sidecar_namespace = f"SIMCORE-SERVICE-DYNAMIC-SIDECAR-{node_id}"
+    await long_running_client_helper.cleanup(sidecar_namespace)
 
 
 async def attempt_pod_removal_and_data_saving(
@@ -389,7 +400,10 @@ async def attempt_pod_removal_and_data_saving(
             raise
 
     await service_remove_sidecar_proxy_docker_networks_and_volumes(
-        TaskProgress.create(), app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
+        TaskProgress.create(),
+        app,
+        scheduler_data.node_uuid,
+        settings.SWARM_STACK_NAME,
     )
 
     # remove sidecar's api client

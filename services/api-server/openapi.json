@@ -10730,9 +10730,27 @@
             "default": "PROJECT"
           },
           "project_job_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Project Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
           }
         },
         "type": "object",
@@ -10740,7 +10758,8 @@
           "function_uid",
           "inputs",
           "outputs",
-          "project_job_id"
+          "project_job_id",
+          "job_creation_task_id"
         ],
         "title": "ProjectFunctionJob"
       },
@@ -11060,9 +11079,27 @@
             "title": "Created At"
           },
           "project_job_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Project Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
           }
         },
         "type": "object",
@@ -11072,7 +11109,8 @@
           "outputs",
           "uid",
           "created_at",
-          "project_job_id"
+          "project_job_id",
+          "job_creation_task_id"
         ],
         "title": "RegisteredProjectFunctionJob"
       },
@@ -11389,9 +11427,27 @@
             "title": "Created At"
           },
           "solver_job_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Solver Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
           }
         },
         "type": "object",
@@ -11401,7 +11457,8 @@
           "outputs",
           "uid",
           "created_at",
-          "solver_job_id"
+          "solver_job_id",
+          "job_creation_task_id"
         ],
         "title": "RegisteredSolverFunctionJob"
       },
@@ -11682,9 +11739,27 @@
             "default": "SOLVER"
           },
           "solver_job_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Solver Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
           }
         },
         "type": "object",
@@ -11692,7 +11767,8 @@
           "function_uid",
           "inputs",
           "outputs",
-          "solver_job_id"
+          "solver_job_id",
+          "job_creation_task_id"
         ],
         "title": "SolverFunctionJob"
       },
