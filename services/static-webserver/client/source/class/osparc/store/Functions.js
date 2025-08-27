@@ -98,8 +98,9 @@ qx.Class.define("osparc.store.Functions", {
           curatedOrderBy.field = "created_at";
           break;
         case "name":
-          // stays the same
-          // it fails, hack:
+          // Backend does not currently support sorting by 'name'.
+          // Fallback: sort by 'modified_at' instead.
+          // TODO: Remove this workaround once backend supports sorting by 'name'.
           curatedOrderBy.field = "modified_at";
           break;
         default:
