@@ -234,6 +234,46 @@ async def create_function_job(  # noqa: PLR0913
     return registered_function_job
 
 
+async def patch_function_job(  # noqa: PLR0913
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    registered_function_job_db: RegisteredFunctionJobDB,
+) -> RegisteredFunctionJobDB:
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
+        await check_user_api_access_rights(
+            app,
+            connection=transaction,
+            user_id=user_id,
+            product_name=product_name,
+            api_access_rights=[
+                FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
+            ],
+        )
+        result = await transaction.execute(
+            function_jobs_table.update()
+            .where(function_jobs_table.c.uuid == f"{registered_function_job_db.uuid}")
+            .values(
+                inputs=registered_function_job_db.inputs,
+                outputs=registered_function_job_db.outputs,
+                function_class=registered_function_job_db.function_class,
+                class_specific_data=registered_function_job_db.class_specific_data,
+                title=registered_function_job_db.title,
+                description=registered_function_job_db.description,
+                status="created",
+            )
+            .returning(*_FUNCTION_JOBS_TABLE_COLS)
+        )
+        row = result.one()
+
+        registered_function_job = RegisteredFunctionJobDB.model_validate(row)
+
+    return registered_function_job
+
+
 async def create_function_job_collection(
     app: web.Application,
     connection: AsyncConnection | None = None,

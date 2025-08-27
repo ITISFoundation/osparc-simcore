@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
 
+TaskID: TypeAlias = str
 FunctionID: TypeAlias = UUID
 FunctionJobID: TypeAlias = UUID
 FileID: TypeAlias = UUID
@@ -166,20 +167,42 @@ class RegisteredFunctionJobBase(FunctionJobBase):
 
 class ProjectFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
-    project_job_id: ProjectID
+    project_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
 class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase):
     pass
 
 
+class RegisteredProjectFunctionJobPatch(BaseModel):
+    function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
+    title: str | None
+    description: str | None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
+    project_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
+
+
 class SolverFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
-    solver_job_id: ProjectID
+    solver_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
 class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
     pass
+
+
+class RegisteredSolverFunctionJobPatch(BaseModel):
+    function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
+    title: str | None
+    description: str | None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
+    solver_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
 class PythonCodeFunctionJob(FunctionJobBase):
@@ -188,6 +211,14 @@ class PythonCodeFunctionJob(FunctionJobBase):
 
 class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):
     pass
+
+
+class RegisteredPythonCodeFunctionJobPatch(BaseModel):
+    function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
+    title: str | None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
+    description: str | None
 
 
 FunctionJob: TypeAlias = Annotated[
@@ -199,6 +230,13 @@ RegisteredFunctionJob: TypeAlias = Annotated[
     RegisteredProjectFunctionJob
     | RegisteredPythonCodeFunctionJob
     | RegisteredSolverFunctionJob,
+    Field(discriminator="function_class"),
+]
+
+RegisteredFunctionJobPatch = Annotated[
+    RegisteredProjectFunctionJobPatch
+    | RegisteredPythonCodeFunctionJobPatch
+    | RegisteredSolverFunctionJobPatch,
     Field(discriminator="function_class"),
 ]
 

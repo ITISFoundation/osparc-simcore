@@ -17,6 +17,7 @@ from models_library.api_schemas_webserver.functions import (
     JSONFunctionOutputSchema,
     ProjectFunction,
 )
+from models_library.functions import FunctionClass, SolverFunction
 from models_library.products import ProductName
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
@@ -69,25 +70,53 @@ async def rpc_client(
 
 
 @pytest.fixture
-def mock_function() -> Function:
-    return ProjectFunction(
-        title="Test Function",
-        description="A test function",
-        input_schema=JSONFunctionInputSchema(
-            schema_content={
-                "type": "object",
-                "properties": {"input1": {"type": "string"}},
-            }
-        ),
-        output_schema=JSONFunctionOutputSchema(
-            schema_content={
-                "type": "object",
-                "properties": {"output1": {"type": "string"}},
-            }
-        ),
-        project_id=uuid4(),
-        default_inputs=None,
-    )
+def mock_function_factory() -> Callable[[FunctionClass], Function]:
+
+    def _(function_class: FunctionClass) -> Function:
+        if function_class == FunctionClass.PROJECT:
+            return ProjectFunction(
+                title="Test Function",
+                description="A test function",
+                input_schema=JSONFunctionInputSchema(
+                    schema_content={
+                        "type": "object",
+                        "properties": {"input1": {"type": "string"}},
+                    }
+                ),
+                output_schema=JSONFunctionOutputSchema(
+                    schema_content={
+                        "type": "object",
+                        "properties": {"output1": {"type": "string"}},
+                    }
+                ),
+                project_id=uuid4(),
+                default_inputs=None,
+            )
+        if function_class == FunctionClass.SOLVER:
+            return SolverFunction(
+                title="Test Solver",
+                description="A test solver",
+                input_schema=JSONFunctionInputSchema(
+                    schema_content={
+                        "type": "object",
+                        "properties": {"input1": {"type": "string"}},
+                    }
+                ),
+                output_schema=JSONFunctionOutputSchema(
+                    schema_content={
+                        "type": "object",
+                        "properties": {"output1": {"type": "string"}},
+                    }
+                ),
+                default_inputs=None,
+                solver_key="simcore/services/comp/mysolver",
+                solver_version="1.0.0",
+            )
+        raise AssertionError(
+            f"Please implement the mock for {function_class=} yourself"
+        )
+
+    return _
 
 
 @pytest.fixture

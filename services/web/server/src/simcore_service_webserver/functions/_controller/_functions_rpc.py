@@ -20,6 +20,7 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
+    RegisteredFunctionJobPatch,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
@@ -29,6 +30,7 @@ from models_library.functions_errors import (
     FunctionJobCollectionsWriteApiAccessDeniedError,
     FunctionJobCollectionWriteAccessDeniedError,
     FunctionJobIDNotFoundError,
+    FunctionJobPatchModelIncompatibleError,
     FunctionJobReadAccessDeniedError,
     FunctionJobsReadApiAccessDeniedError,
     FunctionJobsWriteApiAccessDeniedError,
@@ -85,6 +87,31 @@ async def register_function_job(
 ) -> RegisteredFunctionJob:
     return await _functions_service.register_function_job(
         app=app, user_id=user_id, product_name=product_name, function_job=function_job
+    )
+
+
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionJobClassError,
+        FunctionJobsWriteApiAccessDeniedError,
+        FunctionJobPatchModelIncompatibleError,
+    )
+)
+async def patch_registered_function_job(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_uuid: FunctionJobID,
+    registered_function_job_patch: RegisteredFunctionJobPatch,
+) -> RegisteredFunctionJob:
+
+    return await _functions_service.patch_registered_function_job(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_uuid=function_job_uuid,
+        registered_function_job_patch=registered_function_job_patch,
     )
 
 
