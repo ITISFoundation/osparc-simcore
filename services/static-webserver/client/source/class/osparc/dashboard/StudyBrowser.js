@@ -806,6 +806,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           currentParams[key] = value;
         }
       });
+      if ([
+        osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS,
+        osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
+      ].includes(this.getCurrentContext())) {
+        currentParams.orderBy = osparc.store.Functions.curateOrderBy(currentParams.orderBy);
+      }
 
       // check the entries in currentParams are the same as the reqParams
       let sameContext = true;
