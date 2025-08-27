@@ -176,7 +176,7 @@ class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase
 
 
 class RegisteredProjectFunctionJobPatch(BaseModel):
-    function_class: FunctionClass
+    function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
     title: str | None
     description: str | None
     project_job_id: ProjectID | None
@@ -194,7 +194,7 @@ class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
 
 
 class RegisteredSolverFunctionJobPatch(BaseModel):
-    function_class: FunctionClass
+    function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
     title: str | None
     description: str | None
     solver_job_id: ProjectID | None
@@ -210,7 +210,7 @@ class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJ
 
 
 class RegisteredPythonCodeFunctionJobPatch(BaseModel):
-    function_class: FunctionClass
+    function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
     title: str | None
     description: str | None
 
