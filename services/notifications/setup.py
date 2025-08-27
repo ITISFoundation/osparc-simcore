@@ -23,7 +23,10 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 NAME = "simcore-service-notifications"
 VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
-AUTHORS = ("Andrei Neagu (GitHK)",)
+AUTHORS = (
+    "Giancarlo Romeo (giancarloromeo)",
+    "Andrei Neagu (GitHK)",
+)
 DESCRIPTION = "Service used for sending notifications to users via different channels"
 
 PROD_REQUIREMENTS = tuple(

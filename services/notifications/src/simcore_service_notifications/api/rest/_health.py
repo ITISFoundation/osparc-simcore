@@ -29,5 +29,4 @@ async def check_service_health(
 
     if not postgres_liveness.is_responsive:
         raise HealthCheckError(POSRGRES_DATABASE_UNHEALTHY_MSG)
-
     return HealthCheckGet(timestamp=f"{__name__}@{arrow.utcnow().datetime.isoformat()}")

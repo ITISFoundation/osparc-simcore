@@ -10,11 +10,14 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
+    TASK_QUEUE_DEFAULT,
     Task,
     TaskFilter,
     TaskID,
     TaskInfoStore,
     TaskMetadata,
+    TaskName,
+    TaskQueue,
     TaskState,
     TaskStatus,
     TaskUUID,
@@ -38,34 +41,43 @@ class CeleryTaskManager:
     _celery_settings: CelerySettings
     _task_info_store: TaskInfoStore
 
-    async def submit_task(
+    async def send_task(
         self,
-        task_metadata: TaskMetadata,
-        *,
+        task_name: TaskName,
         task_filter: TaskFilter,
+        *,
+        task_ephemeral: bool = True,
+        task_queue: TaskQueue = TASK_QUEUE_DEFAULT,
         **task_params,
     ) -> TaskUUID:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Submit {task_metadata.name=}: {task_filter=} {task_params=}",
+            msg=f"Send {task_name=}: {task_filter=} {task_params=}",
         ):
             task_uuid = uuid4()
             task_id = build_task_id(task_filter, task_uuid)
             self._celery_app.send_task(
-                task_metadata.name,
+                task_name,
                 task_id=task_id,
                 kwargs={"task_id": task_id} | task_params,
-                queue=task_metadata.queue.value,
+                queue=task_queue,
             )
 
             expiry = (
                 self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
-                if task_metadata.ephemeral
+                if task_ephemeral
                 else self._celery_settings.CELERY_RESULT_EXPIRES
             )
+
             await self._task_info_store.create_task(
-                task_id, task_metadata, expiry=expiry
+                task_id,
+                TaskMetadata(
+                    name=task_name,
+                    ephemeral=task_ephemeral,
+                    queue=task_queue,
+                ),
+                expiry=expiry,
             )
             return task_uuid
 
@@ -97,6 +109,7 @@ class CeleryTaskManager:
             msg=f"Get task result: {task_filter=} {task_uuid=}",
         ):
             task_id = build_task_id(task_filter, task_uuid)
+
             async_result = self._celery_app.AsyncResult(task_id)
             result = async_result.result
             if async_result.ready():
@@ -106,7 +119,7 @@ class CeleryTaskManager:
                     await self._task_info_store.remove_task(task_id)
             return result
 
-    async def _get_task_progress_report(
+    async def _get_progress_report(
         self, task_filter: TaskFilter, task_uuid: TaskUUID, task_state: TaskState
     ) -> ProgressReport:
         if task_state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
@@ -144,7 +157,7 @@ class CeleryTaskManager:
             return TaskStatus(
                 task_uuid=task_uuid,
                 task_state=task_state,
-                progress_report=await self._get_task_progress_report(
+                progress_report=await self._get_progress_report(
                     task_filter, task_uuid, task_state
                 ),
             )

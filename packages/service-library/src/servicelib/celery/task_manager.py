@@ -3,18 +3,26 @@ from typing import Any, Protocol
 from models_library.progress_bar import ProgressReport
 
 from ..celery.models import (
+    TASK_QUEUE_DEFAULT,
     Task,
     TaskFilter,
     TaskID,
-    TaskMetadata,
+    TaskName,
+    TaskQueue,
     TaskStatus,
     TaskUUID,
 )
 
 
 class TaskManager(Protocol):
-    async def submit_task(
-        self, task_metadata: TaskMetadata, *, task_filter: TaskFilter, **task_param
+    async def send_task(
+        self,
+        task_name: TaskName,
+        task_filter: TaskFilter,
+        *,
+        task_ephemeral: bool = True,
+        task_queue: TaskQueue = TASK_QUEUE_DEFAULT,
+        **task_params,
     ) -> TaskUUID: ...
 
     async def cancel_task(
