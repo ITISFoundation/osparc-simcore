@@ -109,6 +109,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     resetValue: function() {
       this.setValue(null);
     },
+    // IStringForm interface implementation
 
     _applyValue: function(value) {
       this.fireDataEvent("changeValue", value);
