@@ -890,7 +890,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
-          delete requestParams.orderBy; // functions do not support ordering yet
           requestParams.includeExtras = "true";
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS: {
@@ -1360,8 +1359,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._searchBarFilter.setEnabled(true);
       // workspaces will exclude it
       this._toolbar.show();
-      // functions will exclude it
-      this.__sortByButton.show();
 
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
@@ -1413,8 +1410,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._searchBarFilter.resetFilters();
           }
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Functions");
-          // functions can't be sorted yet
-          this.__sortByButton.exclude();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateFunctions();
           this.__reloadStudies();
