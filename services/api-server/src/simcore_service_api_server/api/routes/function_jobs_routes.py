@@ -1,6 +1,6 @@
 from typing import Annotated, Final
 
-from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from fastapi_pagination.api import create_page
 from fastapi_pagination.bases import AbstractPage
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
@@ -266,6 +266,7 @@ async def function_job_outputs(
         function.function_class == FunctionClass.PROJECT
         and function_job.function_class == FunctionClass.PROJECT
     ):
+        assert function_job.project_job_id is not None  # nosec
         new_outputs = dict(
             (
                 await studies_jobs.get_study_job_outputs(
@@ -281,6 +282,7 @@ async def function_job_outputs(
         function.function_class == FunctionClass.SOLVER
         and function_job.function_class == FunctionClass.SOLVER
     ):
+        assert function_job.solver_job_id is not None  # nosec
         new_outputs = dict(
             (
                 await solvers_jobs_read.get_job_outputs(
@@ -337,6 +339,11 @@ async def get_function_job_logs_task(
         function.function_class == FunctionClass.PROJECT
         and function_job.function_class == FunctionClass.PROJECT
     ):
+        if function_job.project_job_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Could not find project job",
+            )
         async_job_get = await job_service.start_log_export(
             job_id=function_job.project_job_id,
         )
@@ -353,6 +360,11 @@ async def get_function_job_logs_task(
         function.function_class == FunctionClass.SOLVER
         and function_job.function_class == FunctionClass.SOLVER
     ):
+        if function_job.solver_job_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Could not find solver job",
+            )
         async_job_get = await job_service.start_log_export(
             job_id=function_job.solver_job_id,
         )
