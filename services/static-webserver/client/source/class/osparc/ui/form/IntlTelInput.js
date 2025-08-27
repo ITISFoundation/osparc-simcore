@@ -37,14 +37,8 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
     const randId = Math.floor(Math.random() * 100);
     const html = `<input type='tel' id='phone-${randId}' name='phone' autocomplete='off'>`;
-    const phoneNumber = new qx.ui.embed.Html(html).set({
-      marginTop: 2,
-      marginLeft: 2,
-      marginRight: 2,
-      minWidth: 185,
-      maxHeight: 25
-    });
-    this._add(phoneNumber);
+    const phoneNumber = this.getChildControl("phone-input-field");
+    phoneNumber.setHtml(html);
     phoneNumber.addListenerOnce("appear", () => {
       const convertInputToPhoneInput = () => {
         const domElement = document.querySelector(`#phone-${randId}`);
@@ -64,10 +58,6 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         });
       }
     });
-
-    const feedbackCheck = this.__feedbackCheck = new qx.ui.basic.Image();
-    feedbackCheck.exclude();
-    this._add(feedbackCheck);
   },
 
   properties: {
@@ -97,7 +87,27 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
   members: {
     __itiInput: null,
-    __feedbackCheck: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "phone-input-field":
+          control = new qx.ui.embed.Html().set({
+            marginTop: 2,
+            marginLeft: 2,
+            marginRight: 2,
+            minWidth: 185,
+            maxHeight: 25
+          });
+          this._add(control, { flex: 1 });
+          break;
+        case "feedback-icon":
+          control = new qx.ui.basic.Image();
+          this._add(control);
+          break
+      }
+      return control || this.base(arguments, id);
+    },
 
     // IStringForm interface implementation
     getValue: function() {
@@ -125,14 +135,14 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     },
 
     verifyPhoneNumber: function() {
+      const feedbackIcon = this.getChildControl("feedback-icon");
       const isValid = this.isValidNumber();
-      this.__feedbackCheck.set({
+      feedbackIcon.set({
         toolTipText: "E.164: " + this.getValue(),
         source: isValid ? "@FontAwesome5Solid/check/16" : "@FontAwesome5Solid/exclamation-triangle/16",
         textColor: isValid ? "text" : "failed-red",
         alignY: "middle",
       });
-      this.__feedbackCheck.show();
       if (!isValid) {
         const validationError = this.__itiInput.getValidationError();
         const errorMap = {
@@ -142,11 +152,11 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
           3: this.tr("Number too long")
         };
         const errorMsg = errorMap[validationError] || "Invalid number";
-        this.__feedbackCheck.set({
-          toolTipText: errorMsg + ". " + this.__feedbackCheck.getToolTipText()
+        feedbackIcon.set({
+          toolTipText: errorMsg + ". " + feedbackIcon.getToolTipText()
         });
       }
-      this.self().updateStyle(this.__itiInput, this.__feedbackCheck);
+      this.self().updateStyle(this.__itiInput, feedbackIcon);
     },
 
     __inputToPhoneInput: function(input) {
