@@ -5,8 +5,7 @@
 
 import asyncio
 import json
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from contextlib import asynccontextmanager
+from collections.abc import Awaitable, Callable, Iterator
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
@@ -32,7 +31,8 @@ from models_library.services_creation import CreateServiceMetricsAdditionalParam
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
-from servicelib.fastapi.long_running_tasks.client import BaseClient, RPCClient
+from servicelib.long_running_tasks import lrt_api
+from servicelib.long_running_tasks.errors import TaskNotFoundError
 from servicelib.long_running_tasks.models import LRTNamespace, TaskId
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -71,15 +71,6 @@ class ContainerTimes(NamedTuple):
     created: Any
     started_at: Any
     finished_at: Any
-
-
-@asynccontextmanager
-async def auto_remove_task(client: BaseClient, task_id: TaskId) -> AsyncIterator[None]:
-    """clenup pending tasks"""
-    try:
-        yield
-    finally:
-        await client.remove_task(task_id)
 
 
 async def _get_container_timestamps(
@@ -195,13 +186,6 @@ async def rpc_client(
 def lrt_namespace(app: FastAPI) -> LRTNamespace:
     long_running_manager: FastAPILongRunningManager = app.state.long_running_manager
     return long_running_manager.lrt_namespace
-
-
-@pytest.fixture
-def client(
-    app: FastAPI, rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
-) -> BaseClient:
-    return RPCClient(rpc_client, lrt_namespace)
 
 
 @pytest.fixture
@@ -433,7 +417,6 @@ async def test_create_containers_task(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -460,7 +443,6 @@ async def test_pull_user_servcices_docker_images(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -501,7 +483,6 @@ async def test_create_containers_task_invalid_yaml_spec(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
@@ -538,7 +519,6 @@ async def test_same_task_id_is_returned_if_task_exists(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable[TaskId]],
     mock_stop_heart_beat_task: AsyncMock,
@@ -555,18 +535,26 @@ async def test_same_task_id_is_returned_if_task_exists(
             port_keys=None,
         )
 
+    async def _assert_task_removed(task_id: TaskId) -> None:
+        await lrt_api.remove_task(
+            rpc_client, lrt_namespace, {}, task_id, wait_for_removal=True
+        )
+        with pytest.raises(TaskNotFoundError):
+            await lrt_api.get_task_status(rpc_client, lrt_namespace, {}, task_id)
+
     task_id = await _get_awaitable()
     assert task_id.endswith("unique")
-    async with auto_remove_task(client, task_id):
-        assert await _get_awaitable() == task_id
+    assert await _get_awaitable() == task_id
+
+    await _assert_task_removed(task_id)
 
     # since the previous task was already removed it is again possible
     # to create a task and it will share the same task_id
     new_task_id = await _get_awaitable()
     assert new_task_id.endswith("unique")
     assert new_task_id == task_id
-    async with auto_remove_task(client, task_id):
-        pass
+
+    await _assert_task_removed(task_id)
 
 
 async def test_containers_down_after_starting(
@@ -574,7 +562,6 @@ async def test_containers_down_after_starting(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -613,7 +600,6 @@ async def test_containers_down_missing_spec(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     caplog_info_debug: pytest.LogCaptureFixture,
 ):
     result = await get_lrt_result(
@@ -634,7 +620,6 @@ async def test_container_restore_state(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     mock_data_manager: None,
 ):
     result = await get_lrt_result(
@@ -654,7 +639,6 @@ async def test_container_save_state(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     mock_data_manager: None,
 ):
     result = await get_lrt_result(
@@ -673,7 +657,6 @@ async def test_container_pull_input_ports(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     inputs_pulling_enabled: bool,
     app: FastAPI,
     mock_port_keys: list[str] | None,
@@ -699,7 +682,6 @@ async def test_container_pull_output_ports(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
@@ -720,7 +702,6 @@ async def test_container_push_output_ports(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
@@ -741,7 +722,6 @@ async def test_container_push_output_ports_missing_node(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     mock_port_keys: list[str] | None,
     missing_node_uuid: str,
     mock_node_missing: None,
@@ -774,7 +754,6 @@ async def test_containers_restart(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
-    client: BaseClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
