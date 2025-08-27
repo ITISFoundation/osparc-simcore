@@ -1364,6 +1364,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._searchBarFilter.setEnabled(true);
       // workspaces will exclude it
       this._toolbar.show();
+      // functions will hide some option
+      this.__sortByButton.showAllOptions();
 
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
@@ -1415,6 +1417,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._searchBarFilter.resetFilters();
           }
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Functions");
+          // functions don't support all options yet
+          this.__sortByButton.hideOptionButton("name");
+          this.__sortByButton.hideOptionButton("prj_owner");
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateFunctions();
           this.__reloadStudies();
