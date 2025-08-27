@@ -824,7 +824,7 @@ def _patch_functionjob(
                 ),
             ),
         )
-    elif function_job_db.function_class == FunctionClass.SOLVER:
+    if function_job_db.function_class == FunctionClass.SOLVER:
         assert patch.function_class == FunctionClass.SOLVER  # nosec
         return RegisteredFunctionJobDB(
             function_class=FunctionClass.SOLVER,
@@ -848,7 +848,7 @@ def _patch_functionjob(
                 ),
             ),
         )
-    elif function_job_db.function_class == FunctionClass.PYTHON_CODE:
+    if function_job_db.function_class == FunctionClass.PYTHON_CODE:
         assert patch.function_class == FunctionClass.PYTHON_CODE  # nosec
         return RegisteredFunctionJobDB(
             function_class=FunctionClass.PYTHON_CODE,
@@ -861,7 +861,6 @@ def _patch_functionjob(
             created=function_job_db.created,
             class_specific_data=function_job_db.class_specific_data,
         )
-    else:
-        raise UnsupportedFunctionJobClassError(
-            function_job_class=function_job_db.function_class
-        )
+    raise UnsupportedFunctionJobClassError(
+        function_job_class=function_job_db.function_class
+    )
