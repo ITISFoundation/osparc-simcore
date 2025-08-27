@@ -77,13 +77,6 @@ qx.Class.define("osparc.vipMarket.SortModelsButtons", {
     "sortBy": "qx.event.type.Data"
   },
 
-  statics: {
-    DefaultSorting: {
-      "sort": "name",
-      "order": "down"
-    }
-  },
-
   members: {
     __buttonExecuted: function(btn) {
       this.set({

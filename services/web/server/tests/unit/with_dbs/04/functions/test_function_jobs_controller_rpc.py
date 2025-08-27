@@ -2,30 +2,47 @@
 # pylint: disable=unused-argument
 
 import datetime
+from collections.abc import Callable
 from uuid import uuid4
 
 import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
+from faker import Faker
 from models_library.api_schemas_webserver.functions import (
-    ProjectFunction,
     ProjectFunctionJob,
 )
-from models_library.functions import FunctionJobCollection, FunctionJobStatus
+from models_library.functions import (
+    Function,
+    FunctionClass,
+    FunctionJobCollection,
+    FunctionJobStatus,
+    RegisteredFunctionJob,
+    RegisteredFunctionJobPatch,
+    RegisteredProjectFunctionJobPatch,
+    RegisteredSolverFunctionJobPatch,
+    SolverFunctionJob,
+)
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
+    FunctionJobPatchModelIncompatibleError,
     FunctionJobReadAccessDeniedError,
     FunctionJobsReadApiAccessDeniedError,
     FunctionJobWriteAccessDeniedError,
 )
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from pytest_simcore.helpers.webserver_users import UserInfoDict
+from servicelib.celery.models import TaskID
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface as functions_rpc,
 )
 
 pytest_simcore_core_services_selection = ["rabbit"]
+
+
+_faker = Faker()
 
 
 @pytest.mark.parametrize(
@@ -36,7 +53,7 @@ async def test_register_get_delete_function_job(
     client: TestClient,
     add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
@@ -44,7 +61,7 @@ async def test_register_get_delete_function_job(
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -57,6 +74,7 @@ async def test_register_get_delete_function_job(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs={"output1": "result1"},
+        job_creation_task_id=None,
     )
 
     # Register the function job
@@ -163,14 +181,14 @@ async def test_list_function_jobs(
     client: TestClient,
     add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -183,6 +201,7 @@ async def test_list_function_jobs(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs={"output1": "result1"},
+        job_creation_task_id=None,
     )
 
     # Register the function job
@@ -214,7 +233,7 @@ async def test_list_function_jobs(
 async def test_list_function_jobs_filtering(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
@@ -222,13 +241,13 @@ async def test_list_function_jobs_filtering(
     # Register the function first
     first_registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
     second_registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -244,6 +263,7 @@ async def test_list_function_jobs_filtering(
                 project_job_id=uuid4(),
                 inputs={"input1": "value1"},
                 outputs={"output1": "result1"},
+                job_creation_task_id=None,
             )
             # Register the function job
             first_registered_function_jobs.append(
@@ -262,6 +282,7 @@ async def test_list_function_jobs_filtering(
                 project_job_id=uuid4(),
                 inputs={"input1": "value1"},
                 outputs={"output1": "result1"},
+                job_creation_task_id=None,
             )
             # Register the function job
             second_registered_function_jobs.append(
@@ -361,13 +382,13 @@ async def test_find_cached_function_jobs(
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     clean_functions: None,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -381,6 +402,7 @@ async def test_find_cached_function_jobs(
             project_job_id=uuid4(),
             inputs={"input1": value if value < 4 else 1},
             outputs={"output1": "result1"},
+            job_creation_task_id=None,
         )
 
         # Register the function job
@@ -425,18 +447,181 @@ async def test_find_cached_function_jobs(
     "user_role",
     [UserRole.USER],
 )
+@pytest.mark.parametrize(
+    "function_job, patch",
+    [
+        (
+            ProjectFunctionJob(
+                function_uid=_faker.uuid4(),
+                title="Test Function Job",
+                description="A test function job",
+                project_job_id=None,
+                inputs=None,
+                outputs=None,
+                job_creation_task_id=None,
+            ),
+            RegisteredProjectFunctionJobPatch(
+                title=_faker.word(),
+                description=_faker.sentence(),
+                project_job_id=ProjectID(_faker.uuid4()),
+                job_creation_task_id=TaskID(_faker.uuid4()),
+                inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
+                outputs={"output1": _faker.word()},
+            ),
+        ),
+        (
+            SolverFunctionJob(
+                function_uid=_faker.uuid4(),
+                title="Test Function Job",
+                description="A test function job",
+                inputs=None,
+                outputs=None,
+                job_creation_task_id=None,
+                solver_job_id=None,
+            ),
+            RegisteredSolverFunctionJobPatch(
+                title=_faker.word(),
+                description=_faker.sentence(),
+                job_creation_task_id=TaskID(_faker.uuid4()),
+                inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
+                outputs={"output1": _faker.word()},
+                solver_job_id=_faker.uuid4(),
+            ),
+        ),
+    ],
+)
+async def test_patch_registered_function_jobs(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    add_user_function_api_access_rights: None,
+    logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    mock_function_factory: Callable[[FunctionClass], Function],
+    clean_functions: None,
+    function_job: RegisteredFunctionJob,
+    patch: RegisteredFunctionJobPatch,
+):
+    function = mock_function_factory(function_job.function_class)
+
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client,
+        function=function,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    # Register the function job
+    function_job.function_uid = registered_function.uid
+    registered_job = await functions_rpc.register_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    registered_job = await functions_rpc.patch_registered_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        user_id=logged_user["id"],
+        function_job_uuid=registered_job.uid,
+        product_name=osparc_product_name,
+        registered_function_job_patch=patch,
+    )
+    assert registered_job.title == patch.title
+    assert registered_job.description == patch.description
+    assert registered_job.inputs == patch.inputs
+    assert registered_job.outputs == patch.outputs
+    if isinstance(patch, RegisteredProjectFunctionJobPatch):
+        assert registered_job.function_class == FunctionClass.PROJECT
+        assert registered_job.job_creation_task_id == patch.job_creation_task_id
+        assert registered_job.project_job_id == patch.project_job_id
+    if isinstance(patch, RegisteredSolverFunctionJobPatch):
+        assert registered_job.function_class == FunctionClass.SOLVER
+        assert registered_job.job_creation_task_id == patch.job_creation_task_id
+        assert registered_job.solver_job_id == patch.solver_job_id
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+@pytest.mark.parametrize(
+    "function_job, patch",
+    [
+        (
+            ProjectFunctionJob(
+                function_uid=_faker.uuid4(),
+                title="Test Function Job",
+                description="A test function job",
+                project_job_id=None,
+                inputs=None,
+                outputs=None,
+                job_creation_task_id=None,
+            ),
+            RegisteredSolverFunctionJobPatch(
+                title=_faker.word(),
+                description=_faker.sentence(),
+                job_creation_task_id=TaskID(_faker.uuid4()),
+                inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
+                outputs={"output1": _faker.word()},
+                solver_job_id=_faker.uuid4(),
+            ),
+        ),
+    ],
+)
+async def test_incompatible_patch_model_error(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    add_user_function_api_access_rights: None,
+    logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    mock_function_factory: Callable[[FunctionClass], Function],
+    clean_functions: None,
+    function_job: RegisteredFunctionJob,
+    patch: RegisteredFunctionJobPatch,
+):
+    function = mock_function_factory(function_job.function_class)
+
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client,
+        function=function,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    function_job.function_uid = registered_function.uid
+    registered_job = await functions_rpc.register_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    with pytest.raises(FunctionJobPatchModelIncompatibleError):
+        registered_job = await functions_rpc.patch_registered_function_job(
+            rabbitmq_rpc_client=rpc_client,
+            user_id=logged_user["id"],
+            function_job_uuid=registered_job.uid,
+            product_name=osparc_product_name,
+            registered_function_job_patch=patch,
+        )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_update_function_job_status(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     add_user_function_api_access_rights: None,
     logged_user: UserInfoDict,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -448,6 +633,7 @@ async def test_update_function_job_status(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs={"output1": "result1"},
+        job_creation_task_id=None,
     )
 
     # Register the function job
@@ -489,13 +675,13 @@ async def test_update_function_job_outputs(
     rpc_client: RabbitMQRPCClient,
     add_user_function_api_access_rights: None,
     logged_user: UserInfoDict,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -507,6 +693,7 @@ async def test_update_function_job_outputs(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs=None,
+        job_creation_task_id=None,
     )
 
     # Register the function job

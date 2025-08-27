@@ -634,11 +634,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           getPage: {
             method: "GET",
-            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}"
+            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           getPageSearch: {
             method: "GET",
-            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}&search={text}"
+            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}&search={text}&order_by={orderBy}"
           },
           create: {
             method: "POST",
