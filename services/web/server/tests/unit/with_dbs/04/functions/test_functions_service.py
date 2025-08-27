@@ -24,13 +24,13 @@ async def test_set_and_remove_group_permissions(
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-    mock_function: ProjectFunction,
+    mock_function_factory: ProjectFunction,
     clean_functions: None,
 ) -> None:
     # Register the function
     registered_function = await _functions_service.register_function(
         app=client.app,
-        function=mock_function,
+        function=mock_function_factory,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )

@@ -404,6 +404,9 @@ async def find_cached_function_jobs(
                     project_job_id=returned_function_job.class_specific_data[
                         "project_job_id"
                     ],
+                    job_creation_task_id=returned_function_job.class_specific_data.get(
+                        "job_creation_task_id"
+                    ),
                     created_at=returned_function_job.created,
                 )
             )
@@ -416,9 +419,12 @@ async def find_cached_function_jobs(
                     function_uid=returned_function_job.function_uuid,
                     inputs=returned_function_job.inputs,
                     outputs=None,
-                    solver_job_id=returned_function_job.class_specific_data[
+                    solver_job_id=returned_function_job.class_specific_data.get(
                         "solver_job_id"
-                    ],
+                    ),
+                    job_creation_task_id=returned_function_job.class_specific_data.get(
+                        "job_creation_task_id"
+                    ),
                     created_at=returned_function_job.created,
                 )
             )

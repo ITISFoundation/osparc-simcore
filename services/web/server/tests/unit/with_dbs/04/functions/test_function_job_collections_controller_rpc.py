@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import datetime
+from collections.abc import Callable
 from uuid import uuid4
 
 import pytest
@@ -10,10 +11,13 @@ from common_library.users_enums import UserRole
 from models_library.api_schemas_webserver.functions import (
     FunctionIDString,
     FunctionJobCollection,
-    ProjectFunction,
     ProjectFunctionJob,
 )
-from models_library.functions import FunctionJobCollectionsListFilters
+from models_library.functions import (
+    Function,
+    FunctionClass,
+    FunctionJobCollectionsListFilters,
+)
 from models_library.functions_errors import (
     FunctionJobCollectionReadAccessDeniedError,
     FunctionJobCollectionsReadApiAccessDeniedError,
@@ -37,7 +41,7 @@ pytest_simcore_core_services_selection = ["rabbit"]
 async def test_function_job_collection(
     client: TestClient,
     add_user_function_api_access_rights: None,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
@@ -47,7 +51,7 @@ async def test_function_job_collection(
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -171,7 +175,7 @@ async def test_function_job_collection(
 async def test_list_function_job_collections(
     client: TestClient,
     add_user_function_api_access_rights: None,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     rpc_client: RabbitMQRPCClient,
     clean_functions: None,
     clean_function_job_collections: None,
@@ -196,7 +200,7 @@ async def test_list_function_job_collections(
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -275,7 +279,7 @@ async def test_list_function_job_collections_filtered_function_id(
     client: TestClient,
     add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     clean_functions: None,
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
@@ -284,13 +288,13 @@ async def test_list_function_job_collections_filtered_function_id(
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
     other_registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
