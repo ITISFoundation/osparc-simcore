@@ -29,6 +29,8 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
   construct: function() {
     this.base(arguments);
 
+    this.setFocusable(true);
+
     this._setLayout(new qx.ui.layout.HBox());
 
     this.getContentElement().setStyles({
@@ -65,6 +67,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
   members: {
     __htmlId: null,
+    __inputElement: null,
     __itiInput: null,
 
     _createChildControlImpl: function(id) {
@@ -100,6 +103,27 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
       this.setValue(null);
     },
     // IStringForm interface implementation
+
+    // Make the widget tabbable/focusable
+    focus: function() {
+      if (this.__inputElement) {
+        this.__inputElement.focus();
+      } else {
+        // fallback: let qooxdoo focus the content element
+        this.base(arguments);
+      }
+    },
+
+    tabFocus: function() {
+      this.focus();
+    },
+
+    getFocusElement: function() {
+      const phoneNumber = this.getChildControl("phone-input-field");
+      // phoneNumber is a qx.ui.embed.Html → it has a ContentElement (qx.html.Element)
+      return phoneNumber.getContentElement();
+    },
+    // Make the widget tabbable/focusable
 
     _applyValue: function(value) {
       this.fireDataEvent("changeValue", value);
@@ -198,6 +222,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     },
 
     __inputToPhoneInput: function(input) {
+      this.__inputElement = input; // keep reference to raw <input>
       const iti = intlTelInput(input, {
         initialCountry: "auto",
         geoIpLookup: callback => {
