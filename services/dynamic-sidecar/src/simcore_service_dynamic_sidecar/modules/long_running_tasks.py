@@ -3,7 +3,7 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
@@ -11,9 +11,10 @@ from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from models_library.service_settings_labels import LegacyState
 from pydantic import PositiveInt
+from servicelib.fastapi import long_running_tasks
 from servicelib.file_utils import log_directory_changes
 from servicelib.logging_utils import log_context
-from servicelib.long_running_tasks.task import TaskRegistry
+from servicelib.long_running_tasks.task import TaskProtocol, TaskRegistry
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
@@ -23,6 +24,7 @@ from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 
+from .._meta import APP_NAME
 from ..core.docker_compose_utils import (
     docker_compose_create,
     docker_compose_down,
@@ -168,17 +170,19 @@ async def task_create_service_containers(
 
     assert shared_store.compose_spec  # nosec
 
-    async with event_propagation_disabled(app), _reset_on_error(
-        shared_store
-    ), ProgressBarData(
-        num_steps=4,
-        progress_report_cb=functools.partial(
-            post_progress_message,
-            app,
-            ProgressType.SERVICE_CONTAINERS_STARTING,
-        ),
-        description="starting software",
-    ) as progress_bar:
+    async with (
+        event_propagation_disabled(app),
+        _reset_on_error(shared_store),
+        ProgressBarData(
+            num_steps=4,
+            progress_report_cb=functools.partial(
+                post_progress_message,
+                app,
+                ProgressType.SERVICE_CONTAINERS_STARTING,
+            ),
+            description="starting software",
+        ) as progress_bar,
+    ):
         with log_context(_logger, logging.INFO, "load user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
                 await user_services_preferences.load_user_services_preferences(app)
@@ -433,6 +437,7 @@ async def _save_state_folder(
         progress_bar=progress_bar,
         aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
+        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
     )
 
 
@@ -625,15 +630,60 @@ async def task_containers_restart(
         await progress.update(message="started log fetching", percent=0.99)
 
 
-for task in (
-    task_pull_user_servcices_docker_images,
-    task_create_service_containers,
-    task_runs_docker_compose_down,
-    task_restore_state,
-    task_save_state,
-    task_ports_inputs_pull,
-    task_ports_outputs_pull,
-    task_ports_outputs_push,
-    task_containers_restart,
-):
-    TaskRegistry.register(task)
+def setup_long_running_tasks(app: FastAPI) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    long_running_tasks.server.setup(
+        app,
+        redis_settings=app_settings.REDIS_SETTINGS,
+        rabbit_settings=app_settings.RABBIT_SETTINGS,
+        lrt_namespace=f"{APP_NAME}-{app_settings.DY_SIDECAR_RUN_ID}",
+    )
+
+    task_context: dict[TaskProtocol, dict[str, Any]] = {}
+
+    async def on_startup() -> None:
+        shared_store: SharedStore = app.state.shared_store
+        mounted_volumes: MountedVolumes = app.state.mounted_volumes
+        outputs_manager: OutputsManager = app.state.outputs_manager
+
+        context_app_store: dict[str, Any] = {
+            "app": app,
+            "shared_store": shared_store,
+        }
+        context_app_store_volumes: dict[str, Any] = {
+            "app": app,
+            "shared_store": shared_store,
+            "mounted_volumes": mounted_volumes,
+        }
+        context_app_volumes: dict[str, Any] = {
+            "app": app,
+            "mounted_volumes": mounted_volumes,
+        }
+        context_app_outputs: dict[str, Any] = {
+            "app": app,
+            "outputs_manager": outputs_manager,
+        }
+
+        task_context.update(
+            {
+                task_pull_user_servcices_docker_images: context_app_store,
+                task_create_service_containers: context_app_store,
+                task_runs_docker_compose_down: context_app_store_volumes,
+                task_restore_state: context_app_volumes,
+                task_save_state: context_app_volumes,
+                task_ports_inputs_pull: context_app_volumes,
+                task_ports_outputs_pull: context_app_volumes,
+                task_ports_outputs_push: context_app_outputs,
+                task_containers_restart: context_app_store,
+            }
+        )
+
+        for handler, context in task_context.items():
+            TaskRegistry.register(handler, **context)
+
+    async def _on_shutdown() -> None:
+        for handler in task_context:
+            TaskRegistry.unregister(handler)
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)

@@ -218,7 +218,7 @@ qx.Class.define("osparc.product.Utils", {
     getCreateAccountAction: function() {
       const config = osparc.store.Store.getInstance().get("config");
       if (config["invitation_required"]) {
-        const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+        const vendor = osparc.store.VendorInfo.getVendor();
         if (vendor["invitation_form"]) {
           // If invitation_required (login_settings) and invitation_form (vendor)
           return "REQUEST_ACCOUNT_FORM";
@@ -416,6 +416,10 @@ qx.Class.define("osparc.product.Utils", {
 
     groupServices: function() {
       return Boolean(osparc.store.Products.getInstance().getGroupedServicesUiConfig());
+    },
+
+    isSupportEnabled: function() {
+      return Boolean(osparc.store.Products.getInstance().getSupportGroupId());
     },
   }
 });

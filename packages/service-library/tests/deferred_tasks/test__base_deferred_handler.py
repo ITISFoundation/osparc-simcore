@@ -50,10 +50,10 @@ class MockKeys(StrAutoEnum):
 
 @pytest.fixture
 async def redis_client_sdk(
-    redis_service: RedisSettings,
+    use_in_memory_redis: RedisSettings,
 ) -> AsyncIterable[RedisClientSDK]:
     sdk = RedisClientSDK(
-        redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
+        use_in_memory_redis.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
         decode_responses=False,
         client_name="pytest",
     )

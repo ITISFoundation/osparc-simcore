@@ -58,7 +58,43 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const win = osparc.widget.StudyDataManager.popUpInWindow(node.getStudy().serialize(), node.getNodeId(), node.getLabel());
       const closeBtn = win.getChildControl("close-button");
       osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
-    }
+    },
+
+    __handleIframeStateChange: function(node, iframeLayout) {
+      if (iframeLayout.classname === "osparc.viewer.NodeViewer") {
+        iframeLayout._removeAll();
+      } else  {
+        iframeLayout.removeAll();
+      }
+      if (node && node.getIFrame()) {
+        const iFrame = node.getIFrame();
+        const src = iFrame.getSource();
+        let showPage = iFrame;
+        if (node.getStatus().getLockState().isLockedBySomeoneElse()) {
+          showPage = node.getLockedPage();
+        } else if (src === null || src === "about:blank") {
+          showPage = node.getLoadingPage();
+        }
+        if (iframeLayout.classname === "osparc.viewer.NodeViewer") {
+          iframeLayout._add(showPage, {
+            flex: 1
+          });
+        } else {
+          iframeLayout.add(showPage, {
+            flex: 1
+          });
+        }
+      }
+    },
+
+    listenToIframeStateChanges: function(node, iframeLayout) {
+      if (node && node.getIFrame()) {
+        const iFrame = node.getIFrame();
+        node.getIframeHandler().addListener("iframeStateChanged", () => this.__handleIframeStateChange(node, iframeLayout), this);
+        iFrame.addListener("load", () => this.__handleIframeStateChange(node, iframeLayout));
+        this.__handleIframeStateChange(node, iframeLayout);
+      }
+    },
   },
 
   events: {
@@ -246,9 +282,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__connectEvents();
 
         study.getWorkbench().addListener("pipelineChanged", () => this.__evalSlidesButtons());
+        study.getWorkbench().addListener("nodeAdded", e => {
+          const node = e.getData();
+          this.__nodeAdded(node);
+        });
         study.getWorkbench().addListener("nodeRemoved", e => {
           const {nodeId, connectedEdgeIds} = e.getData();
-          this.nodeRemoved(nodeId, connectedEdgeIds);
+          this.__nodeRemoved(nodeId, connectedEdgeIds);
         });
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesButtons());
         study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
@@ -353,6 +393,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignX: "center",
         marginLeft: 10
       });
+      // do not allow modifying the pipeline
       this.getStudy().bind("pipelineRunning", addNewNodeBtn, "enabled", {
         converter: running => !running
       });
@@ -751,26 +792,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             widget.addListener("restore", () => this.setMaximized(false), this);
           }
         });
-        node.getIframeHandler().addListener("iframeChanged", () => this.__iFrameChanged(node), this);
-        iFrame.addListener("load", () => this.__iFrameChanged(node), this);
-        this.__iFrameChanged(node);
+        osparc.desktop.WorkbenchView.listenToIframeStateChanges(node, this.__iframePage);
       } else {
         // This will keep what comes after at the bottom
         this.__iframePage.add(new qx.ui.core.Spacer(), {
-          flex: 1
-        });
-      }
-    },
-
-    __iFrameChanged: function(node) {
-      this.__iframePage.removeAll();
-
-      if (node && node.getIFrame()) {
-        const loadingPage = node.getLoadingPage();
-        const iFrame = node.getIFrame();
-        const src = iFrame.getSource();
-        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-        this.__iframePage.add(iFrameView, {
           flex: 1
         });
       }
@@ -797,6 +822,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__populateSecondaryColumnParameter(node);
       } else if (node) {
         this.__populateSecondaryColumnNode(node);
+      }
+
+      if (
+        node instanceof osparc.data.model.Node &&
+        node.isComputational() &&
+        node.getPropsForm()
+      ) {
+        node.getStudy().bind("pipelineRunning", node.getPropsForm(), "enabled", {
+          converter: pipelineRunning => !pipelineRunning
+        });
       }
     },
 
@@ -1039,7 +1074,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__serviceOptionsPage.bind("width", vBox, "width");
 
       // HEADER
-      const nodeMetadata = node.getMetaData();
+      const nodeMetadata = node.getMetadata();
       const version = osparc.store.Services.getVersionDisplay(nodeMetadata["key"], nodeMetadata["version"]);
       const header = new qx.ui.basic.Label(`${nodeMetadata["name"]} ${version}`).set({
         paddingLeft: 5
@@ -1127,6 +1162,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.addListener("disappear", () => qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this), this);
     },
 
+    __nodeAdded: function(node) {
+      this.__workbenchUI.addNode(node, node.getPosition());
+    },
+
+    __nodeRemoved: function(nodeId, connectedEdgeIds) {
+      // remove first the connected edges
+      connectedEdgeIds.forEach(edgeId => {
+        this.__workbenchUI.clearEdge(edgeId);
+      });
+      // then remove the node
+      this.__workbenchUI.clearNode(nodeId);
+    },
+
     __removeNode: function(nodeId) {
       const workbench = this.getStudy().getWorkbench();
       const node = workbench.getNode(nodeId);
@@ -1180,15 +1228,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if ([this.__currentNodeId, null].includes(this.__nodesTree.getCurrentNodeId())) {
         this.nodeSelected(this.getStudy().getUuid());
       }
-    },
-
-    nodeRemoved: function(nodeId, connectedEdgeIds) {
-      // remove first the connected edges
-      connectedEdgeIds.forEach(edgeId => {
-        this.__workbenchUI.clearEdge(edgeId);
-      });
-      // then remove the node
-      this.__workbenchUI.clearNode(nodeId);
     },
 
     __removeEdge: function(edgeId) {

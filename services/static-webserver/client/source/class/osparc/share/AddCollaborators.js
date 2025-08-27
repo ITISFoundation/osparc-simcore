@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- *   Widget that offers the "Share with..." button to add collaborators to a resource.
+ *   Widget that offers the "Share" button to add collaborators to a resource.
  *   It also provides the "Check Organization..." direct access.
  *   As output, once the user select n gid in the NewCollaboratorsManager pop up window,
  * an event is fired with the list of collaborators.
@@ -60,7 +60,9 @@ qx.Class.define("osparc.share.AddCollaborators", {
           this._add(control);
           break;
         case "share-with":
-          control = new qx.ui.form.Button(this.tr("Share with...")).set({
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/share-alt/12",
+            label: this.tr("Share"),
             appearance: "form-button",
             alignX: "left",
             allowGrowX: false

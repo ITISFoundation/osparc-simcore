@@ -351,16 +351,27 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       let nodeUI = null;
       try {
         const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
-        nodeUI = this._createNodeUI(node.getNodeId());
-        this._addNodeUIToWorkbench(nodeUI, pos);
-        qx.ui.core.queue.Layout.flush();
-        this.__createDragDropMechanism(nodeUI);
+        nodeUI = this.addNode(node, pos);
       } catch (err) {
         console.error(err);
       } finally {
         // remove temporary node
         this.__removeTemporaryNodeUI(dashedNodeUI);
       }
+      return nodeUI;
+    },
+
+    addNode: function(node, pos) {
+      if (pos === undefined) {
+        pos = {
+          x: 0,
+          y: 0,
+        };
+      }
+      const nodeUI = this._createNodeUI(node.getNodeId());
+      this._addNodeUIToWorkbench(nodeUI, pos);
+      qx.ui.core.queue.Layout.flush();
+      this.__createDragDropMechanism(nodeUI);
       return nodeUI;
     },
 
@@ -663,12 +674,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const nodeUI = new osparc.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
       node.addListener("keyChanged", () => this.__selectNode(nodeUI), this);
-      node.addListener("createEdge", e => {
+      node.addListener("edgeCreated", e => {
         const data = e.getData();
         const { nodeId1, nodeId2 } = data;
         this._createEdgeBetweenNodes(nodeId1, nodeId2, false);
       });
-      node.addListener("removeEdge", e => {
+      node.addListener("edgeRemoved", e => {
         const data = e.getData();
         const { nodeId1, nodeId2 } = data;
         this.__removeEdgeBetweenNodes(nodeId1, nodeId2);
@@ -1706,7 +1717,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __openNodeInfo: function(nodeId) {
       if (nodeId) {
         const node = this.getStudy().getWorkbench().getNode(nodeId);
-        const metadata = node.getMetaData();
+        const metadata = node.getMetadata();
         const serviceDetails = new osparc.info.ServiceLarge(metadata, {
           nodeId,
           label: node.getLabel(),
@@ -2038,7 +2049,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         }
         case annotationTypes.CONVERSATION: {
           const conversationTitle = `${initPos.x}, ${initPos.y}`;
-          osparc.store.Conversations.getInstance().addConversation(this.getStudy().getUuid(), conversationTitle, osparc.study.Conversations.TYPES.PROJECT_ANNOTATION)
+          osparc.store.ConversationsProject.getInstance().postConversation(this.getStudy().getUuid(), conversationTitle, osparc.store.ConversationsProject.TYPES.PROJECT_ANNOTATION)
             .then(conversationData => {
               serializeData.attributes.conversationId = conversationData["conversationId"];
               serializeData.attributes.text = conversationData["name"];
@@ -2068,7 +2079,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__annotations[annotation.getId()] = annotation;
 
       if (annotation.getType() === osparc.workbench.Annotation.TYPES.CONVERSATION) {
-        osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
+        osparc.store.ConversationsProject.getInstance().addListener("conversationDeleted", e => {
           const data = e.getData();
           if (annotation.getAttributes()["conversationId"] === data["conversationId"]) {
             this.__removeAnnotation(annotation.getId());
@@ -2089,7 +2100,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       osparc.study.Conversations.popUpInWindow(this.getStudy().serialize(), conversationId);
 
       // Check if conversation still exists, if not, ask to remove annotation
-      osparc.store.Conversations.getInstance().getConversation(this.getStudy().getUuid(), conversationId)
+      osparc.store.ConversationsProject.getInstance().getConversation(this.getStudy().getUuid(), conversationId)
         .catch(err => {
           if ("status" in err && err.status === 404) {
             const win = new osparc.ui.window.Confirmation(this.tr("Do you want to remove the annotation?")).set({

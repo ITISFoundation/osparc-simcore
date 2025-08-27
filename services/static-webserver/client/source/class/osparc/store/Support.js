@@ -4,7 +4,7 @@ qx.Class.define("osparc.store.Support", {
 
   statics: {
     getLicenseURL: function() {
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      const vendor = osparc.store.VendorInfo.getVendor();
       if (vendor) {
         if ("license_url" in vendor) {
           return vendor["license_url"];
@@ -16,7 +16,27 @@ qx.Class.define("osparc.store.Support", {
     },
 
     getManuals: function() {
-      return osparc.store.VendorInfo.getInstance().getManuals();
+      return osparc.store.VendorInfo.getManuals();
+    },
+
+    addSupportConversationsToMenu: function(menu) {
+      if (osparc.product.Utils.isSupportEnabled()) {
+        const supportCenterButton = new qx.ui.menu.Button().set({
+          icon: "@FontAwesome5Regular/question-circle/16",
+        });
+        const amISupporter = () => {
+          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
+          supportCenterButton.set({
+            label: isSupportUser ? qx.locale.Manager.tr("Support Center") : qx.locale.Manager.tr("Support"),
+          });
+        };
+        amISupporter();
+        osparc.store.Groups.getInstance().addListener("organizationsChanged", () => amISupporter());
+        supportCenterButton.addListener("execute", () => {
+          osparc.support.SupportCenter.openWindow();
+        });
+        menu.add(supportCenterButton);
+      }
     },
 
     addQuickStartToMenu: function(menu) {
@@ -71,8 +91,8 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addSupportButtonsToMenu: function(menu, menuButton) {
-      const issues = osparc.store.VendorInfo.getInstance().getIssues();
-      const supports = osparc.store.VendorInfo.getInstance().getSupports();
+      const issues = osparc.store.VendorInfo.getIssues();
+      const supports = osparc.store.VendorInfo.getSupports();
       if (menuButton) {
         menuButton.setVisibility(issues.length || supports.length ? "visible" : "excluded");
       }
@@ -160,12 +180,15 @@ qx.Class.define("osparc.store.Support", {
     },
 
     getMailToLabel: function(email, subject) {
-      const mailto = new qx.ui.basic.Label(this.mailToLink(email, subject, false)).set({
+      const mailto = new qx.ui.basic.Label().set({
         font: "text-14",
         allowGrowX: true, // let it grow to make it easier to select
         selectable: true,
         rich: true,
       });
+      if (email) {
+        mailto.setValue(this.mailToLink(email, subject, false));
+      }
       return mailto;
     },
 
@@ -183,9 +206,9 @@ qx.Class.define("osparc.store.Support", {
         maxWidth: 380
       });
       osparc.utils.Utils.setIdToWidget(createAccountWindow, "createAccountWindow");
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      const vendor = osparc.store.VendorInfo.getVendor();
       if ("invitation_url" in vendor) {
-        const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+        const displayName = osparc.store.StaticInfo.getDisplayName();
         let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
         message += "<br>";
         message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";

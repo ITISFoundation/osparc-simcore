@@ -91,8 +91,42 @@ qx.Class.define("osparc.store.Functions", {
       return osparc.data.Resources.fetch("functions", "create", params);
     },
 
+    curateOrderBy: function(orderBy) {
+      const curatedOrderBy = JSON.parse(orderBy);
+      switch (curatedOrderBy.field) {
+        case "last_change_date":
+          curatedOrderBy.field = "modified_at";
+          break;
+        case "creation_date":
+          curatedOrderBy.field = "created_at";
+          break;
+        case "name":
+          // stays the same
+          break;
+        default:
+          // only those three are supported
+          curatedOrderBy.field = "modified_at";
+      }
+      return JSON.stringify(curatedOrderBy);
+    },
+
     fetchFunctionsPaginated: function(params, options) {
+      if ("orderBy" in params["url"]) {
+        params["url"]["orderBy"] = this.curateOrderBy(params["url"]["orderBy"]);
+      }
       return osparc.data.Resources.fetch("functions", "getPage", params, options)
+        .then(response => {
+          const functions = response["data"];
+          functions.forEach(func => func["resourceType"] = "function");
+          return response;
+        });
+    },
+
+    searchFunctionsPaginated: function(params, options) {
+      if ("orderBy" in params["url"]) {
+        params["url"]["orderBy"] = this.curateOrderBy(params["url"]["orderBy"]);
+      }
+      return osparc.data.Resources.fetch("functions", "getPageSearch", params, options)
         .then(response => {
           const functions = response["data"];
           functions.forEach(func => func["resourceType"] = "function");
@@ -128,6 +162,65 @@ qx.Class.define("osparc.store.Functions", {
         .catch(error => {
           console.error("Error patching function:", error);
           throw error; // Rethrow the error to propagate it to the caller
+        });
+    },
+
+    __putCollaborator: function(functionData, gid, newPermissions) {
+      const params = {
+        url: {
+          "functionId": functionData["uuid"],
+          "gId": gid,
+        },
+        data: newPermissions
+      };
+      return osparc.data.Resources.fetch("functions", "putAccessRights", params)
+    },
+
+    addCollaborators: function(functionData, newCollaborators) {
+      const promises = [];
+      Object.keys(newCollaborators).forEach(gid => {
+        promises.push(this.__putCollaborator(functionData, gid, newCollaborators[gid]));
+      });
+      return Promise.all(promises)
+        .then(() => {
+          Object.keys(newCollaborators).forEach(gid => {
+            functionData["accessRights"][gid] = newCollaborators[gid];
+          });
+          functionData["lastChangeDate"] = new Date().toISOString();
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
+    },
+
+    updateCollaborator: function(functionData, gid, newPermissions) {
+      return this.__putCollaborator(functionData, gid, newPermissions)
+        .then(() => {
+          functionData["accessRights"][gid] = newPermissions;
+          functionData["lastChangeDate"] = new Date().toISOString();
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
+    },
+
+    removeCollaborator: function(functionData, gid) {
+      const params = {
+        url: {
+          "functionId": functionData["uuid"],
+          "gId": gid
+        }
+      };
+      return osparc.data.Resources.fetch("functions", "deleteAccessRights", params)
+        .then(() => {
+          delete functionData["accessRights"][gid];
+          functionData["lastChangeDate"] = new Date().toISOString();
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
         });
     },
 

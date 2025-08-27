@@ -52,6 +52,7 @@ async def create_project_conversation(
         project_uuid=project_uuid,
         name=name,
         type_=conversation_type,
+        extra_context={},
     )
 
 
@@ -72,7 +73,7 @@ async def list_project_conversations(
         project_id=project_uuid,
         permission="read",
     )
-    return await conversations_service.list_conversations_for_project(
+    return await conversations_service.list_project_conversations(
         app,
         project_uuid=project_uuid,
         offset=offset,
@@ -174,6 +175,7 @@ async def create_project_conversation_message(
     )
     return await conversations_service.create_message(
         app,
+        product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
         conversation_id=conversation_id,
@@ -228,6 +230,7 @@ async def update_project_conversation_message(
     )
     return await conversations_service.update_message(
         app,
+        product_name=product_name,
         project_id=project_uuid,
         conversation_id=conversation_id,
         message_id=message_id,
@@ -253,6 +256,7 @@ async def delete_project_conversation_message(
     )
     await conversations_service.delete_message(
         app,
+        product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
         conversation_id=conversation_id,

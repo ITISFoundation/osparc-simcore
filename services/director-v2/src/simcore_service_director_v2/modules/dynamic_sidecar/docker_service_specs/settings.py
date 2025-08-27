@@ -7,13 +7,13 @@ from models_library.basic_types import EnvVarKey, PortInt
 from models_library.boot_options import BootOption
 from models_library.docker import (
     DockerPlacementConstraint,
-    to_simcore_runtime_docker_label_key,
 )
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
 )
+from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from models_library.services_resources import (
     CPU_100_PERCENT,
     DEFAULT_SINGLE_SERVICE_NAME,

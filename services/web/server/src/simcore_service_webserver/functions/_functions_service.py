@@ -1,9 +1,11 @@
 from aiohttp import web
+from models_library.basic_types import IDStr
 from models_library.functions import (
     Function,
     FunctionClass,
     FunctionClassSpecificData,
     FunctionDB,
+    FunctionGroupAccessRights,
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
@@ -34,12 +36,15 @@ from models_library.functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
 from . import _functions_repository
+from ._functions_exceptions import FunctionGroupAccessRightsNotFoundError
 
 router = RPCRouter()
 
@@ -183,6 +188,10 @@ async def list_functions(
     product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
+    order_by: OrderBy | None = None,
+    filter_by_function_class: FunctionClass | None = None,
+    search_by_function_title: str | None = None,
+    search_by_multi_columns: str | None = None,
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
     returned_functions, page = await _functions_repository.list_functions(
         app=app,
@@ -190,6 +199,17 @@ async def list_functions(
         product_name=product_name,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
+        order_by=(
+            OrderBy(
+                field=IDStr("uuid") if order_by.field == "uid" else order_by.field,
+                direction=order_by.direction,
+            )
+            if order_by
+            else None
+        ),
+        filter_by_function_class=filter_by_function_class,
+        search_by_function_title=search_by_function_title,
+        search_by_multi_columns=search_by_multi_columns,
     )
     return [
         _decode_function(returned_function) for returned_function in returned_functions
@@ -435,6 +455,78 @@ async def get_function_user_permissions(
             write=False,
             execute=False,
         )
+    )
+
+
+async def list_function_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+) -> list[FunctionGroupAccessRights]:
+    access_rights_list = await _functions_repository.get_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_ids=[function_id],
+        object_type="function",
+    )
+
+    for object_id, access_rights in access_rights_list:
+        if object_id == function_id:
+            return access_rights
+
+    raise FunctionGroupAccessRightsNotFoundError(
+        function_id=function_id,
+        product_name=product_name,
+    )
+
+
+async def set_function_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    permissions: FunctionGroupAccessRights,
+) -> FunctionGroupAccessRights:
+    access_rights_list = await _functions_repository.set_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_ids=[function_id],
+        object_type="function",
+        permission_group_id=permissions.group_id,
+        read=permissions.read,
+        write=permissions.write,
+        execute=permissions.execute,
+    )
+    for object_id, access_rights in access_rights_list:
+        if object_id == function_id:
+            return access_rights
+
+    raise FunctionGroupAccessRightsNotFoundError(
+        product_name=product_name,
+        function_id=function_id,
+    )
+
+
+async def remove_function_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    permission_group_id: GroupID,
+) -> None:
+    await _functions_repository.remove_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_ids=[function_id],
+        object_type="function",
+        permission_group_id=permission_group_id,
     )
 
 

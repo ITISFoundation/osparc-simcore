@@ -11,11 +11,12 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.api_schemas_directorv2.services import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from models_library.docker import DockerNodeID, to_simcore_runtime_docker_label_key
+from models_library.docker import DockerNodeID
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkName
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
+from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from servicelib.utils import logged_gather
 from starlette import status
 from tenacity import TryAgain, retry
