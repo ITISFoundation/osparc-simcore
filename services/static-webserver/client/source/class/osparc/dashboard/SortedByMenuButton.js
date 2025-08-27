@@ -34,7 +34,6 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
     this.setMenu(sortedByMenu);
 
     const options = this.self().getSortByOptions();
-
     options.forEach((option, idx) => {
       const btn = new qx.ui.menu.Button();
       btn.btnId = option.id;
@@ -51,11 +50,6 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
 
       btn.addListener("execute", () => this.__buttonExecuted(btn));
     });
-
-    this.addListener("changeSort", e => {
-      const sort = e.getData();
-      this.__handelSortEvent(sort)
-    }, this);
   },
 
   statics: {
@@ -89,6 +83,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       },
       nullable: false,
       event: "changeSort",
+      apply: "__handelSortEvent",
     }
   },
 
