@@ -17,7 +17,11 @@ from models_library.functions import (
     FunctionClass,
     FunctionJobCollection,
     FunctionJobStatus,
+    RegisteredFunctionJob,
+    RegisteredFunctionJobPatch,
     RegisteredProjectFunctionJobPatch,
+    RegisteredSolverFunctionJobPatch,
+    SolverFunctionJob,
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
@@ -442,6 +446,49 @@ async def test_find_cached_function_jobs(
     "user_role",
     [UserRole.USER],
 )
+@pytest.mark.parametrize(
+    "function_job, patch",
+    [
+        (
+            ProjectFunctionJob(
+                function_uid=_faker.uuid4(),
+                title="Test Function Job",
+                description="A test function job",
+                project_job_id=None,
+                inputs=None,
+                outputs=None,
+                job_creation_task_id=None,
+            ),
+            RegisteredProjectFunctionJobPatch(
+                title=_faker.word(),
+                description=_faker.sentence(),
+                project_job_id=ProjectID(_faker.uuid4()),
+                job_creation_task_id=TaskID(_faker.uuid4()),
+                inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
+                outputs={"output1": _faker.word()},
+            ),
+        ),
+        (
+            SolverFunctionJob(
+                function_uid=_faker.uuid4(),
+                title="Test Function Job",
+                description="A test function job",
+                inputs=None,
+                outputs=None,
+                job_creation_task_id=None,
+                solver_job_id=None,
+            ),
+            RegisteredSolverFunctionJobPatch(
+                title=_faker.word(),
+                description=_faker.sentence(),
+                job_creation_task_id=TaskID(_faker.uuid4()),
+                inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
+                outputs={"output1": _faker.word()},
+                solver_job_id=_faker.uuid4(),
+            ),
+        ),
+    ],
+)
 async def test_patch_registered_function_jobs(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
@@ -451,40 +498,25 @@ async def test_patch_registered_function_jobs(
     osparc_product_name: ProductName,
     mock_function_factory: Callable[[FunctionClass], Function],
     clean_functions: None,
+    function_job: RegisteredFunctionJob,
+    patch: RegisteredFunctionJobPatch,
 ):
+    function = mock_function_factory(function_job.function_class)
 
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=function,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
 
-    function_job = ProjectFunctionJob(
-        function_uid=registered_function.uid,
-        title="Test Function Job",
-        description="A test function job",
-        project_job_id=None,
-        inputs=None,
-        outputs=None,
-        job_creation_task_id=None,
-    )
-
     # Register the function job
+    function_job.function_uid = registered_function.uid
     registered_job = await functions_rpc.register_function_job(
         rabbitmq_rpc_client=rpc_client,
         function_job=function_job,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
-    )
-
-    patch = RegisteredProjectFunctionJobPatch(
-        title=_faker.word(),
-        description=_faker.sentence(),
-        project_job_id=ProjectID(_faker.uuid4()),
-        job_creation_task_id=TaskID(_faker.uuid4()),
-        inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
-        outputs={"output1": _faker.word()},
     )
 
     registered_job = await functions_rpc.patch_registered_function_job(
@@ -494,13 +526,18 @@ async def test_patch_registered_function_jobs(
         product_name=osparc_product_name,
         registered_function_job_patch=patch,
     )
-    assert registered_job.function_class == FunctionClass.PROJECT
     assert registered_job.title == patch.title
     assert registered_job.description == patch.description
     assert registered_job.inputs == patch.inputs
     assert registered_job.outputs == patch.outputs
-    assert registered_job.job_creation_task_id == patch.job_creation_task_id
-    assert registered_job.project_job_id == patch.project_job_id
+    if isinstance(patch, RegisteredProjectFunctionJobPatch):
+        assert registered_job.function_class == FunctionClass.PROJECT
+        assert registered_job.job_creation_task_id == patch.job_creation_task_id
+        assert registered_job.project_job_id == patch.project_job_id
+    if isinstance(patch, RegisteredSolverFunctionJobPatch):
+        assert registered_job.function_class == FunctionClass.SOLVER
+        assert registered_job.job_creation_task_id == patch.job_creation_task_id
+        assert registered_job.solver_job_id == patch.solver_job_id
 
 
 @pytest.mark.parametrize(
