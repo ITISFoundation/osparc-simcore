@@ -32,12 +32,7 @@ from models_library.services_creation import CreateServiceMetricsAdditionalParam
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
-from servicelib.fastapi.long_running_tasks.client import (
-    BaseClient,
-    RPCClient,
-    periodic_task_result,
-)
-from servicelib.long_running_tasks.errors import TaskExceptionError
+from servicelib.fastapi.long_running_tasks.client import BaseClient, RPCClient
 from servicelib.long_running_tasks.models import LRTNamespace, TaskId
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -52,13 +47,17 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import long_running_tasks as sidecar_lrts
 from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
-from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
+from simcore_service_dynamic_sidecar.modules.outputs._manager import (
+    OutputsManager,
+    UploadPortsFailedError,
+)
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
     stop_after_delay,
     wait_fixed,
 )
+from utils import get_lrt_result
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -405,18 +404,29 @@ async def _debug_progress(
     print(f"{task_id} {percent} {message}")
 
 
-async def _assert_progress_finished(
-    last_progress_message: tuple[ProgressMessage, ProgressPercent] | None,
-) -> None:
-    async for attempt in AsyncRetrying(
-        stop=stop_after_delay(10),
-        wait=wait_fixed(0.1),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    ):
-        with attempt:
-            await asyncio.sleep(0)  # yield control to the event loop
-            assert last_progress_message == ("finished", 1.0)
+class _LastProgressMessageTracker:
+    def __init__(self) -> None:
+        self.last_progress_message: tuple[ProgressMessage, ProgressPercent] | None = (
+            None
+        )
+
+    async def __call__(
+        self, message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
+    ) -> None:
+        assert percent is not None
+        self.last_progress_message = (message, percent)
+        print(message, percent)
+
+    async def assert_progress_finished(self) -> None:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(10),
+            wait=wait_fixed(0.1),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+        ):
+            with attempt:
+                await asyncio.sleep(0)  # yield control to the event loop
+                assert self.last_progress_message == ("finished", 1.0)
 
 
 async def test_create_containers_task(
@@ -429,28 +439,21 @@ async def test_create_containers_task(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ) -> None:
-    last_progress_message: tuple[ProgressMessage, ProgressPercent] | None = None
+    last_progress_message_tracker = _LastProgressMessageTracker()
 
-    async def create_progress(
-        message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-    ) -> None:
-        nonlocal last_progress_message
-        assert percent is not None
-        last_progress_message = (message, percent)
-        print(message, percent)
-
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_create_service_containers_task(
             rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
-        progress_callback=create_progress,
-    ) as result:
-        assert shared_store.container_names == result
+        progress_callback=last_progress_message_tracker,
+    )
+    assert shared_store.container_names == result
 
-    await _assert_progress_finished(last_progress_message)
+    await last_progress_message_tracker.assert_progress_finished()
 
 
 async def test_pull_user_servcices_docker_images(
@@ -463,40 +466,35 @@ async def test_pull_user_servcices_docker_images(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ) -> None:
-    last_progress_message: tuple[ProgressMessage, ProgressPercent] | None = None
+    last_progress_message_tracker1 = _LastProgressMessageTracker()
 
-    async def create_progress(
-        message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-    ) -> None:
-        nonlocal last_progress_message
-        assert percent is not None
-        last_progress_message = (message, percent)
-        print(message, percent)
-
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_create_service_containers_task(
             rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
-        progress_callback=create_progress,
-    ) as result:
-        assert shared_store.container_names == result
+        progress_callback=last_progress_message_tracker1,
+    )
+    assert shared_store.container_names == result
 
-    await _assert_progress_finished(last_progress_message)
+    await last_progress_message_tracker1.assert_progress_finished()
 
-    async with periodic_task_result(
-        client=client,
+    last_progress_message_tracker2 = _LastProgressMessageTracker()
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_pull_user_services_docker_images_task(
             rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
-        progress_callback=_debug_progress,
-    ) as result:
-        assert result is None
-    await _assert_progress_finished(last_progress_message)
+        progress_callback=last_progress_message_tracker2,
+    )
+    assert result is None
+    await last_progress_message_tracker2.assert_progress_finished()
 
 
 async def test_create_containers_task_invalid_yaml_spec(
@@ -508,16 +506,16 @@ async def test_create_containers_task_invalid_yaml_spec(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
     with pytest.raises(InvalidComposeSpecError) as exec_info:
-        async with periodic_task_result(
-            client=client,
+        await get_lrt_result(
+            rpc_client,
+            lrt_namespace,
             task_id=await _get_task_id_create_service_containers_task(
                 rpc_client, node_id, lrt_namespace, "", mock_metrics_params
             ),
             task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=_FAST_STATUS_POLL,
             progress_callback=_debug_progress,
-        ):
-            pass
+        )
     assert "Provided yaml is not valid" in f"{exec_info.value}"
 
 
@@ -585,28 +583,30 @@ async def test_containers_down_after_starting(
     mocker: MockerFixture,
 ):
     # start containers
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_create_service_containers_task(
             rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as result:
-        assert shared_store.container_names == result
+    )
+    assert shared_store.container_names == result
 
     # put down containers
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_runs_docker_compose_down_task(
             rpc_client, node_id, lrt_namespace
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as result:
-        assert result is None
+    )
+    assert result is None
 
 
 async def test_containers_down_missing_spec(
@@ -616,16 +616,17 @@ async def test_containers_down_missing_spec(
     client: BaseClient,
     caplog_info_debug: pytest.LogCaptureFixture,
 ):
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_runs_docker_compose_down_task(
             rpc_client, node_id, lrt_namespace
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as result:
-        assert result is None
+    )
+    assert result is None
     assert "No compose-spec was found" in caplog_info_debug.text
 
 
@@ -636,16 +637,17 @@ async def test_container_restore_state(
     client: BaseClient,
     mock_data_manager: None,
 ):
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_state_restore_task(
             rpc_client, node_id, lrt_namespace
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as result:
-        assert isinstance(result, int)
+    )
+    assert isinstance(result, int)
 
 
 async def test_container_save_state(
@@ -655,14 +657,15 @@ async def test_container_save_state(
     client: BaseClient,
     mock_data_manager: None,
 ):
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_state_save_task(rpc_client, node_id, lrt_namespace),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as result:
-        assert isinstance(result, int)
+    )
+    assert isinstance(result, int)
 
 
 @pytest.mark.parametrize("inputs_pulling_enabled", [True, False])
@@ -679,16 +682,17 @@ async def test_container_pull_input_ports(
     if inputs_pulling_enabled:
         enable_inputs_pulling(app)
 
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_ports_inputs_pull_task(
             rpc_client, node_id, lrt_namespace, mock_port_keys
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as result:
-        assert result == (42 if inputs_pulling_enabled else 0)
+    )
+    assert result == (42 if inputs_pulling_enabled else 0)
 
 
 async def test_container_pull_output_ports(
@@ -699,16 +703,17 @@ async def test_container_pull_output_ports(
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_ports_outputs_pull_task(
             rpc_client, node_id, lrt_namespace, mock_port_keys
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as result:
-        assert result == 42
+    )
+    assert result == 42
 
 
 async def test_container_push_output_ports(
@@ -719,16 +724,17 @@ async def test_container_push_output_ports(
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_ports_outputs_push_task(
             rpc_client, node_id, lrt_namespace, mock_port_keys
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as result:
-        assert result is None
+    )
+    assert result is None
 
 
 async def test_container_push_output_ports_missing_node(
@@ -745,21 +751,21 @@ async def test_container_push_output_ports_missing_node(
         await outputs_manager.port_key_content_changed(port_key)
 
     async def _test_code() -> None:
-        async with periodic_task_result(
-            client=client,
+        await get_lrt_result(
+            rpc_client,
+            lrt_namespace,
             task_id=await _get_task_id_ports_outputs_push_task(
                 rpc_client, node_id, lrt_namespace, mock_port_keys
             ),
             task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=_FAST_STATUS_POLL,
             progress_callback=_debug_progress,
-        ):
-            pass
+        )
 
     if not mock_port_keys:
         await _test_code()
     else:
-        with pytest.raises(TaskExceptionError) as exec_info:
+        with pytest.raises(UploadPortsFailedError) as exec_info:
             await _test_code()
         assert f"the node id {missing_node_uuid} was not found" in f"{exec_info.value}"
 
@@ -774,31 +780,33 @@ async def test_containers_restart(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ):
-    async with periodic_task_result(
-        client=client,
+    container_names = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_create_service_containers_task(
             rpc_client, node_id, lrt_namespace, compose_spec, mock_metrics_params
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as container_names:
-        assert shared_store.container_names == container_names
+    )
+    assert shared_store.container_names == container_names
 
     assert container_names
 
     container_timestamps_before = await _get_container_timestamps(container_names)
 
-    async with periodic_task_result(
-        client=client,
+    result = await get_lrt_result(
+        rpc_client,
+        lrt_namespace,
         task_id=await _get_task_id_task_containers_restart_task(
             rpc_client, node_id, lrt_namespace
         ),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
         progress_callback=_debug_progress,
-    ) as result:
-        assert result is None
+    )
+    assert result is None
 
     container_timestamps_after = await _get_container_timestamps(container_names)
 
