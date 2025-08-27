@@ -143,26 +143,28 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
+      const height = isCompact ? 23 : 25;
 
       if (isCompact) {
         phoneNumber.set({
           margin: 0,
-          minWidth: 185,
-          maxHeight: 25
+          marginLeft: -1,
         });
       } else {
         phoneNumber.set({
           marginTop: 2,
           marginLeft: 2,
           marginRight: 2,
-          minWidth: 185,
-          maxHeight: 25
         })
       }
+      phoneNumber.set({
+        minWidth: 185,
+        maxHeight: height,
+      });
 
       if (itiInput) {
         itiInput.a.style["width"] = feedbackIcon.isVisible() ? "185px" : "215px";
-        itiInput.a.style["height"] = "25px";
+        itiInput.a.style["height"] = height + "px";
         itiInput.a.style["borderWidth"] = "0px";
         itiInput.a.style["backgroundColor"] = isCompact ? "transparent" : bgColor;
         itiInput.a.style["color"] = textColor;
