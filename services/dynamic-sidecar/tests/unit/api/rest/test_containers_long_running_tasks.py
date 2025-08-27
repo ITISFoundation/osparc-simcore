@@ -6,7 +6,6 @@ import asyncio
 import json
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
-from inspect import getmembers, isfunction
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
@@ -45,9 +44,9 @@ from servicelib.long_running_tasks.task import TaskRegistry
 from settings_library.rabbit import RabbitSettings
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
-from simcore_service_dynamic_sidecar.api.rest import containers_long_running_tasks
 from simcore_service_dynamic_sidecar.core.validation import InvalidComposeSpecError
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules import long_running_tasks as sidecar_lrts
 from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
@@ -92,17 +91,18 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
 
     TaskRegistry.register(_just_log_task)
 
-    # searching by name since all start with _task
-    tasks_names = [
-        x[0]
-        for x in getmembers(containers_long_running_tasks, isfunction)
-        if x[0].startswith("task")
-    ]
-
-    for task_name in tasks_names:
-        mocker.patch.object(
-            containers_long_running_tasks, task_name, new=_just_log_task
-        )
+    for task_name in [
+        sidecar_lrts.task_pull_user_servcices_docker_images.__name__,
+        sidecar_lrts.task_create_service_containers.__name__,
+        sidecar_lrts.task_runs_docker_compose_down.__name__,
+        sidecar_lrts.task_restore_state.__name__,
+        sidecar_lrts.task_save_state.__name__,
+        sidecar_lrts.task_ports_inputs_pull.__name__,
+        sidecar_lrts.task_ports_outputs_pull.__name__,
+        sidecar_lrts.task_ports_outputs_push.__name__,
+        sidecar_lrts.task_containers_restart.__name__,
+    ]:
+        mocker.patch.object(sidecar_lrts, task_name, new=_just_log_task)
 
     yield None
 
