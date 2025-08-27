@@ -16,12 +16,11 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.VendorInfo", {
-  extend: qx.core.Object,
-  type: "singleton",
+  type: "static",
 
-  members: {
+  statics: {
     __getFromStaticInfo: function(key, defaultValue) {
-      const staticValue = osparc.store.StaticInfo.getInstance().getValue(key);
+      const staticValue = osparc.store.StaticInfo.getValue(key);
       if (staticValue) {
         return staticValue;
       }
