@@ -44,7 +44,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       });
       // Sort by last modified date
       if (idx === options.length -1) {
-        this.__menuButton = btn;
+        this.__selectedMenuButton = btn;
         btn.setIcon("@FontAwesome5Solid/arrow-down/14");
       }
       sortedByMenu.add(btn);
@@ -61,11 +61,6 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
   },
 
   statics: {
-    DefaultSorting: {
-      field: "last_change_date",
-      direction: "desc"
-    },
-
     getSortByOptions: function() {
       return [{
         id: "name",
@@ -101,12 +96,13 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
   },
 
   members: {
-    __menuButton: null,
+    __selectedMenuButton: null,
+
     __buttonExecuted: function(btn) {
-      if (this.__menuButton) {
-        this.__menuButton.setIcon(null);
+      if (this.__selectedMenuButton) {
+        this.__selectedMenuButton.setIcon(null);
       }
-      this.__menuButton = btn;
+      this.__selectedMenuButton = btn;
       this.set({
         label: btn.getLabel(),
         icon: "@FontAwesome5Solid/chevron-down/10"
@@ -134,7 +130,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
     },
 
     __handelSortEvent: function({field, direction}) {
-      this.__menuButton.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
+      this.__selectedMenuButton.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
       this.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
       const sort = {
         field: field,
