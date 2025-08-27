@@ -314,7 +314,7 @@ async def _add_remove_buffer_instances(
                 subnet_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
                 iam_instance_profile=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
             ),
-            min_number_of_instances=num_to_start,
+            min_number_of_instances=1,  # NOTE: we want at least 1
             number_of_instances=num_to_start,
             max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
         )
