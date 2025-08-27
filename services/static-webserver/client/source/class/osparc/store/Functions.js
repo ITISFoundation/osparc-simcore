@@ -19,9 +19,6 @@ qx.Class.define("osparc.store.Functions", {
   type: "static",
 
   statics: {
-    __functions: null,
-    __functionsPromiseCached: null,
-
     __createFunctionData: function(templateData, name, description, defaultInputs = {}, exposedInputs = {}, exposedOutputs = {}) {
       const functionData = {
         "projectId": templateData["uuid"],
@@ -222,13 +219,6 @@ qx.Class.define("osparc.store.Functions", {
           osparc.FlashMessenger.logError(err);
           throw err;
         });
-    },
-
-    invalidateFunctions: function() {
-      this.__functions = null;
-      if (this.__functionsPromiseCached) {
-        this.__functionsPromiseCached = null;
-      }
     },
   }
 });
