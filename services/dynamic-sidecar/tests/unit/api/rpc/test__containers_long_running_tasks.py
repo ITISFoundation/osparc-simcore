@@ -282,7 +282,7 @@ async def _get_task_id_create_service_containers_task(
     containers_compose_spec = ContainersComposeSpec(
         docker_compose_yaml=compose_spec,
     )
-    await containers.store_compose_spec(
+    await containers.create_compose_spec(
         rpc_client, node_id=node_id, containers_compose_spec=containers_compose_spec
     )
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)

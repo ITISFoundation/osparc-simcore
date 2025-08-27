@@ -11,7 +11,7 @@ from ..modules.mounted_fs import MountedVolumes
 _logger = logging.getLogger(__name__)
 
 
-async def store_compose_spec(
+async def create_compose_spec(
     app: FastAPI,
     containers_compose_spec: ContainersComposeSpec,
 ):

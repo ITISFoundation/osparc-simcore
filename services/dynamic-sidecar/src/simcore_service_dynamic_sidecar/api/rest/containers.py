@@ -63,7 +63,7 @@ async def store_compose_spec(
     """
     _ = request
 
-    return await containers.store_compose_spec(
+    return await containers.create_compose_spec(
         app=request.app, containers_compose_spec=containers_compose_spec
     )
 

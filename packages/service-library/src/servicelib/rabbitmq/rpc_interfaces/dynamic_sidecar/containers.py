@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def store_compose_spec(
+async def create_compose_spec(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -22,7 +22,7 @@ async def store_compose_spec(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("store_compose_spec"),
+        TypeAdapter(RPCMethodName).validate_python("create_compose_spec"),
         containers_compose_spec=containers_compose_spec,
     )
     assert result is None  # nosec
