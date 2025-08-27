@@ -364,7 +364,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                         result_field = ResultField(
                             str_error=dumps(
                                 TaskRaisedUnserializableError(
-                                    task_id=task_id, exception=serialization_error
+                                    task_id=task_id,
+                                    exception=serialization_error,
+                                    original_exception_str=f"{e}",
                                 )
                             )
                         )

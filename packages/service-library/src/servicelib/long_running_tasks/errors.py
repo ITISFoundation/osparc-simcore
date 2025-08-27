@@ -36,7 +36,9 @@ class TaskExceptionError(BaseLongRunningError):
 
 class TaskRaisedUnserializableError(BaseLongRunningError):
     msg_template: str = (
-        "Task {task_id} finished with an unserializable exception: '{exception}'"
+        "Task {task_id} raised an exception that could not be serialized.\n"
+        "Original exception: '{original_exception_str}'\n"
+        "As a consequence, the following error was raised: '{exception}'"
     )
 
 
