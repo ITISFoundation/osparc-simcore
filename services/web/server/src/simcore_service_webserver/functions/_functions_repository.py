@@ -240,17 +240,8 @@ async def patch_function_job(  # noqa: PLR0913
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_uuid: FunctionJobID,
-    title: str | None,
-    description: str | None,
-    **class_specific_data: FunctionJobClassSpecificData | None,
+    registered_function_job_db: RegisteredFunctionJobDB,
 ) -> RegisteredFunctionJobDB:
-
-    update_params = {
-        "title": title,
-        "description": description,
-        "class_specific_data": class_specific_data,
-    }
 
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
@@ -264,10 +255,15 @@ async def patch_function_job(  # noqa: PLR0913
         )
         result = await transaction.execute(
             function_jobs_table.update()
-            .where(function_jobs_table.c.uuid == function_job_uuid)
+            .where(function_jobs_table.c.uuid == registered_function_job_db.uuid)
             .values(
+                inputs=registered_function_job_db.inputs,
+                outputs=registered_function_job_db.outputs,
+                function_class=registered_function_job_db.function_class,
+                class_specific_data=registered_function_job_db.class_specific_data,
+                title=registered_function_job_db.title,
+                description=registered_function_job_db.description,
                 status="created",
-                **{k: v for k, v in update_params.items() if v is not None},
             )
             .returning(*_FUNCTION_JOBS_TABLE_COLS)
         )

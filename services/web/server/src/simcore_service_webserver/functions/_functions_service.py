@@ -45,7 +45,10 @@ from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
 from . import _functions_repository
-from ._functions_exceptions import FunctionGroupAccessRightsNotFoundError
+from ._functions_exceptions import (
+    FunctionGroupAccessRightsNotFoundError,
+    IncompatiblePatchModelError,
+)
 
 router = RPCRouter()
 
@@ -110,6 +113,13 @@ async def patch_registered_function_job(
         product_name=product_name,
         function_job_id=function_job_uuid,
     )
+    if job.function_class != registered_function_job_patch.function_class:
+        raise IncompatiblePatchModelError(
+            function_id=job.function_uuid,
+            product_name=product_name,
+        )
+
+    patched_job = _patch_functionjob(job, registered_function_job_patch)
 
     await _functions_repository.patch_function_job(
         app=app,
@@ -781,3 +791,62 @@ def _decode_functionjob(
     raise UnsupportedFunctionJobClassError(
         function_job_class=functionjob_db.function_class
     )
+
+
+def _patch_functionjob(
+    function_job_db: RegisteredFunctionJobDB,
+    patch: RegisteredFunctionJobPatch,
+) -> RegisteredFunctionJobDB:
+    if function_job_db.function_class == FunctionClass.PROJECT:
+        assert patch.function_class == FunctionClass.PROJECT  # nosec
+        return RegisteredFunctionJobDB(
+            function_class=FunctionClass.PROJECT,
+            function_uuid=function_job_db.function_uuid,
+            title=patch.title or function_job_db.title,
+            uuid=function_job_db.uuid,
+            description=patch.description or function_job_db.description,
+            inputs=function_job_db.inputs,
+            outputs=function_job_db.outputs,
+            created=function_job_db.created,
+            class_specific_data=FunctionClassSpecificData(
+                project_job_id=patch.project_job_id
+                or function_job_db.class_specific_data.get("project_job_id"),
+                job_creation_task_id=patch.job_creation_task_id
+                or function_job_db.class_specific_data.get("job_creation_task_id"),
+            ),
+        )
+    elif function_job_db.function_class == FunctionClass.SOLVER:
+        assert patch.function_class == FunctionClass.SOLVER  # nosec
+        return RegisteredFunctionJobDB(
+            function_class=FunctionClass.SOLVER,
+            function_uuid=function_job_db.function_uuid,
+            title=patch.title or function_job_db.title,
+            uuid=function_job_db.uuid,
+            description=patch.description or function_job_db.description,
+            inputs=function_job_db.inputs,
+            outputs=function_job_db.outputs,
+            created=function_job_db.created,
+            class_specific_data=FunctionClassSpecificData(
+                solver_job_id=patch.solver_job_id
+                or function_job_db.class_specific_data.get("solver_job_id"),
+                job_creation_task_id=patch.job_creation_task_id
+                or function_job_db.class_specific_data.get("job_creation_task_id"),
+            ),
+        )
+    elif function_job_db.function_class == FunctionClass.PYTHON_CODE:
+        assert patch.function_class == FunctionClass.PYTHON_CODE  # nosec
+        return RegisteredFunctionJobDB(
+            function_class=FunctionClass.PYTHON_CODE,
+            function_uuid=function_job_db.function_uuid,
+            title=patch.title or function_job_db.title,
+            uuid=function_job_db.uuid,
+            description=patch.description or function_job_db.description,
+            inputs=function_job_db.inputs,
+            outputs=function_job_db.outputs,
+            created=function_job_db.created,
+            class_specific_data=function_job_db.class_specific_data,
+        )
+    else:
+        raise UnsupportedFunctionJobClassError(
+            function_job_class=function_job_db.function_class
+        )
