@@ -419,9 +419,8 @@ async def test_get_result_finished_with_unpicklable_error(
         task_id, with_task_context=empty_context
     )
     assert result.str_error is not None  # nosec
-    error = loads(result.str_error)
     with pytest.raises(TaskRaisedUnserializableError, match="cannot pickle"):
-        raise error
+        loads(result.str_error)
 
 
 async def test_cancel_task_from_different_manager(
