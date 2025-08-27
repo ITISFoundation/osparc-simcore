@@ -110,12 +110,14 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
 
 
 @asynccontextmanager
-async def auto_remove_task(client: HttpClient, task_id: TaskId) -> AsyncIterator[None]:
+async def auto_remove_task(
+    http_client: HttpClient, task_id: TaskId
+) -> AsyncIterator[None]:
     """clenup pending tasks"""
     try:
         yield
     finally:
-        await client.remove_task(task_id, timeout=10)
+        await http_client.remove_task(task_id, timeout=10)
 
 
 async def _get_container_timestamps(
@@ -225,7 +227,7 @@ async def httpx_async_client(
 
 
 @pytest.fixture
-def client(
+def http_client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
 ) -> HttpClient:
     return HttpClient(
@@ -275,17 +277,17 @@ def mock_nodeports(mocker: MockerFixture) -> None:
     ]
 )
 async def mock_port_keys(
-    request: pytest.FixtureRequest, client: HttpClient
+    request: pytest.FixtureRequest, http_client: HttpClient
 ) -> list[str] | None:
-    outputs_context: OutputsContext = client.app.state.outputs_context
+    outputs_context: OutputsContext = http_client.app.state.outputs_context
     if request.param is not None:
         await outputs_context.set_file_type_port_keys(request.param)
     return request.param
 
 
 @pytest.fixture
-def outputs_manager(client: HttpClient) -> OutputsManager:
-    return client.app.state.outputs_manager
+def outputs_manager(http_client: HttpClient) -> OutputsManager:
+    return http_client.app.state.outputs_manager
 
 
 @pytest.fixture
@@ -430,7 +432,7 @@ async def _assert_progress_finished(
 
 async def test_create_containers_task(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -447,7 +449,7 @@ async def test_create_containers_task(
         print(message, percent)
 
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -462,7 +464,7 @@ async def test_create_containers_task(
 
 async def test_pull_user_servcices_docker_images(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -479,7 +481,7 @@ async def test_pull_user_servcices_docker_images(
         print(message, percent)
 
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -492,7 +494,7 @@ async def test_pull_user_servcices_docker_images(
     await _assert_progress_finished(last_progress_message)
 
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_pull_user_servcices_docker_images(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -506,13 +508,13 @@ async def test_pull_user_servcices_docker_images(
 
 async def test_create_containers_task_invalid_yaml_spec(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
     with pytest.raises(InvalidComposeSpecError) as exec_info:
         async with periodic_task_result(
-            client=client,
+            client=http_client,
             task_id=await _get_task_id_create_service_containers(
                 httpx_async_client, "", mock_metrics_params
             ),
@@ -540,7 +542,7 @@ async def test_create_containers_task_invalid_yaml_spec(
 )
 async def test_same_task_id_is_returned_if_task_exists(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable],
     mock_stop_heart_beat_task: AsyncMock,
@@ -559,7 +561,7 @@ async def test_same_task_id_is_returned_if_task_exists(
     with mock_tasks(mocker):
         task_id = await _get_awaitable()
         assert task_id.endswith("unique")
-        async with auto_remove_task(client, task_id):
+        async with auto_remove_task(http_client, task_id):
             assert await _get_awaitable() == task_id
 
         # since the previous task was already removed it is again possible
@@ -567,14 +569,14 @@ async def test_same_task_id_is_returned_if_task_exists(
         new_task_id = await _get_awaitable()
         assert new_task_id.endswith("unique")
         assert new_task_id == task_id
-        async with auto_remove_task(client, task_id):
+        async with auto_remove_task(http_client, task_id):
             pass
 
 
 async def test_containers_down_after_starting(
     mock_ensure_read_permissions_on_user_service_data: None,
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -584,7 +586,7 @@ async def test_containers_down_after_starting(
 ):
     # start containers
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -596,7 +598,7 @@ async def test_containers_down_after_starting(
 
     # put down containers
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_docker_compose_down(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
@@ -607,11 +609,11 @@ async def test_containers_down_after_starting(
 
 async def test_containers_down_missing_spec(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     caplog_info_debug: pytest.LogCaptureFixture,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_docker_compose_down(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
@@ -622,10 +624,10 @@ async def test_containers_down_missing_spec(
 
 
 async def test_container_restore_state(
-    httpx_async_client: AsyncClient, client: HttpClient, mock_data_manager: None
+    httpx_async_client: AsyncClient, http_client: HttpClient, mock_data_manager: None
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_state_restore(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
@@ -635,10 +637,10 @@ async def test_container_restore_state(
 
 
 async def test_container_save_state(
-    httpx_async_client: AsyncClient, client: HttpClient, mock_data_manager: None
+    httpx_async_client: AsyncClient, http_client: HttpClient, mock_data_manager: None
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_state_save(httpx_async_client),
         task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=FAST_STATUS_POLL,
@@ -650,7 +652,7 @@ async def test_container_save_state(
 @pytest.mark.parametrize("inputs_pulling_enabled", [True, False])
 async def test_container_pull_input_ports(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     inputs_pulling_enabled: bool,
     app: FastAPI,
     mock_port_keys: list[str] | None,
@@ -660,7 +662,7 @@ async def test_container_pull_input_ports(
         enable_inputs_pulling(app)
 
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_task_ports_inputs_pull(
             httpx_async_client, mock_port_keys
         ),
@@ -673,12 +675,12 @@ async def test_container_pull_input_ports(
 
 async def test_container_pull_output_ports(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_task_ports_outputs_pull(
             httpx_async_client, mock_port_keys
         ),
@@ -691,12 +693,12 @@ async def test_container_pull_output_ports(
 
 async def test_container_push_output_ports(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_task_ports_outputs_push(
             httpx_async_client, mock_port_keys
         ),
@@ -709,7 +711,7 @@ async def test_container_push_output_ports(
 
 async def test_container_push_output_ports_missing_node(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     mock_port_keys: list[str] | None,
     missing_node_uuid: str,
     mock_node_missing: None,
@@ -720,7 +722,7 @@ async def test_container_push_output_ports_missing_node(
 
     async def _test_code() -> None:
         async with periodic_task_result(
-            client=client,
+            client=http_client,
             task_id=await _get_task_id_task_ports_outputs_push(
                 httpx_async_client, mock_port_keys
             ),
@@ -740,14 +742,14 @@ async def test_container_push_output_ports_missing_node(
 
 async def test_containers_restart(
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     compose_spec: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -762,7 +764,7 @@ async def test_containers_restart(
     container_timestamps_before = await _get_container_timestamps(container_names)
 
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_task_containers_restart(
             httpx_async_client, DEFAULT_COMMAND_TIMEOUT
         ),
