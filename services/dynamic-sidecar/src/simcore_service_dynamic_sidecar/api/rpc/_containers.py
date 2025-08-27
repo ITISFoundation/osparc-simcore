@@ -9,7 +9,7 @@ router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=(InvalidComposeSpecError,))
-async def store_compose_spec(
+async def create_compose_spec(
     app: FastAPI,
     *,
     containers_compose_spec: ContainersComposeSpec,
