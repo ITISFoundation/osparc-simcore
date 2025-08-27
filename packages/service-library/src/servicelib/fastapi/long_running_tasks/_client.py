@@ -218,7 +218,7 @@ class HttpClient(BaseClient):
         return f"{url}"
 
     @retry_on_http_errors
-    async def get_task_status(
+    async def get_task_status(  # type:ignore[override]
         self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
     ) -> TaskStatus:
         timeout = timeout or self._client_configuration.default_timeout
@@ -237,7 +237,7 @@ class HttpClient(BaseClient):
         return TaskStatus.model_validate(result.json())
 
     @retry_on_http_errors
-    async def get_task_result(
+    async def get_task_result(  # type:ignore[override]
         self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
     ) -> Any | None:
         timeout = timeout or self._client_configuration.default_timeout
@@ -256,7 +256,7 @@ class HttpClient(BaseClient):
         return result.json()
 
     @retry_on_http_errors
-    async def remove_task(
+    async def remove_task(  # type:ignore[override]
         self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
     ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
