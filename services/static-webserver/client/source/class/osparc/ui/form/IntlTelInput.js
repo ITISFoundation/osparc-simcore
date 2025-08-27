@@ -36,28 +36,11 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     });
 
     const randId = Math.floor(Math.random() * 100);
-    const html = `<input type='tel' id='phone-${randId}' name='phone' autocomplete='off'>`;
+    this.__htmlId = `phone-${randId}`;
+    const html = `<input type='tel' id='${this.__htmlId}' name='phone' autocomplete='off'>`;
     const phoneNumber = this.getChildControl("phone-input-field");
     phoneNumber.setHtml(html);
-    phoneNumber.addListenerOnce("appear", () => {
-      const convertInputToPhoneInput = () => {
-        const domElement = document.querySelector(`#phone-${randId}`);
-        this.__itiInput = this.__inputToPhoneInput(domElement);
-        phoneNumber.getContentElement().setStyles({
-          "overflow": "visible" // needed for countries dropdown menu
-        });
-      };
-      const intlTelInputLib = osparc.wrapper.IntlTelInput.getInstance();
-      if (intlTelInputLib.getLibReady()) {
-        convertInputToPhoneInput();
-      } else {
-        intlTelInputLib.addListenerOnce("changeLibReady", e => {
-          if (e.getData()) {
-            convertInputToPhoneInput();
-          }
-        });
-      }
-    });
+    phoneNumber.addListenerOnce("appear", () => this.__convertInputToPhoneInput(), this);
   },
 
   properties: {
@@ -86,6 +69,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
   },
 
   members: {
+    __htmlId: null,
     __itiInput: null,
 
     _createChildControlImpl: function(id) {
@@ -157,6 +141,28 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         });
       }
       this.self().updateStyle(this.__itiInput, feedbackIcon);
+    },
+
+    __convertInputToPhoneInput: function() {
+      const convertInputToPhoneInput = () => {
+        const domElement = document.querySelector(`#${this.__htmlId}`);
+        const phoneNumber = this.getChildControl("phone-input-field");
+        this.__itiInput = this.__inputToPhoneInput(domElement);
+        phoneNumber.getContentElement().setStyles({
+          "overflow": "visible" // needed for countries dropdown menu
+        });
+      };
+
+      const intlTelInputLib = osparc.wrapper.IntlTelInput.getInstance();
+      if (intlTelInputLib.getLibReady()) {
+        convertInputToPhoneInput();
+      } else {
+        intlTelInputLib.addListenerOnce("changeLibReady", e => {
+          if (e.getData()) {
+            convertInputToPhoneInput();
+          }
+        });
+      }
     },
 
     __inputToPhoneInput: function(input) {
