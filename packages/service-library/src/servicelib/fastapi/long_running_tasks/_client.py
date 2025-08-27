@@ -1,9 +1,7 @@
 import asyncio
 import functools
 import logging
-from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
-from datetime import timedelta
 from typing import Any, Final
 
 from fastapi import FastAPI, status
@@ -15,15 +13,8 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from ...long_running_tasks import lrt_api
 from ...long_running_tasks.errors import GenericClientError
-from ...long_running_tasks.models import (
-    ClientConfiguration,
-    LRTNamespace,
-    TaskId,
-    TaskStatus,
-)
-from ...rabbitmq._client_rpc import RabbitMQRPCClient
+from ...long_running_tasks.models import ClientConfiguration, TaskId, TaskStatus
 
 _DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 
@@ -97,7 +88,7 @@ def retry_on_http_errors(
     assert asyncio.iscoroutinefunction(request_func)
 
     @functools.wraps(request_func)
-    async def request_wrapper(zelf: "BaseClient", *args, **kwargs) -> Any:
+    async def request_wrapper(zelf: "HttpClient", *args, **kwargs) -> Any:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(max_attempt_number=3),
             wait=wait_exponential(min=1),
@@ -115,79 +106,7 @@ def retry_on_http_errors(
     return request_wrapper
 
 
-class BaseClient(ABC):
-
-    @property
-    @abstractmethod
-    def external_reference(self) -> str:
-        pass
-
-    @abstractmethod
-    async def get_task_status(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
-    ) -> TaskStatus:
-        pass
-
-    @abstractmethod
-    async def get_task_result(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
-    ) -> Any | None:
-        pass
-
-    @abstractmethod
-    async def remove_task(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
-    ) -> None:
-        pass
-
-
-class RPCClient(BaseClient):
-    def __init__(
-        self, rabbitmq_rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
-    ):
-        self._rpc_client = rabbitmq_rpc_client
-        self._lrt_namespace = lrt_namespace
-
-    @property
-    def external_reference(self) -> str:
-        return f"LRT_NAMESPACE:{self._lrt_namespace}"
-
-    async def get_task_status(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
-    ) -> TaskStatus:
-        _ = timeout
-        return await lrt_api.get_task_status(
-            self._rpc_client, self._lrt_namespace, {}, task_id
-        )
-
-    async def get_task_result(
-        self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
-    ) -> Any | None:
-        _ = timeout
-        return await lrt_api.get_task_result(
-            self._rpc_client, self._lrt_namespace, {}, task_id
-        )
-
-    async def remove_task(
-        self,
-        task_id: TaskId,
-        *,
-        timeout: PositiveFloat | None = None,  # noqa: ASYNC109
-        wait_for_removal: bool = True,
-        cancellation_timeout: timedelta | None = None,
-    ) -> None:
-        _ = timeout
-        return await lrt_api.remove_task(
-            self._rpc_client,
-            self._lrt_namespace,
-            {},
-            task_id,
-            wait_for_removal=wait_for_removal,
-            cancellation_timeout=cancellation_timeout,
-        )
-
-
-class HttpClient(BaseClient):
+class HttpClient:
     """
     This is a client that aims to simplify the requests to get the
     status, result and/or cancel of a long running task.

@@ -13,9 +13,7 @@ from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.client import (
-    BaseClient,
     HttpClient,
-    RPCClient,
     periodic_task_result,
 )
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
@@ -48,7 +46,7 @@ TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
 
 async def _assert_task_removed(
-    base_client: BaseClient, task_id: TaskId, router_prefix: str
+    base_client: HttpClient, task_id: TaskId, router_prefix: str
 ) -> None:
     with pytest.raises(
         (GenericClientError, TaskNotFoundError), match=f"No task with {task_id} found"
@@ -139,28 +137,10 @@ def mock_task_id() -> TaskId:
     return TypeAdapter(TaskId).validate_python("fake_task_id")
 
 
-@pytest.fixture(params=[RPCClient.__name__, HttpClient.__name__])
-def base_client(
-    request: pytest.FixtureRequest, bg_task_app: FastAPI, async_client: AsyncClient
-) -> BaseClient:
-    match request.param:
-        case RPCClient.__name__:
-            long_running_manager: FastAPILongRunningManager = (
-                bg_task_app.state.long_running_manager
-            )
-            return RPCClient(
-                long_running_manager.rpc_client, long_running_manager.lrt_namespace
-            )
-        case HttpClient.__name__:
-            url = TypeAdapter(AnyHttpUrl).validate_python(
-                "http://backgroud.testserver.io/"
-            )
-            return HttpClient(
-                app=bg_task_app, async_client=async_client, base_url=f"{url}"
-            )
-        case _:
-            msg = f"Client {request.param} not implemented"
-            raise NotImplementedError(msg)
+@pytest.fixture()
+def base_client(bg_task_app: FastAPI, async_client: AsyncClient) -> HttpClient:
+    url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
+    return HttpClient(app=bg_task_app, async_client=async_client, base_url=f"{url}")
 
 
 async def _create_and_get_taskid(async_client: AsyncClient, *, endpoint: str) -> TaskId:
@@ -172,7 +152,7 @@ async def _create_and_get_taskid(async_client: AsyncClient, *, endpoint: str) ->
 
 async def test_task_result(
     async_client: AsyncClient,
-    base_client: BaseClient,
+    base_client: HttpClient,
     router_prefix: str,
 ) -> None:
     task_id = await _create_and_get_taskid(async_client, endpoint="success")
@@ -190,7 +170,7 @@ async def test_task_result(
 
 async def test_task_result_times_out(
     async_client: AsyncClient,
-    base_client: BaseClient,
+    base_client: HttpClient,
     router_prefix: str,
 ) -> None:
     task_id = await _create_and_get_taskid(async_client, endpoint="success")
@@ -215,7 +195,7 @@ async def test_task_result_times_out(
 async def test_task_result_task_result_is_an_error(
     bg_task_app: FastAPI,
     async_client: AsyncClient,
-    base_client: BaseClient,
+    base_client: HttpClient,
     router_prefix: str,
 ) -> None:
     task_id = await _create_and_get_taskid(async_client, endpoint="failing")
