@@ -81,7 +81,7 @@ def mock_fogbugz_api(fake_api_base_url: str) -> Iterator[respx.MockRouter]:
         yield mock
 
 
-async def test_testit(
+async def test_fogubugz_client(
     app_environment: EnvVarsDict,
     client: TestClient,
     mock_fogbugz_api: respx.MockRouter,

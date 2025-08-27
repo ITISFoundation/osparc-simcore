@@ -11,6 +11,6 @@ class FogbugzSettings(BaseCustomSettings):
 
 def get_plugin_settings(app: web.Application) -> FogbugzSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_FOGBUGZ
-    assert settings, "setup_settings not called?"  # nosec
+    assert settings, "plugin.setup_fogbugz not called?"  # nosec
     assert isinstance(settings, FogbugzSettings)  # nosec
     return settings

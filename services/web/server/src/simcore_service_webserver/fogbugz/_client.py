@@ -13,7 +13,7 @@ from pydantic import AnyUrl, BaseModel, Field, SecretStr
 
 from ..products import products_service
 from ..products.models import Product
-from .settings import FogbugzSettings, get_plugin_settings
+from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -164,11 +164,7 @@ _APP_KEY = f"{__name__}.{FogbugzRestClient.__name__}"
 
 async def setup_fogbugz_rest_client(app: web.Application) -> None:
     """Setup Fogbugz REST client"""
-    settings: FogbugzSettings | None = get_plugin_settings(app)
-
-    if settings is None:
-        _logger.warning("Fogbugz settings not configured, skipping setup")
-        return
+    settings = get_plugin_settings(app)
 
     # Fail fast if unexpected configuration
     products: list[Product] = products_service.list_products(app=app)
