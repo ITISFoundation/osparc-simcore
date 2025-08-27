@@ -41,6 +41,9 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     const phoneNumber = this.getChildControl("phone-input-field");
     phoneNumber.setHtml(html);
     phoneNumber.addListenerOnce("appear", () => this.__convertInputToPhoneInput(), this);
+
+    const themeManager = qx.theme.manager.Meta.getInstance();
+    themeManager.addListener("changeTheme", () => this.__updateStyle());
   },
 
   properties: {
@@ -50,21 +53,13 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
       nullable: true,
       event: "changeValue",
       apply: "_applyValue"
-    }
-  },
+    },
 
-  statics: {
-    updateStyle: function(itiInput, checkIcon) {
-      const textColor = qx.theme.manager.Color.getInstance().resolve("text");
-      const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
-      itiInput.a.style["width"] = checkIcon && checkIcon.isVisible() ? "185px" : "215px";
-      itiInput.a.style["height"] = "26px";
-      itiInput.a.style["borderWidth"] = "0px";
-      itiInput.a.style["backgroundColor"] = bgColor;
-      itiInput.a.style["color"] = textColor;
-
-      document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
-      document.documentElement.style.setProperty('--country-list-dropdown-text', textColor);
+    compactField: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "__updateStyle",
     }
   },
 
@@ -76,19 +71,14 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
       let control;
       switch (id) {
         case "phone-input-field":
-          control = new qx.ui.embed.Html().set({
-            marginTop: 2,
-            marginLeft: 2,
-            marginRight: 2,
-            minWidth: 185,
-            maxHeight: 25
-          });
+          control = new qx.ui.embed.Html();
           this._add(control, { flex: 1 });
           break;
         case "feedback-icon":
           control = new qx.ui.basic.Image();
+          control.exclude();
           this._add(control);
-          break
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -121,6 +111,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
     verifyPhoneNumber: function() {
       const feedbackIcon = this.getChildControl("feedback-icon");
+      feedbackIcon.show();
       const isValid = this.isValidNumber();
       feedbackIcon.set({
         toolTipText: "E.164: " + this.getValue(),
@@ -141,7 +132,44 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
           toolTipText: errorMsg + ". " + feedbackIcon.getToolTipText()
         });
       }
-      this.self().updateStyle(this.__itiInput, feedbackIcon);
+      this.__updateStyle();
+    },
+
+    __updateStyle: function() {
+      const phoneNumber = this.getChildControl("phone-input-field");
+      const itiInput = this.__itiInput;
+      const feedbackIcon = this.getChildControl("feedback-icon");
+      const isCompact = this.isCompactField();
+
+      const textColor = qx.theme.manager.Color.getInstance().resolve("text");
+      const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
+
+      if (isCompact) {
+        phoneNumber.set({
+          margin: 0,
+          minWidth: 185,
+          maxHeight: 25
+        });
+      } else {
+        phoneNumber.set({
+          marginTop: 2,
+          marginLeft: 2,
+          marginRight: 2,
+          minWidth: 185,
+          maxHeight: 25
+        })
+      }
+
+      if (itiInput) {
+        itiInput.a.style["width"] = feedbackIcon.isVisible() ? "185px" : "215px";
+        itiInput.a.style["height"] = "25px";
+        itiInput.a.style["borderWidth"] = "0px";
+        itiInput.a.style["backgroundColor"] = isCompact ? "transparent" : bgColor;
+        itiInput.a.style["color"] = textColor;
+      }
+
+      document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
+      document.documentElement.style.setProperty('--country-list-dropdown-text', textColor);
     },
 
     __convertInputToPhoneInput: function() {
@@ -152,6 +180,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         phoneNumber.getContentElement().setStyles({
           "overflow": "visible" // needed for countries dropdown menu
         });
+        this.__updateStyle();
       };
 
       const intlTelInputLib = osparc.wrapper.IntlTelInput.getInstance();
@@ -178,9 +207,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         preferredCountries: [],
         dropdownContainer: document.body,
       });
-      const themeManager = qx.theme.manager.Meta.getInstance();
-      themeManager.addListener("changeTheme", () => this.self().updateStyle(iti));
-      this.self().updateStyle(iti);
+      this.__updateStyle();
       return iti;
     }
   }
