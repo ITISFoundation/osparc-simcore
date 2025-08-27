@@ -18,6 +18,7 @@ from models_library.functions import (
     Function,
     FunctionClass,
     FunctionUserAccessRights,
+    RegisteredFunction,
     SolverFunction,
 )
 from models_library.functions_errors import (
@@ -362,16 +363,19 @@ async def test_list_functions_with_pagination_ordering(
 async def test_list_functions_search(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
-    mock_function_factory: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], ProjectFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
 ):
-    mock_function_dummy1 = mock_function_factory.copy()
+    function = mock_function_factory(FunctionClass.PROJECT)
+    assert function.function_class == FunctionClass.PROJECT
+
+    mock_function_dummy1 = function.model_copy()
     mock_function_dummy1.title = "Function TitleDummy1"
     mock_function_dummy1.description = "Function DescriptionDummy1"
 
-    mock_function_dummy2 = mock_function_factory.copy()
+    mock_function_dummy2 = function.model_copy()
     mock_function_dummy2.title = "Function TitleDummy2"
     mock_function_dummy2.description = "Function DescriptionDummy2"
 
@@ -439,7 +443,7 @@ async def test_list_functions_search(
 async def test_list_functions_with_filters(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
-    mock_function_factory: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], ProjectFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
@@ -450,7 +454,7 @@ async def test_list_functions_with_filters(
     registered_functions = [
         await functions_rpc.register_function(
             rabbitmq_rpc_client=rpc_client,
-            function=mock_function_factory,
+            function=mock_function_factory(FunctionClass.PROJECT),
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
@@ -509,7 +513,7 @@ async def test_list_functions_with_filters(
 async def test_update_function_title(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
-    mock_function_factory: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
@@ -518,7 +522,7 @@ async def test_update_function_title(
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function_factory,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -560,7 +564,7 @@ async def test_update_function_title(
 async def test_update_function_description(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
-    mock_function_factory: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
@@ -568,7 +572,7 @@ async def test_update_function_description(
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function_factory,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -598,7 +602,7 @@ async def test_update_function_description(
 async def test_get_function_input_schema(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
-    mock_function_factory: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
@@ -606,7 +610,7 @@ async def test_get_function_input_schema(
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function_factory,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -631,7 +635,7 @@ async def test_get_function_input_schema(
 async def test_get_function_output_schema(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
-    mock_function_factory: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
@@ -639,7 +643,7 @@ async def test_get_function_output_schema(
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function_factory,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -664,7 +668,7 @@ async def test_get_function_output_schema(
 async def test_delete_function(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
-    mock_function_factory: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
@@ -673,7 +677,7 @@ async def test_delete_function(
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function_factory,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -688,14 +692,14 @@ async def test_get_function_user_permissions(
     client: TestClient,
     add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
-    mock_function_factory: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function_factory,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
