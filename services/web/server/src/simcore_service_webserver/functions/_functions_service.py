@@ -802,8 +802,8 @@ def _patch_functionjob(
             title=patch.title or function_job_db.title,
             uuid=function_job_db.uuid,
             description=patch.description or function_job_db.description,
-            inputs=function_job_db.inputs,
-            outputs=function_job_db.outputs,
+            inputs=patch.inputs or function_job_db.inputs,
+            outputs=patch.outputs or function_job_db.outputs,
             created=function_job_db.created,
             class_specific_data=FunctionClassSpecificData(
                 project_job_id=(
@@ -826,8 +826,8 @@ def _patch_functionjob(
             title=patch.title or function_job_db.title,
             uuid=function_job_db.uuid,
             description=patch.description or function_job_db.description,
-            inputs=function_job_db.inputs,
-            outputs=function_job_db.outputs,
+            inputs=patch.inputs or function_job_db.inputs,
+            outputs=patch.outputs or function_job_db.outputs,
             created=function_job_db.created,
             class_specific_data=FunctionClassSpecificData(
                 solver_job_id=(
@@ -850,8 +850,8 @@ def _patch_functionjob(
             title=patch.title or function_job_db.title,
             uuid=function_job_db.uuid,
             description=patch.description or function_job_db.description,
-            inputs=function_job_db.inputs,
-            outputs=function_job_db.outputs,
+            inputs=patch.inputs or function_job_db.inputs,
+            outputs=patch.outputs or function_job_db.outputs,
             created=function_job_db.created,
             class_specific_data=function_job_db.class_specific_data,
         )

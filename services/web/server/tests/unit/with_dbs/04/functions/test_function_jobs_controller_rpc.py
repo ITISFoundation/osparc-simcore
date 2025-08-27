@@ -464,8 +464,8 @@ async def test_patch_registered_function_jobs(
         title="Test Function Job",
         description="A test function job",
         project_job_id=None,
-        inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
-        outputs={"output1": "result1"},
+        inputs=None,
+        outputs=None,
         job_creation_task_id=None,
     )
 
@@ -482,6 +482,8 @@ async def test_patch_registered_function_jobs(
         description=_faker.sentence(),
         project_job_id=ProjectID(_faker.uuid4()),
         job_creation_task_id=TaskID(_faker.uuid4()),
+        inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
+        outputs={"output1": _faker.word()},
     )
 
     registered_job = await functions_rpc.patch_registered_function_job(
@@ -494,6 +496,8 @@ async def test_patch_registered_function_jobs(
     assert registered_job.function_class == FunctionClass.PROJECT
     assert registered_job.title == patch.title
     assert registered_job.description == patch.description
+    assert registered_job.inputs == patch.inputs
+    assert registered_job.outputs == patch.outputs
     assert registered_job.job_creation_task_id == patch.job_creation_task_id
     assert registered_job.project_job_id == patch.project_job_id
 
