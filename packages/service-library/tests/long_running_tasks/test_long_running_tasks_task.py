@@ -392,9 +392,8 @@ async def test_get_result_finished_with_error(
         task_id, with_task_context=empty_context
     )
     assert result.str_error is not None  # nosec
-    error = loads(result.str_error)
     with pytest.raises(_TetingError, match="failing asap"):
-        raise error
+        loads(result.str_error)
 
 
 async def test_get_result_finished_with_unpicklable_error(
