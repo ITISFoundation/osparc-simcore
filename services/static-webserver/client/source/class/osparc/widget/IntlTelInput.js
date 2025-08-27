@@ -88,11 +88,11 @@ qx.Class.define("osparc.widget.IntlTelInput", {
     __feedbackCheck: null,
 
     getNumber: function() {
-      return this.__itiInput.getNumber();
+      return this.__itiInput ? this.__itiInput.getNumber() : "";
     },
 
     isValidNumber: function() {
-      return this.__itiInput.isValidNumber();
+      return this.__itiInput ? this.__itiInput.isValidNumber() : false;
     },
 
     verifyPhoneNumber: function() {
