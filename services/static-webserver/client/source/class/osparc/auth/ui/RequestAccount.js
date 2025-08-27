@@ -77,7 +77,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           break;
       }
 
-      const phone = new qx.ui.form.TextField();
+      const phone = new osparc.ui.form.IntlTelInput();
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
 
 
