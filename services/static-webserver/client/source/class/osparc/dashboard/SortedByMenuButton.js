@@ -120,5 +120,13 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       };
       this.fireDataEvent("sortByChanged", sort);
     },
+
+    getOptionButton: function(field) {
+      return this.getMenu().getChildren().find(btn => btn.field === field);
+    },
+
+    showAllOptions: function() {
+      this.getMenu().getChildren().forEach(btn => btn.show());
+    },
   }
 });
