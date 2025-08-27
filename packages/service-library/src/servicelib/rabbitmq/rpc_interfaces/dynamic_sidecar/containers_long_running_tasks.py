@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def pull_user_services_docker_images_task(
+async def pull_container_images(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -23,9 +23,7 @@ async def pull_user_services_docker_images_task(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python(
-            "pull_user_services_docker_images_task"
-        ),
+        TypeAdapter(RPCMethodName).validate_python("pull_container_images"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -33,7 +31,7 @@ async def pull_user_services_docker_images_task(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def create_service_containers_task(
+async def create_containers(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -43,7 +41,7 @@ async def create_service_containers_task(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("create_service_containers_task"),
+        TypeAdapter(RPCMethodName).validate_python("create_containers"),
         lrt_namespace=lrt_namespace,
         containers_create=containers_create,
     )
@@ -52,7 +50,7 @@ async def create_service_containers_task(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def runs_docker_compose_down_task(
+async def down_containers(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -61,7 +59,7 @@ async def runs_docker_compose_down_task(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("runs_docker_compose_down_task"),
+        TypeAdapter(RPCMethodName).validate_python("down_containers"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -69,7 +67,7 @@ async def runs_docker_compose_down_task(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def state_restore_task(
+async def restore_cotnainers_state(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -78,7 +76,7 @@ async def state_restore_task(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("state_restore_task"),
+        TypeAdapter(RPCMethodName).validate_python("restore_cotnainers_state"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -86,7 +84,7 @@ async def state_restore_task(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def state_save_task(
+async def save_containers_state(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -95,7 +93,7 @@ async def state_save_task(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("state_save_task"),
+        TypeAdapter(RPCMethodName).validate_python("save_containers_state"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -103,7 +101,7 @@ async def state_save_task(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def ports_inputs_pull_task(
+async def pull_container_port_inputs(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -113,7 +111,7 @@ async def ports_inputs_pull_task(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("ports_inputs_pull_task"),
+        TypeAdapter(RPCMethodName).validate_python("pull_container_port_inputs"),
         lrt_namespace=lrt_namespace,
         port_keys=port_keys,
     )
@@ -141,7 +139,7 @@ async def ports_outputs_pull_task(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def ports_outputs_push_task(
+async def push_container_port_outputs(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -150,7 +148,7 @@ async def ports_outputs_push_task(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("ports_outputs_push_task"),
+        TypeAdapter(RPCMethodName).validate_python("push_container_port_outputs"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -158,7 +156,7 @@ async def ports_outputs_push_task(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def containers_restart_task(
+async def restart_containers(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -167,7 +165,7 @@ async def containers_restart_task(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("containers_restart_task"),
+        TypeAdapter(RPCMethodName).validate_python("restart_containers"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec

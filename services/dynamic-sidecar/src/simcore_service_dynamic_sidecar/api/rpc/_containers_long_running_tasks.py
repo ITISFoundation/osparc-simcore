@@ -10,92 +10,88 @@ router = RPCRouter()
 
 
 @router.expose()
-async def pull_user_services_docker_images_task(
-    app: FastAPI, *, lrt_namespace: LRTNamespace
-) -> TaskId:
+async def pull_container_images(app: FastAPI, *, lrt_namespace: LRTNamespace) -> TaskId:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await containers_long_running_tasks.pull_user_services_docker_images(
+    return await containers_long_running_tasks.pull_container_images(
         rpc_client, lrt_namespace
     )
 
 
 @router.expose()
-async def create_service_containers_task(
+async def create_containers(
     app: FastAPI, *, lrt_namespace: LRTNamespace, containers_create: ContainersCreate
 ) -> TaskId:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await containers_long_running_tasks.create_service_containers_task(
+    return await containers_long_running_tasks.create_containers(
         rpc_client, lrt_namespace, containers_create
     )
 
 
 @router.expose()
-async def runs_docker_compose_down_task(
+async def down_containers(app: FastAPI, *, lrt_namespace: LRTNamespace) -> TaskId:
+    rpc_client = get_rabbitmq_rpc_client(app)
+    return await containers_long_running_tasks.down_containers(
+        rpc_client, lrt_namespace
+    )
+
+
+@router.expose()
+async def restore_cotnainers_state(
     app: FastAPI, *, lrt_namespace: LRTNamespace
 ) -> TaskId:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await containers_long_running_tasks.runs_docker_compose_down_task(
+    return await containers_long_running_tasks.restore_cotnainers_state(
         rpc_client, lrt_namespace
     )
 
 
 @router.expose()
-async def state_restore_task(app: FastAPI, *, lrt_namespace: LRTNamespace) -> TaskId:
+async def save_containers_state(app: FastAPI, *, lrt_namespace: LRTNamespace) -> TaskId:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await containers_long_running_tasks.state_restore_task(
+    return await containers_long_running_tasks.save_containers_state(
         rpc_client, lrt_namespace
     )
 
 
 @router.expose()
-async def state_save_task(app: FastAPI, *, lrt_namespace: LRTNamespace) -> TaskId:
-    rpc_client = get_rabbitmq_rpc_client(app)
-    return await containers_long_running_tasks.state_save_task(
-        rpc_client, lrt_namespace
-    )
-
-
-@router.expose()
-async def ports_inputs_pull_task(
+async def pull_container_port_inputs(
     app: FastAPI,
     *,
     lrt_namespace: LRTNamespace,
     port_keys: list[str] | None,
 ) -> TaskId:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await containers_long_running_tasks.ports_inputs_pull_task(
+    return await containers_long_running_tasks.pull_container_port_inputs(
         rpc_client, lrt_namespace, port_keys
     )
 
 
 @router.expose()
-async def ports_outputs_pull_task(
+async def pull_container_port_outputs(
     app: FastAPI,
     *,
     lrt_namespace: LRTNamespace,
     port_keys: list[str] | None,
 ) -> TaskId:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await containers_long_running_tasks.ports_outputs_pull_task(
+    return await containers_long_running_tasks.pull_container_port_outputs(
         rpc_client, lrt_namespace, port_keys
     )
 
 
 @router.expose()
-async def ports_outputs_push_task(
+async def push_container_port_outputs(
     app: FastAPI, *, lrt_namespace: LRTNamespace
 ) -> TaskId:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await containers_long_running_tasks.ports_outputs_push_task(
+    return await containers_long_running_tasks.push_container_port_outputs(
         rpc_client, lrt_namespace
     )
 
 
 @router.expose()
-async def containers_restart_task(
-    app: FastAPI, *, lrt_namespace: LRTNamespace
-) -> TaskId:
+async def restart_containers(app: FastAPI, *, lrt_namespace: LRTNamespace) -> TaskId:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await containers_long_running_tasks.containers_restart_task(
+    return await containers_long_running_tasks.restart_containers(
         rpc_client, lrt_namespace
     )

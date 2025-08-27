@@ -13,7 +13,7 @@ def _get_task_id_from_error(e: TaskAlreadyRunningError) -> str:
     return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
-async def pull_user_services_docker_images(
+async def pull_container_images(
     rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
 ) -> TaskId:
     try:
@@ -27,7 +27,7 @@ async def pull_user_services_docker_images(
         return _get_task_id_from_error(e)
 
 
-async def create_service_containers_task(
+async def create_containers(
     rpc_client: RabbitMQRPCClient,
     lrt_namespace: LRTNamespace,
     containers_create: ContainersCreate,
@@ -44,7 +44,7 @@ async def create_service_containers_task(
         return _get_task_id_from_error(e)
 
 
-async def runs_docker_compose_down_task(
+async def down_containers(
     rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
 ) -> TaskId:
     try:
@@ -58,7 +58,7 @@ async def runs_docker_compose_down_task(
         return _get_task_id_from_error(e)
 
 
-async def state_restore_task(
+async def restore_cotnainers_state(
     rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
 ) -> TaskId:
     try:
@@ -72,7 +72,7 @@ async def state_restore_task(
         return _get_task_id_from_error(e)
 
 
-async def state_save_task(
+async def save_containers_state(
     rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
 ) -> TaskId:
     try:
@@ -86,7 +86,7 @@ async def state_save_task(
         return _get_task_id_from_error(e)
 
 
-async def ports_inputs_pull_task(
+async def pull_container_port_inputs(
     rpc_client: RabbitMQRPCClient,
     lrt_namespace: LRTNamespace,
     port_keys: list[str] | None = None,
@@ -103,7 +103,7 @@ async def ports_inputs_pull_task(
         return _get_task_id_from_error(e)
 
 
-async def ports_outputs_pull_task(
+async def pull_container_port_outputs(
     rpc_client: RabbitMQRPCClient,
     lrt_namespace: LRTNamespace,
     port_keys: list[str] | None,
@@ -120,7 +120,7 @@ async def ports_outputs_pull_task(
         return _get_task_id_from_error(e)
 
 
-async def ports_outputs_push_task(
+async def push_container_port_outputs(
     rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
 ) -> TaskId:
     try:
@@ -134,7 +134,7 @@ async def ports_outputs_push_task(
         return _get_task_id_from_error(e)
 
 
-async def containers_restart_task(
+async def restart_containers(
     rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
 ) -> TaskId:
     try:

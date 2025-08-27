@@ -20,14 +20,14 @@ router = APIRouter()
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def pull_user_servcices_docker_images(
+async def pull_container_images(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.pull_user_services_docker_images(
+    return await containers_long_running_tasks.pull_container_images(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
@@ -48,7 +48,7 @@ async def pull_user_servcices_docker_images(
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def create_service_containers_task(  # pylint: disable=too-many-arguments
+async def create_containers(  # pylint: disable=too-many-arguments
     request: Request,
     containers_create: ContainersCreate,
     long_running_manager: Annotated[
@@ -56,7 +56,7 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.create_service_containers_task(
+    return await containers_long_running_tasks.create_containers(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
         containers_create,
@@ -70,14 +70,14 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def runs_docker_compose_down_task(
+async def down_containers(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.runs_docker_compose_down_task(
+    return await containers_long_running_tasks.down_containers(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
@@ -89,14 +89,14 @@ async def runs_docker_compose_down_task(
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def state_restore_task(
+async def restore_cotnainers_state(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.state_restore_task(
+    return await containers_long_running_tasks.restore_cotnainers_state(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
@@ -108,14 +108,14 @@ async def state_restore_task(
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def state_save_task(
+async def save_containers_state(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.state_save_task(
+    return await containers_long_running_tasks.save_containers_state(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
@@ -127,7 +127,7 @@ async def state_save_task(
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def ports_inputs_pull_task(
+async def pull_container_port_inputs(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
@@ -135,7 +135,7 @@ async def ports_inputs_pull_task(
     port_keys: list[str] | None = None,
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.ports_inputs_pull_task(
+    return await containers_long_running_tasks.pull_container_port_inputs(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace, port_keys
     )
 
@@ -147,7 +147,7 @@ async def ports_inputs_pull_task(
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def ports_outputs_pull_task(
+async def pull_container_port_outputs(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
@@ -155,7 +155,7 @@ async def ports_outputs_pull_task(
     port_keys: list[str] | None = None,
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.ports_outputs_pull_task(
+    return await containers_long_running_tasks.pull_container_port_outputs(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace, port_keys
     )
 
@@ -167,14 +167,14 @@ async def ports_outputs_pull_task(
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def ports_outputs_push_task(
+async def push_container_port_outputs(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.ports_outputs_push_task(
+    return await containers_long_running_tasks.push_container_port_outputs(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
@@ -186,13 +186,13 @@ async def ports_outputs_push_task(
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def containers_restart_task(
+async def restart_containers(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.containers_restart_task(
+    return await containers_long_running_tasks.restart_containers(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )

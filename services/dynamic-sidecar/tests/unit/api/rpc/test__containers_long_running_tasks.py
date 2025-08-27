@@ -265,7 +265,7 @@ async def _get_task_id_pull_user_services_docker_images_task(
     *args,
     **kwargs,
 ) -> TaskId:
-    return await containers_long_running_tasks.pull_user_services_docker_images_task(
+    return await containers_long_running_tasks.pull_container_images(
         rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
     )
 
@@ -286,7 +286,7 @@ async def _get_task_id_create_service_containers_task(
         rpc_client, node_id=node_id, containers_compose_spec=containers_compose_spec
     )
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)
-    return await containers_long_running_tasks.create_service_containers_task(
+    return await containers_long_running_tasks.create_containers(
         rpc_client,
         node_id=node_id,
         lrt_namespace=lrt_namespace,
@@ -301,7 +301,7 @@ async def _get_task_id_runs_docker_compose_down_task(
     *args,
     **kwargs,
 ) -> TaskId:
-    return await containers_long_running_tasks.runs_docker_compose_down_task(
+    return await containers_long_running_tasks.down_containers(
         rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
     )
 
@@ -313,7 +313,7 @@ async def _get_task_id_state_restore_task(
     *args,
     **kwargs,
 ) -> TaskId:
-    return await containers_long_running_tasks.state_restore_task(
+    return await containers_long_running_tasks.restore_cotnainers_state(
         rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
     )
 
@@ -325,7 +325,7 @@ async def _get_task_id_state_save_task(
     *args,
     **kwargs,
 ) -> TaskId:
-    return await containers_long_running_tasks.state_save_task(
+    return await containers_long_running_tasks.save_containers_state(
         rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
     )
 
@@ -338,7 +338,7 @@ async def _get_task_id_ports_inputs_pull_task(
     *args,
     **kwargs,
 ) -> TaskId:
-    return await containers_long_running_tasks.ports_inputs_pull_task(
+    return await containers_long_running_tasks.pull_container_port_inputs(
         rpc_client, node_id=node_id, lrt_namespace=lrt_namespace, port_keys=port_keys
     )
 
@@ -363,7 +363,7 @@ async def _get_task_id_ports_outputs_push_task(
     *args,
     **kwargs,
 ) -> TaskId:
-    return await containers_long_running_tasks.ports_outputs_push_task(
+    return await containers_long_running_tasks.push_container_port_outputs(
         rpc_client, node_id=node_id, lrt_namespace=lrt_namespace
     )
 
