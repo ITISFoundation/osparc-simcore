@@ -6,6 +6,7 @@
 import json
 import logging
 from typing import Any
+from urllib.parse import urljoin
 
 import httpx
 from aiohttp import web
@@ -44,7 +45,7 @@ class FogbugzRestClient:
         # Fogbugz requires multipart/form-data with stringified JSON
         files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
 
-        url = f"{self._base_url}/f/api/0/jsonapi"
+        url = urljoin(f"{self._base_url}", "f/api/0/jsonapi")
 
         response = await self._client.post(url, files=files)
         response.raise_for_status()
