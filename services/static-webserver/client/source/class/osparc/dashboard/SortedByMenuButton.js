@@ -35,12 +35,8 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
 
     const options = this.self().getSortByOptions();
     options.forEach((option, idx) => {
-      const btn = new qx.ui.menu.Button();
-      btn.btnId = option.id;
-      btn.set({
-        label: option.label,
-        icon: null
-      });
+      const btn = new qx.ui.menu.Button(option.label);
+      btn.field = option.id;
       // Sort by last modified date
       if (idx === options.length -1) {
         this.__selectedMenuButton = btn;
@@ -100,25 +96,19 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
         icon: "@FontAwesome5Solid/chevron-down/10"
       });
 
-      const data = {
-        "id": btn.btnId,
-      };
-      this.__handelSort(data.id);
-    },
-
-    __handelSort: function(field) {
+      const field = btn.field;
       if (field === this.getSort().field) {
         const { direction } = this.getSort();
         this.setSort({
           field,
           direction: !direction
-        })
-        return;
+        });
+      } else {
+        this.setSort({
+          field,
+          direction: true
+        });
       }
-      this.setSort({
-        field,
-        direction: true
-      })
     },
 
     __handelSortEvent: function({field, direction}) {
