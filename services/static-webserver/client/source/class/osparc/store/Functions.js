@@ -99,6 +99,8 @@ qx.Class.define("osparc.store.Functions", {
           break;
         case "name":
           // stays the same
+          // it fails, hack:
+          curatedOrderBy.field = "modified_at";
           break;
         default:
           // only those three are supported
