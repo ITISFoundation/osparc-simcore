@@ -49,9 +49,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       }
       sortedByMenu.add(btn);
 
-      btn.addListener("execute", () => {
-        this.__buttonExecuted(btn)
-      });
+      btn.addListener("execute", () => this.__buttonExecuted(btn));
     });
 
     this.addListener("changeSort", e => {
@@ -91,7 +89,6 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       },
       nullable: false,
       event: "changeSort",
-      apply: "__applySort"
     }
   },
 
@@ -138,9 +135,5 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       };
       this.fireDataEvent("sortByChanged", sort);
     },
-
-    __applySort: function(value, old) {
-
-    }
   }
 });
