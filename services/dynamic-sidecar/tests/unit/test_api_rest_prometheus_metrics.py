@@ -101,7 +101,7 @@ async def httpx_async_client(
 
 
 @pytest.fixture
-def client(
+def http_client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
 ) -> HttpClient:
     return HttpClient(
@@ -162,7 +162,7 @@ async def test_metrics_enabled_containers_will_start(
     enable_prometheus_metrics: None,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     compose_spec: str,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
@@ -172,7 +172,7 @@ async def test_metrics_enabled_containers_will_start(
     assert _USER_SERVICES_NOT_STARTED in response.text
 
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),

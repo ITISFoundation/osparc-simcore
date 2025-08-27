@@ -141,7 +141,7 @@ async def httpx_async_client(
 
 
 @pytest.fixture
-async def client(
+async def http_client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
 ) -> HttpClient:
     return HttpClient(
@@ -234,13 +234,13 @@ async def test_service_starts_and_closes_as_expected(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -253,7 +253,7 @@ async def test_service_starts_and_closes_as_expected(
     await _wait_for_containers_to_be_running(app)
 
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_docker_compose_down(httpx_async_client),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
@@ -287,7 +287,7 @@ async def test_user_services_fail_to_start(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     compose_spec: str,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     with_compose_down: bool,
@@ -295,7 +295,7 @@ async def test_user_services_fail_to_start(
 ):
     with pytest.raises(TaskExceptionError):
         async with periodic_task_result(
-            client=client,
+            client=http_client,
             task_id=await _get_task_id_create_service_containers(
                 httpx_async_client, compose_spec, mock_metrics_params
             ),
@@ -308,7 +308,7 @@ async def test_user_services_fail_to_start(
 
     if with_compose_down:
         async with periodic_task_result(
-            client=client,
+            client=http_client,
             task_id=await _get_task_id_docker_compose_down(httpx_async_client),
             task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=_FAST_STATUS_POLL,
@@ -326,14 +326,14 @@ async def test_user_services_fail_to_stop_or_save_data(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     mock_user_services_fail_to_stop: None,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -353,7 +353,7 @@ async def test_user_services_fail_to_stop_or_save_data(
     for _ in range(_EXPECTED_STOP_MESSAGES):
         with pytest.raises(TaskExceptionError):
             async with periodic_task_result(
-                client=client,
+                client=http_client,
                 task_id=await _get_task_id_docker_compose_down(httpx_async_client),
                 task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
                 status_poll_interval=_FAST_STATUS_POLL,
@@ -423,7 +423,7 @@ async def test_user_services_crash_when_running(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: HttpClient,
+    http_client: HttpClient,
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -431,7 +431,7 @@ async def test_user_services_crash_when_running(
     expected_platform_state: SimcorePlatformStatus,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -483,7 +483,7 @@ async def test_user_services_crash_when_running(
     _EXPECTED_STOP_MESSAGES = 4
     for _ in range(_EXPECTED_STOP_MESSAGES):
         async with periodic_task_result(
-            client=client,
+            client=http_client,
             task_id=await _get_task_id_docker_compose_down(httpx_async_client),
             task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=_FAST_STATUS_POLL,
