@@ -8,20 +8,32 @@ from unittest.mock import ANY
 
 import httpx
 import pytest
+import simcore_service_api_server.api.routes.function_jobs_routes as function_jobs_routes
+from celery_library.task_manager import CeleryTaskManager
+from faker import Faker
+from fastapi import FastAPI
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
     RegisteredProjectFunctionJob,
 )
-from models_library.functions import FunctionJobStatus, RegisteredProjectFunction
+from models_library.functions import (
+    FunctionJobStatus,
+    RegisteredProjectFunction,
+)
 from models_library.products import ProductName
+from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
+from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from servicelib.aiohttp import status
+from servicelib.celery.models import TaskFilter, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import JobStatus
+
+_faker = Faker()
 
 
 async def test_delete_function_job(
@@ -179,19 +191,59 @@ async def test_list_function_jobs_with_job_id_filter(
 
 
 @pytest.mark.parametrize("job_status", ["SUCCESS", "FAILED", "STARTED"])
+@pytest.mark.parametrize("project_job_id", [None, ProjectID(_faker.uuid4())])
+@pytest.mark.parametrize("job_creation_task_id", [None, TaskUUID(_faker.uuid4())])
 async def test_get_function_job_status(
+    app: FastAPI,
     mocked_app_dependencies: None,
     client: AsyncClient,
+    mocker: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     mock_registered_project_function: RegisteredProjectFunction,
     mock_method_in_jobs_service: Callable[[str, Any], None],
     auth: httpx.BasicAuth,
     job_status: str,
+    project_job_id: ProjectID,
+    job_creation_task_id: TaskUUID | None,
 ) -> None:
 
+    def _mock_task_manager(*args, **kwargs) -> CeleryTaskManager:
+        async def _get_task_status(
+            task_uuid: TaskUUID, task_filter: TaskFilter
+        ) -> TaskStatus:
+            assert task_uuid == job_creation_task_id
+            return TaskStatus(
+                task_uuid=task_uuid,
+                task_state=TaskState.STARTED,
+                progress_report=ProgressReport(
+                    actual_value=0.5,
+                    total=1.0,
+                    attempt=1,
+                    unit=None,
+                    message=ProgressStructuredMessage.model_validate(
+                        ProgressStructuredMessage.model_config["json_schema_extra"][
+                            "examples"
+                        ][0]
+                    ),
+                ),
+            )
+
+        obj = mocker.Mock(spec=CeleryTaskManager)
+        obj.get_task_status = _get_task_status
+        return obj
+
+    mocker.patch.object(function_jobs_routes, "get_task_manager", _mock_task_manager)
+
     mock_handler_in_functions_rpc_interface(
-        "get_function_job", mock_registered_project_function_job
+        "get_function_job",
+        mock_registered_project_function_job.model_copy(
+            update={
+                "user_id": ANY,
+                "project_job_id": project_job_id,
+                "job_creation_task_id": job_creation_task_id,
+            }
+        ),
     )
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
