@@ -138,8 +138,9 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     },
 
     verifyPhoneNumber: function() {
+      const value = this.getValue();
       const feedbackIcon = this.getChildControl("feedback-icon");
-      feedbackIcon.show();
+      feedbackIcon.setVisibility(value ? "visible" : "excluded");
       const isValid = this.isValidNumber();
       feedbackIcon.set({
         toolTipText: "E.164: " + this.getValue(),
