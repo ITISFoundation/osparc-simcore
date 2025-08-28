@@ -547,7 +547,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Restore Cotnainers State V1 Containers State Restore Post"
+                  "title": "Response Restore Containers State Paths V1 Containers State Restore Post"
                 }
               }
             }
@@ -569,7 +569,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Save Containers State V1 Containers State Save Post"
+                  "title": "Response Save Containers State Paths V1 Containers State Save Post"
                 }
               }
             }
@@ -708,7 +708,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Restarts previously started containers",
+        "summary": "Restarts previously started user services",
         "operationId": "restart_containers_v1_containers_restart_post",
         "responses": {
           "202": {
