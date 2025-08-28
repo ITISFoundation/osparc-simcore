@@ -92,15 +92,15 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
     TaskRegistry.register(_just_log_task)
 
     for task_name in [
-        sidecar_lrts.task_pull_user_servcices_docker_images.__name__,
-        sidecar_lrts.task_create_service_containers.__name__,
-        sidecar_lrts.task_runs_docker_compose_down.__name__,
-        sidecar_lrts.task_restore_state.__name__,
-        sidecar_lrts.task_save_state.__name__,
-        sidecar_lrts.task_ports_inputs_pull.__name__,
-        sidecar_lrts.task_ports_outputs_pull.__name__,
-        sidecar_lrts.task_ports_outputs_push.__name__,
-        sidecar_lrts.task_containers_restart.__name__,
+        sidecar_lrts.pull_user_services_images.__name__,
+        sidecar_lrts.create_user_services.__name__,
+        sidecar_lrts.remove_user_services.__name__,
+        sidecar_lrts.restore_user_services_state_paths.__name__,
+        sidecar_lrts.save_user_services_state_paths.__name__,
+        sidecar_lrts.pull_user_services_input_ports.__name__,
+        sidecar_lrts.pull_user_services_output_ports.__name__,
+        sidecar_lrts.push_user_services_output_ports.__name__,
+        sidecar_lrts.restart_user_services.__name__,
     ]:
         mocker.patch.object(sidecar_lrts, task_name, new=_just_log_task)
 

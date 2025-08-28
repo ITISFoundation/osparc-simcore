@@ -20,7 +20,7 @@ async def pull_user_services_images(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            long_running_tasks.task_pull_user_servcices_docker_images.__name__,
+            long_running_tasks.pull_user_services_images.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
@@ -36,7 +36,7 @@ async def create_user_services(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            long_running_tasks.task_create_service_containers.__name__,
+            long_running_tasks.create_user_services.__name__,
             unique=True,
             containers_create=containers_create,
         )
@@ -51,7 +51,7 @@ async def remove_user_services(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            long_running_tasks.task_runs_docker_compose_down.__name__,
+            long_running_tasks.remove_user_services.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
@@ -65,7 +65,7 @@ async def restore_user_services_state_paths(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            long_running_tasks.task_restore_state.__name__,
+            long_running_tasks.restore_user_services_state_paths.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
@@ -79,7 +79,7 @@ async def save_user_services_state_paths(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            long_running_tasks.task_save_state.__name__,
+            long_running_tasks.save_user_services_state_paths.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
@@ -95,7 +95,7 @@ async def pull_user_services_input_ports(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            long_running_tasks.task_ports_inputs_pull.__name__,
+            long_running_tasks.pull_user_services_input_ports.__name__,
             unique=True,
             port_keys=port_keys,
         )
@@ -112,7 +112,7 @@ async def pull_user_services_output_ports(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            long_running_tasks.task_ports_outputs_pull.__name__,
+            long_running_tasks.pull_user_services_output_ports.__name__,
             unique=True,
             port_keys=port_keys,
         )
@@ -127,7 +127,7 @@ async def push_user_services_output_ports(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            long_running_tasks.task_ports_outputs_push.__name__,
+            long_running_tasks.push_user_services_output_ports.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:
@@ -141,7 +141,7 @@ async def restart_user_services(
         return await lrt_api.start_task(
             rpc_client,
             lrt_namespace,
-            long_running_tasks.task_containers_restart.__name__,
+            long_running_tasks.restart_user_services.__name__,
             unique=True,
         )
     except TaskAlreadyRunningError as e:

@@ -147,7 +147,7 @@ async def _reset_on_error(
         raise
 
 
-async def task_pull_user_servcices_docker_images(
+async def pull_user_services_images(
     progress: TaskProgress, app: FastAPI, shared_store: SharedStore
 ) -> None:
     assert shared_store.compose_spec  # nosec
@@ -159,7 +159,7 @@ async def task_pull_user_servcices_docker_images(
     await progress.update(message="finished pulling user services", percent=1)
 
 
-async def task_create_service_containers(
+async def create_user_services(
     progress: TaskProgress,
     app: FastAPI,
     settings: ApplicationSettings,
@@ -233,7 +233,7 @@ async def task_create_service_containers(
     return shared_store.container_names
 
 
-async def task_runs_docker_compose_down(
+async def remove_user_services(
     progress: TaskProgress,
     app: FastAPI,
     settings: ApplicationSettings,
@@ -366,7 +366,7 @@ async def _restore_state_folder(
     )
 
 
-async def task_restore_state(
+async def restore_user_services_state_paths(
     progress: TaskProgress,
     app: FastAPI,
     settings: ApplicationSettings,
@@ -442,7 +442,7 @@ async def _save_state_folder(
     )
 
 
-async def task_save_state(
+async def save_user_services_state_paths(
     progress: TaskProgress,
     app: FastAPI,
     settings: ApplicationSettings,
@@ -484,7 +484,7 @@ async def task_save_state(
     return _get_satate_folders_size(state_paths)
 
 
-async def task_ports_inputs_pull(
+async def pull_user_services_input_ports(
     progress: TaskProgress,
     app: FastAPI,
     settings: ApplicationSettings,
@@ -536,7 +536,7 @@ async def task_ports_inputs_pull(
     return int(transferred_bytes)
 
 
-async def task_ports_outputs_pull(
+async def pull_user_services_output_ports(
     progress: TaskProgress,
     app: FastAPI,
     mounted_volumes: MountedVolumes,
@@ -573,7 +573,7 @@ async def task_ports_outputs_pull(
     return int(transferred_bytes)
 
 
-async def task_ports_outputs_push(
+async def push_user_services_output_ports(
     progress: TaskProgress, app: FastAPI, outputs_manager: OutputsManager
 ) -> None:
     await progress.update(message="starting outputs pushing", percent=0.0)
@@ -591,7 +591,7 @@ async def task_ports_outputs_push(
     await progress.update(message="finished outputs pushing", percent=0.99)
 
 
-async def task_containers_restart(
+async def restart_user_services(
     progress: TaskProgress,
     app: FastAPI,
     settings: ApplicationSettings,
@@ -651,47 +651,47 @@ def setup_long_running_tasks(app: FastAPI) -> None:
 
         task_context.update(
             {
-                task_pull_user_servcices_docker_images: {
+                pull_user_services_images: {
                     "shared_store": shared_store,
                     "app": app,
                 },
-                task_create_service_containers: {
+                create_user_services: {
                     "app": app,
                     "settings": settings,
                     "shared_store": shared_store,
                     "application_health": application_health,
                 },
-                task_runs_docker_compose_down: {
+                remove_user_services: {
                     "app": app,
                     "settings": settings,
                     "shared_store": shared_store,
                     "mounted_volumes": mounted_volumes,
                 },
-                task_restore_state: {
+                restore_user_services_state_paths: {
                     "app": app,
                     "settings": settings,
                     "mounted_volumes": mounted_volumes,
                 },
-                task_save_state: {
+                save_user_services_state_paths: {
                     "app": app,
                     "settings": settings,
                     "mounted_volumes": mounted_volumes,
                 },
-                task_ports_inputs_pull: {
+                pull_user_services_input_ports: {
                     "app": app,
                     "settings": settings,
                     "mounted_volumes": mounted_volumes,
                     "inputs_state": inputs_state,
                 },
-                task_ports_outputs_pull: {
+                pull_user_services_output_ports: {
                     "app": app,
                     "mounted_volumes": mounted_volumes,
                 },
-                task_ports_outputs_push: {
+                push_user_services_output_ports: {
                     "app": app,
                     "outputs_manager": outputs_manager,
                 },
-                task_containers_restart: {
+                restart_user_services: {
                     "app": app,
                     "settings": settings,
                     "shared_store": shared_store,
