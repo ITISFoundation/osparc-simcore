@@ -136,7 +136,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
       this.addListener("cellTap", e => {
         const row = e.getRow();
         const target = e.getOriginalTarget();
-        const closestItems = osparc.ui.table.cellrenderer.ButtonRenderer.getClosestItems(target);
+        const closestItems = osparc.ui.table.cellrenderer.ImageButtonRenderer.getClosestItems(target);
         if (closestItems && (target.tagName === "IMG" || target.tagName === "DIV")) {
           const action = closestItems.getAttribute("data-action");
           if (action) {
