@@ -7,6 +7,7 @@
 
 import inspect
 from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +24,6 @@ from faker import Faker
 from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth, HTTPStatusError
 from models_library.api_schemas_long_running_tasks.tasks import (
-    TaskGet,
     TaskResult,
     TaskStatus,
 )
@@ -146,6 +146,18 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
     return _
 
 
+async def _patch_registered_function_job_side_effect(
+    mock_registered_project_function_job: RegisteredFunctionJob, *args, **kwargs
+):
+    registered_function_job_patch = kwargs["registered_function_job_patch"]
+    assert isinstance(registered_function_job_patch, RegisteredProjectFunctionJobPatch)
+    job_creation_task_id = registered_function_job_patch.job_creation_task_id
+    assert job_creation_task_id is not None
+    return mock_registered_project_function_job.model_copy(
+        update={"job_creation_task_id": job_creation_task_id}
+    )
+
+
 @pytest.mark.parametrize("register_celery_tasks", [_register_fake_run_function_task()])
 @pytest.mark.parametrize("add_worker_tasks", [False])
 async def test_with_fake_run_function(
@@ -210,19 +222,14 @@ async def test_with_fake_run_function(
         "register_function_job", mock_registered_project_function_job, None, None
     )
 
-    async def _patch_side_effect(*args, **kwargs):
-        registered_function_job_patch = kwargs["registered_function_job_patch"]
-        assert isinstance(
-            registered_function_job_patch, RegisteredProjectFunctionJobPatch
-        )
-        job_creation_task_id = registered_function_job_patch.job_creation_task_id
-        assert job_creation_task_id is not None
-        return mock_registered_project_function_job.model_copy(
-            update={"job_creation_task_id": job_creation_task_id}
-        )
-
     mock_handler_in_functions_rpc_interface(
-        "patch_registered_function_job", None, None, _patch_side_effect
+        "patch_registered_function_job",
+        None,
+        None,
+        partial(
+            _patch_registered_function_job_side_effect,
+            mock_registered_project_function_job,
+        ),
     )
 
     headers = {}
@@ -313,7 +320,9 @@ async def test_run_project_function_parent_info(
     app: FastAPI,
     with_api_server_celery_worker: TestWorkController,
     client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_handler_in_functions_rpc_interface: Callable[
+        [str, Any, Exception | None, Callable | None], None
+    ],
     mock_registered_project_function: RegisteredProjectFunction,
     mock_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
@@ -358,13 +367,15 @@ async def test_run_project_function_parent_info(
             read=True,
             write=True,
         ),
+        None,
+        None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", mock_registered_project_function, None, None
     )
-    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [])
+    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", mock_registered_project_function_job
+        "register_function_job", mock_registered_project_function_job, None, None
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -373,6 +384,17 @@ async def test_run_project_function_parent_info(
             execute_functions=True,
             write_functions=True,
             read_functions=True,
+        ),
+        None,
+        None,
+    )
+    mock_handler_in_functions_rpc_interface(
+        "patch_registered_function_job",
+        None,
+        None,
+        partial(
+            _patch_registered_function_job_side_effect,
+            mock_registered_project_function_job,
         ),
     )
 
@@ -390,6 +412,9 @@ async def test_run_project_function_parent_info(
     )
     assert response.status_code == expected_status_code
     if response.status_code == status.HTTP_200_OK:
-        task = TaskGet.model_validate(response.json())
-        result = await poll_task_until_done(client, auth, task.task_id)
+        function_job = RegisteredProjectFunctionJob.model_validate(response.json())
+        celery_task_id = function_job.job_creation_task_id
+        assert celery_task_id is not None
+        # Poll until task completion and get result
+        result = await poll_task_until_done(client, auth, celery_task_id)
         RegisteredProjectFunctionJob.model_validate(result.result)
