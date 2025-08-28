@@ -27,7 +27,7 @@ async def pull_container_images(
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.pull_container_images(
+    return await containers_long_running_tasks.pull_user_services_images(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
@@ -56,7 +56,7 @@ async def create_containers(  # pylint: disable=too-many-arguments
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.create_containers(
+    return await containers_long_running_tasks.create_user_services(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
         containers_create,
@@ -77,7 +77,7 @@ async def down_containers(
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.down_containers(
+    return await containers_long_running_tasks.remove_user_services(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
@@ -89,14 +89,14 @@ async def down_containers(
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def restore_cotnainers_state(
+async def restore_containers_state_paths(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.restore_cotnainers_state(
+    return await containers_long_running_tasks.restore_user_services_state_paths(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
@@ -108,14 +108,14 @@ async def restore_cotnainers_state(
     response_model=TaskId,
 )
 @cancel_on_disconnect
-async def save_containers_state(
+async def save_containers_state_paths(
     request: Request,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.save_containers_state(
+    return await containers_long_running_tasks.save_user_services_state_paths(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
@@ -135,7 +135,7 @@ async def pull_container_port_inputs(
     port_keys: list[str] | None = None,
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.pull_container_port_inputs(
+    return await containers_long_running_tasks.pull_user_services_input_ports(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace, port_keys
     )
 
@@ -155,7 +155,7 @@ async def pull_container_port_outputs(
     port_keys: list[str] | None = None,
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.pull_container_port_outputs(
+    return await containers_long_running_tasks.pull_user_services_output_ports(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace, port_keys
     )
 
@@ -174,14 +174,14 @@ async def push_container_port_outputs(
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.push_container_port_outputs(
+    return await containers_long_running_tasks.push_user_services_output_ports(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
 
 @router.post(
     "/containers:restart",
-    summary="Restarts previously started containers",
+    summary="Restarts previously started user services",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
 )
@@ -193,6 +193,6 @@ async def restart_containers(
     ],
 ) -> TaskId:
     _ = request
-    return await containers_long_running_tasks.restart_containers(
+    return await containers_long_running_tasks.restart_user_services(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )

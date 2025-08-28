@@ -28,7 +28,7 @@ def _write_random_binary_file(
             bytes_written += current_chunk_size
 
 
-def delete_reserved_disk() -> None:
+def delete_reserved_disk_space() -> None:
     _RESERVED_DISK_SPACE_NAME.unlink(missing_ok=True)
 
 

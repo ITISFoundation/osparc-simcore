@@ -539,7 +539,7 @@
           "containers"
         ],
         "summary": "Restores the state of the dynamic service",
-        "operationId": "restore_cotnainers_state_v1_containers_state_restore_post",
+        "operationId": "restore_containers_state_paths_v1_containers_state_restore_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -561,7 +561,7 @@
           "containers"
         ],
         "summary": "Stores the state of the dynamic service",
-        "operationId": "save_containers_state_v1_containers_state_save_post",
+        "operationId": "save_containers_state_paths_v1_containers_state_save_post",
         "responses": {
           "202": {
             "description": "Successful Response",

@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def pull_container_images(
+async def pull_user_services_images(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -23,7 +23,7 @@ async def pull_container_images(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("pull_container_images"),
+        TypeAdapter(RPCMethodName).validate_python("pull_user_services_images"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -31,7 +31,7 @@ async def pull_container_images(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def create_containers(
+async def create_user_services(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -41,7 +41,7 @@ async def create_containers(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("create_containers"),
+        TypeAdapter(RPCMethodName).validate_python("create_user_services"),
         lrt_namespace=lrt_namespace,
         containers_create=containers_create,
     )
@@ -50,7 +50,7 @@ async def create_containers(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def down_containers(
+async def remove_user_services(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -59,7 +59,7 @@ async def down_containers(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("down_containers"),
+        TypeAdapter(RPCMethodName).validate_python("remove_user_services"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -67,7 +67,7 @@ async def down_containers(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def restore_cotnainers_state(
+async def restore_user_services_state_paths(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -76,7 +76,7 @@ async def restore_cotnainers_state(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("restore_cotnainers_state"),
+        TypeAdapter(RPCMethodName).validate_python("restore_user_services_state_paths"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -84,7 +84,7 @@ async def restore_cotnainers_state(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def save_containers_state(
+async def save_user_services_state_paths(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -93,7 +93,7 @@ async def save_containers_state(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("save_containers_state"),
+        TypeAdapter(RPCMethodName).validate_python("save_user_services_state_paths"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -101,7 +101,7 @@ async def save_containers_state(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def pull_container_port_inputs(
+async def pull_user_services_input_ports(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -111,7 +111,7 @@ async def pull_container_port_inputs(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("pull_container_port_inputs"),
+        TypeAdapter(RPCMethodName).validate_python("pull_user_services_input_ports"),
         lrt_namespace=lrt_namespace,
         port_keys=port_keys,
     )
@@ -120,7 +120,7 @@ async def pull_container_port_inputs(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def pull_container_port_outputs(
+async def pull_user_services_output_ports(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -130,7 +130,7 @@ async def pull_container_port_outputs(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("pull_container_port_outputs"),
+        TypeAdapter(RPCMethodName).validate_python("pull_user_services_output_ports"),
         lrt_namespace=lrt_namespace,
         port_keys=port_keys,
     )
@@ -139,7 +139,7 @@ async def pull_container_port_outputs(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def push_container_port_outputs(
+async def push_user_services_output_ports(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -148,7 +148,7 @@ async def push_container_port_outputs(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("push_container_port_outputs"),
+        TypeAdapter(RPCMethodName).validate_python("push_user_services_output_ports"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
@@ -156,7 +156,7 @@ async def push_container_port_outputs(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def restart_containers(
+async def restart_user_services(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -165,7 +165,7 @@ async def restart_containers(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("restart_containers"),
+        TypeAdapter(RPCMethodName).validate_python("restart_user_services"),
         lrt_namespace=lrt_namespace,
     )
     assert isinstance(result, TaskId)  # nosec
