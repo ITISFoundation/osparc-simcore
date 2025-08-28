@@ -166,8 +166,9 @@ qx.Class.define("osparc.jobs.RunsTable", {
       this.addListener("cellTap", e => {
         const rowIdx = e.getRow();
         const target = e.getOriginalTarget();
-        if (target.closest(".qx-material-button") && (target.tagName === "IMG" || target.tagName === "DIV")) {
-          const action = target.closest(".qx-material-button").getAttribute("data-action");
+        const closestItems = osparc.ui.table.cellrenderer.ButtonRenderer.getClosestItems(target);
+        if (closestItems && (target.tagName === "IMG" || target.tagName === "DIV")) {
+          const action = closestItems.getAttribute("data-action");
           if (action) {
             this.__handleButtonClick(action, rowIdx);
           }
