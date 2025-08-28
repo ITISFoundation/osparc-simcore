@@ -18,7 +18,7 @@ from unittest import mock
 
 import aiodocker
 import arrow
-import botocore
+import botocore.exceptions
 import pytest
 import tenacity
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, Resources
@@ -2439,7 +2439,7 @@ def mock_start_instances_to_raise_insufficient_capacity_error(
         raise botocore.exceptions.ClientError(
             error_response={
                 "Error": {
-                    "Code": "500",
+                    "Code": "InsufficientInstanceCapacity",
                     "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
                 }
             },
