@@ -248,7 +248,9 @@ class SimcoreEC2API:
                     break
                 except botocore.exceptions.ClientError as exc:
                     error_code = exc.response.get("Error", {}).get("Code")
-                    if error_code == "InsufficientInstanceCapacity":
+                    if error_code == "500" and (
+                        "InsufficientInstanceCapacity" in f"{exc}"
+                    ):
                         _logger.warning(
                             "Insufficient capacity in subnet %s for instance type %s, trying next subnet",
                             subnet_id,

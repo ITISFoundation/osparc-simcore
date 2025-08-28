@@ -623,7 +623,7 @@ async def test_launch_instances_insufficient_capacity_fallback(
             # First call (first subnet) - simulate insufficient capacity
             error_response: dict[str, Any] = {
                 "Error": {
-                    "Code": "InsufficientInstanceCapacity",
+                    "Code": "500",
                     "Message": "Insufficient capacity.",
                 },
             }
@@ -707,7 +707,7 @@ async def test_launch_instances_all_subnets_insufficient_capacity_raises_error(
         # Always simulate insufficient capacity
         error_response = {
             "Error": {
-                "Code": "InsufficientInstanceCapacity",
+                "Code": "500",
                 "Message": "Insufficient capacity.",
             },
         }
@@ -784,7 +784,7 @@ async def test_launch_instances_partial_capacity_then_insufficient_capacity(
         # Second call: simulate insufficient capacity (subnet is full)
         error_response = {
             "Error": {
-                "Code": "InsufficientInstanceCapacity",
+                "Code": "500",
                 "Message": "Insufficient capacity.",
             },
         }
