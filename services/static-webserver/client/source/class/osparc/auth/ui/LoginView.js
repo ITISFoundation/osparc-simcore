@@ -76,10 +76,14 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       email.getContentElement().setAttribute("autocomplete", "username");
       osparc.utils.Utils.setIdToWidget(email, "loginUserEmailFld");
       this._form.add(email, " Email", qx.util.Validate.email(), "email");
-      this.addListener("appear", () => {
+      const focusEmail = () => {
         email.focus();
         email.activate();
-      });
+      };
+      this.addListener("appear", () => {
+        focusEmail();
+        setTimeout(() => focusEmail(), 100); // refocus
+      }, this);
 
       const pass = new osparc.ui.form.PasswordField().set({
         required: true
