@@ -21,7 +21,7 @@ async def test_free_reserved_disk_space(
 
     settings: ApplicationSettings = app.state.settings
 
-    result = await disk.delete_reserved_disk_space(
+    result = await disk.free_reserved_disk_space(
         rpc_client,
         node_id=settings.DY_SIDECAR_NODE_ID,
     )
