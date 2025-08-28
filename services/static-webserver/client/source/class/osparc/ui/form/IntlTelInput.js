@@ -154,9 +154,10 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
       const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
+      const defaultBottomBorder = qx.theme.manager.Color.getInstance().resolve("default-button-active");
       document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
       document.documentElement.style.setProperty('--country-list-dropdown-text', textColor);
-      document.documentElement.style.setProperty('--tel-border-bottom-color', "rgb(9, 89, 122)");
+      document.documentElement.style.setProperty('--tel-border-bottom-color', defaultBottomBorder);
       document.documentElement.style.setProperty('--tel-border-bottom-color-focused', productColor);
 
       const isCompact = this.isCompactField();
