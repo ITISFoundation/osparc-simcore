@@ -22,6 +22,7 @@ from servicelib.long_running_tasks.errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
     TaskNotRegisteredError,
+    TaskRaisedUnserializableError,
 )
 from servicelib.long_running_tasks.manager import (
     LongRunningManager,
@@ -37,7 +38,7 @@ from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from tenacity import TryAgain
+from tenacity import TryAgain, retry, stop_after_attempt
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -77,19 +78,30 @@ async def a_background_task(
 
 
 async def fast_background_task(progress: TaskProgress) -> int:
-    """this task does nothing and returns a constant"""
     return 42
 
 
 async def failing_background_task(progress: TaskProgress):
-    """this task does nothing and returns a constant"""
     msg = "failing asap"
     raise _TetingError(msg)
+
+
+async def failing_unpicklable_background_task(progress: TaskProgress):
+    @retry(
+        stop=stop_after_attempt(2),
+        reraise=False,
+    )
+    async def _innter_fail() -> None:
+        msg = "always fails with retry"
+        raise _TetingError(msg)
+
+    await _innter_fail()
 
 
 TaskRegistry.register(a_background_task)
 TaskRegistry.register(fast_background_task)
 TaskRegistry.register(failing_background_task)
+TaskRegistry.register(failing_unpicklable_background_task)
 
 
 @pytest.fixture
@@ -380,9 +392,34 @@ async def test_get_result_finished_with_error(
         task_id, with_task_context=empty_context
     )
     assert result.str_error is not None  # nosec
-    error = loads(result.str_error)
     with pytest.raises(_TetingError, match="failing asap"):
-        raise error
+        loads(result.str_error)
+
+
+async def test_get_result_finished_with_unpicklable_error(
+    long_running_manager: LongRunningManager, empty_context: TaskContext
+):
+    task_id = await lrt_api.start_task(
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
+        failing_unpicklable_background_task.__name__,
+        task_context=empty_context,
+    )
+    # wait for result
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            assert (
+                await long_running_manager.tasks_manager.get_task_status(
+                    task_id, with_task_context=empty_context
+                )
+            ).done
+
+    result = await long_running_manager.tasks_manager.get_task_result(
+        task_id, with_task_context=empty_context
+    )
+    assert result.str_error is not None  # nosec
+    with pytest.raises(TaskRaisedUnserializableError, match="cannot pickle"):
+        loads(result.str_error)
 
 
 async def test_cancel_task_from_different_manager(
