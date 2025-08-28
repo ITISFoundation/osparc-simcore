@@ -67,7 +67,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       }
       return false;
     }
-    const iconPathInfo = osparc.ui.switch.ThemeSwitcher.isLight() ? "osparc/icons/circle-info-white.svg" : "osparc/icons/circle-info-white.svg";
+    const iconPathInfo = osparc.ui.switch.ThemeSwitcher.isLight() ? "osparc/icons/circle-info-black.svg" : "osparc/icons/circle-info-white.svg";
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo, shouldShowInfo);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_INFO.column, fontButtonRendererInfo);
 
