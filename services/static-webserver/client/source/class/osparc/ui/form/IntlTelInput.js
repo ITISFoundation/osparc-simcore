@@ -68,7 +68,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
   members: {
     __htmlId: null,
     __inputElement: null,
-    __intlTelInput: null,
+    __phoneInput: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -88,13 +88,13 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
     // IStringForm interface implementation
     getValue: function() {
-      return this.__intlTelInput ? this.__intlTelInput.getNumber() : null;
+      return this.__phoneInput ? this.__phoneInput.getNumber() : null;
     },
 
     setValue: function(value) {
-      if (this.__intlTelInput && value) {
+      if (this.__phoneInput && value) {
         // intlTelInput doesn't have a full setter for raw numbers
-        this.__intlTelInput.setNumber(value);
+        this.__phoneInput.setNumber(value);
       }
       this._applyValue(value);
     },
@@ -130,7 +130,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     },
 
     isValidNumber: function() {
-      return this.__intlTelInput ? this.__intlTelInput.isValidNumber() : false;
+      return this.__phoneInput ? this.__phoneInput.isValidNumber() : false;
     },
 
     verifyPhoneNumber: function() {
@@ -144,7 +144,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         alignY: "middle",
       });
       if (!isValid) {
-        const validationError = this.__intlTelInput.getValidationError();
+        const validationError = this.__phoneInput.getValidationError();
         const errorMap = {
           0: this.tr("Invalid number"),
           1: this.tr("Invalid country code"),
@@ -172,14 +172,14 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         margin: 0,
       });
 
-      const intlTelInput = this.__intlTelInput;
+      const phoneInput = this.__phoneInput;
       const feedbackIcon = this.getChildControl("feedback-icon");
-      if (intlTelInput) {
-        intlTelInput.a.style["width"] = feedbackIcon.isVisible() ? "185px" : "215px";
-        intlTelInput.a.style["height"] = height + "px";
-        intlTelInput.a.style["borderWidth"] = "0px";
-        intlTelInput.a.style["backgroundColor"] = isCompact ? "transparent" : bgColor;
-        intlTelInput.a.style["color"] = textColor;
+      if (phoneInput) {
+        phoneInput.a.style["width"] = feedbackIcon.isVisible() ? "185px" : "215px";
+        phoneInput.a.style["height"] = height + "px";
+        phoneInput.a.style["borderWidth"] = "0px";
+        phoneInput.a.style["backgroundColor"] = isCompact ? "transparent" : bgColor;
+        phoneInput.a.style["color"] = textColor;
       }
 
       document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
@@ -190,7 +190,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     __convertInputToPhoneInput: function() {
       const convertInputToPhoneInput = () => {
         const domElement = document.querySelector(`#${this.__htmlId}`);
-        this.__convertInputToIntlTelInput(domElement);
+        this.__inputElementToPhoneInput(domElement);
         const phoneNumber = this.getChildControl("phone-input-field");
         phoneNumber.getContentElement().setStyles({
           "overflow": "visible" // needed for countries dropdown menu
@@ -210,9 +210,9 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
       }
     },
 
-    __convertInputToIntlTelInput: function(input) {
-      this.__inputElement = input; // keep reference to raw <input>
-      this.__intlTelInput = intlTelInput(input, {
+    __inputElementToPhoneInput: function(domElement) {
+      this.__inputElement = domElement; // keep reference to raw <input>
+      this.__phoneInput = intlTelInput(domElement, {
         initialCountry: "auto",
         geoIpLookup: callback => {
           fetch("https://ipapi.co/json")
