@@ -16,7 +16,7 @@ class EC2NotConnectedError(EC2RuntimeError):
 
 class EC2AccessError(EC2RuntimeError):
     msg_template: str = (
-        "Unexpected error while accessing EC2 backend: {operation_name}:{code}:{error}"
+        "Unexpected error while accessing EC2 backend responded with {status_code}: {operation_name}:{code}:{error}"
     )
 
 
@@ -39,7 +39,9 @@ class EC2TooManyInstancesError(EC2AccessError):
 
 
 class EC2InsufficientCapacityError(EC2AccessError):
-    msg_template: str = "Insufficient capacity in {subnet_ids} for {instance_type}"
+    msg_template: str = (
+        "Insufficient capacity in {availability_zone} for {instance_type}"
+    )
 
 
 class EC2SubnetsNotEnoughIPsError(EC2AccessError):
