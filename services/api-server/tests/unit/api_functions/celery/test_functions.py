@@ -38,6 +38,7 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
+    RegisteredProjectFunctionJobPatch,
 )
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -49,23 +50,20 @@ from servicelib.common_headers import (
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server._service_function_jobs import FunctionJobService
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.api.dependencies.celery import (
     ASYNC_JOB_CLIENT_NAME,
     get_task_manager,
 )
-from simcore_service_api_server.api.dependencies.services import (
-    get_function_job_service,
-)
-from simcore_service_api_server.api.routes.functions_routes import get_function
 from simcore_service_api_server.celery.worker_tasks.functions_tasks import (
     run_function as run_function_task,
 )
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
+from simcore_service_api_server.models.domain.functions import (
+    PreRegisteredFunctionJobData,
+)
 from simcore_service_api_server.models.schemas.jobs import (
-    JobInputs,
     JobPricingSpecification,
     NodeID,
 )
@@ -116,7 +114,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
         *,
         user_identity: Identity,
         function: RegisteredFunction,
-        job_inputs: JobInputs,
+        pre_registered_function_job_data: PreRegisteredFunctionJobData,
         pricing_spec: JobPricingSpecification | None,
         job_links: JobLinks,
         x_simcore_parent_project_uuid: NodeID | None,
@@ -126,12 +124,13 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
             title=_faker.sentence(),
             description=_faker.paragraph(),
             function_uid=FunctionID(_faker.uuid4()),
-            inputs=job_inputs.values,
+            inputs=pre_registered_function_job_data.job_inputs.values,
             outputs=None,
             function_class=FunctionClass.PROJECT,
             uid=FunctionJobID(_faker.uuid4()),
             created_at=_faker.date_time(),
             project_job_id=ProjectID(_faker.uuid4()),
+            job_creation_task_id=None,
         )
 
     # check our mock task is correct
@@ -155,6 +154,12 @@ async def test_with_fake_run_function(
     auth: BasicAuth,
     mocker: MockerFixture,
     with_api_server_celery_worker: TestWorkController,
+    mock_handler_in_functions_rpc_interface: Callable[
+        [str, Any, Exception | None, Callable | None], None
+    ],
+    mock_registered_project_function: RegisteredProjectFunction,
+    mock_registered_project_function_job: RegisteredFunctionJob,
+    user_id: UserID,
 ):
 
     body = {
@@ -169,19 +174,55 @@ async def test_with_fake_run_function(
         ],
     }
 
-    async def mock_get_function_job_service() -> FunctionJobService:
-        mock = mocker.AsyncMock(spec=FunctionJobService)
-        mock.run_function_pre_check.return_value = JobInputs(values=body)
-        return mock
+    mock_handler_in_functions_rpc_interface(
+        "get_function_user_permissions",
+        FunctionUserAccessRights(
+            user_id=user_id,
+            execute=True,
+            read=True,
+            write=True,
+        ),
+        None,
+        None,
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_functions_user_api_access_rights",
+        FunctionUserApiAccessRights(
+            user_id=user_id,
+            read_functions=True,
+            write_functions=True,
+            execute_functions=True,
+            read_function_jobs=True,
+            write_function_jobs=True,
+            execute_function_jobs=True,
+            read_function_job_collections=True,
+            write_function_job_collections=True,
+            execute_function_job_collections=True,
+        ),
+        None,
+        None,
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_function", mock_registered_project_function, None, None
+    )
+    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job", mock_registered_project_function_job, None, None
+    )
 
-    app.dependency_overrides[get_function_job_service] = mock_get_function_job_service
-
-    app.dependency_overrides[get_function] = (
-        lambda: RegisteredProjectFunction.model_validate(
-            RegisteredProjectFunction.model_config.get("json_schema_extra", {}).get(
-                "examples", []
-            )[0]
+    async def _patch_side_effect(*args, **kwargs):
+        registered_function_job_patch = kwargs["registered_function_job_patch"]
+        assert isinstance(
+            registered_function_job_patch, RegisteredProjectFunctionJobPatch
         )
+        job_creation_task_id = registered_function_job_patch.job_creation_task_id
+        assert job_creation_task_id is not None
+        return mock_registered_project_function_job.model_copy(
+            update={"job_creation_task_id": job_creation_task_id}
+        )
+
+    mock_handler_in_functions_rpc_interface(
+        "patch_registered_function_job", None, None, _patch_side_effect
     )
 
     headers = {}
@@ -196,10 +237,11 @@ async def test_with_fake_run_function(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    task = TaskGet.model_validate(response.json())
-
+    function_job = RegisteredProjectFunctionJob.model_validate(response.json())
+    celery_task_id = function_job.job_creation_task_id
+    assert celery_task_id is not None
     # Poll until task completion and get result
-    result = await poll_task_until_done(client, auth, task.task_id)
+    result = await poll_task_until_done(client, auth, celery_task_id)
     RegisteredProjectFunctionJob.model_validate(result.result)
 
 
