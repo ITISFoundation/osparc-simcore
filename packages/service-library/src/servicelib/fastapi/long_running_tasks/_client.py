@@ -123,10 +123,6 @@ class HttpClient:
         self.base_url = base_url
 
     @property
-    def external_reference(self) -> str:
-        return f"URL={self.base_url}"
-
-    @property
     def _client_configuration(self) -> ClientConfiguration:
         output: ClientConfiguration = self.app.state.long_running_client_configuration
         return output

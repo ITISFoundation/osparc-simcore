@@ -140,7 +140,7 @@ async def periodic_task_result(
             create_troubleshootting_log_message(
                 user_error_msg=f"{task_id=} raised an exception",
                 error=e,
-                tip=f"Check the logs of the service responding to '{client.external_reference}'",
+                tip=f"Check the logs of the service responding to '{client.base_url}'",
             )
         )
         raise TaskExceptionError(task_id=task_id, exception=e, traceback="") from e
