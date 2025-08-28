@@ -77,11 +77,6 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
           control = new qx.ui.embed.Html();
           this._add(control, { flex: 1 });
           break;
-        case "feedback-icon":
-          control = new qx.ui.basic.Image();
-          control.exclude();
-          this._add(control);
-          break;
       }
       return control || this.base(arguments, id);
     },
@@ -120,7 +115,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
     getFocusElement: function() {
       const phoneNumber = this.getChildControl("phone-input-field");
-      // phoneNumber is a qx.ui.embed.Html → it has a ContentElement (qx.html.Element)
+      // phoneNumber is a qx.ui.embed.Html, it has a ContentElement (qx.html.Element)
       return phoneNumber.getContentElement();
     },
     // Make the widget tabbable/focusable
@@ -138,17 +133,10 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     },
 
     verifyPhoneNumber: function() {
-      const value = this.getValue();
-      const feedbackIcon = this.getChildControl("feedback-icon");
-      feedbackIcon.setVisibility(value ? "visible" : "excluded");
-      const isValid = this.isValidNumber();
-      feedbackIcon.set({
-        toolTipText: "E.164: " + this.getValue(),
-        source: isValid ? "@FontAwesome5Solid/check/16" : "@FontAwesome5Solid/exclamation-triangle/16",
-        textColor: isValid ? "text" : "failed-red",
-        alignY: "middle",
-      });
-      if (!isValid) {
+      if (this.isValidNumber()) {
+        this.setValid(true);
+      } else {
+        this.setValid(false);
         const validationError = this.__phoneInput.getValidationError();
         const errorMap = {
           0: this.tr("Invalid number"),
@@ -157,22 +145,23 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
           3: this.tr("Number too long")
         };
         const errorMsg = errorMap[validationError] || this.tr("Invalid number");
-        feedbackIcon.set({
-          toolTipText: errorMsg + ". " + feedbackIcon.getToolTipText()
-        });
+        this.setInvalidMessage(errorMsg);
       }
       this.__updateStyle();
     },
 
     __updateStyle: function() {
-      const isCompact = this.isCompactField();
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
       const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
+      document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
+      document.documentElement.style.setProperty('--country-list-dropdown-text', textColor);
+      document.documentElement.style.setProperty('--tel-border-bottom-color', "rgb(9, 89, 122)");
+      document.documentElement.style.setProperty('--tel-border-bottom-color-focused', productColor);
+
+      const isCompact = this.isCompactField();
       const phoneInputField = this.getChildControl("phone-input-field");
-      const feedbackIcon = this.getChildControl("feedback-icon");
-      const width = isCompact ? 152 : 215;
-      const phoneInputWidth = feedbackIcon.isVisible() ? width - 14 : width;
+      const width = isCompact ? 152 : 223;
       const height = isCompact ? 26 : 30;
 
       phoneInputField.set({
@@ -183,16 +172,16 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
       const phoneInput = this.__phoneInput;
       if (phoneInput) {
-        phoneInput.a.style["width"] = phoneInputWidth + "px";
+        phoneInput.a.style["width"] = width + "px";
         phoneInput.a.style["height"] = height + "px";
         phoneInput.a.style["borderWidth"] = "0px";
         phoneInput.a.style["backgroundColor"] = isCompact ? "transparent" : bgColor;
         phoneInput.a.style["color"] = textColor;
-      }
 
-      document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
-      document.documentElement.style.setProperty('--country-list-dropdown-text', textColor);
-      document.documentElement.style.setProperty('--border-bottom-color-focused', productColor);
+        if (this.getValue() && !this.isValidNumber()) {
+          document.documentElement.style.setProperty('--tel-border-bottom-color', "red");
+        }
+      }
     },
 
     __convertInputToPhoneInput: function() {

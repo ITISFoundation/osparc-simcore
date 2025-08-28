@@ -946,15 +946,16 @@
 /* osparc */
 .iti input {
   border: none !important;
-  border-bottom: 1px solid var(--border-bottom-color, rgb(9, 89, 122)) !important;
+  border-bottom: 1px solid var(--tel-border-bottom-color) !important;
   outline: none !important;
   box-shadow: none !important;
 }
 
 .iti input:focus {
-  border-bottom: 1px solid var(--border-bottom-color-focused) !important;
+  border-bottom: 1px solid var(--tel-border-bottom-color-focused) !important;
 }
-
+/*
 .iti input:invalid {
   border-bottom: 1px solid red !important;
 }
+*/
