@@ -3,7 +3,9 @@ anyio==4.3.0
     #   -c requirements/_base.txt
     #   httpx
 asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 boto3-stubs==1.37.4
     # via -r requirements/_test.in
 botocore-stubs==1.37.4
