@@ -169,18 +169,21 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
       const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
+      const phoneInputField = this.getChildControl("phone-input-field");
+      const feedbackIcon = this.getChildControl("feedback-icon");
+      const width = isCompact ? 152 : 215;
+      const phoneInputWidth = feedbackIcon.isVisible() ? width - 14 : width;
       const height = isCompact ? 26 : 30;
 
-      this.getChildControl("phone-input-field").set({
-        minWidth: 185,
+      phoneInputField.set({
+        maxWidth: width,
         maxHeight: height,
         margin: 0,
       });
 
       const phoneInput = this.__phoneInput;
-      const feedbackIcon = this.getChildControl("feedback-icon");
       if (phoneInput) {
-        phoneInput.a.style["width"] = feedbackIcon.isVisible() ? "185px" : "215px";
+        phoneInput.a.style["width"] = phoneInputWidth + "px";
         phoneInput.a.style["height"] = height + "px";
         phoneInput.a.style["borderWidth"] = "0px";
         phoneInput.a.style["backgroundColor"] = isCompact ? "transparent" : bgColor;
@@ -229,11 +232,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         dropdownContainer: document.body,
       });
 
-      // Trigger validation on input and blur
-      domElement.addEventListener("input", () => {
-        this.verifyPhoneNumber();
-        this._applyValue(this.getValue()); // keep qooxdoo form property in sync
-      });
+      // Trigger validation on blur
       domElement.addEventListener("blur", () => this.verifyPhoneNumber());
 
       this.__updateStyle();
