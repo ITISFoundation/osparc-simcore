@@ -7,7 +7,6 @@ from models_library.functions import (
     FunctionClass,
     FunctionID,
     FunctionInputs,
-    FunctionInputsList,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobID,
@@ -17,6 +16,7 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
+    RegisteredFunctionJobPatch,
     RegisteredProjectFunctionJobPatch,
     RegisteredSolverFunctionJobPatch,
     SolverFunctionJob,
@@ -333,6 +333,7 @@ class FunctionJobService:
         solver_job_id: SolverJobID | None = None,
     ) -> RegisteredFunctionJob:
         # Only allow one of project_job_id or solver_job_id depending on function_class
+        patch: RegisteredFunctionJobPatch
         if function_class == FunctionClass.PROJECT:
             patch = RegisteredProjectFunctionJobPatch(
                 title=None,
@@ -430,24 +431,18 @@ class FunctionJobService:
     async def map_function(
         self,
         *,
+        job_creation_task_id: TaskID | None,
         function: RegisteredFunction,
-        function_inputs_list: FunctionInputsList,
+        job_inputs: list[JobInputs],
         job_links: JobLinks,
         pricing_spec: JobPricingSpecification | None,
         x_simcore_parent_project_uuid: ProjectID | None,
         x_simcore_parent_node_id: NodeID | None,
     ) -> RegisteredFunctionJobCollection:
 
-        job_inputs = [
-            await self.create_registered_function_job(
-                function=function,
-                function_inputs=inputs,
-            )
-            for inputs in function_inputs_list
-        ]
-
         function_jobs = [
             await self.run_function(
+                job_creation_task_id=job_creation_task_id,
                 function=function,
                 job_inputs=inputs,
                 pricing_spec=pricing_spec,
@@ -458,29 +453,7 @@ class FunctionJobService:
             for inputs in job_inputs
         ]
 
-        function_job_collection_description = f"Function job collection of map of function {function.uid} with {len(function_inputs_list)} inputs"
-        return await self._web_rpc_client.register_function_job_collection(
-            function_job_collection=FunctionJobCollection(
-                title="Function job collection of function map",
-                description=function_job_collection_description,
-                job_ids=[function_job.uid for function_job in function_jobs],
-            ),
-            user_id=self.user_id,
-            product_name=self.product_name,
-        )
-        function_jobs = [
-            await self.run_function(
-                function=function,
-                job_inputs=inputs,
-                pricing_spec=pricing_spec,
-                job_links=job_links,
-                x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
-                x_simcore_parent_node_id=x_simcore_parent_node_id,
-            )
-            for inputs in job_inputs
-        ]
-
-        function_job_collection_description = f"Function job collection of map of function {function.uid} with {len(function_inputs_list)} inputs"
+        function_job_collection_description = f"Function job collection of map of function {function.uid} with {len(job_inputs)} inputs"
         return await self._web_rpc_client.register_function_job_collection(
             function_job_collection=FunctionJobCollection(
                 title="Function job collection of function map",
