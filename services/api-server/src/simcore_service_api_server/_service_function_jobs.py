@@ -26,7 +26,6 @@ from models_library.functions import (
 from models_library.functions_errors import (
     FunctionExecuteAccessDeniedError,
     FunctionInputsValidationError,
-    FunctionJobCacheNotFoundError,
     FunctionsExecuteApiAccessDeniedError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
@@ -41,6 +40,10 @@ from models_library.users import UserID
 from pydantic import ValidationError
 
 from ._service_jobs import JobService
+from .exceptions.function_errors import (
+    FunctionJobCacheNotFoundError,
+    FunctionJobProjectMissingError,
+)
 from .models.api_resources import JobLinks
 from .models.domain.functions import PreRegisteredFunctionJobData
 from .models.schemas.jobs import (
@@ -127,7 +130,7 @@ class FunctionJobService:
     async def inspect_function_job(
         self, function: RegisteredFunction, function_job: RegisteredFunctionJob
     ) -> FunctionJobStatus:
-
+        """Raises FunctionJobProjectNotRegisteredError if no project is associated with job"""
         stored_job_status = await self._web_rpc_client.get_function_job_status(
             function_job_id=function_job.uid,
             user_id=self.user_id,
@@ -141,14 +144,16 @@ class FunctionJobService:
             function.function_class == FunctionClass.PROJECT
             and function_job.function_class == FunctionClass.PROJECT
         ):
-            assert function_job.project_job_id is not None  # nosec
+            if function_job.project_job_id is None:
+                raise FunctionJobProjectMissingError()
             job_status = await self._job_service.inspect_study_job(
                 job_id=function_job.project_job_id,
             )
         elif (function.function_class == FunctionClass.SOLVER) and (
             function_job.function_class == FunctionClass.SOLVER
         ):
-            assert function_job.solver_job_id is not None  # nosec
+            if function_job.solver_job_id is None:
+                raise FunctionJobProjectMissingError()
             job_status = await self._job_service.inspect_solver_job(
                 solver_key=function.solver_key,
                 version=function.solver_version,

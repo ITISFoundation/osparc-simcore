@@ -163,8 +163,3 @@ class FunctionJobCollectionsExecuteApiAccessDeniedError(FunctionBaseError):
 class FunctionJobPatchModelIncompatibleError(FunctionBaseError):
     msg_template = "Incompatible patch model for Function '{function_id}' in product '{product_name}'."
     status_code: int = 422
-
-
-class FunctionJobCacheNotFoundError(FunctionBaseError):
-    msg_template: str = "No cached function job found."
-    status_code: int = 404  # Not Found

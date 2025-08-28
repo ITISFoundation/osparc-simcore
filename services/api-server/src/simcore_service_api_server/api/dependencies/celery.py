@@ -4,7 +4,6 @@ from celery_library.common import create_app, create_task_manager
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
-from servicelib.celery.task_manager import TaskManager
 from settings_library.celery import CelerySettings
 
 from ...celery.worker_tasks.tasks import pydantic_types_to_register
@@ -24,7 +23,7 @@ def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
     app.add_event_handler("startup", on_startup)
 
 
-def get_task_manager(app: FastAPI) -> TaskManager:
+def get_task_manager(app: FastAPI) -> CeleryTaskManager:
     assert hasattr(app.state, "task_manager")  # nosec
     task_manager = app.state.task_manager
     assert isinstance(task_manager, CeleryTaskManager)  # nosec

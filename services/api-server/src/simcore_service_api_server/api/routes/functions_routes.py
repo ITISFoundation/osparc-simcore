@@ -17,7 +17,6 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
-from models_library.functions_errors import FunctionJobCacheNotFoundError
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -28,6 +27,7 @@ from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
 from ...celery.worker_tasks.functions_tasks import run_function as run_function_task
+from ...exceptions.function_errors import FunctionJobCacheNotFoundError
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import JobPricingSpecification
