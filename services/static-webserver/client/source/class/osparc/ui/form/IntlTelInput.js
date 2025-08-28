@@ -68,7 +68,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
   members: {
     __htmlId: null,
     __inputElement: null,
-    __itiInput: null,
+    __intlTelInput: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -88,13 +88,13 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
     // IStringForm interface implementation
     getValue: function() {
-      return this.__itiInput ? this.__itiInput.getNumber() : null;
+      return this.__intlTelInput ? this.__intlTelInput.getNumber() : null;
     },
 
     setValue: function(value) {
-      if (this.__itiInput && value) {
+      if (this.__intlTelInput && value) {
         // intlTelInput doesn't have a full setter for raw numbers
-        this.__itiInput.setNumber(value);
+        this.__intlTelInput.setNumber(value);
       }
       this._applyValue(value);
     },
@@ -130,7 +130,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     },
 
     isValidNumber: function() {
-      return this.__itiInput ? this.__itiInput.isValidNumber() : false;
+      return this.__intlTelInput ? this.__intlTelInput.isValidNumber() : false;
     },
 
     verifyPhoneNumber: function() {
@@ -144,7 +144,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         alignY: "middle",
       });
       if (!isValid) {
-        const validationError = this.__itiInput.getValidationError();
+        const validationError = this.__intlTelInput.getValidationError();
         const errorMap = {
           0: this.tr("Invalid number"),
           1: this.tr("Invalid country code"),
@@ -160,28 +160,26 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     },
 
     __updateStyle: function() {
-      const phoneNumber = this.getChildControl("phone-input-field");
-      const itiInput = this.__itiInput;
-      const feedbackIcon = this.getChildControl("feedback-icon");
       const isCompact = this.isCompactField();
-
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
       const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
       const height = isCompact ? 26 : 30;
 
-      phoneNumber.set({
+      this.getChildControl("phone-input-field").set({
         minWidth: 185,
         maxHeight: height,
         margin: 0,
       });
 
-      if (itiInput) {
-        itiInput.a.style["width"] = feedbackIcon.isVisible() ? "185px" : "215px";
-        itiInput.a.style["height"] = height + "px";
-        itiInput.a.style["borderWidth"] = "0px";
-        itiInput.a.style["backgroundColor"] = isCompact ? "transparent" : bgColor;
-        itiInput.a.style["color"] = textColor;
+      const intlTelInput = this.__intlTelInput;
+      const feedbackIcon = this.getChildControl("feedback-icon");
+      if (intlTelInput) {
+        intlTelInput.a.style["width"] = feedbackIcon.isVisible() ? "185px" : "215px";
+        intlTelInput.a.style["height"] = height + "px";
+        intlTelInput.a.style["borderWidth"] = "0px";
+        intlTelInput.a.style["backgroundColor"] = isCompact ? "transparent" : bgColor;
+        intlTelInput.a.style["color"] = textColor;
       }
 
       document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
@@ -192,8 +190,8 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
     __convertInputToPhoneInput: function() {
       const convertInputToPhoneInput = () => {
         const domElement = document.querySelector(`#${this.__htmlId}`);
+        this.__convertInputToIntlTelInput(domElement);
         const phoneNumber = this.getChildControl("phone-input-field");
-        this.__itiInput = this.__inputToPhoneInput(domElement);
         phoneNumber.getContentElement().setStyles({
           "overflow": "visible" // needed for countries dropdown menu
         });
@@ -212,9 +210,9 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
       }
     },
 
-    __inputToPhoneInput: function(input) {
+    __convertInputToIntlTelInput: function(input) {
       this.__inputElement = input; // keep reference to raw <input>
-      const iti = intlTelInput(input, {
+      this.__intlTelInput = intlTelInput(input, {
         initialCountry: "auto",
         geoIpLookup: callback => {
           fetch("https://ipapi.co/json")
@@ -226,7 +224,6 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         dropdownContainer: document.body,
       });
       this.__updateStyle();
-      return iti;
     }
   }
 });
