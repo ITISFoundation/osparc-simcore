@@ -77,7 +77,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           break;
       }
 
-      const phone = new qx.ui.form.TextField();
+      const phone = new osparc.ui.form.IntlTelInput().set({
+        compactField: true,
+      });
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
 
 
@@ -416,6 +418,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           this.fireDataEvent("done");
         })
         .catch(err => {
+          if ("errors" in err) {
+            osparc.utils.Utils.errorsToForm(this._form, err.errors);
+          }
           osparc.FlashMessenger.logError(err);
           this.__restartCaptcha();
         });
