@@ -27,7 +27,10 @@
     display: flex;
     align-items: center;
     height: 100%;
-    padding: 0 6px 0 8px; }
+    padding: 0 6px 0 8px;
+    /* osparc */
+    padding: 0 4px 0 4px;
+  }
   .iti__arrow {
     margin-left: 6px;
     width: 0;
@@ -90,6 +93,8 @@
   .iti--allow-dropdown input, .iti--allow-dropdown input[type=text], .iti--allow-dropdown input[type=tel], .iti--separate-dial-code input, .iti--separate-dial-code input[type=text], .iti--separate-dial-code input[type=tel] {
     padding-right: 6px;
     padding-left: 52px;
+    /* osparc */
+    padding-left: 42px;
     margin-left: 0; }
   .iti--allow-dropdown .iti__flag-container, .iti--separate-dial-code .iti__flag-container {
     right: auto;
@@ -937,3 +942,20 @@
 
 .iti__flag.iti__np {
   background-color: transparent; }
+
+/* osparc */
+.iti input {
+  border: none !important;
+  border-bottom: 1px solid var(--tel-border-bottom-color) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.iti input:focus {
+  border-bottom: 1px solid var(--tel-border-bottom-color-focused) !important;
+}
+/*
+.iti input:invalid {
+  border-bottom: 1px solid red !important;
+}
+*/

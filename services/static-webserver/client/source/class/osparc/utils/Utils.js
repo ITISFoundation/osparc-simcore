@@ -91,6 +91,21 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    errorsToForm: function(form, errors) {
+      const items = form.getItems();
+      // reset validity
+      Object.values(items).forEach(item => item.setValid(true));
+      errors.forEach(error => {
+        const msg = error.message;
+        const field = error.field;
+        if (field && field in items) {
+          const item = items[field];
+          item.setValid(false);
+          item.setInvalidMessage(msg);
+        }
+      });
+    },
+
     getBounds: function(widget) {
       const bounds = widget.getBounds();
       const cel = widget.getContentElement();
