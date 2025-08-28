@@ -215,7 +215,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       // quick starts and manuals
       osparc.store.Support.addQuickStartToMenu(this);
       osparc.store.Support.addGuidedToursToMenu(this);
-      osparc.store.Support.addManualButtonsToMenu(this);
+      osparc.store.Support.addManualsToMenu(this);
       this.addSeparator();
 
       // feedbacks
