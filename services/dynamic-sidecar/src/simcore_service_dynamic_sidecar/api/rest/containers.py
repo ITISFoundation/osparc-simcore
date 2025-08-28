@@ -9,6 +9,7 @@ from common_library.json_serialization import json_loads
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
+from models_library.api_schemas_directorv2.dynamic_services import ContainersComposeSpec
 from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
     ActivityInfoOrNone,
@@ -24,20 +25,10 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ...core.docker_utils import docker_client
 from ...core.settings import ApplicationSettings
-from ...core.validation import (
-    ComposeSpecValidation,
-    get_and_validate_compose_spec,
-    parse_compose_spec,
-)
-from ...models.schemas.containers import ContainersComposeSpec
+from ...core.validation import parse_compose_spec
 from ...models.shared_store import SharedStore
-from ...modules.mounted_fs import MountedVolumes
-from ._dependencies import (
-    get_container_restart_lock,
-    get_mounted_volumes,
-    get_settings,
-    get_shared_store,
-)
+from ...services import containers
+from ._dependencies import get_container_restart_lock, get_settings, get_shared_store
 
 _INACTIVE_FOR_LONG_TIME: Final[int] = 2**63 - 1
 
@@ -65,34 +56,16 @@ router = APIRouter()
 )
 @cancel_on_disconnect
 async def store_compose_spec(
-    request: Request,
-    settings: Annotated[ApplicationSettings, Depends(get_settings)],
-    containers_compose_spec: ContainersComposeSpec,
-    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
-    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
+    request: Request, containers_compose_spec: ContainersComposeSpec
 ):
     """
     Validates and stores the docker compose spec for the user services.
     """
     _ = request
 
-    async with shared_store:
-        compose_spec_validation: ComposeSpecValidation = (
-            await get_and_validate_compose_spec(
-                settings=settings,
-                compose_file_content=containers_compose_spec.docker_compose_yaml,
-                mounted_volumes=mounted_volumes,
-            )
-        )
-        shared_store.compose_spec = compose_spec_validation.compose_spec
-        shared_store.container_names = compose_spec_validation.current_container_names
-        shared_store.original_to_container_names = (
-            compose_spec_validation.original_to_current_container_names
-        )
-
-    _logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
-
-    assert shared_store.compose_spec  # nosec
+    return await containers.create_compose_spec(
+        app=request.app, containers_compose_spec=containers_compose_spec
+    )
 
 
 @router.get(
