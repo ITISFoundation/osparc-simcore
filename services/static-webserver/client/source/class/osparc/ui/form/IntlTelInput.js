@@ -129,6 +129,10 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
       this.fireDataEvent("changeValue", value);
     },
 
+    validate: function() {
+      return this.isValidNumber();
+    },
+
     isValidNumber: function() {
       return this.__phoneInput ? this.__phoneInput.isValidNumber() : false;
     },
@@ -223,6 +227,14 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         preferredCountries: [],
         dropdownContainer: document.body,
       });
+
+      // Trigger validation on input and blur
+      domElement.addEventListener("input", () => {
+        this.verifyPhoneNumber();
+        this._applyValue(this.getValue()); // keep qooxdoo form property in sync
+      });
+      domElement.addEventListener("blur", () => this.verifyPhoneNumber());
+
       this.__updateStyle();
     }
   }
