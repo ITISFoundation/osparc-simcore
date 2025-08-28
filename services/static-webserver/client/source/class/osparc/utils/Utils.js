@@ -94,7 +94,7 @@ qx.Class.define("osparc.utils.Utils", {
     errorsToForm: function(form, errors) {
       const items = form.getItems();
       // reset validity
-      items.forEach(item => item.setValid(true));
+      Object.values(items).forEach(item => item.setValid(true));
       errors.forEach(error => {
         const msg = error.message;
         const field = error.field;
