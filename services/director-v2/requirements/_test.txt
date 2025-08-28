@@ -38,7 +38,9 @@ anyio==4.9.0
     #   -c requirements/_base.txt
     #   httpx
 asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
 attrs==25.3.0
@@ -66,7 +68,7 @@ charset-normalizer==3.4.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.1.8
+click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   dask

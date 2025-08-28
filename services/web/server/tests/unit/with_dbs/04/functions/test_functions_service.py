@@ -1,10 +1,15 @@
 # pylint: disable=unused-argument
 
+from collections.abc import Callable
+
 import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
-from models_library.api_schemas_webserver.functions import ProjectFunction
-from models_library.functions import FunctionGroupAccessRights
+from models_library.functions import (
+    FunctionClass,
+    FunctionGroupAccessRights,
+    RegisteredFunction,
+)
 from models_library.functions_errors import FunctionReadAccessDeniedError
 from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -24,13 +29,13 @@ async def test_set_and_remove_group_permissions(
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
     clean_functions: None,
 ) -> None:
     # Register the function
     registered_function = await _functions_service.register_function(
         app=client.app,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -53,19 +58,23 @@ async def test_set_and_remove_group_permissions(
             function_id=registered_function.uid,
         )
 
+    group_permissions = FunctionGroupAccessRights(
+        group_id=int(other_logged_user["primary_gid"]),
+        read=True,
+        write=True,
+        execute=False,
+    )
+
     # Give non-registering user group access
-    await _functions_service.set_function_group_permissions(
+    updated_group_permissions = await _functions_service.set_function_group_permissions(
         app=client.app,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
         function_id=registered_function.uid,
-        permissions=FunctionGroupAccessRights(
-            group_id=int(other_logged_user["primary_gid"]),
-            read=True,
-            write=True,
-            execute=False,
-        ),
+        permissions=group_permissions,
     )
+
+    assert updated_group_permissions == group_permissions
 
     # Test if non-registering user can access the function
     returned_function = await _functions_service.get_function(

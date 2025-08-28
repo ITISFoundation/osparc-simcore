@@ -157,26 +157,24 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       switch (id) {
         case "left-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
+            alignX: "left",
             alignY: "middle",
-            alignX: "left"
           }));
-          this._addAt(control, 0);
+          this._addAt(control, 0, { flex: 1 });
           break;
         case "center-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignX: "center",
             alignY: "middle",
-            alignX: "center"
           }));
-          this._addAt(control, 1, {
-            flex: 1
-          });
+          this._addAt(control, 1);
           break;
         case "right-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
+            alignX: "right",
             alignY: "middle",
-            alignX: "right"
           }));
-          this._addAt(control, 2);
+          this._addAt(control, 2, { flex: 1 });
           break;
         case "logo":
           control = osparc.navigation.LogoOnOff.getInstance().set({
@@ -256,7 +254,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "avatar-group": {
           const maxWidth = osparc.WindowSizeTracker.getInstance().isCompactVersion() ? 80 : 150;
           control = new osparc.ui.basic.AvatarGroup(26, "right", maxWidth).set({
+            hideMyself: true,
             alignY: "middle",
+            visibility: "excluded",
           });
           this.getChildControl("right-items").add(control);
           break;
@@ -354,11 +354,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           if (this.getStudy() && data["project_uuid"] === this.getStudy().getUuid()) {
             const projectState = data["data"];
             const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(projectState);
-            // remove myself from the list of users
-            const filteredUserGroupIds = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
-            // show the rest of the users in the avatar group
             const avatarGroup = this.getChildControl("avatar-group");
-            avatarGroup.setUserGroupIds(filteredUserGroupIds);
+            avatarGroup.setUserGroupIds(currentUserGroupIds);
           }
         }
       }, this);
@@ -369,20 +366,23 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         position: "top-right",
         appearance: "menu-wider",
       });
-      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/22", menu).set({
+      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/24", menu).set({
         backgroundColor: "transparent"
       });
 
       osparc.utils.Utils.setIdToWidget(menu, "helpNavigationMenu");
 
+      // add support conversations
+      osparc.store.Support.addSupportConversationsToMenu(menu);
+
       // quick starts and manuals
       osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addGuidedToursToMenu(menu);
-      osparc.store.Support.addManualButtonsToMenu(menu, menuButton);
+      osparc.store.Support.addManualsToMenu(menu);
       menu.addSeparator();
 
       // feedback
-      osparc.store.Support.addSupportButtonsToMenu(menu, menuButton);
+      osparc.store.Support.addSupportButtonsToMenu(menu);
       osparc.store.Support.addReleaseNotesToMenu(menu);
 
       return menuButton;

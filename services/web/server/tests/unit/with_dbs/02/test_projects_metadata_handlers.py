@@ -28,11 +28,16 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 )
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.utils_projects_metadata import (
     get as get_db_project_metadata,
 )
 from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 
 @pytest.mark.acceptance_test(
@@ -113,6 +118,7 @@ async def test_custom_metadata_handlers(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_with_parent_project_node(
+    rabbit_settings: RabbitSettings,
     mock_dynamic_scheduler: None,
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],
@@ -269,6 +275,7 @@ async def test_new_project_with_invalid_parent_project_node(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_set_project_parent_backward_compatibility(
+    rabbit_settings: RabbitSettings,
     mock_dynamic_scheduler: None,
     # for deletion
     mocked_dynamic_services_interface: dict[str, MagicMock],

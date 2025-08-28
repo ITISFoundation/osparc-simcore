@@ -14,10 +14,11 @@ import aiodocker
 import pytest
 from aiodocker.utils import clean_filters
 from faker import Faker
-from models_library.docker import DockerNodeID, to_simcore_runtime_docker_label_key
+from models_library.docker import DockerNodeID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
+from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict

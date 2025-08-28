@@ -123,7 +123,7 @@ qx.Class.define("osparc.workbench.Annotation", {
           representation = svgLayer.drawAnnotationConversation(attrs.x, attrs.y, attrs.text);
           const conversationId = attrs.conversationId;
           if (conversationId) {
-            osparc.store.Conversations.getInstance().addListener("conversationRenamed", e => {
+            osparc.store.ConversationsProject.getInstance().addListener("conversationRenamed", e => {
               const data = e.getData();
               if (conversationId === data["conversationId"]) {
                 this.setText(data.name);

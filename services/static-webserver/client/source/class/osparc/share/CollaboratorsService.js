@@ -54,6 +54,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         return;
       }
 
+      // default access rights
       const readAccessRole = osparc.data.Roles.SERVICES["read"];
       const newAccessRights = this._serializedDataCopy["accessRights"];
       gids.forEach(gid => {

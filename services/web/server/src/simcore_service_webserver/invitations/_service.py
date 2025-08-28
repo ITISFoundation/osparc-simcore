@@ -8,7 +8,8 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationInputs,
 )
 from models_library.emails import LowerCaseEmailStr
-from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
+from pydantic import AnyHttpUrl, HttpUrl, TypeAdapter, ValidationError
+from yarl import URL
 
 from ..groups.api import is_user_by_email_in_group
 from ..products.models import Product
@@ -134,7 +135,9 @@ async def extract_invitation(
 
 
 async def generate_invitation(
-    app: web.Application, params: ApiInvitationInputs
+    app: web.Application,
+    params: ApiInvitationInputs,
+    product_origin_url: URL,
 ) -> ApiInvitationContentAndLink:
     """
     Raises:
@@ -145,4 +148,10 @@ async def generate_invitation(
     invitation: ApiInvitationContentAndLink = await get_invitations_service_api(
         app=app
     ).generate_invitation(params)
+
+    _normalized_url = URL(f"{invitation.invitation_url}")
+    invitation.invitation_url = HttpUrl(
+        f"{product_origin_url.with_path(_normalized_url.path).with_fragment(_normalized_url.raw_fragment)}"
+    )
+
     return invitation

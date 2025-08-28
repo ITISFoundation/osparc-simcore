@@ -1,5 +1,5 @@
 import logging
-from typing import cast
+from typing import Any, cast
 
 from aiohttp import web
 from models_library.conversations import (
@@ -14,7 +14,9 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from pydantic import NonNegativeInt
-from simcore_postgres_database.models.conversations import conversations
+from simcore_postgres_database.models.conversations import (
+    conversations,
+)
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -42,6 +44,7 @@ async def create(
     user_group_id: GroupID,
     type_: ConversationType,
     product_name: ProductName,
+    extra_context: dict[str, Any],
 ) -> ConversationGetDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
@@ -54,6 +57,7 @@ async def create(
                 created=func.now(),
                 modified=func.now(),
                 product_name=product_name,
+                extra_context=extra_context,
             )
             .returning(*_SELECTION_ARGS)
         )
@@ -76,7 +80,111 @@ async def list_project_conversations(
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
-        .where(conversations.c.project_uuid == f"{project_uuid}")
+        .where(
+            (conversations.c.project_uuid == f"{project_uuid}")
+            & (
+                conversations.c.type.in_(
+                    (
+                        ConversationType.PROJECT_STATIC,
+                        ConversationType.PROJECT_ANNOTATION,
+                    )
+                )
+            )
+        )
+    )
+
+    # Select total count from base_query
+    subquery = base_query.subquery()
+    count_query = select(func.count()).select_from(subquery)
+
+    # Ordering and pagination
+    if order_by.direction == OrderDirection.ASC:
+        list_query = base_query.order_by(
+            asc(getattr(conversations.c, order_by.field)),
+            conversations.c.conversation_id,
+        )
+    else:
+        list_query = base_query.order_by(
+            desc(getattr(conversations.c, order_by.field)),
+            conversations.c.conversation_id,
+        )
+    list_query = list_query.offset(offset).limit(limit)
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        total_count = await conn.scalar(count_query)
+
+        result = await conn.stream(list_query)
+        items: list[ConversationGetDB] = [
+            ConversationGetDB.model_validate(row) async for row in result
+        ]
+
+        return cast(int, total_count), items
+
+
+async def list_support_conversations_for_user(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_group_id: GroupID,
+    # pagination
+    offset: NonNegativeInt,
+    limit: NonNegativeInt,
+    # ordering
+    order_by: OrderBy,
+) -> tuple[PageTotalCount, list[ConversationGetDB]]:
+
+    base_query = (
+        select(*_SELECTION_ARGS)
+        .select_from(conversations)
+        .where(
+            (conversations.c.user_group_id == user_group_id)
+            & (conversations.c.type == ConversationType.SUPPORT)
+        )
+    )
+
+    # Select total count from base_query
+    subquery = base_query.subquery()
+    count_query = select(func.count()).select_from(subquery)
+
+    # Ordering and pagination
+    if order_by.direction == OrderDirection.ASC:
+        list_query = base_query.order_by(
+            asc(getattr(conversations.c, order_by.field)),
+            conversations.c.conversation_id,
+        )
+    else:
+        list_query = base_query.order_by(
+            desc(getattr(conversations.c, order_by.field)),
+            conversations.c.conversation_id,
+        )
+    list_query = list_query.offset(offset).limit(limit)
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        total_count = await conn.scalar(count_query)
+
+        result = await conn.stream(list_query)
+        items: list[ConversationGetDB] = [
+            ConversationGetDB.model_validate(row) async for row in result
+        ]
+
+        return cast(int, total_count), items
+
+
+async def list_all_support_conversations_for_support_user(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    # pagination
+    offset: NonNegativeInt,
+    limit: NonNegativeInt,
+    # ordering
+    order_by: OrderBy,
+) -> tuple[PageTotalCount, list[ConversationGetDB]]:
+
+    base_query = (
+        select(*_SELECTION_ARGS)
+        .select_from(conversations)
+        .where(conversations.c.type == ConversationType.SUPPORT)
     )
 
     # Select total count from base_query
@@ -112,12 +220,44 @@ async def get(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
+    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     select_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
         .where(conversations.c.conversation_id == f"{conversation_id}")
     )
+
+    if type_ is not None:
+        select_query = select_query.where(conversations.c.type == type_)
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(select_query)
+        row = result.one_or_none()
+        if row is None:
+            raise ConversationErrorNotFoundError(conversation_id=conversation_id)
+        return ConversationGetDB.model_validate(row)
+
+
+async def get_for_user(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    conversation_id: ConversationID,
+    user_group_id: GroupID,
+    type_: ConversationType | None = None,
+) -> ConversationGetDB:
+    select_query = (
+        select(*_SELECTION_ARGS)
+        .select_from(conversations)
+        .where(
+            (conversations.c.conversation_id == f"{conversation_id}")
+            & (conversations.c.user_group_id == user_group_id)
+        )
+    )
+
+    if type_ is not None:
+        select_query = select_query.where(conversations.c.type == type_)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(select_query)

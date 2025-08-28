@@ -32,7 +32,7 @@ from models_library.functions_errors import (
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
-from pytest_mock import MockType
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.aiohttp import status
 from servicelib.common_headers import (
@@ -274,6 +274,7 @@ async def test_get_function_output_schema(
 
 async def test_validate_function_inputs(
     client: AsyncClient,
+    mock_rabbitmq_rpc_client: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,

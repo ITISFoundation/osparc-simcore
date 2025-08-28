@@ -20,7 +20,9 @@ anyio==4.8.0
     #   -c requirements/_fastapi.txt
     #   httpx
 asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_fastapi.txt
+    #   -r requirements/_test.in
 attrs==25.1.0
     # via
     #   -c requirements/_aiohttp.txt
@@ -289,6 +291,7 @@ urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_fastapi.txt
     #   botocore
     #   docker
     #   requests

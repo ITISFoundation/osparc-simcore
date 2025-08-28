@@ -276,11 +276,13 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
 async def key_version_expected(
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_service: dict,
-    docker_registry_image_injector: Callable,
+    docker_registry_image_injector: Callable[
+        [str, str, str | None], Awaitable[dict[str, Any]]
+    ],
 ) -> list[tuple[ServiceKeyVersion, bool]]:
     results: list[tuple[ServiceKeyVersion, bool]] = []
 
-    sleeper_service = docker_registry_image_injector(
+    sleeper_service = await docker_registry_image_injector(
         "itisfoundation/sleeper", "2.1.1", "user@e.mail"
     )
 

@@ -269,5 +269,32 @@ products = sa.Table(
         nullable=True,
         doc="Group associated to this product",
     ),
+    sa.Column(
+        "support_standard_group_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            groups.c.gid,
+            name="fk_products_support_standard_group_id",
+            ondelete=RefActions.SET_NULL,
+            onupdate=RefActions.CASCADE,
+        ),
+        unique=False,
+        nullable=True,
+        doc="Group associated to this product support",
+    ),
+    sa.Column(
+        "support_assigned_fogbugz_person_id",
+        sa.BigInteger,
+        unique=False,
+        nullable=True,
+        doc="Fogbugz person ID to assign support case",
+    ),
+    sa.Column(
+        "support_assigned_fogbugz_project_id",
+        sa.BigInteger,
+        unique=False,
+        nullable=True,
+        doc="Fogbugz project ID to assign support case",
+    ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

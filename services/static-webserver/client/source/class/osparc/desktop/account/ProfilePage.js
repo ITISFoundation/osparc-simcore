@@ -31,35 +31,53 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.__userProfileData = {};
-    this.__userPrivacyData = {};
-
-    this.__fetchProfile();
-
     this._add(this.__createProfileUser());
     this._add(this.__createPrivacySection());
-    if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
+    if (osparc.store.StaticInfo.is2FARequired()) {
       this._add(this.__create2FASection());
     }
     this._add(this.__createPasswordSection());
     this._add(this.__createDeleteAccount());
+
+    this.__userProfileData = {};
+    this.__userPrivacyData = {};
+
+    this.__fetchProfile();
+  },
+
+  statics: {
+    PROFILE: {
+      POS: {
+        USERNAME: 0,
+        FIRST_NAME: 1,
+        LAST_NAME: 2,
+        EMAIL: 3,
+        PHONE: 4,
+      },
+    },
   },
 
   members: {
     __userProfileData: null,
     __userProfileModel: null,
     __userProfileRenderer: null,
+    __privacyRenderer: null,
     __updateProfileBtn: null,
     __userPrivacyData: null,
     __userPrivacyModel: null,
     __updatePrivacyBtn: null,
     __userProfileForm: null,
+    __sms2FAItem: null,
 
     __fetchProfile: function() {
+      this.__userProfileRenderer.setEnabled(false);
+      this.__privacyRenderer.setEnabled(false);
       osparc.data.Resources.getOne("profile", {}, null, false)
         .then(profile => {
           this.__setDataToProfile(profile);
           this.__setDataToPrivacy(profile["privacy"]);
+          this.__userProfileRenderer.setEnabled(true);
+          this.__privacyRenderer.setEnabled(true);
         })
         .catch(err => console.error(err));
     },
@@ -72,10 +90,15 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           "firstName": data["first_name"] || "",
           "lastName": data["last_name"] || "",
           "email": data["login"],
+          "phone": data["phone"] || "-",
           "expirationDate": data["expirationDate"] || null,
         });
       }
       this.__updateProfileBtn.setEnabled(false);
+
+      if (this.__sms2FAItem) {
+        this.__sms2FAItem.setEnabled(Boolean(data["phone"]));
+      }
     },
 
     __setDataToPrivacy: function(privacyData) {
@@ -89,13 +112,27 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
         const visibleIcon = "@FontAwesome5Solid/eye/12";
         const hiddenIcon = "@FontAwesome5Solid/eye-slash/12";
-        const icons = {
-          0: this.__userPrivacyModel.getHideUsername() ? hiddenIcon : visibleIcon,
-          1: this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon,
-          2: this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon,
-          3: this.__userPrivacyModel.getHideEmail() ? hiddenIcon : visibleIcon,
+        const createImage = source => {
+          return new qx.ui.basic.Image(source).set({
+            alignX: "center",
+            alignY: "middle",
+          });
+        }
+        const pos = this.self().PROFILE.POS;
+        const widgets = {
+          [pos.USERNAME]: createImage(this.__userPrivacyModel.getHideUsername() ? hiddenIcon : visibleIcon),
+          [pos.FIRST_NAME]: createImage(this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon),
+          [pos.LAST_NAME]: createImage(this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon),
+          [pos.EMAIL]: createImage(this.__userPrivacyModel.getHideEmail() ? hiddenIcon : visibleIcon),
         };
-        this.__userProfileRenderer.setIcons(icons);
+        if (osparc.store.StaticInfo.isUpdatePhoneNumberEnabled()) {
+          const updatePhoneNumberButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+            padding: [1, 5],
+          });
+          updatePhoneNumberButton.addListener("execute", () => this.__openPhoneNumberUpdater(), this);
+          widgets[pos.PHONE] = updatePhoneNumberButton;
+        }
+        this.__userProfileRenderer.setWidgets(widgets);
       }
       this.__updatePrivacyBtn.setEnabled(false);
     },
@@ -124,13 +161,21 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         readOnly: true
       });
 
+      const phoneNumber = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Phone Number"),
+        readOnly: true
+      });
+
       const profileForm = this.__userProfileForm = new qx.ui.form.Form();
       profileForm.add(username, "Username", null, "username");
       profileForm.add(firstName, "First Name", null, "firstName");
       profileForm.add(lastName, "Last Name", null, "lastName");
       profileForm.add(email, "Email", null, "email");
-      const singleWithIcon = this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithIcon(profileForm);
-      box.add(singleWithIcon);
+      if (osparc.store.StaticInfo.is2FARequired()) {
+        profileForm.add(phoneNumber, "Phone Number", null, "phoneNumber");
+      }
+      this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithWidget(profileForm);
+      box.add(this.__userProfileRenderer);
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
         paddingLeft: 16,
@@ -144,7 +189,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       expirationLayout.add(expirationDate);
       const infoLabel = this.tr("Please contact us via email:<br>");
       const infoExtension = new osparc.ui.hint.InfoHint(infoLabel);
-      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const supportEmail = osparc.store.VendorInfo.getSupportEmail();
       infoExtension.setHintText(infoLabel + supportEmail);
       expirationLayout.add(infoExtension);
       box.add(expirationLayout);
@@ -155,6 +200,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         "firstName": "",
         "lastName": "",
         "email": "",
+        "phone": "",
         "expirationDate": null,
       };
 
@@ -169,6 +215,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         }
       });
       controller.addTarget(lastName, "value", "lastName", true);
+      controller.addTarget(phoneNumber, "value", "phone", true);
       controller.addTarget(expirationDate, "value", "expirationDate", false, {
         converter: expirationDay => {
           if (expirationDay) {
@@ -245,7 +292,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           lastName.getValue() !== this.__userProfileData["last_name"];
         updateProfileBtn.setEnabled(anyChanged);
       };
-      valueChanged();
       profileFields.forEach(privacyField => privacyField.addListener("changeValue", () => valueChanged()));
 
       return box;
@@ -284,7 +330,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       privacyForm.add(hideUsername, "Hide Username", null, "hideUsername");
       privacyForm.add(hideFullname, "Hide Full Name", null, "hideFullname");
       privacyForm.add(hideEmail, "Hide Email", null, "hideEmail");
-      box.add(new qx.ui.form.renderer.Single(privacyForm));
+      this.__privacyRenderer = new qx.ui.form.renderer.Single(privacyForm);
+      box.add(this.__privacyRenderer);
 
       const privacyModelCtrl = new qx.data.controller.Object(privacyModel);
       privacyModelCtrl.addTarget(hideUsername, "value", "hideUsername", true);
@@ -374,7 +421,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           optOutMessage.exclude();
         }
       };
-      valueChanged();
       privacyFields.forEach(privacyField => privacyField.addListener("changeValue", () => valueChanged()));
 
       return box;
@@ -404,6 +450,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         label: "Disabled"
       }].forEach(options => {
         const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
+        if (options.id === "SMS") {
+          this.__sms2FAItem = lItem;
+        }
         twoFAPreferenceSB.add(lItem);
       });
       const value = preferencesSettings.getTwoFAPreference();
@@ -549,6 +598,24 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       box.add(deleteBtn);
 
       return box;
-    }
+    },
+
+    __openPhoneNumberUpdater: function() {
+      const verifyPhoneNumberView = new osparc.auth.ui.VerifyPhoneNumberView().set({
+        userEmail: osparc.auth.Data.getInstance().getEmail(),
+        updatingNumber: true,
+      });
+      verifyPhoneNumberView.getChildControl("title").exclude();
+      verifyPhoneNumberView.getChildControl("send-via-email-button").exclude();
+      const win = osparc.ui.window.Window.popUpInWindow(verifyPhoneNumberView, this.tr("Update Phone Number"), 330, 135).set({
+        clickAwayClose: false,
+        resizable: false,
+        showClose: true
+      });
+      verifyPhoneNumberView.addListener("done", () => {
+        win.close();
+        this.__fetchProfile();
+      }, this);
+    },
   }
 });

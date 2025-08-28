@@ -217,7 +217,7 @@ async def delete_node(request: web.Request) -> web.Response:
         request,
         path_params.project_id,
         req_ctx.user_id,
-        NodeIDStr(path_params.node_id),
+        f"{path_params.node_id}",
         req_ctx.product_name,
         product_api_base_url=get_api_base_url(request),
         client_session_id=header_params.client_session_id,
@@ -311,6 +311,15 @@ async def _stop_dynamic_service_task(
         await dynamic_scheduler_service.stop_dynamic_service(
             app, dynamic_service_stop=dynamic_service_stop
         )
+        project = await _projects_service.get_project_for_user(
+            app,
+            f"{dynamic_service_stop.project_id}",
+            dynamic_service_stop.user_id,
+            include_state=True,
+        )
+        await _projects_service.notify_project_node_update(
+            app, project, dynamic_service_stop.node_id, errors=None
+        )
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
@@ -322,7 +331,10 @@ async def _stop_dynamic_service_task(
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-TaskRegistry.register(_stop_dynamic_service_task)
+def register_stop_dynamic_service_task(app: web.Application) -> None:
+    TaskRegistry.register(
+        _stop_dynamic_service_task, allowed_errors=(web.HTTPNotFound,), app=app
+    )
 
 
 @routes.post(
@@ -352,7 +364,6 @@ async def stop_node(request: web.Request) -> web.Response:
         _stop_dynamic_service_task.__name__,
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
-        app=request.app,
         dynamic_service_stop=DynamicServiceStop(
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,

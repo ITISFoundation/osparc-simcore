@@ -1,6 +1,6 @@
 from typing import Annotated, Final
 
-from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from fastapi_pagination.api import create_page
 from fastapi_pagination.bases import AbstractPage
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
@@ -15,10 +15,8 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import RegisteredFunction
 from models_library.functions_errors import (
     UnsupportedFunctionClassError,
-    UnsupportedFunctionFunctionJobClassCombinationError,
 )
 from models_library.products import ProductName
-from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
 from simcore_service_api_server.models.schemas.functions_filters import (
@@ -30,7 +28,6 @@ from ..._service_function_jobs import FunctionJobService
 from ..._service_jobs import JobService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.storage import StorageApi
 from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
@@ -40,7 +37,6 @@ from ..dependencies.functions import (
     get_function_from_functionjob,
     get_function_job_dependency,
     get_stored_job_outputs,
-    get_stored_job_status,
 )
 from ..dependencies.models_schemas_function_filters import get_function_jobs_filters
 from ..dependencies.services import (
@@ -50,7 +46,7 @@ from ..dependencies.services import (
 )
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
-from . import solvers_jobs, solvers_jobs_read, studies_jobs
+from . import solvers_jobs_read, studies_jobs
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
@@ -204,49 +200,13 @@ async def function_job_status(
         RegisteredFunctionJob, Depends(get_function_job_dependency)
     ],
     function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
-    stored_job_status: Annotated[FunctionJobStatus, Depends(get_stored_job_status)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
 ) -> FunctionJobStatus:
 
-    if stored_job_status.status in (RunningState.SUCCESS, RunningState.FAILED):
-        return stored_job_status
-
-    if (
-        function.function_class == FunctionClass.PROJECT
-        and function_job.function_class == FunctionClass.PROJECT
-    ):
-        job_status = await studies_jobs.inspect_study_job(
-            study_id=function.project_id,
-            job_id=function_job.project_job_id,
-            user_id=user_id,
-            director2_api=director2_api,
-        )
-    elif (function.function_class == FunctionClass.SOLVER) and (
-        function_job.function_class == FunctionClass.SOLVER
-    ):
-        job_status = await solvers_jobs.inspect_job(
-            solver_key=function.solver_key,
-            version=function.solver_version,
-            job_id=function_job.solver_job_id,
-            user_id=user_id,
-            director2_api=director2_api,
-        )
-    else:
-        raise UnsupportedFunctionFunctionJobClassCombinationError(
-            function_class=function.function_class,
-            function_job_class=function_job.function_class,
-        )
-
-    new_job_status = FunctionJobStatus(status=job_status.state)
-
-    return await wb_api_rpc.update_function_job_status(
-        function_job_id=function_job.uid,
-        user_id=user_id,
-        product_name=product_name,
-        job_status=new_job_status,
+    return await function_job_service.inspect_function_job(
+        function=function, function_job=function_job
     )
 
 
@@ -306,6 +266,7 @@ async def function_job_outputs(
         function.function_class == FunctionClass.PROJECT
         and function_job.function_class == FunctionClass.PROJECT
     ):
+        assert function_job.project_job_id is not None  # nosec
         new_outputs = dict(
             (
                 await studies_jobs.get_study_job_outputs(
@@ -321,6 +282,7 @@ async def function_job_outputs(
         function.function_class == FunctionClass.SOLVER
         and function_job.function_class == FunctionClass.SOLVER
     ):
+        assert function_job.solver_job_id is not None  # nosec
         new_outputs = dict(
             (
                 await solvers_jobs_read.get_job_outputs(
@@ -377,6 +339,11 @@ async def get_function_job_logs_task(
         function.function_class == FunctionClass.PROJECT
         and function_job.function_class == FunctionClass.PROJECT
     ):
+        if function_job.project_job_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Could not find project job",
+            )
         async_job_get = await job_service.start_log_export(
             job_id=function_job.project_job_id,
         )
@@ -393,6 +360,11 @@ async def get_function_job_logs_task(
         function.function_class == FunctionClass.SOLVER
         and function_job.function_class == FunctionClass.SOLVER
     ):
+        if function_job.solver_job_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Could not find solver job",
+            )
         async_job_get = await job_service.start_log_export(
             job_id=function_job.solver_job_id,
         )

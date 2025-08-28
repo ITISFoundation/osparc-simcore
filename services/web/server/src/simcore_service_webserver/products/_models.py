@@ -140,6 +140,17 @@ class Product(BaseModel):
     group_id: Annotated[
         int | None, Field(description="Groups associated to this product")
     ] = None
+    support_standard_group_id: Annotated[
+        int | None, Field(description="Support standard group ID, None if disabled")
+    ] = None
+    support_assigned_fogbugz_person_id: Annotated[
+        int | None,
+        Field(description="Support assigned Fogbugz person ID, None if disabled"),
+    ] = None
+    support_assigned_fogbugz_project_id: Annotated[
+        int | None,
+        Field(description="Support assigned Fogbugz project ID, None if disabled"),
+    ] = None
 
     is_payment_enabled: Annotated[
         bool,
@@ -285,6 +296,9 @@ class Product(BaseModel):
                             "LOGIN_2FA_REQUIRED": False,
                         },
                         "group_id": 12345,
+                        "support_standard_group_id": 67890,
+                        "support_assigned_fogbugz_person_id": 112,
+                        "support_assigned_fogbugz_project_id": 72,
                         "is_payment_enabled": False,
                     },
                 ]

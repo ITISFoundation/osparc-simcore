@@ -27,7 +27,9 @@ anyio==4.7.0
     #   httpx
     #   starlette
 asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 attrs==24.2.0
     # via
     #   -c requirements/_base.txt
@@ -75,7 +77,7 @@ charset-normalizer==3.4.0
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.1.7
+click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -102,7 +104,9 @@ ecdsa==0.19.0
     #   sshpubkeys
 faker==36.1.1
     # via -r requirements/_test.in
-fastapi==0.115.12
+fakeredis==2.31.0
+    # via -r requirements/_test.in
+fastapi==0.116.1
     # via
     #   -c requirements/_base.txt
     #   pact-python
@@ -303,6 +307,11 @@ pyyaml==6.0.2
     #   moto
     #   openapi-spec-validator
     #   responses
+redis==5.2.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fakeredis
 referencing==0.35.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -349,6 +358,8 @@ sniffio==1.3.1
     #   anyio
     #   asgi-lifespan
     #   httpx
+sortedcontainers==2.4.0
+    # via fakeredis
 sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -359,7 +370,7 @@ sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
-starlette==0.41.3
+starlette==0.47.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -384,14 +395,17 @@ typing-extensions==4.14.1
     #   pydantic
     #   pydantic-core
     #   sqlalchemy2-stubs
+    #   starlette
     #   types-boto3
     #   typing-inspection
 typing-inspection==0.4.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
-tzdata==2025.1
-    # via faker
+tzdata==2025.2
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

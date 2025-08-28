@@ -315,7 +315,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH: {
           this.__setIcon("@FontAwesome5Solid/trash/24");
           title.setValue(this.tr("Recently Deleted"));
-          const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+          const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
           description.set({
             value: this.tr(`Items here will be permanently deleted after ${trashDays} days.`),
             visibility: "visible",
@@ -334,6 +334,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           this.__setIcon("@FontAwesome5Solid/search/24");
           title.setValue(this.tr("Public Projects results"));
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Functions results"));
       }
     },
 

@@ -1,7 +1,9 @@
 from functools import cached_property
 from pathlib import Path
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.config import JsonDict
 
 from ..basic_types import PortInt
 from ..projects import ProjectID
@@ -88,40 +90,50 @@ class RunningDynamicServiceDetails(ServiceDetails):
         alias="service_message",
     )
 
+    is_collaborative: Annotated[
+        bool,
+        Field(description="True if service allows collaboration (multi-tenant access)"),
+    ] = False
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [  # legacy
+                    {
+                        "service_key": "simcore/services/dynamic/raw-graphs",
+                        "service_version": "2.10.6",
+                        "user_id": 1,
+                        "project_id": "32fb4eb6-ab30-11ef-9ee4-0242ac140008",
+                        "service_uuid": "0cd049ba-cd6b-4a12-b416-a50c9bc8e7bb",
+                        "service_basepath": "/x/0cd049ba-cd6b-4a12-b416-a50c9bc8e7bb",
+                        "service_host": "raw-graphs_0cd049ba-cd6b-4a12-b416-a50c9bc8e7bb",
+                        "service_port": 4000,
+                        "published_port": None,
+                        "entry_point": "",
+                        "service_state": "running",
+                        "service_message": "",
+                    },
+                    # new style
+                    {
+                        "service_key": "simcore/services/dynamic/jupyter-math",
+                        "service_version": "3.0.3",
+                        "user_id": 1,
+                        "project_id": "32fb4eb6-ab30-11ef-9ee4-0242ac140008",
+                        "service_uuid": "6e3cad3a-eb64-43de-b476-9ac3c413fd9c",
+                        "boot_type": "V2",
+                        "service_host": "dy-sidecar_6e3cad3a-eb64-43de-b476-9ac3c413fd9c",
+                        "service_port": 8888,
+                        "service_state": "running",
+                        "service_message": "",
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
         ignored_types=(cached_property,),
-        json_schema_extra={
-            "examples": [
-                # legacy
-                {
-                    "service_key": "simcore/services/dynamic/raw-graphs",
-                    "service_version": "2.10.6",
-                    "user_id": 1,
-                    "project_id": "32fb4eb6-ab30-11ef-9ee4-0242ac140008",
-                    "service_uuid": "0cd049ba-cd6b-4a12-b416-a50c9bc8e7bb",
-                    "service_basepath": "/x/0cd049ba-cd6b-4a12-b416-a50c9bc8e7bb",
-                    "service_host": "raw-graphs_0cd049ba-cd6b-4a12-b416-a50c9bc8e7bb",
-                    "service_port": 4000,
-                    "published_port": None,
-                    "entry_point": "",
-                    "service_state": "running",
-                    "service_message": "",
-                },
-                # new style
-                {
-                    "service_key": "simcore/services/dynamic/jupyter-math",
-                    "service_version": "3.0.3",
-                    "user_id": 1,
-                    "project_id": "32fb4eb6-ab30-11ef-9ee4-0242ac140008",
-                    "service_uuid": "6e3cad3a-eb64-43de-b476-9ac3c413fd9c",
-                    "boot_type": "V2",
-                    "service_host": "dy-sidecar_6e3cad3a-eb64-43de-b476-9ac3c413fd9c",
-                    "service_port": 8888,
-                    "service_state": "running",
-                    "service_message": "",
-                },
-            ]
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
 
     @cached_property
