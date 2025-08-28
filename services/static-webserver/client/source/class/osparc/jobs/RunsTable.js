@@ -52,7 +52,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       }
       return false;
     }
-    const iconPathStop = "osparc/icons/circle-xmark-white.svg";
+    const iconPathStop = osparc.ui.switch.ThemeSwitcher.isLight() ? "osparc/icons/circle-xmark-black.svg" : "osparc/icons/circle-xmark-white.svg";
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop, shouldShowCancel);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
 
