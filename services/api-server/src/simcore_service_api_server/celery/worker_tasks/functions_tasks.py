@@ -3,7 +3,7 @@ from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-i
 )
 from celery_library.utils import get_app_server  # pylint: disable=no-name-in-module
 from fastapi import FastAPI
-from models_library.functions import RegisteredFunction
+from models_library.functions import FunctionJobID, RegisteredFunction
 from models_library.projects_nodes_io import NodeID
 from servicelib.celery.models import TaskID
 from simcore_service_api_server._service_function_jobs import FunctionJobService
@@ -94,6 +94,7 @@ async def run_function(
     *,
     user_identity: Identity,
     function: RegisteredFunction,
+    pre_registered_function_job_id: FunctionJobID,
     job_inputs: JobInputs,
     pricing_spec: JobPricingSpecification | None,
     job_links: JobLinks,
@@ -109,6 +110,7 @@ async def run_function(
     return await function_job_service.run_function(
         job_creation_task_id=task_id,
         function=function,
+        pre_registered_function_job_id=pre_registered_function_job_id,
         job_inputs=job_inputs,
         pricing_spec=pricing_spec,
         job_links=job_links,

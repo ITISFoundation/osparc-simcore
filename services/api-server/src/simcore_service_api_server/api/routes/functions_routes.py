@@ -387,6 +387,7 @@ async def run_function(  # noqa: PLR0913
         task_filter=task_filter,
         user_identity=user_identity,
         function=to_run_function,
+        pre_registered_function_job_id=pre_registered_function_job_id,
         job_inputs=job_inputs,
         pricing_spec=pricing_spec,
         job_links=job_links,

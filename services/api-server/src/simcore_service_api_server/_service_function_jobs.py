@@ -368,6 +368,7 @@ class FunctionJobService:
         *,
         job_creation_task_id: TaskID | None,
         function: RegisteredFunction,
+        pre_registered_function_job_id: FunctionJobID,
         job_inputs: JobInputs,
         pricing_spec: JobPricingSpecification | None,
         job_links: JobLinks,
@@ -393,7 +394,7 @@ class FunctionJobService:
             return await self.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
-                function_job_id=study_job.id,
+                function_job_id=pre_registered_function_job_id,
                 function_class=FunctionClass.PROJECT,
                 job_creation_task_id=job_creation_task_id,
                 project_job_id=study_job.id,
@@ -418,7 +419,7 @@ class FunctionJobService:
             return await self.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
-                function_job_id=solver_job.id,
+                function_job_id=pre_registered_function_job_id,
                 function_class=FunctionClass.SOLVER,
                 job_creation_task_id=job_creation_task_id,
                 solver_job_id=solver_job.id,
