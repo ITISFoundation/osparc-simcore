@@ -19,9 +19,6 @@ qx.Class.define("osparc.store.Functions", {
   type: "static",
 
   statics: {
-    __functions: null,
-    __functionsPromiseCached: null,
-
     __createFunctionData: function(templateData, name, description, defaultInputs = {}, exposedInputs = {}, exposedOutputs = {}) {
       const functionData = {
         "projectId": templateData["uuid"],
@@ -101,7 +98,10 @@ qx.Class.define("osparc.store.Functions", {
           curatedOrderBy.field = "created_at";
           break;
         case "name":
-          // stays the same
+          // Backend does not currently support sorting by 'name'.
+          // Fallback: sort by 'modified_at' instead.
+          // TODO: Remove this workaround once backend supports sorting by 'name'.
+          curatedOrderBy.field = "modified_at";
           break;
         default:
           // only those three are supported
@@ -222,13 +222,6 @@ qx.Class.define("osparc.store.Functions", {
           osparc.FlashMessenger.logError(err);
           throw err;
         });
-    },
-
-    invalidateFunctions: function() {
-      this.__functions = null;
-      if (this.__functionsPromiseCached) {
-        this.__functionsPromiseCached = null;
-      }
     },
   }
 });
