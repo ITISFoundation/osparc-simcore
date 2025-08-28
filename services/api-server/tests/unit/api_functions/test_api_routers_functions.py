@@ -50,6 +50,9 @@ from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.celery.worker_tasks import functions_tasks
 from simcore_service_api_server.models.api_resources import JobLinks
+from simcore_service_api_server.models.domain.functions import (
+    PreRegisteredFunctionJobData,
+)
 from simcore_service_api_server.models.schemas.jobs import JobInputs
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
@@ -473,13 +476,21 @@ async def test_run_project_function(
             read_functions=True,
         ),
     )
+    mock_handler_in_functions_rpc_interface(
+        "patch_registered_function_job", mock_registered_project_function_job
+    )
+
+    pre_registered_function_job_data = PreRegisteredFunctionJobData(
+        job_inputs=JobInputs(values={}),
+        function_job_id=mock_registered_project_function.uid,
+    )
 
     job = await functions_tasks.run_function(
         task=MagicMock(spec=Task),
         task_id=TaskID(_faker.uuid4()),
         user_identity=user_identity,
         function=mock_registered_project_function,
-        job_inputs=JobInputs(values={}),
+        pre_registered_function_job_data=pre_registered_function_job_data,
         pricing_spec=None,
         job_links=job_links,
         x_simcore_parent_project_uuid=None,
