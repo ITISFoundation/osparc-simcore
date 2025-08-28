@@ -44,7 +44,6 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathStop = "osparc/icons/circle-xmark-text.svg";
     const shouldShowCancel = cellInfo => {
       if (cellInfo && cellInfo.rowData && cellInfo.rowData["state"]) {
         return [
@@ -53,10 +52,10 @@ qx.Class.define("osparc.jobs.RunsTable", {
       }
       return false;
     }
+    const iconPathStop = "osparc/icons/circle-xmark-white.svg";
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop, shouldShowCancel);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
 
-    const iconPathInfo = "osparc/icons/circle-info-text.svg";
     const jobsStore =osparc.store.Jobs.getInstance();
     const shouldShowInfo = cellInfo => {
       if (cellInfo && cellInfo.rowData && cellInfo.rowData["collectionRunId"]) {
@@ -68,6 +67,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       }
       return false;
     }
+    const iconPathInfo = "osparc/icons/circle-info-text.svg";
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo, shouldShowInfo);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_INFO.column, fontButtonRendererInfo);
 
