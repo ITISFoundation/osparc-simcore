@@ -3,7 +3,9 @@ anyio==4.9.0
     #   -c requirements/_base.txt
     #   httpx
 asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 certifi==2025.1.31
     # via
     #   -c requirements/../../../requirements/constraints.txt

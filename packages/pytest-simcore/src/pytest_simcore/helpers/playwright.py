@@ -303,6 +303,29 @@ class SocketIOProjectStateUpdatedWaiter:
 
 
 @dataclass
+class SocketIOWaitNodeForOutputs:
+    logger: logging.Logger
+    expected_number_of_outputs: int
+    node_id: str
+
+    def __call__(self, message: str) -> bool:
+        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+            decoded_message = decode_socketio_42_message(message)
+            if decoded_message.name == _OSparcMessages.NODE_UPDATED:
+                assert "data" in decoded_message.obj
+                assert "node_id" in decoded_message.obj
+                if decoded_message.obj["node_id"] == self.node_id:
+                    assert "outputs" in decoded_message.obj["data"]
+
+                    return (
+                        len(decoded_message.obj["data"]["outputs"])
+                        == self.expected_number_of_outputs
+                    )
+
+        return False
+
+
+@dataclass
 class SocketIOOsparcMessagePrinter:
     include_logger_messages: bool = False
 

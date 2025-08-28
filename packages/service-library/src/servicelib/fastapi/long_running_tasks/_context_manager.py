@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
@@ -15,7 +16,7 @@ from ...long_running_tasks.models import (
     TaskId,
     TaskStatus,
 )
-from ._client import Client
+from ._client import HttpClient
 
 _logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ class _ProgressManager:
 
 @asynccontextmanager
 async def periodic_task_result(
-    client: Client,
+    client: HttpClient,
     task_id: TaskId,
     *,
     task_timeout: PositiveFloat,
@@ -94,6 +95,13 @@ async def periodic_task_result(
     raises: the original expcetion the task raised, if any
     raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
+
+    warnings.warn(
+        "This context manager is deprecated and will be removed in future releases. "
+        "Please use the `servicelib.long_running_tasks.lrt_api` instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     progress_manager = _ProgressManager(progress_callback)
 
@@ -121,7 +129,7 @@ async def periodic_task_result(
 
         yield result
     except TimeoutError as e:
-        await client.cancel_and_delete_task(task_id)
+        await client.remove_task(task_id)
         raise TaskClientTimeoutError(
             task_id=task_id,
             timeout=task_timeout,

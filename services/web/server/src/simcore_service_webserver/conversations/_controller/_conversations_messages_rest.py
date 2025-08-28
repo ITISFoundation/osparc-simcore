@@ -1,6 +1,9 @@
+import functools
 import logging
+from typing import Any
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver.conversations import (
     ConversationMessagePatch,
     ConversationMessageRestGet,
@@ -16,6 +19,7 @@ from models_library.rest_pagination import (
     PageQueryParameters,
 )
 from models_library.rest_pagination_utils import paginate_data
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -25,11 +29,13 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.users import users_service
 
 from ..._meta import API_VTAG as VTAG
+from ...email import email_service
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
-from ...users import users_service
+from ...products import products_web
 from ...utils_aiohttp import envelope_json_response
 from .. import _conversation_message_service, _conversation_service
 from ._common import ConversationPathParams, raise_unsupported_type
@@ -56,6 +62,10 @@ class _ConversationMessageCreateBodyParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+def _json_encoder_and_dumps(obj: Any, **kwargs):
+    return json_dumps(jsonable_encoder(obj), **kwargs)
+
+
 @routes.post(
     f"/{VTAG}/conversations/{{conversation_id}}/messages",
     name="create_conversation_message",
@@ -70,26 +80,67 @@ async def create_conversation_message(request: web.Request):
         _ConversationMessageCreateBodyParams, request
     )
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    conversation = await _conversation_service.get_conversation_for_user(
-        app=request.app,
-        conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
-    )
-    # Ensure only support conversations are allowed
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
 
-    message = await _conversation_message_service.create_message(
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
         user_id=req_ctx.user_id,
-        project_id=None,  # Support conversations don't use project_id
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        content=body_params.content,
-        type_=body_params.type,
     )
+
+    message, is_first_message = (
+        await _conversation_message_service.create_support_message_with_first_check(
+            app=request.app,
+            product_name=req_ctx.product_name,
+            user_id=req_ctx.user_id,
+            project_id=None,  # Support conversations don't use project_id
+            conversation_id=path_params.conversation_id,
+            content=body_params.content,
+            type_=body_params.type,
+        )
+    )
+
+    # NOTE: This is done here in the Controller layer, as the interface around email currently needs request
+    if is_first_message:
+        try:
+            user = await users_service.get_user(request.app, req_ctx.user_id)
+            product = products_web.get_current_product(request)
+            template_name = "request_support.jinja2"
+            destination_email = product.support_email
+            email_template_path = await products_web.get_product_template_path(
+                request, template_name
+            )
+            _url = request.url
+            _conversation_url = f"{_url.scheme}://{_url.host}/#/conversation/{path_params.conversation_id}"
+            _extra_context = _conversation.extra_context
+            await email_service.send_email_from_template(
+                request,
+                from_=product.support_email,
+                to=destination_email,
+                template=email_template_path,
+                context={
+                    "host": request.host,
+                    "first_name": user["first_name"],
+                    "last_name": user["last_name"],
+                    "user_email": user["email"],
+                    "conversation_url": _conversation_url,
+                    "message_content": message.content,
+                    "extra_context": _extra_context,
+                    "dumps": functools.partial(_json_encoder_and_dumps, indent=1),
+                },
+            )
+        except Exception:  # pylint: disable=broad-except
+            _logger.exception(
+                "Failed to send '%s' email to %s (this means the FogBugz case for the request was not created).",
+                template_name,
+                destination_email,
+            )
 
     data = ConversationMessageRestGet.from_domain_model(message)
     return envelope_json_response(data, web.HTTPCreated)
@@ -109,16 +160,19 @@ async def list_conversation_messages(request: web.Request):
         _ListConversationMessageQueryParams, request
     )
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    conversation = await _conversation_service.get_conversation_for_user(
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
     )
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
 
     total, messages = (
         await _conversation_message_service.list_messages_for_conversation(
@@ -160,16 +214,19 @@ async def get_conversation_message(request: web.Request):
         _ConversationMessagePathParams, request
     )
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    conversation = await _conversation_service.get_conversation_for_user(
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
     )
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
 
     message = await _conversation_message_service.get_message(
         app=request.app,
@@ -195,19 +252,23 @@ async def update_conversation_message(request: web.Request):
     )
     body_params = await parse_request_body_as(ConversationMessagePatch, request)
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    conversation = await _conversation_service.get_conversation_for_user(
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
     )
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
 
     message = await _conversation_message_service.update_message(
         app=request.app,
+        product_name=req_ctx.product_name,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,
         message_id=path_params.message_id,
@@ -231,19 +292,23 @@ async def delete_conversation_message(request: web.Request):
         _ConversationMessagePathParams, request
     )
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    conversation = await _conversation_service.get_conversation_for_user(
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
     )
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
 
     await _conversation_message_service.delete_message(
         app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,

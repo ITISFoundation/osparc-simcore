@@ -40,8 +40,8 @@ from simcore_sdk.node_ports_common.filemanager import upload_path
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME
 from simcore_service_dynamic_sidecar.modules.long_running_tasks import (
-    task_restore_state,
-    task_save_state,
+    restore_user_services_state_paths,
+    save_user_services_state_paths,
 )
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
@@ -375,7 +375,7 @@ async def test_legacy_state_open_and_clone(
 
     # restore state from legacy archives
     for _ in range(repeat_count):
-        await task_restore_state(
+        await restore_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,
@@ -396,7 +396,7 @@ async def test_legacy_state_open_and_clone(
     )
 
     for _ in range(repeat_count):
-        await task_save_state(
+        await save_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,
@@ -436,7 +436,7 @@ async def test_state_open_and_close(
 
     # restoring finds nothing inside
     for _ in range(repeat_count):
-        await task_restore_state(
+        await restore_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,
@@ -462,7 +462,7 @@ async def test_state_open_and_close(
 
     # save them to S3
     for _ in range(repeat_count):
-        await task_save_state(
+        await save_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,
@@ -485,7 +485,7 @@ async def test_state_open_and_close(
 
     # restore them from S3
     for _ in range(repeat_count):
-        await task_restore_state(
+        await restore_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,

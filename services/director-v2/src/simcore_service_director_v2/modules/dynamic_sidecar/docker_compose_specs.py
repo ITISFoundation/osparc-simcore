@@ -4,7 +4,7 @@ from typing import Any, Final, TypeAlias, TypedDict
 
 from common_library.json_serialization import json_dumps
 from fastapi.applications import FastAPI
-from models_library.docker import DockerGenericTag, StandardSimcoreDockerLabels
+from models_library.docker import DockerGenericTag
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -14,6 +14,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
 )
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
@@ -129,7 +130,7 @@ def _update_paths_mappings(
         env_vars["DY_SIDECAR_PATH_INPUTS"] = f"{path_mappings.inputs_path}"
         env_vars["DY_SIDECAR_PATH_OUTPUTS"] = f"{path_mappings.outputs_path}"
         env_vars["DY_SIDECAR_STATE_PATHS"] = (
-            f"{json_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
+            f"{json_dumps({f'{p}' for p in path_mappings.state_paths})}"
         )
 
         service_content["environment"] = _EnvironmentSection.export_as_list(env_vars)
@@ -202,7 +203,7 @@ def _update_resource_limits_and_reservations(
         ]
 
         resource_limits = [
-            f"{CPU_RESOURCE_LIMIT_KEY}={int(nano_cpu_limits*_NANO)}",
+            f"{CPU_RESOURCE_LIMIT_KEY}={int(nano_cpu_limits * _NANO)}",
             f"{MEM_RESOURCE_LIMIT_KEY}={mem_limits}",
         ]
 
@@ -241,7 +242,7 @@ def _update_container_labels(
             spec_service_key, default_limits
         )
 
-        label_keys = StandardSimcoreDockerLabels.model_validate(
+        label_keys = SimcoreContainerLabels.model_validate(
             {
                 "user_id": user_id,
                 "project_id": project_id,
@@ -295,9 +296,7 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
     )
 
-    docker_compose_version = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
-    )
+    docker_compose_version = app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
 
     egress_proxy_settings: EgressProxySettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
@@ -347,19 +346,21 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
             service_version=service_version,
             product_name=product_name,
         )
-        simcore_service_labels = await resolve_and_substitute_session_variables_in_model(
-            app=app,
-            model=simcore_service_labels,
-            # NOTE: at this point all OsparcIdentifiers have to be replaced
-            # an error will be raised otherwise
-            safe=False,
-            user_id=user_id,
-            product_name=product_name,
-            product_api_base_url=product_api_base_url,
-            project_id=project_id,
-            node_id=node_id,
-            service_run_id=service_run_id,
-            wallet_id=wallet_id,
+        simcore_service_labels = (
+            await resolve_and_substitute_session_variables_in_model(
+                app=app,
+                model=simcore_service_labels,
+                # NOTE: at this point all OsparcIdentifiers have to be replaced
+                # an error will be raised otherwise
+                safe=False,
+                user_id=user_id,
+                product_name=product_name,
+                product_api_base_url=product_api_base_url,
+                project_id=project_id,
+                node_id=node_id,
+                service_run_id=service_run_id,
+                wallet_id=wallet_id,
+            )
         )
 
         add_egress_configuration(

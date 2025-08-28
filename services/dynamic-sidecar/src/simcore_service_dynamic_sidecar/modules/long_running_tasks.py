@@ -3,17 +3,19 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Final
+from typing import Any, Final
 
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from models_library.service_settings_labels import LegacyState
 from pydantic import PositiveInt
+from servicelib.fastapi import long_running_tasks
 from servicelib.file_utils import log_directory_changes
 from servicelib.logging_utils import log_context
-from servicelib.long_running_tasks.task import TaskRegistry
+from servicelib.long_running_tasks.task import TaskProtocol, TaskRegistry
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
@@ -47,9 +49,9 @@ from ..core.settings import ApplicationSettings
 from ..core.utils import CommandResult
 from ..core.validation import parse_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
-from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
+from ..modules.inputs import InputsState
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
@@ -145,8 +147,8 @@ async def _reset_on_error(
         raise
 
 
-async def task_pull_user_servcices_docker_images(
-    progress: TaskProgress, shared_store: SharedStore, app: FastAPI
+async def pull_user_services_images(
+    progress: TaskProgress, app: FastAPI, shared_store: SharedStore
 ) -> None:
     assert shared_store.compose_spec  # nosec
 
@@ -157,13 +159,13 @@ async def task_pull_user_servcices_docker_images(
     await progress.update(message="finished pulling user services", percent=1)
 
 
-async def task_create_service_containers(
+async def create_user_services(
     progress: TaskProgress,
-    settings: ApplicationSettings,
-    containers_create: ContainersCreate,
-    shared_store: SharedStore,
     app: FastAPI,
+    settings: ApplicationSettings,
+    shared_store: SharedStore,
     application_health: ApplicationHealth,
+    containers_create: ContainersCreate,
 ) -> list[str]:
     await progress.update(message="validating service spec", percent=0)
 
@@ -231,11 +233,11 @@ async def task_create_service_containers(
     return shared_store.container_names
 
 
-async def task_runs_docker_compose_down(
+async def remove_user_services(
     progress: TaskProgress,
     app: FastAPI,
-    shared_store: SharedStore,
     settings: ApplicationSettings,
+    shared_store: SharedStore,
     mounted_volumes: MountedVolumes,
 ) -> None:
     if shared_store.compose_spec is None:
@@ -364,11 +366,11 @@ async def _restore_state_folder(
     )
 
 
-async def task_restore_state(
+async def restore_user_services_state_paths(
     progress: TaskProgress,
+    app: FastAPI,
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
-    app: FastAPI,
 ) -> int:
     # NOTE: the legacy data format was a zip file
     # this method will maintain retro compatibility.
@@ -440,11 +442,11 @@ async def _save_state_folder(
     )
 
 
-async def task_save_state(
+async def save_user_services_state_paths(
     progress: TaskProgress,
+    app: FastAPI,
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
-    app: FastAPI,
 ) -> int:
     """
     Saves the states of the service.
@@ -482,16 +484,15 @@ async def task_save_state(
     return _get_satate_folders_size(state_paths)
 
 
-async def task_ports_inputs_pull(
+async def pull_user_services_input_ports(
     progress: TaskProgress,
-    port_keys: list[str] | None,
-    mounted_volumes: MountedVolumes,
     app: FastAPI,
     settings: ApplicationSettings,
-    *,
-    inputs_pulling_enabled: bool,
+    mounted_volumes: MountedVolumes,
+    inputs_state: InputsState,
+    port_keys: list[str] | None,
 ) -> int:
-    if not inputs_pulling_enabled:
+    if not inputs_state.inputs_pulling_enabled:
         _logger.info("Received request to pull inputs but was ignored")
         return 0
 
@@ -535,11 +536,11 @@ async def task_ports_inputs_pull(
     return int(transferred_bytes)
 
 
-async def task_ports_outputs_pull(
+async def pull_user_services_output_ports(
     progress: TaskProgress,
-    port_keys: list[str] | None,
-    mounted_volumes: MountedVolumes,
     app: FastAPI,
+    mounted_volumes: MountedVolumes,
+    port_keys: list[str] | None,
 ) -> int:
     await progress.update(message="starting outputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
@@ -572,8 +573,8 @@ async def task_ports_outputs_pull(
     return int(transferred_bytes)
 
 
-async def task_ports_outputs_push(
-    progress: TaskProgress, outputs_manager: OutputsManager, app: FastAPI
+async def push_user_services_output_ports(
+    progress: TaskProgress, app: FastAPI, outputs_manager: OutputsManager
 ) -> None:
     await progress.update(message="starting outputs pushing", percent=0.0)
     await post_sidecar_log_message(
@@ -590,7 +591,7 @@ async def task_ports_outputs_push(
     await progress.update(message="finished outputs pushing", percent=0.99)
 
 
-async def task_containers_restart(
+async def restart_user_services(
     progress: TaskProgress,
     app: FastAPI,
     settings: ApplicationSettings,
@@ -629,15 +630,81 @@ async def task_containers_restart(
         await progress.update(message="started log fetching", percent=0.99)
 
 
-for task in (
-    task_pull_user_servcices_docker_images,
-    task_create_service_containers,
-    task_runs_docker_compose_down,
-    task_restore_state,
-    task_save_state,
-    task_ports_inputs_pull,
-    task_ports_outputs_pull,
-    task_ports_outputs_push,
-    task_containers_restart,
-):
-    TaskRegistry.register(task)
+def setup_long_running_tasks(app: FastAPI) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    long_running_tasks.server.setup(
+        app,
+        redis_settings=app_settings.REDIS_SETTINGS,
+        rabbit_settings=app_settings.RABBIT_SETTINGS,
+        lrt_namespace=f"{APP_NAME}-{app_settings.DY_SIDECAR_RUN_ID}",
+    )
+
+    task_context: dict[TaskProtocol, dict[str, Any]] = {}
+
+    async def on_startup() -> None:
+        shared_store: SharedStore = app.state.shared_store
+        settings: ApplicationSettings = app.state.settings
+        application_health: ApplicationHealth = app.state.application_health
+        mounted_volumes: MountedVolumes = app.state.mounted_volumes
+        outputs_manager: OutputsManager = app.state.outputs_manager
+        inputs_state: InputsState = app.state.inputs_state
+
+        task_context.update(
+            {
+                pull_user_services_images: {
+                    "shared_store": shared_store,
+                    "app": app,
+                },
+                create_user_services: {
+                    "app": app,
+                    "settings": settings,
+                    "shared_store": shared_store,
+                    "application_health": application_health,
+                },
+                remove_user_services: {
+                    "app": app,
+                    "settings": settings,
+                    "shared_store": shared_store,
+                    "mounted_volumes": mounted_volumes,
+                },
+                restore_user_services_state_paths: {
+                    "app": app,
+                    "settings": settings,
+                    "mounted_volumes": mounted_volumes,
+                },
+                save_user_services_state_paths: {
+                    "app": app,
+                    "settings": settings,
+                    "mounted_volumes": mounted_volumes,
+                },
+                pull_user_services_input_ports: {
+                    "app": app,
+                    "settings": settings,
+                    "mounted_volumes": mounted_volumes,
+                    "inputs_state": inputs_state,
+                },
+                pull_user_services_output_ports: {
+                    "app": app,
+                    "mounted_volumes": mounted_volumes,
+                },
+                push_user_services_output_ports: {
+                    "app": app,
+                    "outputs_manager": outputs_manager,
+                },
+                restart_user_services: {
+                    "app": app,
+                    "settings": settings,
+                    "shared_store": shared_store,
+                },
+            }
+        )
+
+        for handler, context in task_context.items():
+            TaskRegistry.register(handler, **context)
+
+    async def _on_shutdown() -> None:
+        for handler in task_context:
+            TaskRegistry.unregister(handler)
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)

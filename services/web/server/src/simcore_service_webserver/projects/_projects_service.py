@@ -278,9 +278,7 @@ async def get_project_for_user(
     # adds state if it is not a template
     if include_state:
         project = await add_project_states_for_user(
-            user_id=user_id,
-            project=project,
-            app=app,
+            user_id=user_id, project=project, app=app
         )
 
     # adds `trashed_by_primary_gid`
@@ -1367,22 +1365,32 @@ async def is_node_id_present_in_any_project_workbench(
 
 
 async def _get_node_share_state(
-    app: web.Application, *, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
+    app: web.Application,
+    *,
+    project_uuid: ProjectID,
+    node_id: NodeID,
+    computational_pipeline_running: bool | None,
+    user_primrary_groupid: GroupID,
 ) -> NodeShareState:
     node = await _projects_nodes_repository.get(
         app, project_id=project_uuid, node_id=node_id
     )
 
     if _is_node_dynamic(node.key):
-        # if the service is dynamic and running it is locked
+        # if the service is dynamic and running it is locked if it is not collaborative
         service = await dynamic_scheduler_service.get_dynamic_service(
             app, node_id=node_id
         )
 
         if isinstance(service, DynamicServiceGet | NodeGet):
             # service is running
+            is_collaborative_service = False
+            if isinstance(service, DynamicServiceGet):
+                # only dynamic-sidecar powered services can be collaborative
+                is_collaborative_service = service.is_collaborative
+
             return NodeShareState(
-                locked=True,
+                locked=not is_collaborative_service,
                 current_user_groupids=[
                     await users_service.get_user_primary_group_id(
                         app, TypeAdapter(UserID).validate_python(service.user_id)
@@ -1398,11 +1406,11 @@ async def _get_node_share_state(
         return NodeShareState(locked=False)
 
     # if the service is computational and no pipeline is running it is not locked
-    if await director_v2_service.is_pipeline_running(app, user_id, project_uuid):
+    if computational_pipeline_running:
         return NodeShareState(
             locked=True,
             current_user_groupids=[
-                await users_service.get_user_primary_group_id(app, user_id)
+                user_primrary_groupid,
             ],
             status=NodeShareStatus.OPENED,
         )
@@ -1906,6 +1914,10 @@ async def add_project_states_for_user(
     )
 
     # compose the node states
+    is_pipeline_running = await director_v2_service.is_pipeline_running(
+        app, user_id, project["uuid"]
+    )
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id)
     for node_uuid, node in project["workbench"].items():
         assert isinstance(node_uuid, str)  # nosec
         assert isinstance(node, dict)  # nosec
@@ -1914,9 +1926,10 @@ async def add_project_states_for_user(
         with contextlib.suppress(NodeShareStateCannotBeComputedError):
             node_lock_state = await _get_node_share_state(
                 app,
-                user_id=user_id,
                 project_uuid=project["uuid"],
                 node_id=NodeID(node_uuid),
+                computational_pipeline_running=is_pipeline_running,
+                user_primrary_groupid=user_primary_group_id,
             )
         if NodeID(node_uuid) in computational_node_states:
             node_state = computational_node_states[NodeID(node_uuid)].model_copy(

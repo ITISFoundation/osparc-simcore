@@ -221,7 +221,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
           break;
         case "middle-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
             alignY: "middle"
           })).set({
             padding: [3, 4]
@@ -251,7 +251,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
               toolTipText: "Unknown",
             });
           }
-          this.getChildControl("middle-container").add(control);
+          this.getChildControl("middle-container").addAt(control, 0);
           break;
         }
         case "node-status-ui": {
@@ -273,7 +273,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           };
           evaluateLabel();
           statusLabel.addListener("changeValue", evaluateLabel);
-          this.getChildControl("middle-container").add(control);
+          this.getChildControl("middle-container").addAt(control, 1);
           break;
         }
         case "progress":
@@ -285,6 +285,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
             row: 1,
             column: 0,
             colSpan: 3
+          });
+          break;
+        case "avatar-group":
+          control = new osparc.ui.basic.AvatarGroup(20, "right").set({
+            hideMyself: true,
+          });
+          this.getChildControl("middle-container").addAt(control, 2, {
+            flex: 1
           });
           break;
         case "usage-indicator":
@@ -313,7 +321,6 @@ qx.Class.define("osparc.workbench.NodeUI", {
     __createContentLayout: function() {
       const node = this.getNode();
       if (node) {
-        this.getChildControl("middle-container").removeAll();
         this.getChildControl("node-type-chip");
         this.getChildControl("node-status-ui");
 
@@ -397,10 +404,32 @@ qx.Class.define("osparc.workbench.NodeUI", {
         this.__optionsMenu.add(convertToParameter);
       }
 
+      const lockState = node.getStatus().getLockState();
       const lock = this.getChildControl("lock");
-      node.getStudy().bind("pipelineRunning", lock, "visibility", {
-        converter: pipelineRunning => pipelineRunning ? "visible" : "excluded"
+      lockState.bind("locked", lock, "visibility", {
+        converter: locked => {
+          if (locked) {
+            if (node.isDynamic()) {
+              // if it's dynamic, don't show the lock if it's me using it
+              const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+              const currentUserGroupIds = lockState.getCurrentUserGroupIds();
+              return currentUserGroupIds.includes(myGroupId) ? "excluded" : "visible";
+            } else {
+              return "visible";
+            }
+          }
+          return "excluded";
+        }
       });
+
+      const updateUserGroupIds = () => {
+        const currentUserGroupIds = lockState.getCurrentUserGroupIds();
+        const avatarGroup = this.getChildControl("avatar-group");
+        avatarGroup.setUserGroupIds(currentUserGroupIds);
+        avatarGroup.setVisibility(currentUserGroupIds.length ? "visible" : "excluded");
+      };
+      updateUserGroupIds();
+      lockState.addListener("changeCurrentUserGroupIds", updateUserGroupIds);
 
       this.__markerBtn.show();
       this.getNode().bind("marker", this.__markerBtn, "label", {
@@ -420,6 +449,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
 
+      // do not allow modifying the pipeline
       node.getStudy().bind("pipelineRunning", this.__deleteBtn, "enabled", {
         converter: running => !running
       });

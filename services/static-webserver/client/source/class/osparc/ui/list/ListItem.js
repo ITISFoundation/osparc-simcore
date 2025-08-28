@@ -142,16 +142,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       let control;
       switch (id) {
         case "thumbnail":
-          control = new qx.ui.basic.Image().set({
-            alignY: "middle",
-            scale: true,
-            allowGrowX: true,
-            allowGrowY: true,
-            allowShrinkX: true,
-            allowShrinkY: true,
-            maxWidth: 32,
-            maxHeight: 32
-          });
+          control = osparc.utils.Utils.createThumbnail(32);
           this._add(control, {
             row: 0,
             column: 0,

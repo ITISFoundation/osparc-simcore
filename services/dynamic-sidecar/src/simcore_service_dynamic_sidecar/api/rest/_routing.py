@@ -1,4 +1,4 @@
-""" Module to collect, tag and prefix all routes under 'main_router'
+"""Module to collect, tag and prefix all routes under 'main_router'
 
 Setup and register all routes here form different modules
 """

@@ -699,6 +699,9 @@ services:
       WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       WEBSERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
 
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: wb
+
       # WEBSERVER_SERVER_HOST
 
       WEBSERVER_HOST: ${WEBSERVER_HOST}
@@ -760,6 +763,7 @@ services:
       INVITATIONS_USERNAME: ${INVITATIONS_USERNAME}
 
       WEBSERVER_LICENSES: ${WEBSERVER_LICENSES}
+      WEBSERVER_FOGBUGZ: ${WEBSERVER_FOGBUGZ}
       LICENSES_ITIS_VIP_SYNCER_ENABLED: ${LICENSES_ITIS_VIP_SYNCER_ENABLED}
       LICENSES_ITIS_VIP_SYNCER_PERIODICITY: ${LICENSES_ITIS_VIP_SYNCER_PERIODICITY}
       LICENSES_ITIS_VIP_API_URL: ${LICENSES_ITIS_VIP_API_URL}
@@ -929,6 +933,9 @@ services:
       WEBSERVER_STATICWEB: "null"
       WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for api-server
 
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: api
+
     networks: *webserver_networks
 
   wb-db-event-listener:
@@ -937,6 +944,9 @@ services:
     hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
+
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: db
 
       WEBSERVER_HOST: ${WEBSERVER_HOST}
       WEBSERVER_PORT: ${WEBSERVER_PORT}
@@ -977,6 +987,7 @@ services:
       WEBSERVER_GROUPS: ${WB_DB_EL_GROUPS}
       WEBSERVER_INVITATIONS: ${WB_DB_EL_INVITATIONS}
       WEBSERVER_LICENSES: "null"
+      WEBSERVER_FOGBUGZ: "null"
       WEBSERVER_LOGIN: ${WB_DB_EL_LOGIN}
       WEBSERVER_PAYMENTS: ${WB_DB_EL_PAYMENTS}
       WEBSERVER_NOTIFICATIONS: ${WB_DB_EL_NOTIFICATIONS}
@@ -1033,6 +1044,9 @@ services:
 
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: gc
 
       # WEBSERVER_DB
       POSTGRES_DB: ${POSTGRES_DB}
@@ -1092,6 +1106,7 @@ services:
       WEBSERVER_HOST: ${WEBSERVER_HOST}
       WEBSERVER_INVITATIONS: ${WB_GC_INVITATIONS}
       WEBSERVER_LICENSES: "null"
+      WEBSERVER_FOGBUGZ: "null"
       WEBSERVER_LOGIN: ${WB_GC_LOGIN}
       WEBSERVER_LOGLEVEL: ${WB_GC_LOGLEVEL}
       WEBSERVER_NOTIFICATIONS: ${WB_GC_NOTIFICATIONS}
@@ -1125,6 +1140,9 @@ services:
       APP_NAME: "simcore_service_wb_auth"
       WEBSERVER_APP_FACTORY_NAME: WEBSERVER_AUTHZ_APP_FACTORY
       WEBSERVER_LOGLEVEL: ${WB_AUTH_LOGLEVEL}
+
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: auth
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
 
@@ -1168,6 +1186,7 @@ services:
       WEBSERVER_GROUPS: 0
       WEBSERVER_INVITATIONS: "null"
       WEBSERVER_LICENSES: "null"
+      WEBSERVER_FOGBUGZ: "null"
       WEBSERVER_LOGIN: "null"
       WEBSERVER_NOTIFICATIONS: 0
       WEBSERVER_PAYMENTS: "null"

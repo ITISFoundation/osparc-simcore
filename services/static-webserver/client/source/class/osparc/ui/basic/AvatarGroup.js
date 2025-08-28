@@ -43,6 +43,13 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     document.addEventListener("pointermove", this.__onGlobalPointerMove);
   },
 
+  properties: {
+    hideMyself: {
+      check: "Boolean",
+      init: false,
+    }
+  },
+
   members: {
     __avatarSize: null,
     __maxVisible: null,
@@ -60,6 +67,12 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
         return;
       }
       this.__userGroupIds = userGroupIds || [];
+
+      if (this.isHideMyself()) {
+        // remove myself from the list of users
+        userGroupIds = userGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
+      }
+
       const usersStore = osparc.store.Users.getInstance();
       const userPromises = userGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
       const users = [];

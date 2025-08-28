@@ -1,6 +1,7 @@
 import asyncio
+import json
 import logging
-import os
+import socket
 import tempfile
 from asyncio.streams import StreamReader
 from datetime import timedelta
@@ -9,6 +10,7 @@ from textwrap import dedent
 from typing import Final
 from uuid import uuid4
 
+import httpx
 from fastapi import FastAPI
 from servicelib.container_utils import run_command_in_container
 from settings_library.utils_r_clone import resolve_provider
@@ -112,8 +114,28 @@ def _log_expected_operation(
     _logger.log(log_level, formatted_message)
 
 
+def _get_self_container_ip() -> str:
+    return socket.gethostbyname(socket.gethostname())
+
+
+async def _get_self_container() -> str:
+    ip = _get_self_container_ip()
+
+    async with httpx.AsyncClient(
+        transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock")
+    ) as client:
+        response = await client.get("http://localhost/containers/json")
+        for entry in response.json():
+            if ip in json.dumps(entry):
+                container_id: str = entry["Id"]
+                return container_id
+
+    msg = "Could not determine self container ID"
+    raise RuntimeError(msg)
+
+
 async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
-    self_container = os.environ["HOSTNAME"]
+    self_container = await _get_self_container()
     await run_command_in_container(
         self_container,
         command=f"chmod -R o+rX '{source_dir}'",

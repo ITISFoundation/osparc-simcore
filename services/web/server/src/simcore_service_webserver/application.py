@@ -32,6 +32,7 @@ from .director_v2.plugin import setup_director_v2
 from .dynamic_scheduler.plugin import setup_dynamic_scheduler
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
+from .fogbugz.plugin import setup_fogbugz
 from .folders.plugin import setup_folders
 from .functions.plugin import setup_functions
 from .garbage_collector.plugin import setup_garbage_collector
@@ -40,7 +41,7 @@ from .invitations.plugin import setup_invitations
 from .licenses.plugin import setup_licenses
 from .login.plugin import setup_login
 from .login_auth.plugin import setup_login_auth
-from .long_running_tasks import setup_long_running_tasks
+from .long_running_tasks.plugin import setup_long_running_tasks
 from .notifications.plugin import setup_notifications
 from .payments.plugin import setup_payments
 from .products.plugin import setup_products
@@ -166,6 +167,7 @@ def create_application() -> web.Application:
 
     # conversations
     setup_conversations(app)
+    setup_fogbugz(app)  # Needed for support conversations
 
     # licenses
     setup_licenses(app)

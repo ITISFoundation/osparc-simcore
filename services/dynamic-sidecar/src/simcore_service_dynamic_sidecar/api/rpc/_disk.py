@@ -8,4 +8,4 @@ router = RPCRouter()
 
 @router.expose()
 async def free_reserved_disk_space(_: FastAPI) -> None:
-    disk.remove_reserved_disk_space()
+    disk.free_reserved_disk_space()
