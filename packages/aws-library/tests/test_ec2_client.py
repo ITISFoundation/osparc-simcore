@@ -623,7 +623,7 @@ async def test_launch_instances_insufficient_capacity_fallback(
             # First call (first subnet) - simulate insufficient capacity
             error_response: dict[str, Any] = {
                 "Error": {
-                    "Code": "500",
+                    "Code": "InsufficientInstanceCapacity",
                     "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
                 },
             }
@@ -707,7 +707,7 @@ async def test_launch_instances_all_subnets_insufficient_capacity_raises_error(
         # Always simulate insufficient capacity
         error_response = {
             "Error": {
-                "Code": "500",
+                "Code": "InsufficientInstanceCapacity",
                 "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
             },
         }
@@ -784,7 +784,7 @@ async def test_launch_instances_partial_capacity_then_insufficient_capacity(
         # Second call: simulate insufficient capacity (subnet is full)
         error_response = {
             "Error": {
-                "Code": "500",
+                "Code": "InsufficientInstanceCapacity",
                 "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
             },
         }
