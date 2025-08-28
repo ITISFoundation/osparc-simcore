@@ -16,6 +16,7 @@ import simcore_service_clusters_keeper.data
 import yaml
 from asgi_lifespan import LifespanManager
 from aws_library.ec2 import EC2InstanceBootSpecific
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -143,9 +144,7 @@ def app_environment(
                 {
                     random.choice(  # noqa: S311
                         ec2_instances
-                    ): EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                        "examples"
-                    ][
+                    ): EC2InstanceBootSpecific.model_json_schema()["examples"][
                         1
                     ]  # NOTE: we use example with custom script
                 }
@@ -163,9 +162,7 @@ def app_environment(
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                        EC2InstanceBootSpecific.model_json_schema()["examples"]
                     )
                     for ec2_type_name in ec2_instances
                 }

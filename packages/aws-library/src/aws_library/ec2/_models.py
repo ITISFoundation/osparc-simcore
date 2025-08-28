@@ -17,6 +17,7 @@ from pydantic import (
     StringConstraints,
     field_validator,
 )
+from pydantic.config import JsonDict
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
 
@@ -179,68 +180,74 @@ class EC2InstanceBootSpecific(BaseModel):
                 temp_file.writelines(v)
                 temp_file.flush()
                 # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
-                sh.bash("-n", temp_file.name)
+                sh.bash("-n", temp_file.name)  # pyright: ignore[reportCallIssue]
         except sh.ErrorReturnCode as exc:
             msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
             raise ValueError(msg) from exc
 
         return v
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        # just AMI
+                        "ami_id": "ami-123456789abcdef",
+                    },
+                    {
+                        # AMI + scripts
+                        "ami_id": "ami-123456789abcdef",
+                        "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
+                    },
+                    {
+                        # AMI + scripts + pre-pull
+                        "ami_id": "ami-123456789abcdef",
+                        "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
+                        "pre_pull_images": [
+                            "nginx:latest",
+                            "itisfoundation/my-very-nice-service:latest",
+                            "simcore/services/dynamic/another-nice-one:2.4.5",
+                            "asd",
+                        ],
+                    },
+                    {
+                        # AMI + pre-pull
+                        "ami_id": "ami-123456789abcdef",
+                        "pre_pull_images": [
+                            "nginx:latest",
+                            "itisfoundation/my-very-nice-service:latest",
+                            "simcore/services/dynamic/another-nice-one:2.4.5",
+                            "asd",
+                        ],
+                    },
+                    {
+                        # AMI + pre-pull + cron
+                        "ami_id": "ami-123456789abcdef",
+                        "pre_pull_images": [
+                            "nginx:latest",
+                            "itisfoundation/my-very-nice-service:latest",
+                            "simcore/services/dynamic/another-nice-one:2.4.5",
+                            "asd",
+                        ],
+                        "pre_pull_images_cron_interval": "01:00:00",
+                    },
+                    {
+                        # AMI + pre-pull + buffer count
+                        "ami_id": "ami-123456789abcdef",
+                        "pre_pull_images": [
+                            "nginx:latest",
+                            "itisfoundation/my-very-nice-service:latest",
+                            "simcore/services/dynamic/another-nice-one:2.4.5",
+                            "asd",
+                        ],
+                        "buffer_count": 10,
+                    },
+                ]
+            }
+        )
+
     model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    # just AMI
-                    "ami_id": "ami-123456789abcdef",
-                },
-                {
-                    # AMI + scripts
-                    "ami_id": "ami-123456789abcdef",
-                    "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
-                },
-                {
-                    # AMI + scripts + pre-pull
-                    "ami_id": "ami-123456789abcdef",
-                    "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
-                    "pre_pull_images": [
-                        "nginx:latest",
-                        "itisfoundation/my-very-nice-service:latest",
-                        "simcore/services/dynamic/another-nice-one:2.4.5",
-                        "asd",
-                    ],
-                },
-                {
-                    # AMI + pre-pull
-                    "ami_id": "ami-123456789abcdef",
-                    "pre_pull_images": [
-                        "nginx:latest",
-                        "itisfoundation/my-very-nice-service:latest",
-                        "simcore/services/dynamic/another-nice-one:2.4.5",
-                        "asd",
-                    ],
-                },
-                {
-                    # AMI + pre-pull + cron
-                    "ami_id": "ami-123456789abcdef",
-                    "pre_pull_images": [
-                        "nginx:latest",
-                        "itisfoundation/my-very-nice-service:latest",
-                        "simcore/services/dynamic/another-nice-one:2.4.5",
-                        "asd",
-                    ],
-                    "pre_pull_images_cron_interval": "01:00:00",
-                },
-                {
-                    # AMI + pre-pull + buffer count
-                    "ami_id": "ami-123456789abcdef",
-                    "pre_pull_images": [
-                        "nginx:latest",
-                        "itisfoundation/my-very-nice-service:latest",
-                        "simcore/services/dynamic/another-nice-one:2.4.5",
-                        "asd",
-                    ],
-                    "buffer_count": 10,
-                },
-            ]
-        }
+        json_schema_extra=_update_json_schema_extra,
     )

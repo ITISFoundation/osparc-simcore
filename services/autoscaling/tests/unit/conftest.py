@@ -8,6 +8,7 @@ import datetime
 import json
 import logging
 import random
+import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
@@ -244,11 +245,6 @@ def app_environment(
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
         return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
 
-    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
-    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
-    assert isinstance(
-        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
-    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -268,9 +264,7 @@ def app_environment(
             "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                        EC2InstanceBootSpecific.model_json_schema()["examples"]
                     )
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
@@ -292,11 +286,6 @@ def mocked_ec2_instances_envs(
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
     aws_instance_profile: str,
 ) -> EnvVarsDict:
-    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
-    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
-    assert isinstance(
-        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
-    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -307,10 +296,8 @@ def mocked_ec2_instances_envs(
                 {
                     ec2_type_name: cast(
                         dict,
-                        random.choice(  # noqa: S311
-                            EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                                "examples"
-                            ]
+                        secrets.choice(
+                            EC2InstanceBootSpecific.model_json_schema()["examples"]
                         ),
                     )
                     | {"ami_id": aws_ami_id}
