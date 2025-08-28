@@ -3,7 +3,7 @@ from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-i
 )
 from celery_library.utils import get_app_server  # pylint: disable=no-name-in-module
 from fastapi import FastAPI
-from models_library.functions import FunctionJobID, RegisteredFunction
+from models_library.functions import RegisteredFunction
 from models_library.projects_nodes_io import NodeID
 from servicelib.celery.models import TaskID
 from simcore_service_api_server._service_function_jobs import FunctionJobService
@@ -21,7 +21,8 @@ from ...api.dependencies.services import (
 from ...api.dependencies.webserver_http import get_session_cookie, get_webserver_session
 from ...api.dependencies.webserver_rpc import get_wb_api_rpc_client
 from ...models.api_resources import JobLinks
-from ...models.schemas.jobs import JobInputs, JobPricingSpecification
+from ...models.domain.functions import PreRegisteredFunctionJobData
+from ...models.schemas.jobs import JobPricingSpecification
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.storage import StorageApi
 
@@ -94,8 +95,7 @@ async def run_function(
     *,
     user_identity: Identity,
     function: RegisteredFunction,
-    pre_registered_function_job_id: FunctionJobID,
-    job_inputs: JobInputs,
+    pre_registered_function_job_data: PreRegisteredFunctionJobData,
     pricing_spec: JobPricingSpecification | None,
     job_links: JobLinks,
     x_simcore_parent_project_uuid: NodeID | None,
@@ -110,8 +110,7 @@ async def run_function(
     return await function_job_service.run_function(
         job_creation_task_id=task_id,
         function=function,
-        pre_registered_function_job_id=pre_registered_function_job_id,
-        job_inputs=job_inputs,
+        pre_registered_function_job_data=pre_registered_function_job_data,
         pricing_spec=pricing_spec,
         job_links=job_links,
         x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,

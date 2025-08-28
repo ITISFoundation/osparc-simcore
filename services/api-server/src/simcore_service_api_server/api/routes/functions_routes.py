@@ -334,6 +334,7 @@ async def run_function(  # noqa: PLR0913
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJob:
+    # massage inputs
     task_manager = get_task_manager(request.app)
     parent_project_uuid = (
         x_simcore_parent_project_uuid
@@ -351,20 +352,18 @@ async def run_function(  # noqa: PLR0913
         function=to_run_function, function_inputs=function_inputs
     )
 
+    # check if results are cached
     try:
-        # checks access rights
         return await function_job_service.get_cached_function_job(
             function=to_run_function,
-            function_inputs=function_inputs,
             job_inputs=job_inputs,
         )
     except FunctionJobCacheNotFoundError:
         pass
 
-    pre_registered_function_job_id = (
-        await function_job_service.create_registered_function_job(
+    pre_registered_function_job_data = (
+        await function_job_service.pre_register_function_job(
             function=to_run_function,
-            function_inputs=function_inputs,
             job_inputs=job_inputs,
         )
     )
@@ -387,8 +386,7 @@ async def run_function(  # noqa: PLR0913
         task_filter=task_filter,
         user_identity=user_identity,
         function=to_run_function,
-        pre_registered_function_job_id=pre_registered_function_job_id,
-        job_inputs=job_inputs,
+        pre_registered_function_job_data=pre_registered_function_job_data,
         pricing_spec=pricing_spec,
         job_links=job_links,
         x_simcore_parent_project_uuid=parent_project_uuid,
@@ -398,7 +396,7 @@ async def run_function(  # noqa: PLR0913
     return await function_job_service.patch_registered_function_job(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
-        function_job_id=pre_registered_function_job_id,
+        function_job_id=pre_registered_function_job_data.function_job_id,
         function_class=to_run_function.function_class,
         job_creation_task_id=TaskID(task_uuid),
     )
