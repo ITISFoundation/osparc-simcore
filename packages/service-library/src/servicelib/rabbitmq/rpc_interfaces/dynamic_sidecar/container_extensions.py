@@ -44,3 +44,41 @@ async def create_output_dirs(
         outputs_labels=outputs_labels,
     )
     assert result is None  # nosec
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def attach_container_to_network(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    node_id: NodeID,
+    container_id: str,
+    network_id: str,
+    network_aliases: list[str]
+) -> None:
+    rpc_namespace = get_rpc_namespace(node_id)
+    result = await rabbitmq_rpc_client.request(
+        rpc_namespace,
+        TypeAdapter(RPCMethodName).validate_python("attach_container_to_network"),
+        container_id=container_id,
+        network_id=network_id,
+        network_aliases=network_aliases,
+    )
+    assert result is None  # nosec
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def detach_container_from_network(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    node_id: NodeID,
+    container_id: str,
+    network_id: str
+) -> None:
+    rpc_namespace = get_rpc_namespace(node_id)
+    result = await rabbitmq_rpc_client.request(
+        rpc_namespace,
+        TypeAdapter(RPCMethodName).validate_python("detach_container_from_network"),
+        container_id=container_id,
+        network_id=network_id,
+    )
+    assert result is None  # nosec
