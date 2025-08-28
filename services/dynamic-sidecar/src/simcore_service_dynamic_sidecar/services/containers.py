@@ -194,7 +194,7 @@ async def get_containers_name(app: FastAPI, *, filters: str) -> str | dict[str, 
 
 class ContainerIsMissingError(OsparcErrorMixin, RuntimeError):
     msg_template: str = (
-        "No container '{container_id}' was started. Started containers '{container_names}'"
+        "No container='{container_id}' was found in started_containers='{container_names}'"
     )
 
 
@@ -208,8 +208,11 @@ async def inspect_container(
 
     container_names = shared_store.container_names
     if container_id not in container_names:
-        message = f"No container '{container_id}' was started. Started containers '{container_names}'"
-        _logger.warning(message)
+        _logger.warning(
+            "No container='%s' was found in started_containers='%s'",
+            container_id,
+            container_names,
+        )
         raise ContainerIsMissingError(
             container_id=container_id, container_names=container_names
         )

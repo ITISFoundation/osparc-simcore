@@ -444,7 +444,7 @@ async def test_container_missing_container(
 ):
     def _expected_error_string(container: str) -> dict[str, str]:
         return {
-            "detail": f"No container '{container}' was started. Started containers '[]'"
+            "detail": f"No container='{container}' was found in started_containers='[]'"
         }
 
     for container in not_started_containers:
