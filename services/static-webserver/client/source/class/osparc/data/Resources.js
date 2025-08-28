@@ -1643,6 +1643,7 @@ qx.Class.define("osparc.data.Resources", {
           let message = null;
           let status = null;
           let supportId = null;
+          let errors = [];
           if (e.getData().error) {
             const errorData = e.getData().error;
             if (errorData.message) {
@@ -1652,7 +1653,7 @@ qx.Class.define("osparc.data.Resources", {
             if (message === null && logs && logs.length) {
               message = logs[0].message;
             }
-            const errors = errorData.errors || [];
+            errors = errorData.errors || [];
             if (message === null && errors && errors.length) {
               message = errors[0].message;
             }
@@ -1690,6 +1691,9 @@ qx.Class.define("osparc.data.Resources", {
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {
             err.status = status;
+          }
+          if (errors.length) {
+            err.errors = errors;
           }
           if (supportId) {
             err.supportId = supportId;
