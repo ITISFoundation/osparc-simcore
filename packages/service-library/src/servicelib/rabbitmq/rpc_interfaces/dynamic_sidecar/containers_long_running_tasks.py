@@ -120,7 +120,7 @@ async def pull_container_port_inputs(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def ports_outputs_pull_task(
+async def pull_container_port_outputs(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -130,7 +130,7 @@ async def ports_outputs_pull_task(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("ports_outputs_pull_task"),
+        TypeAdapter(RPCMethodName).validate_python("pull_container_port_outputs"),
         lrt_namespace=lrt_namespace,
         port_keys=port_keys,
     )

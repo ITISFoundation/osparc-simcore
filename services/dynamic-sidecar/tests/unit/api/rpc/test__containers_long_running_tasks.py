@@ -351,7 +351,7 @@ async def _get_task_id_ports_outputs_pull_task(
     *args,
     **kwargs,
 ) -> TaskId:
-    return await containers_long_running_tasks.ports_outputs_pull_task(
+    return await containers_long_running_tasks.pull_container_port_outputs(
         rpc_client, node_id=node_id, lrt_namespace=lrt_namespace, port_keys=port_keys
     )
 
@@ -375,7 +375,7 @@ async def _get_task_id_task_containers_restart_task(
     *args,
     **kwargs,
 ) -> TaskId:
-    return await containers_long_running_tasks.containers_restart_task(
+    return await containers_long_running_tasks.restart_containers(
         rpc_client,
         node_id=node_id,
         lrt_namespace=lrt_namespace,
