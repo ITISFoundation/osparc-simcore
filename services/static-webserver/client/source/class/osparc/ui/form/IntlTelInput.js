@@ -179,7 +179,8 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
         phoneInput.a.style["color"] = textColor;
 
         if (this.getValue() && !this.isValidNumber()) {
-          document.documentElement.style.setProperty('--tel-border-bottom-color', "red");
+          const errorColor = qx.theme.manager.Color.getInstance().resolve("failed-red");
+          document.documentElement.style.setProperty('--tel-border-bottom-color', errorColor);
         }
       }
     },
