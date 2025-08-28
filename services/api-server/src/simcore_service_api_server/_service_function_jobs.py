@@ -169,7 +169,7 @@ class FunctionJobService:
             job_status=new_job_status,
         )
 
-    async def create_function_job_inputs(
+    async def create_function_job_inputs(  # pylint: disable=no-self-use
         self,
         *,
         function: RegisteredFunction,
