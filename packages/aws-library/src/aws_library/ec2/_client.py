@@ -173,12 +173,17 @@ class SimcoreEC2API:
             )
             assert "Subnets" in subnets  # nosec
             subnet_id_to_subnet_map: dict[str, SubnetTypeDef] = {
-                subnet["SubnetId"]: subnet for subnet in subnets["Subnets"]
+                subnet[
+                    "SubnetId"
+                ]: subnet  # pyright: ignore[reportTypedDictNotRequiredAccess]
+                for subnet in subnets["Subnets"]
             }
             # preserve the order of instance_config.subnet_ids
 
             subnet_id_to_available_ips: dict[str, int] = {
-                subnet_id: subnet_id_to_subnet_map[subnet_id]["AvailableIpAddressCount"]  # type: ignore
+                subnet_id: subnet_id_to_subnet_map[subnet_id][
+                    "AvailableIpAddressCount"
+                ]  # pyright: ignore[reportTypedDictNotRequiredAccess]
                 for subnet_id in instance_config.subnet_ids
             }
 
@@ -264,7 +269,10 @@ class SimcoreEC2API:
                     subnet_ids=instance_config.subnet_ids,
                     instance_type=instance_config.type.name,
                 )
-            instance_ids = [i["InstanceId"] for i in instances["Instances"]]
+            instance_ids = [
+                i["InstanceId"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+                for i in instances["Instances"]
+            ]
             with log_context(
                 _logger,
                 logging.INFO,
