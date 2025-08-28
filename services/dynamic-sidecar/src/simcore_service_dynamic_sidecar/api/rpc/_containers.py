@@ -14,4 +14,6 @@ async def create_compose_spec(
     *,
     containers_compose_spec: ContainersComposeSpec,
 ) -> None:
-    await containers.create_compose_spec(app, containers_compose_spec)
+    await containers.create_compose_spec(
+        app, containers_compose_spec=containers_compose_spec
+    )
