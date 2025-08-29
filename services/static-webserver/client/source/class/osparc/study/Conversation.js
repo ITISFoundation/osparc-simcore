@@ -21,16 +21,17 @@ qx.Class.define("osparc.study.Conversation", {
 
   /**
     * @param studyData {String} Study Data
-    * @param conversationId {String} Conversation Id
+    * @param conversationData {Object} Conversation Data
     */
-  construct: function(studyData, conversationId) {
+  construct: function(studyData, conversationData) {
     this.base(arguments);
 
     this.__studyData = studyData;
     this.__messages = [];
 
-    if (conversationId) {
-      this.setConversationId(conversationId);
+    if (conversationData) {
+      const conversation = new osparc.data.model.Conversation(conversationData);
+      this.setConversation(conversation);
     }
 
     this._setLayout(new qx.ui.layout.VBox(5));
@@ -51,11 +52,12 @@ qx.Class.define("osparc.study.Conversation", {
   },
 
   properties: {
-    conversationId: {
-      check: "String",
+    conversation: {
+      check: "osparc.data.model.Conversation",
       init: null,
       nullable: false,
-      event: "changeConversationId"
+      event: "changeConversation",
+      apply: "__applyConversation",
     },
   },
 
@@ -67,6 +69,28 @@ qx.Class.define("osparc.study.Conversation", {
     __messageScroll: null,
     __messagesList: null,
     __loadMoreMessages: null,
+
+    __applyConversation: function(conversation) {
+      conversation.addListener("messageAdded", e => {
+        const message = e.getData();
+        this.addMessage(message);
+      }, this);
+      conversation.addListener("messageUpdated", e => {
+        const message = e.getData();
+        this.updateMessage(message);
+      }, this);
+      conversation.addListener("messageDeleted", e => {
+        const message = e.getData();
+        this.deleteMessage(message);
+      }, this);
+    },
+
+    getConversationId: function() {
+      if (this.getConversation()) {
+        return this.getConversation().getConversationId();
+      }
+      return null;
+    },
 
     __addConversationButtons: function() {
       const tabButton = this.getChildControl("button");
@@ -93,7 +117,8 @@ qx.Class.define("osparc.study.Conversation", {
             // create new conversation first
             osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"], newLabel)
               .then(data => {
-                this.setConversationId(data["conversationId"]);
+                const conversation = new osparc.data.model.Conversation(data);
+                this.setConversation(conversation);
                 this.getChildControl("button").setLabel(newLabel);
               });
           }
@@ -135,7 +160,7 @@ qx.Class.define("osparc.study.Conversation", {
         row: 0,
         column: 4
       });
-      this.bind("conversationId", closeButton, "visibility", {
+      this.bind("conversation", closeButton, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
     },

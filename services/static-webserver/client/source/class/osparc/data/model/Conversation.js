@@ -40,9 +40,11 @@ qx.Class.define("osparc.data.model.Conversation", {
     });
 
     this.__messages = [];
-    this.__fetchLastMessage();
-
     this.__listenToConversationMessageWS();
+
+    if (conversationData.type === "SUPPORT") {
+      this.__fetchLastMessage();
+    }
   },
 
   statics: {
