@@ -1,4 +1,4 @@
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from models_library.progress_bar import ProgressReport
 
@@ -12,6 +12,7 @@ from ..celery.models import (
 )
 
 
+@runtime_checkable
 class TaskManager(Protocol):
     async def submit_task(
         self, task_metadata: TaskMetadata, *, task_filter: TaskFilter, **task_param
