@@ -15,7 +15,7 @@ from aws_library.ec2 import (
     EC2Tags,
     Resources,
 )
-from aws_library.ec2._errors import EC2TooManyInstancesError
+from aws_library.ec2._errors import EC2AccessError, EC2TooManyInstancesError
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
@@ -421,7 +421,7 @@ async def _activate_drained_nodes(
     )
 
 
-async def _start_warm_buffer_instances(
+async def _try_start_warm_buffer_instances(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: AutoscalingProvider
 ) -> Cluster:
     """starts warm buffer if there are assigned tasks, or if a hot buffer of the same type is needed"""
@@ -471,9 +471,21 @@ async def _start_warm_buffer_instances(
     with log_context(
         _logger, logging.INFO, f"start {len(instances_to_start)} warm buffer machines"
     ):
-        started_instances = await get_ec2_client(app).start_instances(
-            instances_to_start
-        )
+        try:
+            started_instances = await get_ec2_client(app).start_instances(
+                instances_to_start
+            )
+        except EC2AccessError:
+            _logger.warning(
+                "Could not start warm buffer instances! "
+                "TIP: This can happen in case of Insufficient "
+                "Capacity on AWS AvailabilityZone(s) where the warm buffers were originally created. "
+                "Until https://github.com/ITISFoundation/osparc-simcore/issues/8273 is fixed this "
+                "will prevent fulfilling this instance type need.",
+                exc_info=True,
+            )
+            # we need to re-assign the tasks assigned to the warm buffer instances
+            return cluster
         # NOTE: first start the instance and then set the tags in case the instance cannot start (e.g. InsufficientInstanceCapacity)
         await get_ec2_client(app).set_instances_tags(
             started_instances,
@@ -816,7 +828,7 @@ async def _launch_instances(
                     ].ami_id,
                     key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                     security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
-                    subnet_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
+                    subnet_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_IDS,
                     iam_instance_profile=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
                 ),
                 min_number_of_instances=1,  # NOTE: we want at least 1 if possible
@@ -1231,7 +1243,7 @@ async def _autoscale_cluster(
     cluster = await _activate_drained_nodes(app, cluster)
 
     # 3. start warm buffer instances to cover the remaining tasks
-    cluster = await _start_warm_buffer_instances(app, cluster, auto_scaling_mode)
+    cluster = await _try_start_warm_buffer_instances(app, cluster, auto_scaling_mode)
 
     # 4. scale down unused instances
     cluster = await _scale_down_unused_cluster_instances(
