@@ -26,4 +26,6 @@ async def put_volume_state(
     app: Annotated[FastAPI, Depends(get_application)],
     volume_category: Annotated[VolumeCategory, PathParam(..., alias="id")],
 ) -> None:
-    await volumes.save_volume_state(app, status=item.status, category=volume_category)
+    await volumes.update_volume_status(
+        app, status=item.status, category=volume_category
+    )

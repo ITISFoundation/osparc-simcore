@@ -89,7 +89,7 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
           iconSource = "osparc/icons/circle-exclamation-solid.svg";
           break;
         case logLevels.ERROR:
-          iconSource = "osparc/icons/circle-xmark-solid.svg";
+          iconSource = "osparc/icons/circle-xmark-red.svg";
           break;
       }
       return iconSource;

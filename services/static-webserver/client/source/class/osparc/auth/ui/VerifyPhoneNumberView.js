@@ -66,7 +66,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           this.add(control);
           break;
         case "intl-tel-input":
-          control = new osparc.widget.IntlTelInput();
+          control = new osparc.ui.form.IntlTelInput();
           this.getChildControl("phone-number-layout").add(control, {
             flex: 1
           });
