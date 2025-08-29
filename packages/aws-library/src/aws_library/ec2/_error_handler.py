@@ -68,7 +68,7 @@ def _map_botocore_client_exception(
                 availability_zone = match.group("failed_az")
 
             raise EC2InsufficientCapacityError(
-                availability_zone=availability_zone, instance_type=instance_type
+                availability_zones=availability_zone, instance_type=instance_type
             )
         case _:
             return EC2AccessError(

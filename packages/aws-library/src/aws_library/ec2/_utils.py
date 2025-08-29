@@ -1,6 +1,7 @@
 from textwrap import dedent
 from typing import TYPE_CHECKING, cast
 
+from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.type_defs import (
     InstanceTypeDef,
     SubnetTypeDef,
@@ -67,10 +68,9 @@ async def check_max_number_of_instances_not_exceeded(
 
 
 async def get_subnet_capacity(
-    ec2_client: "SimcoreEC2API", *, subnet_ids: list[str]
+    aioboto_ec2_client: EC2Client, *, subnet_ids: list[str]
 ) -> dict[str, int]:
-
-    subnets = await ec2_client.client.describe_subnets(SubnetIds=subnet_ids)
+    subnets = await aioboto_ec2_client.describe_subnets(SubnetIds=subnet_ids)
     assert "Subnets" in subnets  # nosec
     subnet_id_to_subnet_map: dict[str, SubnetTypeDef] = {
         subnet["SubnetId"]: subnet  # pyright: ignore[reportTypedDictNotRequiredAccess]
@@ -85,3 +85,23 @@ async def get_subnet_capacity(
         for subnet_id in subnet_ids
     }
     return subnet_id_to_available_ips
+
+
+async def get_subnet_azs(
+    aioboto_ec2_client: EC2Client, *, subnet_ids: list[str]
+) -> list[str]:
+    subnets = await aioboto_ec2_client.describe_subnets(SubnetIds=subnet_ids)
+    assert "Subnets" in subnets  # nosec
+    subnet_id_to_subnet_map: dict[str, SubnetTypeDef] = {
+        subnet["SubnetId"]: subnet  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        for subnet in subnets["Subnets"]
+    }
+    # preserve the order of instance_config.subnet_ids
+
+    subnet_azs: list[str] = [
+        subnet_id_to_subnet_map[subnet_id][
+            "AvailabilityZone"
+        ]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        for subnet_id in subnet_ids
+    ]
+    return subnet_azs

@@ -36,6 +36,7 @@ from ._utils import (
     check_max_number_of_instances_not_exceeded,
     compose_user_data,
     ec2_instance_data_from_aws_instance,
+    get_subnet_azs,
     get_subnet_capacity,
 )
 
@@ -169,7 +170,7 @@ class SimcoreEC2API:
             # and also allows to circumvent a moto bug that does not raise
             # InsufficientInstanceCapacity when a subnet is full
             subnet_id_to_available_ips = await get_subnet_capacity(
-                self, subnet_ids=instance_config.subnet_ids
+                self.client, subnet_ids=instance_config.subnet_ids
             )
 
             total_available_ips = sum(subnet_id_to_available_ips.values())
@@ -244,14 +245,11 @@ class SimcoreEC2API:
                     raise
 
             else:
-                # All subnets failed with capacity errors
-                _logger.error(
-                    "All subnets failed with insufficient capacity for instance type %s",
-                    instance_config.type.name,
+                subnet_zones = await get_subnet_azs(
+                    self.client, subnet_ids=subnet_ids_with_capacity
                 )
-
                 raise EC2InsufficientCapacityError(
-                    subnet_ids=instance_config.subnet_ids,
+                    availability_zones=subnet_zones,
                     instance_type=instance_config.type.name,
                 )
             instance_ids = [

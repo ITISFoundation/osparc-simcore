@@ -40,7 +40,7 @@ class EC2TooManyInstancesError(EC2AccessError):
 
 class EC2InsufficientCapacityError(EC2AccessError):
     msg_template: str = (
-        "Insufficient capacity in {availability_zone} for {instance_type}"
+        "Insufficient capacity in {availability_zones} for {instance_type}"
     )
 
 
