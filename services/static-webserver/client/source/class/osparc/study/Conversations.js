@@ -205,7 +205,7 @@ qx.Class.define("osparc.study.Conversations", {
       const conversationsLayout = this.getChildControl("conversations-layout");
       if (conversationsLayout.getChildren().length === 1) {
         // remove the temporary conversation page
-        if (conversationsLayout.getChildren()[0].getConversation() === null) {
+        if (conversationsLayout.getChildren()[0].getConversationId() === null) {
           conversationsLayout.remove(conversationsLayout.getChildren()[0]);
         }
       }
