@@ -418,6 +418,74 @@ async def test_stop_start_instances(
             else:
                 assert getattr(s, f.name) == getattr(c, f.name)
 
+    # stop them now
+    await simcore_ec2_api.stop_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="stopped",
+    )
+
+
+async def test_start_instances_with_insufficient_instance_capacity(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    faker: Faker,
+    ec2_instance_config: EC2InstanceConfig,
+    mocker: MockerFixture,
+):
+    # we have nothing running now in ec2
+    await _assert_no_instances_in_ec2(ec2_client)
+    # create some instance
+    _NUM_INSTANCES = 10
+    num_instances = faker.pyint(min_value=1, max_value=_NUM_INSTANCES)
+    created_instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=num_instances,
+        number_of_instances=num_instances,
+    )
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+    # stop the instances
+    await simcore_ec2_api.stop_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="stopped",
+    )
+
+    # Mock the EC2 client to simulate InsufficientInstanceCapacity on first subnet
+    async def mock_start_instances(*args, **kwargs) -> Any:
+        # no more machines, simulate insufficient capacity
+        error_response: dict[str, Any] = {
+            "Error": {
+                "Code": "InsufficientInstanceCapacity",
+                "Message": "An error occurred (InsufficientInstanceCapacity) when calling the StartInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
+            },
+        }
+        raise botocore.exceptions.ClientError(error_response, "StartInstances")  # type: ignore
+
+    # Apply the mock
+    mocker.patch.object(
+        simcore_ec2_api.client, "start_instances", side_effect=mock_start_instances
+    )
+
+    # start the instances now
+    with pytest.raises(EC2InsufficientCapacityError):
+        await simcore_ec2_api.start_instances(created_instances)
+
 
 async def test_terminate_instance(
     simcore_ec2_api: SimcoreEC2API,
