@@ -110,12 +110,12 @@ async def test_get_ec2_instance_capabilities(
     simcore_ec2_api: SimcoreEC2API,
     ec2_allowed_instances: list[InstanceTypeType],
 ):
-    instance_types: list[EC2InstanceType] = (
-        await simcore_ec2_api.get_ec2_instance_capabilities(
-            cast(
-                set[InstanceTypeType],
-                set(ec2_allowed_instances),
-            )
+    instance_types: list[
+        EC2InstanceType
+    ] = await simcore_ec2_api.get_ec2_instance_capabilities(
+        cast(
+            set[InstanceTypeType],
+            set(ec2_allowed_instances),
         )
     )
     assert instance_types
@@ -128,9 +128,9 @@ async def test_get_ec2_instance_capabilities_returns_all_options(
     instance_types = await simcore_ec2_api.get_ec2_instance_capabilities("ALL")
     assert instance_types
     # NOTE: this might need adaptation when moto is updated
-    assert (
-        850 < len(instance_types) < 877
-    ), f"received {len(instance_types)}, the test might need adaptation"
+    assert 850 < len(instance_types) < 877, (
+        f"received {len(instance_types)}, the test might need adaptation"
+    )
 
 
 async def test_get_ec2_instance_capabilities_raise_with_empty_set(
@@ -156,9 +156,9 @@ async def fake_ec2_instance_type(
     request: pytest.FixtureRequest,
 ) -> EC2InstanceType:
     instance_type_name: InstanceTypeType = request.param
-    instance_types: list[EC2InstanceType] = (
-        await simcore_ec2_api.get_ec2_instance_capabilities({instance_type_name})
-    )
+    instance_types: list[
+        EC2InstanceType
+    ] = await simcore_ec2_api.get_ec2_instance_capabilities({instance_type_name})
 
     assert len(instance_types) == 1
     return instance_types[0]
@@ -785,7 +785,9 @@ async def test_launch_instances_all_subnets_insufficient_capacity_raises_error(
     mocker.patch.object(
         simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances
     )
-    with pytest.raises(EC2InsufficientCapacityError) as exc_info:
+    with pytest.raises(
+        EC2InsufficientCapacityError, match=fake_ec2_instance_type.name
+    ) as exc_info:
         await simcore_ec2_api.launch_instances(
             ec2_instance_config,
             min_number_of_instances=1,
