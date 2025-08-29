@@ -5,9 +5,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ..login.decorators import login_required
 from ..products.plugin import setup_products
-from . import _rest_handlers
+from ._controller import setup_controller
 from ._projects_permalinks import setup_projects_permalinks
-from ._redirects_handlers import get_redirection_to_viewer
 from ._studies_access import get_redirection_to_study_page
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
@@ -48,20 +47,7 @@ def setup_studies_dispatcher(app: web.Application) -> bool:
     _setup_studies_access(app, settings)
     setup_projects_permalinks(app, settings)
 
-    # routes
-    redirect_handler = get_redirection_to_viewer
-    if settings.is_login_required():
-        redirect_handler = login_required(get_redirection_to_viewer)
-
-        _logger.info(
-            "'%s' config explicitly disables anonymous users from this feature",
-            __name__,
-        )
-
-    app.router.add_routes(
-        [web.get("/view", redirect_handler, name="get_redirection_to_viewer")]
-    )
-
-    app.router.add_routes(_rest_handlers.routes)
+    # rest controllers
+    setup_controller(app, settings)
 
     return True

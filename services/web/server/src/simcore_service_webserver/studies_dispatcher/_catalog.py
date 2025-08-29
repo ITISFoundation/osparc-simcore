@@ -25,7 +25,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 
 from ..db.plugin import get_database_engine_legacy
-from ._errors import ServiceNotFound
+from ._errors import ServiceNotFoundError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 LARGEST_PAGE_SIZE = 1000
@@ -156,7 +156,7 @@ async def validate_requested_service(
         row = await result.fetchone()
 
         if row is None:
-            raise ServiceNotFound(
+            raise ServiceNotFoundError(
                 service_key=service_key, service_version=service_version
             )
 

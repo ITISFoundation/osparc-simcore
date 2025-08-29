@@ -1,39 +1,38 @@
 """Handles request to the viewers redirection entrypoints"""
 
-import functools
 import logging
-import urllib.parse
-from typing import TypeAlias
 
 from aiohttp import web
-from common_library.error_codes import create_error_code
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
-from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
-from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
-from ..dynamic_scheduler import api as dynamic_scheduler_service
-from ..products import products_web
-from ..utils import compose_support_error_msg
-from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
-from ._catalog import ValidService, validate_requested_service
-from ._constants import MSG_UNEXPECTED_DISPATCH_ERROR
-from ._core import validate_requested_file, validate_requested_viewer
-from ._errors import InvalidRedirectionParams, StudyDispatcherError
-from ._models import FileParams, ServiceInfo, ServiceParams, ViewerInfo
-from ._projects import (
+from ....dynamic_scheduler import api as dynamic_scheduler_service
+from ....products import products_web
+from ....utils_aiohttp import create_redirect_to_page_response, get_api_base_url
+from ... import _service
+from ..._catalog import ValidService, validate_requested_service
+from ..._errors import (
+    InvalidRedirectionParamsError,
+)
+from ..._models import ServiceInfo, ViewerInfo
+from ..._projects import (
     get_or_create_project_with_file,
     get_or_create_project_with_file_and_service,
     get_or_create_project_with_service,
 )
-from ._users import UserInfo, ensure_authentication, get_or_create_guest_user
-from .settings import get_plugin_settings
+from ..._users import UserInfo, ensure_authentication, get_or_create_guest_user
+from ...settings import get_plugin_settings
+from .redirects_exceptions import handle_errors_with_error_page
+from .redirects_schemas import (
+    FileQueryParams,
+    RedirectionQueryParams,
+    ServiceAndFileParams,
+    ServiceQueryParams,
+)
 
 _logger = logging.getLogger(__name__)
+
 
 #
 # HELPERS
@@ -58,18 +57,6 @@ def _create_redirect_response_to_view_page(
     )
 
 
-def _create_redirect_response_to_error_page(
-    app: web.Application, message: str, status_code: int
-) -> web.HTTPFound:
-    # NOTE: these are 'error' page params and need to be interpreted by front-end correctly!
-    return create_redirect_to_page_response(
-        app,
-        page="error",
-        message=message,
-        status_code=status_code,
-    )
-
-
 def _create_service_info_from(service: ValidService) -> ServiceInfo:
     values_map = {
         "key": service.key,
@@ -82,133 +69,12 @@ def _create_service_info_from(service: ValidService) -> ServiceInfo:
     return ServiceInfo.model_construct(_fields_set=set(values_map.keys()), **values_map)
 
 
-def _handle_errors_with_error_page(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except (web.HTTPRedirection, web.HTTPSuccessful):
-            # NOTE: that response is a redirection that is reraised and not returned
-            raise
-
-        except StudyDispatcherError as err:
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=f"Sorry, we cannot dispatch your study: {err}",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,  # 422
-            ) from err
-
-        except web.HTTPUnauthorized as err:
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=f"{err.text}. Please reload this page to login/register.",
-                status_code=err.status_code,
-            ) from err
-
-        except web.HTTPUnprocessableEntity as err:
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=f"Invalid parameters in link: {err.text}",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,  # 422
-            ) from err
-
-        except web.HTTPClientError as err:
-            _logger.exception("Client error with status code %d", err.status_code)
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=err.reason,
-                status_code=err.status_code,
-            ) from err
-
-        except (ValidationError, web.HTTPServerError, Exception) as err:
-            error_code = create_error_code(err)
-
-            user_error_msg = compose_support_error_msg(
-                msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
-            )
-            _logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    user_error_msg,
-                    error=err,
-                    error_code=error_code,
-                    error_context={"request": request},
-                    tip="Unexpected failure while dispatching study",
-                )
-            )
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=user_error_msg,
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ) from err
-
-    return wrapper
-
-
 #
-# API Schemas
+# ROUTES
 #
 
 
-class ServiceQueryParams(ServiceParams):
-    model_config = ConfigDict(extra="forbid")
-
-
-class FileQueryParams(FileParams):
-    model_config = ConfigDict(extra="forbid")
-
-    @field_validator("file_type")
-    @classmethod
-    def ensure_extension_upper_and_dotless(cls, v):
-        # NOTE: see filetype constraint-check
-        if v and isinstance(v, str):
-            w = urllib.parse.unquote(v)
-            return w.upper().lstrip(".")
-        return v
-
-
-class ServiceAndFileParams(FileQueryParams, ServiceParams): ...
-
-
-class ViewerQueryParams(BaseModel):
-    file_type: str | None = None
-    viewer_key: ServiceKey
-    viewer_version: ServiceVersion
-
-    @staticmethod
-    def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
-        # can safely construct w/o validation from a viewer
-        return ViewerQueryParams.model_construct(
-            file_type=viewer.filetype,
-            viewer_key=viewer.key,
-            viewer_version=viewer.version,
-        )
-
-    @field_validator("file_type")
-    @classmethod
-    def ensure_extension_upper_and_dotless(cls, v):
-        # NOTE: see filetype constraint-check
-        if v and isinstance(v, str):
-            w = urllib.parse.unquote(v)
-            return w.upper().lstrip(".")
-        return v
-
-
-RedirectionQueryParams: TypeAlias = (
-    # NOTE: Extra.forbid in FileQueryParams, ServiceQueryParams avoids bad casting when
-    # errors in ServiceAndFileParams
-    ServiceAndFileParams
-    | FileQueryParams
-    | ServiceQueryParams
-)
-
-
-#
-# API HANDLERS
-#
-
-
-@_handle_errors_with_error_page
+@handle_errors_with_error_page
 async def get_redirection_to_viewer(request: web.Request):
     """
     - validate request
@@ -229,7 +95,7 @@ async def get_redirection_to_viewer(request: web.Request):
         file_params = service_params = query_params
 
         # NOTE: Cannot check file_size in from HEAD in a AWS download link so file_size is just infomative
-        viewer: ViewerInfo = await validate_requested_viewer(
+        viewer: ViewerInfo = await _service.validate_requested_viewer(
             request.app,
             file_type=file_params.file_type,
             file_size=file_params.file_size,
@@ -298,7 +164,7 @@ async def get_redirection_to_viewer(request: web.Request):
     elif isinstance(query_params, FileQueryParams):
         file_params_ = query_params
 
-        validate_requested_file(
+        _service.validate_requested_file(
             app=request.app,
             file_type=file_params_.file_type,
             file_size=file_params_.file_size,
@@ -336,7 +202,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
     else:
         # NOTE: if query is done right, this should never happen
-        raise InvalidRedirectionParams
+        raise InvalidRedirectionParamsError(query_params=query_params)
 
     # Adds auth cookies (login)
     await ensure_authentication(user, request, response)

@@ -34,8 +34,10 @@ from servicelib.aiohttp import status
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
-from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
+from simcore_service_webserver.studies_dispatcher._controller.rest.nih_schemas import (
+    ServiceGet,
+)
+from simcore_service_webserver.studies_dispatcher._models import ViewerInfo
 from sqlalchemy.sql import text
 from yarl import URL
 
@@ -430,7 +432,7 @@ async def test_dispatch_study_anonymously(
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_service.update_projects_networks",
+        "simcore_service_webserver.studies_dispatcher._controller.rest.redirects.dynamic_scheduler_service.update_projects_networks",
         return_value=None,
     )
 
@@ -496,7 +498,7 @@ async def test_dispatch_logged_in_user(
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_service.update_projects_networks",
+        "simcore_service_webserver.studies_dispatcher._controller.rest.redirects.dynamic_scheduler_service.update_projects_networks",
         return_value=None,
     )
 
@@ -580,7 +582,7 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
     message, status_code = assert_error_in_fragment(resp)
 
     assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert "type" in message.lower()
+    assert "link" in message.lower()
 
 
 async def test_viewer_redirect_with_client_errors(client: TestClient):
