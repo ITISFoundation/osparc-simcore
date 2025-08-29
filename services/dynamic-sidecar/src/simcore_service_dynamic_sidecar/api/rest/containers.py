@@ -13,7 +13,12 @@ from models_library.api_schemas_dynamic_sidecar.containers import (
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ...services import containers
-from ...services.containers import ContainerIsMissingError
+from ...services.containers import (
+    ContainerIsMissingError,
+    ContainerNotFoundError,
+    InvalidFilterFormatError,
+    MissingDockerComposeDownSpecError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -29,7 +34,7 @@ router = APIRouter()
     },
 )
 @cancel_on_disconnect
-async def store_compose_spec(
+async def create_compose_spec(
     request: Request, containers_compose_spec: ContainersComposeSpec
 ):
     """
@@ -37,7 +42,7 @@ async def store_compose_spec(
     """
     _ = request
 
-    return await containers.create_compose_spec(
+    await containers.create_compose_spec(
         app=request.app, containers_compose_spec=containers_compose_spec
     )
 
@@ -108,7 +113,12 @@ async def get_containers_name(
     """
     _ = request
 
-    return await containers.get_containers_name(app=request.app, filters=filters)
+    try:
+        return await containers.get_containers_name(app=request.app, filters=filters)
+    except InvalidFilterFormatError as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}") from e
+    except (MissingDockerComposeDownSpecError, ContainerNotFoundError) as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
 @router.get(

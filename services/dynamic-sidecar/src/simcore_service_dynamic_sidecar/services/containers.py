@@ -5,7 +5,7 @@ from typing import Any, Final
 from aiodocker import DockerError
 from common_library.errors_classes import OsparcErrorMixin
 from common_library.json_serialization import json_loads
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import ContainersComposeSpec
 from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
@@ -38,7 +38,7 @@ async def create_compose_spec(
     app: FastAPI,
     *,
     containers_compose_spec: ContainersComposeSpec,
-):
+) -> None:
     settings: ApplicationSettings = app.state.settings
     shared_store: SharedStore = app.state.shared_store
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
@@ -140,6 +140,24 @@ async def get_containers_activity(app: FastAPI) -> ActivityInfoOrNone:
     return ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
 
 
+class BaseGetNameError(OsparcErrorMixin, RuntimeError):
+    pass
+
+
+class InvalidFilterFormatError(BaseGetNameError):
+    msg_template: str = "Provided filters, could not parsed {filters}"
+
+
+class MissingDockerComposeDownSpecError(BaseGetNameError):
+    msg_template: str = "No spec for docker compose down was found"
+
+
+class ContainerNotFoundError(BaseGetNameError):
+    msg_template: str = (
+        "No container found for network={network_name} and exclude={exclude}"
+    )
+
+
 async def get_containers_name(app: FastAPI, *, filters: str) -> str | dict[str, Any]:
     """
     Searches for the container's name given the network
@@ -155,19 +173,13 @@ async def get_containers_name(app: FastAPI, *, filters: str) -> str | dict[str, 
 
     filters_dict: dict[str, str] = json_loads(filters)
     if not isinstance(filters_dict, dict):
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Provided filters, could not parsed {filters_dict}",
-        )
+        raise InvalidFilterFormatError(filters=filters_dict)
     network_name: str | None = filters_dict.get("network")
     exclude: str | None = filters_dict.get("exclude")
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail="No spec for docker compose down was found",
-        )
+        raise MissingDockerComposeDownSpecError
 
     compose_spec = parse_compose_spec(stored_compose_content)
 
@@ -184,10 +196,7 @@ async def get_containers_name(app: FastAPI, *, filters: str) -> str | dict[str, 
             break
 
     if container_name is None:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=f"No container found for network={network_name}",
-        )
+        raise ContainerNotFoundError(network_name=network_name, exclude=exclude)
 
     return f"{container_name}"
 
