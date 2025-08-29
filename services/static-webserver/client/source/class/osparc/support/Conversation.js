@@ -324,9 +324,8 @@ qx.Class.define("osparc.support.Conversation", {
       // Update the UI element from the messages list
       const control = this.__getMessageControl(message["messageId"]);
       if (control) {
-        const as = control.setMessage(message);
-        console.log("as", as);
-        control.__applyMessage(message);
+        // Force a new reference
+        control.setMessage(Object.assign({}, message));
       }
     },
 
