@@ -20,12 +20,10 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 )
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
 from models_library.projects_nodes_io import NodeID
-from models_library.services import ServiceOutput
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.services_io import ServiceOutput
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
@@ -36,7 +34,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar import (
     containers,
     containers_long_running_tasks,
 )
-from simcore_service_dynamic_sidecar.core.application import AppState, SharedStore
+from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_create,
 )
