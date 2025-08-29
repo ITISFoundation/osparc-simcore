@@ -141,8 +141,23 @@ qx.Class.define("osparc.support.Conversation", {
       });
     },
 
-    __applyConversation: function() {
+    __applyConversation: function(conversation) {
       this.__reloadMessages(true);
+
+      if (conversation) {
+        conversation.addListener("messageAdded", e => {
+          const data = e.getData();
+          this.addMessage(data);
+        });
+        conversation.addListener("messageUpdated", e => {
+          const data = e.getData();
+          console.log("Message updated:", data);
+        });
+        conversation.addListener("messageDeleted", e => {
+          const data = e.getData();
+          console.log("Message deleted:", data);
+        });
+      }
 
       this.__populateShareProjectCheckbox();
     },

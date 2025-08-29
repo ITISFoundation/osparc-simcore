@@ -159,6 +159,7 @@ qx.Class.define("osparc.data.model.Conversation", {
     },
 
     __listenToConversationMessageWS: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
       [
         this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED,
         this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED,
@@ -169,13 +170,13 @@ qx.Class.define("osparc.data.model.Conversation", {
             const conversationId = message["conversationId"];
             if (conversationId === this.getConversationId()) {
               switch (eventName) {
-                case osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_CREATED:
+                case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
                   this.addMessage(message);
                   break;
-                case osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_UPDATED:
+                case this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED:
                   this.updateMessage(message);
                   break;
-                case osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_DELETED:
+                case this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED:
                   this.deleteMessage(message);
                   break;
               }
@@ -183,7 +184,8 @@ qx.Class.define("osparc.data.model.Conversation", {
           }
         };
         socket.on(eventName, eventHandler, this);
-        this.__wsHandlers.push({ eventName, handler: eventHandler });
+        // OM do I need this?
+        // this.__wsHandlers.push({ eventName, handler: eventHandler });
       });
     },
 
