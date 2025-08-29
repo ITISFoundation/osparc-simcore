@@ -13,7 +13,11 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
     RegisteredProjectFunctionJob,
 )
-from models_library.functions import FunctionJobStatus, RegisteredProjectFunction
+from models_library.functions import (
+    FunctionJobStatus,
+    RegisteredProjectFunction,
+    RegisteredProjectFunctionJobWithStatus,
+)
 from models_library.products import ProductName
 from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -112,6 +116,60 @@ async def test_list_function_jobs(
         RegisteredProjectFunctionJob.model_validate(data[0])
         == mock_registered_project_function_job
     )
+
+
+@pytest.mark.parametrize("status_str", ["SUCCESS", "FAILED"])
+async def test_list_function_jobs_with_status(
+    client: AsyncClient,
+    mock_rabbitmq_rpc_client: MockerFixture,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_registered_project_function: RegisteredProjectFunction,
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    auth: httpx.BasicAuth,
+    mocker: MockerFixture,
+    status_str: str,
+) -> None:
+    mock_status = FunctionJobStatus(status=status_str)
+    mock_outputs = {"X+Y": 42, "X-Y": 10}
+    mock_registered_project_function_job_with_status = (
+        RegisteredProjectFunctionJobWithStatus(
+            **{
+                **mock_registered_project_function_job.model_dump(),
+                "status": mock_status,
+            }
+        )
+    )
+    mock_handler_in_functions_rpc_interface(
+        "list_function_jobs_with_status",
+        (
+            [mock_registered_project_function_job_with_status for _ in range(5)],
+            PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
+        ),
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_function", mock_registered_project_function
+    )
+    from simcore_service_api_server._service_function_jobs import FunctionJobService
+
+    mock_function_job_outputs = mocker.patch.object(
+        FunctionJobService, "function_job_outputs", return_value=mock_outputs
+    )
+    mock_handler_in_functions_rpc_interface("get_function_job_status", mock_status)
+    response = await client.get(f"{API_VTAG}/function_jobs/with-status", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()["items"]
+    assert len(data) == 5
+    returned_function_job = RegisteredProjectFunctionJobWithStatus.model_validate(
+        data[0]
+    )
+    if status_str == "SUCCESS":
+        mock_function_job_outputs.assert_called()
+        assert returned_function_job.outputs == mock_outputs
+    else:
+        mock_function_job_outputs.assert_not_called()
+        assert returned_function_job.outputs is None
+
+    assert returned_function_job == mock_registered_project_function_job_with_status
 
 
 async def test_list_function_jobs_with_job_id_filter(

@@ -5656,6 +5656,128 @@
         }
       }
     },
+    "/v0/function_jobs/list_with_status": {
+      "get": {
+        "tags": [
+          "function_jobs"
+        ],
+        "summary": "List Function Jobs With Status",
+        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
+        "operationId": "list_function_jobs_with_status",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "function_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function ID pattern",
+              "title": "Function Id"
+            },
+            "description": "Filter by function ID pattern"
+          },
+          {
+            "name": "function_job_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function job IDs",
+              "title": "Function Job Ids"
+            },
+            "description": "Filter by function job IDs"
+          },
+          {
+            "name": "function_job_collection_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function job collection ID",
+              "title": "Function Job Collection Id"
+            },
+            "description": "Filter by function job collection ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Union_RegisteredProjectFunctionJobWithStatus__RegisteredSolverFunctionJobWithStatus__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/function_jobs/{function_job_id}": {
       "get": {
         "tags": [
@@ -10383,6 +10505,72 @@
         ],
         "title": "Page[Study]"
       },
+      "Page_Union_RegisteredProjectFunctionJobWithStatus__RegisteredSolverFunctionJobWithStatus__": {
+        "properties": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RegisteredProjectFunctionJobWithStatus"
+                },
+                {
+                  "$ref": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "Page[Union[RegisteredProjectFunctionJobWithStatus, RegisteredSolverFunctionJobWithStatus]]"
+      },
       "PricingPlanClassification": {
         "type": "string",
         "enum": [
@@ -11095,6 +11283,85 @@
         ],
         "title": "RegisteredProjectFunctionJob"
       },
+      "RegisteredProjectFunctionJobWithStatus": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "function_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Function Uid"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "PROJECT",
+            "title": "Function Class",
+            "default": "PROJECT"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "project_job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function_uid",
+          "inputs",
+          "outputs",
+          "uid",
+          "created_at",
+          "status",
+          "project_job_id"
+        ],
+        "title": "RegisteredProjectFunctionJobWithStatus"
+      },
       "RegisteredPythonCodeFunction": {
         "properties": {
           "function_class": {
@@ -11423,6 +11690,85 @@
           "solver_job_id"
         ],
         "title": "RegisteredSolverFunctionJob"
+      },
+      "RegisteredSolverFunctionJobWithStatus": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "function_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Function Uid"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "SOLVER",
+            "title": "Function Class",
+            "default": "SOLVER"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "solver_job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Solver Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function_uid",
+          "inputs",
+          "outputs",
+          "uid",
+          "created_at",
+          "status",
+          "solver_job_id"
+        ],
+        "title": "RegisteredSolverFunctionJobWithStatus"
       },
       "RunningState": {
         "type": "string",

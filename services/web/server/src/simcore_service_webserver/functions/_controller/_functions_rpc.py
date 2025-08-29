@@ -20,6 +20,7 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
+    RegisteredFunctionJobWithStatus,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
@@ -214,6 +215,38 @@ async def list_function_jobs(
     filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     return await _functions_service.list_function_jobs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
+        filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+    )
+
+
+@router.expose(
+    reraise_if_error_type=(
+        FunctionJobsReadApiAccessDeniedError,
+        FunctionsReadApiAccessDeniedError,
+    )
+)
+async def list_function_jobs_with_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    pagination_limit: int,
+    pagination_offset: int,
+    filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+) -> tuple[
+    list[RegisteredFunctionJobWithStatus],
+    PageMetaInfoLimitOffset,
+]:
+    return await _functions_service.list_function_jobs_with_status(
         app=app,
         user_id=user_id,
         product_name=product_name,

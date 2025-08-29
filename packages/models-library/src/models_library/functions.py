@@ -159,18 +159,9 @@ class FunctionJobBase(BaseModel):
     function_class: FunctionClass
 
 
-class RegisteredFunctionJobBase(FunctionJobBase):
-    uid: FunctionJobID
-    created_at: datetime.datetime
-
-
 class ProjectFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
     project_job_id: ProjectID
-
-
-class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase):
-    pass
 
 
 class SolverFunctionJob(FunctionJobBase):
@@ -178,22 +169,32 @@ class SolverFunctionJob(FunctionJobBase):
     solver_job_id: ProjectID
 
 
-class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
-    pass
-
-
 class PythonCodeFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
-
-
-class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):
-    pass
 
 
 FunctionJob: TypeAlias = Annotated[
     ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
     Field(discriminator="function_class"),
 ]
+
+
+class RegisteredFunctionJobBase(FunctionJobBase):
+    uid: FunctionJobID
+    created_at: datetime.datetime
+
+
+class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase):
+    pass
+
+
+class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
+    pass
+
+
+class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):
+    pass
+
 
 RegisteredFunctionJob: TypeAlias = Annotated[
     RegisteredProjectFunctionJob
@@ -205,6 +206,36 @@ RegisteredFunctionJob: TypeAlias = Annotated[
 
 class FunctionJobStatus(BaseModel):
     status: str
+
+
+class RegisteredFunctionJobWithStatusBase(RegisteredFunctionJobBase, FunctionJobBase):
+    status: FunctionJobStatus
+
+
+class RegisteredProjectFunctionJobWithStatus(
+    RegisteredProjectFunctionJob, RegisteredFunctionJobWithStatusBase
+):
+    pass
+
+
+class RegisteredSolverFunctionJobWithStatus(
+    RegisteredSolverFunctionJob, RegisteredFunctionJobWithStatusBase
+):
+    pass
+
+
+class RegisteredPythonCodeFunctionJobWithStatus(
+    RegisteredPythonCodeFunctionJob, RegisteredFunctionJobWithStatusBase
+):
+    pass
+
+
+RegisteredFunctionJobWithStatus: TypeAlias = Annotated[
+    RegisteredProjectFunctionJobWithStatus
+    | RegisteredPythonCodeFunctionJobWithStatus
+    | RegisteredSolverFunctionJobWithStatus,
+    Field(discriminator="function_class"),
+]
 
 
 class FunctionJobCollection(BaseModel):
@@ -239,6 +270,12 @@ class FunctionJobDB(BaseModel):
 class RegisteredFunctionJobDB(FunctionJobDB):
     uuid: FunctionJobID
     created: datetime.datetime
+
+
+class RegisteredFunctionJobWithStatusDB(FunctionJobDB):
+    uuid: FunctionJobID
+    created: datetime.datetime
+    status: str
 
 
 class FunctionDB(BaseModel):

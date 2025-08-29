@@ -29,10 +29,7 @@ from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import JobPricingSpecification
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import (
-    get_function_job_service,
-    get_function_service,
-)
+from ..dependencies.services import get_function_job_service, get_function_service
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
@@ -121,12 +118,10 @@ async def register_function(
 )
 async def get_function(
     function_id: FunctionID,
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
 ) -> RegisteredFunction:
-    return await wb_api_rpc.get_function(
-        function_id=function_id, user_id=user_id, product_name=product_name
+    return await function_service.get_function(
+        function_id=function_id,
     )
 
 
@@ -311,7 +306,7 @@ async def validate_function_inputs(
         changelog=CHANGE_LOGS["run_function"],
     ),
 )
-async def run_function(  # noqa: PLR0913
+async def run_function(
     request: Request,
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
@@ -383,7 +378,7 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
         changelog=CHANGE_LOGS["map_function"],
     ),
 )
-async def map_function(  # noqa: PLR0913
+async def map_function(
     request: Request,
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     function_inputs_list: FunctionInputsList,

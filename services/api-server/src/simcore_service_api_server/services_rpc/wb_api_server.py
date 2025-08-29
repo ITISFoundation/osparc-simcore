@@ -28,6 +28,7 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
+    RegisteredFunctionJobWithStatus,
 )
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
@@ -249,7 +250,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         project_uuid: ProjectID,
         job_parent_resource_name: RelativeResourceName,
-        storage_assets_deleted: bool,
+        storage_assets_deleted: bool,  # noqa: FBT001
     ):
         await projects_rpc.mark_project_as_job(
             rpc_client=self._client,
@@ -375,6 +376,31 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         return await functions_rpc_interface.list_function_jobs(
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        )
+
+    async def list_function_jobs_with_status(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        filter_by_function_id: FunctionID | None = None,
+        filter_by_function_job_ids: list[FunctionJobID] | None = None,
+        filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+    ) -> tuple[
+        list[RegisteredFunctionJobWithStatus],
+        PageMetaInfoLimitOffset,
+    ]:
+        return await functions_rpc_interface.list_function_jobs_with_status(
             self._client,
             user_id=user_id,
             product_name=product_name,

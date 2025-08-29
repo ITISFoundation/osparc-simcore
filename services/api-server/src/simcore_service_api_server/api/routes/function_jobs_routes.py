@@ -12,27 +12,22 @@ from models_library.api_schemas_webserver.functions import (
     FunctionOutputs,
     RegisteredFunctionJob,
 )
-from models_library.functions import RegisteredFunction
-from models_library.functions_errors import (
-    UnsupportedFunctionClassError,
-)
+from models_library.functions import RegisteredFunction, RegisteredFunctionJobWithStatus
+from models_library.functions_errors import UnsupportedFunctionClassError
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
+from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.models.schemas.functions_filters import (
     FunctionJobsListFilters,
 )
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_jobs import JobService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...services_http.storage import StorageApi
-from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.functions import (
     get_function_from_functionjob,
     get_function_job_dependency,
@@ -40,13 +35,11 @@ from ..dependencies.functions import (
 )
 from ..dependencies.models_schemas_function_filters import get_function_jobs_filters
 from ..dependencies.services import (
-    get_api_client,
     get_function_job_service,
+    get_function_service,
     get_job_service,
 )
-from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
-from . import solvers_jobs_read, studies_jobs
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
@@ -122,6 +115,38 @@ async def list_function_jobs(
 
     return create_page(
         function_jobs_list,
+        total=meta.total,
+        params=page_params,
+    )
+
+
+@function_job_router.get(
+    "/with-status",
+    response_model=Page[RegisteredFunctionJobWithStatus],
+    description=create_route_description(
+        base="List function jobs with status",
+        changelog=CHANGE_LOGS["list_function_jobs"],
+    ),
+)
+async def list_function_jobs_with_status(
+    page_params: Annotated[PaginationParams, Depends()],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
+    filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
+) -> AbstractPage[RegisteredFunctionJobWithStatus]:
+    function_jobs_wso_list, meta = (
+        await function_job_service.list_function_jobs_with_status(
+            pagination_offset=page_params.offset,
+            pagination_limit=page_params.limit,
+            filter_by_function_job_ids=filters.function_job_ids,
+            filter_by_function_job_collection_id=filters.function_job_collection_id,
+            filter_by_function_id=filters.function_id,
+        )
+    )
+
+    return create_page(
+        function_jobs_wso_list,
         total=meta.total,
         params=page_params,
     )
@@ -213,6 +238,7 @@ async def function_job_status(
 async def get_function_from_functionjobid(
     wb_api_rpc: WbApiRpcClient,
     function_job_id: FunctionJobID,
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> tuple[RegisteredFunction, RegisteredFunctionJob]:
@@ -223,14 +249,9 @@ async def get_function_from_functionjobid(
         product_name=product_name,
     )
 
-    from .functions_routes import get_function
-
     return (
-        await get_function(
-            wb_api_rpc=wb_api_rpc,
+        await function_service.get_function(
             function_id=function_job.function_uid,
-            user_id=user_id,
-            product_name=product_name,
         ),
         function_job,
     )
@@ -249,60 +270,20 @@ async def function_job_outputs(
     function_job: Annotated[
         RegisteredFunctionJob, Depends(get_function_job_dependency)
     ],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
     function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
-    job_service: Annotated[JobService, Depends(get_job_service)],
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
     stored_job_outputs: Annotated[FunctionOutputs, Depends(get_stored_job_outputs)],
 ) -> FunctionOutputs:
-    if stored_job_outputs is not None:
-        return stored_job_outputs
-
-    if (
-        function.function_class == FunctionClass.PROJECT
-        and function_job.function_class == FunctionClass.PROJECT
-    ):
-        new_outputs = dict(
-            (
-                await studies_jobs.get_study_job_outputs(
-                    study_id=function.project_id,
-                    job_id=function_job.project_job_id,
-                    user_id=user_id,
-                    webserver_api=webserver_api,
-                    storage_client=storage_client,
-                )
-            ).results
-        )
-    elif (
-        function.function_class == FunctionClass.SOLVER
-        and function_job.function_class == FunctionClass.SOLVER
-    ):
-        new_outputs = dict(
-            (
-                await solvers_jobs_read.get_job_outputs(
-                    solver_key=function.solver_key,
-                    version=function.solver_version,
-                    job_id=function_job.solver_job_id,
-                    user_id=user_id,
-                    webserver_api=webserver_api,
-                    storage_client=storage_client,
-                    job_service=job_service,
-                    async_pg_engine=async_pg_engine,
-                )
-            ).results
-        )
-    else:
-        raise UnsupportedFunctionClassError(function_class=function.function_class)
-
-    return await wb_api_rpc.update_function_job_outputs(
-        function_job_id=function_job.uid,
+    return await function_job_service.function_job_outputs(
+        function_job=function_job,
         user_id=user_id,
         product_name=product_name,
-        outputs=new_outputs,
+        function=function,
+        stored_job_outputs=stored_job_outputs,
     )
 
 
@@ -320,14 +301,16 @@ async def function_job_outputs(
 async def get_function_job_logs_task(
     function_job_id: FunctionJobID,
     app: Annotated[FastAPI, Depends(get_app)],
-    job_service: Annotated[JobService, Depends(get_job_service)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     function, function_job = await get_function_from_functionjobid(
         wb_api_rpc=wb_api_rpc,
         function_job_id=function_job_id,
+        function_service=function_service,
         user_id=user_id,
         product_name=product_name,
     )
