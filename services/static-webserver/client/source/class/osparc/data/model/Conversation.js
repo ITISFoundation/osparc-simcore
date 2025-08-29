@@ -184,8 +184,6 @@ qx.Class.define("osparc.data.model.Conversation", {
           }
         };
         socket.on(eventName, eventHandler, this);
-        // OM do I need this?
-        // this.__wsHandlers.push({ eventName, handler: eventHandler });
       });
     },
 
