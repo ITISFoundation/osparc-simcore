@@ -18,7 +18,7 @@ from ...api.dependencies.authentication import Identity
 from ...models.api_resources import JobLinks
 from ...models.domain.functions import PreRegisteredFunctionJobData
 from ...models.schemas.jobs import JobInputs, JobPricingSpecification
-from .functions_tasks import run_function
+from .functions_tasks import map, run_function
 
 _logger = logging.getLogger(__name__)
 
@@ -43,3 +43,4 @@ def setup_worker_tasks(app: Celery) -> None:
 
     with log_context(_logger, logging.INFO, msg="worker task registration"):
         register_task(app, run_function)
+        register_task(app, map)
