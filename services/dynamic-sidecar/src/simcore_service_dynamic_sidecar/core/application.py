@@ -47,7 +47,7 @@ _NOISY_LOGGERS = (
     "httpcore",
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 #
 # https://patorjk.com/software/taag/#p=display&f=AMC%20Tubes&t=DYSIDECAR
@@ -126,7 +126,7 @@ def create_base_app() -> FastAPI:
         noisy_loggers=_NOISY_LOGGERS,
     )
 
-    logger.info(
+    _logger.info(
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
@@ -217,11 +217,11 @@ def create_app() -> FastAPI:
     async def _on_shutdown() -> None:
         app_state = AppState(app)
         if docker_compose_yaml := app_state.compose_spec:
-            logger.info("Removing spawned containers")
+            _logger.info("Removing spawned containers")
 
             result = await docker_compose_down(docker_compose_yaml, app.state.settings)
 
-            logger.log(
+            _logger.log(
                 logging.INFO if result.success else logging.ERROR,
                 "Removed spawned containers:\n%s",
                 result.message,
