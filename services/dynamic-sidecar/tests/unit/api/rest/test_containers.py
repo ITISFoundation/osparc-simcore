@@ -632,7 +632,7 @@ async def test_containers_entrypoint_name_containers_not_started(
     if include_exclude_filter_option:
         assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
         assert response.json() == {
-            "detail": "No container found for network=entrypoint_container_network"
+            "detail": "No container found for network=entrypoint_container_network and exclude=egress"
         }
     else:
         assert response.status_code == status.HTTP_200_OK, response.text
