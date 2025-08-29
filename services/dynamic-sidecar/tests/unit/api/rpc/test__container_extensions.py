@@ -669,9 +669,6 @@ async def test_containers_entrypoint_name_containers_not_started(
         assert SUFFIX_EGRESS_PROXY_NAME in found_container
 
 
-# FINISH BELOW
-
-
 @pytest.fixture
 def not_started_containers() -> list[str]:
     return [f"missing-container-{i}" for i in range(5)]
