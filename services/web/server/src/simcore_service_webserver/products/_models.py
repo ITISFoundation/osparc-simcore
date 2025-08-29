@@ -256,7 +256,6 @@ class Product(BaseModel):
                             "ui": {
                                 "logo_url": "https://acme.com/logo",
                                 "strong_color": "#123456",
-                                "project_alias": "study",
                             },
                         },
                         "issues": [
@@ -307,12 +306,13 @@ class Product(BaseModel):
 
     model_config = ConfigDict(
         alias_generator=snake_to_camel,
-        populate_by_name=True,
-        str_strip_whitespace=True,
-        frozen=True,
         from_attributes=True,
-        extra="ignore",
+        frozen=True,
         json_schema_extra=_update_json_schema_extra,
+        str_strip_whitespace=True,
+        validate_by_alias=True,
+        validate_by_name=True,
+        extra="ignore",
     )
 
     def to_statics(self) -> dict[str, Any]:

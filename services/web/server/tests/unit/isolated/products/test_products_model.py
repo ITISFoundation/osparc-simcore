@@ -40,6 +40,10 @@ def test_all_products_models_examples(
         if "registration_email_template" in example_data:
             assert model_instance.get_template_name_for("registration_email.jinja2")
 
+        if model_instance.vendor and "ui" in model_instance.vendor:
+            assert model_instance.vendor["ui"]["strong_color"]
+            assert model_instance.vendor["ui"]["logo_url"]
+
 
 def test_product_to_static():
 
@@ -63,7 +67,6 @@ def test_product_to_static():
             "ui": {
                 "logo_url": "https://acme.com/logo",
                 "strong_color": "#123456",
-                "project_alias": "study",
             },
         },
         "issues": [
