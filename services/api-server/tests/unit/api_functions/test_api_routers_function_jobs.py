@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument
 
+import random
 import uuid
 from collections.abc import Callable
 from datetime import datetime
@@ -11,7 +12,7 @@ import pytest
 import simcore_service_api_server.api.routes.function_jobs_routes as function_jobs_routes
 from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.functions import (
     ProjectFunctionJob,
@@ -20,6 +21,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     FunctionJobStatus,
     RegisteredProjectFunction,
+    TaskID,
 )
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
@@ -28,9 +30,11 @@ from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
-from servicelib.aiohttp import status
 from servicelib.celery.models import TaskFilter, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.api.routes.function_jobs_routes import (
+    _JOB_CREATION_TASK_STATUS_PREFIX,
+)
 from simcore_service_api_server.models.schemas.jobs import JobStatus
 
 _faker = Faker()
@@ -191,8 +195,18 @@ async def test_list_function_jobs_with_job_id_filter(
 
 
 @pytest.mark.parametrize("job_status", ["SUCCESS", "FAILED", "STARTED"])
-@pytest.mark.parametrize("project_job_id", [None, ProjectID(_faker.uuid4())])
-@pytest.mark.parametrize("job_creation_task_id", [None, TaskUUID(_faker.uuid4())])
+@pytest.mark.parametrize(
+    "project_job_id, job_creation_task_id, celery_task_state",
+    [
+        (
+            ProjectID(_faker.uuid4()),
+            TaskID(_faker.uuid4()),
+            random.choice([state for state in TaskState]),
+        ),
+        (None, None, random.choice([state for state in TaskState])),
+        (None, TaskID(_faker.uuid4()), random.choice([state for state in TaskState])),
+    ],
+)
 async def test_get_function_job_status(
     app: FastAPI,
     mocked_app_dependencies: None,
@@ -205,17 +219,26 @@ async def test_get_function_job_status(
     auth: httpx.BasicAuth,
     job_status: str,
     project_job_id: ProjectID,
-    job_creation_task_id: TaskUUID | None,
+    job_creation_task_id: TaskID | None,
+    celery_task_state: TaskState,
 ) -> None:
+
+    _expected_return_status = (
+        status.HTTP_500_INTERNAL_SERVER_ERROR
+        if job_status != "SUCCESS"
+        and job_status != "FAILED"
+        and (project_job_id is None and job_creation_task_id is None)
+        else status.HTTP_200_OK
+    )
 
     def _mock_task_manager(*args, **kwargs) -> CeleryTaskManager:
         async def _get_task_status(
             task_uuid: TaskUUID, task_filter: TaskFilter
         ) -> TaskStatus:
-            assert task_uuid == job_creation_task_id
+            assert f"{task_uuid}" == job_creation_task_id
             return TaskStatus(
                 task_uuid=task_uuid,
-                task_state=TaskState.STARTED,
+                task_state=celery_task_state,
                 progress_report=ProgressReport(
                     actual_value=0.5,
                     total=1.0,
@@ -271,9 +294,20 @@ async def test_get_function_job_status(
         f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}/status",
         auth=auth,
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert data["status"] == job_status
+    assert response.status_code == _expected_return_status
+    if response.status_code == status.HTTP_200_OK:
+        data = response.json()
+        if (
+            project_job_id is not None
+            or job_status == "SUCCESS"
+            or job_status == "FAILED"
+        ):
+            assert data["status"] == job_status
+        else:
+            assert (
+                data["status"]
+                == f"{_JOB_CREATION_TASK_STATUS_PREFIX}{celery_task_state}"
+            )
 
 
 @pytest.mark.parametrize("job_outputs", [{"X+Y": 42, "X-Y": 10}])

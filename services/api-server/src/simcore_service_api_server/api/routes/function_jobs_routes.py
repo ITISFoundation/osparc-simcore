@@ -70,6 +70,8 @@ _logger = getLogger(__name__)
 JOB_LIST_FILTER_PAGE_RELEASE_VERSION = "0.11.0"
 JOB_LOG_RELEASE_VERSION = "0.11.0"
 
+_JOB_CREATION_TASK_STATUS_PREFIX: Final[str] = "JOB_CREATION_TASK_STATUS_"
+
 function_job_router = APIRouter()
 
 _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
@@ -236,7 +238,7 @@ async def function_job_status(
                     task_uuid=TaskUUID(task_id), task_filter=task_filter
                 )
                 return FunctionJobStatus(
-                    status=f"JOB_CREATION_TASK_STATUS_{task_status.task_state}"
+                    status=f"{_JOB_CREATION_TASK_STATUS_PREFIX}{task_status.task_state}"
                 )
             user_error_msg = f"The creation of job {function_job.uid} failed"
             support_id = create_error_code(Exception())
