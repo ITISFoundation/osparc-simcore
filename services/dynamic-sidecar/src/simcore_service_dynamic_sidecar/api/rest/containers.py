@@ -64,11 +64,13 @@ async def containers_docker_inspect(
     )
 
 
-@router.get(
-    "/containers/activity",
-)
+@router.get("/containers/activity")
 @cancel_on_disconnect
 async def get_containers_activity(request: Request) -> ActivityInfoOrNone:
+    """
+    If user service declared an inactivity hook, this enpoint provides
+    inforamtion about how much time has passed since the service became inactive.
+    """
     _ = request
     return await containers.get_containers_activity(app=request.app)
 
