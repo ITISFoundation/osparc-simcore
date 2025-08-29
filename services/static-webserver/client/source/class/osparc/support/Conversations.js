@@ -68,7 +68,7 @@ qx.Class.define("osparc.support.Conversations", {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
-      osparc.store.ConversationsSupport.getInstance().getConversations()
+      osparc.store.ConversationsSupport.getInstance().fetchConversations()
         .then(conversations => {
           if (conversations.length) {
             conversations.forEach(conversation => this.__addConversation(conversation));

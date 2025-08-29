@@ -40,7 +40,22 @@ qx.Class.define("osparc.data.model.Conversation", {
     });
 
     this.__messages = [];
-    this.__fetchLastMessage();
+    this.__listenToConversationMessageWS();
+
+    if (conversationData.type === "SUPPORT") {
+      this.__fetchLastMessage();
+    }
+  },
+
+  statics: {
+    CHANNELS: {
+      CONVERSATION_CREATED: "conversation:created",
+      CONVERSATION_UPDATED: "conversation:updated",
+      CONVERSATION_DELETED: "conversation:deleted",
+      CONVERSATION_MESSAGE_CREATED: "conversation:message:created",
+      CONVERSATION_MESSAGE_UPDATED: "conversation:message:updated",
+      CONVERSATION_MESSAGE_DELETED: "conversation:message:deleted",
+    },
   },
 
   properties: {
@@ -121,6 +136,12 @@ qx.Class.define("osparc.data.model.Conversation", {
     },
   },
 
+  events: {
+    "messageAdded": "qx.event.type.Data",
+    "messageUpdated": "qx.event.type.Data",
+    "messageDeleted": "qx.event.type.Data",
+  },
+
   members: {
     __fetchLastMessagePromise: null,
     __nextRequestParams: null,
@@ -137,6 +158,35 @@ qx.Class.define("osparc.data.model.Conversation", {
       if (!name || name === "null") {
         this.setNameAlias(lastMessage ? lastMessage.content : "");
       }
+    },
+
+    __listenToConversationMessageWS: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      [
+        this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED,
+        this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED,
+        this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED,
+      ].forEach(eventName => {
+        const eventHandler = message => {
+          if (message) {
+            const conversationId = message["conversationId"];
+            if (conversationId === this.getConversationId()) {
+              switch (eventName) {
+                case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
+                  this.addMessage(message);
+                  break;
+                case this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED:
+                  this.updateMessage(message);
+                  break;
+                case this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED:
+                  this.deleteMessage(message);
+                  break;
+              }
+            }
+          }
+        };
+        socket.on(eventName, eventHandler, this);
+      });
     },
 
     __fetchLastMessage: function() {
@@ -201,10 +251,31 @@ qx.Class.define("osparc.data.model.Conversation", {
         const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
         if (!found) {
           this.__messages.push(message);
+          this.fireDataEvent("messageAdded", message);
         }
         // latest first
         this.__messages.sort((a, b) => new Date(b.created) - new Date(a.created));
         this.setLastMessage(this.__messages[0]);
+      }
+    },
+
+    updateMessage: function(message) {
+      if (message) {
+        const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
+        if (found) {
+          Object.assign(found, message);
+          this.fireDataEvent("messageUpdated", found);
+        }
+      }
+    },
+
+    deleteMessage: function(message) {
+      if (message) {
+        const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
+        if (found) {
+          this.__messages.splice(this.__messages.indexOf(found), 1);
+          this.fireDataEvent("messageDeleted", found);
+        }
       }
     },
 
