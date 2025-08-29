@@ -322,12 +322,18 @@ qx.Class.define("osparc.support.Conversation", {
       this.__messages[messageIndex] = message;
 
       // Update the UI element from the messages list
+      const control = this.__getMessageControl(message["messageId"]);
+      if (control) {
+        const as = control.setMessage(message);
+        console.log("as", as);
+        control.__applyMessage(message);
+      }
+    },
+
+    __getMessageControl: function(messageId) {
       const messagesContainer = this.getChildControl("messages-container");
-      messagesContainer.getChildren().forEach(control => {
-        if ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]) {
-          control.setMessage(message);
-          return;
-        }
+      return messagesContainer.getChildren().find(control => {
+        return "getMessage" in control && control.getMessage()["messageId"] === messageId;
       });
     },
   }
