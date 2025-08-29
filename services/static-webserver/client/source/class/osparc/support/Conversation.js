@@ -151,11 +151,11 @@ qx.Class.define("osparc.support.Conversation", {
         });
         conversation.addListener("messageUpdated", e => {
           const data = e.getData();
-          console.log("Message updated:", data);
+          this.updateMessage(data);
         });
         conversation.addListener("messageDeleted", e => {
           const data = e.getData();
-          console.log("Message deleted:", data);
+          this.deleteMessage(data);
         });
       }
 

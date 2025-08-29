@@ -273,7 +273,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       if (message) {
         const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
         if (found) {
-          this.__messages.remove(found);
+          this.__messages.splice(this.__messages.indexOf(found), 1);
           this.fireDataEvent("messageDeleted", found);
         }
       }
