@@ -15,7 +15,11 @@ from aws_library.ec2 import (
     EC2Tags,
     Resources,
 )
-from aws_library.ec2._errors import EC2AccessError, EC2TooManyInstancesError
+from aws_library.ec2._errors import (
+    EC2AccessError,
+    EC2InsufficientCapacityError,
+    EC2TooManyInstancesError,
+)
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
@@ -421,10 +425,46 @@ async def _activate_drained_nodes(
     )
 
 
+def _de_assign_tasks_from_warm_buffer_ec2s(
+    cluster: Cluster, instances_to_start: list[EC2InstanceData]
+) -> tuple[Cluster, list]:
+    # de-assign tasks from the warm buffer instances that could not be started
+    deassigned_tasks = list(
+        itertools.chain.from_iterable(
+            i.assigned_tasks
+            for i in cluster.warm_buffer_ec2s
+            if i.ec2_instance in instances_to_start
+        )
+    )
+    # upgrade the cluster
+    return (
+        dataclasses.replace(
+            cluster,
+            warm_buffer_ec2s=[
+                (
+                    dataclasses.replace(i, assigned_tasks=[])
+                    if i.ec2_instance in instances_to_start
+                    else i
+                )
+                for i in cluster.warm_buffer_ec2s
+            ],
+        ),
+        deassigned_tasks,
+    )
+
+
 async def _try_start_warm_buffer_instances(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: AutoscalingProvider
-) -> Cluster:
-    """starts warm buffer if there are assigned tasks, or if a hot buffer of the same type is needed"""
+) -> tuple[Cluster, list]:
+    """
+    starts warm buffer if there are assigned tasks, or if a hot buffer of the same type is needed
+
+    Returns:
+        A tuple containing:
+            - The updated cluster instance after attempting to start warm buffer instances.
+            - In case warm buffer could not be started, a list of de-assigned tasks (tasks whose resource requirements cannot be fulfilled by warm buffers anymore).
+
+    """
 
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -466,26 +506,34 @@ async def _try_start_warm_buffer_instances(
         ]
 
     if not instances_to_start:
-        return cluster
+        return cluster, []
 
     with log_context(
-        _logger, logging.INFO, f"start {len(instances_to_start)} warm buffer machines"
+        _logger,
+        logging.INFO,
+        f"start {len(instances_to_start)} warm buffer machines '{[i.id for i in instances_to_start]}'",
     ):
         try:
             started_instances = await get_ec2_client(app).start_instances(
                 instances_to_start
             )
-        except EC2AccessError:
+        except EC2InsufficientCapacityError:
+            # NOTE: this warning is only raised if none of the instances could be started due to InsufficientCapacity
             _logger.warning(
-                "Could not start warm buffer instances! "
-                "TIP: This can happen in case of Insufficient "
-                "Capacity on AWS AvailabilityZone(s) where the warm buffers were originally created. "
-                "Until https://github.com/ITISFoundation/osparc-simcore/issues/8273 is fixed this "
-                "will prevent fulfilling this instance type need.",
-                exc_info=True,
+                "Could not start warm buffer instances: %s due to Insufficient Capacity in the current AWS Availability Zone! "
+                "The warm buffer assigned tasks will be moved to new instances if possible.",
+                [i.id for i in instances_to_start],
             )
-            # we need to re-assign the tasks assigned to the warm buffer instances
-            return cluster
+            return _de_assign_tasks_from_warm_buffer_ec2s(cluster, instances_to_start)
+
+        except EC2AccessError:
+            _logger.exception(
+                "Could not start warm buffer instances %s! TIP: This needs to be analysed!"
+                "The warm buffer assigned tasks will be moved to new instances if possible.",
+                [i.id for i in instances_to_start],
+            )
+            return _de_assign_tasks_from_warm_buffer_ec2s(cluster, instances_to_start)
+
         # NOTE: first start the instance and then set the tags in case the instance cannot start (e.g. InsufficientInstanceCapacity)
         await get_ec2_client(app).set_instances_tags(
             started_instances,
@@ -495,15 +543,18 @@ async def _try_start_warm_buffer_instances(
         )
     started_instance_ids = [i.id for i in started_instances]
 
-    return dataclasses.replace(
-        cluster,
-        warm_buffer_ec2s=[
-            i
-            for i in cluster.warm_buffer_ec2s
-            if i.ec2_instance.id not in started_instance_ids
-        ],
-        pending_ec2s=cluster.pending_ec2s
-        + [NonAssociatedInstance(ec2_instance=i) for i in started_instances],
+    return (
+        dataclasses.replace(
+            cluster,
+            warm_buffer_ec2s=[
+                i
+                for i in cluster.warm_buffer_ec2s
+                if i.ec2_instance.id not in started_instance_ids
+            ],
+            pending_ec2s=cluster.pending_ec2s
+            + [NonAssociatedInstance(ec2_instance=i) for i in started_instances],
+        ),
+        [],
     )
 
 
@@ -1243,7 +1294,11 @@ async def _autoscale_cluster(
     cluster = await _activate_drained_nodes(app, cluster)
 
     # 3. start warm buffer instances to cover the remaining tasks
-    cluster = await _try_start_warm_buffer_instances(app, cluster, auto_scaling_mode)
+    cluster, de_assigned_tasks = await _try_start_warm_buffer_instances(
+        app, cluster, auto_scaling_mode
+    )
+    # 3.1 if some tasks were de-assigned, we need to add them to the still pending tasks
+    still_pending_tasks.extend(de_assigned_tasks)
 
     # 4. scale down unused instances
     cluster = await _scale_down_unused_cluster_instances(

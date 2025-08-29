@@ -2454,9 +2454,6 @@ def mock_start_instances_to_raise_insufficient_capacity_error(
     )
 
 
-@pytest.mark.xfail(
-    reason="bug described in https://github.com/ITISFoundation/osparc-simcore/issues/8273"
-)
 @pytest.mark.parametrize(
     # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
     "with_docker_join_drained",
@@ -2495,7 +2492,7 @@ async def test_fresh_instance_is_launched_if_warm_buffers_cannot_start_due_to_in
         InstanceTypeType,
         next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
     )
-    await create_buffer_machines(1, warm_buffer_instance_type, "stopped", None)
+    await create_buffer_machines(3, warm_buffer_instance_type, "stopped", None)
 
     # create several tasks that needs more power
     scale_up_params = _ScaleUpParams(
