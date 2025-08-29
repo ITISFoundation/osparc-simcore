@@ -15,7 +15,6 @@ from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import (
     FilterTypeDef,
-    SubnetTypeDef,
     TagTypeDef,
 )
 
@@ -37,6 +36,7 @@ from ._utils import (
     check_max_number_of_instances_not_exceeded,
     compose_user_data,
     ec2_instance_data_from_aws_instance,
+    get_subnet_capacity,
 )
 
 _logger = logging.getLogger(__name__)
@@ -168,24 +168,9 @@ class SimcoreEC2API:
             # and avoid trying to launch instances in subnets that are already full
             # and also allows to circumvent a moto bug that does not raise
             # InsufficientInstanceCapacity when a subnet is full
-            subnets = await self.client.describe_subnets(
-                SubnetIds=instance_config.subnet_ids
+            subnet_id_to_available_ips = await get_subnet_capacity(
+                self, subnet_ids=instance_config.subnet_ids
             )
-            assert "Subnets" in subnets  # nosec
-            subnet_id_to_subnet_map: dict[str, SubnetTypeDef] = {
-                subnet[
-                    "SubnetId"
-                ]: subnet  # pyright: ignore[reportTypedDictNotRequiredAccess]
-                for subnet in subnets["Subnets"]
-            }
-            # preserve the order of instance_config.subnet_ids
-
-            subnet_id_to_available_ips: dict[str, int] = {
-                subnet_id: subnet_id_to_subnet_map[subnet_id][
-                    "AvailableIpAddressCount"
-                ]  # pyright: ignore[reportTypedDictNotRequiredAccess]
-                for subnet_id in instance_config.subnet_ids
-            }
 
             total_available_ips = sum(subnet_id_to_available_ips.values())
             if total_available_ips < min_number_of_instances:

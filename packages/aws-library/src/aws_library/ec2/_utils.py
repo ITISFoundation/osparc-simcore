@@ -1,7 +1,10 @@
 from textwrap import dedent
 from typing import TYPE_CHECKING, cast
 
-from types_aiobotocore_ec2.type_defs import InstanceTypeDef
+from types_aiobotocore_ec2.type_defs import (
+    InstanceTypeDef,
+    SubnetTypeDef,
+)
 
 from ._errors import EC2TooManyInstancesError
 from ._models import EC2InstanceConfig, EC2InstanceData, EC2Tags
@@ -61,3 +64,24 @@ async def check_max_number_of_instances_not_exceeded(
         > max_total_number_of_instances
     ):
         raise EC2TooManyInstancesError(num_instances=max_total_number_of_instances)
+
+
+async def get_subnet_capacity(
+    ec2_client: "SimcoreEC2API", *, subnet_ids: list[str]
+) -> dict[str, int]:
+
+    subnets = await ec2_client.client.describe_subnets(SubnetIds=subnet_ids)
+    assert "Subnets" in subnets  # nosec
+    subnet_id_to_subnet_map: dict[str, SubnetTypeDef] = {
+        subnet["SubnetId"]: subnet  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        for subnet in subnets["Subnets"]
+    }
+    # preserve the order of instance_config.subnet_ids
+
+    subnet_id_to_available_ips: dict[str, int] = {
+        subnet_id: subnet_id_to_subnet_map[subnet_id][
+            "AvailableIpAddressCount"
+        ]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        for subnet_id in subnet_ids
+    }
+    return subnet_id_to_available_ips
