@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi import Path as PathParam
-from fastapi import Request, Response, status
+from fastapi import Response, status
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
 
@@ -80,12 +80,10 @@ async def create_output_dirs(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def attach_container_to_network(
-    request: Request,
     item: AttachContainerToNetworkItem,
     container_id: Annotated[str, PathParam(..., alias="id")],
 ) -> None:
     """attach container to a network, if not already attached"""
-    assert request  # nosec
     await container_extensions.attach_container_to_network(
         container_id=container_id,
         network_id=item.network_id,
