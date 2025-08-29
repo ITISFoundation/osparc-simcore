@@ -208,7 +208,7 @@
           "containers"
         ],
         "summary": "Get Containers Activity",
-        "description": "If user service declared an inactivity hook, this enpoint provides\ninforamtion about how much time has passed since the service became inactive.",
+        "description": "If user service declared an inactivity hook, this endpoint provides\ninformation about how much time has passed since the service became inactive.",
         "operationId": "get_containers_activity_v1_containers_activity_get",
         "responses": {
           "200": {

@@ -41,8 +41,8 @@ async def containers_docker_inspect(
 @router.expose()
 async def get_containers_activity(app: FastAPI) -> ActivityInfoOrNone:
     """
-    If user service declared an inactivity hook, this enpoint provides
-    inforamtion about how much time has passed since the service became inactive.
+    If user service declared an inactivity hook, this endpoint provides
+    information about how much time has passed since the service became inactive.
     """
     return await containers.get_containers_activity(app=app)
 
