@@ -47,15 +47,6 @@ qx.Class.define("osparc.study.Conversations", {
   },
 
   statics: {
-    CHANNELS: {
-      CONVERSATION_CREATED: "conversation:created",
-      CONVERSATION_UPDATED: "conversation:updated",
-      CONVERSATION_DELETED: "conversation:deleted",
-      CONVERSATION_MESSAGE_CREATED: "conversation:message:created",
-      CONVERSATION_MESSAGE_UPDATED: "conversation:message:updated",
-      CONVERSATION_MESSAGE_DELETED: "conversation:message:deleted",
-    },
-
     popUpInWindow: function(studyData, openConversationId = null) {
       const conversations = new osparc.study.Conversations(studyData, openConversationId);
       const title = qx.locale.Manager.tr("Conversations");
@@ -112,22 +103,22 @@ qx.Class.define("osparc.study.Conversations", {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
       [
-        this.self().CHANNELS.CONVERSATION_CREATED,
-        this.self().CHANNELS.CONVERSATION_UPDATED,
-        this.self().CHANNELS.CONVERSATION_DELETED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
       ].forEach(eventName => {
         const eventHandler = conversation => {
           if (conversation) {
             switch (eventName) {
-              case this.self().CHANNELS.CONVERSATION_CREATED:
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
                 if (conversation["projectId"] === this.getStudyData()["uuid"]) {
                   this.__addConversationPage(conversation);
                 }
                 break;
-              case this.self().CHANNELS.CONVERSATION_UPDATED:
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
                 this.__updateConversationName(conversation);
                 break;
-              case this.self().CHANNELS.CONVERSATION_DELETED:
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
                 this.__removeConversationPage(conversation["conversationId"]);
                 break;
             }
@@ -138,9 +129,9 @@ qx.Class.define("osparc.study.Conversations", {
       });
 
       [
-        this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED,
-        this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED,
-        this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_CREATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_UPDATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_DELETED,
       ].forEach(eventName => {
         const eventHandler = message => {
           if (message) {
@@ -148,13 +139,13 @@ qx.Class.define("osparc.study.Conversations", {
             const conversationPage = this.__getConversationPage(conversationId);
             if (conversationPage) {
               switch (eventName) {
-                case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
+                case osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_CREATED:
                   conversationPage.addMessage(message);
                   break;
-                case this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED:
+                case osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_UPDATED:
                   conversationPage.updateMessage(message);
                   break;
-                case this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED:
+                case osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_DELETED:
                   conversationPage.deleteMessage(message);
                   break;
               }

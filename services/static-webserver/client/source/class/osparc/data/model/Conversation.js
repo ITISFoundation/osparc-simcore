@@ -43,6 +43,17 @@ qx.Class.define("osparc.data.model.Conversation", {
     this.__fetchLastMessage();
   },
 
+  statics: {
+    CHANNELS: {
+      CONVERSATION_CREATED: "conversation:created",
+      CONVERSATION_UPDATED: "conversation:updated",
+      CONVERSATION_DELETED: "conversation:deleted",
+      CONVERSATION_MESSAGE_CREATED: "conversation:message:created",
+      CONVERSATION_MESSAGE_UPDATED: "conversation:message:updated",
+      CONVERSATION_MESSAGE_DELETED: "conversation:message:deleted",
+    },
+  },
+
   properties: {
     conversationId: {
       check: "String",
