@@ -243,7 +243,6 @@ async def _get_mounts(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-    app_settings: AppSettings,
     has_quota_support: bool,
     rpc_client: RabbitMQRPCClient,
     is_efs_enabled: bool,
@@ -321,19 +320,6 @@ async def _get_mounts(
                     user_id=scheduler_data.user_id,
                     efs_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS,
                     storage_directory_name=_storage_directory_name,
-                )
-            )
-        # for now only enable this with dev features enabled
-        elif app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-            mounts.append(
-                DynamicSidecarVolumesPathsResolver.mount_r_clone(
-                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-                    path=path_to_mount,
-                    node_uuid=scheduler_data.node_uuid,
-                    service_run_id=scheduler_data.run_id,
-                    project_id=scheduler_data.project_id,
-                    user_id=scheduler_data.user_id,
-                    r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
                 )
             )
         else:
@@ -448,7 +434,6 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         scheduler_data=scheduler_data,
         dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
-        app_settings=app_settings,
         has_quota_support=has_quota_support,
         rpc_client=rpc_client,
         is_efs_enabled=user_extra_properties.is_efs_enabled,

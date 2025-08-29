@@ -9,7 +9,7 @@ set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
-R_CLONE_VERSION="1.63.1"
+R_CLONE_VERSION="1.70.3"
 TARGETARCH="${TARGETARCH:-amd64}"
 
 echo "platform ${TARGETARCH}"
