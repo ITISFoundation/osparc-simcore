@@ -141,8 +141,14 @@ qx.Class.define("osparc.support.Conversation", {
       });
     },
 
-    __applyConversation: function(conversation) {
+    __applyConversation: function() {
       this.__reloadMessages(true);
+
+      this.__populateShareProjectCheckbox();
+    },
+
+    __populateShareProjectCheckbox: function() {
+      const conversation = this.getConversation();
 
       const shareProjectCB = this.getChildControl("share-project-checkbox");
       const shareProjectLayout = this.getChildControl("share-project-layout");
