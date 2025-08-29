@@ -1,6 +1,3 @@
-# pylint: disable=too-many-arguments
-
-import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -19,9 +16,6 @@ from ...services.containers import (
     InvalidFilterFormatError,
     MissingDockerComposeDownSpecError,
 )
-
-_logger = logging.getLogger(__name__)
-
 
 router = APIRouter()
 
