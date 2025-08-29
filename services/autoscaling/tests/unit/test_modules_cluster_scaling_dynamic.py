@@ -18,9 +18,11 @@ from unittest import mock
 
 import aiodocker
 import arrow
+import botocore.exceptions
 import pytest
 import tenacity
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, Resources
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from models_library.docker import (
     DockerGenericTag,
@@ -68,6 +70,7 @@ from simcore_service_autoscaling.modules.docker import (
     AutoscalingDocker,
     get_docker_client,
 )
+from simcore_service_autoscaling.modules.ec2 import get_ec2_client
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
     _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
@@ -522,9 +525,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
     assert not all_instances["Reservations"]
 
-    assert scale_up_params.expected_num_instances == 1, (
-        "This test is not made to work with more than 1 expected instance. so please adapt if needed"
-    )
+    assert (
+        scale_up_params.expected_num_instances == 1
+    ), "This test is not made to work with more than 1 expected instance. so please adapt if needed"
 
     # create the service(s)
     created_docker_services = await create_services_batch(scale_up_params)
@@ -1254,7 +1257,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
                 expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
                 expected_num_instances=7,
             ),
-            id="A batch of services requiring g3.4xlarge and a batch requiring g4dn.8xlarge",
+            id="A batch of services requiring g4dn.2xlarge and a batch requiring g4dn.8xlarge",
         ),
     ],
 )
@@ -1283,9 +1286,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     assert (
         scale_up_params1.num_services
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ), (
-        "this test requires to run a first batch of more services than the maximum number of instances allowed"
-    )
+    ), "this test requires to run a first batch of more services than the maximum number of instances allowed"
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
@@ -1502,9 +1503,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     assert "Instances" in reservation1
     assert len(reservation1["Instances"]) == (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ), (
-        f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
-    )
+    ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
     for instance in reservation1["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == scale_up_params1.expected_instance_type
@@ -1518,9 +1517,9 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     reservation2 = all_instances["Reservations"][1]
     assert "Instances" in reservation2
-    assert len(reservation2["Instances"]) == 1, (
-        f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
-    )
+    assert (
+        len(reservation2["Instances"]) == 1
+    ), f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
     for instance in reservation2["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == scale_up_params2.expected_instance_type
@@ -2086,7 +2085,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
 )
-async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7071(
+async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7071(  # noqa: PLR0915
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     with_instances_machines_hot_buffer: EnvVarsDict,
@@ -2247,9 +2246,9 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     # BUG REPRODUCTION
     #
     # start a service that imposes same type as the hot buffer
-    assert hot_buffer_instance_type == "t2.xlarge", (
-        "the test is hard-coded for this type and accordingly resource. If this changed then the resource shall be changed too"
-    )
+    assert (
+        hot_buffer_instance_type == "t2.xlarge"
+    ), "the test is hard-coded for this type and accordingly resource. If this changed then the resource shall be changed too"
     scale_up_params = _ScaleUpParams(
         imposed_instance_type=hot_buffer_instance_type,
         service_resources=Resources(
@@ -2335,3 +2334,192 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
 
     with pytest.raises(tenacity.RetryError):
         await _check_autoscaling_is_stable()
+
+
+@pytest.fixture
+async def with_multiple_small_subnet_ids(
+    create_aws_subnet_id: Callable[..., Awaitable[str]], monkeypatch: pytest.MonkeyPatch
+) -> tuple[str, ...]:
+    subnet_1 = await create_aws_subnet_id("10.0.200.0/29")  # 3 usable IPs
+    subnet_2 = await create_aws_subnet_id("10.0.201.0/29")  # 3 usable IPs
+    monkeypatch.setenv("EC2_INSTANCES_SUBNET_IDS", json_dumps([subnet_1, subnet_2]))
+    return subnet_1, subnet_2
+
+
+@pytest.mark.parametrize(
+    "scale_up_params",
+    [
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                service_resources=Resources(
+                    cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")
+                ),
+                num_services=1,
+                expected_instance_type="r5n.4xlarge",  # 1 GPU, 16 CPUs, 128GiB
+                expected_num_instances=1,
+            ),
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+async def test_fresh_instance_is_started_in_second_subnet_if_warm_buffers_used_up_all_ips_in_first_subnet(
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
+    minimal_configuration: None,
+    with_multiple_small_subnet_ids: tuple[str, ...],
+    initialized_app: FastAPI,
+    app_settings: ApplicationSettings,
+    create_buffer_machines: Callable[
+        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag] | None],
+        Awaitable[list[str]],
+    ],
+    ec2_client: EC2Client,
+    scale_up_params: _ScaleUpParams,
+    create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
+    ec2_instance_custom_tags: dict[str, str],
+    instance_type_filters: Sequence[FilterTypeDef],
+):
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    # have warm buffers in the first subnet *fixture uses subnet_1 by default*, this will use all the IPs in the first subnet
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    await create_buffer_machines(
+        3,
+        cast(
+            InstanceTypeType,
+            next(
+                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+            ),
+        ),
+        "stopped",
+        None,
+    )
+
+    # create several tasks that needs more power
+    await create_services_batch(scale_up_params)
+    # now autoscale shall create machines in the second subnet
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
+    )
+    # check the instances were started
+    created_instances = await assert_autoscaled_dynamic_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+    # check the instance is in the second subnet
+    assert created_instances
+    assert "SubnetId" in created_instances[0]
+    assert created_instances[0]["SubnetId"] == with_multiple_small_subnet_ids[1]
+
+
+@pytest.fixture
+def mock_start_instances_to_raise_insufficient_capacity_error(
+    initialized_app: FastAPI,
+    mocker: MockerFixture,
+) -> mock.Mock:
+    async def _raise_insufficient_capacity_error(*args: Any, **kwargs: Any) -> None:
+        raise botocore.exceptions.ClientError(
+            error_response={
+                "Error": {
+                    "Code": "InsufficientInstanceCapacity",
+                    "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
+                }
+            },
+            operation_name="StartInstances",
+        )
+
+    return mocker.patch.object(
+        get_ec2_client(initialized_app).client,
+        "start_instances",
+        autospec=True,
+        side_effect=_raise_insufficient_capacity_error,
+    )
+
+
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_docker_join_drained",
+    ["without_AUTOSCALING_DOCKER_JOIN_DRAINED"],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
+    "with_drain_nodes_labelled",
+    ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
+    indirect=True,
+)
+async def test_fresh_instance_is_launched_if_warm_buffers_cannot_start_due_to_insufficient_capacity_error(
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
+    minimal_configuration: None,
+    with_multiple_small_subnet_ids: tuple[str, ...],
+    initialized_app: FastAPI,
+    mock_start_instances_to_raise_insufficient_capacity_error: None,
+    app_settings: ApplicationSettings,
+    create_buffer_machines: Callable[
+        [int, InstanceTypeType, InstanceStateNameType, list[DockerGenericTag] | None],
+        Awaitable[list[str]],
+    ],
+    ec2_client: EC2Client,
+    create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
+    ec2_instance_custom_tags: dict[str, str],
+    instance_type_filters: Sequence[FilterTypeDef],
+):
+    # we have nothing running now
+    all_instances = await ec2_client.describe_instances()
+    assert not all_instances["Reservations"]
+
+    # have warm buffers in the first subnet *fixture uses subnet_1 by default*, this will use all the IPs in the first subnet
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    warm_buffer_instance_type = cast(
+        InstanceTypeType,
+        next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
+    )
+    await create_buffer_machines(3, warm_buffer_instance_type, "stopped", None)
+
+    # create several tasks that needs more power
+    scale_up_params = _ScaleUpParams(
+        imposed_instance_type=warm_buffer_instance_type,
+        service_resources=Resources(
+            cpus=1, ram=TypeAdapter(ByteSize).validate_python("1Gib")
+        ),
+        num_services=1,
+        expected_instance_type=warm_buffer_instance_type,
+        expected_num_instances=1,
+    )
+    await create_services_batch(scale_up_params)
+    # now autoscale shall create machines in the second subnet
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
+    )
+    # check the instances were started
+    created_instances = await assert_autoscaled_dynamic_ec2_instances(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=scale_up_params.expected_num_instances,
+        expected_instance_type=scale_up_params.expected_instance_type,
+        expected_instance_state="running",
+        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        instance_filters=instance_type_filters,
+    )
+    # check the instance is in the second subnet
+    assert created_instances
+    assert "SubnetId" in created_instances[0]
+    assert created_instances[0]["SubnetId"] == with_multiple_small_subnet_ids[1]
