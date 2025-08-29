@@ -5,6 +5,7 @@
 # pylint: disable=too-many-arguments
 
 
+import datetime
 import inspect
 from collections.abc import Callable
 from functools import partial
@@ -31,11 +32,13 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.functions import (
     FunctionClass,
     FunctionID,
+    FunctionJobCollection,
     FunctionJobID,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     RegisteredFunction,
     RegisteredFunctionJob,
+    RegisteredFunctionJobCollection,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
     RegisteredProjectFunctionJobPatch,
@@ -119,7 +122,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
         job_links: JobLinks,
         x_simcore_parent_project_uuid: NodeID | None,
         x_simcore_parent_node_id: NodeID | None,
-    ):
+    ) -> RegisteredFunctionJob:
         return RegisteredProjectFunctionJob(
             title=_faker.sentence(),
             description=_faker.paragraph(),
@@ -418,3 +421,138 @@ async def test_run_project_function_parent_info(
         # Poll until task completion and get result
         result = await poll_task_until_done(client, auth, celery_task_id)
         RegisteredProjectFunctionJob.model_validate(result.result)
+
+
+@pytest.mark.parametrize(
+    "parent_project_uuid, parent_node_uuid, expected_status_code",
+    [
+        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
+        ("null", "null", status.HTTP_200_OK),
+    ],
+)
+@pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
+@pytest.mark.parametrize("mocked_app_dependencies", [None])
+async def test_map_function_parent_info(
+    app: FastAPI,
+    with_api_server_celery_worker: TestWorkController,
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[
+        [str, Any, Exception | None, Callable | None], None
+    ],
+    mock_registered_project_function: RegisteredProjectFunction,
+    mock_registered_project_function_job: RegisteredFunctionJob,
+    auth: httpx.BasicAuth,
+    user_id: UserID,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_directorv2_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    create_respx_mock_from_capture,
+    project_tests_dir: Path,
+    parent_project_uuid: str | None,
+    parent_node_uuid: str | None,
+    expected_status_code: int,
+    capture: str,
+) -> None:
+
+    side_effect_checks = {}
+
+    def _default_side_effect(
+        side_effect_checks: dict,
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        if request.method == "POST" and request.url.path.endswith("/projects"):
+            side_effect_checks["headers_checked"] = True
+            if parent_project_uuid and parent_project_uuid != "null":
+                _parent_uuid = request.headers.get(X_SIMCORE_PARENT_PROJECT_UUID)
+                assert _parent_uuid is not None
+                assert parent_project_uuid == _parent_uuid
+            if parent_node_uuid and parent_node_uuid != "null":
+                _parent_node_uuid = request.headers.get(X_SIMCORE_PARENT_NODE_ID)
+                assert _parent_node_uuid is not None
+                assert parent_node_uuid == _parent_node_uuid
+        return capture.response_body
+
+    create_respx_mock_from_capture(
+        respx_mocks=[mocked_webserver_rest_api_base, mocked_directorv2_rest_api_base],
+        capture_path=project_tests_dir / "mocks" / capture,
+        side_effects_callbacks=[partial(_default_side_effect, side_effect_checks)] * 50,
+    )
+
+    mock_handler_in_functions_rpc_interface(
+        "get_function_user_permissions",
+        FunctionUserAccessRights(
+            user_id=user_id,
+            execute=True,
+            read=True,
+            write=True,
+        ),
+        None,
+        None,
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_function", mock_registered_project_function, None, None
+    )
+    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job", mock_registered_project_function_job, None, None
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_functions_user_api_access_rights",
+        FunctionUserApiAccessRights(
+            user_id=user_id,
+            execute_functions=True,
+            write_functions=True,
+            read_functions=True,
+        ),
+        None,
+        None,
+    )
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job_collection",
+        RegisteredFunctionJobCollection(
+            uid=FunctionJobID(_faker.uuid4()),
+            title="Test Collection",
+            description="A test function job collection",
+            job_ids=[],
+            created_at=datetime.datetime.now(datetime.UTC),
+        ),
+        None,
+        None,
+    )
+
+    patch_mock = mock_handler_in_functions_rpc_interface(
+        "patch_registered_function_job",
+        None,
+        None,
+        partial(
+            _patch_registered_function_job_side_effect,
+            mock_registered_project_function_job,
+        ),
+    )
+
+    headers = {}
+    if parent_project_uuid:
+        headers[X_SIMCORE_PARENT_PROJECT_UUID] = parent_project_uuid
+    if parent_node_uuid:
+        headers[X_SIMCORE_PARENT_NODE_ID] = parent_node_uuid
+
+    response = await client.post(
+        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:map",
+        json=[{}, {}],
+        auth=auth,
+        headers=headers,
+    )
+    assert response.status_code == expected_status_code
+
+    if expected_status_code == status.HTTP_200_OK:
+        job_collection = FunctionJobCollection.model_validate(response.json())
+        task_id = patch_mock.call_args.kwargs[
+            "registered_function_job_patch"
+        ].job_creation_task_id
+        await poll_task_until_done(client, auth, f"{task_id}")
+        assert side_effect_checks["headers_checked"] is True
