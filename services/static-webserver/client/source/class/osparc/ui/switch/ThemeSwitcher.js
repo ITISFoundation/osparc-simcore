@@ -13,6 +13,11 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
   type: "static",
 
   statics: {
+    isLight: function() {
+      const currentTheme = qx.theme.manager.Meta.getInstance().getTheme();
+      return currentTheme.basename === "ThemeLight";
+    },
+
     getValidThemes: function() {
       return Object.values(qx.Theme.getAll()).filter(theme => theme.type === "meta");
     },
