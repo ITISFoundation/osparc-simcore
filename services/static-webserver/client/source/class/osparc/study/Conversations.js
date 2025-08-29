@@ -130,7 +130,7 @@ qx.Class.define("osparc.study.Conversations", {
     },
 
     __getConversationPage: function(conversationId) {
-      return this.__conversationsPages.find(conversationPage => conversationPage.getConversation() && conversationPage.getConversation().getConversationId() === conversationId);
+      return this.__conversationsPages.find(conversationPage => conversationPage.getConversationId() === conversationId);
     },
 
     __applyStudyData: function(studyData) {
@@ -143,7 +143,7 @@ qx.Class.define("osparc.study.Conversations", {
             conversations.forEach(conversation => this.__addConversationPage(conversation));
             if (this.__openConversationId) {
               const conversationsLayout = this.getChildControl("conversations-layout");
-              const conversation = conversationsLayout.getSelectables().find(c => c.getConversationId() && c.getConversationId().getConversationId() === this.__openConversationId);
+              const conversation = conversationsLayout.getSelectables().find(c => c.getConversationId() === this.__openConversationId);
               if (conversation) {
                 conversationsLayout.setSelection([conversation]);
               }
