@@ -479,8 +479,9 @@ async def _try_start_warm_buffer_instances(
             _logger.warning(
                 "Could not start warm buffer instances! "
                 "TIP: This can happen in case of Insufficient "
-                "Capacity on AWS AZ(s) where the warm buffers were created. "
-                "Scaling up will be achieved via launching new EC2 instances instead.",
+                "Capacity on AWS AvailabilityZone(s) where the warm buffers were originally created. "
+                "Until https://github.com/ITISFoundation/osparc-simcore/issues/8273 is fixed this "
+                "will prevent fulfilling this instance type need.",
                 exc_info=True,
             )
             # we need to re-assign the tasks assigned to the warm buffer instances
