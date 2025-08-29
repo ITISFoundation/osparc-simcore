@@ -156,7 +156,7 @@ qx.Class.define("osparc.service.Utils", {
     DEPRECATED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Stop the Service and then Update it"),
     RETIRED_AUTOUPDATABLE_INSTRUCTIONS: qx.locale.Manager.tr("Please Update the Service"),
 
-    extractVersionFromHistory: function(metadata) {
+    getHistoryEntry: function(metadata) {
       if (metadata["history"]) {
         const found = metadata["history"].find(historyEntry => historyEntry["version"] === metadata["version"]);
         return found;
@@ -164,8 +164,16 @@ qx.Class.define("osparc.service.Utils", {
       return null;
     },
 
+    extractReleasedDateFromHistory: function(metadata) {
+      const historyEntry = this.getHistoryEntry(metadata);
+      if (historyEntry && historyEntry["released"]) {
+        return historyEntry["released"];
+      }
+      return null;
+    },
+
     isUpdatable: function(metadata) {
-      const historyEntry = this.extractVersionFromHistory(metadata);
+      const historyEntry = this.getHistoryEntry(metadata);
       if (historyEntry && historyEntry["compatibility"] && historyEntry["compatibility"]["canUpdateTo"]) {
         const latestCompatible = historyEntry["compatibility"]["canUpdateTo"];
         return latestCompatible && (metadata["key"] !== latestCompatible["key"] || metadata["version"] !== latestCompatible["version"]);
@@ -182,7 +190,7 @@ qx.Class.define("osparc.service.Utils", {
         // this works for service latest
         return new Date(metadata["release"]["retired"]);
       }
-      const historyEntry = this.extractVersionFromHistory(metadata);
+      const historyEntry = this.getHistoryEntry(metadata);
       if (historyEntry && "retired" in historyEntry && historyEntry["retired"]) {
         return new Date(historyEntry["retired"]);
       }
