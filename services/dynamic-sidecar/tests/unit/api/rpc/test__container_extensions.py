@@ -653,7 +653,7 @@ async def test_containers_entrypoint_name_containers_not_started(
     if include_exclude_filter_option:
         with pytest.raises(
             RPCServerError,
-            match="No container found for network=entrypoint_container_network",
+            match="No container found for network=entrypoint_container_network and exclude=egress",
         ):
             await containers.get_containers_name(
                 rpc_client,
