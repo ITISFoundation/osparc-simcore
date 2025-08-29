@@ -72,9 +72,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Store Compose Spec",
+        "summary": "Create Compose Spec",
         "description": "Validates and stores the docker compose spec for the user services.",
-        "operationId": "store_compose_spec_v1_containers_compose_spec_post",
+        "operationId": "create_compose_spec_v1_containers_compose_spec_post",
         "requestBody": {
           "content": {
             "application/json": {
