@@ -199,8 +199,14 @@ qx.Class.define("osparc.study.Conversation", {
       });
       addMessages.addListener("messageAdded", e => {
         const data = e.getData();
-        if (data["conversationId"]) {
-          this.setConversationId(data["conversationId"]);
+        if (data["conversationId"] && this.getConversation() === null) {
+          osparc.store.ConversationsProject.getInstance().getConversation(this.__studyData["uuid"], data["conversationId"])
+            .then(conversationData => {
+              const conversation = new osparc.data.model.Conversation(conversationData);
+              this.setConversation(conversation);
+            });
+        } else {
+          this.getConversation().addMessage(data);
           this.addMessage(data);
         }
       });
