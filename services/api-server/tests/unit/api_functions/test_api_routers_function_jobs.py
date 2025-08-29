@@ -310,7 +310,13 @@ async def test_get_function_job_status(
             )
 
 
-@pytest.mark.parametrize("job_outputs", [{"X+Y": 42, "X-Y": 10}])
+@pytest.mark.parametrize(
+    "job_outputs, project_job_id",
+    [
+        (None, None),
+        ({"X+Y": 42, "X-Y": 10}, ProjectID(_faker.uuid4())),
+    ],
+)
 async def test_get_function_job_outputs(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
@@ -318,11 +324,25 @@ async def test_get_function_job_outputs(
     mock_registered_project_function: RegisteredProjectFunction,
     mocked_webserver_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
-    job_outputs: dict[str, Any],
+    job_outputs: dict[str, Any] | None,
+    project_job_id: ProjectID | None,
 ) -> None:
 
+    _expected_return_status = (
+        status.HTTP_404_NOT_FOUND
+        if project_job_id is None and job_outputs is None
+        else status.HTTP_200_OK
+    )
+
     mock_handler_in_functions_rpc_interface(
-        "get_function_job", mock_registered_project_function_job
+        "get_function_job",
+        mock_registered_project_function_job.model_copy(
+            update={
+                "user_id": ANY,
+                "project_job_id": project_job_id,
+                "job_creation_task_id": None,
+            }
+        ),
     )
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
@@ -333,6 +353,7 @@ async def test_get_function_job_outputs(
         f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}/outputs",
         auth=auth,
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert data == job_outputs
+    assert response.status_code == _expected_return_status
+    if response.status_code == status.HTTP_200_OK:
+        data = response.json()
+        assert data == job_outputs

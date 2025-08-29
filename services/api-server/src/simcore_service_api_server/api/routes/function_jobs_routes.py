@@ -317,7 +317,11 @@ async def function_job_outputs(
         function.function_class == FunctionClass.PROJECT
         and function_job.function_class == FunctionClass.PROJECT
     ):
-        assert function_job.project_job_id is not None  # nosec
+        if function_job.project_job_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Function job outputs not found",
+            )
         new_outputs = dict(
             (
                 await studies_jobs.get_study_job_outputs(
@@ -333,7 +337,11 @@ async def function_job_outputs(
         function.function_class == FunctionClass.SOLVER
         and function_job.function_class == FunctionClass.SOLVER
     ):
-        assert function_job.solver_job_id is not None  # nosec
+        if function_job.solver_job_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Function job outputs not found",
+            )
         new_outputs = dict(
             (
                 await solvers_jobs_read.get_job_outputs(
