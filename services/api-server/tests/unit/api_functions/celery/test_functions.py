@@ -440,7 +440,7 @@ async def test_map_function_parent_info(
     with_api_server_celery_worker: TestWorkController,
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[
-        [str, Any, Exception | None, Callable | None], None
+        [str, Any, Exception | None, Callable | None], MockType
     ],
     mock_registered_project_function: RegisteredProjectFunction,
     mock_registered_project_function_job: RegisteredFunctionJob,
@@ -550,7 +550,7 @@ async def test_map_function_parent_info(
     assert response.status_code == expected_status_code
 
     if expected_status_code == status.HTTP_200_OK:
-        job_collection = FunctionJobCollection.model_validate(response.json())
+        FunctionJobCollection.model_validate(response.json())
         task_id = patch_mock.call_args.kwargs[
             "registered_function_job_patch"
         ].job_creation_task_id

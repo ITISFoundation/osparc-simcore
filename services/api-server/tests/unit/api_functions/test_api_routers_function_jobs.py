@@ -1,4 +1,6 @@
 # pylint: disable=unused-argument
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 
 import random
 import uuid
@@ -9,7 +11,6 @@ from unittest.mock import ANY
 
 import httpx
 import pytest
-import simcore_service_api_server.api.routes.function_jobs_routes as function_jobs_routes
 from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI, status
@@ -32,6 +33,7 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskFilter, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.api.routes import function_jobs_routes
 from simcore_service_api_server.api.routes.function_jobs_routes import (
     _JOB_CREATION_TASK_STATUS_PREFIX,
 )
@@ -201,10 +203,10 @@ async def test_list_function_jobs_with_job_id_filter(
         (
             ProjectID(_faker.uuid4()),
             TaskID(_faker.uuid4()),
-            random.choice([state for state in TaskState]),
+            random.choice(list(TaskState)),
         ),
-        (None, None, random.choice([state for state in TaskState])),
-        (None, TaskID(_faker.uuid4()), random.choice([state for state in TaskState])),
+        (None, None, random.choice(list(TaskState))),
+        (None, TaskID(_faker.uuid4()), random.choice(list(TaskState))),
     ],
 )
 async def test_get_function_job_status(

@@ -260,7 +260,7 @@ def mock_registered_function_job_collection(
 @pytest.fixture()
 def mock_handler_in_functions_rpc_interface(
     mock_wb_api_server_rpc: MockerFixture,
-) -> Callable[[str, Any, Exception | None, Callable | None], None]:
+) -> Callable[[str, Any, Exception | None, Callable | None], MockType]:
     def _mock(
         handler_name: str = "",
         return_value: Any = None,

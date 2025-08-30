@@ -27,7 +27,7 @@ from servicelib.fastapi.dependencies import get_reverse_url_mapper
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
-from ...celery.worker_tasks.functions_tasks import map as map_task
+from ...celery.worker_tasks.functions_tasks import function_map as map_task
 from ...celery.worker_tasks.functions_tasks import run_function as run_function_task
 from ...exceptions.function_errors import FunctionJobCacheNotFoundError
 from ...models.domain.functions import PreRegisteredFunctionJobData

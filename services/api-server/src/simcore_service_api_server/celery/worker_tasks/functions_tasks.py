@@ -119,7 +119,7 @@ async def run_function(
     )
 
 
-async def map(
+async def function_map(
     task: Task,
     task_id: TaskID,
     *,

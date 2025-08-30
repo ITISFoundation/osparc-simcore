@@ -258,7 +258,7 @@ async def function_job_status(
         raise UnsupportedFunctionFunctionJobClassCombinationError(
             function_class=function.function_class,
             function_job_class=function_job.function_class,
-        )
+        ) from exc
 
 
 async def get_function_from_functionjobid(
