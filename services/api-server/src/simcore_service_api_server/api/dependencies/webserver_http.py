@@ -4,7 +4,6 @@ from typing import Annotated
 from common_library.json_serialization import json_dumps
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.requests import Request
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
 from ...core.settings import ApplicationSettings, WebServerSettings
@@ -29,18 +28,15 @@ def _get_settings(
     return settings
 
 
-def _get_encrypt(request: Request) -> Fernet | None:
-    e: Fernet | None = getattr(request.app.state, "webserver_fernet", None)
-    return e
-
-
 def get_session_cookie(
     identity: Annotated[str, Depends(get_active_user_email)],
     settings: Annotated[WebServerSettings, Depends(_get_settings)],
-    fernet: Annotated[Fernet | None, Depends(_get_encrypt)],
+    app: Annotated[FastAPI, Depends(get_app)],
 ) -> dict:
     # Based on aiohttp_session and aiohttp_security
     # SEE services/web/server/tests/unit/with_dbs/test_login.py
+
+    fernet: Fernet | None = getattr(app.state, "webserver_fernet", None)
 
     if fernet is None:
         raise HTTPException(

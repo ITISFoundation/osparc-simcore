@@ -23,6 +23,18 @@ class TaskProgress(BaseModel):
     message: ProgressMessage = ""
     percent: ProgressPercent = 0.0
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "task_id": "3ac48b54-a48d-4c5e-a6ac-dcaddb9eaa59",
+                    "message": "Halfway done",
+                    "percent": 0.5,
+                }
+            ]
+        }
+    }
+
     # used to propagate progress updates internally
     _update_callback: Callable[["TaskProgress"], Awaitable[None]] | None = None
 

@@ -25,13 +25,14 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    environment:
+    environment: &api_server_environment
       <<: *tracing_open_telemetry_environs
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
       API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       API_SERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       API_SERVER_LOGLEVEL: ${API_SERVER_LOGLEVEL}
       API_SERVER_PROFILING: ${API_SERVER_PROFILING}
+      API_SERVER_WORKER_MODE: "false"
 
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
@@ -50,6 +51,12 @@ services:
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
+
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_SECURE: ${REDIS_SECURE}
+      REDIS_USER: ${REDIS_USER}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
 
       STORAGE_HOST: ${STORAGE_HOST}
       STORAGE_PORT: ${STORAGE_PORT}
@@ -75,8 +82,22 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@swarm,ratelimit-${SWARM_STACK_NAME}_api-server,inflightreq-${SWARM_STACK_NAME}_api-server
-    networks:
+    networks: &api_server_networks
       - default
+
+
+  api-worker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<: *api_server_environment
+      API_SERVER_WORKER_NAME: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      API_SERVER_WORKER_MODE: "true"
+      CELERY_CONCURRENCY: 100
+      CELERY_QUEUES: "api_worker_queue"
+    networks: *api_server_networks
+
 
   autoscaling:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}

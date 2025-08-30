@@ -260,21 +260,24 @@ def mock_registered_function_job_collection(
 @pytest.fixture()
 def mock_handler_in_functions_rpc_interface(
     mock_wb_api_server_rpc: MockerFixture,
-) -> Callable[[str, Any, Exception | None], None]:
+) -> Callable[[str, Any, Exception | None, Callable | None], MockType]:
     def _mock(
         handler_name: str = "",
         return_value: Any = None,
         exception: Exception | None = None,
+        side_effect: Callable | None = None,
     ) -> MockType:
         from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
             functions_rpc_interface,
         )
 
+        assert exception is None or side_effect is None
+
         return mock_wb_api_server_rpc.patch.object(
             functions_rpc_interface,
             handler_name,
             return_value=return_value,
-            side_effect=exception,
+            side_effect=exception or side_effect,
         )
 
     return _mock
