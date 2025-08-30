@@ -46,7 +46,7 @@ from ..dependencies.services import (
     get_function_job_service,
     get_function_service,
 )
-from ..dependencies.webserver_rpc import WbApiRpcClient, get_wb_api_rpc_client
+from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
