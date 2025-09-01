@@ -155,7 +155,7 @@ qx.Class.define("osparc.user.UserDetails", {
 
       this.getChildControl("thumbnail").setSource(user.createThumbnail(96));
       this.getChildControl("username").setValue(user.getUsername());
-      this.getChildControl("fullname").setValue(user.getFirstName() + " " + user.getLastName());
+      this.getChildControl("fullname").setValue([user.getFirstName(), user.getLastName()].filter(Boolean).join(" "));
       this.getChildControl("email").setValue(user.getEmail());
       this.getChildControl("user-id").setValue(String(user.getUserId()));
       this.getChildControl("group-id").setValue(String(user.getGroupId()));
