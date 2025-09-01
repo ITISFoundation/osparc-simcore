@@ -460,7 +460,15 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             task_schedule.result, TaskResultCancelledError
         ):
             _logger.debug("Schedule retry attempt for task_uid '%s'", task_uid)
-            # does not retry if task was cancelled
+
+            subclass = self.__get_subclass(task_schedule.class_unique_reference)
+            deferred_context = self.__get_deferred_context(task_schedule.start_context)
+            sleep_interval = await subclass.get_retry_delay(
+                context=deferred_context,
+                remaining_attempts=task_schedule.execution_attempts,
+            )
+            await asyncio.sleep(sleep_interval.total_seconds())
+
             task_schedule.state = TaskState.SUBMIT_TASK
             await self._task_tracker.save(task_uid, task_schedule)
             await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.SUBMIT_TASK)
