@@ -13,6 +13,7 @@ import sqlalchemy as sa
 from faker import Faker
 from models_library.basic_regex import TWILIO_ALPHANUMERIC_SENDER_ID_RE
 from models_library.products import ProductName
+from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ValidationError
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.pydantic_models import (
@@ -48,14 +49,16 @@ def test_all_products_models_examples(
 def test_product_to_static():
 
     product = Product.model_validate(Product.model_json_schema()["examples"][0])
-    assert product.to_statics() == {
+    product_data = {snake_to_camel(k): v for k, v in product.to_statics().items()}
+    assert product_data == {
         "displayName": "o²S²PARC",
         "supportEmail": "support@osparc.io",
     }
 
     product = Product.model_validate(Product.model_json_schema()["examples"][2])
 
-    assert product.to_statics() == {
+    product_data = {snake_to_camel(k): v for k, v in product.to_statics().items()}
+    assert product_data == {
         "displayName": "o²S²PARC FOO",
         "supportEmail": "foo@osparcf.io",
         "vendor": {
