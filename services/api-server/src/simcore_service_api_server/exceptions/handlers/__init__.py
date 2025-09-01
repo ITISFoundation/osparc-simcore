@@ -1,3 +1,4 @@
+from celery.exceptions import CeleryError
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPError as HttpxException
@@ -37,6 +38,18 @@ def setup(app: FastAPI, *, is_debug: bool = False):
             error_message="This endpoint is still not implemented (under development)",
         ),
     )
+
+    app.add_exception_handler(
+        CeleryError,
+        make_handler_for_exception(
+            CeleryError,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            error_message=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE,
+            add_exception_to_message=is_debug,
+            add_oec_to_message=True,
+        ),
+    )
+
     app.add_exception_handler(
         Exception,
         make_handler_for_exception(

@@ -142,9 +142,13 @@ async def test_get_task_result(
                     actual_value=0.5,
                     total=1.0,
                     unit="Byte",
-                    message=ProgressStructuredMessage.model_json_schema()["examples"][
-                        0
-                    ],
+                    message=ProgressStructuredMessage.model_validate(
+                        {
+                            "description": "some description",
+                            "current": 12.2,
+                            "total": 123,
+                        }
+                    ),
                 ),
             ),
             None,
@@ -162,9 +166,13 @@ async def test_get_task_result(
                     actual_value=0.5,
                     total=1.0,
                     unit="Byte",
-                    message=ProgressStructuredMessage.model_json_schema()["examples"][
-                        0
-                    ],
+                    message=ProgressStructuredMessage.model_validate(
+                        {
+                            "description": "some description",
+                            "current": 12.2,
+                            "total": 123,
+                        }
+                    ),
                 ),
             ),
             None,

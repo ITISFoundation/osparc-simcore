@@ -28,22 +28,15 @@ def get_task_result_return_value() -> dict:
 
 @pytest.fixture
 def get_task_status_return_value() -> TaskStatus:
-    status_extra = TaskStatus.model_config.get("json_schema_extra")
-    assert status_extra is not None
-    status_examples = status_extra.get("examples")
-    assert isinstance(status_examples, list)
-    assert len(status_examples) > 0
-    return TaskStatus.model_validate(status_examples[0])
+    example = TaskStatus.model_json_schema()["examples"][0]
+    return TaskStatus.model_validate(example)
 
 
 @pytest.fixture
 def list_tasks_return_value() -> list[Task]:
-    list_extra = Task.model_config.get("json_schema_extra")
-    assert isinstance(list_extra, dict)
-    list_examples = list_extra.get("examples")
-    assert isinstance(list_examples, list)
-    assert len(list_examples) > 0
-    return [Task.model_validate(example) for example in list_examples]
+    examples = Task.model_json_schema()["examples"]
+    assert len(examples) > 0
+    return [Task.model_validate(example) for example in examples]
 
 
 @pytest.fixture
