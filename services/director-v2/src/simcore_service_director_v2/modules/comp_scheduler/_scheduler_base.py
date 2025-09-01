@@ -632,10 +632,11 @@ class BaseCompScheduler(ABC):
             msg=f"scheduling pipeline {user_id=}:{project_id=}:{iteration=}",
         ):
             dag: nx.DiGraph = nx.DiGraph()
+            comp_run = await CompRunsRepository.instance(self.db_engine).get(
+                user_id, project_id, iteration
+            )
             try:
-                comp_run = await CompRunsRepository.instance(self.db_engine).get(
-                    user_id, project_id, iteration
-                )
+
                 dag = await self._get_pipeline_dag(project_id)
                 # 1. Update our list of tasks with data from backend (state, results)
                 await self._update_states_from_comp_backend(
@@ -707,25 +708,44 @@ class BaseCompScheduler(ABC):
                 await self._set_run_result(
                     user_id, project_id, iteration, RunningState.ABORTED
                 )
-            except (DaskClientAcquisisitonError, ClustersKeeperNotAvailableError):
-                _logger.exception(
-                    "Unexpected error while connecting with computational backend, aborting pipeline"
+            except (
+                DaskClientAcquisisitonError,
+                ComputationalBackendNotConnectedError,
+                ClustersKeeperNotAvailableError,
+            ):
+                # we somehow lost access to the dask scheduler for different reasons
+                # maybe network glitch in which case we might recover?
+                # maybe the dask scheduler was restarted in which case we lost everything
+                # maybe the private cluster machine was restarted in which case we lost everything
+                # maybe the private cluster was shutdown in which case we lost everything
+                # we should switch to WAITING_FOR_CLUSTER
+                _logger.warning(
+                    "Unexpected error while connecting with computational backend, waiting for it to re-appear"
                 )
-                tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(
-                    project_id, dag
-                )
+                # what if we keep the tasks status?
+                # just set the run result to waiting for result? and check when it last changed?
+                not_completed_tasks = {
+                    k: v
+                    for k, v in (
+                        await self._get_pipeline_tasks(project_id, dag)
+                    ).items()
+                    if v.state
+                    not in {
+                        *COMPLETED_STATES,
+                        RunningState.WAITING_FOR_CLUSTER,
+                        RunningState.PUBLISHED,
+                    }
+                }
                 comp_tasks_repo = CompTasksRepository(self.db_engine)
                 await comp_tasks_repo.update_project_tasks_state(
                     project_id,
                     comp_run.run_id,
-                    [t.node_id for t in tasks.values()],
-                    RunningState.FAILED,
+                    [t.node_id for t in not_completed_tasks.values()],
+                    RunningState.WAITING_FOR_CLUSTER,
                 )
                 await self._set_run_result(
-                    user_id, project_id, iteration, RunningState.FAILED
+                    user_id, project_id, iteration, RunningState.WAITING_FOR_CLUSTER
                 )
-            except ComputationalBackendNotConnectedError:
-                _logger.exception("Computational backend is not connected!")
             finally:
                 await self._set_processing_done(user_id, project_id, iteration)
 
