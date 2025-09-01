@@ -339,7 +339,7 @@ async def run_function(  # noqa: PLR0913
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJob:
-    # massage inputs
+    # preprocess inputs
     task_manager = get_task_manager(request.app)
     parent_project_uuid = (
         x_simcore_parent_project_uuid
