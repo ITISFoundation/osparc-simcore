@@ -31,10 +31,9 @@ from ...services_http.storage import StorageApi
 async def _assemble_function_job_service(
     *, app: FastAPI, user_identity: Identity
 ) -> FunctionJobService:
-    # to avoid this show we could introduce a dependency injection
-    # system which is not linked to FastAPI (i.e. can be resolved manually).
-    # One suggestion: https://github.com/ets-labs/python-dependency-injector, which is compatible
-    # with FastAPI's Depends.
+    # This should ideally be done by a dependency injection system (like it is done in the api-server).
+    # However, for that we would need to introduce a dependency injection system which is not coupled to,
+    # but compatible with FastAPI's Depends. One suggestion: https://github.com/ets-labs/python-dependency-injector.
     # See also https://github.com/fastapi/fastapi/issues/1105#issuecomment-609919850.
     settings = app.state.settings
     assert settings.API_SERVER_WEBSERVER  # nosec
