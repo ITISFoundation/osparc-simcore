@@ -100,6 +100,10 @@ def _get_release_notes_vtag(vtag: str) -> str:
     return f"v{version.major}.{version.minor}.0"
 
 
+def _get_product_data(product: Product) -> dict[str, Any]:
+    return {snake_to_camel(k): v for k, v in product.to_statics().items()}
+
+
 async def create_and_cache_statics_json(app: web.Application) -> None:
     # NOTE: in devel model, the folder might be under construction
     # (qx-compile takes time), therefore we create statics.json
@@ -124,8 +128,7 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
 
         _logger.debug("Product %s", product.name)
 
-        product_data = {snake_to_camel(k): v for k, v in product.to_statics().items()}
-        data.update(product_data)
+        data.update(_get_product_data(product))
 
         # Adds specifics to login settings
         if (p := product.login_settings) and (v := p.get("LOGIN_2FA_REQUIRED", None)):
