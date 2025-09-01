@@ -63,7 +63,7 @@ qx.Class.define("osparc.study.Conversations", {
 
     makeButtonBlink: function(button) {
       const socket = osparc.wrapper.WebSocket.getInstance();
-      Object.values(osparc.study.Conversations.CHANNELS).forEach(eventName => {
+      Object.values(osparc.data.model.Conversation.CHANNELS).forEach(eventName => {
         socket.on(eventName, () => {
           if (button) {
             osparc.utils.Utils.makeButtonBlink(button);
