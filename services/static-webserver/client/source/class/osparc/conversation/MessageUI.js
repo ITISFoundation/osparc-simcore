@@ -64,7 +64,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       let control;
       switch (id) {
         case "thumbnail":
-          control = osparc.utils.Utils.createThumbnail(32).set({
+          control = new osparc.ui.basic.UserThumbnail(32).set({
             marginTop: 4,
           });
           this._add(control, {
@@ -167,6 +167,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
         .then(user => {
           if (user) {
             thumbnail.setSource(user.getThumbnail());
+            thumbnail.setUser(user);
             userName.setValue(user.getLabel());
           } else {
             thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());
