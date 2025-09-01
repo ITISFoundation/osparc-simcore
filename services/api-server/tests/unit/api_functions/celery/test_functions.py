@@ -304,7 +304,7 @@ async def test_celery_error_propagation(
     with pytest.raises(HTTPStatusError) as exc_info:
         await poll_task_until_done(client, auth, f"{task_uuid}")
 
-    assert exc_info.value.response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert exc_info.value.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
 
 @pytest.mark.parametrize(

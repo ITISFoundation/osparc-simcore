@@ -102,7 +102,7 @@ async def test_get_task_result(
             None,
             None,
             None,
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
         ),
         (
             "GET",
@@ -111,7 +111,7 @@ async def test_get_task_result(
             CeleryError(),
             None,
             None,
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
         ),
         (
             "POST",
@@ -120,7 +120,7 @@ async def test_get_task_result(
             None,
             CeleryError(),
             None,
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
         ),
         (
             "GET",
@@ -129,7 +129,7 @@ async def test_get_task_result(
             CeleryError(),
             None,
             None,
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
         ),
         (
             "GET",
@@ -142,9 +142,9 @@ async def test_get_task_result(
                     actual_value=0.5,
                     total=1.0,
                     unit="Byte",
-                    message=ProgressStructuredMessage.model_config["json_schema_extra"][
-                        "examples"
-                    ][0],
+                    message=ProgressStructuredMessage.model_json_schema()["examples"][
+                        0
+                    ],
                 ),
             ),
             None,
@@ -162,9 +162,9 @@ async def test_get_task_result(
                     actual_value=0.5,
                     total=1.0,
                     unit="Byte",
-                    message=ProgressStructuredMessage.model_config["json_schema_extra"][
-                        "examples"
-                    ][0],
+                    message=ProgressStructuredMessage.model_json_schema()["examples"][
+                        0
+                    ],
                 ),
             ),
             None,
