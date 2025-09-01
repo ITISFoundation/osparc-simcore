@@ -16,7 +16,7 @@ class EC2NotConnectedError(EC2RuntimeError):
 
 class EC2AccessError(EC2RuntimeError):
     msg_template: str = (
-        "Unexpected error while accessing EC2 backend: {operation_name}:{code}:{error}"
+        "Unexpected error while accessing EC2 backend responded with {status_code}: {operation_name}:{code}:{error}"
     )
 
 
@@ -35,4 +35,17 @@ class EC2InstanceTypeInvalidError(EC2AccessError):
 class EC2TooManyInstancesError(EC2AccessError):
     msg_template: str = (
         "The maximum amount of instances {num_instances} is already reached!"
+    )
+
+
+class EC2InsufficientCapacityError(EC2AccessError):
+    msg_template: str = (
+        "Insufficient capacity in {availability_zones} for {instance_type}"
+    )
+
+
+class EC2SubnetsNotEnoughIPsError(EC2AccessError):
+    msg_template: str = (
+        "Not enough free IPs in subnet(s) {subnet_ids} for {num_instances} instances"
+        ". Only {available_ips} IPs available."
     )

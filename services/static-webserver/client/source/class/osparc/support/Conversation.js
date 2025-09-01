@@ -144,6 +144,27 @@ qx.Class.define("osparc.support.Conversation", {
     __applyConversation: function(conversation) {
       this.__reloadMessages(true);
 
+      if (conversation) {
+        conversation.addListener("messageAdded", e => {
+          const data = e.getData();
+          this.addMessage(data);
+        });
+        conversation.addListener("messageUpdated", e => {
+          const data = e.getData();
+          this.updateMessage(data);
+        });
+        conversation.addListener("messageDeleted", e => {
+          const data = e.getData();
+          this.deleteMessage(data);
+        });
+      }
+
+      this.__populateShareProjectCheckbox();
+    },
+
+    __populateShareProjectCheckbox: function() {
+      const conversation = this.getConversation();
+
       const shareProjectCB = this.getChildControl("share-project-checkbox");
       const shareProjectLayout = this.getChildControl("share-project-layout");
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
@@ -302,12 +323,13 @@ qx.Class.define("osparc.support.Conversation", {
 
       // Update the UI element from the messages list
       const messagesContainer = this.getChildControl("messages-container");
-      messagesContainer.getChildren().forEach(control => {
-        if ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]) {
-          control.setMessage(message);
-          return;
-        }
+      const messageUI = messagesContainer.getChildren().find(control => {
+        return "getMessage" in control && control.getMessage()["messageId"] === message["messageId"];
       });
+      if (messageUI) {
+        // Force a new reference
+        messageUI.setMessage(Object.assign({}, message));
+      }
     },
   }
 });
