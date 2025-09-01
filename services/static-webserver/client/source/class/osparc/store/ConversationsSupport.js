@@ -37,7 +37,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   members: {
-    getConversations: function() {
+    fetchConversations: function() {
       const params = {
         url: {
           offset: 0,
