@@ -11,4 +11,4 @@ router = APIRouter()
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def free_reserved_disk_space() -> None:
-    disk.remove_reserved_disk_space()
+    disk.free_reserved_disk_space()

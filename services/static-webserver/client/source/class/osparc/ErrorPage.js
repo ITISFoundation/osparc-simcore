@@ -211,7 +211,7 @@ qx.Class.define("osparc.ErrorPage", {
     },
 
     __supportEmail: function() {
-      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const supportEmail = osparc.store.VendorInfo.getSupportEmail();
       const giveEmailFeedbackWindow = new osparc.ui.window.Dialog("Support", null, qx.locale.Manager.tr("Please send us an email to:"));
       const mailto = osparc.store.Support.getMailToLabel(supportEmail, "Access error");
       mailto.setTextAlign("center");

@@ -177,9 +177,18 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
 
       const contextDropDown = this.getChildControl("context-drop-down");
       this.getChildControl("my-projects-button");
-      this.getChildControl("templates-button");
-      this.getChildControl("public-projects-button");
-      this.getChildControl("functions-button");
+      if (osparc.product.Utils.showTemplates()) {
+        this.getChildControl("templates-button");
+      }
+      if (osparc.product.Utils.showPublicProjects()) {
+        this.getChildControl("public-projects-button");
+      }
+      if (osparc.product.Utils.showFunctions()) {
+        this.getChildControl("functions-button");
+      }
+      if (contextDropDown.getChildren().length === 1) {
+        contextDropDown.hide();
+      }
       contextDropDown.addListener("changeSelection", e => {
         const selection = e.getData();
         if (selection.length) {

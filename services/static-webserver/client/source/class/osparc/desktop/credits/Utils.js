@@ -51,8 +51,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     },
 
     areWalletsEnabled: function() {
-      const statics = osparc.store.Store.getInstance().get("statics");
-      return Boolean(statics && statics["isPaymentEnabled"]);
+      return Boolean(osparc.store.StaticInfo.getValue("isPaymentEnabled"));
     },
 
     getNoWriteAccessInformationLabel: function() {

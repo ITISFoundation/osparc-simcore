@@ -4,7 +4,7 @@ qx.Class.define("osparc.store.Support", {
 
   statics: {
     getLicenseURL: function() {
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      const vendor = osparc.store.VendorInfo.getVendor();
       if (vendor) {
         if ("license_url" in vendor) {
           return vendor["license_url"];
@@ -16,7 +16,7 @@ qx.Class.define("osparc.store.Support", {
     },
 
     getManuals: function() {
-      return osparc.store.VendorInfo.getInstance().getManuals();
+      return osparc.store.VendorInfo.getManuals();
     },
 
     addSupportConversationsToMenu: function(menu) {
@@ -75,27 +75,35 @@ qx.Class.define("osparc.store.Support", {
       }
     },
 
-    addManualButtonsToMenu: function(menu, menuButton) {
+    addManualsToMenu: function(menu) {
       const manuals = osparc.store.Support.getManuals();
-      if (menuButton) {
-        menuButton.setVisibility(manuals && manuals.length ? "visible" : "excluded");
-      }
-      manuals.forEach(manual => {
-        const manualBtn = new qx.ui.menu.Button(manual.label, "@FontAwesome5Solid/book/14");
-        manualBtn.getChildControl("label").set({
-          rich: true
+      const addManuals = mn => {
+        manuals.forEach(manual => {
+          const manualBtn = new qx.ui.menu.Button(manual.label, "@FontAwesome5Solid/book/14");
+          manualBtn.getChildControl("label").set({
+            rich: true
+          });
+          manualBtn.addListener("execute", () => window.open(manual.url), this);
+          mn.add(manualBtn);
         });
-        manualBtn.addListener("execute", () => window.open(manual.url), this);
-        menu.add(manualBtn);
-      });
+      };
+      if (manuals.length > 1) {
+        // if there are more than 1 manuals, add them in their own menu
+        const ownMenu = new qx.ui.menu.Menu().set({
+          appearance: "menu-wider",
+        });
+        const manualsBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Manuals"), "@FontAwesome5Solid/book/14");
+        manualsBtn.setMenu(ownMenu);
+        menu.add(manualsBtn);
+        addManuals(ownMenu);
+      } else {
+        addManuals(menu);
+      }
     },
 
-    addSupportButtonsToMenu: function(menu, menuButton) {
-      const issues = osparc.store.VendorInfo.getInstance().getIssues();
-      const supports = osparc.store.VendorInfo.getInstance().getSupports();
-      if (menuButton) {
-        menuButton.setVisibility(issues.length || supports.length ? "visible" : "excluded");
-      }
+    addSupportButtonsToMenu: function(menu) {
+      const issues = osparc.store.VendorInfo.getIssues();
+      const supports = osparc.store.VendorInfo.getSupports();
       issues.forEach(issueInfo => {
         const label = issueInfo["label"];
         const issueButton = new qx.ui.menu.Button(label, "@FontAwesome5Solid/comments/14");
@@ -206,9 +214,9 @@ qx.Class.define("osparc.store.Support", {
         maxWidth: 380
       });
       osparc.utils.Utils.setIdToWidget(createAccountWindow, "createAccountWindow");
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      const vendor = osparc.store.VendorInfo.getVendor();
       if ("invitation_url" in vendor) {
-        const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+        const displayName = osparc.store.StaticInfo.getDisplayName();
         let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
         message += "<br>";
         message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
