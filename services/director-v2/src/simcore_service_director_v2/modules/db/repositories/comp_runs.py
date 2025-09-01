@@ -493,17 +493,17 @@ class CompRunsRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
             items = []
             async for row in await conn.stream(list_query):
-                db_states = [DB_TO_RUNNING_STATE[s] for s in row["states"]]
+                db_states = [DB_TO_RUNNING_STATE[s] for s in row.states]
                 resolved_state = _resolve_grouped_state(db_states)
                 items.append(
                     ComputationCollectionRunRpcGet(
-                        collection_run_id=row["collection_run_id"],
-                        project_ids=row["project_ids"],
+                        collection_run_id=row.collection_run_id,
+                        project_ids=row.project_ids,
                         state=resolved_state,
-                        info={} if row["info"] is None else row["info"],
-                        submitted_at=row["submitted_at"],
-                        started_at=row["started_at"],
-                        ended_at=row["ended_at"],
+                        info={} if row.info is None else row.info,
+                        submitted_at=row.submitted_at,
+                        started_at=row.started_at,
+                        ended_at=row.ended_at,
                     )
                 )
             return cast(int, total_count), items

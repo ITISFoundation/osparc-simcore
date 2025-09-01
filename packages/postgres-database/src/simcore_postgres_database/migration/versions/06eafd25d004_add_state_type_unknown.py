@@ -6,6 +6,7 @@ Create Date: 2025-09-01 12:25:25.617790+00:00
 
 """
 
+import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -26,13 +27,15 @@ def downgrade() -> None:
 
     # Find all tables and columns that use statetype enum
     result = op.get_bind().execute(
-        """
+        sa.DDL(
+            """
         SELECT t.table_name, c.column_name, c.column_default
         FROM information_schema.columns c
         JOIN information_schema.tables t ON c.table_name = t.table_name
         WHERE c.udt_name = 'statetype'
         AND t.table_schema = 'public'
     """
+        )
     )
 
     tables_columns = result.fetchall()
@@ -40,9 +43,11 @@ def downgrade() -> None:
     # Update UNKNOWN states to FAILED in all affected tables
     for table_name, column_name, _ in tables_columns:
         op.execute(
-            f"""
+            sa.DDL(
+                f"""
             UPDATE {table_name}
             SET {column_name} = 'FAILED'
             WHERE {column_name} = 'UNKNOWN'
         """
+            )
         )
