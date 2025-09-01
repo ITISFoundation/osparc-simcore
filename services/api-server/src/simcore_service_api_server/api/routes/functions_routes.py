@@ -1,3 +1,5 @@
+import contextlib
+
 # pylint: disable=too-many-positional-arguments
 from collections.abc import Callable
 from typing import Annotated, Final, Literal
@@ -358,13 +360,11 @@ async def run_function(  # noqa: PLR0913
     )
 
     # check if results are cached
-    try:
+    with contextlib.suppress(FunctionJobCacheNotFoundError):
         return await function_job_service.get_cached_function_job(
             function=to_run_function,
             job_inputs=job_inputs,
         )
-    except FunctionJobCacheNotFoundError:
-        pass
 
     pre_registered_function_job_data = (
         await function_job_service.pre_register_function_job(
