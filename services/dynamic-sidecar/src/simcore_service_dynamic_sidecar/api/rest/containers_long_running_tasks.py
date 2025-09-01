@@ -1,4 +1,3 @@
-from textwrap import dedent
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
@@ -15,7 +14,6 @@ router = APIRouter()
 
 @router.post(
     "/containers/images:pull",
-    summary="Pulls all the docker container images for the user services",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
 )
@@ -26,27 +24,14 @@ async def pull_container_images(
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
+    """Pulls all the docker container images for the user services"""
     _ = request
     return await containers_long_running_tasks.pull_user_services_images(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
 
-@router.post(
-    "/containers",
-    summary=dedent(
-        """
-        Starts the containers as defined in ContainerCreate by:
-        - cleaning up resources from previous runs if any
-        - starting the containers
-
-        Progress may be obtained through URL
-        Process may be cancelled through URL
-        """
-    ).strip(),
-    status_code=status.HTTP_202_ACCEPTED,
-    response_model=TaskId,
-)
+@router.post("/containers", status_code=status.HTTP_202_ACCEPTED, response_model=TaskId)
 @cancel_on_disconnect
 async def create_containers(  # pylint: disable=too-many-arguments
     request: Request,
@@ -55,6 +40,14 @@ async def create_containers(  # pylint: disable=too-many-arguments
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
+    """
+    Starts the containers as defined in ContainerCreate by:
+    - cleaning up resources from previous runs if any
+    - starting the containers
+
+    Progress may be obtained through URL
+    Process may be cancelled through URL
+    """
     _ = request
     return await containers_long_running_tasks.create_user_services(
         long_running_manager.rpc_client,
@@ -64,10 +57,7 @@ async def create_containers(  # pylint: disable=too-many-arguments
 
 
 @router.post(
-    "/containers:down",
-    summary="Remove the previously started containers",
-    status_code=status.HTTP_202_ACCEPTED,
-    response_model=TaskId,
+    "/containers:down", status_code=status.HTTP_202_ACCEPTED, response_model=TaskId
 )
 @cancel_on_disconnect
 async def down_containers(
@@ -76,6 +66,7 @@ async def down_containers(
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
+    """Remove the previously started containers"""
     _ = request
     return await containers_long_running_tasks.remove_user_services(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
@@ -84,7 +75,6 @@ async def down_containers(
 
 @router.post(
     "/containers/state:restore",
-    summary="Restores the state of the dynamic service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
 )
@@ -95,6 +85,7 @@ async def restore_containers_state_paths(
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
+    """Restores the state of the dynamic service"""
     _ = request
     return await containers_long_running_tasks.restore_user_services_state_paths(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
@@ -103,7 +94,6 @@ async def restore_containers_state_paths(
 
 @router.post(
     "/containers/state:save",
-    summary="Stores the state of the dynamic service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
 )
@@ -114,6 +104,7 @@ async def save_containers_state_paths(
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
+    """Stores the state of the dynamic service"""
     _ = request
     return await containers_long_running_tasks.save_user_services_state_paths(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
@@ -122,7 +113,6 @@ async def save_containers_state_paths(
 
 @router.post(
     "/containers/ports/inputs:pull",
-    summary="Pull input ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
 )
@@ -134,6 +124,7 @@ async def pull_container_port_inputs(
     ],
     port_keys: list[str] | None = None,
 ) -> TaskId:
+    """Pull input ports data"""
     _ = request
     return await containers_long_running_tasks.pull_user_services_input_ports(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace, port_keys
@@ -142,7 +133,6 @@ async def pull_container_port_inputs(
 
 @router.post(
     "/containers/ports/outputs:pull",
-    summary="Pull output ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
 )
@@ -154,6 +144,7 @@ async def pull_container_port_outputs(
     ],
     port_keys: list[str] | None = None,
 ) -> TaskId:
+    """Pull output ports data"""
     _ = request
     return await containers_long_running_tasks.pull_user_services_output_ports(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace, port_keys
@@ -162,7 +153,6 @@ async def pull_container_port_outputs(
 
 @router.post(
     "/containers/ports/outputs:push",
-    summary="Push output ports data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
 )
@@ -173,6 +163,7 @@ async def push_container_port_outputs(
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
+    """Push output ports data"""
     _ = request
     return await containers_long_running_tasks.push_user_services_output_ports(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace
@@ -181,7 +172,6 @@ async def push_container_port_outputs(
 
 @router.post(
     "/containers:restart",
-    summary="Restarts previously started user services",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
 )
@@ -192,6 +182,7 @@ async def restart_containers(
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
+    """Restarts previously started user services"""
     _ = request
     return await containers_long_running_tasks.restart_user_services(
         long_running_manager.rpc_client, long_running_manager.lrt_namespace

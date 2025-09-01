@@ -289,7 +289,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showTemplates: function() {
-      if (osparc.data.Permissions.getInstance().isTester()) {
+      if (osparc.data.Permissions.getInstance().isProductOwner()) {
         return true;
       }
 
@@ -300,7 +300,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showPublicProjects: function() {
-      if (osparc.data.Permissions.getInstance().isTester()) {
+      if (osparc.data.Permissions.getInstance().isProductOwner()) {
         return true;
       }
 
