@@ -95,11 +95,12 @@ def _handle_foreign_key_violation(
 
 def _resolve_grouped_state(states: list[RunningState]) -> RunningState:
     # If any state is not a final state, return STARTED
+
     final_states = {
         RunningState.FAILED,
         RunningState.ABORTED,
         RunningState.SUCCESS,
-        RunningState.UNKNOWN,
+        RunningState.UNKNOWN,  # NOTE: this is NOT a final state, but happens when tasks are missing
     }
     if any(state not in final_states for state in states):
         return RunningState.STARTED
@@ -399,7 +400,6 @@ class CompRunsRepository(BaseRepository):
         product_name: str,
         user_id: UserID,
     ) -> list[CollectionRunID]:
-
         list_query = (
             sa.select(
                 comp_runs.c.collection_run_id,
