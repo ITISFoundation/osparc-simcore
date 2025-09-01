@@ -1,9 +1,6 @@
 import logging
 from typing import Annotated, Any
 
-from celery.exceptions import (  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
-    CeleryError,
-)
 from common_library.error_codes import create_error_code
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
@@ -70,15 +67,9 @@ async def list_tasks(
 
     task_manager = get_task_manager(app)
 
-    try:
-        tasks = await task_manager.list_tasks(
-            task_filter=_get_task_filter(user_id, product_name),
-        )
-    except CeleryError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Encountered issue when listing tasks",
-        ) from exc
+    tasks = await task_manager.list_tasks(
+        task_filter=_get_task_filter(user_id, product_name),
+    )
 
     app_router = app.router
     data = [
@@ -118,16 +109,10 @@ async def get_task_status(
 ):
     task_manager = get_task_manager(app)
 
-    try:
-        task_status = await task_manager.get_task_status(
-            task_filter=_get_task_filter(user_id, product_name),
-            task_uuid=TaskUUID(f"{task_id}"),
-        )
-    except CeleryError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Encountered issue when getting task status",
-        ) from exc
+    task_status = await task_manager.get_task_status(
+        task_filter=_get_task_filter(user_id, product_name),
+        task_uuid=TaskUUID(f"{task_id}"),
+    )
 
     return TaskStatus(
         task_progress=TaskProgress(
@@ -159,16 +144,10 @@ async def cancel_task(
 ):
     task_manager = get_task_manager(app)
 
-    try:
-        await task_manager.cancel_task(
-            task_filter=_get_task_filter(user_id, product_name),
-            task_uuid=TaskUUID(f"{task_id}"),
-        )
-    except CeleryError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Encountered issue when cancelling task",
-        ) from exc
+    await task_manager.cancel_task(
+        task_filter=_get_task_filter(user_id, product_name),
+        task_uuid=TaskUUID(f"{task_id}"),
+    )
 
 
 @router.get(
@@ -202,32 +181,26 @@ async def get_task_result(
     task_manager = get_task_manager(app)
     task_filter = _get_task_filter(user_id, product_name)
 
-    try:
-        task_status = await task_manager.get_task_status(
-            task_filter=task_filter,
-            task_uuid=TaskUUID(f"{task_id}"),
-        )
+    task_status = await task_manager.get_task_status(
+        task_filter=task_filter,
+        task_uuid=TaskUUID(f"{task_id}"),
+    )
 
-        if not task_status.is_done:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Task result not available yet",
-            )
-        if task_status.task_state == TaskState.ABORTED:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Task was cancelled",
-            )
-
-        task_result = await task_manager.get_task_result(
-            task_filter=task_filter,
-            task_uuid=TaskUUID(f"{task_id}"),
-        )
-    except CeleryError as exc:
+    if not task_status.is_done:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Encountered issue when getting task result",
-        ) from exc
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task result not available yet",
+        )
+    if task_status.task_state == TaskState.ABORTED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Task was cancelled",
+        )
+
+    task_result = await task_manager.get_task_result(
+        task_filter=task_filter,
+        task_uuid=TaskUUID(f"{task_id}"),
+    )
 
     if task_status.task_state == TaskState.FAILURE:
         assert isinstance(task_result, Exception)
