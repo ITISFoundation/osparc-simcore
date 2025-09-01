@@ -103,17 +103,21 @@ def _url_missing_only_job_id(url: str | None) -> str | None:
 
 
 class JobLinks(BaseModel):
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "url_template": "https://api.osparc.io/v0/jobs/{job_id}",
-                    "runner_url_template": "https://runner.osparc.io/dashboard",
-                    "outputs_url_template": "https://api.osparc.io/v0/jobs/{job_id}/outputs",
-                }
-            ]
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: dict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "url_template": "https://api.osparc.io/v0/jobs/{job_id}",
+                        "runner_url_template": "https://runner.osparc.io/dashboard",
+                        "outputs_url_template": "https://api.osparc.io/v0/jobs/{job_id}/outputs",
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     url_template: Annotated[str | None, AfterValidator(_url_missing_only_job_id)]
     runner_url_template: str | None
