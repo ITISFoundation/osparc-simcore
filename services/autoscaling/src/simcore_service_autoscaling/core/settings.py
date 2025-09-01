@@ -112,13 +112,14 @@ class EC2InstancesSettings(BaseCustomSettings):
             " this is required to start a new EC2 instance",
         ),
     ]
-    EC2_INSTANCES_SUBNET_ID: Annotated[
-        str,
+    EC2_INSTANCES_SUBNET_IDS: Annotated[
+        list[str],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
             " (https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html), "
-            "this is required to start a new EC2 instance",
+            "this is required to start a new EC2 instance. The subnets are used in the given order "
+            "until the capacity is used up.",
         ),
     ]
     EC2_INSTANCES_TIME_BEFORE_DRAINING: Annotated[
