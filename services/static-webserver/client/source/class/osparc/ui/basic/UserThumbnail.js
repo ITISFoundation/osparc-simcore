@@ -32,7 +32,7 @@ qx.Class.define("osparc.ui.basic.UserThumbnail", {
   properties: {
     user: {
       check: "osparc.data.model.User",
-      init: true,
+      init: null,
       nullable: true,
       apply: "__applyUser",
     }

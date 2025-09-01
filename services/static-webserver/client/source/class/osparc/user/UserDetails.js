@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2022 IT'IS Foundation, https://itis.swiss
+     2025 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -48,7 +48,7 @@ qx.Class.define("osparc.user.UserDetails", {
   properties: {
     user: {
       check: "osparc.data.model.User",
-      init: true,
+      init: null,
       nullable: false,
       event: "changeUser",
       apply: "__applyUser",
