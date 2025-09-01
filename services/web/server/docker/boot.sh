@@ -58,7 +58,8 @@ echo "$INFO" "GUNICORN_CMD_ARGS: $GUNICORN_CMD_ARGS"
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well
-  exec python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:"${WEBSERVER_REMOTE_DEBUGGING_PORT}" -m gunicorn simcore_service_webserver.cli:app_factory \
+  exec python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:"${WEBSERVER_REMOTE_DEBUGGING_PORT}" -m \
+    gunicorn simcore_service_webserver.cli:create_app_runner \
     --log-level="${SERVER_LOG_LEVEL}" \
     --bind 0.0.0.0:8080 \
     --worker-class aiohttp.GunicornUVLoopWebWorker \
@@ -71,7 +72,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
 else
 
-  exec gunicorn simcore_service_webserver.cli:app_factory \
+  exec gunicorn simcore_service_webserver.cli:create_app_runner \
     --log-level="${SERVER_LOG_LEVEL}" \
     --bind 0.0.0.0:8080 \
     --worker-class aiohttp.GunicornUVLoopWebWorker \
@@ -79,5 +80,8 @@ else
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
-    --worker-tmp-dir=/dev/shm
+    --worker-tmp-dir=/dev/shm \
+    --limit-request-line 4094 \
+    --limit-request-fields 100 \
+    --limit-request-field_size 8190
 fi

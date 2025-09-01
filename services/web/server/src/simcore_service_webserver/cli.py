@@ -83,6 +83,22 @@ async def app_factory() -> web.Application:
     return app
 
 
+_ACCESS_LOG_FMT = '%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
+
+
+async def create_app_runner() -> web.AppRunner:
+
+    app = await app_factory()
+
+    # Rejects requests that are oversized. Fixes https://github.com/ITISFoundation/osparc-simcore/issues/7979
+    return web.AppRunner(
+        app,
+        access_log_format=_ACCESS_LOG_FMT,
+        max_line_size=4094,  # request line & single header line cap
+        max_field_size=8190,  # per-header field cap
+    )
+
+
 # CLI -------------
 
 main = typer.Typer(name="simcore-service-webserver")
