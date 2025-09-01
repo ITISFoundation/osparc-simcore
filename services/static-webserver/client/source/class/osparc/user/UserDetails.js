@@ -40,6 +40,8 @@ qx.Class.define("osparc.user.UserDetails", {
       USERNAME: 0,
       FULLNAME: 1,
       EMAIL: 2,
+      USER_ID: 3,
+      GROUP_ID: 4,
     }
   },
 
@@ -58,7 +60,7 @@ qx.Class.define("osparc.user.UserDetails", {
       let control;
       switch (id) {
         case "top-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
           this.add(control);
           break;
         case "thumbnail":
@@ -70,7 +72,7 @@ qx.Class.define("osparc.user.UserDetails", {
           this.getChildControl("top-layout").add(control);
           break;
         case "main-info": {
-          const grid = new qx.ui.layout.Grid(5, 10);
+          const grid = new qx.ui.layout.Grid(10, 6);
           grid.setColumnFlex(1, 1);
           grid.setColumnAlign(0, "right", "middle");
           control = new qx.ui.container.Composite(grid);
@@ -118,6 +120,32 @@ qx.Class.define("osparc.user.UserDetails", {
           });
           break;
         }
+        case "user-id": {
+          const title = new qx.ui.basic.Label("User ID");
+          this.getChildControl("main-info").add(title, {
+            row: this.self().GRID_POS.USER_ID,
+            column: 0
+          });
+          control = new qx.ui.basic.Label();
+          this.getChildControl("main-info").add(control, {
+            row: this.self().GRID_POS.USER_ID,
+            column: 1
+          });
+          break;
+        }
+        case "group-id": {
+          const title = new qx.ui.basic.Label("Group ID");
+          this.getChildControl("main-info").add(title, {
+            row: this.self().GRID_POS.GROUP_ID,
+            column: 0
+          });
+          control = new qx.ui.basic.Label();
+          this.getChildControl("main-info").add(control, {
+            row: this.self().GRID_POS.GROUP_ID,
+            column: 1
+          });
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -129,6 +157,8 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("username").setValue(user.getUsername());
       this.getChildControl("fullname").setValue(user.getFirstName() + " " + user.getLastName());
       this.getChildControl("email").setValue(user.getEmail());
+      this.getChildControl("user-id").setValue(String(user.getUserId()));
+      this.getChildControl("group-id").setValue(String(user.getGroupId()));
     },
   }
 });
