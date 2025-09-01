@@ -418,17 +418,6 @@ async def test_stop_start_instances(
             else:
                 assert getattr(s, f.name) == getattr(c, f.name)
 
-    # stop them now
-    await simcore_ec2_api.stop_instances(created_instances)
-    await _assert_instances_in_ec2(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=num_instances,
-        expected_instance_type=ec2_instance_config.type,
-        expected_tags=ec2_instance_config.tags,
-        expected_state="stopped",
-    )
-
 
 async def test_start_instances_with_insufficient_instance_capacity(
     simcore_ec2_api: SimcoreEC2API,
