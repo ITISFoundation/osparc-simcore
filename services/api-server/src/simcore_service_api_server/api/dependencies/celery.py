@@ -6,7 +6,7 @@ from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
 from settings_library.celery import CelerySettings
 
-from ...celery.worker_tasks.tasks import pydantic_types_to_register
+from ...celery_worker.worker_tasks.tasks import pydantic_types_to_register
 
 ASYNC_JOB_CLIENT_NAME: Final[str] = "API_SERVER"
 

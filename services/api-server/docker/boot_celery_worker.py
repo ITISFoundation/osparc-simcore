@@ -2,7 +2,10 @@ from celery.signals import worker_init, worker_shutdown  # type: ignore[import-u
 from celery_library.signals import (
     on_worker_shutdown,
 )
-from simcore_service_api_server.celery.worker_main import get_app, worker_init_wrapper
+from simcore_service_api_server.celery_worker.worker_main import (
+    get_app,
+    worker_init_wrapper,
+)
 
 app = get_app()
 

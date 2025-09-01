@@ -26,7 +26,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
-from simcore_service_api_server.celery.worker_main import setup_worker_tasks
+from simcore_service_api_server.celery_worker.worker_main import setup_worker_tasks
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
