@@ -39,9 +39,19 @@ qx.Class.define("osparc.ui.basic.UserThumbnail", {
   },
 
   members: {
+    __applyUser: function(user) {
+      if (user) {
+        this.setSource(user.getThumbnail());
+      } else {
+        this.setSource(osparc.utils.Avatar.emailToThumbnail());
+      }
+    },
+
     __openUserDetails: function() {
       if (this.getUser()) {
-        osparc.user.UserDetails.popUpInWindow(this.getUser());
+        const userDetails = new osparc.user.UserDetails(this.getUser());
+        userDetails.center();
+        userDetails.open();
       }
     },
   }

@@ -165,14 +165,8 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
       osparc.store.Users.getInstance().getUser(message["userGroupId"])
         .then(user => {
-          if (user) {
-            thumbnail.setSource(user.getThumbnail());
-            thumbnail.setUser(user);
-            userName.setValue(user.getLabel());
-          } else {
-            thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());
-            userName.setValue("Unknown user");
-          }
+          thumbnail.setUser(user);
+          userName.setValue(user ? user.getLabel() : "Unknown user");
         })
         .catch(() => {
             thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());

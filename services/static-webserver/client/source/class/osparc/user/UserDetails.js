@@ -21,7 +21,13 @@ qx.Class.define("osparc.user.UserDetails", {
   construct: function(user) {
     this.base(arguments);
 
-    this.setLayout(new qx.ui.layout.VBox(10));
+    this.set({
+      layout: new qx.ui.layout.VBox(10),
+      autoDestroy: true,
+      showMaximize: false,
+      showMinimize: false,
+      clickAwayClose: true,
+    });
 
     this.setUser(user);
   },
@@ -29,15 +35,6 @@ qx.Class.define("osparc.user.UserDetails", {
   statics: {
     WIDTH: 300,
     HEIGHT: 200,
-
-    popUpInWindow: function(userModel) {
-      const userDetails = new osparc.user.UserDetails(userModel);
-      const title = userModel.getUsername();
-      osparc.ui.window.Window.popUpInWindow(userDetails, title, this.WIDTH, this.HEIGHT).set({
-        // layout: new qx.ui.layout.Grow(),
-        // ...osparc.ui.window.TabbedWindow.DEFAULT_PROPS,
-      });
-    },
 
     GRID_POS: {
       USERNAME: 0,
@@ -62,15 +59,20 @@ qx.Class.define("osparc.user.UserDetails", {
       switch (id) {
         case "top-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-          this._add(control);
+          this.add(control);
           break;
         case "thumbnail":
           control = new osparc.ui.basic.Thumbnail(null, 100, 100);
+          control.getChildControl("image").set({
+            anonymous: true,
+            decorator: "rounded",
+          });
           this.getChildControl("top-layout").add(control);
           break;
         case "main-info": {
           const grid = new qx.ui.layout.Grid(5, 10);
           grid.setColumnFlex(1, 1);
+          grid.setColumnAlign(0, "right", "middle");
           control = new qx.ui.container.Composite(grid);
           this.getChildControl("top-layout").add(control, {
             flex: 1
@@ -121,11 +123,11 @@ qx.Class.define("osparc.user.UserDetails", {
     },
 
     __applyUser: function(user) {
-      console.log("user", user);
+      this.setCaption(user.getUsername());
 
-      this.getChildControl("thumbnail").setSource(user.getThumbnail());
+      this.getChildControl("thumbnail").setSource(user.createThumbnail(96));
       this.getChildControl("username").setValue(user.getUsername());
-      this.getChildControl("fullname").setValue(user.getFirstName() + " " + this.getLastName());
+      this.getChildControl("fullname").setValue(user.getFirstName() + " " + user.getLastName());
       this.getChildControl("email").setValue(user.getEmail());
     },
   }
