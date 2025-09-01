@@ -32,7 +32,6 @@ from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.long_running_tasks.models import TaskId
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
-from simcore_service_dynamic_sidecar.api.rest.containers import _INACTIVE_FOR_LONG_TIME
 from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_create,
@@ -44,6 +43,7 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
+from simcore_service_dynamic_sidecar.services.containers import _INACTIVE_FOR_LONG_TIME
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -53,8 +53,8 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
-WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
-FAST_POLLING_INTERVAL: Final[float] = 0.1
+_WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
+_FAST_POLLING_INTERVAL: Final[float] = 0.1
 
 
 # UTILS
@@ -115,8 +115,8 @@ async def _start_containers(
     task_id: TaskId = response.json()
 
     async for attempt in AsyncRetrying(
-        wait=wait_fixed(FAST_POLLING_INTERVAL),
-        stop=stop_after_delay(100 * FAST_POLLING_INTERVAL),
+        wait=wait_fixed(_FAST_POLLING_INTERVAL),
+        stop=stop_after_delay(100 * _FAST_POLLING_INTERVAL),
         reraise=True,
     ):
         with attempt:
@@ -444,7 +444,7 @@ async def test_container_missing_container(
 ):
     def _expected_error_string(container: str) -> dict[str, str]:
         return {
-            "detail": f"No container '{container}' was started. Started containers '[]'"
+            "detail": f"No container='{container}' was found in started_containers='[]'"
         }
 
     for container in not_started_containers:
@@ -481,7 +481,7 @@ async def test_outputs_watcher_disabling(
     assert isinstance(test_client.application, FastAPI)
     outputs_context: OutputsContext = test_client.application.state.outputs_context
     outputs_manager: OutputsManager = test_client.application.state.outputs_manager
-    outputs_manager.task_monitor_interval_s = WAIT_FOR_OUTPUTS_WATCHER / 10
+    outputs_manager.task_monitor_interval_s = _WAIT_FOR_OUTPUTS_WATCHER / 10
 
     async def _create_port_key_events(is_propagation_enabled: bool) -> None:
         random_subdir = f"{uuid4()}"
@@ -548,7 +548,7 @@ async def test_container_create_outputs_dirs(
 
     # by default outputs-watcher it is disabled
     await _assert_enable_output_ports(test_client)
-    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
+    await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
 
     assert mock_event_filter_enqueue.call_count == 0
 
@@ -565,7 +565,7 @@ async def test_container_create_outputs_dirs(
     for dir_name in mock_outputs_labels:
         assert (mounted_volumes.disk_outputs_path / dir_name).is_dir()
 
-    await asyncio.sleep(WAIT_FOR_OUTPUTS_WATCHER)
+    await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
     EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS = 0
     assert (
         mock_event_filter_enqueue.call_count
@@ -632,7 +632,7 @@ async def test_containers_entrypoint_name_containers_not_started(
     if include_exclude_filter_option:
         assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
         assert response.json() == {
-            "detail": "No container found for network=entrypoint_container_network"
+            "detail": "No container found for network=entrypoint_container_network and exclude=egress"
         }
     else:
         assert response.status_code == status.HTTP_200_OK, response.text
@@ -752,7 +752,7 @@ def mock_inactive_since_command_response(
     activity_response: ActivityInfo,
 ) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.api.rest.containers.run_command_in_container",
+        "simcore_service_dynamic_sidecar.services.containers.run_command_in_container",
         return_value=activity_response.model_dump_json(),
     )
 
@@ -772,7 +772,7 @@ async def test_containers_activity_inactive_since(
 @pytest.fixture
 def mock_inactive_response_wrong_format(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.api.rest.containers.run_command_in_container",
+        "simcore_service_dynamic_sidecar.services.containers.run_command_in_container",
         return_value="This is an unparsable json response {}",
     )
 
