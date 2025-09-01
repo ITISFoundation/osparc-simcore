@@ -53,6 +53,8 @@ from ._constants import (
 JOB_LIST_FILTER_PAGE_RELEASE_VERSION = "0.11.0"
 JOB_LOG_RELEASE_VERSION = "0.11.0"
 
+WITH_STATUS_RELEASE_VERSION = "0.12.0"
+
 function_job_router = APIRouter()
 
 _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
@@ -87,6 +89,14 @@ for endpoint in ENDPOINTS:
             FMSG_CHANGELOG_ADDED_IN_VERSION.format(
                 JOB_LIST_FILTER_PAGE_RELEASE_VERSION,
                 "add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
+            )
+        )
+
+    if endpoint in ["list_function_jobs_with_status"]:
+        CHANGE_LOGS[endpoint].append(
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                WITH_STATUS_RELEASE_VERSION,
+                "add /with-status endpoint to list function jobs with their status",
             )
         )
 
