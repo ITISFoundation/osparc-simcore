@@ -7,6 +7,7 @@ from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from common_library.json_serialization import json_dumps
+from models_library.utils.change_case import snake_to_camel
 from packaging.version import Version
 from servicelib.aiohttp.client_session import get_client_session
 from tenacity.asyncio import AsyncRetrying
@@ -122,7 +123,9 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
         data = deepcopy(common)
 
         _logger.debug("Product %s", product.name)
-        data.update(product.to_statics())
+
+        product_data = {snake_to_camel(k): v for k, v in product.to_statics().items()}
+        data.update(product_data)
 
         # Adds specifics to login settings
         if (p := product.login_settings) and (v := p.get("LOGIN_2FA_REQUIRED", None)):
