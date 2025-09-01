@@ -118,8 +118,8 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
             " this is required to start a new EC2 instance",
         ),
     ]
-    WORKERS_EC2_INSTANCES_SUBNET_ID: Annotated[
-        str,
+    WORKERS_EC2_INSTANCES_SUBNET_IDS: Annotated[
+        list[str],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -186,8 +186,8 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
             " this is required to start a new EC2 instance",
         ),
     ]
-    PRIMARY_EC2_INSTANCES_SUBNET_ID: Annotated[
-        str,
+    PRIMARY_EC2_INSTANCES_SUBNET_IDS: Annotated[
+        list[str],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "

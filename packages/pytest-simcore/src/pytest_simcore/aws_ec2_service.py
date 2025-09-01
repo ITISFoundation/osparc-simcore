@@ -5,7 +5,7 @@
 import contextlib
 import datetime
 import random
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import cast
 
 import aioboto3
@@ -60,9 +60,69 @@ async def aws_vpc_id(
     print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
 
 
-@pytest.fixture(scope="session")
-def subnet_cidr_block() -> str:
-    return "10.0.1.0/24"
+@pytest.fixture
+def create_subnet_cidr_block(faker: Faker) -> Callable[[], str]:
+    # Keep track of used subnet numbers to avoid overlaps
+    used_subnets: set[int] = set()
+
+    def _() -> str:
+        # Generate subnet CIDR blocks within the VPC range 10.0.0.0/16
+        # Using /24 subnets (10.0.X.0/24) where X is between 1-255
+        while True:
+            subnet_number = faker.random_int(min=1, max=255)
+            if subnet_number not in used_subnets:
+                used_subnets.add(subnet_number)
+                return f"10.0.{subnet_number}.0/24"
+
+    return _
+
+
+@pytest.fixture
+def subnet_cidr_block(create_subnet_cidr_block: Callable[[], str]) -> str:
+    return create_subnet_cidr_block()
+
+
+@pytest.fixture
+async def create_aws_subnet_id(
+    aws_vpc_id: str,
+    ec2_client: EC2Client,
+    create_subnet_cidr_block: Callable[[], str],
+) -> AsyncIterator[Callable[..., Awaitable[str]]]:
+    created_subnet_ids: set[str] = set()
+
+    async def _(cidr_override: str | None = None) -> str:
+        subnet = await ec2_client.create_subnet(
+            CidrBlock=cidr_override or create_subnet_cidr_block(), VpcId=aws_vpc_id
+        )
+        assert "Subnet" in subnet
+        assert "SubnetId" in subnet["Subnet"]
+        subnet_id = subnet["Subnet"]["SubnetId"]
+        print(f"--> Created Subnet in AWS with {subnet_id=}")
+        created_subnet_ids.add(subnet_id)
+        return subnet_id
+
+    yield _
+
+    # cleanup
+    # all the instances in the subnet must be terminated before that works
+    for subnet_id in created_subnet_ids:
+        instances_in_subnet = await ec2_client.describe_instances(
+            Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
+        )
+        if instances_in_subnet["Reservations"]:
+            print(f"--> terminating {len(instances_in_subnet)} instances in subnet")
+            await ec2_client.terminate_instances(
+                InstanceIds=[
+                    instance["Instances"][0]["InstanceId"]  # type: ignore
+                    for instance in instances_in_subnet["Reservations"]
+                ]
+            )
+            print(f"<-- terminated {len(instances_in_subnet)} instances in subnet")
+
+        await ec2_client.delete_subnet(SubnetId=subnet_id)
+        subnets = await ec2_client.describe_subnets()
+        print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
+        print(f"current {subnets=}")
 
 
 @pytest.fixture
@@ -70,35 +130,9 @@ async def aws_subnet_id(
     aws_vpc_id: str,
     ec2_client: EC2Client,
     subnet_cidr_block: str,
-) -> AsyncIterator[str]:
-    subnet = await ec2_client.create_subnet(
-        CidrBlock=subnet_cidr_block, VpcId=aws_vpc_id
-    )
-    assert "Subnet" in subnet
-    assert "SubnetId" in subnet["Subnet"]
-    subnet_id = subnet["Subnet"]["SubnetId"]
-    print(f"--> Created Subnet in AWS with {subnet_id=}")
-
-    yield subnet_id
-
-    # all the instances in the subnet must be terminated before that works
-    instances_in_subnet = await ec2_client.describe_instances(
-        Filters=[{"Name": "subnet-id", "Values": [subnet_id]}]
-    )
-    if instances_in_subnet["Reservations"]:
-        print(f"--> terminating {len(instances_in_subnet)} instances in subnet")
-        await ec2_client.terminate_instances(
-            InstanceIds=[
-                instance["Instances"][0]["InstanceId"]  # type: ignore
-                for instance in instances_in_subnet["Reservations"]
-            ]
-        )
-        print(f"<-- terminated {len(instances_in_subnet)} instances in subnet")
-
-    await ec2_client.delete_subnet(SubnetId=subnet_id)
-    subnets = await ec2_client.describe_subnets()
-    print(f"<-- Deleted Subnet in AWS with {subnet_id=}")
-    print(f"current {subnets=}")
+    create_aws_subnet_id: Callable[[], Awaitable[str]],
+) -> str:
+    return await create_aws_subnet_id()
 
 
 @pytest.fixture
@@ -133,7 +167,7 @@ def fake_ec2_instance_data(faker: Faker) -> Callable[..., EC2InstanceData]:
         return EC2InstanceData(
             **(
                 {
-                    "launch_time": faker.date_time(tzinfo=datetime.timezone.utc),
+                    "launch_time": faker.date_time(tzinfo=datetime.UTC),
                     "id": faker.uuid4(),
                     "aws_private_dns": f"ip-{faker.ipv4().replace('.', '-')}.ec2.internal",
                     "aws_public_ip": faker.ipv4(),
