@@ -9,9 +9,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from faker import Faker
-from models_library.api_schemas_webserver.functions import (
-    ProjectFunctionJob,
-)
+from models_library.api_schemas_webserver.functions import ProjectFunctionJob
 from models_library.functions import (
     Function,
     FunctionClass,
@@ -234,14 +232,14 @@ async def test_list_function_jobs_with_status(
     client: TestClient,
     add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
-    mock_function: ProjectFunction,
+    mock_function_factory: Callable[[FunctionClass], Function],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
         rabbitmq_rpc_client=rpc_client,
-        function=mock_function,
+        function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -254,6 +252,7 @@ async def test_list_function_jobs_with_status(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs={"output1": "result1"},
+        job_creation_task_id=None,
     )
 
     # Register the function job
