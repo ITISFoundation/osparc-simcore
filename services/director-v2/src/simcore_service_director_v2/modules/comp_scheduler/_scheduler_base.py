@@ -76,7 +76,12 @@ _logger = logging.getLogger(__name__)
 
 _Previous = CompTaskAtDB
 _Current = CompTaskAtDB
-_MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
+_MAX_WAITING_FOR_CLUSTER_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(
+    minutes=10
+)
+_MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
+    seconds=30
+)
 
 
 def _auto_schedule_callback(
@@ -115,11 +120,6 @@ class SortedTasks:
     completed: list[CompTaskAtDB]
     waiting: list[CompTaskAtDB]
     potentially_lost: list[CompTaskAtDB]
-
-
-_MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
-    seconds=30
-)
 
 
 async def _triage_changed_tasks(
@@ -920,7 +920,7 @@ class BaseCompScheduler(ABC):
 
             if (
                 arrow.utcnow().datetime - latest_modified_of_all_tasks
-            ) > datetime.timedelta(minutes=_MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN):
+            ) > _MAX_WAITING_FOR_CLUSTER_TIMEOUT:
                 await CompTasksRepository.instance(
                     self.db_engine
                 ).update_project_tasks_state(
