@@ -53,7 +53,7 @@ from ._constants import (
 JOB_LIST_FILTER_PAGE_RELEASE_VERSION = "0.11.0"
 JOB_LOG_RELEASE_VERSION = "0.11.0"
 
-WITH_STATUS_RELEASE_VERSION = "0.12.0"
+WITH_STATUS_RELEASE_VERSION = "0.13.0"
 
 function_job_router = APIRouter()
 
