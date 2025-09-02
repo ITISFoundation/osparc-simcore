@@ -305,10 +305,11 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             state=TaskState.SCHEDULED,
         )
 
+        await self._task_tracker.save(task_uid, task_schedule)
+
         with log_catch(_logger, reraise=False):
             await subclass.on_created(task_uid, deferred_context)
 
-        await self._task_tracker.save(task_uid, task_schedule)
         _logger.debug("Scheduled task '%s' with entry: %s", task_uid, task_schedule)
         await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.SCHEDULED)
 
