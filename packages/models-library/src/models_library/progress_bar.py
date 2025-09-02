@@ -17,32 +17,30 @@ class ProgressStructuredMessage(BaseModel):
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
         schema.update(
-            {
-                "examples": [
-                    {
-                        "description": "some description",
-                        "current": 12.2,
-                        "total": 123,
-                    },
-                    {
-                        "description": "some description",
+            examples=[
+                {
+                    "description": "some description",
+                    "current": 12.2,
+                    "total": 123,
+                },
+                {
+                    "description": "some description",
+                    "current": 12.2,
+                    "total": 123,
+                    "unit": "Byte",
+                },
+                {
+                    "description": "downloading",
+                    "current": 2.0,
+                    "total": 5,
+                    "sub": {
+                        "description": "port 2",
                         "current": 12.2,
                         "total": 123,
                         "unit": "Byte",
                     },
-                    {
-                        "description": "downloading",
-                        "current": 2.0,
-                        "total": 5,
-                        "sub": {
-                            "description": "port 2",
-                            "current": 12.2,
-                            "total": 123,
-                            "unit": "Byte",
-                        },
-                    },
-                ]
-            }
+                },
+            ]
         )
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)

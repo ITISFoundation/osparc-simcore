@@ -247,9 +247,9 @@ async def test_get_function_job_status(
                     attempt=1,
                     unit=None,
                     message=ProgressStructuredMessage.model_validate(
-                        ProgressStructuredMessage.model_config["json_schema_extra"][
-                            "examples"
-                        ][0]
+                        ProgressStructuredMessage.model_json_schema()["$defs"][
+                            "ProgressStructuredMessage"
+                        ]["examples"][0]
                     ),
                 ),
             )
