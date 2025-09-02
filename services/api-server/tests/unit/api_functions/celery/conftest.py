@@ -21,14 +21,18 @@ from celery.signals import (  # pylint: disable=no-name-in-module
 )
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library.signals import on_worker_init, on_worker_shutdown
-from fakeredis.aioredis import FakeRedis
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
+from settings_library.redis import RedisSettings
 from simcore_service_api_server.celery_worker.worker_main import setup_worker_tasks
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+
+pytest_plugins = [
+    "pytest_simcore.redis_service",
+]
 
 
 @pytest.fixture(scope="session")
@@ -45,12 +49,6 @@ def celery_config() -> dict[str, Any]:
         "task_track_started": True,
         "worker_send_task_events": True,
     }
-
-
-@pytest.fixture
-async def mocked_redis_server(mocker: MockerFixture) -> None:
-    mock_redis = FakeRedis()
-    mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
 
 
 @pytest.fixture
@@ -76,7 +74,7 @@ def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Cel
 def app_environment(
     mock_celery_app: Celery,
     mocked_log_streamer_setup: MockerFixture,
-    mocked_redis_server: None,
+    use_in_memory_redis: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,
