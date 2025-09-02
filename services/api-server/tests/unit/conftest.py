@@ -57,7 +57,6 @@ from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
-from simcore_service_api_server._service_jobs import get_solver_output_results
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.repository.api_keys import UserAndProductTuple
@@ -733,7 +732,7 @@ def mocked_solver_job_outputs(mocker) -> None:
         eTag=None,
     )
     mocker.patch(
-        get_solver_output_results,
+        "simcore_service_api_server._service_jobs.get_solver_output_results",
         autospec=True,
         return_value=result,
     )
