@@ -1,5 +1,5 @@
-from celery.exceptions import (
-    CeleryError,  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
+from celery.exceptions import (  # type: ignore[import-untyped]
+    CeleryError,
 )
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
