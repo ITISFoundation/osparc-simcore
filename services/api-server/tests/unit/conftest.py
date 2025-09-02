@@ -566,11 +566,8 @@ def project_job_rpc_get() -> ProjectJobRpcGet:
 
 @pytest.fixture
 def job_links() -> JobLinks:
-    extra = JobLinks.model_config.get("json_schema_extra")
-    assert isinstance(extra, dict)
-    examples = extra.get("examples")
-    assert isinstance(examples, list) and len(examples) > 0
-    return JobLinks.model_validate(examples[0])
+    example = JobLinks.model_json_schema()["examples"][0]
+    return JobLinks.model_validate(example)
 
 
 @pytest.fixture
