@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, status
@@ -119,6 +120,9 @@ async def list_function_jobs(
         bool, Query(description="Include job status in response")
     ] = False,
 ):
+    function_jobs_list: Sequence[
+        RegisteredFunctionJobWithStatus | RegisteredFunctionJob
+    ] = []
     if include_status:
         function_jobs_list, meta = (
             await function_job_service.list_function_jobs_with_status(
