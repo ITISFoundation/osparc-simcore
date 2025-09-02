@@ -737,6 +737,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           win.close();
         }
         win.addListener("cancel", () => cancelStudyOptions());
+        win.getChildControl("close-button").addListener("tap", () => cancelStudyOptions());
         studyOptions.addListener("cancel", () => cancelStudyOptions());
         studyOptions.addListener("startStudy", () => {
           const newName = studyOptions.getChildControl("title-field").getValue();

@@ -12,7 +12,6 @@ from models_library.basic_regex import (
 from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
-from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -256,7 +255,6 @@ class Product(BaseModel):
                             "ui": {
                                 "logo_url": "https://acme.com/logo",
                                 "strong_color": "#123456",
-                                "project_alias": "study",
                             },
                         },
                         "issues": [
@@ -306,13 +304,13 @@ class Product(BaseModel):
         )
 
     model_config = ConfigDict(
-        alias_generator=snake_to_camel,
-        populate_by_name=True,
-        str_strip_whitespace=True,
-        frozen=True,
+        # NOTE: do not add aliases. Use ProductGet schema for rest API
         from_attributes=True,
-        extra="ignore",
+        frozen=True,
         json_schema_extra=_update_json_schema_extra,
+        str_strip_whitespace=True,
+        validate_by_name=True,
+        extra="ignore",
     )
 
     def to_statics(self) -> dict[str, Any]:
@@ -337,13 +335,12 @@ class Product(BaseModel):
             },
             exclude_none=True,
             exclude_unset=True,
-            by_alias=True,
         )
 
     def get_template_name_for(self, filename: str) -> str | None:
         """Checks for field marked with 'x_template_name' that fits the argument"""
         template_name = filename.removesuffix(".jinja2")
-        for name, field in self.model_fields.items():
+        for name, field in self.__class__.model_fields.items():
             if (
                 field.json_schema_extra
                 and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
