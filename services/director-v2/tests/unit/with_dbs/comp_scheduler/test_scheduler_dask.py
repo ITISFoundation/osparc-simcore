@@ -1272,7 +1272,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
-        expected_state=RunningState.ABORTED,
+        expected_state=RunningState.FAILED,
         where_statement=(comp_runs.c.user_id == user["id"])
         & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}"),
     )
