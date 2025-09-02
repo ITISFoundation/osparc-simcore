@@ -172,7 +172,9 @@ class UsersRepo:
             pre_columns = (
                 users_pre_registration_details.c.pre_first_name,
                 users_pre_registration_details.c.pre_last_name,
-                # NOTE: pre_phone is not copied since it has to be validated.
+                # NOTE: pre_phone is NOT copied since it has to be validated.
+                # It remains here as informative. In the future it might be given
+                # as a hint to the front end?
                 # Otherwise, if phone is wrong, currently user won't be able to login!
             )
 
