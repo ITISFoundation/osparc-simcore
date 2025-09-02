@@ -28,9 +28,13 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
   construct: function(message, duration, supportId) {
     this.base(arguments, message, "ERROR", duration*2);
 
-    const oecAtom = this.getChildControl("oec-atom");
-    this.bind("supportId", oecAtom, "label");
-    this.setSupportId(supportId);
+    if (osparc.product.Utils.isSupportEnabled()) {
+      console.log("bring it to support chat");
+    } else {
+      const oecAtom = this.getChildControl("oec-atom");
+      this.bind("supportId", oecAtom, "label");
+      this.setSupportId(supportId);
+    }
   },
 
   properties: {
