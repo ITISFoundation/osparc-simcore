@@ -15,6 +15,7 @@ import asyncio
 import datetime
 import logging
 from abc import ABC, abstractmethod
+from asyncio import tasks
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Final
@@ -76,9 +77,7 @@ _logger = logging.getLogger(__name__)
 
 _Previous = CompTaskAtDB
 _Current = CompTaskAtDB
-_MAX_WAITING_FOR_CLUSTER_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(
-    minutes=10
-)
+
 _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
     seconds=30
 )
@@ -667,7 +666,7 @@ class BaseCompScheduler(ABC):
                     )
                 # 4. timeout if waiting for cluster has been there for more than X minutes
                 comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
-                    user_id, project_id, comp_run.run_id, comp_tasks
+                    user_id, project_id, comp_run, comp_tasks
                 )
                 # 5. send a heartbeat
                 await self._send_running_tasks_heartbeat(
@@ -902,31 +901,34 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        run_id: PositiveInt,
+        comp_run: CompRunsAtDB,
         comp_tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> dict[NodeIDStr, CompTaskAtDB]:
-        if all(
-            c.state is RunningState.WAITING_FOR_CLUSTER for c in comp_tasks.values()
-        ):
+        if comp_run.result is RunningState.WAITING_FOR_CLUSTER:
+            tasks_waiting_for_cluster = [
+                t
+                for t in comp_tasks.values()
+                if t.state is RunningState.WAITING_FOR_CLUSTER
+            ]
             # get latest modified task
             latest_modified_of_all_tasks = max(
-                comp_tasks.values(), key=lambda task: task.modified
+                tasks_waiting_for_cluster, key=lambda task: task.modified
             ).modified
 
             if (
                 arrow.utcnow().datetime - latest_modified_of_all_tasks
-            ) > _MAX_WAITING_FOR_CLUSTER_TIMEOUT:
+            ) > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT:
                 await CompTasksRepository.instance(
                     self.db_engine
                 ).update_project_tasks_state(
                     project_id,
-                    run_id,
-                    [NodeID(idstr) for idstr in comp_tasks],
+                    comp_run.run_id,
+                    [task.node_id for task in tasks_waiting_for_cluster],
                     RunningState.FAILED,
                     optional_progress=1.0,
                     optional_stopped=arrow.utcnow().datetime,
                 )
-                for task in comp_tasks.values():
+                for task in tasks_waiting_for_cluster:
                     task.state = RunningState.FAILED
                 msg = "Timed-out waiting for computational cluster! Please try again and/or contact Osparc support."
                 _logger.error(msg)
