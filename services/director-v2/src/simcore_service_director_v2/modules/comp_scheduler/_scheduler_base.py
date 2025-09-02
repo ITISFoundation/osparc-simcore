@@ -636,11 +636,13 @@ class BaseCompScheduler(ABC):
                     user_id, project_id, iteration
                 )
                 dag = await self._get_pipeline_dag(project_id)
-                comp_tasks = await self._get_pipeline_tasks(project_id, dag)
+
                 # 1. Update our list of tasks with data from backend (state, results)
                 await self._update_states_from_comp_backend(
                     user_id, project_id, iteration, dag, comp_run
                 )
+                # 1.bis get the updated tasks NOTE: we need to get them again as some states might have changed
+                comp_tasks = await self._get_pipeline_tasks(project_id, dag)
                 # 2. timeout if waiting for cluster has been there for more than X minutes
                 comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
                     user_id, project_id, comp_run, comp_tasks
