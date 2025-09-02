@@ -632,11 +632,11 @@ class BaseCompScheduler(ABC):
             msg=f"scheduling pipeline {user_id=}:{project_id=}:{iteration=}",
         ):
             dag: nx.DiGraph = nx.DiGraph()
-            comp_run = await CompRunsRepository.instance(self.db_engine).get(
-                user_id, project_id, iteration
-            )
-            try:
 
+            try:
+                comp_run = await CompRunsRepository.instance(self.db_engine).get(
+                    user_id, project_id, iteration
+                )
                 dag = await self._get_pipeline_dag(project_id)
                 # 1. Update our list of tasks with data from backend (state, results)
                 await self._update_states_from_comp_backend(
@@ -692,55 +692,45 @@ class BaseCompScheduler(ABC):
                         f"{pipeline_result=}",
                     )
             except PipelineNotFoundError:
-                _logger.warning(
-                    "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
+                _logger.exception(
+                    "pipeline %s is missing from `comp_pipelines` DB table, something is corrupted. Aborting scheduling",
                     f"{project_id=}",
                 )
+                # NOTE: no need to update task states here as pipeline is already broken
                 await self._set_run_result(
-                    user_id, project_id, iteration, RunningState.ABORTED
+                    user_id, project_id, iteration, RunningState.FAILED
                 )
-            except InvalidPipelineError as exc:
-                _logger.warning(
-                    "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
+            except InvalidPipelineError:
+                _logger.exception(
+                    "pipeline %s appears to be misconfigured, it will be removed from scheduler. Aborting scheduling",
                     f"{project_id=}",
-                    exc,
                 )
+                # NOTE: no need to update task states here as pipeline is already broken
                 await self._set_run_result(
-                    user_id, project_id, iteration, RunningState.ABORTED
+                    user_id, project_id, iteration, RunningState.FAILED
                 )
             except (
                 DaskClientAcquisisitonError,
                 ComputationalBackendNotConnectedError,
                 ClustersKeeperNotAvailableError,
             ):
-                # we somehow lost access to the dask scheduler for different reasons
-                # maybe network glitch in which case we might recover?
-                # maybe the dask scheduler was restarted in which case we lost everything
-                # maybe the private cluster machine was restarted in which case we lost everything
-                # maybe the private cluster was shutdown in which case we lost everything
-                # we should switch to WAITING_FOR_CLUSTER
-                _logger.warning(
-                    "Unexpected error while connecting with computational backend, waiting for it to re-appear"
+                _logger.exception(
+                    "Unexpectedly lost connection to the computational backend. "
+                    "TIP: this might be a network error or some service restarting. "
+                    "All scheduled tasks will be set to WAITING_FOR_CLUSTER state until we reconnect",
                 )
-                # what if we keep the tasks status?
-                # just set the run result to waiting for result? and check when it last changed?
-                not_completed_tasks = {
+                processing_tasks = {
                     k: v
                     for k, v in (
                         await self._get_pipeline_tasks(project_id, dag)
                     ).items()
-                    if v.state
-                    not in {
-                        *COMPLETED_STATES,
-                        RunningState.WAITING_FOR_CLUSTER,
-                        RunningState.PUBLISHED,
-                    }
+                    if v.state in PROCESSING_STATES
                 }
                 comp_tasks_repo = CompTasksRepository(self.db_engine)
                 await comp_tasks_repo.update_project_tasks_state(
                     project_id,
                     comp_run.run_id,
-                    [t.node_id for t in not_completed_tasks.values()],
+                    [t.node_id for t in processing_tasks.values()],
                     RunningState.WAITING_FOR_CLUSTER,
                 )
                 await self._set_run_result(
