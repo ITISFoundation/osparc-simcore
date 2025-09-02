@@ -13,9 +13,9 @@ from servicelib.fastapi.tracing import (
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
-from ..api.dependencies.celery import setup_task_manager
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
+from ..clients.celery_task_manager import setup_task_manager
 from ..clients.postgres import setup_postgres
 from ..services_http import director_v2, storage, webserver
 from ..services_http.rabbitmq import setup_rabbitmq
