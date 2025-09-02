@@ -208,10 +208,7 @@ async def list_function_jobs_with_status(
     list[RegisteredFunctionJobWithStatus],
     PageMetaInfoLimitOffset,
 ]:
-    result: tuple[
-        list[RegisteredFunctionJobWithStatus],
-        PageMetaInfoLimitOffset,
-    ] = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("list_function_jobs_with_status"),
         user_id=user_id,
