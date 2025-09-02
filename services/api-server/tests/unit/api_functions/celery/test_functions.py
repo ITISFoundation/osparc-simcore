@@ -83,7 +83,7 @@ pytest_simcore_ops_services_selection = ["adminer"]
 _faker = Faker()
 
 
-async def poll_task_until_done(
+async def wait_for_task_result(
     client: AsyncClient,
     auth: BasicAuth,
     task_id: str,
@@ -251,7 +251,7 @@ async def test_with_fake_run_function(
     celery_task_id = function_job.job_creation_task_id
     assert celery_task_id is not None
     # Poll until task completion and get result
-    result = await poll_task_until_done(client, auth, celery_task_id)
+    result = await wait_for_task_result(client, auth, celery_task_id)
     RegisteredProjectFunctionJob.model_validate(result.result)
 
 
@@ -302,7 +302,7 @@ async def test_celery_error_propagation(
     )
 
     with pytest.raises(HTTPStatusError) as exc_info:
-        await poll_task_until_done(client, auth, f"{task_uuid}")
+        await wait_for_task_result(client, auth, f"{task_uuid}")
 
     assert exc_info.value.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
@@ -419,7 +419,7 @@ async def test_run_project_function_parent_info(
         celery_task_id = function_job.job_creation_task_id
         assert celery_task_id is not None
         # Poll until task completion and get result
-        result = await poll_task_until_done(client, auth, celery_task_id)
+        result = await wait_for_task_result(client, auth, celery_task_id)
         RegisteredProjectFunctionJob.model_validate(result.result)
 
 
@@ -554,5 +554,5 @@ async def test_map_function_parent_info(
         task_id = patch_mock.call_args.kwargs[
             "registered_function_job_patch"
         ].job_creation_task_id
-        await poll_task_until_done(client, auth, f"{task_id}")
+        await wait_for_task_result(client, auth, f"{task_id}")
         assert side_effect_checks["headers_checked"] is True
