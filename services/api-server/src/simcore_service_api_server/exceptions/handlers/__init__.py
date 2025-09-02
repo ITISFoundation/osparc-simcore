@@ -1,4 +1,4 @@
-from celery.exceptions import (  # type: ignore[import-untyped]
+from celery.exceptions import (  # type: ignore[import-untyped] #pylint: disable=no-name-in-module
     CeleryError,
 )
 from fastapi import FastAPI
