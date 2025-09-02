@@ -74,7 +74,7 @@ from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
     stop_after_delay,
-    wait_exponential,
+    wait_fixed,
 )
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
@@ -92,7 +92,7 @@ async def wait_for_task_result(
 
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(timeout),
-        wait=wait_exponential(multiplier=0.5, min=0.5, max=2.0),
+        wait=wait_fixed(wait=datetime.timedelta(seconds=1.0)),
         reraise=True,
         retry=retry_if_exception_type(AssertionError),
     ):
