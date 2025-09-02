@@ -823,10 +823,18 @@ class BaseCompScheduler(ABC):
         except (
             ComputationalBackendNotConnectedError,
             ComputationalSchedulerChangedError,
+            ClustersKeeperNotAvailableError,
         ):
             _logger.exception(
                 "Issue with computational backend. Tasks are set back "
                 "to WAITING_FOR_CLUSTER state until scheduler comes back!",
+            )
+            await publish_project_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                log="Unexpected error while scheduling computational tasks! TIP: contact osparc support if this does not resolve automatically.",
+                log_level=logging.ERROR,
             )
             await CompTasksRepository.instance(
                 self.db_engine
@@ -861,29 +869,6 @@ class BaseCompScheduler(ABC):
             )
             for task in tasks_ready_to_start:
                 comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
-        except ClustersKeeperNotAvailableError:
-            _logger.exception("Unexpected error while starting tasks:")
-            await publish_project_log(
-                self.rabbitmq_client,
-                user_id,
-                project_id,
-                log="Unexpected error while scheduling computational tasks! TIP: contact osparc support.",
-                log_level=logging.ERROR,
-            )
-
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
-                project_id,
-                comp_run.run_id,
-                list(tasks_ready_to_start.keys()),
-                RunningState.FAILED,
-                optional_progress=1.0,
-                optional_stopped=arrow.utcnow().datetime,
-            )
-            for task in tasks_ready_to_start:
-                comp_tasks[f"{task}"].state = RunningState.FAILED
-            raise
         except TaskSchedulingError as exc:
             _logger.exception(
                 "Project '%s''s task '%s' could not be scheduled",
