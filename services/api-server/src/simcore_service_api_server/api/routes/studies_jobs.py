@@ -279,7 +279,7 @@ async def get_study_job_outputs(
     job_id: JobID,
     job_service: Annotated[JobService, Depends(get_job_service)],
 ):
-    return job_service.get_study_job_outputs(
+    return await job_service.get_study_job_outputs(
         study_id=study_id,
         job_id=job_id,
     )

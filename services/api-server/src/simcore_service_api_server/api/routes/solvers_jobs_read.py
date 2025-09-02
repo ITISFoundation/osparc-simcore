@@ -312,7 +312,7 @@ async def get_job_outputs(
     job_id: JobID,
     job_service: Annotated[JobService, Depends(get_job_service)],
 ):
-    return job_service.get_solver_job_outputs(
+    return await job_service.get_solver_job_outputs(
         solver_key=solver_key,
         version=version,
         job_id=job_id,

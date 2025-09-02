@@ -154,6 +154,11 @@ def program_service(
 
 
 @pytest.fixture
+def async_pg_engine(mocker: MockerFixture) -> AsyncEngine:
+    return mocker.MagicMock(spec=AsyncEngine)
+
+
+@pytest.fixture
 def job_service(
     auth_session: AuthSession,
     director_v2_rpc_client: DirectorV2Service,
