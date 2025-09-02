@@ -250,10 +250,7 @@ async def function_job_status(
                     tip="Initial call to run metamodeling function must have failed",
                 )
             )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Function job is not in a valid state",
-            ) from exc
+            raise
 
         raise UnsupportedFunctionFunctionJobClassCombinationError(
             function_class=function.function_class,
