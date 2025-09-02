@@ -82,9 +82,6 @@ _MAX_WAITING_FOR_CLUSTER_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta
 _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
     seconds=30
 )
-_MAX_WAITING_TIME_FOR_MISSING_BACKEND: Final[datetime.timedelta] = datetime.timedelta(
-    minutes=5
-)
 
 
 def _auto_schedule_callback(
