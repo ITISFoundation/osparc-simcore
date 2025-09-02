@@ -66,7 +66,6 @@ def product_data(
     product_ui = ProductUIData(
         logo_url=vendor_ui.get("logo_url"),
         strong_color=vendor_ui.get("strong_color"),
-        project_alias=vendor_ui["project_alias"],
     )
 
     return ProductData(  # type: ignore
