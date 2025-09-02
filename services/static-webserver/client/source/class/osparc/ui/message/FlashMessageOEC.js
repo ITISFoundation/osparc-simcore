@@ -98,7 +98,11 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
 
     __openSupportChat: function() {
       console.log(this.__getContext());
-      osparc.support.SupportCenter.openWindow();
+      const supportCenter = osparc.support.SupportCenter.openWindow();
+      supportCenter.openConversation(null);
+      const conversationPage = supportCenter.getChildControl("conversation-page");
+      const conversation = conversationPage.getChildControl("conversation-content");
+      // conversation.
     },
   }
 });
