@@ -120,6 +120,7 @@ def get_job_service(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ) -> JobService:
     """
     "Assembles" the JobsService layer to the underlying service and client interfaces
@@ -133,6 +134,7 @@ def get_job_service(
         _director2_api=director2_api,
         _storage_rest_client=storage_api,
         _solver_service=solver_service,
+        _async_pg_engine=async_pg_engine,
         user_id=user_id,
         product_name=product_name,
     )

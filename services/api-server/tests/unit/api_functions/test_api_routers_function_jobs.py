@@ -25,6 +25,7 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server._service_function_jobs import FunctionJobService
 from simcore_service_api_server.models.schemas.jobs import JobStatus
 
 
@@ -149,7 +150,6 @@ async def test_list_function_jobs_with_status(
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
     )
-    from simcore_service_api_server._service_function_jobs import FunctionJobService
 
     mock_function_job_outputs = mocker.patch.object(
         FunctionJobService, "function_job_outputs", return_value=mock_outputs

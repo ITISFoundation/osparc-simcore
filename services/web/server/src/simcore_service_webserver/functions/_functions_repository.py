@@ -270,9 +270,7 @@ async def patch_function_job(
         )
         row = result.one()
 
-        registered_function_job = RegisteredFunctionJobDB.model_validate(row)
-
-    return registered_function_job
+        return RegisteredFunctionJobDB.model_validate(row)
 
 
 async def create_function_job_collection(

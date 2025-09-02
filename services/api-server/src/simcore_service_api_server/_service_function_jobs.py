@@ -388,8 +388,6 @@ class FunctionJobService:
         stored_job_outputs: FunctionOutputs | None,
     ) -> FunctionOutputs:
 
-        from .api.routes import solvers_jobs_read, studies_jobs  # avoid circular import
-
         if stored_job_outputs is not None:
             return stored_job_outputs
 
@@ -409,12 +407,9 @@ class FunctionJobService:
                 return None
             new_outputs = dict(
                 (
-                    await studies_jobs.get_study_job_outputs(
+                    await self._job_service.get_study_job_outputs(
                         study_id=function.project_id,
                         job_id=function_job.project_job_id,
-                        user_id=user_id,
-                        webserver_api=self._webserver_api,
-                        storage_client=self._storage_client,
                     )
                 ).results
             )
@@ -426,15 +421,10 @@ class FunctionJobService:
                 return None
             new_outputs = dict(
                 (
-                    await solvers_jobs_read.get_job_outputs(
+                    await self._job_service.get_solver_job_outputs(
                         solver_key=function.solver_key,
                         version=function.solver_version,
                         job_id=function_job.solver_job_id,
-                        user_id=user_id,
-                        webserver_api=self._webserver_api,
-                        storage_client=self._storage_client,
-                        job_service=self._job_service,
-                        async_pg_engine=self._async_pg_engine,
                     )
                 ).results
             )
