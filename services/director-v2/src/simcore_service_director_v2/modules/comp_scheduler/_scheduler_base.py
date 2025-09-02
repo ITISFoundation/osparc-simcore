@@ -15,7 +15,6 @@ import asyncio
 import datetime
 import logging
 from abc import ABC, abstractmethod
-from asyncio import tasks
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Final
@@ -272,9 +271,12 @@ class BaseCompScheduler(ABC):
             )
 
     async def _set_states_following_failed_to_aborted(
-        self, project_id: ProjectID, dag: nx.DiGraph, run_id: PositiveInt
+        self,
+        project_id: ProjectID,
+        dag: nx.DiGraph,
+        tasks: dict[NodeIDStr, CompTaskAtDB],
+        run_id: PositiveInt,
     ) -> dict[NodeIDStr, CompTaskAtDB]:
-        tasks = await self._get_pipeline_tasks(project_id, dag)
         # Perform a reverse topological sort to ensure tasks are ordered from last to first
         sorted_node_ids = list(reversed(list(nx.topological_sort(dag))))
         tasks = {
@@ -634,15 +636,20 @@ class BaseCompScheduler(ABC):
                     user_id, project_id, iteration
                 )
                 dag = await self._get_pipeline_dag(project_id)
+                comp_tasks = await self._get_pipeline_tasks(project_id, dag)
                 # 1. Update our list of tasks with data from backend (state, results)
                 await self._update_states_from_comp_backend(
                     user_id, project_id, iteration, dag, comp_run
                 )
-                # 2. Any task following a FAILED task shall be ABORTED
-                comp_tasks = await self._set_states_following_failed_to_aborted(
-                    project_id, dag, comp_run.run_id
+                # 2. timeout if waiting for cluster has been there for more than X minutes
+                comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
+                    user_id, project_id, comp_run, comp_tasks
                 )
-                # 3. do we want to stop the pipeline now?
+                # 3. Any task following a FAILED task shall be ABORTED
+                comp_tasks = await self._set_states_following_failed_to_aborted(
+                    project_id, dag, comp_tasks, comp_run.run_id
+                )
+                # 4. do we want to stop the pipeline now?
                 if comp_run.cancelled:
                     comp_tasks = await self._schedule_tasks_to_stop(
                         user_id, project_id, comp_tasks, comp_run
@@ -664,10 +671,7 @@ class BaseCompScheduler(ABC):
                             iteration=iteration,
                         ),
                     )
-                # 4. timeout if waiting for cluster has been there for more than X minutes
-                comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
-                    user_id, project_id, comp_run, comp_tasks
-                )
+
                 # 5. send a heartbeat
                 await self._send_running_tasks_heartbeat(
                     user_id, project_id, comp_run.run_id, iteration, dag
