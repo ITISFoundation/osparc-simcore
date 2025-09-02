@@ -778,7 +778,7 @@ class BaseCompScheduler(ABC):
 
         return comp_tasks
 
-    async def _schedule_tasks_to_start(  # noqa: C901
+    async def _schedule_tasks_to_start(
         self,
         user_id: UserID,
         project_id: ProjectID,
