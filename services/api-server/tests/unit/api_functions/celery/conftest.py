@@ -30,10 +30,6 @@ from simcore_service_api_server.celery_worker.worker_main import setup_worker_ta
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
-pytest_plugins = [
-    "pytest_simcore.redis_service",
-]
-
 
 @pytest.fixture(scope="session")
 def celery_config() -> dict[str, Any]:
