@@ -155,7 +155,9 @@ async def test_list_function_jobs_with_status(
         FunctionJobService, "function_job_outputs", return_value=mock_outputs
     )
     mock_handler_in_functions_rpc_interface("get_function_job_status", mock_status)
-    response = await client.get(f"{API_VTAG}/function_jobs/with-status", auth=auth)
+    response = await client.get(
+        f"{API_VTAG}/function_jobs?include_status=true", auth=auth
+    )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()["items"]
     assert len(data) == 5

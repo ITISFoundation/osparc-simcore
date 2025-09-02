@@ -5466,6 +5466,18 @@
         ],
         "parameters": [
           {
+            "name": "include_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include job status in response",
+              "default": false,
+              "title": "Include Status"
+            },
+            "description": "Include job status in response"
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
@@ -5555,7 +5567,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                  "$ref": "#/components/schemas/Page_Union_Annotated_Union_RegisteredProjectFunctionJobWithStatus__RegisteredPythonCodeFunctionJobWithStatus__RegisteredSolverFunctionJobWithStatus___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____"
                 }
               }
             }
@@ -5639,128 +5651,6 @@
                     }
                   },
                   "title": "Response Register Function Job V0 Function Jobs Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/function_jobs/with-status": {
-      "get": {
-        "tags": [
-          "function_jobs"
-        ],
-        "summary": "List Function Jobs With Status",
-        "description": "List function jobs with status\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
-        "operationId": "list_function_jobs_with_status",
-        "security": [
-          {
-            "HTTPBasic": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 50,
-              "minimum": 1,
-              "default": 20,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0,
-              "title": "Offset"
-            }
-          },
-          {
-            "name": "function_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter by function ID pattern",
-              "title": "Function Id"
-            },
-            "description": "Filter by function ID pattern"
-          },
-          {
-            "name": "function_job_ids",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "format": "uuid"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter by function job IDs",
-              "title": "Function Job Ids"
-            },
-            "description": "Filter by function job IDs"
-          },
-          {
-            "name": "function_job_collection_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Filter by function job collection ID",
-              "title": "Function Job Collection Id"
-            },
-            "description": "Filter by function job collection ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunctionJobWithStatus__RegisteredPythonCodeFunctionJobWithStatus__RegisteredSolverFunctionJobWithStatus___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
                 }
               }
             }
@@ -10056,83 +9946,6 @@
         ],
         "title": "OnePage[StudyPort]"
       },
-      "Page_Annotated_Union_RegisteredProjectFunctionJobWithStatus__RegisteredPythonCodeFunctionJobWithStatus__RegisteredSolverFunctionJobWithStatus___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
-        "properties": {
-          "items": {
-            "items": {
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/RegisteredProjectFunctionJobWithStatus"
-                },
-                {
-                  "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus"
-                },
-                {
-                  "$ref": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
-                }
-              ],
-              "discriminator": {
-                "propertyName": "function_class",
-                "mapping": {
-                  "PROJECT": "#/components/schemas/RegisteredProjectFunctionJobWithStatus",
-                  "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus",
-                  "SOLVER": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
-                }
-              }
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limit"
-          },
-          "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset"
-          },
-          "links": {
-            "$ref": "#/components/schemas/Links"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "limit",
-          "offset",
-          "links"
-        ],
-        "title": "Page[Annotated[Union[RegisteredProjectFunctionJobWithStatus, RegisteredPythonCodeFunctionJobWithStatus, RegisteredSolverFunctionJobWithStatus], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]"
-      },
       "Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
         "properties": {
           "items": {
@@ -10581,6 +10394,108 @@
           "links"
         ],
         "title": "Page[Study]"
+      },
+      "Page_Union_Annotated_Union_RegisteredProjectFunctionJobWithStatus__RegisteredPythonCodeFunctionJobWithStatus__RegisteredSolverFunctionJobWithStatus___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____": {
+        "properties": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJobWithStatus"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJobWithStatus",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
+                    }
+                  }
+                },
+                {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
+                    }
+                  }
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "Page[Union[Annotated[Union[RegisteredProjectFunctionJobWithStatus, RegisteredPythonCodeFunctionJobWithStatus, RegisteredSolverFunctionJobWithStatus], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')], Annotated[Union[RegisteredProjectFunctionJob, RegisteredPythonCodeFunctionJob, RegisteredSolverFunctionJob], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]]"
       },
       "PricingPlanClassification": {
         "type": "string",

@@ -1,8 +1,7 @@
 from typing import Annotated, Final
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, status
 from fastapi_pagination.api import create_page
-from fastapi_pagination.bases import AbstractPage
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.functions import (
     FunctionClass,
@@ -103,7 +102,9 @@ for endpoint in ENDPOINTS:
 
 @function_job_router.get(
     "",
-    response_model=Page[RegisteredFunctionJob],
+    response_model=Page[
+        RegisteredFunctionJobWithStatus | RegisteredFunctionJob
+    ],  # left-right order is important here
     description=create_route_description(
         base="List function jobs", changelog=CHANGE_LOGS["list_function_jobs"]
     ),
@@ -114,49 +115,31 @@ async def list_function_jobs(
         FunctionJobService, Depends(get_function_job_service)
     ],
     filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
-) -> AbstractPage[RegisteredFunctionJob]:
-    function_jobs_list, meta = await function_job_service.list_function_jobs(
-        pagination_offset=page_params.offset,
-        pagination_limit=page_params.limit,
-        filter_by_function_job_ids=filters.function_job_ids,
-        filter_by_function_job_collection_id=filters.function_job_collection_id,
-        filter_by_function_id=filters.function_id,
-    )
-
-    return create_page(
-        function_jobs_list,
-        total=meta.total,
-        params=page_params,
-    )
-
-
-@function_job_router.get(
-    "/with-status",
-    response_model=Page[RegisteredFunctionJobWithStatus],
-    description=create_route_description(
-        base="List function jobs with status",
-        changelog=CHANGE_LOGS["list_function_jobs"],
-    ),
-)
-async def list_function_jobs_with_status(
-    page_params: Annotated[PaginationParams, Depends()],
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
-    filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
-) -> AbstractPage[RegisteredFunctionJobWithStatus]:
-    function_jobs_wso_list, meta = (
-        await function_job_service.list_function_jobs_with_status(
+    include_status: Annotated[  # noqa: FBT002
+        bool, Query(description="Include job status in response")
+    ] = False,
+):
+    if include_status:
+        function_jobs_list, meta = (
+            await function_job_service.list_function_jobs_with_status(
+                pagination_offset=page_params.offset,
+                pagination_limit=page_params.limit,
+                filter_by_function_job_ids=filters.function_job_ids,
+                filter_by_function_job_collection_id=filters.function_job_collection_id,
+                filter_by_function_id=filters.function_id,
+            )
+        )
+    else:
+        function_jobs_list, meta = await function_job_service.list_function_jobs(
             pagination_offset=page_params.offset,
             pagination_limit=page_params.limit,
             filter_by_function_job_ids=filters.function_job_ids,
             filter_by_function_job_collection_id=filters.function_job_collection_id,
             filter_by_function_id=filters.function_id,
         )
-    )
 
     return create_page(
-        function_jobs_wso_list,
+        function_jobs_list,
         total=meta.total,
         params=page_params,
     )
