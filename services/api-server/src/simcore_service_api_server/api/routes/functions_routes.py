@@ -480,7 +480,7 @@ async def map_function(  # noqa: PLR0913
         for function_inputs in function_inputs_list
     ]
 
-    cached_job_uuids: list[FunctionJobID] = []
+    job_ids: list[FunctionJobID] = []
     pre_registered_function_job_data_list: list[PreRegisteredFunctionJobData] = []
 
     for job_inputs in job_inputs_list:
@@ -489,13 +489,14 @@ async def map_function(  # noqa: PLR0913
                 function=to_run_function,
                 job_inputs=job_inputs,
             )
-            cached_job_uuids.append(cached_job.uid)
+            job_ids.append(cached_job.uid)
         except FunctionJobCacheNotFoundError:
             data = await function_jobs_service.pre_register_function_job(
                 function=to_run_function,
                 job_inputs=job_inputs,
             )
             pre_registered_function_job_data_list.append(data)
+            job_ids.append(data.function_job_id)
 
     # run map in celery task
     job_filter = AsyncJobFilter(
@@ -533,9 +534,6 @@ async def map_function(  # noqa: PLR0913
         )
 
     function_job_collection_description = f"Function job collection of map of function {to_run_function.uid} with {len(pre_registered_function_job_data_list)} inputs"
-    job_ids = cached_job_uuids + [
-        data.function_job_id for data in pre_registered_function_job_data_list
-    ]
     return await web_api_rpc_client.register_function_job_collection(
         function_job_collection=FunctionJobCollection(
             title="Function job collection of function map",
