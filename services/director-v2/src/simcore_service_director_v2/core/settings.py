@@ -82,6 +82,11 @@ class ComputationalBackendSettings(BaseCustomSettings):
         FileLinkType.PRESIGNED,
         description=f"Default file link type to use with computational backend on-demand clusters '{list(FileLinkType)}'",
     )
+    COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=30),
+        description="maximum time a pipeline can wait for a cluster to start"
+        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating).",
+    )
 
     @cached_property
     def default_cluster(self) -> BaseCluster:
