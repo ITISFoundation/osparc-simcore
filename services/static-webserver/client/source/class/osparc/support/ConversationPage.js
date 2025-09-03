@@ -215,8 +215,9 @@ qx.Class.define("osparc.support.ConversationPage", {
         this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field")
       ) {
         this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(message);
-        this.getChildControl("conversation-content").getChildControl("add-message").addComment();
+        return this.getChildControl("conversation-content").getChildControl("add-message").addComment();
       }
+      return Promise.reject();
     },
   }
 });
