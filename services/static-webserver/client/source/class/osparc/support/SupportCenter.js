@@ -173,15 +173,22 @@ qx.Class.define("osparc.support.SupportCenter", {
       const conversationPage = this.getChildControl("conversation-page");
       conversationPage.setConversation(null);
       this.__showConversation();
-      conversationPage.addListenerOnce("changeConversation", e => {
-        const conversation = e.getData();
-        // update conversation name and patch extra_context
-        conversation.renameConversation("Book a call");
-        conversation.patchExtraContext({
-          "appointment": "requested"
+      conversationPage.postMessage(osparc.support.SupportCenter.REQUEST_CALL_MESSAGE)
+        .then(data => {
+          const conversationId = data["conversationId"];
+          osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
+            .then(conversation => {
+              const conversation = e.getData();
+              // update conversation name and patch extra_context
+              conversation.renameConversation("Book a call");
+              conversation.patchExtraContext({
+                "appointment": "requested"
+              });
+            });
+        })
+        .catch(err => {
+          console.error("Error sending request call message", err);
         });
-      });
-      conversationPage.postMessage(osparc.support.SupportCenter.REQUEST_CALL_MESSAGE);
     },
   }
 });
