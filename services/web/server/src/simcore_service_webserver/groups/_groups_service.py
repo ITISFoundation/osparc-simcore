@@ -79,25 +79,12 @@ async def get_product_group_for_user(
     )
 
 
-async def get_support_group_for_user_or_none(
-    app: web.Application, *, user_id: UserID, support_gid: GroupID
-) -> tuple[Group, AccessRightsDict] | None:
-    """
-    Returns support's group if user belongs to it, otherwise it
-    """
-    with suppress(GroupNotFoundError):
-        return await _groups_repository.get_any_group_for_user(
-            app, user_id=user_id, group_gid=support_gid
-        )
-    return None
-
-
 async def get_user_profile_groups(
     app: web.Application, *, user_id: UserID, product: Product
 ) -> tuple[
     GroupsByTypeTuple,
     tuple[Group, AccessRightsDict] | None,
-    tuple[Group, AccessRightsDict] | None,
+    Group | None,
 ]:
     """
     Get all groups needed for user profile including standard groups,
@@ -120,10 +107,8 @@ async def get_user_profile_groups(
     my_support_group = None
     if product.support_standard_group_id:  # Support group is optional
         # NOTE: my_support_group can be part of groups_by_type.standard!
-        my_support_group = await get_support_group_for_user_or_none(
-            app=app,
-            user_id=user_id,
-            support_gid=product.support_standard_group_id,
+        my_support_group = await get_group_from_gid(
+            app, product.support_standard_group_id
         )
 
     return groups_by_type, my_product_group, my_support_group
