@@ -21,6 +21,7 @@ from typing import Final
 
 import arrow
 import networkx as nx
+from common_library.user_messages import user_message
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
@@ -247,7 +248,9 @@ class BaseCompScheduler(ABC):
                 self.rabbitmq_client,
                 user_id=user_id,
                 project_id=project_id,
-                log=f"Pipeline run {run_result.value} for iteration {iteration} is done with {run_result.value} state",
+                log=user_message(
+                    f"Pipeline run {run_result.value} for iteration {iteration} is done with {run_result.value} state"
+                ),
                 log_level=logging.INFO,
             )
         await publish_pipeline_scheduling_state(
@@ -861,7 +864,9 @@ class BaseCompScheduler(ABC):
                 self.rabbitmq_client,
                 user_id,
                 project_id,
-                log="Unexpected error while scheduling computational tasks! TIP: contact osparc support if this does not resolve automatically.",
+                log=user_message(
+                    "Unexpected error while scheduling computational tasks! TIP: contact osparc support if this does not resolve automatically."
+                ),
                 log_level=logging.ERROR,
             )
             await CompTasksRepository.instance(
@@ -997,7 +1002,9 @@ class BaseCompScheduler(ABC):
                 )
                 for task in tasks_waiting_for_cluster:
                     task.state = RunningState.FAILED
-                msg = "Timed-out waiting for computational cluster! Please try again and/or contact Osparc support."
+                msg = user_message(
+                    "Timed-out waiting for computational cluster! Please try again and/or contact Osparc support."
+                )
                 _logger.error(msg)
                 await publish_project_log(
                     self.rabbitmq_client,
