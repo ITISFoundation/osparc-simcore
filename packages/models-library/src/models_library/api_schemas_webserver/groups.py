@@ -187,6 +187,12 @@ class MyGroupsGet(OutputSchema):
     organizations: list[GroupGet] | None = None
     all: GroupGet
     product: GroupGet | None = None
+    support: Annotated[
+        GroupGet | None,
+        Field(
+            description="Group ID of the app support team or None if no support is defined for this product"
+        ),
+    ] = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -225,6 +231,12 @@ class MyGroupsGet(OutputSchema):
                     "description": "Open to all users",
                     "accessRights": {"read": True, "write": False, "delete": False},
                 },
+                "support": {
+                    "gid": "2",
+                    "label": "Support Team",
+                    "description": "The support team of the application",
+                    "accessRights": {"read": False, "write": False, "delete": False},
+                },
             }
         }
     )
@@ -234,6 +246,7 @@ class MyGroupsGet(OutputSchema):
         cls,
         groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
+        my_support_group: tuple[Group, AccessRightsDict] | None = None,
     ) -> Self:
         assert groups_by_type.primary  # nosec
         assert groups_by_type.everyone  # nosec
@@ -247,6 +260,11 @@ class MyGroupsGet(OutputSchema):
             product=(
                 GroupGet.from_domain_model(*my_product_group)
                 if my_product_group
+                else None
+            ),
+            support=(
+                GroupGet.from_domain_model(*my_support_group)
+                if my_support_group
                 else None
             ),
         )

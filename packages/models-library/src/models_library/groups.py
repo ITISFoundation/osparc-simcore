@@ -39,41 +39,44 @@ class Group(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update(
-            {
-                "examples": [
-                    {
-                        "gid": 1,
-                        "name": "Everyone",
-                        "type": "everyone",
-                        "description": "all users",
-                        "thumbnail": None,
-                    },
-                    {
-                        "gid": 2,
-                        "name": "User",
-                        "description": "primary group",
-                        "type": "primary",
-                        "thumbnail": None,
-                    },
-                    {
-                        "gid": 3,
-                        "name": "Organization",
-                        "description": "standard group",
-                        "type": "standard",
-                        "thumbnail": None,
-                        "inclusionRules": {},
-                    },
-                    {
-                        "gid": 4,
-                        "name": "Product",
-                        "description": "standard group for products",
-                        "type": "standard",
-                        "thumbnail": None,
-                    },
-                ]
-            }
-        )
+        everyone = {
+            "gid": 1,
+            "name": "Everyone",
+            "type": "everyone",
+            "description": "all users",
+            "thumbnail": None,
+        }
+        user = {
+            "gid": 2,
+            "name": "User",
+            "description": "primary group",
+            "type": "primary",
+            "thumbnail": None,
+        }
+        organization = {
+            "gid": 3,
+            "name": "Organization",
+            "description": "standard group",
+            "type": "standard",
+            "thumbnail": None,
+            "inclusionRules": {},
+        }
+        product = {
+            "gid": 4,
+            "name": "Product",
+            "description": "standard group for products",
+            "type": "standard",
+            "thumbnail": None,
+        }
+        support = {
+            "gid": 5,
+            "name": "Support",
+            "description": "support group",
+            "type": "standard",
+            "thumbnail": None,
+        }
+
+        schema.update({"examples": [everyone, user, organization, product, support]})
 
     model_config = ConfigDict(
         populate_by_name=True, json_schema_extra=_update_json_schema_extra
