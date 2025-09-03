@@ -22,7 +22,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
 
     this.set({
       autoDestroy: true,
-      layout: new qx.ui.layout.VBox(15),
+      layout: new qx.ui.layout.VBox(10),
       showMinimize: false,
       showMaximize: false,
       contentPadding: 15,
@@ -41,7 +41,8 @@ qx.Class.define("osparc.ui.window.Dialog", {
   properties: {
     message: {
       check: "String",
-      apply: "_applyMessage"
+      init: "",
+      event: "changeMessage",
     }
   },
 
@@ -52,11 +53,28 @@ qx.Class.define("osparc.ui.window.Dialog", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "message-label":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14",
+            selectable: true,
+            rich: true
+          });
+          this.bind("message", control, "value");
+          this.addAt(control, 0);
+          break;
+        case "extra-widgets-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            paddingTop: 10
+          });
+          this.addAt(control, 1, {
+            flex: 1
+          });
+          break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "right"
           }));
-          this.add(control);
+          this.addAt(control, 2);
           break;
         case "cancel-button": {
           const btnsLayout = this.getChildControl("buttons-layout");
@@ -71,37 +89,16 @@ qx.Class.define("osparc.ui.window.Dialog", {
     },
 
     __buildLayout: function() {
-      this.__messageLabel = new qx.ui.basic.Label().set({
-        font: "text-14",
-        selectable: true,
-        rich: true
-      });
-      this.add(this.__messageLabel, {
-        flex: 1
-      });
-
-      this.__extraWidgetsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
-        paddingTop: 10
-      });
-      this.__extraWidgetsLayout.exclude();
-      this.add(this.__extraWidgetsLayout, {
-        flex: 1
-      });
-
+      this.getChildControl("message-label");
       this.getChildControl("buttons-layout");
     },
 
-    _applyMessage: function(message) {
-      this.__messageLabel.setValue(message);
-    },
-
     addWidget: function(widget) {
-      this.__extraWidgetsLayout.show();
-      this.__extraWidgetsLayout.add(widget);
+      this.getChildControl("extra-widgets-layout").add(widget);
     },
 
     getExtraWidgetsLayout: function() {
-      return this.__extraWidgetsLayout;
+      return this.getChildControl("extra-widgets-layout");
     },
 
     /**
