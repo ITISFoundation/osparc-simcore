@@ -56,8 +56,6 @@ async def list_groups(request: web.Request):
     assert groups_by_type.primary
     assert groups_by_type.everyone
 
-    my_product_group = None
-
     if product.group_id:
         with suppress(GroupNotFoundError):
             # Product is optional
@@ -66,16 +64,20 @@ async def list_groups(request: web.Request):
                 user_id=req_ctx.user_id,
                 product_gid=product.group_id,
             )
+    else:
+        my_product_group = None
 
-    my_groups = MyGroupsGet(
-        me=GroupGet.from_domain_model(*groups_by_type.primary),
-        organizations=[
-            GroupGet.from_domain_model(*gi) for gi in groups_by_type.standard
-        ],
-        all=GroupGet.from_domain_model(*groups_by_type.everyone),
-        product=(
-            GroupGet.from_domain_model(*my_product_group) if my_product_group else None
-        ),
+    if product.support_standard_group_id:
+        my_support_group = await _groups_service.get_support_group_for_user_or_none(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            support_gid=product.support_standard_group_id,
+        )
+    else:
+        my_support_group = None
+
+    my_groups = MyGroupsGet.from_domain_model(
+        groups_by_type, my_product_group, my_support_group
     )
 
     return envelope_json_response(my_groups)

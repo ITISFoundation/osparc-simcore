@@ -88,6 +88,7 @@ async def private_user(
             "first_name": partial_first_name,
             "last_name": "Bond",
             "email": f"james{partial_email}",
+            # Maximum privacy
             "privacy_hide_username": True,
             "privacy_hide_email": True,
             "privacy_hide_fullname": True,
@@ -108,6 +109,7 @@ async def semi_private_user(
             "first_name": partial_first_name,
             "last_name": "Maxwell",
             "email": "j@maxwell.me",
+            # Medium privacy
             "privacy_hide_username": False,
             "privacy_hide_email": True,
             "privacy_hide_fullname": False,  # <--
@@ -128,6 +130,7 @@ async def public_user(
             "first_name": "Taylor",
             "last_name": "Swift",
             "email": f"taylor{partial_email}",
+            # Fully public
             "privacy_hide_username": False,
             "privacy_hide_email": False,
             "privacy_hide_fullname": False,
@@ -406,6 +409,8 @@ async def test_get_profile(
         "label": "osparc",
         "thumbnail": None,
     }
+
+    assert got_profile_groups["support"] is None
 
     sorted_by_group_id = functools.partial(sorted, key=lambda d: d["gid"])
     assert sorted_by_group_id(

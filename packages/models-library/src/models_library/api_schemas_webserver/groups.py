@@ -246,7 +246,7 @@ class MyGroupsGet(OutputSchema):
         cls,
         groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
-        my_support_group: tuple[Group, AccessRightsDict] | None = None,
+        my_support_group: tuple[Group, AccessRightsDict] | None,
     ) -> Self:
         assert groups_by_type.primary  # nosec
         assert groups_by_type.everyone  # nosec

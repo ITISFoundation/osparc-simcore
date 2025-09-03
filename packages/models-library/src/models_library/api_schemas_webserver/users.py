@@ -132,6 +132,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         my_groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
         my_preferences: AggregatedPreferences,
+        my_support_group: tuple[Group, AccessRightsDict] | None,
     ) -> Self:
         data = remap_keys(
             my_profile.model_dump(
@@ -152,7 +153,9 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         )
         return cls(
             **data,
-            groups=MyGroupsGet.from_domain_model(my_groups_by_type, my_product_group),
+            groups=MyGroupsGet.from_domain_model(
+                my_groups_by_type, my_product_group, my_support_group
+            ),
             preferences=my_preferences,
         )
 
