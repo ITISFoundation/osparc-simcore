@@ -297,9 +297,11 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         subclass = self.__get_subclass(class_unique_reference)
         deferred_context = self.__get_deferred_context(start_context)
 
+        retry_count = await subclass.get_retries(deferred_context)
         task_schedule = TaskScheduleModel(
             timeout=await subclass.get_timeout(deferred_context),
-            execution_attempts=await subclass.get_retries(deferred_context) + 1,
+            total_attempts=retry_count,
+            execution_attempts=retry_count + 1,
             class_unique_reference=class_unique_reference,
             start_context=start_context,
             state=TaskState.SCHEDULED,
@@ -467,6 +469,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             sleep_interval = await subclass.get_retry_delay(
                 context=deferred_context,
                 remaining_attempts=task_schedule.execution_attempts,
+                total_attempts=task_schedule.total_attempts,
             )
             await asyncio.sleep(sleep_interval.total_seconds())
 

@@ -47,13 +47,17 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
 
     @classmethod
     async def get_retry_delay(
-        cls, context: DeferredContext, remaining_attempts: NonNegativeInt
+        cls,
+        context: DeferredContext,
+        remaining_attempts: NonNegativeInt,
+        total_attempts: NonNegativeInt,
     ) -> timedelta:
         """
         returns: the delay between eatch retry attempt (default: 0s)
         """
         assert context  # nosec
         assert remaining_attempts  # nosec
+        assert total_attempts  # nosec
         return timedelta(seconds=0)
 
     @classmethod
