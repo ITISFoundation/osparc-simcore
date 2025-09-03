@@ -101,7 +101,9 @@ class GenerateResolvedJsonSchema(GenerateJsonSchema):
     Usage: pydantic_base_model.model_json_schema(schema_generator=GenerateResolvedJsonSchema) returns a json schema where it is guaranteed that all json references are resolved.
     """
 
-    def generate(self, schema: CoreSchema, mode: JsonSchemaMode) -> JsonSchemaValue:
+    def generate(
+        self, schema: CoreSchema, mode: JsonSchemaMode = "validation"
+    ) -> JsonSchemaValue:
         schema_value = super().generate(schema=schema, mode=mode)
         schema_value = jsonref.replace_refs(schema_value, jsonschema=True)
         return JsonSchemaValue(schema_value)
