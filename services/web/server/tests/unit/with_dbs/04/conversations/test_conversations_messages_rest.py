@@ -461,7 +461,7 @@ async def test_conversation_messages_with_database(
     mock_send_email = mocker.patch(
         "simcore_service_webserver.email.email_service.send_email_from_template"
     )
-
+    mocker.patch("simcore_service_webserver.products.products_web.get_current_product")
     assert client.app
 
     # Create a conversation directly via API (no mocks)
