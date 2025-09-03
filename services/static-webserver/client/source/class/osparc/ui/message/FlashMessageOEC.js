@@ -33,6 +33,8 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
     } else {
       const oecAtom = this.getChildControl("oec-atom");
       this.bind("supportId", oecAtom, "label");
+    }
+    if (supportId) {
       this.setSupportId(supportId);
     }
   },
