@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
@@ -16,7 +18,7 @@ from pydantic import EmailStr
 
 from ..users import users_service
 from . import _groups_repository
-from .exceptions import GroupsError
+from .exceptions import GroupNotFoundError, GroupsError
 
 #
 # GROUPS
@@ -71,9 +73,22 @@ async def get_product_group_for_user(
     Returns product's group if user belongs to it, otherwise it
     raises GroupNotFoundError
     """
-    return await _groups_repository.get_product_group_for_user(
-        app, user_id=user_id, product_gid=product_gid
+    return await _groups_repository.get_any_group_for_user(
+        app, user_id=user_id, group_gid=product_gid
     )
+
+
+async def get_support_group_for_user_or_none(
+    app: web.Application, *, user_id: UserID, support_gid: GroupID
+) -> tuple[Group, AccessRightsDict] | None:
+    """
+    Returns support's group if user belongs to it, otherwise it
+    """
+    with suppress(GroupNotFoundError):
+        return await _groups_repository.get_any_group_for_user(
+            app, user_id=user_id, group_gid=support_gid
+        )
+    return None
 
 
 #

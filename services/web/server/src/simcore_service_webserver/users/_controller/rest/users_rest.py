@@ -58,8 +58,6 @@ async def get_my_profile(request: web.Request) -> web.Response:
     assert groups_by_type.primary
     assert groups_by_type.everyone
 
-    my_product_group = None
-
     if product.group_id:
         with suppress(GroupNotFoundError):
             # Product is optional
@@ -68,13 +66,25 @@ async def get_my_profile(request: web.Request) -> web.Response:
                 user_id=req_ctx.user_id,
                 product_gid=product.group_id,
             )
+    else:
+        my_product_group = None
+
+    if product.support_standard_group_id:
+        # Support group is optional
+        my_support_group = await groups_service.get_support_group_for_user_or_none(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            support_gid=product.support_standard_group_id,
+        )
+    else:
+        my_support_group = None
 
     my_profile, preferences = await _users_service.get_my_profile(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 
     profile = MyProfileRestGet.from_domain_model(
-        my_profile, groups_by_type, my_product_group, preferences
+        my_profile, groups_by_type, my_product_group, preferences, my_support_group
     )
 
     return envelope_json_response(profile)

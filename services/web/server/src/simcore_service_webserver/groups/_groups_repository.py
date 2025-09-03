@@ -108,7 +108,7 @@ async def _get_group_and_access_rights_or_raise(
     *,
     caller_id: UserID,
     group_id: GroupID,
-    permission: Literal["read", "write", "delete"] | None,
+    check_permission: Literal["read", "write", "delete"] | None,
 ) -> Row:
     result = await conn.execute(
         sa.select(
@@ -122,8 +122,8 @@ async def _get_group_and_access_rights_or_raise(
     if not row:
         raise GroupNotFoundError(gid=group_id)
 
-    if permission:
-        _check_group_permissions(row, caller_id, group_id, permission)
+    if check_permission:
+        _check_group_permissions(row, caller_id, group_id, check_permission)
 
     return row
 
@@ -274,29 +274,29 @@ async def get_user_group(
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         row = await _get_group_and_access_rights_or_raise(
-            conn, caller_id=user_id, group_id=group_id, permission="read"
+            conn, caller_id=user_id, group_id=group_id, check_permission="read"
         )
         group, access_rights = _to_group_info_tuple(row)
         return group, access_rights
 
 
-async def get_product_group_for_user(
+async def get_any_group_for_user(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
-    product_gid: GroupID,
+    group_gid: GroupID,
 ) -> tuple[Group, AccessRightsDict]:
     """
-    Returns product's group if user belongs to it, otherwise it
+    Returns any group if user belongs to it (even if it has no permissions), otherwise it
     raises GroupNotFoundError
     """
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         row = await _get_group_and_access_rights_or_raise(
             conn,
             caller_id=user_id,
-            group_id=product_gid,
-            permission=None,
+            group_id=group_gid,
+            check_permission=None,
         )
         group, access_rights = _to_group_info_tuple(row)
         return group, access_rights
@@ -363,7 +363,7 @@ async def update_standard_group(
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         row = await _get_group_and_access_rights_or_raise(
-            conn, caller_id=user_id, group_id=group_id, permission="write"
+            conn, caller_id=user_id, group_id=group_id, check_permission="write"
         )
         assert row.gid == group_id  # nosec
         # NOTE: update does not include access-rights
@@ -391,7 +391,7 @@ async def delete_standard_group(
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await _get_group_and_access_rights_or_raise(
-            conn, caller_id=user_id, group_id=group_id, permission="delete"
+            conn, caller_id=user_id, group_id=group_id, check_permission="delete"
         )
 
         await conn.execute(
@@ -581,7 +581,7 @@ async def get_user_in_group(
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
         await _get_group_and_access_rights_or_raise(
-            conn, caller_id=caller_id, group_id=group_id, permission="read"
+            conn, caller_id=caller_id, group_id=group_id, check_permission="read"
         )
 
         # get the user with its permissions
@@ -611,7 +611,7 @@ async def update_user_in_group(
 
         # first check if the group exists
         await _get_group_and_access_rights_or_raise(
-            conn, caller_id=caller_id, group_id=group_id, permission="write"
+            conn, caller_id=caller_id, group_id=group_id, check_permission="write"
         )
 
         # now check the user exists
@@ -651,7 +651,7 @@ async def delete_user_from_group(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
         await _get_group_and_access_rights_or_raise(
-            conn, caller_id=caller_id, group_id=group_id, permission="write"
+            conn, caller_id=caller_id, group_id=group_id, check_permission="write"
         )
 
         # check the user exists
@@ -714,7 +714,7 @@ async def add_new_user_in_group(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         # first check if the group exists
         await _get_group_and_access_rights_or_raise(
-            conn, caller_id=caller_id, group_id=group_id, permission="write"
+            conn, caller_id=caller_id, group_id=group_id, check_permission="write"
         )
 
         query = sa.select(users.c.id)

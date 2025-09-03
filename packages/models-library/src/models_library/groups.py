@@ -39,21 +39,21 @@ class Group(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        everyone = {
+        everyone: JsonDict = {
             "gid": 1,
             "name": "Everyone",
             "type": "everyone",
             "description": "all users",
             "thumbnail": None,
         }
-        user = {
+        user: JsonDict = {
             "gid": 2,
             "name": "User",
             "description": "primary group",
             "type": "primary",
             "thumbnail": None,
         }
-        organization = {
+        organization: JsonDict = {
             "gid": 3,
             "name": "Organization",
             "description": "standard group",
@@ -61,14 +61,14 @@ class Group(BaseModel):
             "thumbnail": None,
             "inclusionRules": {},
         }
-        product = {
+        product: JsonDict = {
             "gid": 4,
             "name": "Product",
             "description": "standard group for products",
             "type": "standard",
             "thumbnail": None,
         }
-        support = {
+        support: JsonDict = {
             "gid": 5,
             "name": "Support",
             "description": "support group",
@@ -76,7 +76,17 @@ class Group(BaseModel):
             "thumbnail": None,
         }
 
-        schema.update({"examples": [everyone, user, organization, product, support]})
+        schema.update(
+            {
+                "examples": [
+                    everyone,
+                    user,
+                    organization,
+                    product,
+                    support,
+                ]
+            }
+        )
 
     model_config = ConfigDict(
         populate_by_name=True, json_schema_extra=_update_json_schema_extra
