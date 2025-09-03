@@ -13605,6 +13605,12 @@ components:
           anyOf:
           - $ref: '#/components/schemas/GroupGet'
           - type: 'null'
+        support:
+          anyOf:
+          - $ref: '#/components/schemas/GroupGet'
+          - type: 'null'
+          description: Group ID of the app support team or None if no support is defined
+            for this product
       type: object
       required:
       - me
@@ -13643,6 +13649,14 @@ components:
           description: Some foundation
           gid: '16'
           label: Blue Fundation
+        support:
+          accessRights:
+            delete: false
+            read: false
+            write: false
+          description: The support team of the application
+          gid: '2'
+          label: Support Team
     MyPermissionGet:
       properties:
         name:
