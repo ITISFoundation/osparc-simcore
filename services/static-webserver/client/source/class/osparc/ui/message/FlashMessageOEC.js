@@ -26,7 +26,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
    * @param {String} supportId
    */
   construct: function(message, duration, supportId) {
-    this.base(arguments, message, "ERROR", duration*2);
+    this.base(arguments, message, "ERROR", duration ? duration*2 : null);
 
     if (osparc.product.Utils.isSupportEnabled()) {
       this.getChildControl("contact-support");
@@ -89,7 +89,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
         releaseTag: osparc.utils.Utils.getReleaseTag(),
         studyId: currentStudy ? currentStudy.getUuid() : "",
       }
-      osparc.utils.Utils.prettifyJson(dataToClipboard);
+      return osparc.utils.Utils.prettifyJson(dataToClipboard);
     },
 
     __copyToClipboard: function() {
@@ -97,12 +97,16 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
     },
 
     __openSupportChat: function() {
-      console.log(this.__getContext());
       const supportCenter = osparc.support.SupportCenter.openWindow();
       supportCenter.openConversation(null);
-      const conversationPage = supportCenter.getChildControl("conversation-page");
-      const conversation = conversationPage.getChildControl("conversation-content");
-      // conversation.
+      if (
+        supportCenter.getChildControl("conversation-page") &&
+        supportCenter.getChildControl("conversation-page").getChildControl("conversation-content") &&
+        supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message") &&
+        supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field")
+      ) {
+        supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(this.__getContext());
+      }
     },
   }
 });
