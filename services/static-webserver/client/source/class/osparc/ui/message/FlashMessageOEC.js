@@ -141,8 +141,11 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
         if (confirmationWindow.getConfirmed()) {
           const extraContext = extraContextTA.getValue()
           const friendlyContext = this.__getSupportFriendlyContext();
-          const text = "Dear Support Team,\n" + extraContext + "\n" + friendlyContext;
+          const text = "Dear Support team,\n" + extraContext + "\n" + friendlyContext;
           textToAddMessageField(text);
+          // This should be an automatic response in the chat
+          const msg = this.tr("Thanks, your report has been sent.<br>Our support team will get back to you.");
+          osparc.FlashMessenger.logAs(msg, "INFO");
         } else {
           supportCenter.close();
         }
