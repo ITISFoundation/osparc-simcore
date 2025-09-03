@@ -62,10 +62,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       let control;
       switch (id) {
         case "add-comment-layout": {
-          const grid = new qx.ui.layout.Grid(8, 5);
-          grid.setColumnWidth(0, 32);
-          grid.setColumnFlex(1, 1);
-          control = new qx.ui.container.Composite(grid);
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
           this._add(control, {
             flex: 1
           });
@@ -77,13 +74,12 @@ qx.Class.define("osparc.conversation.AddMessage", {
           const myUsername = authData.getUsername();
           const myEmail = authData.getEmail();
           control.set({
-            source: osparc.utils.Avatar.emailToThumbnail(myEmail, myUsername, 32)
+            source: osparc.utils.Avatar.emailToThumbnail(myEmail, myUsername, 32),
+            alignX: "center",
+            alignY: "middle",
+            marginRight: 8,
           });
-          const layout = this.getChildControl("add-comment-layout");
-          layout.add(control, {
-            row: 0,
-            column: 0
-          });
+          this.getChildControl("add-comment-layout").add(control);
           break;
         }
         case "comment-field":
@@ -96,20 +92,38 @@ qx.Class.define("osparc.conversation.AddMessage", {
             }
           }, this);
           control.getChildControl("buttons").exclude();
-          const layout = this.getChildControl("add-comment-layout");
-          layout.add(control, {
-            row: 0,
-            column: 1
+          control.getChildControl("text-area").getContentElement().setStyles({
+            "border-top-right-radius": "0px", // no roundness there to match the arrow button
+          });
+          this.getChildControl("add-comment-layout").add(control, {
+            flex: 1
           });
           break;
         case "add-comment-button":
-          control = new qx.ui.form.Button(this.tr("Add message")).set({
-            appearance: "form-button",
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/16").set({
+            backgroundColor: "input_background",
             allowGrowX: false,
             alignX: "right"
           });
+          control.getContentElement().setStyles({
+            "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("default-button-active"),
+            "border-top-left-radius": "0px", // no roundness there to match the message field
+            "border-bottom-left-radius": "0px", // no roundness there to match the message field
+            "border-bottom-right-radius": "0px", // no roundness there to match the message field
+          });
+          const commentField = this.getChildControl("comment-field").getChildControl("text-area");
+          commentField.addListener("focus", () => {
+            control.getContentElement().setStyles({
+              "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("product-color"),
+            });
+          }, this);
+          commentField.addListener("focusout", () => {
+            control.getContentElement().setStyles({
+              "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("default-button-active"),
+            });
+          }, this);
           control.addListener("execute", this.__addCommentPressed, this);
-          this._add(control);
+          this.getChildControl("add-comment-layout").add(control);
           break;
         case "notify-user-button":
           control = new qx.ui.form.Button("🔔 " + this.tr("Notify user")).set({
