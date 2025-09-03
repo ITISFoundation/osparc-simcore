@@ -21,13 +21,9 @@ _logger = logging.getLogger(__name__)
 _JSON_CONTENT_TYPE = "application/json"
 _UNKNOWN_ERROR_MESSAGE = "Unknown error occurred"
 
-_FOGBUGZ_TIMEOUT: float = Field(
-    default=45.0, description="API request timeout in seconds"
-)
-
 
 class FogbugzCaseCreate(BaseModel):
-    fogbugz_project_id: str = Field(description="Project ID in Fogbugz")
+    fogbugz_project_id: int = Field(description="Project ID in Fogbugz")
     title: str = Field(description="Case title")
     description: str = Field(description="Case description/first comment")
 
@@ -36,7 +32,7 @@ class FogbugzRestClient:
     """REST client for Fogbugz API"""
 
     def __init__(self, api_token: SecretStr, base_url: AnyUrl) -> None:
-        self._client = httpx.AsyncClient(timeout=_FOGBUGZ_TIMEOUT)
+        self._client = httpx.AsyncClient()
         self._api_token = api_token
         self._base_url = base_url
 
@@ -57,7 +53,7 @@ class FogbugzRestClient:
         json_payload = {
             "cmd": "new",
             "token": self._api_token.get_secret_value(),
-            "ixProject": data.fogbugz_project_id,
+            "ixProject": f"{data.fogbugz_project_id}",
             "sTitle": data.title,
             "sEvent": data.description,
         }
