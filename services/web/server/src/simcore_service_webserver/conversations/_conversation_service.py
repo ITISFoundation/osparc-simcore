@@ -285,7 +285,6 @@ async def create_fogbugz_case_for_support_conversation(
         project_id=None,
         conversation_id=conversation.conversation_id,
         updates=ConversationPatchDB(
-            name=None,
             extra_context=conversation.extra_context
             | {
                 "fogbugz_case_url": urljoin(
