@@ -227,14 +227,16 @@ qx.Class.define("osparc.support.ConversationPage", {
       renamer.open();
     },
 
+    __getAddMessageField: function() {
+      return this.getChildControl("conversation-content") &&
+        this.getChildControl("conversation-content").getChildControl("add-message");
+    },
+
     postMessage: function(message) {
-      if (
-        this.getChildControl("conversation-content") &&
-        this.getChildControl("conversation-content").getChildControl("add-message") &&
-        this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field")
-      ) {
-        this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(message);
-        return this.getChildControl("conversation-content").getChildControl("add-message").addComment();
+      const addMessage = this.__getAddMessageField();
+      if (addMessage && addMessage.getChildControl("comment-field")) {
+        addMessage.getChildControl("comment-field").setText(message);
+        return addMessage.addComment();
       }
       return Promise.reject();
     },
