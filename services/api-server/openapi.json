@@ -5457,7 +5457,7 @@
           "function_jobs"
         ],
         "summary": "List Function Jobs",
-        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
+        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`\n\nAdded in *version 0.13.0*: add include_status bool query parameter to list function jobs with their status",
         "operationId": "list_function_jobs",
         "security": [
           {
