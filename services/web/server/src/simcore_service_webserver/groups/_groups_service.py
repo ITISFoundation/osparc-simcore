@@ -297,10 +297,17 @@ async def add_user_in_group(
     Raises:
         UserInGroupNotFoundError
         GroupsException
+        GroupNotFoundError
+        UserInsufficientRightsError
     """
     if not _only_one_true(new_by_user_id, new_by_user_name, new_by_user_email):
         msg = "Invalid method call, required one of these: user id, username or user email, none provided"
         raise GroupsError(msg=msg)
+
+    # First check if caller has write access to the group
+    await _groups_repository.check_group_write_access(
+        app, caller_id=user_id, group_id=group_id
+    )
 
     # get target user to add to group
     if new_by_user_email:
