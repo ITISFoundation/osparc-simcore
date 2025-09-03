@@ -166,7 +166,7 @@ qx.Class.define("osparc.support.ConversationPage", {
                   extraContextText += appointment;
                 } else {
                   // already set
-                  extraContextText += osparc.utils.Utils.formatDateAndTime(appointment);
+                  extraContextText += osparc.utils.Utils.formatDateAndTime(new Date(appointment));
                 }
               }
             }
