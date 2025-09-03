@@ -24,6 +24,7 @@ pact-python
 pyinstrument
 pytest
 pytest-asyncio
+pytest-celery
 pytest-cov
 pytest-docker
 pytest-mock
