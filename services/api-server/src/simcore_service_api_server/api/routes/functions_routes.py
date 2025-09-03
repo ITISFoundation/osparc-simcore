@@ -1,3 +1,5 @@
+import contextlib
+
 # pylint: disable=too-many-positional-arguments
 from collections.abc import Callable
 from typing import Annotated, Final, Literal
@@ -16,19 +18,34 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
 )
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
+from models_library.functions import FunctionJobCollection, FunctionJobID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata, TasksQueue
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
+from ...celery_worker.worker_tasks.functions_tasks import function_map as map_task
+from ...celery_worker.worker_tasks.functions_tasks import (
+    run_function as run_function_task,
+)
+from ...exceptions.function_errors import FunctionJobCacheNotFoundError
+from ...models.domain.functions import PreRegisteredFunctionJobData
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import JobPricingSpecification
 from ...services_rpc.wb_api_server import WbApiRpcClient
-from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.authentication import (
+    Identity,
+    get_current_identity,
+    get_current_user_id,
+    get_product_name,
+)
+from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager
 from ..dependencies.services import (
     get_function_job_service,
     get_function_service,
@@ -313,16 +330,19 @@ async def validate_function_inputs(
 )
 async def run_function(  # noqa: PLR0913
     request: Request,
+    user_identity: Annotated[Identity, Depends(get_current_identity)],
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     function_inputs: FunctionInputs,
     function_service: Annotated[FunctionService, Depends(get_function_service)],
-    function_jobs_service: Annotated[
+    function_job_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJob:
+    # preprocess inputs
+    task_manager = get_task_manager(request.app)
     parent_project_uuid = (
         x_simcore_parent_project_uuid
         if isinstance(x_simcore_parent_project_uuid, ProjectID)
@@ -335,14 +355,55 @@ async def run_function(  # noqa: PLR0913
     )
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
+    job_inputs = await function_job_service.create_function_job_inputs(
+        function=to_run_function, function_inputs=function_inputs
+    )
 
-    return await function_jobs_service.run_function(
+    # check if results are cached
+    with contextlib.suppress(FunctionJobCacheNotFoundError):
+        return await function_job_service.get_cached_function_job(
+            function=to_run_function,
+            job_inputs=job_inputs,
+        )
+
+    pre_registered_function_job_data = (
+        await function_job_service.pre_register_function_job(
+            function=to_run_function,
+            job_inputs=job_inputs,
+        )
+    )
+
+    # run function in celery task
+    job_filter = AsyncJobFilter(
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
+        client_name=ASYNC_JOB_CLIENT_NAME,
+    )
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_name = run_function_task.__name__
+
+    task_uuid = await task_manager.submit_task(
+        TaskMetadata(
+            name=task_name,
+            ephemeral=True,
+            queue=TasksQueue.API_WORKER_QUEUE,
+        ),
+        task_filter=task_filter,
+        user_identity=user_identity,
         function=to_run_function,
-        function_inputs=function_inputs,
+        pre_registered_function_job_data=pre_registered_function_job_data,
         pricing_spec=pricing_spec,
         job_links=job_links,
         x_simcore_parent_project_uuid=parent_project_uuid,
         x_simcore_parent_node_id=parent_node_id,
+    )
+
+    return await function_job_service.patch_registered_function_job(
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
+        function_job_id=pre_registered_function_job_data.function_job_id,
+        function_class=to_run_function.function_class,
+        job_creation_task_id=TaskID(task_uuid),
     )
 
 
@@ -385,6 +446,7 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
 )
 async def map_function(  # noqa: PLR0913
     request: Request,
+    user_identity: Annotated[Identity, Depends(get_current_identity)],
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     function_inputs_list: FunctionInputsList,
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
@@ -392,10 +454,12 @@ async def map_function(  # noqa: PLR0913
         FunctionJobService, Depends(get_function_job_service)
     ],
     function_service: Annotated[FunctionService, Depends(get_function_service)],
+    web_api_rpc_client: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
 
+    task_manager = get_task_manager(request.app)
     parent_project_uuid = (
         x_simcore_parent_project_uuid
         if isinstance(x_simcore_parent_project_uuid, ProjectID)
@@ -407,14 +471,75 @@ async def map_function(  # noqa: PLR0913
         else None
     )
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
-
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
 
-    return await function_jobs_service.map_function(
+    job_inputs_list = [
+        await function_jobs_service.create_function_job_inputs(
+            function=to_run_function, function_inputs=function_inputs
+        )
+        for function_inputs in function_inputs_list
+    ]
+
+    job_ids: list[FunctionJobID] = []
+    pre_registered_function_job_data_list: list[PreRegisteredFunctionJobData] = []
+
+    for job_inputs in job_inputs_list:
+        try:
+            cached_job = await function_jobs_service.get_cached_function_job(
+                function=to_run_function,
+                job_inputs=job_inputs,
+            )
+            job_ids.append(cached_job.uid)
+        except FunctionJobCacheNotFoundError:
+            data = await function_jobs_service.pre_register_function_job(
+                function=to_run_function,
+                job_inputs=job_inputs,
+            )
+            pre_registered_function_job_data_list.append(data)
+            job_ids.append(data.function_job_id)
+
+    # run map in celery task
+    job_filter = AsyncJobFilter(
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
+        client_name=ASYNC_JOB_CLIENT_NAME,
+    )
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_name = map_task.__name__
+
+    task_uuid = await task_manager.submit_task(
+        TaskMetadata(
+            name=task_name,
+            ephemeral=True,
+            queue=TasksQueue.API_WORKER_QUEUE,
+        ),
+        task_filter=task_filter,
+        user_identity=user_identity,
         function=to_run_function,
-        function_inputs_list=function_inputs_list,
+        pre_registered_function_job_data_list=pre_registered_function_job_data_list,
         pricing_spec=pricing_spec,
         job_links=job_links,
         x_simcore_parent_project_uuid=parent_project_uuid,
         x_simcore_parent_node_id=parent_node_id,
+    )
+
+    # patch pre-registered function jobs
+    for data in pre_registered_function_job_data_list:
+        await function_jobs_service.patch_registered_function_job(
+            user_id=user_identity.user_id,
+            product_name=user_identity.product_name,
+            function_job_id=data.function_job_id,
+            function_class=to_run_function.function_class,
+            job_creation_task_id=TaskID(task_uuid),
+        )
+
+    function_job_collection_description = f"Function job collection of map of function {to_run_function.uid} with {len(pre_registered_function_job_data_list)} inputs"
+    return await web_api_rpc_client.register_function_job_collection(
+        function_job_collection=FunctionJobCollection(
+            title="Function job collection of function map",
+            description=function_job_collection_description,
+            job_ids=job_ids,
+        ),
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
     )
