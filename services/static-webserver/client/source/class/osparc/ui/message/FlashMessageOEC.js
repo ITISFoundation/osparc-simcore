@@ -99,8 +99,26 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
     },
 
     __openSupportChat: function() {
+      const caption = this.tr("Something went wrong");
+      const introText = this.tr("Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster.");
+      const dialog = new osparc.ui.window.Confirmation(introText);
+      dialog.setCaption(caption);
+      dialog.getChildControl("message-label").setFont("text-13");
+      const extraContext = new qx.ui.form.TextArea().set({
+        font: "text-13",
+        autoSize: true,
+        minHeight: 70,
+        maxHeight: 140
+      });
+      dialog.addWidget(extraContext);
+      dialog.addCancelButton();
+      dialog.setConfirmText(this.tr("Send Report"));
+      dialog.open();
+
       const supportCenter = osparc.support.SupportCenter.openWindow();
       supportCenter.openConversation(null);
+
+      /*
       if (
         supportCenter.getChildControl("conversation-page") &&
         supportCenter.getChildControl("conversation-page").getChildControl("conversation-content") &&
@@ -109,6 +127,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
       ) {
         supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(this.__getContext());
       }
+      */
     },
   }
 });
