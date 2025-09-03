@@ -249,7 +249,8 @@ class BaseCompScheduler(ABC):
                 user_id=user_id,
                 project_id=project_id,
                 log=user_message(
-                    f"Pipeline run {run_result.value} for iteration {iteration} is done with {run_result.value} state"
+                    f"Project pipeline execution for iteration {iteration} has completed with status: {run_result.value}",
+                    _version=1,
                 ),
                 log_level=logging.INFO,
             )
@@ -865,7 +866,8 @@ class BaseCompScheduler(ABC):
                 user_id,
                 project_id,
                 log=user_message(
-                    "Unexpected error while scheduling computational tasks! TIP: contact osparc support if this does not resolve automatically."
+                    "An unexpected error occurred during task scheduling. Please contact oSparc support if this issue persists.",
+                    _version=1,
                 ),
                 log_level=logging.ERROR,
             )
@@ -1003,7 +1005,8 @@ class BaseCompScheduler(ABC):
                 for task in tasks_waiting_for_cluster:
                     task.state = RunningState.FAILED
                 msg = user_message(
-                    "Timed-out waiting for computational cluster! Please try again and/or contact Osparc support."
+                    "The system has timed out while waiting for computational resources. Please try running your project again or contact oSparc support if this issue persists.",
+                    _version=1,
                 )
                 _logger.error(msg)
                 await publish_project_log(
