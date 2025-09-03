@@ -27,6 +27,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from settings_library.redis import RedisSettings
 from simcore_service_api_server.celery_worker.worker_main import setup_worker_tasks
+from simcore_service_api_server.clients import celery_task_manager
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
@@ -60,8 +61,11 @@ async def mocked_log_streamer_setup(mocker: MockerFixture) -> MockerFixture:
 def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Celery:
     celery_app = Celery(**celery_config)
 
-    for module in ("simcore_service_api_server.api.dependencies.celery.create_app",):
-        mocker.patch(module, return_value=celery_app)
+    mocker.patch.object(
+        celery_task_manager,
+        celery_task_manager.create_app.__name__,
+        lambda settings: celery_app,
+    )
 
     return celery_app
 
