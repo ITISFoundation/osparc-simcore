@@ -164,7 +164,7 @@ async def test_get_profile(
     assert got_profile_groups["product"] == {
         "accessRights": {"delete": False, "read": False, "write": False},
         "description": "osparc product group",
-        "gid": 2,
+        "gid": 3,
         "label": "osparc",
         "thumbnail": None,
     }
