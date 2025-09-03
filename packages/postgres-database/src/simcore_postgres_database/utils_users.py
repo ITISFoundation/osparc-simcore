@@ -318,7 +318,11 @@ class UsersRepo:
             return bool(pre_registered)
 
     async def get_billing_details(
-        self, connection: AsyncConnection | None = None, *, user_id: int
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        product_name: str,
+        user_id: int,
     ) -> Any | None:
         async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
@@ -339,7 +343,10 @@ class UsersRepo:
                         users.c.id == users_pre_registration_details.c.user_id,
                     )
                 )
-                .where(users.c.id == user_id)
+                .where(
+                    (users.c.id == user_id)
+                    & (users_pre_registration_details.c.product_name == product_name)
+                )
                 .order_by(users_pre_registration_details.c.created.desc())
                 .limit(1)
                 # NOTE: might want to copy billing details to users table??

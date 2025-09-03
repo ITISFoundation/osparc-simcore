@@ -190,11 +190,14 @@ async def list_user_permissions(
 
 
 async def get_user_invoice_address(
-    app: web.Application, *, user_id: UserID
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
 ) -> UserInvoiceAddress:
     user_billing_details: UserBillingDetails = (
         await _users_repository.get_user_billing_details(
-            get_asyncpg_engine(app), user_id=user_id
+            get_asyncpg_engine(app), user_id=user_id, product_name=product_name
         )
     )
     _user_billing_country = pycountry.countries.lookup(user_billing_details.country)

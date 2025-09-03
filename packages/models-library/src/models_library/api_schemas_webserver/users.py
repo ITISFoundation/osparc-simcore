@@ -62,9 +62,10 @@ class MyProfilePrivacyPatch(InputSchema):
     hide_email: bool | None = None
 
 
-class MyProfileProvidedDetails(OutputSchema):
-    """Details provided upon registration"""
+class MyProfileAddressGet(OutputSchema):
+    """Details provided upon registration and used e.g. for invoicing"""
 
+    institution: str | None
     address: str | None
     city: str | None
     state: Annotated[str | None, Field(description="State, province, canton, ...")]
@@ -96,7 +97,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
 
     privacy: MyProfilePrivacyGet
     preferences: AggregatedPreferences
-    provided: MyProfileProvidedDetails | None = None
+    contact: MyProfileAddressGet | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
