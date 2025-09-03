@@ -29,19 +29,23 @@ qx.Class.define("osparc.ui.form.DateTimeField", {
       maxHeight: 26
     });
 
+    const now = new Date();
+
     // Date selector
     const dateFormat = new qx.util.format.DateFormat("dd/MM/yyyy");
     this.__dateField = new qx.ui.form.DateField();
     this.__dateField.setDateFormat(dateFormat);
-    this.__dateField.setValue(new Date());
+    this.__dateField.setValue(now);
     this._add(this.__dateField);
 
     // Hour selector
     this.__hourSpinner = new qx.ui.form.Spinner(0, 12, 23);
+    this.__hourSpinner.setValue(now.getHours());
     this._add(this.__hourSpinner);
 
     // Minute selector
     this.__minuteSpinner = new qx.ui.form.Spinner(0, 0, 59);
+    this.__minuteSpinner.setValue(now.getMinutes());
     this._add(this.__minuteSpinner);
 
     // Sync changes back to value

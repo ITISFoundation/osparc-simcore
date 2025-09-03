@@ -235,7 +235,7 @@ qx.Class.define("osparc.support.ConversationPage", {
     __openAppointmentDetails: function() {
       const dateTimeField = new osparc.ui.form.DateTimeField();
       const title = this.tr("Choose a Date and Time");
-      const win = osparc.ui.window.Window.popUpInWindow(dateTimeField, title, 260, 65).set({
+      const win = osparc.ui.window.Window.popUpInWindow(dateTimeField, title, 260, 26).set({
         clickAwayClose: false,
         resizable: false,
         showClose: true
