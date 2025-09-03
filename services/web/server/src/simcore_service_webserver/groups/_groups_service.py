@@ -16,6 +16,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
 
+from ..products.models import Product
 from ..users import users_service
 from . import _groups_repository
 from .exceptions import GroupNotFoundError, GroupsError
@@ -89,6 +90,43 @@ async def get_support_group_for_user_or_none(
             app, user_id=user_id, group_gid=support_gid
         )
     return None
+
+
+async def get_user_profile_groups(
+    app: web.Application, *, user_id: UserID, product: Product
+) -> tuple[
+    GroupsByTypeTuple,
+    tuple[Group, AccessRightsDict] | None,
+    tuple[Group, AccessRightsDict] | None,
+]:
+    """
+    Get all groups needed for user profile including standard groups,
+    product group, and support group.
+
+    Returns:
+        Tuple of (groups_by_type, my_product_group, my_support_group)
+    """
+    groups_by_type = await list_user_groups_with_read_access(app, user_id=user_id)
+
+    my_product_group = None
+    if product.group_id:  # Product group is optional
+        with suppress(GroupNotFoundError):
+            my_product_group = await get_product_group_for_user(
+                app=app,
+                user_id=user_id,
+                product_gid=product.group_id,
+            )
+
+    my_support_group = None
+    if product.support_standard_group_id:  # Support group is optional
+        # NOTE: my_support_group can be part of groups_by_type.standard!
+        my_support_group = await get_support_group_for_user_or_none(
+            app=app,
+            user_id=user_id,
+            support_gid=product.support_standard_group_id,
+        )
+
+    return groups_by_type, my_product_group, my_support_group
 
 
 #

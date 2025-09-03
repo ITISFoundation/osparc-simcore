@@ -1,5 +1,4 @@
 import logging
-from contextlib import suppress
 
 from aiohttp import web
 from models_library.api_schemas_webserver.groups import (
@@ -30,7 +29,6 @@ from ._common.schemas import (
     GroupsRequestContext,
     GroupsUsersPathParams,
 )
-from .exceptions import GroupNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -49,32 +47,16 @@ async def list_groups(request: web.Request):
     product: Product = products_web.get_current_product(request)
     req_ctx = GroupsRequestContext.model_validate(request)
 
-    groups_by_type = await _groups_service.list_user_groups_with_read_access(
-        request.app, user_id=req_ctx.user_id
+    (
+        groups_by_type,
+        my_product_group,
+        my_support_group,
+    ) = await _groups_service.get_user_profile_groups(
+        request.app, user_id=req_ctx.user_id, product=product
     )
 
-    assert groups_by_type.primary
-    assert groups_by_type.everyone
-
-    if product.group_id:
-        with suppress(GroupNotFoundError):
-            # Product is optional
-            my_product_group = await _groups_service.get_product_group_for_user(
-                app=request.app,
-                user_id=req_ctx.user_id,
-                product_gid=product.group_id,
-            )
-    else:
-        my_product_group = None
-
-    if product.support_standard_group_id:
-        my_support_group = await _groups_service.get_support_group_for_user_or_none(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            support_gid=product.support_standard_group_id,
-        )
-    else:
-        my_support_group = None
+    assert groups_by_type.primary  # nosec
+    assert groups_by_type.everyone  # nosec
 
     my_groups = MyGroupsGet.from_domain_model(
         groups_by_type, my_product_group, my_support_group
