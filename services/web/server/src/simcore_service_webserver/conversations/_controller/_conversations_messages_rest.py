@@ -1,4 +1,5 @@
 import functools
+import json
 import logging
 from typing import Any
 
@@ -22,6 +23,7 @@ from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -29,13 +31,16 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.users import users_service
 
 from ..._meta import API_VTAG as VTAG
 from ...email import email_service
+from ...fogbugz import get_fogbugz_rest_client
+from ...fogbugz._client import FogbugzCaseCreate
+from ...fogbugz.settings import FogbugzSettings
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...products import products_web
+from ...users import users_service
 from ...utils_aiohttp import envelope_json_response
 from .. import _conversation_message_service, _conversation_service
 from ._common import ConversationPathParams, raise_unsupported_type
@@ -107,10 +112,60 @@ async def create_conversation_message(request: web.Request):
     )
 
     # NOTE: This is done here in the Controller layer, as the interface around email currently needs request
-    if is_first_message:
+    product = products_web.get_current_product(request)
+    fogbugz_settings_or_none: FogbugzSettings | None = request.app[
+        APP_SETTINGS_KEY
+    ].WEBSERVER_FOGBUGZ
+    if (
+        product.support_standard_group_id
+        and fogbugz_settings_or_none is not None
+        and is_first_message
+    ):
+        _logger.debug(
+            "Support settings available and FogBugz client configured, creating FogBugz case."
+        )
+        assert product.support_assigned_fogbugz_project_id  # nosec
+
         try:
             user = await users_service.get_user(request.app, req_ctx.user_id)
-            product = products_web.get_current_product(request)
+            _url = request.url
+            _conversation_url = f"{_url.scheme}://{_url.host}/#/conversation/{path_params.conversation_id}"
+
+            _description = f"""
+            Dear Support Team,
+
+            We have received a support request from {user["first_name"]} {user["last_name"]} ({user["email"]}) on {request.host}.
+
+            All communication should take place in the Platform Support Center at the following link: {_conversation_url}
+
+            First message content: {message.content}
+
+            Extra content: {json.dumps(_conversation.extra_context)}
+            """
+
+            _fogbugz_client = get_fogbugz_rest_client(request.app)
+            _fogbugz_case_data = FogbugzCaseCreate(
+                fogbugz_project_id=product.support_assigned_fogbugz_project_id,
+                title=f"Request for Support on {request.host}",
+                description=_description,
+            )
+            await _fogbugz_client.create_case(_fogbugz_case_data)
+        except Exception:  # pylint: disable=broad-except
+            _logger.exception(
+                "Failed to create support request FogBugz case for conversation %s.",
+                _conversation.conversation_id,
+            )
+
+    elif (
+        product.support_standard_group_id
+        and fogbugz_settings_or_none is None
+        and is_first_message
+    ):
+        _logger.debug(
+            "Support settings available, but no FogBugz client configured, sending email instead to create FogBugz case."
+        )
+        try:
+            user = await users_service.get_user(request.app, req_ctx.user_id)
             template_name = "request_support.jinja2"
             destination_email = product.support_email
             email_template_path = await products_web.get_product_template_path(
@@ -141,6 +196,8 @@ async def create_conversation_message(request: web.Request):
                 template_name,
                 destination_email,
             )
+    else:
+        _logger.debug("No support settings available, skipping FogBugz case creation.")
 
     data = ConversationMessageRestGet.from_domain_model(message)
     return envelope_json_response(data, web.HTTPCreated)
