@@ -147,18 +147,37 @@ qx.Class.define("osparc.support.ConversationPage", {
       }
 
       const extraContextLabel = this.getChildControl("conversation-extra-content");
-      const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
-      if (conversation && amISupporter) {
-        const extraContext = conversation.getExtraContext();
-        if (extraContext && Object.keys(extraContext).length) {
-          let extraContextText = `Ticket ID: ${conversation.getConversationId()}`;
-          const contextProjectId = conversation.getContextProjectId();
-          if (contextProjectId) {
-            extraContextText += `<br>Project ID: ${contextProjectId}`;
+      if (conversation) {
+        const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
+        conversation.bind("extraContext", extraContextLabel, "value", {
+          converter: extraContext => {
+            let extraContextText = "";
+            if (extraContext && Object.keys(extraContext).length) {
+              extraContextText = `Ticket ID: ${conversation.getConversationId()}`;
+              const contextProjectId = conversation.getContextProjectId();
+              if (contextProjectId && amISupporter) {
+                extraContextText += `<br>Project ID: ${contextProjectId}`;
+              }
+              const appointment = conversation.getAppointment();
+              if (appointment) {
+                extraContextText += "<br>Appointment: ";
+                if (appointment === "requested") {
+                  // still pending
+                  extraContextText += appointment;
+                } else {
+                  // already set
+                  extraContextText += osparc.utils.Utils.formatDateAndTime(appointment);
+                }
+              }
+            }
+            return extraContextText;
           }
-          extraContextLabel.setValue(extraContextText);
-        }
-        extraContextLabel.show();
+        });
+        extraContextLabel.bind("value", extraContextLabel, "visibility", {
+          converter: extraContext => {
+            return extraContext ? "visible" : "excluded";
+          }
+        });
       } else {
         extraContextLabel.exclude();
       }

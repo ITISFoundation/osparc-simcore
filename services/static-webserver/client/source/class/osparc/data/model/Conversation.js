@@ -291,6 +291,13 @@ qx.Class.define("osparc.data.model.Conversation", {
         return this.getExtraContext()["projectId"];
       }
       return null;
-    }
+    },
+
+    getAppointment: function() {
+      if (this.getExtraContext() && "appointment" in this.getExtraContext()) {
+        return this.getExtraContext()["appointment"];
+      }
+      return null;
+    },
   },
 });
