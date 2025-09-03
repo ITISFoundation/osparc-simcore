@@ -14,7 +14,7 @@ from contextlib import suppress
 from copy import deepcopy
 from typing import Any
 
-import jsonref
+import jsonref  # type: ignore[import-untyped]
 import jsonschema
 from jsonschema import validators
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue
