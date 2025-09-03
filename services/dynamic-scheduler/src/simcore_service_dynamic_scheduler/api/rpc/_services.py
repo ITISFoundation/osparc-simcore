@@ -20,7 +20,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWasNotFoundError,
 )
 
-from ...services import scheduler_interface
+from ...services import common_interface
 
 router = RPCRouter()
 
@@ -29,7 +29,7 @@ router = RPCRouter()
 async def list_tracked_dynamic_services(
     app: FastAPI, *, user_id: UserID | None = None, project_id: ProjectID | None = None
 ) -> list[DynamicServiceGet]:
-    return await scheduler_interface.list_tracked_dynamic_services(
+    return await common_interface.list_tracked_dynamic_services(
         app, user_id=user_id, project_id=project_id
     )
 
@@ -38,14 +38,14 @@ async def list_tracked_dynamic_services(
 async def get_service_status(
     app: FastAPI, *, node_id: NodeID
 ) -> NodeGet | DynamicServiceGet | NodeGetIdle:
-    return await scheduler_interface.get_service_status(app, node_id=node_id)
+    return await common_interface.get_service_status(app, node_id=node_id)
 
 
 @router.expose()
 async def run_dynamic_service(
     app: FastAPI, *, dynamic_service_start: DynamicServiceStart
 ) -> NodeGet | DynamicServiceGet:
-    return await scheduler_interface.run_dynamic_service(
+    return await common_interface.run_dynamic_service(
         app, dynamic_service_start=dynamic_service_start
     )
 
@@ -59,7 +59,7 @@ async def run_dynamic_service(
 async def stop_dynamic_service(
     app: FastAPI, *, dynamic_service_stop: DynamicServiceStop
 ) -> None:
-    return await scheduler_interface.stop_dynamic_service(
+    return await common_interface.stop_dynamic_service(
         app, dynamic_service_stop=dynamic_service_stop
     )
 
@@ -68,25 +68,25 @@ async def stop_dynamic_service(
 async def get_project_inactivity(
     app: FastAPI, *, project_id: ProjectID, max_inactivity_seconds: NonNegativeInt
 ) -> GetProjectInactivityResponse:
-    return await scheduler_interface.get_project_inactivity(
+    return await common_interface.get_project_inactivity(
         app, project_id=project_id, max_inactivity_seconds=max_inactivity_seconds
     )
 
 
 @router.expose()
 async def restart_user_services(app: FastAPI, *, node_id: NodeID) -> None:
-    await scheduler_interface.restart_user_services(app, node_id=node_id)
+    await common_interface.restart_user_services(app, node_id=node_id)
 
 
 @router.expose()
 async def retrieve_inputs(
     app: FastAPI, *, node_id: NodeID, port_keys: list[ServicePortKey]
 ) -> RetrieveDataOutEnveloped:
-    return await scheduler_interface.retrieve_inputs(
+    return await common_interface.retrieve_inputs(
         app, node_id=node_id, port_keys=port_keys
     )
 
 
 @router.expose()
 async def update_projects_networks(app: FastAPI, *, project_id: ProjectID) -> None:
-    await scheduler_interface.update_projects_networks(app, project_id=project_id)
+    await common_interface.update_projects_networks(app, project_id=project_id)
