@@ -7,7 +7,7 @@
 
 
 import functools
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from copy import deepcopy
 from http import HTTPStatus
 from typing import Any
@@ -21,10 +21,10 @@ from common_library.users_enums import UserRole
 from models_library.api_schemas_webserver.users import (
     MyProfileRestGet,
 )
+from models_library.groups import AccessRightsDict
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -32,7 +32,7 @@ from simcore_service_webserver.user_preferences._service import (
     get_frontend_user_preferences_aggregation,
 )
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
 @pytest.fixture
@@ -50,12 +50,13 @@ def app_environment(
     )
 
 
-@pytest.fixture(scope="module")
-def support_group(
-    postgres_db: sa.engine.Engine,
+@pytest.fixture
+async def support_group(
+    asyncpg_engine: AsyncEngine,
     product_name: str,
-) -> Iterator[dict[str, Any]]:
+) -> AsyncIterator[dict[str, Any]]:
     """Creates a standard support group and assigns it to the current product"""
+    from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
     from simcore_postgres_database.models.groups import groups
     from simcore_postgres_database.models.products import products
 
@@ -66,8 +67,9 @@ def support_group(
         "type": "STANDARD",
     }
 
-    with sync_insert_and_get_row_lifespan(
-        postgres_db,
+    # pylint: disable=contextmanager-generator-missing-cleanup
+    async with insert_and_get_row_lifespan(
+        asyncpg_engine,
         table=groups,
         values=group_values,
         pk_col=groups.c.gid,
@@ -75,14 +77,15 @@ def support_group(
         group_id = group_row["gid"]
 
         # Update product to set support_standard_group_id
-        with postgres_db.begin() as conn:
-            conn.execute(
+        async with asyncpg_engine.begin() as conn:
+            await conn.execute(
                 sa.update(products)
                 .where(products.c.name == product_name)
                 .values(support_standard_group_id=group_id)
             )
 
         yield group_row
+        # group will be deleted after test
 
 
 @pytest.mark.parametrize(
@@ -131,7 +134,7 @@ async def test_access_update_profile(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_get_profile(
+async def test_get_profile_user_not_in_support_group(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
@@ -191,6 +194,81 @@ async def test_get_profile(
     assert profile.preferences == await get_frontend_user_preferences_aggregation(
         client.app, user_id=logged_user["id"], product_name="osparc"
     )
+
+
+@pytest.mark.test
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_profile_user_in_support_group(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    primary_group: dict[str, Any],
+    standard_groups: list[dict[str, Any]],
+    all_group: dict[str, str],
+    support_group: dict[str, Any],
+):
+    assert client.app
+    from simcore_service_webserver.groups import _groups_repository
+
+    # Now add user to support group with read-only access
+    await _groups_repository.add_new_user_in_group(
+        client.app,
+        group_id=support_group["gid"],
+        new_user_id=logged_user["id"],
+        access_rights=AccessRightsDict(read=True, write=False, delete=False),
+    )
+
+    url = client.app.router["get_my_profile"].url_for()
+    assert url.path == "/v0/me"
+
+    resp = await client.get(f"{url}")
+    data, error = await assert_status(resp, status.HTTP_200_OK)
+
+    assert not error
+    profile = MyProfileRestGet.model_validate(data)
+
+    assert profile.login == logged_user["email"]
+    assert profile.first_name == logged_user.get("first_name", None)
+    assert profile.last_name == logged_user.get("last_name", None)
+    assert profile.role == user_role.name
+    assert profile.groups
+    assert profile.expiration_date is None
+
+    got_profile_groups = profile.groups.model_dump(**RESPONSE_MODEL_POLICY, mode="json")
+    assert got_profile_groups["me"] == primary_group
+    assert got_profile_groups["all"] == all_group
+    assert got_profile_groups["product"] == {
+        "accessRights": {"delete": False, "read": False, "write": False},
+        "description": "osparc product group",
+        "gid": 3,
+        "label": "osparc",
+        "thumbnail": None,
+    }
+
+    # support group exists
+    assert got_profile_groups["support"]
+    support_group_id = got_profile_groups["support"]["gid"]
+
+    assert support_group_id == support_group["gid"]
+    assert got_profile_groups["support"]["description"] == support_group["description"]
+    assert "accessRights" not in got_profile_groups["support"]
+
+    # When user is part of support group, it should appear in standard groups
+    sorted_by_group_id = functools.partial(sorted, key=lambda d: d["gid"])
+    expected_standard_groups = [
+        *standard_groups,
+        {
+            "gid": support_group_id,
+            "label": support_group["name"],
+            "description": support_group["description"],
+            "thumbnail": None,
+            "accessRights": {"read": True, "write": False, "delete": False},
+        },
+    ]
+    assert sorted_by_group_id(
+        got_profile_groups["organizations"]
+    ) == sorted_by_group_id(expected_standard_groups)
+    assert support_group_id in {g["gid"] for g in got_profile_groups["organizations"]}
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])

@@ -322,7 +322,6 @@ async def add_user_in_group(
 
     return await _groups_repository.add_new_user_in_group(
         app,
-        caller_id=user_id,
         group_id=group_id,
         new_user_id=new_by_user_id,
         new_user_name=new_by_user_name,
