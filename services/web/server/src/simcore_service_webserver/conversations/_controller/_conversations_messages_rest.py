@@ -1,8 +1,6 @@
 import functools
-import json
 import logging
 from typing import Any
-from urllib.parse import urljoin
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
@@ -14,7 +12,6 @@ from models_library.conversations import (
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
-    ConversationPatchDB,
     ConversationType,
 )
 from models_library.rest_pagination import (
@@ -36,8 +33,6 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..._meta import API_VTAG as VTAG
 from ...email import email_service
-from ...fogbugz import get_fogbugz_rest_client
-from ...fogbugz._client import FogbugzCaseCreate
 from ...fogbugz.settings import FogbugzSettings
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
@@ -129,44 +124,18 @@ async def create_conversation_message(request: web.Request):
         assert product.support_assigned_fogbugz_project_id  # nosec
 
         try:
-            user = await users_service.get_user(request.app, req_ctx.user_id)
             _url = request.url
             _conversation_url = f"{_url.scheme}://{_url.host}/#/conversation/{path_params.conversation_id}"
 
-            _description = f"""
-            Dear Support Team,
-
-            We have received a support request from {user["first_name"]} {user["last_name"]} ({user["email"]}) on {request.host}.
-
-            All communication should take place in the Platform Support Center at the following link: {_conversation_url}
-
-            First message content: {message.content}
-
-            Extra content: {json.dumps(_conversation.extra_context)}
-            """
-
-            _fogbugz_client = get_fogbugz_rest_client(request.app)
-            _fogbugz_case_data = FogbugzCaseCreate(
-                fogbugz_project_id=product.support_assigned_fogbugz_project_id,
-                title=f"Request for Support on {request.host}",
-                description=_description,
-            )
-            _case_id = await _fogbugz_client.create_case(_fogbugz_case_data)
-
-            await _conversation_service.update_conversation(
+            await _conversation_service.create_fogbugz_case_for_support_conversation(
                 request.app,
-                project_id=None,
-                conversation_id=_conversation.conversation_id,
-                updates=ConversationPatchDB(
-                    name=None,
-                    extra_context=_conversation.extra_context
-                    | {
-                        "fogbugz_case_url": urljoin(
-                            f"{fogbugz_settings_or_none.FOGBUGZ_URL}",
-                            f"f/cases/{_case_id}",
-                        )
-                    },
-                ),
+                conversation=_conversation,
+                user_id=req_ctx.user_id,
+                message_content=message.content,
+                conversation_url=_conversation_url,
+                host=request.host,
+                product_support_assigned_fogbugz_project_id=product.support_assigned_fogbugz_project_id,
+                fogbugz_url=str(fogbugz_settings_or_none.FOGBUGZ_URL),
             )
         except Exception:  # pylint: disable=broad-except
             _logger.exception(
