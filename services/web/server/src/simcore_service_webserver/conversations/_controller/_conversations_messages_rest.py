@@ -13,6 +13,7 @@ from models_library.conversations import (
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
+    ConversationPatchDB,
     ConversationType,
 )
 from models_library.rest_pagination import (
@@ -149,7 +150,18 @@ async def create_conversation_message(request: web.Request):
                 title=f"Request for Support on {request.host}",
                 description=_description,
             )
-            await _fogbugz_client.create_case(_fogbugz_case_data)
+            _case_id = await _fogbugz_client.create_case(_fogbugz_case_data)
+
+            await _conversation_service.update_conversation(
+                request.app,
+                project_id=None,
+                conversation_id=_conversation.conversation_id,
+                updates=ConversationPatchDB(
+                    name=None,
+                    extra_context=_conversation.extra_context
+                    | {"fogbugz_case_id": _case_id},
+                ),
+            )
         except Exception:  # pylint: disable=broad-except
             _logger.exception(
                 "Failed to create support request FogBugz case for conversation %s.",
