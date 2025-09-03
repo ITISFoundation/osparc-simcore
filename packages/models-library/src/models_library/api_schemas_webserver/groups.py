@@ -72,8 +72,8 @@ class BasicGroupGet(OutputSchema):
         return None
 
     @classmethod
-    def _extract_basic_group_data(cls, group: Group) -> dict:
-        """Extract common group data for schema conversion"""
+    def dump_basic_group_data(cls, group: Group) -> dict:
+        """Helper function to extract common group data for schema conversion"""
         return remap_keys(
             group.model_dump(
                 include={
@@ -93,11 +93,6 @@ class BasicGroupGet(OutputSchema):
             },
         )
 
-    @classmethod
-    def from_domain_model(cls, group: Group) -> Self:
-        # Adapts these domain models into this schema
-        return cls.model_validate(cls._extract_basic_group_data(group))
-
 
 class GroupGet(BasicGroupGet):
     access_rights: Annotated[GroupAccessRights, Field(alias="accessRights")]
@@ -116,7 +111,7 @@ class GroupGet(BasicGroupGet):
         # Adapts these domain models into this schema
         return cls.model_validate(
             {
-                **cls._extract_basic_group_data(group),
+                **cls.dump_basic_group_data(group),
                 "access_rights": access_rights,
             }
         )
@@ -259,7 +254,7 @@ class MyGroupsGet(OutputSchema):
         cls,
         groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
-        my_support_group: Group | None,
+        product_support_group: Group | None,
     ) -> Self:
         assert groups_by_type.primary  # nosec
         assert groups_by_type.everyone  # nosec
@@ -276,8 +271,10 @@ class MyGroupsGet(OutputSchema):
                 else None
             ),
             support=(
-                BasicGroupGet.from_domain_model(my_support_group)
-                if my_support_group
+                BasicGroupGet.model_validate(
+                    BasicGroupGet.dump_basic_group_data(product_support_group)
+                )
+                if product_support_group
                 else None
             ),
         )
