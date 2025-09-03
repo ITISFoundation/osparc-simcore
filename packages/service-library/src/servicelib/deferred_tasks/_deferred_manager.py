@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable, Iterable
-from datetime import timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Final
 
@@ -116,6 +116,14 @@ def _raise_if_not_type(task_result: Any, expected_types: Iterable[type]) -> None
     if not isinstance(task_result, tuple(expected_types)):
         msg = f"Unexpected '{task_result=}', should be one of {[x.__name__ for x in expected_types]}"
         raise TypeError(msg)
+
+
+async def _wait_until_future_date(possible_future_date: datetime) -> None:
+    while True:
+        now = arrow.utcnow().datetime
+        if now >= possible_future_date:
+            return
+        await asyncio.sleep(1)
 
 
 class DeferredManager:  # pylint:disable=too-many-instance-attributes
@@ -464,15 +472,28 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         ):
             _logger.debug("Schedule retry attempt for task_uid '%s'", task_uid)
 
-            subclass = self.__get_subclass(task_schedule.class_unique_reference)
-            deferred_context = self.__get_deferred_context(task_schedule.start_context)
-            sleep_interval = await subclass.get_retry_delay(
-                context=deferred_context,
-                remaining_attempts=task_schedule.execution_attempts,
-                total_attempts=task_schedule.total_attempts,
-            )
-            await asyncio.sleep(sleep_interval.total_seconds())
+            # resilenet wait before retrying
+            if task_schedule.wait_cancellation_until is None:
+                # save the new one
+                subclass = self.__get_subclass(task_schedule.class_unique_reference)
+                deferred_context = self.__get_deferred_context(
+                    task_schedule.start_context
+                )
+                sleep_interval = await subclass.get_retry_delay(
+                    context=deferred_context,
+                    remaining_attempts=task_schedule.execution_attempts,
+                    total_attempts=task_schedule.total_attempts,
+                )
+                task_schedule.wait_cancellation_until = (
+                    arrow.utcnow().datetime + sleep_interval
+                )
+                await self._task_tracker.save(task_uid, task_schedule)
 
+            await _wait_until_future_date(task_schedule.wait_cancellation_until)
+            task_schedule.wait_cancellation_until = None
+            await self._task_tracker.save(task_uid, task_schedule)
+
+            # waiting is done can proceed with retry
             task_schedule.state = TaskState.SUBMIT_TASK
             await self._task_tracker.save(task_uid, task_schedule)
             await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.SUBMIT_TASK)

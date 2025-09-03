@@ -62,6 +62,11 @@ class TaskScheduleModel(BaseModel):
         ),
     ]
 
+    wait_cancellation_until: Annotated[
+        datetime | None,
+        Field(description="when set has to wait till this before cancelling the task"),
+    ] = None
+
     time_started: Annotated[
         datetime,
         Field(
