@@ -52,7 +52,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
     (
         groups_by_type,
         my_product_group,
-        my_support_group,
+        product_support_group,
     ) = await groups_service.get_user_profile_groups(
         request.app, user_id=req_ctx.user_id, product=product
     )
@@ -65,7 +65,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
     )
 
     profile = MyProfileRestGet.from_domain_model(
-        my_profile, groups_by_type, my_product_group, preferences, my_support_group
+        my_profile, groups_by_type, my_product_group, preferences, product_support_group
     )
 
     return envelope_json_response(profile)
