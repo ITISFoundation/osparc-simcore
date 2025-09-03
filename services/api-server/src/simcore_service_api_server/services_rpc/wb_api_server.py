@@ -28,6 +28,7 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
+    RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
 )
 from models_library.licenses import LicensedItemID
@@ -513,6 +514,22 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             product_name=product_name,
             function_job=function_job,
+        )
+
+    async def patch_registered_function_job(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_id: FunctionJobID,
+        registered_function_job_patch: RegisteredFunctionJobPatch,
+    ) -> RegisteredFunctionJob:
+        return await functions_rpc_interface.patch_registered_function_job(
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            function_job_uuid=function_job_id,
+            registered_function_job_patch=registered_function_job_patch,
         )
 
     async def get_function_input_schema(

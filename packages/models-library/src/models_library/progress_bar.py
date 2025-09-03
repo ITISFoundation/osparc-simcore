@@ -1,6 +1,7 @@
 from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict
+from pydantic.config import JsonDict
 
 # NOTE: keep a list of possible unit, and please use correct official unit names
 ProgressUnit: TypeAlias = Literal["Byte"]
@@ -13,9 +14,10 @@ class ProgressStructuredMessage(BaseModel):
     unit: str | None = None
     sub: "ProgressStructuredMessage | None" = None
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            examples=[
                 {
                     "description": "some description",
                     "current": 12.2,
@@ -39,8 +41,9 @@ class ProgressStructuredMessage(BaseModel):
                     },
                 },
             ]
-        }
-    )
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 UNITLESS = None
@@ -96,7 +99,17 @@ class ProgressReport(BaseModel):
                 {
                     "actual_value": 0.3,
                     "total": 1.0,
-                    "message": ProgressStructuredMessage.model_config["json_schema_extra"]["examples"][2],  # type: ignore [index]
+                    "message": {
+                        "description": "downloading",
+                        "current": 2.0,
+                        "total": 5,
+                        "sub": {
+                            "description": "port 2",
+                            "current": 12.2,
+                            "total": 123,
+                            "unit": "Byte",
+                        },
+                    },
                 },
             ]
         },
