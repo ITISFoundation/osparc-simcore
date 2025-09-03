@@ -51,7 +51,7 @@ def app_environment(
 
 
 @pytest.fixture
-async def support_group(
+async def support_group_before_app_starts(
     asyncpg_engine: AsyncEngine,
     product_name: str,
 ) -> AsyncIterator[dict[str, Any]]:
@@ -135,13 +135,14 @@ async def test_access_update_profile(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_profile_user_not_in_support_group(
+    support_group_before_app_starts: dict[str, Any],
+    # after app starts because it modifies the product
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
     primary_group: dict[str, Any],
     standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
-    support_group: dict[str, Any],
 ):
     assert client.app
 
@@ -176,8 +177,11 @@ async def test_get_profile_user_not_in_support_group(
     assert got_profile_groups["support"]
     support_group_id = got_profile_groups["support"]["gid"]
 
-    assert support_group_id == support_group["gid"]
-    assert got_profile_groups["support"]["description"] == support_group["description"]
+    assert support_group_id == support_group_before_app_starts["gid"]
+    assert (
+        got_profile_groups["support"]["description"]
+        == support_group_before_app_starts["description"]
+    )
     assert "accessRights" not in got_profile_groups["support"]
 
     # standard groups with at least read access
@@ -196,16 +200,16 @@ async def test_get_profile_user_not_in_support_group(
     )
 
 
-@pytest.mark.test
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_profile_user_in_support_group(
+    support_group_before_app_starts: dict[str, Any],
+    # after app starts because it modifies the product
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
     primary_group: dict[str, Any],
     standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
-    support_group: dict[str, Any],
 ):
     assert client.app
     from simcore_service_webserver.groups import _groups_repository
@@ -213,7 +217,7 @@ async def test_get_profile_user_in_support_group(
     # Now add user to support group with read-only access
     await _groups_repository.add_new_user_in_group(
         client.app,
-        group_id=support_group["gid"],
+        group_id=support_group_before_app_starts["gid"],
         new_user_id=logged_user["id"],
         access_rights=AccessRightsDict(read=True, write=False, delete=False),
     )
@@ -249,8 +253,11 @@ async def test_get_profile_user_in_support_group(
     assert got_profile_groups["support"]
     support_group_id = got_profile_groups["support"]["gid"]
 
-    assert support_group_id == support_group["gid"]
-    assert got_profile_groups["support"]["description"] == support_group["description"]
+    assert support_group_id == support_group_before_app_starts["gid"]
+    assert (
+        got_profile_groups["support"]["description"]
+        == support_group_before_app_starts["description"]
+    )
     assert "accessRights" not in got_profile_groups["support"]
 
     # When user is part of support group, it should appear in standard groups
@@ -259,8 +266,8 @@ async def test_get_profile_user_in_support_group(
         *standard_groups,
         {
             "gid": support_group_id,
-            "label": support_group["name"],
-            "description": support_group["description"],
+            "label": support_group_before_app_starts["name"],
+            "description": support_group_before_app_starts["description"],
             "thumbnail": None,
             "accessRights": {"read": True, "write": False, "delete": False},
         },
