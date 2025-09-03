@@ -9284,6 +9284,35 @@ components:
       - name
       - email
       title: Author
+    BasicGroupGet:
+      properties:
+        gid:
+          type: integer
+          exclusiveMinimum: true
+          title: Gid
+          description: the group's unique ID
+          minimum: 0
+        label:
+          type: string
+          title: Label
+          description: the group's display name
+        description:
+          type: string
+          title: Description
+        thumbnail:
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Thumbnail
+          description: a link to the group's thumbnail
+      type: object
+      required:
+      - gid
+      - label
+      - description
+      title: BasicGroupGet
     Body_service_submission:
       properties:
         file:
@@ -12881,16 +12910,15 @@ components:
           type: integer
           exclusiveMinimum: true
           title: Gid
-          description: the group ID
+          description: the group's unique ID
           minimum: 0
         label:
           type: string
           title: Label
-          description: the group name
+          description: the group's display name
         description:
           type: string
           title: Description
-          description: the group description
         thumbnail:
           anyOf:
           - type: string
@@ -12898,7 +12926,7 @@ components:
             format: uri
           - type: 'null'
           title: Thumbnail
-          description: url to the group thumbnail
+          description: a link to the group's thumbnail
         accessRights:
           $ref: '#/components/schemas/GroupAccessRights'
         inclusionRules:
@@ -13607,7 +13635,7 @@ components:
           - type: 'null'
         support:
           anyOf:
-          - $ref: '#/components/schemas/GroupGet'
+          - $ref: '#/components/schemas/BasicGroupGet'
           - type: 'null'
           description: Group ID of the app support team or None if no support is defined
             for this product
@@ -13650,13 +13678,10 @@ components:
           gid: '16'
           label: Blue Fundation
         support:
-          accessRights:
-            delete: false
-            read: false
-            write: false
           description: The support team of the application
           gid: '2'
           label: Support Team
+          thumbnail: https://placekitten.com/15/15
     MyPermissionGet:
       properties:
         name:
