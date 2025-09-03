@@ -13717,6 +13717,49 @@ components:
       required:
       - phone
       title: MyPhoneRegister
+    MyProfileAddressGet:
+      properties:
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+        address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Address
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+          description: State, province, canton, ...
+        postalCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postalcode
+        country:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country
+      type: object
+      required:
+      - institution
+      - address
+      - city
+      - state
+      - postalCode
+      - country
+      title: MyProfileAddressGet
+      description: Details provided upon registration and used e.g. for invoicing
     MyProfilePrivacyGet:
       properties:
         hideUsername:
@@ -13822,6 +13865,10 @@ components:
             $ref: '#/components/schemas/Preference'
           type: object
           title: Preferences
+        contact:
+          anyOf:
+          - $ref: '#/components/schemas/MyProfileAddressGet'
+          - type: 'null'
       type: object
       required:
       - id
