@@ -679,6 +679,26 @@ async def delete_user_from_group(
 #
 
 
+async def check_group_write_access(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    caller_id: UserID,
+    group_id: GroupID,
+) -> None:
+    """
+    Checks if caller has write access to the group.
+
+    Raises:
+        GroupNotFoundError: if group not found or caller has no access
+        UserInsufficientRightsError: if caller has no write permission
+    """
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        await _get_group_and_access_rights_or_raise(
+            conn, caller_id=caller_id, group_id=group_id, check_permission="write"
+        )
+
+
 async def is_user_by_email_in_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -701,7 +721,6 @@ async def add_new_user_in_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    caller_id: UserID,
     group_id: GroupID,
     # either user_id or user_name
     new_user_id: UserID | None = None,
@@ -709,14 +728,11 @@ async def add_new_user_in_group(
     access_rights: AccessRightsDict | None = None,
 ) -> None:
     """
-    adds new_user (either by id or email) in group (with gid) owned by user_id
+    adds new_user (either by id or email) in group (with gid)
+
+    Note: This function does not check permissions - caller must ensure permissions are checked separately
     """
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        # first check if the group exists
-        await _get_group_and_access_rights_or_raise(
-            conn, caller_id=caller_id, group_id=group_id, check_permission="write"
-        )
-
         query = sa.select(users.c.id)
         if new_user_id is not None:
             query = query.where(users.c.id == new_user_id)
@@ -747,7 +763,6 @@ async def add_new_user_in_group(
             raise UserAlreadyInGroupError(
                 uid=new_user_id,
                 gid=group_id,
-                user_id=caller_id,
                 access_rights=access_rights,
             ) from exc
 
