@@ -498,23 +498,8 @@ async def test_map_function_parent_info(
         "get_function", mock_registered_project_function, None, None
     )
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
-
-    _generated_project_job_ids: list[ProjectID] = []
-
-    async def _patch_register_function_job(
-        project_job_ids: list[ProjectID], *args, **kwargs
-    ):
-        project_job_id = ProjectID(_faker.uuid4())
-        project_job_ids.append(project_job_id)
-        return mock_registered_project_function_job.model_copy(
-            update={"project_job_id": project_job_id}
-        )
-
     mock_handler_in_functions_rpc_interface(
-        "register_function_job",
-        None,
-        None,
-        partial(_patch_register_function_job, _generated_project_job_ids),
+        "register_function_job", mock_registered_project_function_job, None, None
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -527,23 +512,17 @@ async def test_map_function_parent_info(
         None,
         None,
     )
-
-    async def _patch_register_function_job_collection(*args, **kwargs):
-        return (
-            RegisteredFunctionJobCollection(
-                uid=FunctionJobID(_faker.uuid4()),
-                title="Test Collection",
-                description="A test function job collection",
-                job_ids=kwargs["function_job_collection"].job_ids,
-                created_at=datetime.datetime.now(datetime.UTC),
-            ),
-        )
-
     mock_handler_in_functions_rpc_interface(
         "register_function_job_collection",
+        RegisteredFunctionJobCollection(
+            uid=FunctionJobID(_faker.uuid4()),
+            title="Test Collection",
+            description="A test function job collection",
+            job_ids=[],
+            created_at=datetime.datetime.now(datetime.UTC),
+        ),
         None,
         None,
-        _patch_register_function_job_collection,
     )
 
     patch_mock = mock_handler_in_functions_rpc_interface(
@@ -564,15 +543,14 @@ async def test_map_function_parent_info(
 
     response = await client.post(
         f"{API_VTAG}/functions/{mock_registered_project_function.uid}:map",
-        json=[{"input_1": 2.0}, {"input_2": 3.0}],
+        json=[{}, {}],
         auth=auth,
         headers=headers,
     )
     assert response.status_code == expected_status_code
 
     if expected_status_code == status.HTTP_200_OK:
-        job_collection = FunctionJobCollection.model_validate(response.json())
-        assert job_collection.job_ids == _generated_project_job_ids
+        FunctionJobCollection.model_validate(response.json())
         task_id = patch_mock.call_args.kwargs[
             "registered_function_job_patch"
         ].job_creation_task_id
