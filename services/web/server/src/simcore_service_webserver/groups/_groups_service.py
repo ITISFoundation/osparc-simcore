@@ -91,7 +91,7 @@ async def get_user_profile_groups(
     product group, and support group.
 
     Returns:
-        Tuple of (groups_by_type, my_product_group, my_support_group)
+        Tuple of (groups_by_type, my_product_group, product_support_group)
     """
     groups_by_type = await list_user_groups_with_read_access(app, user_id=user_id)
 
@@ -104,14 +104,14 @@ async def get_user_profile_groups(
                 product_gid=product.group_id,
             )
 
-    my_support_group = None
+    product_support_group = None
     if product.support_standard_group_id:  # Support group is optional
         # NOTE: my_support_group can be part of groups_by_type.standard!
-        my_support_group = await get_group_from_gid(
+        product_support_group = await get_group_from_gid(
             app, product.support_standard_group_id
         )
 
-    return groups_by_type, my_product_group, my_support_group
+    return groups_by_type, my_product_group, product_support_group
 
 
 #

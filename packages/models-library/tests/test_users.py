@@ -30,9 +30,7 @@ def test_adapter_from_model_to_schema(
         read=False, write=False, delete=False
     )
 
-    my_support_group = groups[4], AccessRightsDict(
-        read=False, write=False, delete=False
-    )
+    my_support_group = groups[4]
 
     my_preferences = {"foo": Preference(default_value=3, value=1)}
 
