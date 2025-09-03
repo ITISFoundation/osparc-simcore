@@ -96,10 +96,10 @@ def any_ref_key(obj):
     return False
 
 
-class ResolvedGenerateJsonSchema(GenerateJsonSchema):
+class GenerateResolvedJsonSchema(GenerateJsonSchema):
     def generate(self, schema: CoreSchema, mode: JsonSchemaMode) -> JsonSchemaValue:
         schema_value = super().generate(schema=schema, mode=mode)
-        schema_value = jsonref.replace_refs(schema_value)
+        schema_value = jsonref.replace_refs(schema_value, jsonschema=True)
         return JsonSchemaValue(schema_value)
 
 
