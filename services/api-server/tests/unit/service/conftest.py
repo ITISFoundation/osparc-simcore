@@ -179,7 +179,6 @@ def job_service(
         _directorv2_rpc_client=director_v2_rpc_client,
         _director2_api=director2_api,
         _solver_service=solver_service,
-        _async_pg_engine=async_pg_engine,
         user_id=user_id,
         product_name=product_name,
     )
