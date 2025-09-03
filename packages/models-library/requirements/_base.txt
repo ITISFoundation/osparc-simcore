@@ -12,6 +12,8 @@ email-validator==2.2.0
     # via pydantic
 idna==3.10
     # via email-validator
+jsonref==1.1.0
+    # via -r requirements/_base.in
 jsonschema==4.23.0
     # via -r requirements/_base.in
 jsonschema-specifications==2024.10.1
