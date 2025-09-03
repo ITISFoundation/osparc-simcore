@@ -114,9 +114,9 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         }
         case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "center",
-          });
+          }));
           this.getChildControl("conversations-layout").add(control);
           break;
         case "ask-a-question-button":
@@ -124,7 +124,6 @@ qx.Class.define("osparc.support.SupportCenter", {
             appearance: "strong-button",
             allowGrowX: false,
             center: true,
-            alignX: "center",
           });
           control.addListener("execute", () => this.openConversation(null), this);
           this.getChildControl("buttons-layout").add(control);
@@ -134,7 +133,6 @@ qx.Class.define("osparc.support.SupportCenter", {
             appearance: "strong-button",
             allowGrowX: false,
             center: true,
-            alignX: "center",
           });
           control.addListener("execute", () => this.createConversationBookCall(null), this);
           this.getChildControl("buttons-layout").add(control);
