@@ -99,7 +99,6 @@ class JobService:
     _storage_rest_client: StorageApi
     _directorv2_rpc_client: DirectorV2Service
     _solver_service: SolverService
-    _async_pg_engine: AsyncEngine
 
     user_id: UserID
     product_name: ProductName
@@ -300,7 +299,11 @@ class JobService:
         )
 
     async def get_solver_job_outputs(
-        self, solver_key: SolverKeyId, version: VersionStr, job_id: JobID
+        self,
+        solver_key: SolverKeyId,
+        version: VersionStr,
+        job_id: JobID,
+        async_pg_engine: AsyncEngine,
     ) -> JobOutputs:
         job_name = compose_solver_job_resource_name(solver_key, version, job_id)
         _logger.debug("Get Job '%s' outputs", job_name)
@@ -340,7 +343,7 @@ class JobService:
             user_id=self.user_id,
             project_uuid=job_id,
             node_uuid=UUID(node_ids[0]),
-            db_engine=self._async_pg_engine,
+            db_engine=async_pg_engine,
         )
 
         results: dict[str, ArgumentTypes] = {}

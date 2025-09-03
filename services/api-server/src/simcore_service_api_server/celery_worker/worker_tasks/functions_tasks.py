@@ -15,6 +15,7 @@ from ...api.dependencies.services import (
     get_catalog_service,
     get_directorv2_service,
     get_function_job_service,
+    get_function_service,
     get_job_service,
     get_solver_service,
     get_storage_service,
@@ -29,7 +30,9 @@ from ...services_http.storage import StorageApi
 
 
 async def _assemble_function_job_service(
-    *, app: FastAPI, user_identity: Identity
+    *,
+    app: FastAPI,
+    user_identity: Identity,
 ) -> FunctionJobService:
     # This should ideally be done by a dependency injection system (like it is done in the api-server).
     # However, for that we would need to introduce a dependency injection system which is not coupled to,
@@ -69,6 +72,12 @@ async def _assemble_function_job_service(
         product_name=user_identity.product_name,
     )
 
+    function_service = get_function_service(
+        web_rpc_api=web_api_rpc_client,
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
+    )
+
     job_service = get_job_service(
         web_rest_api=web_server_rest_client,
         director2_api=director2_api,
@@ -86,6 +95,9 @@ async def _assemble_function_job_service(
         job_service=job_service,
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
+        function_service=function_service,
+        webserver_api=web_server_rest_client,
+        storage_service=storage_service,
     )
 
 

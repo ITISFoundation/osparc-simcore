@@ -16,6 +16,7 @@ from models_library.users import UserID
 from pydantic import HttpUrl, NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
 from ..._service_jobs import JobService, compose_solver_job_resource_name
@@ -45,6 +46,7 @@ from ...services_http.solver_job_models_converters import (
 )
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
+from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.models_schemas_jobs_filters import get_job_metadata_filter
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client, get_job_service, get_solver_service
@@ -311,11 +313,13 @@ async def get_job_outputs(
     version: VersionStr,
     job_id: JobID,
     job_service: Annotated[JobService, Depends(get_job_service)],
+    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ):
     return await job_service.get_solver_job_outputs(
         solver_key=solver_key,
         version=version,
         job_id=job_id,
+        async_pg_engine=async_pg_engine,
     )
 
 

@@ -15,19 +15,14 @@ from typing import Any
 import httpx
 import pytest
 import respx
-from celery import Celery, Task  # pylint: disable=no-name-in-module
-from celery.contrib.testing.worker import (
-    TestWorkController,  # pylint: disable=no-name-in-module
-)
+from celery import Celery, Task  # type: ignore # pylint: disable=no-name-in-module
+from celery.contrib.testing.worker import TestWorkController  # type: ignore
 from celery_library.task import register_task
 from celery_library.types import register_pydantic_types
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth, HTTPStatusError
-from models_library.api_schemas_long_running_tasks.tasks import (
-    TaskResult,
-    TaskStatus,
-)
+from models_library.api_schemas_long_running_tasks.tasks import TaskResult, TaskStatus
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.functions import (
     FunctionClass,
@@ -87,7 +82,7 @@ async def wait_for_task_result(
     client: AsyncClient,
     auth: BasicAuth,
     task_id: str,
-    timeout: float = 30.0,
+    timeout: float = 30.0,  # noqa: ASYNC109
 ) -> TaskResult:
 
     async for attempt in AsyncRetrying(

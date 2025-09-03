@@ -365,10 +365,23 @@ async def test_get_function_job_status(
 
 
 @pytest.mark.parametrize(
-    "job_outputs, project_job_id",
+    "job_outputs, project_job_id, job_status, expected_output, use_db_cache",
     [
-        (None, None),
-        ({"X+Y": 42, "X-Y": 10}, ProjectID(_faker.uuid4())),
+        (None, None, "created", None, True),
+        (
+            {"X+Y": 42, "X-Y": 10},
+            ProjectID(_faker.uuid4()),
+            RunningState.FAILED,
+            None,
+            False,
+        ),
+        (
+            {"X+Y": 42, "X-Y": 10},
+            ProjectID(_faker.uuid4()),
+            RunningState.SUCCESS,
+            {"X+Y": 42, "X-Y": 10},
+            True,
+        ),
     ],
 )
 async def test_get_function_job_outputs(
@@ -380,13 +393,10 @@ async def test_get_function_job_outputs(
     auth: httpx.BasicAuth,
     job_outputs: dict[str, Any] | None,
     project_job_id: ProjectID | None,
+    job_status: str,
+    expected_output: dict[str, Any] | None,
+    use_db_cache: bool,
 ) -> None:
-
-    _expected_return_status = (
-        status.HTTP_404_NOT_FOUND
-        if project_job_id is None and job_outputs is None
-        else status.HTTP_200_OK
-    )
 
     mock_handler_in_functions_rpc_interface(
         "get_function_job",
@@ -401,13 +411,21 @@ async def test_get_function_job_outputs(
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
     )
-    mock_handler_in_functions_rpc_interface("get_function_job_outputs", job_outputs)
+
+    if use_db_cache:
+        mock_handler_in_functions_rpc_interface("get_function_job_outputs", job_outputs)
+    else:
+        mock_handler_in_functions_rpc_interface("get_function_job_outputs", None)
+
+    mock_handler_in_functions_rpc_interface(
+        "get_function_job_status",
+        FunctionJobStatus(status=job_status),
+    )
 
     response = await client.get(
         f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}/outputs",
         auth=auth,
     )
-    assert response.status_code == _expected_return_status
-    if response.status_code == status.HTTP_200_OK:
-        data = response.json()
-        assert data == job_outputs
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data == expected_output

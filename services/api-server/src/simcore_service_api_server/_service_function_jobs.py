@@ -39,7 +39,7 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import ValidationError
 from simcore_service_api_server._service_functions import FunctionService
-from simcore_service_api_server.services_http.storage import StorageApi
+from simcore_service_api_server.services_rpc.storage import StorageService
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_jobs import JobService
@@ -73,11 +73,10 @@ class FunctionJobService:
     user_id: UserID
     product_name: ProductName
     _web_rpc_client: WbApiRpcClient
-    _storage_client: StorageApi
+    _storage_client: StorageService
     _job_service: JobService
     _function_service: FunctionService
     _webserver_api: AuthSession
-    _async_pg_engine: AsyncEngine
 
     async def list_function_jobs(
         self,
@@ -121,40 +120,14 @@ class FunctionJobService:
             pagination_offset=pagination_offset, pagination_limit=pagination_limit
         )
 
-        function_jobs_wso, page_meta = (
-            await self._web_rpc_client.list_function_jobs_with_status(
-                user_id=self.user_id,
-                product_name=self.product_name,
-                filter_by_function_id=filter_by_function_id,
-                filter_by_function_job_ids=filter_by_function_job_ids,
-                filter_by_function_job_collection_id=filter_by_function_job_collection_id,
-                **pagination_kwargs,
-            )
+        return await self._web_rpc_client.list_function_jobs_with_status(
+            user_id=self.user_id,
+            product_name=self.product_name,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+            **pagination_kwargs,
         )
-
-        for function_job_wso in function_jobs_wso:
-            if (
-                function_job_wso.status.status
-                not in (
-                    RunningState.SUCCESS,
-                    RunningState.FAILED,
-                )
-            ) or function_job_wso.outputs is None:
-                function = await self._function_service.get_function(
-                    function_id=function_job_wso.function_uid
-                )
-                function_job_wso.status = await self.inspect_function_job(
-                    function=function, function_job=function_job_wso
-                )
-                if function_job_wso.status.status == RunningState.SUCCESS:
-                    function_job_wso.outputs = await self.function_job_outputs(
-                        function_job=function_job_wso,
-                        function=function,
-                        user_id=self.user_id,
-                        product_name=self.product_name,
-                        stored_job_outputs=None,
-                    )
-        return function_jobs_wso, page_meta
 
     async def validate_function_inputs(
         self, *, function_id: FunctionID, inputs: FunctionInputs
@@ -525,15 +498,19 @@ class FunctionJobService:
         user_id: UserID,
         product_name: ProductName,
         stored_job_outputs: FunctionOutputs | None,
+        async_pg_engine: AsyncEngine,
     ) -> FunctionOutputs:
 
         if stored_job_outputs is not None:
             return stored_job_outputs
 
-        job_status = await self.inspect_function_job(
-            function=function,
-            function_job=function_job,
-        )
+        try:
+            job_status = await self.inspect_function_job(
+                function=function,
+                function_job=function_job,
+            )
+        except FunctionJobProjectMissingError:
+            return None
 
         if job_status.status != RunningState.SUCCESS:
             return None
@@ -564,6 +541,7 @@ class FunctionJobService:
                         solver_key=function.solver_key,
                         version=function.solver_version,
                         job_id=function_job.solver_job_id,
+                        async_pg_engine=async_pg_engine,
                     )
                 ).results
             )

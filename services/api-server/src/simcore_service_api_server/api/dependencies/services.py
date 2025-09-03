@@ -7,7 +7,6 @@ from fastapi import Depends, HTTPException, Request, status
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
@@ -22,7 +21,6 @@ from ...services_rpc.director_v2 import DirectorV2Service
 from ...services_rpc.storage import StorageService
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ...utils.client_base import BaseServiceClientApi
-from ..dependencies.database import get_db_asyncpg_engine
 from .authentication import get_current_user_id, get_product_name
 from .rabbitmq import get_rabbitmq_rpc_client
 from .webserver_http import get_webserver_session
@@ -120,7 +118,6 @@ def get_job_service(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
-    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ) -> JobService:
     """
     "Assembles" the JobsService layer to the underlying service and client interfaces
@@ -134,7 +131,6 @@ def get_job_service(
         _director2_api=director2_api,
         _storage_rest_client=storage_api,
         _solver_service=solver_service,
-        _async_pg_engine=async_pg_engine,
         user_id=user_id,
         product_name=product_name,
     )
@@ -159,8 +155,8 @@ def get_function_job_service(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    storage_service: Annotated[StorageApi, Depends(get_storage_service)],
-    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
+    storage_service: Annotated[StorageService, Depends(get_storage_service)],
+    # async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ) -> FunctionJobService:
     return FunctionJobService(
         _web_rpc_client=web_rpc_api,
@@ -168,7 +164,6 @@ def get_function_job_service(
         _function_service=function_service,
         _storage_client=storage_service,
         _webserver_api=webserver_api,
-        _async_pg_engine=async_pg_engine,
         user_id=user_id,
         product_name=product_name,
     )

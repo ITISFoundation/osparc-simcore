@@ -20,23 +20,24 @@ from models_library.functions_errors import (
     UnsupportedFunctionFunctionJobClassCombinationError,
 )
 from models_library.products import ProductName
+from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.celery.models import TaskUUID
 from servicelib.fastapi.dependencies import get_app
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
-from simcore_service_api_server._service_functions import FunctionService
-from simcore_service_api_server.models.schemas.functions_filters import (
-    FunctionJobsListFilters,
-)
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_function_jobs import FunctionJobService
+from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
 from ...exceptions.function_errors import FunctionJobProjectMissingError
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
+from ...models.schemas.functions_filters import FunctionJobsListFilters
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.celery import get_task_manager
+from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.functions import (
     get_function_from_functionjob,
     get_function_job_dependency,
@@ -104,11 +105,11 @@ for endpoint in ENDPOINTS:
             )
         )
 
-    if endpoint in ["list_function_jobs_with_status"]:
+    if endpoint in ["list_function_jobs"]:
         CHANGE_LOGS[endpoint].append(
             FMSG_CHANGELOG_ADDED_IN_VERSION.format(
                 WITH_STATUS_RELEASE_VERSION,
-                "add /with-status endpoint to list function jobs with their status",
+                "add include_status bool query parameter to list function jobs with their status",
             )
         )
 
@@ -123,11 +124,16 @@ for endpoint in ENDPOINTS:
     ),
 )
 async def list_function_jobs(
+    app: Annotated[FastAPI, Depends(get_app)],
     page_params: Annotated[PaginationParams, Depends()],
     function_job_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
     filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
+    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
     include_status: Annotated[  # noqa: FBT002
         bool, Query(description="Include job status in response")
     ] = False,
@@ -145,6 +151,38 @@ async def list_function_jobs(
                 filter_by_function_id=filters.function_id,
             )
         )
+        # the code below should ideally be in the service layer, but this can only be done if the
+        # celery status resolution is done in the service layer too
+        for function_job_wso in function_jobs_list:
+            if (
+                function_job_wso.status.status
+                not in (
+                    RunningState.SUCCESS,
+                    RunningState.FAILED,
+                )
+            ) or function_job_wso.outputs is None:
+                function = await function_service.get_function(
+                    function_id=function_job_wso.function_uid
+                )
+                function_job_wso.status = await function_job_status(
+                    app=app,
+                    function=function,
+                    function_job=function_job_wso,
+                    function_job_service=function_job_service,
+                    user_id=user_id,
+                    product_name=product_name,
+                )
+                if function_job_wso.status.status == RunningState.SUCCESS:
+                    function_job_wso.outputs = (
+                        await function_job_service.function_job_outputs(
+                            function_job=function_job_wso,
+                            function=function,
+                            user_id=user_id,
+                            product_name=product_name,
+                            stored_job_outputs=None,
+                            async_pg_engine=async_pg_engine,
+                        )
+                    )
     else:
         function_jobs_list, meta = await function_job_service.list_function_jobs(
             pagination_offset=page_params.offset,
@@ -322,6 +360,7 @@ async def function_job_outputs(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     stored_job_outputs: Annotated[FunctionOutputs, Depends(get_stored_job_outputs)],
+    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ) -> FunctionOutputs:
     return await function_job_service.function_job_outputs(
         function_job=function_job,
@@ -329,6 +368,7 @@ async def function_job_outputs(
         product_name=product_name,
         function=function,
         stored_job_outputs=stored_job_outputs,
+        async_pg_engine=async_pg_engine,
     )
 
 
