@@ -25,11 +25,15 @@ qx.Class.define("osparc.ui.form.DateTimeField", {
 
     this._setLayout(new qx.ui.layout.HBox(5));
 
-    // Date selector
-    this.__dateField = new qx.ui.form.DateField();
-    this.__dateField.set({
-      minimumDate: new Date() // forbid past dates
+    this.set({
+      maxHeight: 26
     });
+
+    // Date selector
+    const dateFormat = new qx.util.format.DateFormat("dd/MM/yyyy");
+    this.__dateField = new qx.ui.form.DateField();
+    this.__dateField.setDateFormat(dateFormat);
+    this.__dateField.setValue(new Date());
     this._add(this.__dateField);
 
     // Hour selector
@@ -75,21 +79,26 @@ qx.Class.define("osparc.ui.form.DateTimeField", {
 
     __updateValue: function() {
       const date = this.__dateField.getValue();
+      const now = new Date();
+
       if (date) {
+        // Prevent past dates
+        if (date < now.setHours(0,0,0,0)) {
+          this.__dateField.setValue(new Date());
+          return;
+        }
+
         const newDate = new Date(date.getTime());
         newDate.setHours(this.__hourSpinner.getValue());
         newDate.setMinutes(this.__minuteSpinner.getValue());
 
-        const now = new Date();
-
-        // If same day, ensure time is not in the past
+        // If today, prevent past time
         const isToday =
           date.getFullYear() === now.getFullYear() &&
           date.getMonth() === now.getMonth() &&
           date.getDate() === now.getDate();
 
         if (isToday && newDate < now) {
-          // Snap to current time if invalid
           this.__hourSpinner.setValue(now.getHours());
           this.__minuteSpinner.setValue(now.getMinutes());
           this.setValue(now);
