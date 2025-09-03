@@ -82,16 +82,30 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
     },
 
     __getContext: function() {
-      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       const dataToClipboard = {
         message: this.getMessage(),
         supportId: this.getSupportId(),
         timestamp: new Date().toString(),
         url: window.location.href,
         releaseTag: osparc.utils.Utils.getReleaseTag(),
-        studyId: currentStudy ? currentStudy.getUuid() : "",
+      }
+      if (osparc.store.Store.getInstance().getCurrentStudy()) {
+        dataToClipboard["projectId"] = osparc.store.Store.getInstance().getCurrentStudy().getUuid();
       }
       return osparc.utils.Utils.prettifyJson(dataToClipboard);
+    },
+
+    __getSupportFriendlyContext: function() {
+      let curatedText = "Extra Context:";
+      curatedText += "\nError: " + this.getMessage();
+      curatedText += "\nSupportID: " + this.getSupportId();
+      curatedText += "\nTimestamp: " + new Date().toISOString();
+      curatedText += "\nURL: " + window.location.href;
+      curatedText += "\nRelease Tag: " + osparc.utils.Utils.getReleaseTag();
+      if (osparc.store.Store.getInstance().getCurrentStudy()) {
+        curatedText += "\nProject ID: " + osparc.store.Store.getInstance().getCurrentStudy().getUuid();
+      }
+      return curatedText;
     },
 
     __copyToClipboard: function() {
@@ -99,35 +113,45 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
     },
 
     __openSupportChat: function() {
+      const supportCenter = osparc.support.SupportCenter.openWindow();
+      supportCenter.openConversation(null);
+
+      const textToAddMessageField = msg => {
+        if (
+          supportCenter.getChildControl("conversation-page") &&
+          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content") &&
+          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message") &&
+          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field")
+        ) {
+          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(msg);
+        }
+      }
+
       const caption = this.tr("Something went wrong");
       const introText = this.tr("Please describe what you were doing before the error (optional).\nThis will help our support team understand the context and resolve the issue faster.");
-      const dialog = new osparc.ui.window.Confirmation(introText);
-      dialog.setCaption(caption);
-      dialog.getChildControl("message-label").setFont("text-13");
-      const extraContext = new qx.ui.form.TextArea().set({
+      const confirmationWindow = new osparc.ui.window.Confirmation(introText);
+      confirmationWindow.setCaption(caption);
+      confirmationWindow.getChildControl("message-label").setFont("text-13");
+      const extraContextTA = new qx.ui.form.TextArea().set({
         font: "text-13",
         autoSize: true,
         minHeight: 70,
         maxHeight: 140
       });
-      dialog.addWidget(extraContext);
-      dialog.addCancelButton();
-      dialog.setConfirmText(this.tr("Send Report"));
-      dialog.open();
-
-      const supportCenter = osparc.support.SupportCenter.openWindow();
-      supportCenter.openConversation(null);
-
-      /*
-      if (
-        supportCenter.getChildControl("conversation-page") &&
-        supportCenter.getChildControl("conversation-page").getChildControl("conversation-content") &&
-        supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message") &&
-        supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field")
-      ) {
-        supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(this.__getContext());
-      }
-      */
+      confirmationWindow.addWidget(extraContextTA);
+      confirmationWindow.addCancelButton();
+      confirmationWindow.setConfirmText(this.tr("Send Report"));
+      confirmationWindow.open();
+      confirmationWindow.addListener("close", () => {
+        if (confirmationWindow.getConfirmed()) {
+          const extraContext = extraContextTA.getValue()
+          const friendlyContext = this.__getSupportFriendlyContext();
+          const text = "Dear Support Team,\n" + extraContext + "\n" + friendlyContext;
+          textToAddMessageField(text);
+        } else {
+          supportCenter.close();
+        }
+      });
     },
   }
 });
