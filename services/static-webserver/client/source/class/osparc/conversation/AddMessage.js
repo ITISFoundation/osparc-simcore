@@ -86,7 +86,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control = new osparc.editor.MarkdownEditor();
           control.addListener("keydown", e => {
             if (e.isCtrlPressed() && e.getKeyIdentifier() === "Enter") {
-              this.__addComment();
+              this.addComment();
               e.stopPropagation();
               e.preventDefault();
             }
@@ -169,10 +169,10 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __addCommentPressed: function() {
-      this.getMessage() ? this.__editComment() : this.__addComment();
+      this.getMessage() ? this.__editComment() : this.addComment();
     },
 
-    __addComment: function() {
+    addComment: function() {
       const conversationId = this.getConversationId();
       if (conversationId) {
         this.__postMessage();

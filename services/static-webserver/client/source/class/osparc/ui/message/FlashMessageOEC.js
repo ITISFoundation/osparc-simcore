@@ -124,6 +124,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
           supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field")
         ) {
           supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(msg);
+          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").addComment();
         }
       }
 
