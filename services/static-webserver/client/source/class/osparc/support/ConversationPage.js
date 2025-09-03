@@ -105,6 +105,19 @@ qx.Class.define("osparc.support.ConversationPage", {
           control.addListener("execute", () => this.__openProjectDetails());
           this.getChildControl("conversation-header-layout").addAt(control, 2);
           break;
+        case "set-appointment-button": {
+          control = new qx.ui.form.Button().set({
+            maxWidth: 26,
+            maxHeight: 24,
+            padding: [0, 6],
+            alignX: "center",
+            alignY: "middle",
+            icon: "@FontAwesome5Solid/clock/12",
+          });
+          control.addListener("execute", () => this.__openAppointmentDetails());
+          this.getChildControl("conversation-header-layout").addAt(control, 3);
+          break;
+        }
         case "conversation-options": {
           control = new qx.ui.form.MenuButton().set({
             maxWidth: 24,
@@ -123,7 +136,7 @@ qx.Class.define("osparc.support.ConversationPage", {
           });
           renameButton.addListener("execute", () => this.__renameConversation());
           menu.add(renameButton);
-          this.getChildControl("conversation-header-layout").addAt(control, 3);
+          this.getChildControl("conversation-header-layout").addAt(control, 4);
           break;
         }
         case "conversation-content":
@@ -147,8 +160,8 @@ qx.Class.define("osparc.support.ConversationPage", {
       }
 
       const extraContextLabel = this.getChildControl("conversation-extra-content");
+      const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
       if (conversation) {
-        const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
         conversation.bind("extraContext", extraContextLabel, "value", {
           converter: extraContext => {
             let extraContextText = "";
@@ -182,11 +195,18 @@ qx.Class.define("osparc.support.ConversationPage", {
         extraContextLabel.exclude();
       }
 
-      const openButton = this.getChildControl("open-project-button");
+      const openProjectButton = this.getChildControl("open-project-button");
       if (conversation && conversation.getContextProjectId()) {
-        openButton.show();
+        openProjectButton.show();
       } else {
-        openButton.exclude();
+        openProjectButton.exclude();
+      }
+
+      const setAppointmentButton = this.getChildControl("set-appointment-button");
+      if (conversation && conversation.getAppointment() && amISupporter) {
+        setAppointmentButton.show();
+      } else {
+        setAppointmentButton.exclude();
       }
 
       const options = this.getChildControl("conversation-options");
@@ -210,6 +230,10 @@ qx.Class.define("osparc.support.ConversationPage", {
           })
           .catch(err => console.warn(err));
       }
+    },
+
+    __openAppointmentDetails: function() {
+
     },
 
     __renameConversation: function() {
