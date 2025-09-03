@@ -2,6 +2,7 @@ import functools
 import json
 import logging
 from typing import Any
+from urllib.parse import urljoin
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
@@ -159,7 +160,12 @@ async def create_conversation_message(request: web.Request):
                 updates=ConversationPatchDB(
                     name=None,
                     extra_context=_conversation.extra_context
-                    | {"fogbugz_case_id": _case_id},
+                    | {
+                        "fogbugz_case_url": urljoin(
+                            f"{fogbugz_settings_or_none.FOGBUGZ_URL}",
+                            f"f/cases/{_case_id}",
+                        )
+                    },
                 ),
             )
         except Exception:  # pylint: disable=broad-except
