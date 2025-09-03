@@ -332,6 +332,7 @@ class Product(BaseModel):
                 "support": True,
                 "is_payment_enabled": True,
                 "is_dynamic_services_telemetry_enabled": True,
+                "support_standard_group_id": True,
             },
             exclude_none=True,
             exclude_unset=True,
