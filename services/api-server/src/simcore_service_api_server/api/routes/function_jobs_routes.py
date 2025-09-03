@@ -1,5 +1,7 @@
+from logging import getLogger
 from typing import Annotated, Final
 
+from common_library.error_codes import create_error_code
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from fastapi_pagination.api import create_page
 from fastapi_pagination.bases import AbstractPage
@@ -15,10 +17,13 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import RegisteredFunction
 from models_library.functions_errors import (
     UnsupportedFunctionClassError,
+    UnsupportedFunctionFunctionJobClassCombinationError,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.celery.models import TaskUUID
 from servicelib.fastapi.dependencies import get_app
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from simcore_service_api_server.models.schemas.functions_filters import (
     FunctionJobsListFilters,
 )
@@ -26,12 +31,14 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_jobs import JobService
+from ...exceptions.function_errors import FunctionJobProjectMissingError
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...services_http.storage import StorageApi
 from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.celery import get_task_manager
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.functions import (
     get_function_from_functionjob,
@@ -52,6 +59,9 @@ from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
+from .tasks import _get_task_filter
+
+_logger = getLogger(__name__)
 
 # pylint: disable=too-many-arguments
 # pylint: disable=cyclic-import
@@ -59,6 +69,8 @@ from ._constants import (
 
 JOB_LIST_FILTER_PAGE_RELEASE_VERSION = "0.11.0"
 JOB_LOG_RELEASE_VERSION = "0.11.0"
+
+_JOB_CREATION_TASK_STATUS_PREFIX: Final[str] = "JOB_CREATION_TASK_STATUS_"
 
 function_job_router = APIRouter()
 
@@ -196,6 +208,9 @@ async def delete_function_job(
     ),
 )
 async def function_job_status(
+    app: Annotated[FastAPI, Depends(get_app)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
     function_job: Annotated[
         RegisteredFunctionJob, Depends(get_function_job_dependency)
     ],
@@ -204,10 +219,43 @@ async def function_job_status(
         FunctionJobService, Depends(get_function_job_service)
     ],
 ) -> FunctionJobStatus:
+    try:
+        return await function_job_service.inspect_function_job(
+            function=function, function_job=function_job
+        )
+    except FunctionJobProjectMissingError as exc:
+        if (
+            function.function_class == FunctionClass.PROJECT
+            and function_job.function_class == FunctionClass.PROJECT
+        ) or (
+            function.function_class == FunctionClass.SOLVER
+            and function_job.function_class == FunctionClass.SOLVER
+        ):
+            if task_id := function_job.job_creation_task_id:
+                task_manager = get_task_manager(app)
+                task_filter = _get_task_filter(user_id, product_name)
+                task_status = await task_manager.get_task_status(
+                    task_uuid=TaskUUID(task_id), task_filter=task_filter
+                )
+                return FunctionJobStatus(
+                    status=f"{_JOB_CREATION_TASK_STATUS_PREFIX}{task_status.task_state}"
+                )
+            user_error_msg = f"The creation of job {function_job.uid} failed"
+            support_id = create_error_code(Exception())
+            _logger.exception(
+                **create_troubleshootting_log_kwargs(
+                    user_error_msg,
+                    error=Exception(),
+                    error_code=support_id,
+                    tip="Initial call to run metamodeling function must have failed",
+                )
+            )
+            raise
 
-    return await function_job_service.inspect_function_job(
-        function=function, function_job=function_job
-    )
+        raise UnsupportedFunctionFunctionJobClassCombinationError(
+            function_class=function.function_class,
+            function_job_class=function_job.function_class,
+        ) from exc
 
 
 async def get_function_from_functionjobid(
@@ -266,7 +314,11 @@ async def function_job_outputs(
         function.function_class == FunctionClass.PROJECT
         and function_job.function_class == FunctionClass.PROJECT
     ):
-        assert function_job.project_job_id is not None  # nosec
+        if function_job.project_job_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Function job outputs not found",
+            )
         new_outputs = dict(
             (
                 await studies_jobs.get_study_job_outputs(
@@ -282,7 +334,11 @@ async def function_job_outputs(
         function.function_class == FunctionClass.SOLVER
         and function_job.function_class == FunctionClass.SOLVER
     ):
-        assert function_job.solver_job_id is not None  # nosec
+        if function_job.solver_job_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Function job outputs not found",
+            )
         new_outputs = dict(
             (
                 await solvers_jobs_read.get_job_outputs(

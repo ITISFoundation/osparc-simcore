@@ -8,6 +8,7 @@ class BaseBackEndError(ApiServerBaseError):
     """status_code: the default return status which will be returned to the client calling the
     api-server (in case this exception is raised)"""
 
+    msg_template = "The api-server encountered an error when contacting the backend"
     status_code = status.HTTP_502_BAD_GATEWAY
 
     @classmethod
