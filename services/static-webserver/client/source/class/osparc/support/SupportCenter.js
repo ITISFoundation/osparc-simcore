@@ -43,7 +43,7 @@ qx.Class.define("osparc.support.SupportCenter", {
 
   statics: {
     WINDOW_WIDTH: 430,
-    REQUEST_CALL_MESSAGE: qx.locale.Manager.tr("Dear Support,\nI would like to make an appointment for a support call."),
+    REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
 
     getMaxHeight: function() {
       // height: max 80% of screen, or 600px
@@ -173,6 +173,14 @@ qx.Class.define("osparc.support.SupportCenter", {
       const conversationPage = this.getChildControl("conversation-page");
       conversationPage.setConversation(null);
       this.__showConversation();
+      conversationPage.addListenerOnce("changeConversation", e => {
+        const conversation = e.getData();
+        // update conversation name and patch extra_context
+        conversation.renameConversation("Book a call");
+        conversation.patchExtraContext({
+          "appointment": "requested"
+        });
+      });
       conversationPage.postMessage(osparc.support.SupportCenter.REQUEST_CALL_MESSAGE);
     },
   }
