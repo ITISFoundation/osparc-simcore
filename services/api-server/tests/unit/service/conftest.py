@@ -26,6 +26,7 @@ from simcore_service_api_server.services_rpc.catalog import CatalogService
 from simcore_service_api_server.services_rpc.director_v2 import DirectorV2Service
 from simcore_service_api_server.services_rpc.storage import StorageService
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 async def catalog_rpc_side_effect():
@@ -118,8 +119,7 @@ def director2_api(mocker: MockerFixture) -> DirectorV2Api:
 def storage_rest_client(
     mocker: MockerFixture,
 ) -> StorageApi:
-    mock = mocker.AsyncMock(spec=StorageApi)
-    return mock
+    return mocker.AsyncMock(spec=StorageApi)
 
 
 @pytest.fixture
@@ -154,6 +154,11 @@ def program_service(
 
 
 @pytest.fixture
+def async_pg_engine(mocker: MockerFixture) -> AsyncEngine:
+    return mocker.MagicMock(spec=AsyncEngine)
+
+
+@pytest.fixture
 def job_service(
     auth_session: AuthSession,
     director_v2_rpc_client: DirectorV2Service,
@@ -164,6 +169,7 @@ def job_service(
     product_name: ProductName,
     user_id: UserID,
     solver_service: SolverService,
+    async_pg_engine: AsyncEngine,
 ) -> JobService:
     return JobService(
         _web_rest_client=auth_session,

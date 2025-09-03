@@ -151,12 +151,19 @@ def get_function_service(
 def get_function_job_service(
     web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     job_service: Annotated[JobService, Depends(get_job_service)],
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    storage_service: Annotated[StorageService, Depends(get_storage_service)],
+    # async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ) -> FunctionJobService:
     return FunctionJobService(
         _web_rpc_client=web_rpc_api,
         _job_service=job_service,
+        _function_service=function_service,
+        _storage_client=storage_service,
+        _webserver_api=webserver_api,
         user_id=user_id,
         product_name=product_name,
     )

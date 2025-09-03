@@ -9,9 +9,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from faker import Faker
-from models_library.api_schemas_webserver.functions import (
-    ProjectFunctionJob,
-)
+from models_library.api_schemas_webserver.functions import ProjectFunctionJob
 from models_library.functions import (
     Function,
     FunctionClass,
@@ -223,6 +221,60 @@ async def test_list_function_jobs(
 
     # Assert the list contains the registered job
     assert len(jobs) > 0
+    assert any(j.uid == registered_job.uid for j in jobs)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_list_function_jobs_with_status(
+    client: TestClient,
+    add_user_function_api_access_rights: None,
+    rpc_client: RabbitMQRPCClient,
+    mock_function_factory: Callable[[FunctionClass], Function],
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+):
+    # Register the function first
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function_factory(FunctionClass.PROJECT),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert registered_function.uid is not None
+
+    function_job = ProjectFunctionJob(
+        function_uid=registered_function.uid,
+        title="Test Function Job",
+        description="A test function job",
+        project_job_id=uuid4(),
+        inputs={"input1": "value1"},
+        outputs={"output1": "result1"},
+        job_creation_task_id=None,
+    )
+
+    # Register the function job
+    registered_job = await functions_rpc.register_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    # List function jobs
+    jobs, _ = await functions_rpc.list_function_jobs_with_status(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    # Assert the list contains the registered job
+    assert len(jobs) > 0
+    assert jobs[0].status.status == "created"
     assert any(j.uid == registered_job.uid for j in jobs)
 
 

@@ -190,19 +190,10 @@ class FunctionJobBase(BaseModel):
     function_class: FunctionClass
 
 
-class RegisteredFunctionJobBase(FunctionJobBase):
-    uid: FunctionJobID
-    created_at: datetime.datetime
-
-
 class ProjectFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
     project_job_id: ProjectID | None
     job_creation_task_id: TaskID | None
-
-
-class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase):
-    pass
 
 
 class RegisteredProjectFunctionJobPatch(BaseModel):
@@ -221,10 +212,6 @@ class SolverFunctionJob(FunctionJobBase):
     job_creation_task_id: TaskID | None
 
 
-class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
-    pass
-
-
 class RegisteredSolverFunctionJobPatch(BaseModel):
     function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
     title: str | None
@@ -239,10 +226,6 @@ class PythonCodeFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
 
 
-class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):
-    pass
-
-
 class RegisteredPythonCodeFunctionJobPatch(BaseModel):
     function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
     title: str | None
@@ -255,6 +238,24 @@ FunctionJob: TypeAlias = Annotated[
     ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
     Field(discriminator="function_class"),
 ]
+
+
+class RegisteredFunctionJobBase(FunctionJobBase):
+    uid: FunctionJobID
+    created_at: datetime.datetime
+
+
+class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase):
+    pass
+
+
+class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
+    pass
+
+
+class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):
+    pass
+
 
 RegisteredFunctionJob: TypeAlias = Annotated[
     RegisteredProjectFunctionJob
@@ -273,6 +274,36 @@ RegisteredFunctionJobPatch = Annotated[
 
 class FunctionJobStatus(BaseModel):
     status: str
+
+
+class RegisteredFunctionJobWithStatusBase(RegisteredFunctionJobBase, FunctionJobBase):
+    status: FunctionJobStatus
+
+
+class RegisteredProjectFunctionJobWithStatus(
+    RegisteredProjectFunctionJob, RegisteredFunctionJobWithStatusBase
+):
+    pass
+
+
+class RegisteredSolverFunctionJobWithStatus(
+    RegisteredSolverFunctionJob, RegisteredFunctionJobWithStatusBase
+):
+    pass
+
+
+class RegisteredPythonCodeFunctionJobWithStatus(
+    RegisteredPythonCodeFunctionJob, RegisteredFunctionJobWithStatusBase
+):
+    pass
+
+
+RegisteredFunctionJobWithStatus: TypeAlias = Annotated[
+    RegisteredProjectFunctionJobWithStatus
+    | RegisteredPythonCodeFunctionJobWithStatus
+    | RegisteredSolverFunctionJobWithStatus,
+    Field(discriminator="function_class"),
+]
 
 
 class FunctionJobCollection(BaseModel):
@@ -307,6 +338,12 @@ class FunctionJobDB(BaseModel):
 class RegisteredFunctionJobDB(FunctionJobDB):
     uuid: FunctionJobID
     created: datetime.datetime
+
+
+class RegisteredFunctionJobWithStatusDB(FunctionJobDB):
+    uuid: FunctionJobID
+    created: datetime.datetime
+    status: str
 
 
 class FunctionDB(BaseModel):
