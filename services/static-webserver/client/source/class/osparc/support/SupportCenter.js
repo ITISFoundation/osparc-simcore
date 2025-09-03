@@ -38,6 +38,7 @@ qx.Class.define("osparc.support.SupportCenter", {
     this.getChildControl("conversations-intro-text");
     this.getChildControl("conversations-list");
     this.getChildControl("ask-a-question-button");
+    this.getChildControl("book-a-call-button");
   },
 
   statics: {
@@ -112,6 +113,12 @@ qx.Class.define("osparc.support.SupportCenter", {
           });
           break;
         }
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+            alignX: "center",
+          });
+          this.getChildControl("conversations-layout").add(control);
+          break;
         case "ask-a-question-button":
           control = new osparc.ui.form.FetchButton(this.tr("Ask a Question")).set({
             appearance: "strong-button",
@@ -120,7 +127,17 @@ qx.Class.define("osparc.support.SupportCenter", {
             alignX: "center",
           });
           control.addListener("execute", () => this.openConversation(null), this);
-          this.getChildControl("conversations-layout").add(control);
+          this.getChildControl("buttons-layout").add(control);
+          break;
+        case "book-a-call-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Book a Call")).set({
+            appearance: "strong-button",
+            allowGrowX: false,
+            center: true,
+            alignX: "center",
+          });
+          control.addListener("execute", () => this.createConversationBookCall(null), this);
+          this.getChildControl("buttons-layout").add(control);
           break;
         case "conversation-page":
           control = new osparc.support.ConversationPage();
@@ -151,6 +168,12 @@ qx.Class.define("osparc.support.SupportCenter", {
         conversationPage.setConversation(null);
         this.__showConversation();
       }
+    },
+
+    createConversationBookCall: function() {
+      const conversationPage = this.getChildControl("conversation-page");
+      conversationPage.setConversation(null);
+      this.__showConversation();
     },
   }
 });
