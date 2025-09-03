@@ -246,6 +246,10 @@ qx.Class.define("osparc.data.model.Conversation", {
         });
     },
 
+    patchExtraContext: function(extraContext) {
+      console.log("extraContext", extraContext);
+    },
+
     addMessage: function(message) {
       if (message) {
         const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
