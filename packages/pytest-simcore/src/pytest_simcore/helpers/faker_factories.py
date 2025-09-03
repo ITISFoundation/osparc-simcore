@@ -256,6 +256,7 @@ def fake_task_factory(
 def random_product(
     *,
     group_id: int | None = None,
+    support_standard_group_id: int | None = None,
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
@@ -302,6 +303,7 @@ def random_product(
         "priority": fake.pyint(0, 10),
         "max_open_studies_per_user": fake.pyint(1, 10),
         "group_id": group_id,
+        "support_standard_group_id": support_standard_group_id,
     }
 
     if ui := fake.random_element(
