@@ -97,6 +97,10 @@ def any_ref_key(obj):
 
 
 class GenerateResolvedJsonSchema(GenerateJsonSchema):
+    """Generates a json-schema with all $ref resolved
+    Usage: pydantic_base_model.model_json_schema(schema_generator=GenerateResolvedJsonSchema) returns a json schema where it is guaranteed that all json references are resolved.
+    """
+
     def generate(self, schema: CoreSchema, mode: JsonSchemaMode) -> JsonSchemaValue:
         schema_value = super().generate(schema=schema, mode=mode)
         schema_value = jsonref.replace_refs(schema_value, jsonschema=True)
