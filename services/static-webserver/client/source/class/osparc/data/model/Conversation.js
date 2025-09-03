@@ -247,7 +247,10 @@ qx.Class.define("osparc.data.model.Conversation", {
     },
 
     patchExtraContext: function(extraContext) {
-      console.log("extraContext", extraContext);
+      osparc.store.ConversationsSupport.getInstance().patchExtraContext(this.getConversationId(), extraContext)
+        .then(() => {
+          this.setExtraContext(extraContext);
+        });
     },
 
     addMessage: function(message) {

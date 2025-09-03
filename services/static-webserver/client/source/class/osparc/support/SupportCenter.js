@@ -178,12 +178,15 @@ qx.Class.define("osparc.support.SupportCenter", {
           const conversationId = data["conversationId"];
           osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
             .then(conversation => {
-              const conversation = e.getData();
               // update conversation name and patch extra_context
               conversation.renameConversation("Book a call");
               conversation.patchExtraContext({
+                ...conversation.getExtraContext(),
                 "appointment": "requested"
               });
+              // This should be an automatic response in the chat
+              const msg = this.tr("Your request has been sent.<br>Our support team will get back to you.");
+              osparc.FlashMessenger.logAs(msg, "INFO");
             });
         })
         .catch(err => {
