@@ -22,7 +22,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
 
     this.set({
       autoDestroy: true,
-      layout: new qx.ui.layout.VBox(15),
+      layout: new qx.ui.layout.VBox(10),
       showMinimize: false,
       showMaximize: false,
       contentPadding: 15,
@@ -63,7 +63,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
           this.addAt(control, 0);
           break;
         case "extra-widgets-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
             paddingTop: 10
           });
           this.addAt(control, 1, {
@@ -74,7 +74,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "right"
           }));
-          this.add(control, 2);
+          this.addAt(control, 2);
           break;
         case "cancel-button": {
           const btnsLayout = this.getChildControl("buttons-layout");
