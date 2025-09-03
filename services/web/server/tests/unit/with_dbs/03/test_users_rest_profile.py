@@ -7,12 +7,14 @@
 
 
 import functools
+from collections.abc import Iterator
 from copy import deepcopy
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import patch
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole
@@ -22,6 +24,7 @@ from models_library.api_schemas_webserver.users import (
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -45,6 +48,41 @@ def app_environment(
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",  # NOTE: still under development
         },
     )
+
+
+@pytest.fixture(scope="module")
+def support_group(
+    postgres_db: sa.engine.Engine,
+    product_name: str,
+) -> Iterator[dict[str, Any]]:
+    """Creates a standard support group and assigns it to the current product"""
+    from simcore_postgres_database.models.groups import groups
+    from simcore_postgres_database.models.products import products
+
+    # Create support group using direct database insertion
+    group_values = {
+        "name": "Support Group",
+        "description": "Support group for product",
+        "type": "STANDARD",
+    }
+
+    with sync_insert_and_get_row_lifespan(
+        postgres_db,
+        table=groups,
+        values=group_values,
+        pk_col=groups.c.gid,
+    ) as group_row:
+        group_id = group_row["gid"]
+
+        # Update product to set support_standard_group_id
+        with postgres_db.begin() as conn:
+            conn.execute(
+                sa.update(products)
+                .where(products.c.name == product_name)
+                .values(support_standard_group_id=group_id)
+            )
+
+        yield group_row
 
 
 @pytest.mark.parametrize(
@@ -100,6 +138,7 @@ async def test_get_profile(
     primary_group: dict[str, Any],
     standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
+    support_group: dict[str, Any],
 ):
     assert client.app
 
@@ -130,13 +169,25 @@ async def test_get_profile(
         "thumbnail": None,
     }
 
-    assert got_profile_groups["support"] is None
+    # support group exists
+    assert got_profile_groups["support"]
+    support_group_id = got_profile_groups["support"]["gid"]
 
+    assert support_group_id == support_group["gid"]
+    assert got_profile_groups["support"]["description"] == support_group["description"]
+    assert "accessRights" not in got_profile_groups["support"]
+
+    # standard groups with at least read access
     sorted_by_group_id = functools.partial(sorted, key=lambda d: d["gid"])
     assert sorted_by_group_id(
         got_profile_groups["organizations"]
     ) == sorted_by_group_id(standard_groups)
 
+    # user is NOT part of the support group
+    all_standard_groups_ids = {g["gid"] for g in standard_groups}
+    assert support_group_id not in all_standard_groups_ids
+
+    # preferences
     assert profile.preferences == await get_frontend_user_preferences_aggregation(
         client.app, user_id=logged_user["id"], product_name="osparc"
     )
