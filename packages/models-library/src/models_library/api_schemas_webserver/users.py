@@ -62,6 +62,16 @@ class MyProfilePrivacyPatch(InputSchema):
     hide_email: bool | None = None
 
 
+class MyProfileProvidedDetails(OutputSchema):
+    """Details provided upon registration"""
+
+    address: str | None
+    city: str | None
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
+    postal_code: str | None
+    country: str | None
+
+
 class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
     user_name: Annotated[
@@ -86,6 +96,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
 
     privacy: MyProfilePrivacyGet
     preferences: AggregatedPreferences
+    provided: MyProfileProvidedDetails | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -103,6 +114,25 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
                             "hide_username": 0,
                             "hide_fullname": 0,
                             "hide_email": 1,
+                        },
+                    },
+                    {
+                        "id": 1,
+                        "login": "minimal@user.com",
+                        "userName": "minuser",
+                        "role": "USER",
+                        "preferences": {},
+                        "privacy": {
+                            "hide_username": False,
+                            "hide_fullname": False,
+                            "hide_email": False,
+                        },
+                        "provided": {
+                            "address": "123 Main St",
+                            "city": "Sampleville",
+                            "state": "CA",
+                            "postal_code": "12345",
+                            "country": "Wonderland",
                         },
                     },
                 ]
