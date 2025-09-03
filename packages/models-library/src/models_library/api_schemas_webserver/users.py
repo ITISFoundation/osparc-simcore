@@ -164,8 +164,9 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         my_product_group: tuple[Group, AccessRightsDict] | None,
         my_preferences: AggregatedPreferences,
         my_support_group: Group | None,
+        profile_contact: MyProfileAddressGet | None = None,
     ) -> Self:
-        data = remap_keys(
+        profile_data = remap_keys(
             my_profile.model_dump(
                 include={
                     "id",
@@ -183,11 +184,12 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
             rename={"email": "login"},
         )
         return cls(
-            **data,
+            **profile_data,
             groups=MyGroupsGet.from_domain_model(
                 my_groups_by_type, my_product_group, my_support_group
             ),
             preferences=my_preferences,
+            contact=profile_contact,
         )
 
 
