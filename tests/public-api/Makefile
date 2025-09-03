@@ -26,7 +26,6 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 
 .PHONY: test-dev
-PUBLICAPI_TEST_TARGET := $(if $(OVERRIDE_TEST_TARGET), $(OVERRIDE_TEST_TARGET), $(CURDIR))
 test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	# WARNING:
 	#   - do not forget to build latest changes images
@@ -39,8 +38,8 @@ test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	--failed-first \
 	--durations=10 \
 	--asyncio-mode=auto \
-	$(PDB_OPTION) \
-	$(PUBLICAPI_TEST_TARGET)
+	--pdb \
+	$(CURDIR)
 
 
 .PHONY: test-ci

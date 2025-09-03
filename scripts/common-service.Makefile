@@ -136,14 +136,8 @@ info: ## displays service info
 #
 
 .PHONY: _run-test-dev _run-test-ci
-# Use OVERRIDE_TEST_TARGET to override the default test target
-# Use TEST_DISABLE_PDB to disable pdb in these tests
-TEST_TARGET := $(if $(OVERRIDE_TEST_TARGET), $(OVERRIDE_TEST_TARGET), $(if $(target),$(target),$(CURDIR)/tests/unit))
-# Use TEST_DISABLE_PDB to disable pdb in these tests
-PDB_OPTION := $(if $(filter-out 0,$(TEST_DISABLE_PDB)),,--pdb)
-# Use TEST_ENABLE_TESTIT to enable testit in these tests
-TESTIT_OPTION := $(if $(filter-out 0,$(TEST_ENABLE_TESTIT)),-m testit,)
 
+TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 PYTEST_ADDITIONAL_PARAMETERS := $(if $(pytest-parameters),$(pytest-parameters),)
 _run-test-dev: _check_venv_active
 	# runs tests for development (e.g w/ pdb)
@@ -159,8 +153,7 @@ _run-test-dev: _check_venv_active
 		--failed-first \
 		--junitxml=junit.xml -o junit_family=legacy \
 		--keep-docker-up \
-		$(PDB_OPTION) \
-		$(TESTIT_OPTION) \
+		--pdb \
 		-vv \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)
