@@ -23,12 +23,13 @@ qx.Class.define("osparc.ui.form.DateTimeField", {
   construct: function() {
     this.base(arguments);
 
-    // Layout
-    var layout = new qx.ui.layout.HBox(5);
-    this._setLayout(layout);
+    this._setLayout(new qx.ui.layout.HBox(5));
 
     // Date selector
     this.__dateField = new qx.ui.form.DateField();
+    this.__dateField.set({
+      minimumDate: new Date() // forbid past dates
+    });
     this._add(this.__dateField);
 
     // Hour selector
@@ -78,7 +79,23 @@ qx.Class.define("osparc.ui.form.DateTimeField", {
         const newDate = new Date(date.getTime());
         newDate.setHours(this.__hourSpinner.getValue());
         newDate.setMinutes(this.__minuteSpinner.getValue());
-        this.setValue(newDate);
+
+        const now = new Date();
+
+        // If same day, ensure time is not in the past
+        const isToday =
+          date.getFullYear() === now.getFullYear() &&
+          date.getMonth() === now.getMonth() &&
+          date.getDate() === now.getDate();
+
+        if (isToday && newDate < now) {
+          // Snap to current time if invalid
+          this.__hourSpinner.setValue(now.getHours());
+          this.__minuteSpinner.setValue(now.getMinutes());
+          this.setValue(now);
+        } else {
+          this.setValue(newDate);
+        }
       } else {
         this.resetValue();
       }
