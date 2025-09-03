@@ -117,14 +117,8 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
       supportCenter.openConversation(null);
 
       const textToAddMessageField = msg => {
-        if (
-          supportCenter.getChildControl("conversation-page") &&
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content") &&
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message") &&
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field")
-        ) {
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(msg);
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").addComment();
+        if (supportCenter.getChildControl("conversation-page")) {
+          supportCenter.getChildControl("conversation-page").postMessage(msg);
         }
       }
 

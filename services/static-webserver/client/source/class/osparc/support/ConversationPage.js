@@ -207,5 +207,16 @@ qx.Class.define("osparc.support.ConversationPage", {
       renamer.center();
       renamer.open();
     },
+
+    postMessage: function(message) {
+      if (
+        this.getChildControl("conversation-content") &&
+        this.getChildControl("conversation-content").getChildControl("add-message") &&
+        this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field")
+      ) {
+        this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(message);
+        this.getChildControl("conversation-content").getChildControl("add-message").addComment();
+      }
+    },
   }
 });

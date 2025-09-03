@@ -172,6 +172,7 @@ qx.Class.define("osparc.support.SupportCenter", {
       const conversationPage = this.getChildControl("conversation-page");
       conversationPage.setConversation(null);
       this.__showConversation();
+      conversationPage.postMessage("I want a call!");
     },
   }
 });
