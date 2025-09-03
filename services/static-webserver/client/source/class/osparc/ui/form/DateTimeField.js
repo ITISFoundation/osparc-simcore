@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("demo.widget.DateTimeField", {
+qx.Class.define("osparc.ui.form.DateTimeField", {
   extend: qx.ui.core.Widget,
   include: [qx.ui.form.MForm],
   implement: [qx.ui.form.IForm, qx.ui.form.IStringForm],
@@ -29,16 +29,14 @@ qx.Class.define("demo.widget.DateTimeField", {
 
     // Date selector
     this.__dateField = new qx.ui.form.DateField();
-    this._add(this.__dateField, {flex: 1});
+    this._add(this.__dateField);
 
     // Hour selector
     this.__hourSpinner = new qx.ui.form.Spinner(0, 12, 23);
-    this.__hourSpinner.setWidth(60);
     this._add(this.__hourSpinner);
 
     // Minute selector
     this.__minuteSpinner = new qx.ui.form.Spinner(0, 0, 59);
-    this.__minuteSpinner.setWidth(60);
     this._add(this.__minuteSpinner);
 
     // Sync changes back to value
