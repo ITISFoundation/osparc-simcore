@@ -96,6 +96,11 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         """
 
     @classmethod
+    @abstractmethod
+    async def on_cancelled(cls, context: DeferredContext) -> None:
+        """called after handling ``cancel`` request by the copy executing ``run``"""
+
+    @classmethod
     async def cancel(cls, task_uid: TaskUID) -> None:
         """cancels a deferred"""
 

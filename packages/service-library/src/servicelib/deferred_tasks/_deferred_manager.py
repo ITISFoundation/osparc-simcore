@@ -579,6 +579,11 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         _logger.info("Found and cancelled run for '%s'", task_uid)
         await self.__remove_task(task_uid, task_schedule)
 
+        subclass = self.__get_subclass(task_schedule.class_unique_reference)
+        deferred_context = self.__get_deferred_context(task_schedule.start_context)
+        with log_catch(_logger, reraise=False):
+            await subclass.on_cancelled(deferred_context)
+
     async def __is_present(self, task_uid: TaskUID) -> bool:
         task_schedule: TaskScheduleModel | None = await self._task_tracker.get(task_uid)
         return task_schedule is not None
