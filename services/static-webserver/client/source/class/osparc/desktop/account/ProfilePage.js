@@ -69,24 +69,29 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
   members: {
     __userProfileData: null,
     __userProfileModel: null,
+    __userProfileForm: null,
     __userProfileRenderer: null,
-    __privacyRenderer: null,
     __updateProfileBtn: null,
     __userPrivacyData: null,
     __userPrivacyModel: null,
+    __privacyRenderer: null,
     __updatePrivacyBtn: null,
-    __userProfileForm: null,
     __sms2FAItem: null,
+    __personalInfoModel: null,
+    __personalInfoRenderer: null,
 
     __fetchProfile: function() {
       this.__userProfileRenderer.setEnabled(false);
       this.__privacyRenderer.setEnabled(false);
+      this.__personalInfoRenderer.setEnabled(false);
+
       osparc.data.Resources.getOne("profile", {}, null, false)
         .then(profile => {
           this.__setDataToProfile(profile);
           this.__setDataToPrivacy(profile["privacy"]);
           this.__userProfileRenderer.setEnabled(true);
           this.__privacyRenderer.setEnabled(true);
+          this.__personalInfoRenderer.setEnabled(true);
         })
         .catch(err => console.error(err));
     },
@@ -101,6 +106,14 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           "email": data["login"],
           "phone": data["phone"] || "-",
           "expirationDate": data["expirationDate"] || null,
+        });
+        this.__personalInfoModel.set({
+          "institution": data["institution"] || "",
+          "address": data["address"] || "",
+          "city": data["city"] || "",
+          "state": data["state"] || "",
+          "country": data["country"] || "",
+          "postalCode": data["postal_code"] || "",
         });
       }
       this.__updateProfileBtn.setEnabled(false);
@@ -607,7 +620,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         readOnly: true,
       });
 
-      const personalInfoForm = this.__personalInfoForm = new qx.ui.form.Form();
+      const personalInfoForm = new qx.ui.form.Form();
       personalInfoForm.add(institution, "Institution", null, "institution");
       personalInfoForm.add(address, "Address", null, "address");
       personalInfoForm.add(city, "City", null, "city");
@@ -630,24 +643,12 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       const model = this.__personalInfoModel = qx.data.marshal.Json.createModel(raw);
       const controller = new qx.data.controller.Object(model);
 
-      controller.addTarget(institution, "value", "institution", true, null, {
-        converter: data => data ? data : ""
-      });
-      controller.addTarget(address, "value", "address", true, null, {
-        converter: data => data ? data : ""
-      });
-      controller.addTarget(city, "value", "city", true, null, {
-        converter: data => data ? data : ""
-      });
-      controller.addTarget(state, "value", "state", true, null, {
-        converter: data => data ? data : ""
-      });
-      controller.addTarget(country, "value", "country", true, null, {
-        converter: data => data ? data : ""
-      });
-      controller.addTarget(postalCode, "value", "postalCode", true, null, {
-        converter: data => data ? data : ""
-      });
+      controller.addTarget(institution, "value", "institution", true);
+      controller.addTarget(address, "value", "address", true);
+      controller.addTarget(city, "value", "city", true);
+      controller.addTarget(state, "value", "state", true);
+      controller.addTarget(country, "value", "country", true);
+      controller.addTarget(postalCode, "value", "postalCode", true);
 
       return box;
     },
