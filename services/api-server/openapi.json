@@ -10862,15 +10862,6 @@
             "title": "Function Class",
             "default": "PROJECT"
           },
-          "has_state": {
-            "type": "boolean",
-            "enum": [
-              true,
-              false
-            ],
-            "title": "Has State",
-            "default": false
-          },
           "project_job_id": {
             "anyOf": [
               {
@@ -11023,15 +11014,6 @@
             "const": "PYTHON_CODE",
             "title": "Function Class",
             "default": "PYTHON_CODE"
-          },
-          "has_state": {
-            "type": "boolean",
-            "enum": [
-              true,
-              false
-            ],
-            "title": "Has State",
-            "default": false
           }
         },
         "type": "object",
@@ -11219,15 +11201,6 @@
             "title": "Function Class",
             "default": "PROJECT"
           },
-          "has_state": {
-            "type": "boolean",
-            "enum": [
-              true,
-              false
-            ],
-            "title": "Has State",
-            "default": false
-          },
           "uid": {
             "type": "string",
             "format": "uuid",
@@ -11320,15 +11293,6 @@
             "const": "PROJECT",
             "title": "Function Class",
             "default": "PROJECT"
-          },
-          "has_state": {
-            "type": "boolean",
-            "enum": [
-              true,
-              false
-            ],
-            "title": "Has State",
-            "default": false
           },
           "uid": {
             "type": "string",
@@ -11517,15 +11481,6 @@
             "title": "Function Class",
             "default": "PYTHON_CODE"
           },
-          "has_state": {
-            "type": "boolean",
-            "enum": [
-              true,
-              false
-            ],
-            "title": "Has State",
-            "default": false
-          },
           "uid": {
             "type": "string",
             "format": "uuid",
@@ -11593,15 +11548,6 @@
             "const": "PYTHON_CODE",
             "title": "Function Class",
             "default": "PYTHON_CODE"
-          },
-          "has_state": {
-            "type": "boolean",
-            "enum": [
-              true,
-              false
-            ],
-            "title": "Has State",
-            "default": false
           },
           "uid": {
             "type": "string",
@@ -11772,15 +11718,6 @@
             "title": "Function Class",
             "default": "SOLVER"
           },
-          "has_state": {
-            "type": "boolean",
-            "enum": [
-              true,
-              false
-            ],
-            "title": "Has State",
-            "default": false
-          },
           "uid": {
             "type": "string",
             "format": "uuid",
@@ -11873,15 +11810,6 @@
             "const": "SOLVER",
             "title": "Function Class",
             "default": "SOLVER"
-          },
-          "has_state": {
-            "type": "boolean",
-            "enum": [
-              true,
-              false
-            ],
-            "title": "Has State",
-            "default": false
           },
           "uid": {
             "type": "string",
@@ -12208,15 +12136,6 @@
             "const": "SOLVER",
             "title": "Function Class",
             "default": "SOLVER"
-          },
-          "has_state": {
-            "type": "boolean",
-            "enum": [
-              true,
-              false
-            ],
-            "title": "Has State",
-            "default": false
           },
           "solver_job_id": {
             "anyOf": [
