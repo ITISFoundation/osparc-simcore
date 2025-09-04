@@ -28,10 +28,14 @@ from models_library.functions import (
     RegisteredFunctionJobCollection,
     RegisteredFunctionJobDB,
     RegisteredFunctionJobPatch,
+    RegisteredFunctionJobWithStatus,
+    RegisteredFunctionJobWithStatusDB,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
+    RegisteredProjectFunctionJobWithStatus,
     RegisteredSolverFunction,
     RegisteredSolverFunctionJob,
+    RegisteredSolverFunctionJobWithStatus,
 )
 from models_library.functions_errors import (
     FunctionJobPatchModelIncompatibleError,
@@ -46,9 +50,7 @@ from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
 from . import _functions_repository
-from ._functions_exceptions import (
-    FunctionGroupAccessRightsNotFoundError,
-)
+from ._functions_exceptions import FunctionGroupAccessRightsNotFoundError
 
 router = RPCRouter()
 
@@ -262,19 +264,53 @@ async def list_function_jobs(
     filter_by_function_job_ids: list[FunctionJobID] | None = None,
     filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
-    returned_function_jobs, page = await _functions_repository.list_function_jobs(
-        app=app,
-        user_id=user_id,
-        product_name=product_name,
-        pagination_limit=pagination_limit,
-        pagination_offset=pagination_offset,
-        filter_by_function_id=filter_by_function_id,
-        filter_by_function_job_ids=filter_by_function_job_ids,
-        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+    returned_function_jobs, page = (
+        await _functions_repository.list_function_jobs_with_status(
+            app=app,
+            user_id=user_id,
+            product_name=product_name,
+            pagination_limit=pagination_limit,
+            pagination_offset=pagination_offset,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        )
     )
     return [
         _decode_functionjob(returned_function_job)
         for returned_function_job in returned_function_jobs
+    ], page
+
+
+async def list_function_jobs_with_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    pagination_limit: int,
+    pagination_offset: int,
+    filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+) -> tuple[
+    list[RegisteredFunctionJobWithStatus],
+    PageMetaInfoLimitOffset,
+]:
+    returned_function_jobs_wso, page = (
+        await _functions_repository.list_function_jobs_with_status(
+            app=app,
+            user_id=user_id,
+            product_name=product_name,
+            pagination_limit=pagination_limit,
+            pagination_offset=pagination_offset,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        )
+    )
+    return [
+        _decode_functionjob_wso(returned_function_job_wso)
+        for returned_function_job_wso in returned_function_jobs_wso
     ], page
 
 
@@ -759,7 +795,7 @@ def _encode_functionjob(
 
 
 def _decode_functionjob(
-    functionjob_db: RegisteredFunctionJobDB,
+    functionjob_db: RegisteredFunctionJobWithStatusDB | RegisteredFunctionJobDB,
 ) -> RegisteredFunctionJob:
     if functionjob_db.function_class == FunctionClass.PROJECT:
         return RegisteredProjectFunctionJob(
@@ -789,6 +825,46 @@ def _decode_functionjob(
                 "job_creation_task_id"
             ],
             created_at=functionjob_db.created,
+        )
+
+    raise UnsupportedFunctionJobClassError(
+        function_job_class=functionjob_db.function_class
+    )
+
+
+def _decode_functionjob_wso(
+    functionjob_db: RegisteredFunctionJobWithStatusDB,
+) -> RegisteredFunctionJobWithStatus:
+    if functionjob_db.function_class == FunctionClass.PROJECT:
+        return RegisteredProjectFunctionJobWithStatus(
+            uid=functionjob_db.uuid,
+            title=functionjob_db.title,
+            description="",
+            function_uid=functionjob_db.function_uuid,
+            inputs=functionjob_db.inputs,
+            outputs=functionjob_db.outputs,
+            project_job_id=functionjob_db.class_specific_data["project_job_id"],
+            created_at=functionjob_db.created,
+            status=FunctionJobStatus(status=functionjob_db.status),
+            job_creation_task_id=functionjob_db.class_specific_data.get(
+                "job_creation_task_id"
+            ),
+        )
+
+    if functionjob_db.function_class == FunctionClass.SOLVER:
+        return RegisteredSolverFunctionJobWithStatus(
+            uid=functionjob_db.uuid,
+            title=functionjob_db.title,
+            description="",
+            function_uid=functionjob_db.function_uuid,
+            inputs=functionjob_db.inputs,
+            outputs=functionjob_db.outputs,
+            solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
+            created_at=functionjob_db.created,
+            status=FunctionJobStatus(status=functionjob_db.status),
+            job_creation_task_id=functionjob_db.class_specific_data.get(
+                "job_creation_task_id"
+            ),
         )
 
     raise UnsupportedFunctionJobClassError(

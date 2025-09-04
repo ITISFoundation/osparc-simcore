@@ -279,6 +279,9 @@ async def update(
         **updates.model_dump(exclude_unset=True),
         conversations.c.modified.name: func.now(),
     }
+    _name = _updates.get("name", "Default")
+    if _name is None:
+        _updates["name"] = "no name"
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
