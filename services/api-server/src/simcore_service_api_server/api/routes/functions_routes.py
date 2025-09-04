@@ -483,14 +483,12 @@ async def map_function(
             raise result
 
     # At this point, all results are FunctionJobID since we've checked for exceptions
-    job_ids: list[FunctionJobID] = results  # type: ignore[assignment]
-
     function_job_collection_description = f"Function job collection of map of function {to_run_function.uid} with {len(function_inputs_list)} inputs"
     return await web_api_rpc_client.register_function_job_collection(
         function_job_collection=FunctionJobCollection(
             title="Function job collection of function map",
             description=function_job_collection_description,
-            job_ids=job_ids,
+            job_ids=results,  # type: ignore
         ),
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
