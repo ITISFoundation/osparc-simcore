@@ -27,15 +27,6 @@ qx.Class.define("osparc.store.Products", {
   extend: qx.core.Object,
   type: "singleton",
 
-  properties: {
-    supportEnabled: {
-      check: "Boolean",
-      nullable: false,
-      init: false,
-      event: "changeSupportEnabled",
-    },
-  },
-
   members: {
     __uiConfig: null,
 
