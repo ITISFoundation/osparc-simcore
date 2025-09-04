@@ -68,7 +68,7 @@ certifi==2025.4.26
     #   requests
 charset-normalizer==3.4.2
     # via requests
-click==8.1.8
+click==8.2.1
     # via
     #   celery
     #   click-didyoumean
@@ -343,7 +343,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.4
     # via opentelemetry-exporter-otlp-proto-http
-rich==14.0.0
+rich==14.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -366,7 +366,7 @@ toolz==1.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.15.4
+typer==0.16.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in

@@ -284,6 +284,7 @@ def fake_task_factory(
 def random_product(
     *,
     group_id: int | None = None,
+    support_standard_group_id: int | None = None,
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
@@ -322,7 +323,6 @@ def random_product(
             ui=VendorUI(
                 logo_url="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg",
                 strong_color=fake.color(),
-                project_alias=fake.random_element(elements=["project", "study"]),
             ),
         ),
         "registration_email_template": registration_email_template,
@@ -331,6 +331,7 @@ def random_product(
         "priority": fake.pyint(0, 10),
         "max_open_studies_per_user": fake.pyint(1, 10),
         "group_id": group_id,
+        "support_standard_group_id": support_standard_group_id,
     }
 
     if ui := fake.random_element(

@@ -57,7 +57,7 @@ from simcore_postgres_database.models.users import UserRole
 from ..._meta import API_VTAG as VTAG
 from ...catalog import catalog_service
 from ...dynamic_scheduler import api as dynamic_scheduler_service
-from ...groups.api import get_group_from_gid, list_all_user_groups_ids
+from ...groups import api as groups_service
 from ...groups.exceptions import GroupNotFoundError
 from ...login.decorators import login_required
 from ...models import ClientSessionHeaderParams
@@ -572,7 +572,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
     groups_to_compare = {EVERYONE_GROUP_ID}
 
     # Get the group from the provided group ID
-    _sharing_with_group: Group | None = await get_group_from_gid(
+    _sharing_with_group: Group | None = await groups_service.get_group_by_gid(
         app=request.app, group_id=query_params.for_gid
     )
 
@@ -585,7 +585,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
         _user_id = await users_service.get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
-        user_groups_ids = await list_all_user_groups_ids(
+        user_groups_ids = await groups_service.list_all_user_groups_ids(
             app=request.app, user_id=_user_id
         )
         groups_to_compare.update(set(user_groups_ids))

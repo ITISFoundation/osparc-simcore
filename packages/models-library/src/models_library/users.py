@@ -71,8 +71,11 @@ class UserBillingDetails(BaseModel):
     institution: str | None
     address: str | None
     city: str | None
-    state: str | None = Field(description="State, province, canton, ...")
-    country: str  # Required for taxes
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
+    country: Annotated[
+        str,
+        Field(description="Billing country (with standardize name) required for taxes"),
+    ]
     postal_code: str | None
     phone: str | None
 

@@ -57,8 +57,10 @@ from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
+from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.repository.api_keys import UserAndProductTuple
 from simcore_service_api_server.services_http.solver_job_outputs import ResultsTypes
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
@@ -67,6 +69,19 @@ from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 @pytest.fixture
 def product_name() -> ProductName:
     return "osparc"
+
+
+@pytest.fixture
+def user_identity(
+    user_id: UserID,
+    user_email: EmailStr,
+    product_name: ProductName,
+) -> Identity:
+    return Identity(
+        user_id=user_id,
+        product_name=product_name,
+        email=user_email,
+    )
 
 
 @pytest.fixture
@@ -114,7 +129,6 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
             "setup_prometheus_instrumentation",
             autospec=True,
         )
-
     return app_environment
 
 
@@ -551,6 +565,12 @@ def project_job_rpc_get() -> ProjectJobRpcGet:
 
 
 @pytest.fixture
+def job_links() -> JobLinks:
+    example = JobLinks.model_json_schema()["examples"][0]
+    return JobLinks.model_validate(example)
+
+
+@pytest.fixture
 def mocked_webserver_rpc_api(
     mocked_app_dependencies: None,
     mocker: MockerFixture,
@@ -732,7 +752,7 @@ def mocked_solver_job_outputs(mocker) -> None:
         eTag=None,
     )
     mocker.patch(
-        "simcore_service_api_server.api.routes.solvers_jobs_read.get_solver_output_results",
+        "simcore_service_api_server._service_jobs.get_solver_output_results",
         autospec=True,
         return_value=result,
     )

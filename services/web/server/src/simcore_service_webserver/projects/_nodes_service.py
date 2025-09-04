@@ -24,6 +24,7 @@ from pydantic import (
     model_validator,
 )
 from servicelib.utils import logged_gather
+from simcore_postgres_database.utils_projects_nodes import ProjectNode
 
 from ..application_settings import get_application_settings
 from ..storage.api import get_download_link, get_files_in_node_folder
@@ -99,6 +100,12 @@ async def update_project_nodes_map(
     return await _nodes_repository.update_project_nodes_map(
         app, project_id=project_id, partial_nodes_map=partial_nodes_map
     )
+
+
+async def get_project_nodes(
+    app: web.Application, *, project_uuid: ProjectID
+) -> list[ProjectNode]:
+    return await _nodes_repository.get_project_nodes(app, project_uuid=project_uuid)
 
 
 #

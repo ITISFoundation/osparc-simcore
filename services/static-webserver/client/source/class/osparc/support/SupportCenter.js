@@ -37,13 +37,13 @@ qx.Class.define("osparc.support.SupportCenter", {
 
     this.getChildControl("conversations-intro-text");
     this.getChildControl("conversations-list");
-    if (!osparc.store.Products.getInstance().amIASupportUser()) {
-      this.getChildControl("ask-a-question-button");
-    }
+    this.getChildControl("ask-a-question-button");
+    this.getChildControl("book-a-call-button");
   },
 
   statics: {
     WINDOW_WIDTH: 430,
+    REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
 
     getMaxHeight: function() {
       // height: max 80% of screen, or 600px
@@ -114,15 +114,29 @@ qx.Class.define("osparc.support.SupportCenter", {
           });
           break;
         }
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignX: "center",
+          }));
+          this.getChildControl("conversations-layout").add(control);
+          break;
         case "ask-a-question-button":
           control = new osparc.ui.form.FetchButton(this.tr("Ask a Question")).set({
             appearance: "strong-button",
             allowGrowX: false,
             center: true,
-            alignX: "center",
           });
           control.addListener("execute", () => this.openConversation(null), this);
-          this.getChildControl("conversations-layout").add(control);
+          this.getChildControl("buttons-layout").add(control);
+          break;
+        case "book-a-call-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Book a Call")).set({
+            appearance: "strong-button",
+            allowGrowX: false,
+            center: true,
+          });
+          control.addListener("execute", () => this.createConversationBookCall(null), this);
+          this.getChildControl("buttons-layout").add(control);
           break;
         case "conversation-page":
           control = new osparc.support.ConversationPage();
@@ -153,6 +167,31 @@ qx.Class.define("osparc.support.SupportCenter", {
         conversationPage.setConversation(null);
         this.__showConversation();
       }
+    },
+
+    createConversationBookCall: function() {
+      const conversationPage = this.getChildControl("conversation-page");
+      conversationPage.setConversation(null);
+      this.__showConversation();
+      conversationPage.postMessage(osparc.support.SupportCenter.REQUEST_CALL_MESSAGE)
+        .then(data => {
+          const conversationId = data["conversationId"];
+          osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
+            .then(conversation => {
+              // update conversation name and patch extra_context
+              conversation.renameConversation("Book a call");
+              conversation.patchExtraContext({
+                ...conversation.getExtraContext(),
+                "appointment": "requested"
+              });
+              // This should be an automatic response in the chat
+              const msg = this.tr("Your request has been sent.<br>Our support team will get back to you.");
+              osparc.FlashMessenger.logAs(msg, "INFO");
+            });
+        })
+        .catch(err => {
+          console.error("Error sending request call message", err);
+        });
     },
   }
 });

@@ -6,11 +6,12 @@ from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import TypeAdapter
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
+from simcore_postgres_database.utils_projects_nodes import ProjectNode, ProjectNodesRepo
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+
 from ..db.plugin import get_asyncpg_engine
 
 
@@ -61,3 +62,12 @@ async def update_project_nodes_map(
             workbench[node_id] = project_node.model_dump_as_node()
 
     return TypeAdapter(dict[NodeID, Node]).validate_python(workbench)
+
+
+async def get_project_nodes(
+    app: web.Application, *, project_uuid: ProjectID
+) -> list[ProjectNode]:
+    repo = ProjectNodesRepo(project_uuid=project_uuid)
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app)) as conn:
+        return await repo.list(conn)

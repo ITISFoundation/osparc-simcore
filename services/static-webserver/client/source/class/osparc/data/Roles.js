@@ -120,6 +120,35 @@ qx.Class.define("osparc.data.Roles", {
         },
       }
     },
+    FUNCTION: {
+      "read": {
+        id: "read",
+        label: qx.locale.Manager.tr("User"),
+        longLabel: qx.locale.Manager.tr("User: Read access"),
+        canDo: [
+          qx.locale.Manager.tr("- Can use it")
+        ],
+        accessRights: {
+          "execute": true,
+          "read": true,
+          "write": false
+        },
+      },
+      "write": {
+        id: "write",
+        label: qx.locale.Manager.tr("Owner"),
+        longLabel: qx.locale.Manager.tr("Owner: Read/Write access"),
+        canDo: [
+          qx.locale.Manager.tr("- Can make changes"),
+          qx.locale.Manager.tr("- Can share it")
+        ],
+        accessRights: {
+          "execute": true,
+          "read": true,
+          "write": true
+        },
+      },
+    },
     SERVICES: {
       "read": {
         id: "read",
@@ -267,6 +296,10 @@ qx.Class.define("osparc.data.Roles", {
 
     createRolesStudyInfo: function() {
       return this.__createRolesLayout(osparc.data.Roles.STUDY);
+    },
+
+    createRolesFunctionInfo: function() {
+      return this.__createRolesLayout(osparc.data.Roles.FUNCTION);
     },
 
     createRolesServicesInfo: function() {

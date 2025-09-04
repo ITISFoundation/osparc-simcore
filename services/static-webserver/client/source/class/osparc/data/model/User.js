@@ -51,7 +51,7 @@ qx.Class.define("osparc.data.model.User", {
       }
       description += email;
     }
-    const thumbnail = osparc.utils.Avatar.emailToThumbnail(email, username);
+
     this.set({
       userId,
       groupId,
@@ -59,9 +59,14 @@ qx.Class.define("osparc.data.model.User", {
       firstName,
       lastName,
       email,
-      thumbnail,
+      phoneNumber: userData["phone"] || null,
       label: userData["userName"] || description,
       description,
+    });
+
+    // create the thumbnail after setting email and username
+    this.set({
+      thumbnail: this.createThumbnail(),
     });
   },
 
@@ -122,11 +127,24 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeEmail",
     },
 
+    phoneNumber: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changePhoneNumber"
+    },
+
     thumbnail: {
       check: "String",
       nullable: true,
       init: "",
       event: "changeThumbnail",
+    },
+  },
+
+  members: {
+    createThumbnail: function(size) {
+      return osparc.utils.Avatar.emailToThumbnail(this.getEmail(), this.getUsername(), size);
     },
   },
 });

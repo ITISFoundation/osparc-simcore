@@ -19,6 +19,7 @@ from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -603,13 +604,19 @@ async def test_running_computation_sends_progress_updates_via_socketio(
     mocker: MockerFixture,
 ):
     assert client.app
-    socket_io_conn, _ = await create_socketio_connection(None, client)
+    socket_io_conn, client_id = await create_socketio_connection(None, client)
     mock_node_updated_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_NODE_UPDATED_EVENT, handler=mock_node_updated_handler)
 
     project_id = user_project["uuid"]
 
-    # NOTE: no need to open the project, since the messages are sent to the user groups
+    # NOTE: we need to open the project so that the computation pipeline messages are transmitted and we get all the node updates
+    url_open = client.app.router["open_project"].url_for(project_id=project_id)
+    assert url_open == URL(f"/{API_VTAG}/projects/{project_id}:open")
+    resp = await client.post(f"{url_open}", json=client_id)
+    data, error = await assert_status(resp, expected.ok)
+
+    # start the computation
     url_start = client.app.router["start_computation"].url_for(project_id=project_id)
     assert url_start == URL(f"/{API_VTAG}/computations/{project_id}:start")
 
@@ -675,6 +682,20 @@ async def test_running_computation_sends_progress_updates_via_socketio(
         f"Received updates for: {received_progress_node_ids}"
     )
 
-    print(
-        f"✓ Successfully received progress updates for all {len(computational_node_ids)} computational nodes: {computational_node_ids}"
-    )
+    # check that a node update was sent for each computational node at the end that unlocks the node
+    node_id_data_map: dict[NodeID, list[Node]] = {}
+    for mock_call in mock_node_updated_handler.call_args_list:
+        node_id = NodeID(mock_call[0][0]["node_id"])
+        node_data = TypeAdapter(Node).validate_python(mock_call[0][0]["data"])
+        node_id_data_map.setdefault(node_id, []).append(node_data)
+
+    for node_id, node_data_list in node_id_data_map.items():
+        # find the last update for this node
+        last_node_data = node_data_list[-1]
+        assert last_node_data.state
+        assert last_node_data.state.current_status == RunningState.SUCCESS
+        assert last_node_data.state.lock_state
+        assert last_node_data.state.lock_state.locked is False, (
+            f"expected node {node_id} to be unlocked at the end of the pipeline, "
+            "but it is still locked."
+        )

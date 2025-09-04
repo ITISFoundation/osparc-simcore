@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.75.0
+  version: 0.77.0
 servers:
 - url: ''
   description: webserver
@@ -10506,9 +10506,9 @@ components:
         total:
           anyOf:
           - type: integer
+            minimum: 0
           - type: 'null'
           title: Total
-          description: Total items
         current_page:
           anyOf:
           - type: string
@@ -12881,16 +12881,15 @@ components:
           type: integer
           exclusiveMinimum: true
           title: Gid
-          description: the group ID
+          description: the group's unique ID
           minimum: 0
         label:
           type: string
           title: Label
-          description: the group name
+          description: the group's display name
         description:
           type: string
           title: Description
-          description: the group description
         thumbnail:
           anyOf:
           - type: string
@@ -12898,7 +12897,7 @@ components:
             format: uri
           - type: 'null'
           title: Thumbnail
-          description: url to the group thumbnail
+          description: a link to the group's thumbnail
         accessRights:
           $ref: '#/components/schemas/GroupAccessRights'
         inclusionRules:
@@ -12914,6 +12913,35 @@ components:
       - description
       - accessRights
       title: GroupGet
+    GroupGetBase:
+      properties:
+        gid:
+          type: integer
+          exclusiveMinimum: true
+          title: Gid
+          description: the group's unique ID
+          minimum: 0
+        label:
+          type: string
+          title: Label
+          description: the group's display name
+        description:
+          type: string
+          title: Description
+        thumbnail:
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Thumbnail
+          description: a link to the group's thumbnail
+      type: object
+      required:
+      - gid
+      - label
+      - description
+      title: GroupGetBase
     GroupUpdate:
       properties:
         label:
@@ -13605,6 +13633,12 @@ components:
           anyOf:
           - $ref: '#/components/schemas/GroupGet'
           - type: 'null'
+        support:
+          anyOf:
+          - $ref: '#/components/schemas/GroupGetBase'
+          - type: 'null'
+          description: Group ID of the app support team or None if no support is defined
+            for this product
       type: object
       required:
       - me
@@ -13643,6 +13677,11 @@ components:
           description: Some foundation
           gid: '16'
           label: Blue Fundation
+        support:
+          description: The support team of the application
+          gid: '2'
+          label: Support Team
+          thumbnail: https://placekitten.com/15/15
     MyPermissionGet:
       properties:
         name:
@@ -13678,6 +13717,49 @@ components:
       required:
       - phone
       title: MyPhoneRegister
+    MyProfileAddressGet:
+      properties:
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+        address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Address
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+          description: State, province, canton, ...
+        postalCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postalcode
+        country:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country
+      type: object
+      required:
+      - institution
+      - address
+      - city
+      - state
+      - postalCode
+      - country
+      title: MyProfileAddressGet
+      description: Details provided upon registration and used e.g. for invoicing
     MyProfilePrivacyGet:
       properties:
         hideUsername:
@@ -13783,6 +13865,10 @@ components:
             $ref: '#/components/schemas/Preference'
           type: object
           title: Preferences
+        contact:
+          anyOf:
+          - $ref: '#/components/schemas/MyProfileAddressGet'
+          - type: 'null'
       type: object
       required:
       - id
@@ -14666,28 +14752,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14695,6 +14773,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationCollectionRunRestGet]
     Page_ComputationCollectionRunTaskRestGet_:
       properties:
@@ -14704,28 +14783,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14733,6 +14804,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationCollectionRunTaskRestGet]
     Page_ComputationRunRestGet_:
       properties:
@@ -14742,28 +14814,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14771,6 +14835,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationRunRestGet]
     Page_ComputationTaskRestGet_:
       properties:
@@ -14780,28 +14845,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14809,6 +14866,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationTaskRestGet]
     Page_ConversationMessageRestGet_:
       properties:

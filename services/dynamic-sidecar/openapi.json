@@ -72,9 +72,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Store Compose Spec",
+        "summary": "Create Compose Spec",
         "description": "Validates and stores the docker compose spec for the user services.",
-        "operationId": "store_compose_spec_v1_containers_compose_spec_post",
+        "operationId": "create_compose_spec_v1_containers_compose_spec_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -164,8 +164,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Starts the containers as defined in ContainerCreate by:\n- cleaning up resources from previous runs if any\n- starting the containers\n\nProgress may be obtained through URL\nProcess may be cancelled through URL",
-        "operationId": "create_service_containers_task_v1_containers_post",
+        "summary": "Create Containers",
+        "description": "Starts the containers as defined in ContainerCreate by:\n- cleaning up resources from previous runs if any\n- starting the containers\n\nProgress may be obtained through URL\nProcess may be cancelled through URL",
+        "operationId": "create_containers_v1_containers_post",
         "requestBody": {
           "required": true,
           "content": {
@@ -183,7 +184,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Create Service Containers Task V1 Containers Post"
+                  "title": "Response Create Containers V1 Containers Post"
                 }
               }
             }
@@ -207,6 +208,7 @@
           "containers"
         ],
         "summary": "Get Containers Activity",
+        "description": "If user service declared an inactivity hook, this endpoint provides\ninformation about how much time has passed since the service became inactive.",
         "operationId": "get_containers_activity_v1_containers_activity_get",
         "responses": {
           "200": {
@@ -336,7 +338,8 @@
         "tags": [
           "containers"
         ],
-        "summary": "Enable/disable ports i/o",
+        "summary": "Toggle Ports Io",
+        "description": "Enable/disable ports i/o",
         "operationId": "toggle_ports_io_v1_containers_ports_io_patch",
         "requestBody": {
           "content": {
@@ -370,7 +373,8 @@
         "tags": [
           "containers"
         ],
-        "summary": "Creates the output directories declared by the docker images's labels. It is more convenient to pass the labels from director-v2, since it already has all the machinery to call into director-v0 to retrieve them.",
+        "summary": "Create Output Dirs",
+        "description": "Creates the output directories declared by the docker images's labels.\nIt is more convenient to pass the labels from director-v2,\nsince it already has all the machinery to call into director-v0\nto retrieve them.",
         "operationId": "create_output_dirs_v1_containers_ports_outputs_dirs_post",
         "requestBody": {
           "content": {
@@ -404,7 +408,8 @@
         "tags": [
           "containers"
         ],
-        "summary": "attach container to a network, if not already attached",
+        "summary": "Attach Container To Network",
+        "description": "attach container to a network, if not already attached",
         "operationId": "attach_container_to_network_v1_containers__id__networks_attach_post",
         "parameters": [
           {
@@ -449,7 +454,8 @@
         "tags": [
           "containers"
         ],
-        "summary": "detach container from a network, if not already detached",
+        "summary": "Detach Container From Network",
+        "description": "detach container from a network, if not already detached",
         "operationId": "detach_container_from_network_v1_containers__id__networks_detach_post",
         "parameters": [
           {
@@ -494,8 +500,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Pulls all the docker container images for the user services",
-        "operationId": "pull_user_servcices_docker_images_v1_containers_images_pull_post",
+        "summary": "Pull Container Images",
+        "description": "Pulls all the docker container images for the user services",
+        "operationId": "pull_container_images_v1_containers_images_pull_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -503,7 +510,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Pull User Servcices Docker Images V1 Containers Images Pull Post"
+                  "title": "Response Pull Container Images V1 Containers Images Pull Post"
                 }
               }
             }
@@ -516,8 +523,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Remove the previously started containers",
-        "operationId": "runs_docker_compose_down_task_v1_containers_down_post",
+        "summary": "Down Containers",
+        "description": "Remove the previously started containers",
+        "operationId": "down_containers_v1_containers_down_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -525,7 +533,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Runs Docker Compose Down Task V1 Containers Down Post"
+                  "title": "Response Down Containers V1 Containers Down Post"
                 }
               }
             }
@@ -538,8 +546,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Restores the state of the dynamic service",
-        "operationId": "state_restore_task_v1_containers_state_restore_post",
+        "summary": "Restore Containers State Paths",
+        "description": "Restores the state of the dynamic service",
+        "operationId": "restore_containers_state_paths_v1_containers_state_restore_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -547,7 +556,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response State Restore Task V1 Containers State Restore Post"
+                  "title": "Response Restore Containers State Paths V1 Containers State Restore Post"
                 }
               }
             }
@@ -560,8 +569,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Stores the state of the dynamic service",
-        "operationId": "state_save_task_v1_containers_state_save_post",
+        "summary": "Save Containers State Paths",
+        "description": "Stores the state of the dynamic service",
+        "operationId": "save_containers_state_paths_v1_containers_state_save_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -569,7 +579,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response State Save Task V1 Containers State Save Post"
+                  "title": "Response Save Containers State Paths V1 Containers State Save Post"
                 }
               }
             }
@@ -582,8 +592,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Pull input ports data",
-        "operationId": "ports_inputs_pull_task_v1_containers_ports_inputs_pull_post",
+        "summary": "Pull Container Port Inputs",
+        "description": "Pull input ports data",
+        "operationId": "pull_container_port_inputs_v1_containers_ports_inputs_pull_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -611,7 +622,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Ports Inputs Pull Task V1 Containers Ports Inputs Pull Post"
+                  "title": "Response Pull Container Port Inputs V1 Containers Ports Inputs Pull Post"
                 }
               }
             }
@@ -634,8 +645,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Pull output ports data",
-        "operationId": "ports_outputs_pull_task_v1_containers_ports_outputs_pull_post",
+        "summary": "Pull Container Port Outputs",
+        "description": "Pull output ports data",
+        "operationId": "pull_container_port_outputs_v1_containers_ports_outputs_pull_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -663,7 +675,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Ports Outputs Pull Task V1 Containers Ports Outputs Pull Post"
+                  "title": "Response Pull Container Port Outputs V1 Containers Ports Outputs Pull Post"
                 }
               }
             }
@@ -686,8 +698,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Push output ports data",
-        "operationId": "ports_outputs_push_task_v1_containers_ports_outputs_push_post",
+        "summary": "Push Container Port Outputs",
+        "description": "Push output ports data",
+        "operationId": "push_container_port_outputs_v1_containers_ports_outputs_push_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -695,7 +708,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Ports Outputs Push Task V1 Containers Ports Outputs Push Post"
+                  "title": "Response Push Container Port Outputs V1 Containers Ports Outputs Push Post"
                 }
               }
             }
@@ -708,8 +721,9 @@
         "tags": [
           "containers"
         ],
-        "summary": "Restarts previously started containers",
-        "operationId": "containers_restart_task_v1_containers_restart_post",
+        "summary": "Restart Containers",
+        "description": "Restarts previously started user services",
+        "operationId": "restart_containers_v1_containers_restart_post",
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -717,7 +731,7 @@
               "application/json": {
                 "schema": {
                   "type": "string",
-                  "title": "Response Containers Restart Task V1 Containers Restart Post"
+                  "title": "Response Restart Containers V1 Containers Restart Post"
                 }
               }
             }
@@ -730,7 +744,8 @@
         "tags": [
           "volumes"
         ],
-        "summary": "Updates the state of the volume",
+        "summary": "Put Volume State",
+        "description": "Updates the state of the volume",
         "operationId": "put_volume_state_v1_volumes__id__put",
         "parameters": [
           {
@@ -774,7 +789,8 @@
         "tags": [
           "disk"
         ],
-        "summary": "Frees up reserved disk space",
+        "summary": "Free Reserved Disk Space",
+        "description": "Frees up reserved disk space",
         "operationId": "free_reserved_disk_space_v1_disk_reserved_free_post",
         "responses": {
           "204": {
