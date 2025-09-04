@@ -86,13 +86,13 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
         let iconPath = null;
         switch (visibleCollaborator["collabType"]) {
           case 0:
-            iconPath = "@FontAwesome5Solid/globe/14";
+            iconPath = osparc.dashboard.CardBase.SHARED_ALL;
             break;
           case 1:
-            iconPath = "@FontAwesome5Solid/users/14";
+            iconPath = osparc.dashboard.CardBase.SHARED_ORGS;
             break;
           case 2:
-            iconPath = "@FontAwesome5Solid/user/14";
+            iconPath = osparc.dashboard.CardBase.SHARED_USER;
             break;
         }
         btn.setIcon(iconPath);
