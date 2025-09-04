@@ -246,6 +246,13 @@ qx.Class.define("osparc.data.model.Conversation", {
         });
     },
 
+    patchExtraContext: function(extraContext) {
+      osparc.store.ConversationsSupport.getInstance().patchExtraContext(this.getConversationId(), extraContext)
+        .then(() => {
+          this.setExtraContext(extraContext);
+        });
+    },
+
     addMessage: function(message) {
       if (message) {
         const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
@@ -284,6 +291,27 @@ qx.Class.define("osparc.data.model.Conversation", {
         return this.getExtraContext()["projectId"];
       }
       return null;
-    }
+    },
+
+    getAppointment: function() {
+      if (this.getExtraContext() && "appointment" in this.getExtraContext()) {
+        return this.getExtraContext()["appointment"];
+      }
+      return null;
+    },
+
+    setAppointment: function(appointment) {
+      const extraContext = this.getExtraContext() || {};
+      extraContext["appointment"] = appointment ? appointment.toISOString() : null;
+      // OM: Supporters are not allowed to patch the conversation metadata yet
+      const backendAllowsPatch = osparc.store.Products.getInstance().amIASupportUser() ? false : true;
+      if (backendAllowsPatch) {
+        return osparc.store.ConversationsSupport.getInstance().patchExtraContext(this.getConversationId(), extraContext)
+          .then(() => {
+            this.setExtraContext(Object.assign({}, extraContext));
+        });
+      }
+      return Promise.resolve(this.setExtraContext(Object.assign({}, extraContext)));
+    },
   },
 });
