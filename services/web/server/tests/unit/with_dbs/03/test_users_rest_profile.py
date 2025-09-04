@@ -28,7 +28,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.products._models import Product
+from simcore_service_webserver.products.models import Product
 from simcore_service_webserver.user_preferences._service import (
     get_frontend_user_preferences_aggregation,
 )
