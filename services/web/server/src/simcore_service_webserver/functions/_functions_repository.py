@@ -29,6 +29,7 @@ from models_library.functions import (
     RegisteredFunctionDB,
     RegisteredFunctionJobCollectionDB,
     RegisteredFunctionJobDB,
+    RegisteredFunctionJobWithStatusDB,
 )
 from models_library.functions_errors import (
     FunctionBaseError,
@@ -234,7 +235,7 @@ async def create_function_job(  # noqa: PLR0913
     return registered_function_job
 
 
-async def patch_function_job(  # noqa: PLR0913
+async def patch_function_job(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -269,9 +270,7 @@ async def patch_function_job(  # noqa: PLR0913
         )
         row = result.one()
 
-        registered_function_job = RegisteredFunctionJobDB.model_validate(row)
-
-    return registered_function_job
+        return RegisteredFunctionJobDB.model_validate(row)
 
 
 async def create_function_job_collection(
@@ -506,7 +505,7 @@ async def list_functions(
         )
 
 
-async def list_function_jobs(
+async def list_function_jobs_with_status(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -517,7 +516,7 @@ async def list_function_jobs(
     filter_by_function_id: FunctionID | None = None,
     filter_by_function_job_ids: list[FunctionJobID] | None = None,
     filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
-) -> tuple[list[RegisteredFunctionJobDB], PageMetaInfoLimitOffset]:
+) -> tuple[list[RegisteredFunctionJobWithStatusDB], PageMetaInfoLimitOffset]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         await check_user_api_access_rights(
             app,
@@ -579,7 +578,7 @@ async def list_function_jobs(
                 total=0, offset=pagination_offset, limit=pagination_limit, count=0
             )
         results = [
-            RegisteredFunctionJobDB.model_validate(row)
+            RegisteredFunctionJobWithStatusDB.model_validate(row)
             async for row in await conn.stream(
                 function_jobs_table.select()
                 .where(filter_conditions)

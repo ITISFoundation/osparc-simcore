@@ -22,6 +22,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     FunctionJobStatus,
     RegisteredProjectFunction,
+    RegisteredProjectFunctionJobWithStatus,
     TaskID,
 )
 from models_library.products import ProductName
@@ -33,6 +34,7 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskFilter, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server._service_function_jobs import FunctionJobService
 from simcore_service_api_server.api.routes import function_jobs_routes
 from simcore_service_api_server.api.routes.function_jobs_routes import (
     _JOB_CREATION_TASK_STATUS_PREFIX,
@@ -132,6 +134,61 @@ async def test_list_function_jobs(
     )
 
 
+@pytest.mark.parametrize("status_str", ["SUCCESS", "FAILED"])
+async def test_list_function_jobs_with_status(
+    client: AsyncClient,
+    mock_rabbitmq_rpc_client: MockerFixture,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_registered_project_function: RegisteredProjectFunction,
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    auth: httpx.BasicAuth,
+    mocker: MockerFixture,
+    status_str: str,
+) -> None:
+    mock_status = FunctionJobStatus(status=status_str)
+    mock_outputs = {"X+Y": 42, "X-Y": 10}
+    mock_registered_project_function_job_with_status = (
+        RegisteredProjectFunctionJobWithStatus(
+            **{
+                **mock_registered_project_function_job.model_dump(),
+                "status": mock_status,
+            }
+        )
+    )
+    mock_handler_in_functions_rpc_interface(
+        "list_function_jobs_with_status",
+        (
+            [mock_registered_project_function_job_with_status for _ in range(5)],
+            PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
+        ),
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_function", mock_registered_project_function
+    )
+
+    mock_function_job_outputs = mocker.patch.object(
+        FunctionJobService, "function_job_outputs", return_value=mock_outputs
+    )
+    mock_handler_in_functions_rpc_interface("get_function_job_status", mock_status)
+    response = await client.get(
+        f"{API_VTAG}/function_jobs?include_status=true", auth=auth
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()["items"]
+    assert len(data) == 5
+    returned_function_job = RegisteredProjectFunctionJobWithStatus.model_validate(
+        data[0]
+    )
+    if status_str == "SUCCESS":
+        mock_function_job_outputs.assert_called()
+        assert returned_function_job.outputs == mock_outputs
+    else:
+        mock_function_job_outputs.assert_not_called()
+        assert returned_function_job.outputs is None
+
+    assert returned_function_job == mock_registered_project_function_job_with_status
+
+
 async def test_list_function_jobs_with_job_id_filter(
     client: AsyncClient,
     mock_rabbitmq_rpc_client: MockerFixture,
@@ -203,10 +260,10 @@ async def test_list_function_jobs_with_job_id_filter(
         (
             ProjectID(_faker.uuid4()),
             TaskID(_faker.uuid4()),
-            random.choice(list(TaskState)),
+            random.choice(list(TaskState)),  # noqa: S311
         ),
-        (None, None, random.choice(list(TaskState))),
-        (None, TaskID(_faker.uuid4()), random.choice(list(TaskState))),
+        (None, None, random.choice(list(TaskState))),  # noqa: S311
+        (None, TaskID(_faker.uuid4()), random.choice(list(TaskState))),  # noqa: S311
     ],
 )
 async def test_get_function_job_status(
@@ -227,8 +284,7 @@ async def test_get_function_job_status(
 
     _expected_return_status = (
         status.HTTP_500_INTERNAL_SERVER_ERROR
-        if job_status != "SUCCESS"
-        and job_status != "FAILED"
+        if job_status not in ("SUCCESS", "FAILED")
         and (project_job_id is None and job_creation_task_id is None)
         else status.HTTP_200_OK
     )
@@ -299,11 +355,7 @@ async def test_get_function_job_status(
     assert response.status_code == _expected_return_status
     if response.status_code == status.HTTP_200_OK:
         data = response.json()
-        if (
-            project_job_id is not None
-            or job_status == "SUCCESS"
-            or job_status == "FAILED"
-        ):
+        if project_job_id is not None or job_status in ("SUCCESS", "FAILED"):
             assert data["status"] == job_status
         else:
             assert (
@@ -313,10 +365,23 @@ async def test_get_function_job_status(
 
 
 @pytest.mark.parametrize(
-    "job_outputs, project_job_id",
+    "job_outputs, project_job_id, job_status, expected_output, use_db_cache",
     [
-        (None, None),
-        ({"X+Y": 42, "X-Y": 10}, ProjectID(_faker.uuid4())),
+        (None, None, "created", None, True),
+        (
+            {"X+Y": 42, "X-Y": 10},
+            ProjectID(_faker.uuid4()),
+            RunningState.FAILED,
+            None,
+            False,
+        ),
+        (
+            {"X+Y": 42, "X-Y": 10},
+            ProjectID(_faker.uuid4()),
+            RunningState.SUCCESS,
+            {"X+Y": 42, "X-Y": 10},
+            True,
+        ),
     ],
 )
 async def test_get_function_job_outputs(
@@ -328,13 +393,10 @@ async def test_get_function_job_outputs(
     auth: httpx.BasicAuth,
     job_outputs: dict[str, Any] | None,
     project_job_id: ProjectID | None,
+    job_status: str,
+    expected_output: dict[str, Any] | None,
+    use_db_cache: bool,
 ) -> None:
-
-    _expected_return_status = (
-        status.HTTP_404_NOT_FOUND
-        if project_job_id is None and job_outputs is None
-        else status.HTTP_200_OK
-    )
 
     mock_handler_in_functions_rpc_interface(
         "get_function_job",
@@ -349,13 +411,21 @@ async def test_get_function_job_outputs(
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
     )
-    mock_handler_in_functions_rpc_interface("get_function_job_outputs", job_outputs)
+
+    if use_db_cache:
+        mock_handler_in_functions_rpc_interface("get_function_job_outputs", job_outputs)
+    else:
+        mock_handler_in_functions_rpc_interface("get_function_job_outputs", None)
+
+    mock_handler_in_functions_rpc_interface(
+        "get_function_job_status",
+        FunctionJobStatus(status=job_status),
+    )
 
     response = await client.get(
         f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}/outputs",
         auth=auth,
     )
-    assert response.status_code == _expected_return_status
-    if response.status_code == status.HTTP_200_OK:
-        data = response.json()
-        assert data == job_outputs
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data == expected_output
