@@ -303,10 +303,15 @@ qx.Class.define("osparc.data.model.Conversation", {
     setAppointment: function(appointment) {
       const extraContext = this.getExtraContext() || {};
       extraContext["appointment"] = appointment ? appointment.toISOString() : null;
-      return osparc.store.ConversationsSupport.getInstance().patchExtraContext(this.getConversationId(), extraContext)
-        .then(() => {
-          this.setExtraContext(extraContext);
+      // OM Supporters are not allowed to patch the conversation metadata yet
+      const backendAllowsPatch = osparc.store.Products.getInstance().amIASupportUser() ? false : true;
+      if (backendAllowsPatch) {
+        return osparc.store.ConversationsSupport.getInstance().patchExtraContext(this.getConversationId(), extraContext)
+          .then(() => {
+            this.setExtraContext(Object.assign({}, extraContext));
         });
+      }
+      return Promise.resolve(this.setExtraContext(Object.assign({}, extraContext)));
     },
   },
 });
