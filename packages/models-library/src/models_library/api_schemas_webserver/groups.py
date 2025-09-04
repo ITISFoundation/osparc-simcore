@@ -54,7 +54,7 @@ class GroupAccessRights(BaseModel):
     )
 
 
-class BasicGroupGet(OutputSchema):
+class GroupGetBase(OutputSchema):
     gid: Annotated[GroupID, Field(description="the group's unique ID")]
     label: Annotated[str, Field(description="the group's display name")]
     description: str
