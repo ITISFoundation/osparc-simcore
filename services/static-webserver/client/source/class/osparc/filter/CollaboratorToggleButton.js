@@ -33,6 +33,11 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
         label = this.tr("Public");
         toolTipText = this.tr("Public to all users");
         break;
+      case osparc.store.Groups.COLLAB_TYPE.SUPPORT:
+        iconPath = osparc.dashboard.CardBase.SHARED_SUPPORT;
+        label = collaborator.getLabel();
+        toolTipText = collaborator.getDescription();
+        break;
       case osparc.store.Groups.COLLAB_TYPE.ORGANIZATION:
         iconPath = osparc.dashboard.CardBase.SHARED_ORGS;
         label = collaborator.getLabel();
