@@ -466,27 +466,6 @@ class FunctionJobService:
             function_class=function.function_class,
         )
 
-    async def map_function(
-        self,
-        *,
-        function: RegisteredFunction,
-        pre_registered_function_job_data_list: list[PreRegisteredFunctionJobData],
-        job_links: JobLinks,
-        pricing_spec: JobPricingSpecification | None,
-        x_simcore_parent_project_uuid: ProjectID | None,
-        x_simcore_parent_node_id: NodeID | None,
-    ) -> None:
-
-        for data in pre_registered_function_job_data_list:
-            await self.run_function(
-                function=function,
-                pre_registered_function_job_data=data,
-                pricing_spec=pricing_spec,
-                job_links=job_links,
-                x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
-                x_simcore_parent_node_id=x_simcore_parent_node_id,
-            )
-
     async def function_job_outputs(
         self,
         *,
