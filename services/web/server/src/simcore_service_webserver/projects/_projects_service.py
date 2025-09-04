@@ -1991,7 +1991,10 @@ async def add_project_states_for_user(
         # upgrade the project
         # NOTE: copy&dump step avoids both alias and field-names to be keys in the dict
         # e.g. "current_status" and "currentStatus"
-        current_node_state = NodeState.model_validate(node.get("state", {}))
+        current_node_state = NodeState.model_validate(
+            node.get("state")
+            or {}  # NOTE: that node.get("state") can exists and be None!
+        )
         updated_node_state = current_node_state.model_copy(
             update=computed_node_state.model_dump(mode="json", exclude_unset=True)
         )

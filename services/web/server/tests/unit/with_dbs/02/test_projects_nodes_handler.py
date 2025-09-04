@@ -483,7 +483,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
         assert result
         node_ids = result.scalars().all()
     assert len(node_ids) == NUM_DY_SERVICES + num_services_in_project
-    assert set(running_services.running_services_uuids).issubset(node_ids)
+    assert {f"{i}" for i in running_services.running_services_uuids}.issubset(node_ids)
     print(f"--> {NUM_DY_SERVICES} nodes were created concurrently")
 
     #
