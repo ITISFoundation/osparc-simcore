@@ -70,11 +70,11 @@ async def get_my_profile(request: web.Request) -> web.Response:
 
     # Get profile address
     try:
-        user_invoice_address = await _users_service.get_user_invoice_address(
+        user_billing_details = await _users_service.get_user_billing_details(
             request.app, product_name=product.name, user_id=req_ctx.user_id
         )
         my_address = MyProfileAddressGet.model_validate(
-            user_invoice_address, from_attributes=True
+            user_billing_details, from_attributes=True
         )
     except BillingDetailsNotFoundError:
         my_address = None
