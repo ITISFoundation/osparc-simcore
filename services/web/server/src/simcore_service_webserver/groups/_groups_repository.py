@@ -110,6 +110,21 @@ async def _get_group_and_access_rights_or_raise(
     group_id: GroupID,
     check_permission: Literal["read", "write", "delete"] | None,
 ) -> Row:
+    """Fetches a group and its access rights for a specific user (caller_id).
+
+    Arguments:
+        conn -- Database connection to use for the query.
+        caller_id -- the user requesting the group information
+        group_id -- ID of the group to fetch.
+        check_permission -- Permission to check for the user on the group. If None, no permission check is performed.
+
+    Raises:
+        GroupNotFoundError: if the group does not exist or the caller is not part of the group.
+        UserInsufficientRightsError: if the user lacks the specified permission on the group.
+
+    Returns:
+        Row containing the group details and access rights.
+    """
     result = await conn.execute(
         sa.select(
             *_GROUP_COLUMNS,
