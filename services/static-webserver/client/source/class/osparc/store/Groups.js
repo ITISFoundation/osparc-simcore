@@ -146,6 +146,11 @@ qx.Class.define("osparc.store.Groups", {
         allGroupsAndUsers[groupProductEveryone.getGroupId()] = groupProductEveryone;
       }
 
+      const supportGroup = this.getSupportGroup();
+      if (supportGroup) {
+        allGroupsAndUsers[supportGroup.getGroupId()] = supportGroup;
+      }
+
       const groupMe = this.getGroupMe();
       allGroupsAndUsers[groupMe.getGroupId()] = groupMe;
 
@@ -225,6 +230,12 @@ qx.Class.define("osparc.store.Groups", {
         org["collabType"] = 1;
         groups.push(org);
       });
+
+      const supportGroup = this.getSupportGroup();
+      if (supportGroup && groups.findIndex(g => g.getGroupId() === supportGroup.getGroupId()) === -1) {
+        supportGroup["collabType"] = 1;
+        groups.push(supportGroup);
+      }
 
       const groupProductEveryone = this.getEveryoneProductGroup();
       if (groupProductEveryone) {

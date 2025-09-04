@@ -447,8 +447,6 @@ qx.Class.define("osparc.share.Collaborators", {
         let collab = null;
         if (gid in allGroups) {
           collab = allGroups[gid];
-        } else if (supportGroup && supportGroup.getGroupId() === gid) {
-          collab = supportGroup;
         } else {
           collab = await usersStore.getUser(gid);
         }
