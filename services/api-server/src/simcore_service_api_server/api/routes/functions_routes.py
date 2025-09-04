@@ -26,6 +26,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata, TasksQueue
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
+from servicelib.utils import limited_gather
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
@@ -452,10 +453,8 @@ async def map_function(
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
 
-    job_ids: list[FunctionJobID] = []
-
-    for function_inputs in function_inputs_list:
-        job = await run_function(
+    async def _run_single_function(function_inputs: FunctionInputs) -> FunctionJobID:
+        result = await run_function(
             request=request,
             user_identity=user_identity,
             to_run_function=to_run_function,
@@ -466,7 +465,25 @@ async def map_function(
             x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
             x_simcore_parent_node_id=x_simcore_parent_node_id,
         )
-        job_ids.append(job.uid)
+        return result.uid
+
+    # Run all tasks concurrently, allowing them to complete even if some fail
+    results = await limited_gather(
+        *[
+            _run_single_function(function_inputs)
+            for function_inputs in function_inputs_list
+        ],
+        reraise=False,
+        limit=10,
+    )
+
+    # Check if any tasks raised exceptions and raise the first one found
+    for result in results:
+        if isinstance(result, BaseException):
+            raise result
+
+    # At this point, all results are FunctionJobID since we've checked for exceptions
+    job_ids: list[FunctionJobID] = results  # type: ignore[assignment]
 
     function_job_collection_description = f"Function job collection of map of function {to_run_function.uid} with {len(function_inputs_list)} inputs"
     return await web_api_rpc_client.register_function_job_collection(
