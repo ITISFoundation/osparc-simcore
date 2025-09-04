@@ -42,7 +42,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 async def services_metadata_in_db(
     asyncpg_engine: AsyncEngine,
 ) -> AsyncIterator[list[dict]]:
@@ -94,7 +94,7 @@ async def services_metadata_in_db(
         yield created_services
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 async def services_consume_filetypes_in_db(
     asyncpg_engine: AsyncEngine, services_metadata_in_db: list[dict]
 ) -> AsyncIterator[list[dict]]:
@@ -203,7 +203,7 @@ async def services_consume_filetypes_in_db(
         yield created_filetypes
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 async def services_access_rights_in_db(
     asyncpg_engine: AsyncEngine, services_metadata_in_db: list[dict]
 ) -> AsyncIterator[list[dict]]:
