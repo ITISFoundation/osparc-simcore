@@ -129,3 +129,75 @@ async def test_list_viewers_info_only_default(
     # Assert
     assert len(viewers) == 1
     assert viewers[0].filetype == "CSV"
+
+
+async def test_get_default_viewer_for_filetype(
+    studies_dispatcher_repository: StudiesDispatcherRepository,
+    consume_filetypes_in_db: dict,
+):
+    """Test getting the default viewer for a specific file type."""
+    # Act
+    viewer = await studies_dispatcher_repository.get_default_viewer_for_filetype(
+        file_type="CSV"
+    )
+
+    # Assert
+    assert viewer is not None
+    assert isinstance(viewer, ViewerInfo)
+    assert viewer.key == consume_filetypes_in_db["service_key"]
+    assert viewer.version == consume_filetypes_in_db["service_version"]
+    assert viewer.filetype == "CSV"
+    assert viewer.label == consume_filetypes_in_db["service_display_name"]
+
+    # Test with non-existent filetype
+    viewer_none = await studies_dispatcher_repository.get_default_viewer_for_filetype(
+        file_type="NONEXISTENT"
+    )
+    assert viewer_none is None
+
+
+async def test_find_compatible_viewer_found(
+    studies_dispatcher_repository: StudiesDispatcherRepository,
+    consume_filetypes_in_db: dict,
+):
+    """Test finding a compatible viewer service that exists."""
+    # Act
+    viewer = await studies_dispatcher_repository.find_compatible_viewer(
+        file_type="CSV",
+        service_key=consume_filetypes_in_db["service_key"],
+        service_version="1.0.0",
+    )
+
+    # Assert
+    assert viewer is not None
+    assert isinstance(viewer, ViewerInfo)
+    assert viewer.key == consume_filetypes_in_db["service_key"]
+    assert viewer.version == "1.0.0"  # Should use the requested version
+    assert viewer.filetype == "CSV"
+    assert viewer.label == consume_filetypes_in_db["service_display_name"]
+
+
+async def test_find_compatible_viewer_not_found(
+    studies_dispatcher_repository: StudiesDispatcherRepository,
+    consume_filetypes_in_db: dict,
+):
+    """Test finding a compatible viewer service that doesn't exist."""
+    # Act - test with non-existent service key
+    viewer = await studies_dispatcher_repository.find_compatible_viewer(
+        file_type="CSV",
+        service_key="simcore/services/dynamic/nonexistent",
+        service_version="1.0.0",
+    )
+
+    # Assert
+    assert viewer is None
+
+    # Act - test with incompatible filetype
+    viewer_wrong_filetype = await studies_dispatcher_repository.find_compatible_viewer(
+        file_type="NONEXISTENT",
+        service_key=consume_filetypes_in_db["service_key"],
+        service_version="1.0.0",
+    )
+
+    # Assert
+    assert viewer_wrong_filetype is None
