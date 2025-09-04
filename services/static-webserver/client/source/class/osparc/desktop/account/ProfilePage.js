@@ -37,6 +37,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       this._add(this.__create2FASection());
     }
     this._add(this.__createPasswordSection());
+    this._add(this.__createPersonalInfoSection());
     this._add(this.__createDeleteAccount());
 
     this.__userProfileData = {};
@@ -54,6 +55,16 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         EMAIL: 3,
         PHONE: 4,
       },
+    },
+  },
+
+  statics: {
+    createSectionBox: function(title) {
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr(title)).set({
+        alignX: "left",
+        maxWidth: 500
+      });
+      return box;
     },
   },
 
@@ -137,13 +148,17 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       this.__updatePrivacyBtn.setEnabled(false);
     },
 
+    __resetUserData: function() {
+      this.__setDataToProfile(this.__userProfileData);
+    },
+
+    __resetPrivacyData: function() {
+      this.__setDataToPrivacy(this.__userPrivacyData);
+    },
+
     __createProfileUser: function() {
       // layout
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("User"));
-      box.set({
-        alignX: "left",
-        maxWidth: 500
-      });
+      const box = this.self().createSectionBox(this.tr("User"));
 
       const username = new qx.ui.form.TextField().set({
         placeholder: this.tr("username")
@@ -307,11 +322,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
       const privacyModel = this.__userPrivacyModel = qx.data.marshal.Json.createModel(defaultModel, true);
 
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Privacy"));
-      box.set({
-        alignX: "left",
-        maxWidth: 500
-      });
+      const box = this.self().createSectionBox(this.tr("Privacy"));
 
       const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Choose what other see."));
       box.add(label);
@@ -427,7 +438,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     },
 
     __create2FASection: function() {
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Two-Factor Authentication"));
+      const box = this.self().createSectionBox(this.tr("Two-Factor Authentication"));
 
       const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Set your preferred method to use for two-factor authentication when signing in:"));
       box.add(label);
@@ -497,21 +508,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       return box;
     },
 
-    __resetUserData: function() {
-      this.__setDataToProfile(this.__userProfileData);
-    },
-
-    __resetPrivacyData: function() {
-      this.__setDataToPrivacy(this.__userPrivacyData);
-    },
-
     __createPasswordSection: function() {
       // layout
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Password"));
-      box.set({
-        alignX: "left",
-        maxWidth: 500
-      });
+      const box = this.self().createSectionBox(this.tr("Password"));
 
       const currentPassword = new osparc.ui.form.PasswordField().set({
         required: true,
@@ -577,12 +576,100 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       return box;
     },
 
+    __createPersonalInfoSection: function() {
+      // layout
+      const box = this.self().createSectionBox(this.tr("Personal Information"));
+
+      const username = new qx.ui.form.TextField().set({
+        placeholder: this.tr("username")
+      });
+
+      const firstName = new qx.ui.form.TextField().set({
+        placeholder: this.tr("First Name")
+      });
+      const lastName = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Last Name")
+      });
+
+      const email = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Email"),
+        readOnly: true
+      });
+
+      const phoneNumber = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Phone Number"),
+        readOnly: true
+      });
+
+      const profileForm = this.__userProfileForm = new qx.ui.form.Form();
+      profileForm.add(username, "Username", null, "username");
+      profileForm.add(firstName, "First Name", null, "firstName");
+      profileForm.add(lastName, "Last Name", null, "lastName");
+      profileForm.add(email, "Email", null, "email");
+      if (osparc.store.StaticInfo.is2FARequired()) {
+        profileForm.add(phoneNumber, "Phone Number", null, "phoneNumber");
+      }
+      this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithWidget(profileForm);
+      box.add(this.__userProfileRenderer);
+
+      const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+        paddingLeft: 16,
+        visibility: "excluded"
+      });
+      const expirationDateLabel = new qx.ui.basic.Label(this.tr("Expiration date:")).set({
+        textColor: "danger-red"
+      });
+      expirationLayout.add(expirationDateLabel);
+      const expirationDate = new qx.ui.basic.Label();
+      expirationLayout.add(expirationDate);
+      const infoLabel = this.tr("Please contact us via email:<br>");
+      const infoExtension = new osparc.ui.hint.InfoHint(infoLabel);
+      const supportEmail = osparc.store.VendorInfo.getSupportEmail();
+      infoExtension.setHintText(infoLabel + supportEmail);
+      expirationLayout.add(infoExtension);
+      box.add(expirationLayout);
+
+      // binding to a model
+      const raw = {
+        "username": "",
+        "firstName": "",
+        "lastName": "",
+        "email": "",
+        "phone": "",
+        "expirationDate": null,
+      };
+
+      const model = this.__userProfileModel = qx.data.marshal.Json.createModel(raw);
+      const controller = new qx.data.controller.Object(model);
+
+      controller.addTarget(username, "value", "username", true);
+      controller.addTarget(email, "value", "email", true);
+      controller.addTarget(firstName, "value", "firstName", true, null, {
+        converter: function(data) {
+          return data.replace(/^\w/, c => c.toUpperCase());
+        }
+      });
+      controller.addTarget(lastName, "value", "lastName", true);
+      controller.addTarget(phoneNumber, "value", "phone", true);
+      controller.addTarget(expirationDate, "value", "expirationDate", false, {
+        converter: expirationDay => {
+          if (expirationDay) {
+            expirationLayout.show();
+            return osparc.utils.Utils.formatDate(new Date(expirationDay));
+          }
+          return "";
+        }
+      });
+
+      return box;
+    },
+
     __createDeleteAccount: function() {
       // layout
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Danger Zone")).set({
-        alignX: "left",
-        maxWidth: 500
-      });
+      const box = this.self().createSectionBox(this.tr("Delete Account"));
+
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Request the deletion of your account."));
+      box.add(label);
 
       const deleteBtn = new qx.ui.form.Button(this.tr("Delete Account")).set({
         appearance: "danger-button",
