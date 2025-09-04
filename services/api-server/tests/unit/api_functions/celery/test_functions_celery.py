@@ -572,6 +572,7 @@ async def test_map_function(
     project_tests_dir: Path,
 ) -> None:
 
+    # arrange
     _capture = "run_study_function_parent_info.json"
 
     def _default_side_effect(
@@ -657,6 +658,7 @@ async def test_map_function(
         ),
     )
 
+    # act
     _inputs = [{}, {}]
     response = await client.post(
         f"{API_VTAG}/functions/{mock_registered_project_function.uid}:map",
@@ -667,8 +669,9 @@ async def test_map_function(
             X_SIMCORE_PARENT_NODE_ID: "null",
         },
     )
-    assert response.status_code == status.HTTP_200_OK
 
+    # assert
+    assert response.status_code == status.HTTP_200_OK
     job_collection = FunctionJobCollection.model_validate(response.json())
     assert (
         job_collection.job_ids == _generated_function_job_ids
