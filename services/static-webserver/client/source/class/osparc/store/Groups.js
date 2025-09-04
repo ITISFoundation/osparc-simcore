@@ -36,6 +36,11 @@ qx.Class.define("osparc.store.Groups", {
       init: null // this will stay null for guest users
     },
 
+    supportGroup: {
+      check: "osparc.data.model.Group",
+      init: null // this will stay null for guest users
+    },
+
     organizations: {
       check: "Object",
       init: {},
