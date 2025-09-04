@@ -285,7 +285,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
             if (everyoneGroups.includes(sharedGroup)) {
               sharedGrpLabel = "Public";
             }
-            if (supportGroup && [supportGroup.getGroupId()].includes(sharedGroup.getGroupId())) {
+            if (supportGroup && supportGroup.getGroupId() === sharedGroup.getGroupId()) {
               sharedGrpLabel = supportGroup.getLabel();
             }
             if (!sharedGrpLabels.includes(sharedGrpLabel)) {
