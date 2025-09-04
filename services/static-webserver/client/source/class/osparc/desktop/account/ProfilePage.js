@@ -37,7 +37,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       this._add(this.__create2FASection());
     }
     this._add(this.__createPasswordSection());
-    this._add(this.__createPersonalInfoSection());
+    this._add(this.__createContactSection());
     this._add(this.__createDeleteAccount());
 
     this.__userProfileData = {};
@@ -590,9 +590,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       return box;
     },
 
-    __createPersonalInfoSection: function() {
+    __createContactSection: function() {
       // layout
-      const box = this.self().createSectionBox(this.tr("Personal Information"));
+      const box = this.self().createSectionBox(this.tr("Contact"));
 
       const institution = new qx.ui.form.TextField().set({
         placeholder: this.tr("Institution"),
