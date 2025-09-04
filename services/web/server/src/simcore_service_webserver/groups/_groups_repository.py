@@ -148,19 +148,19 @@ async def _get_group_and_access_rights_or_raise(
 #
 
 
-async def get_group_from_gid(
+async def get_group_by_gid(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     group_id: GroupID,
 ) -> Group | None:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        row = await conn.execute(
+        result = await conn.execute(
             sa.select(*_GROUP_COLUMNS).where(groups.c.gid == group_id)
         )
-        result = row.first()
-        if result:
-            return Group.model_validate(result, from_attributes=True)
+        row = result.one_or_none()
+        if row:
+            return Group.model_validate(row, from_attributes=True)
         return None
 
 

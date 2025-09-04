@@ -26,8 +26,8 @@ from .exceptions import GroupNotFoundError, GroupsError
 #
 
 
-async def get_group_from_gid(app: web.Application, group_id: GroupID) -> Group | None:
-    group_db = await _groups_repository.get_group_from_gid(app, group_id=group_id)
+async def get_group_by_gid(app: web.Application, group_id: GroupID) -> Group | None:
+    group_db = await _groups_repository.get_group_by_gid(app, group_id=group_id)
 
     if group_db:
         return Group.model_construct(**group_db.model_dump())
@@ -107,7 +107,7 @@ async def get_user_profile_groups(
     product_support_group = None
     if product.support_standard_group_id:  # Support group is optional
         # NOTE: my_support_group can be part of groups_by_type.standard!
-        product_support_group = await get_group_from_gid(
+        product_support_group = await get_group_by_gid(
             app, product.support_standard_group_id
         )
 
