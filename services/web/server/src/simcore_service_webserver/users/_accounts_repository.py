@@ -276,6 +276,7 @@ async def search_merged_pre_and_registered_users(
     product_name: ProductName | None = None,
 ) -> list[Row]:
     users_alias = sa.alias(users, name="users_alias")
+    reviewer_alias = sa.alias(users, name="reviewer_alias")
 
     invited_by = (
         sa.select(
@@ -283,6 +284,17 @@ async def search_merged_pre_and_registered_users(
         )
         .where(users_pre_registration_details.c.created_by == users_alias.c.id)
         .label("invited_by")
+    )
+
+    account_request_reviewed_by_username = (
+        sa.select(
+            reviewer_alias.c.name,
+        )
+        .where(
+            users_pre_registration_details.c.account_request_reviewed_by
+            == reviewer_alias.c.id
+        )
+        .label("account_request_reviewed_by_username")
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:
@@ -305,7 +317,7 @@ async def search_merged_pre_and_registered_users(
             users_pre_registration_details.c.user_id,
             users_pre_registration_details.c.extras,
             users_pre_registration_details.c.account_request_status,
-            users_pre_registration_details.c.account_request_reviewed_by,
+            account_request_reviewed_by_username,
             users_pre_registration_details.c.account_request_reviewed_at,
             users.c.status,
             invited_by,

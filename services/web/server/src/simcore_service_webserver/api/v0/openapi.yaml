@@ -18361,6 +18361,8 @@ components:
         invitedBy:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
           - type: 'null'
           title: Invitedby
         accountRequestStatus:
@@ -18369,9 +18371,9 @@ components:
           - type: 'null'
         accountRequestReviewedBy:
           anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+          - type: string
+            maxLength: 100
+            minLength: 1
           - type: 'null'
           title: Accountrequestreviewedby
         accountRequestReviewedAt:

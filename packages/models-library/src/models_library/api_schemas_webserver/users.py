@@ -340,9 +340,9 @@ class UserAccountGet(OutputSchema):
     # pre-registration NOTE: that some users have no pre-registartion and therefore all options here can be none
     pre_registration_id: int | None
     pre_registration_created: datetime | None
-    invited_by: str | None = None
+    invited_by: UserNameID | None = None
     account_request_status: AccountRequestStatus | None
-    account_request_reviewed_by: UserID | None = None
+    account_request_reviewed_by: UserNameID | None = None
     account_request_reviewed_at: datetime | None = None
 
     # user status
