@@ -373,6 +373,7 @@ async def get_user_billing_details(
     product_name: ProductName,
 ) -> UserBillingDetails:
     """
+    Returns UserBillingDetails for the given user when registered in a product or None
     Raises:
         BillingDetailsNotFoundError
     """

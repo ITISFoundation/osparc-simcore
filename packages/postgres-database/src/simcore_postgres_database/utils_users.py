@@ -324,6 +324,11 @@ class UsersRepo:
         product_name: str,
         user_id: int,
     ) -> Any | None:
+        """Returns billing details for the specified user and product.
+
+        - If the user is registered without a product, returns details for that registration.
+        - Returns None if no billing details are found.
+        """
         async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
                 sa.select(
@@ -345,7 +350,10 @@ class UsersRepo:
                 )
                 .where(
                     (users.c.id == user_id)
-                    & (users_pre_registration_details.c.product_name == product_name)
+                    & (
+                        (users_pre_registration_details.c.product_name == product_name)
+                        | (users_pre_registration_details.c.product_name.is_(None))
+                    )
                 )
                 .order_by(users_pre_registration_details.c.created.desc())
                 .limit(1)
