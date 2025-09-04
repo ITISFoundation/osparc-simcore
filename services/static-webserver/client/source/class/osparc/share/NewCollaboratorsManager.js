@@ -17,11 +17,12 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       allowMaximize: false,
       showMinimize: false,
       showMaximize: false,
+      resizable: true,
       autoDestroy: true,
       modal: true,
       width: 430,
-      maxHeight: 500,
-      clickAwayClose: true
+      height: 500,
+      clickAwayClose: true,
     });
 
     this.__resourceData = resourceData;
@@ -120,9 +121,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           break;
         }
         case "potential-collaborators-list": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-            minHeight: 160,
-          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
           const scrollContainer = new qx.ui.container.Scroll();
           scrollContainer.add(control);
           this.add(scrollContainer, {
