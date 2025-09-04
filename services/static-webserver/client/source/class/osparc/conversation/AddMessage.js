@@ -175,7 +175,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     addComment: function() {
       const conversationId = this.getConversationId();
       if (conversationId) {
-        this.__postMessage();
+        return this.__postMessage();
       } else {
         const studyData = this.getStudyData();
         let promise = null;
@@ -191,10 +191,10 @@ qx.Class.define("osparc.conversation.AddMessage", {
           }
           promise = osparc.store.ConversationsSupport.getInstance().postConversation(extraContext);
         }
-        promise
+        return promise
           .then(data => {
             this.setConversationId(data["conversationId"]);
-            this.__postMessage();
+            return this.__postMessage();
           });
       }
     },
@@ -211,12 +211,14 @@ qx.Class.define("osparc.conversation.AddMessage", {
         } else {
           promise = osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
         }
-        promise
+        return promise
           .then(data => {
             this.fireDataEvent("messageAdded", data);
             commentField.getChildControl("text-area").setValue("");
+            return data;
           });
       }
+      return Promise.reject();
     },
 
     __editComment: function() {

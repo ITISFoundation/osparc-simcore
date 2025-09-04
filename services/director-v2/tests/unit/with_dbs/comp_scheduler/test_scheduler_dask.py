@@ -1272,7 +1272,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
-        expected_state=RunningState.ABORTED,
+        expected_state=RunningState.FAILED,
         where_statement=(comp_runs.c.user_id == user["id"])
         & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}"),
     )
@@ -2048,9 +2048,10 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     "get_or_create_exception",
     [ClustersKeeperNotAvailableError],
 )
-async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
+async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_waits_and_eventually_timesout_fails(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
+    with_short_max_wait_for_clusters_keeper: datetime.timedelta,
     initialized_app: FastAPI,
     scheduler_api: BaseCompScheduler,
     sqlalchemy_async_engine: AsyncEngine,
@@ -2061,8 +2062,6 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
     fake_collection_run_id: CollectionRunID,
 ):
-    # needs to change: https://github.com/ITISFoundation/osparc-simcore/issues/6817
-
     mocked_get_or_create_cluster.side_effect = get_or_create_exception
     # running the pipeline will trigger a call to the clusters-keeper
     assert published_project.project.prj_owner
@@ -2100,8 +2099,8 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
-    # now it should switch to failed, the run still runs until the next iteration
-    expected_failed_tasks = [
+    # now it should switch to waiting for cluster and waits
+    expected_waiting_for_cluster_tasks = [
         published_project.tasks[1],
         published_project.tasks[3],
     ]
@@ -2116,7 +2115,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
-        expected_state=RunningState.FAILED,
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
         where_statement=and_(
             comp_runs.c.user_id == published_project.project.prj_owner,
             comp_runs.c.project_uuid == f"{published_project.project.uuid}",
@@ -2130,12 +2129,44 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
-        task_ids=[t.node_id for t in expected_failed_tasks],
-        expected_state=RunningState.FAILED,
-        expected_progress=1.0,
+        task_ids=[t.node_id for t in expected_waiting_for_cluster_tasks],
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
+        expected_progress=None,
         run_id=run_in_db.run_id,
     )
-    # again will not re-trigger the call to clusters-keeper
+    # again will trigger the call again
+    await scheduler_api.apply(
+        user_id=run_in_db.user_id,
+        project_id=run_in_db.project_uuid,
+        iteration=run_in_db.iteration,
+    )
+    mocked_get_or_create_cluster.assert_called()
+    assert mocked_get_or_create_cluster.call_count == 1
+    mocked_get_or_create_cluster.reset_mock()
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        0,
+        ComputationalPipelineStatusMessage.model_validate_json,
+    )
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=published_project.project.uuid,
+        task_ids=[t.node_id for t in expected_waiting_for_cluster_tasks],
+        expected_state=RunningState.WAITING_FOR_CLUSTER,
+        expected_progress=None,
+        run_id=run_in_db.run_id,
+    )
+    await asyncio.sleep(with_short_max_wait_for_clusters_keeper.total_seconds() + 1)
+    # again will trigger the call again, but now it will start failing, first the task will be mark as FAILED
     await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
@@ -2153,13 +2184,13 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     )
     await _assert_message_received(
         computational_pipeline_rabbit_client_parser,
-        0,
+        1,
         ComputationalPipelineStatusMessage.model_validate_json,
     )
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
-        task_ids=[t.node_id for t in expected_failed_tasks],
+        task_ids=[t.node_id for t in expected_waiting_for_cluster_tasks],
         expected_state=RunningState.FAILED,
         expected_progress=1.0,
         run_id=run_in_db.run_id,
