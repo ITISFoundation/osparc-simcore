@@ -564,6 +564,7 @@ async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.
         await engine.wait_closed()
 
 
+@pytest.fixture
 async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE instead of aiopg_engine
     postgres_db: sa.engine.Engine, is_pdb_enabled: bool
 ) -> AsyncIterable[AsyncEngine]:
