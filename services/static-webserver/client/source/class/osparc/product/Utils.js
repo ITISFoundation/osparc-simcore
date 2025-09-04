@@ -155,6 +155,39 @@ qx.Class.define("osparc.product.Utils", {
       return resourceType;
     },
 
+    getInstitutionAlias: function() {
+      switch (osparc.product.Utils.getProductName()) {
+        case "s4l":
+          return {
+            label: this.tr("Company Name"),
+            key: "company",
+            required: true,
+          };
+        case "s4lacad":
+        case "s4ldesktopacad":
+          return {
+            label: this.tr("University"),
+            key: "university",
+            required: true,
+          };
+        case "tiplite":
+          return {
+            label: this.tr("University"),
+            key: "university",
+          };
+        case "tis":
+          return {
+            label: this.tr("Organization"),
+            key: "organization",
+          };
+        case "osparc":
+          return {
+            label: this.tr("Research Group/Organization"),
+            key: "organization",
+          };
+      }
+    },
+
     getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();

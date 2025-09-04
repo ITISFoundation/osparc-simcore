@@ -595,7 +595,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       const box = this.self().createSectionBox(this.tr("Contact"));
 
       const institution = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Institution"),
+        placeholder: osparc.product.Utils.getInstitutionAlias().label,
         readOnly: true,
       });
 
@@ -624,12 +624,12 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
 
       const personalInfoForm = new qx.ui.form.Form();
-      personalInfoForm.add(institution, "Institution", null, "institution");
-      personalInfoForm.add(address, "Address", null, "address");
-      personalInfoForm.add(city, "City", null, "city");
-      personalInfoForm.add(state, "State", null, "state");
-      personalInfoForm.add(country, "Country", null, "country");
-      personalInfoForm.add(postalCode, "Postal Code", null, "postalCode");
+      personalInfoForm.add(institution, osparc.product.Utils.getInstitutionAlias().label, null, "institution");
+      personalInfoForm.add(address, this.tr("Address"), null, "address");
+      personalInfoForm.add(city, this.tr("City"), null, "city");
+      personalInfoForm.add(state, this.tr("State"), null, "state");
+      personalInfoForm.add(country, this.tr("Country"), null, "country");
+      personalInfoForm.add(postalCode, this.tr("Postal Code"), null, "postalCode");
       this.__personalInfoRenderer = new qx.ui.form.renderer.Single(personalInfoForm);
       box.add(this.__personalInfoRenderer);
 
