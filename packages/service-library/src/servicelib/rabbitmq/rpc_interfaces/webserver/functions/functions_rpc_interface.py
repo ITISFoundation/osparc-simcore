@@ -23,6 +23,7 @@ from models_library.functions import (
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     RegisteredFunctionJobPatch,
+    RegisteredFunctionJobWithStatus,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -189,6 +190,40 @@ async def list_function_jobs(
     )
     return TypeAdapter(
         tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]
+    ).validate_python(result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_function_jobs_with_status(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    pagination_offset: int,
+    pagination_limit: int,
+    filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+) -> tuple[
+    list[RegisteredFunctionJobWithStatus],
+    PageMetaInfoLimitOffset,
+]:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_function_jobs_with_status"),
+        user_id=user_id,
+        product_name=product_name,
+        pagination_offset=pagination_offset,
+        pagination_limit=pagination_limit,
+        filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+    )
+    return TypeAdapter(
+        tuple[
+            list[RegisteredFunctionJobWithStatus],
+            PageMetaInfoLimitOffset,
+        ]
     ).validate_python(result)
 
 

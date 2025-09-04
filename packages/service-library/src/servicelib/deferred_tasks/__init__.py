@@ -22,14 +22,16 @@ The `BaseDeferredHandler` is the interface to the user.
 - `cancel`: (called by the user) [optional]:
     send a message to cancel the current task. A warning will be logged but no call to either
     `on_result` or `on_finished_with_error` will occur.
+-  `on_cancelled` (called by state `ManuallyCancelled`) [optional] {can be overwritten by the user}:
+    called after the cancellation is handled by the worker executing the `run`
 
 
 ## DeferredHandler lifecycle
 
 ```mermaid
 stateDiagram-v2
-    * --> Scheduled: via [start]
-    ** --> ManuallyCancelled: via [cancel]
+    (1) --> Scheduled: via [start]
+    (2) --> ManuallyCancelled: via [cancel]
 
     ManuallyCancelled --> Worker: attempts to cancel task in
 
@@ -41,9 +43,10 @@ stateDiagram-v2
     ErrorResult --> FinishedWithError: gives up when out of retries or if cancelled
     Worker --> DeferredResult: success
 
-    DeferredResult --> °: calls [on_result]
-    FinishedWithError --> °°: calls [on_finished_with_error]
-    Worker --> °°°: task cancelled
+    DeferredResult --> (3): calls [on_result]
+    FinishedWithError --> (4): calls [on_finished_with_error]
+    Worker --> Removed*: task cancelled
+    Removed* --> (5): calls [on_cancelled]
 ```
 
 ### States
@@ -57,6 +60,7 @@ Used internally for scheduling the task's execution:
 - `FinishedWIthError`: logs error, invokes `on_finished_with_error` and removes the schedule
 - `DeferredResult`: invokes `on_result` and removes the schedule
 - `ManuallyCancelled`: sends message to all instances to cancel. The instance handling the task will cancel the task and remove the schedule
+- `Removed*`: is a fake state that does not exist only used to convey the information that the cancellation event is triggered after removal
 """
 
 from ._base_deferred_handler import (

@@ -10,11 +10,13 @@ from models_library.functions import (
     FunctionJobCollectionID,
     FunctionJobID,
     FunctionJobStatus,
+    FunctionOutputs,
     FunctionSchemaClass,
     ProjectFunctionJob,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobPatch,
+    RegisteredFunctionJobWithStatus,
     RegisteredProjectFunctionJobPatch,
     RegisteredSolverFunctionJobPatch,
     SolverFunctionJob,
@@ -36,6 +38,9 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetIn
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import ValidationError
+from simcore_service_api_server._service_functions import FunctionService
+from simcore_service_api_server.services_rpc.storage import StorageService
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_jobs import JobService
 from .exceptions.function_errors import (
@@ -44,10 +49,8 @@ from .exceptions.function_errors import (
 )
 from .models.api_resources import JobLinks
 from .models.domain.functions import PreRegisteredFunctionJobData
-from .models.schemas.jobs import (
-    JobInputs,
-    JobPricingSpecification,
-)
+from .models.schemas.jobs import JobInputs, JobPricingSpecification
+from .services_http.webserver import AuthSession
 from .services_rpc.wb_api_server import WbApiRpcClient
 
 
@@ -70,7 +73,10 @@ class FunctionJobService:
     user_id: UserID
     product_name: ProductName
     _web_rpc_client: WbApiRpcClient
+    _storage_client: StorageService
     _job_service: JobService
+    _function_service: FunctionService
+    _webserver_api: AuthSession
 
     async def list_function_jobs(
         self,
@@ -88,6 +94,33 @@ class FunctionJobService:
         )
 
         return await self._web_rpc_client.list_function_jobs(
+            user_id=self.user_id,
+            product_name=self.product_name,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+            **pagination_kwargs,
+        )
+
+    async def list_function_jobs_with_status(
+        self,
+        *,
+        filter_by_function_id: FunctionID | None = None,
+        filter_by_function_job_ids: list[FunctionJobID] | None = None,
+        filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
+    ) -> tuple[
+        list[RegisteredFunctionJobWithStatus],
+        PageMetaInfoLimitOffset,
+    ]:
+        """Lists all function jobs for a user with pagination"""
+
+        pagination_kwargs = as_dict_exclude_none(
+            pagination_offset=pagination_offset, pagination_limit=pagination_limit
+        )
+
+        return await self._web_rpc_client.list_function_jobs_with_status(
             user_id=self.user_id,
             product_name=self.product_name,
             filter_by_function_id=filter_by_function_id,
@@ -143,7 +176,7 @@ class FunctionJobService:
             and function_job.function_class == FunctionClass.PROJECT
         ):
             if function_job.project_job_id is None:
-                raise FunctionJobProjectMissingError()
+                raise FunctionJobProjectMissingError
             job_status = await self._job_service.inspect_study_job(
                 job_id=function_job.project_job_id,
             )
@@ -151,7 +184,7 @@ class FunctionJobService:
             function_job.function_class == FunctionClass.SOLVER
         ):
             if function_job.solver_job_id is None:
-                raise FunctionJobProjectMissingError()
+                raise FunctionJobProjectMissingError
             job_status = await self._job_service.inspect_solver_job(
                 solver_key=function.solver_key,
                 version=function.solver_version,
@@ -236,7 +269,7 @@ class FunctionJobService:
                 if job_status.status == RunningState.SUCCESS:
                     return cached_function_job
 
-        raise FunctionJobCacheNotFoundError()
+        raise FunctionJobCacheNotFoundError
 
     async def pre_register_function_job(
         self,
@@ -456,3 +489,68 @@ class FunctionJobService:
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,
             )
+
+    async def function_job_outputs(
+        self,
+        *,
+        function: RegisteredFunction,
+        function_job: RegisteredFunctionJob,
+        user_id: UserID,
+        product_name: ProductName,
+        stored_job_outputs: FunctionOutputs | None,
+        async_pg_engine: AsyncEngine,
+    ) -> FunctionOutputs:
+
+        if stored_job_outputs is not None:
+            return stored_job_outputs
+
+        try:
+            job_status = await self.inspect_function_job(
+                function=function,
+                function_job=function_job,
+            )
+        except FunctionJobProjectMissingError:
+            return None
+
+        if job_status.status != RunningState.SUCCESS:
+            return None
+
+        if (
+            function.function_class == FunctionClass.PROJECT
+            and function_job.function_class == FunctionClass.PROJECT
+        ):
+            if function_job.project_job_id is None:
+                return None
+            new_outputs = dict(
+                (
+                    await self._job_service.get_study_job_outputs(
+                        study_id=function.project_id,
+                        job_id=function_job.project_job_id,
+                    )
+                ).results
+            )
+        elif (
+            function.function_class == FunctionClass.SOLVER
+            and function_job.function_class == FunctionClass.SOLVER
+        ):
+            if function_job.solver_job_id is None:
+                return None
+            new_outputs = dict(
+                (
+                    await self._job_service.get_solver_job_outputs(
+                        solver_key=function.solver_key,
+                        version=function.solver_version,
+                        job_id=function_job.solver_job_id,
+                        async_pg_engine=async_pg_engine,
+                    )
+                ).results
+            )
+        else:
+            raise UnsupportedFunctionClassError(function_class=function.function_class)
+
+        return await self._web_rpc_client.update_function_job_outputs(
+            function_job_id=function_job.uid,
+            user_id=user_id,
+            product_name=product_name,
+            outputs=new_outputs,
+        )
