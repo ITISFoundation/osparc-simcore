@@ -97,6 +97,7 @@ def mock_email_session(mocker: MockerFixture) -> AsyncMock:
             for role in UserRole
             if role not in {UserRole.PRODUCT_OWNER, UserRole.ADMIN, UserRole.ANONYMOUS}
         ),
+        (UserRole.PRODUCT_SUPPORT, status.HTTP_200_OK),
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
         (UserRole.ADMIN, status.HTTP_200_OK),
     ],
