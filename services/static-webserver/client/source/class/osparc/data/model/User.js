@@ -145,6 +145,7 @@ qx.Class.define("osparc.data.model.User", {
         }
         description += email;
       }
+      return description;
     }
   },
 
