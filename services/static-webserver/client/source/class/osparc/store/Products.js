@@ -27,6 +27,15 @@ qx.Class.define("osparc.store.Products", {
   extend: qx.core.Object,
   type: "singleton",
 
+  properties: {
+    supportEnabled: {
+      check: "Boolean",
+      nullable: false,
+      init: false,
+      event: "changeSupportEnabled",
+    },
+  },
+
   members: {
     __uiConfig: null,
 
@@ -124,17 +133,6 @@ qx.Class.define("osparc.store.Products", {
 
     getGroupedServicesUiConfig: function() {
       return this.__uiConfig["groupedServices"];
-    },
-
-    getSupportGroupId: function() {
-      return osparc.store.StaticInfo.getValue("supportStandardGroupId");
-    },
-
-    amIASupportUser: function() {
-      const supportGroupId = this.getSupportGroupId();
-      const groupsStore = osparc.store.Groups.getInstance();
-      const myGroupIds = groupsStore.getOrganizationIds().map(gId => parseInt(gId));
-      return (supportGroupId && myGroupIds.includes(supportGroupId));
     },
   }
 });

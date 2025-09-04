@@ -147,7 +147,7 @@ qx.Class.define("osparc.support.ConversationPage", {
       }
 
       const extraContextLabel = this.getChildControl("conversation-extra-content");
-      const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
+      const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
       if (conversation && amISupporter) {
         const extraContext = conversation.getExtraContext();
         if (extraContext && Object.keys(extraContext).length) {

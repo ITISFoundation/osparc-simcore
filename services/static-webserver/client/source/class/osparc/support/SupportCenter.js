@@ -90,7 +90,7 @@ qx.Class.define("osparc.support.SupportCenter", {
             rich: true,
             font: "text-14",
           });
-          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
+          const isSupportUser = osparc.store.Groups.getInstance().amIASupportUser();
           control.set({
             value: isSupportUser ?
               this.tr("Thanks for being here! Let's help every user feel supported.") :

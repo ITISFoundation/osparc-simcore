@@ -38,7 +38,8 @@ qx.Class.define("osparc.store.Groups", {
 
     supportGroup: {
       check: "osparc.data.model.Group",
-      init: null // this will stay null for guest users
+      init: null, // this will stay null for guest users
+      event: "changeSupportGroup",
     },
 
     organizations: {
@@ -67,6 +68,15 @@ qx.Class.define("osparc.store.Groups", {
         .then(resp => {
           const everyoneGroup = this.__addToGroupsCache(resp["all"], "everyone");
           const productEveryoneGroup = this.__addToGroupsCache(resp["product"], "productEveryone");
+          let supportGroup = null;
+          if ("support" && resp["support"]) {
+            resp["support"]["accessRights"] = {
+              "read": false,
+              "write": false,
+              "delete": false,
+            };
+            supportGroup = this.__addToGroupsCache(resp["support"], "support");
+          }
           const groupMe = this.__addToGroupsCache(resp["me"], "me");
           const orgs = {};
           resp["organizations"].forEach(organization => {
@@ -75,6 +85,7 @@ qx.Class.define("osparc.store.Groups", {
           });
           this.setEveryoneGroup(everyoneGroup);
           this.setEveryoneProductGroup(productEveryoneGroup);
+          this.setSupportGroup(supportGroup);
           this.setOrganizations(orgs);
           this.setGroupMe(groupMe);
           const myAuthData = osparc.auth.Data.getInstance();
@@ -180,6 +191,19 @@ qx.Class.define("osparc.store.Groups", {
         everyoneGroups.push(this.getEveryoneGroup());
       }
       return everyoneGroups;
+    },
+
+    isSupportEnabled: function() {
+      return Boolean(this.getSupportGroup());
+    },
+
+    amIASupportUser: function() {
+      const supportGroup = this.getSupportGroup();
+      if (supportGroup) {
+        const myOrgIds = this.getOrganizationIds().map(gId => parseInt(gId));
+        return myOrgIds.includes(supportGroup.getGroupId());
+      }
+      return false;
     },
 
     getGroup: function(groupId) {
