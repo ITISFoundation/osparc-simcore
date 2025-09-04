@@ -5567,7 +5567,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_Union_Annotated_Union_RegisteredProjectFunctionJobWithStatus__RegisteredPythonCodeFunctionJobWithStatus__RegisteredSolverFunctionJobWithStatus___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____"
+                  "$ref": "#/components/schemas/PageRegisteredFunctionJobWithorWithoutStatus"
                 }
               }
             }
@@ -9946,6 +9946,108 @@
         ],
         "title": "OnePage[StudyPort]"
       },
+      "PageRegisteredFunctionJobWithorWithoutStatus": {
+        "properties": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJobWithStatus"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJobWithStatus",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
+                    }
+                  }
+                },
+                {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
+                    }
+                  }
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "PageRegisteredFunctionJobWithorWithoutStatus"
+      },
       "Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
         "properties": {
           "items": {
@@ -10394,108 +10496,6 @@
           "links"
         ],
         "title": "Page[Study]"
-      },
-      "Page_Union_Annotated_Union_RegisteredProjectFunctionJobWithStatus__RegisteredPythonCodeFunctionJobWithStatus__RegisteredSolverFunctionJobWithStatus___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____": {
-        "properties": {
-          "items": {
-            "items": {
-              "anyOf": [
-                {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/RegisteredProjectFunctionJobWithStatus"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "function_class",
-                    "mapping": {
-                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJobWithStatus",
-                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus",
-                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
-                    }
-                  }
-                },
-                {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "function_class",
-                    "mapping": {
-                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
-                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
-                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
-                    }
-                  }
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Limit"
-          },
-          "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Offset"
-          },
-          "links": {
-            "$ref": "#/components/schemas/Links"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "limit",
-          "offset",
-          "links"
-        ],
-        "title": "Page[Union[Annotated[Union[RegisteredProjectFunctionJobWithStatus, RegisteredPythonCodeFunctionJobWithStatus, RegisteredSolverFunctionJobWithStatus], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')], Annotated[Union[RegisteredProjectFunctionJob, RegisteredPythonCodeFunctionJob, RegisteredSolverFunctionJob], FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]]"
       },
       "PricingPlanClassification": {
         "type": "string",

@@ -117,14 +117,8 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
       supportCenter.openConversation(null);
 
       const textToAddMessageField = msg => {
-        if (
-          supportCenter.getChildControl("conversation-page") &&
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content") &&
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message") &&
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field")
-        ) {
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(msg);
-          supportCenter.getChildControl("conversation-page").getChildControl("conversation-content").getChildControl("add-message").addComment();
+        if (supportCenter.getChildControl("conversation-page")) {
+          supportCenter.getChildControl("conversation-page").postMessage(msg);
         }
       }
 
@@ -149,6 +143,9 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
           const friendlyContext = this.__getSupportFriendlyContext();
           const text = "Dear Support Team,\n" + extraContext + "\n" + friendlyContext;
           textToAddMessageField(text);
+          // This should be an automatic response in the chat
+          const msg = this.tr("Thanks, your report has been sent.<br>Our support team will get back to you.");
+          osparc.FlashMessenger.logAs(msg, "INFO");
         } else {
           supportCenter.close();
         }

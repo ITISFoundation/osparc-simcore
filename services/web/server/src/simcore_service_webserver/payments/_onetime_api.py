@@ -298,7 +298,7 @@ async def init_creation_of_wallet_payment(
     # user info
     user = await users_service.get_user_display_and_id_names(app, user_id=user_id)
     user_invoice_address = await users_service.get_user_invoice_address(
-        app, user_id=user_id
+        app, user_id=user_id, product_name=product_name
     )
 
     # stripe info
@@ -393,7 +393,7 @@ async def pay_with_payment_method(
     # user info
     user_info = await users_service.get_user_display_and_id_names(app, user_id=user_id)
     user_invoice_address = await users_service.get_user_invoice_address(
-        app, user_id=user_id
+        app, user_id=user_id, product_name=product_name
     )
 
     settings: PaymentsSettings = get_plugin_settings(app)
