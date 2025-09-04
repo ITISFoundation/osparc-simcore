@@ -107,14 +107,17 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           "phone": data["phone"] || "-",
           "expirationDate": data["expirationDate"] || null,
         });
-        this.__personalInfoModel.set({
-          "institution": data["institution"] || "",
-          "address": data["address"] || "",
-          "city": data["city"] || "",
-          "state": data["state"] || "",
-          "country": data["country"] || "",
-          "postalCode": data["postal_code"] || "",
-        });
+        if (data["contact"]) {
+          const contact = data["contact"];
+          this.__personalInfoModel.set({
+            "institution": contact["institution"] || "",
+            "address": contact["address"] || "",
+            "city": contact["city"] || "",
+            "state": contact["state"] || "",
+            "country": contact["country"] || "",
+            "postalCode": contact["postalCode"] || "",
+          });
+        }
       }
       this.__updateProfileBtn.setEnabled(false);
 

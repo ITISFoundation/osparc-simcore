@@ -62,13 +62,19 @@ qx.Class.define("osparc.data.model.User", {
       phoneNumber: userData["phone"] || null,
       label: userData["userName"] || description,
       description,
-      institution: userData["institution"] || null,
-      address: userData["address"] || null,
-      city: userData["city"] || null,
-      state: userData["state"] || null,
-      country: userData["country"] || null,
-      postalCode: userData["postal_code"] || null,
     });
+
+    if (userData["contact"]) {
+      const contact = userData["contact"]
+      this.set({
+        institution: contact["institution"] || null,
+        address: contact["address"] || null,
+        city: contact["city"] || null,
+        state: contact["state"] || null,
+        country: contact["country"] || null,
+        postalCode: contact["postalCode"] || null,
+      });
+    }
 
     // create the thumbnail after setting email and username
     this.set({
