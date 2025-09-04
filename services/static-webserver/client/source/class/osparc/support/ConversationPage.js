@@ -84,14 +84,8 @@ qx.Class.define("osparc.support.ConversationPage", {
             });
           this.getChildControl("conversation-header-center-layout").addAt(control, 0);
           break;
-        case "conversation-extra-content":
-          control = new qx.ui.basic.Label().set({
-            font: "text-12",
-            textColor: "text-disabled",
-            rich: true,
-            allowGrowX: true,
-            selectable: true,
-          });
+        case "conversation-extra-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
           this.getChildControl("conversation-header-center-layout").addAt(control, 1);
           break;
         case "open-project-button":
@@ -159,40 +153,51 @@ qx.Class.define("osparc.support.ConversationPage", {
         title.setValue(this.tr("Ask a Question"));
       }
 
-      const extraContextLabel = this.getChildControl("conversation-extra-content");
+      const extraContextLayout = this.getChildControl("conversation-extra-layout");
       const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
       if (conversation) {
-        conversation.bind("extraContext", extraContextLabel, "value", {
-          converter: extraContext => {
-            let extraContextText = "";
-            if (extraContext && Object.keys(extraContext).length) {
-              extraContextText = `Ticket ID: ${conversation.getConversationId()}`;
-              const contextProjectId = conversation.getContextProjectId();
-              if (contextProjectId && amISupporter) {
-                extraContextText += `<br>Project ID: ${contextProjectId}`;
-              }
-              const appointment = conversation.getAppointment();
-              if (appointment) {
-                extraContextText += "<br>Appointment: ";
-                if (appointment === "requested") {
-                  // still pending
-                  extraContextText += appointment;
-                } else {
-                  // already set
-                  extraContextText += osparc.utils.Utils.formatDateAndTime(new Date(appointment));
-                }
-              }
+        const createExtraContextLabel = text => {
+          return new qx.ui.basic.Label(text).set({
+            font: "text-12",
+            textColor: "text-disabled",
+            rich: true,
+            allowGrowX: true,
+            selectable: true,
+          });
+        };
+        const updateExtraContext = () => {
+          extraContextLayout.removeAll();
+          const extraContext = conversation.getExtraContext();
+          if (extraContext && Object.keys(extraContext).length) {
+            const ticketIdLabel = createExtraContextLabel(`Ticket ID: ${conversation.getConversationId()}`);
+            extraContextLayout.add(ticketIdLabel);
+            const contextProjectId = conversation.getContextProjectId();
+            if (contextProjectId && amISupporter) {
+              const projectIdLabel = createExtraContextLabel(`Project ID: ${contextProjectId}`);
+              extraContextLayout.add(projectIdLabel);
             }
-            return extraContextText;
+            const appointment = conversation.getAppointment();
+            if (appointment) {
+              const appointmentLabel = createExtraContextLabel();
+              let appointmentText = "Appointment: ";
+              if (appointment === "requested") {
+                // still pending
+                appointmentText += appointment;
+              } else {
+                // already set
+                appointmentText += osparc.utils.Utils.formatDateAndTime(new Date(appointment));
+                appointmentLabel.set({
+                  cursor: "pointer",
+                  toolTipText: osparc.utils.Utils.formatDateWithCityAndTZ(new Date(appointment)),
+                });
+              }
+              appointmentLabel.setValue(appointmentText);
+              extraContextLayout.add(appointmentLabel);
+            }
           }
-        });
-        extraContextLabel.bind("value", extraContextLabel, "visibility", {
-          converter: extraContext => {
-            return extraContext ? "visible" : "excluded";
-          }
-        });
-      } else {
-        extraContextLabel.exclude();
+        };
+        updateExtraContext();
+        conversation.addListener("changeExtraContext", () => updateExtraContext(), this);
       }
 
       const openProjectButton = this.getChildControl("open-project-button");
