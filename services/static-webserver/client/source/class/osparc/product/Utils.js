@@ -159,30 +159,30 @@ qx.Class.define("osparc.product.Utils", {
       switch (osparc.product.Utils.getProductName()) {
         case "s4l":
           return {
-            label: this.tr("Company Name"),
+            label: qx.locale.Manager.tr("Company Name"),
             key: "company",
             required: true,
           };
         case "s4lacad":
         case "s4ldesktopacad":
           return {
-            label: this.tr("University"),
+            label: qx.locale.Manager.tr("University"),
             key: "university",
             required: true,
           };
         case "tiplite":
           return {
-            label: this.tr("University"),
+            label: qx.locale.Manager.tr("University"),
             key: "university",
           };
         case "tis":
           return {
-            label: this.tr("Organization"),
+            label: qx.locale.Manager.tr("Organization"),
             key: "organization",
           };
         case "osparc":
           return {
-            label: this.tr("Research Group/Organization"),
+            label: qx.locale.Manager.tr("Research Group/Organization"),
             key: "organization",
           };
       }
