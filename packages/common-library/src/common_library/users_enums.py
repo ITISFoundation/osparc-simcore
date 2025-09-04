@@ -33,6 +33,7 @@ class UserRole(Enum):
     GUEST = "GUEST"
     USER = "USER"
     TESTER = "TESTER"
+    PRODUCT_SUPPORT = "PRODUCT_SUPPORT"
     PRODUCT_OWNER = "PRODUCT_OWNER"
     ADMIN = "ADMIN"
 
