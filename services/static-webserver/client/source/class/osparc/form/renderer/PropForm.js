@@ -323,13 +323,12 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const paramsMenuBtn = this.__getParamsMenuButton(field.key);
         paramsMenuBtn.exclude();
         optionsMenu.add(paramsMenuBtn);
-        const areParamsEnabled = osparc.utils.Utils.isDevelopmentPlatform();
         [
           newParamBtn,
           paramsMenuBtn
         ].forEach(btn => {
           studyUI.bind("mode", btn, "visibility", {
-            converter: mode => mode === "workbench" && areParamsEnabled ? "visible" : "excluded"
+            converter: mode => mode === "workbench" ? "visible" : "excluded"
           });
         });
       }
