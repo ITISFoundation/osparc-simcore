@@ -46,6 +46,7 @@ class MockKeys(StrAutoEnum):
     RUN_DEFERRED_AFTER_HANDLER = auto()
     ON_DEFERRED_RESULT = auto()
     ON_FINISHED_WITH_ERROR = auto()
+    ON_CANCELLED = auto()
 
 
 @pytest.fixture
@@ -131,6 +132,10 @@ async def get_mocked_deferred_handler(
             @classmethod
             async def on_result(cls, result: Any, context: DeferredContext) -> None:
                 mocks[MockKeys.ON_DEFERRED_RESULT](result, context)
+
+            @classmethod
+            async def on_cancelled(cls, context: DeferredContext) -> None:
+                mocks[MockKeys.ON_CANCELLED](context)
 
             @classmethod
             async def on_finished_with_error(
@@ -324,6 +329,7 @@ async def test_deferred_manager_cancelled(
     await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED_BEFORE_HANDLER, count=1)
     await mocked_deferred_handler.cancel(task_uid)
 
+    await _assert_mock_call(mocks, key=MockKeys.ON_CANCELLED, count=1)
     await _assert_mock_call(mocks, key=MockKeys.ON_FINISHED_WITH_ERROR, count=0)
 
     assert (
