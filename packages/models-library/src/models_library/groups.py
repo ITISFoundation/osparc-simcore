@@ -39,38 +39,51 @@ class Group(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
+        everyone: JsonDict = {
+            "gid": 1,
+            "name": "Everyone",
+            "type": "everyone",
+            "description": "all users",
+            "thumbnail": None,
+        }
+        user: JsonDict = {
+            "gid": 2,
+            "name": "User",
+            "description": "primary group",
+            "type": "primary",
+            "thumbnail": None,
+        }
+        organization: JsonDict = {
+            "gid": 3,
+            "name": "Organization",
+            "description": "standard group",
+            "type": "standard",
+            "thumbnail": None,
+            "inclusionRules": {},
+        }
+        product: JsonDict = {
+            "gid": 4,
+            "name": "Product",
+            "description": "standard group for products",
+            "type": "standard",
+            "thumbnail": None,
+        }
+        support: JsonDict = {
+            "gid": 5,
+            "name": "Support",
+            "description": "support group",
+            "type": "standard",
+            "thumbnail": None,
+        }
+
         schema.update(
             {
                 "examples": [
-                    {
-                        "gid": 1,
-                        "name": "Everyone",
-                        "type": "everyone",
-                        "description": "all users",
-                        "thumbnail": None,
-                    },
-                    {
-                        "gid": 2,
-                        "name": "User",
-                        "description": "primary group",
-                        "type": "primary",
-                        "thumbnail": None,
-                    },
-                    {
-                        "gid": 3,
-                        "name": "Organization",
-                        "description": "standard group",
-                        "type": "standard",
-                        "thumbnail": None,
-                        "inclusionRules": {},
-                    },
-                    {
-                        "gid": 4,
-                        "name": "Product",
-                        "description": "standard group for products",
-                        "type": "standard",
-                        "thumbnail": None,
-                    },
+                    everyone,
+                    user,
+                    organization,
+                    product,
+                    support,
                 ]
             }
         )

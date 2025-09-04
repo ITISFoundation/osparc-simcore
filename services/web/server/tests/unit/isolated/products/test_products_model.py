@@ -61,6 +61,7 @@ def test_product_to_static():
     assert product_data == {
         "displayName": "o²S²PARC FOO",
         "supportEmail": "foo@osparcf.io",
+        "supportStandardGroupId": 67890,
         "vendor": {
             "copyright": "© ACME correcaminos",
             "name": "ACME",

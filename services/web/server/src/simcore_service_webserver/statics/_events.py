@@ -147,9 +147,6 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
             release_vtag = _get_release_notes_vtag(vtag)
             data["vcsReleaseUrl"] = template_url.format(vtag=release_vtag)
 
-        # Add support_standard_group_id
-        data["supportStandardGroupId"] = product.support_standard_group_id
-
         data_json = json_dumps(data)
         _logger.debug("Front-end statics.json: %s", data_json)
 
