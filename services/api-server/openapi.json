@@ -9954,27 +9954,6 @@
                 {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "function_class",
-                    "mapping": {
-                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
-                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
-                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
-                    }
-                  }
-                },
-                {
-                  "oneOf": [
-                    {
                       "$ref": "#/components/schemas/RegisteredProjectFunctionJobWithStatus"
                     },
                     {
@@ -9990,6 +9969,27 @@
                       "PROJECT": "#/components/schemas/RegisteredProjectFunctionJobWithStatus",
                       "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus",
                       "SOLVER": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
+                    }
+                  }
+                },
+                {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
                     }
                   }
                 }

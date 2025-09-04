@@ -15,7 +15,7 @@ class PreRegisteredFunctionJobData(BaseModel):
 
 
 class PageRegisteredFunctionJobWithorWithoutStatus(
-    Page[RegisteredFunctionJob | RegisteredFunctionJobWithStatus]
+    Page[RegisteredFunctionJobWithStatus | RegisteredFunctionJob]  # order is important
 ):
     # This class is created specifically to provide a name for this in openapi.json.
     # When using an alias the python-client generates too long file name

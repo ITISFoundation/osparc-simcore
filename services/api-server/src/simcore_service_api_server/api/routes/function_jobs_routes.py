@@ -137,7 +137,7 @@ async def list_function_jobs(
     ] = False,
 ):
     if include_status:
-        function_jobs_list, meta = (
+        function_jobs_list_ws, meta = (
             await function_job_service.list_function_jobs_with_status(
                 pagination_offset=page_params.offset,
                 pagination_limit=page_params.limit,
@@ -148,7 +148,7 @@ async def list_function_jobs(
         )
         # the code below should ideally be in the service layer, but this can only be done if the
         # celery status resolution is done in the service layer too
-        for function_job_wso in function_jobs_list:
+        for function_job_wso in function_jobs_list_ws:
             if (
                 function_job_wso.status.status
                 not in (
@@ -180,7 +180,7 @@ async def list_function_jobs(
                     )
 
         return create_page(
-            function_jobs_list,
+            function_jobs_list_ws,
             total=meta.total,
             params=page_params,
         )
