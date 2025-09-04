@@ -553,7 +553,6 @@ async def test_map_function_parent_info(
         assert side_effect_checks["headers_checked"] is True
 
 
-@pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
 @pytest.mark.parametrize("mocked_app_dependencies", [None])
 async def test_map_function(
     app: FastAPI,
@@ -571,8 +570,9 @@ async def test_map_function(
     mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture,
     project_tests_dir: Path,
-    capture: str,
 ) -> None:
+
+    _capture = "run_study_function_parent_info.json"
 
     def _default_side_effect(
         request: httpx.Request,
@@ -583,7 +583,7 @@ async def test_map_function(
 
     create_respx_mock_from_capture(
         respx_mocks=[mocked_webserver_rest_api_base, mocked_directorv2_rest_api_base],
-        capture_path=project_tests_dir / "mocks" / capture,
+        capture_path=project_tests_dir / "mocks" / _capture,
         side_effects_callbacks=[_default_side_effect] * 50,
     )
 
