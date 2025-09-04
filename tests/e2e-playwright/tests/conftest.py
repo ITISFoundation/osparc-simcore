@@ -749,7 +749,7 @@ def create_project_from_service_dashboard(
             expected_states,
             True,
             None,
-            service_version,  # noqa: FBT003
+            service_version,
         )
 
     return _
