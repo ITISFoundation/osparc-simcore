@@ -163,7 +163,7 @@ qx.Class.define("osparc.store.Support", {
     addReleaseNotesToMenu: function(menu) {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
       const releaseLink = osparc.utils.Utils.getReleaseLink();
-      const releaseBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Release Notes") + " " + releaseTag, "@FontAwesome5Solid/book/14");
+      const releaseBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("What's new in") + " " + releaseTag, "@FontAwesome5Solid/bullhorn/14");
       releaseBtn.addListener("execute", () => window.open(releaseLink), this);
       menu.add(releaseBtn);
     },

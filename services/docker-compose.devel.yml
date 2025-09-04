@@ -21,6 +21,16 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
+  api-worker:
+    environment:
+      <<: *common-environment
+      API_SERVER_PROFILING : ${API_SERVER_PROFILING}
+      API_SERVER_LOGLEVEL: DEBUG
+    volumes:
+      - ./api-server:/devel/services/api-server
+      - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
+
   autoscaling:
     environment:
       <<: *common-environment

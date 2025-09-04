@@ -37,9 +37,7 @@ qx.Class.define("osparc.support.SupportCenter", {
 
     this.getChildControl("conversations-intro-text");
     this.getChildControl("conversations-list");
-    if (!osparc.store.Products.getInstance().amIASupportUser()) {
-      this.getChildControl("ask-a-question-button");
-    }
+    this.getChildControl("ask-a-question-button");
   },
 
   statics: {

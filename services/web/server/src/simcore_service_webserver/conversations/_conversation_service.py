@@ -1,7 +1,9 @@
 # pylint: disable=unused-argument
 
+import json
 import logging
 from typing import Any
+from urllib.parse import urljoin
 
 from aiohttp import web
 from models_library.basic_types import IDStr
@@ -22,6 +24,7 @@ from ..conversations._socketio import (
     notify_conversation_deleted,
     notify_conversation_updated,
 )
+from ..fogbugz import FogbugzCaseCreate, get_fogbugz_rest_client
 from ..groups.api import list_user_groups_ids_with_read_access
 from ..products import products_service
 from ..projects._groups_repository import list_project_groups
@@ -239,4 +242,55 @@ async def list_support_conversations_for_user(
         offset=offset,
         limit=limit,
         order_by=OrderBy(field=IDStr("conversation_id"), direction=OrderDirection.DESC),
+    )
+
+
+async def create_fogbugz_case_for_support_conversation(
+    app: web.Application,
+    *,
+    conversation: ConversationGetDB,
+    user_id: UserID,
+    message_content: str,
+    conversation_url: str,
+    host: str,
+    product_support_assigned_fogbugz_project_id: int,
+    fogbugz_url: str,
+) -> None:
+    """Creates a FogBugz case for a support conversation and updates the conversation with the case URL."""
+    user = await users_service.get_user(app, user_id)
+
+    description = f"""
+    Dear Support Team,
+
+    We have received a support request from {user["first_name"]} {user["last_name"]} ({user["email"]}) on {host}.
+
+    All communication should take place in the Platform Support Center at the following link: {conversation_url}
+
+    First message content: {message_content}
+
+    Extra content: {json.dumps(conversation.extra_context)}
+    """
+
+    fogbugz_client = get_fogbugz_rest_client(app)
+    fogbugz_case_data = FogbugzCaseCreate(
+        fogbugz_project_id=product_support_assigned_fogbugz_project_id,
+        title=f"Request for Support on {host}",
+        description=description,
+    )
+    case_id = await fogbugz_client.create_case(fogbugz_case_data)
+
+    # Update conversation with FogBugz case URL
+    await update_conversation(
+        app,
+        project_id=None,
+        conversation_id=conversation.conversation_id,
+        updates=ConversationPatchDB(
+            extra_context=conversation.extra_context
+            | {
+                "fogbugz_case_url": urljoin(
+                    f"{fogbugz_url}",
+                    f"f/cases/{case_id}",
+                )
+            },
+        ),
     )
