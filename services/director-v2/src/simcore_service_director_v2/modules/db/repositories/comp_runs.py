@@ -525,7 +525,7 @@ class CompRunsRepository(BaseRepository):
                     iteration = await _get_next_iteration(conn, user_id, project_id)
 
                 result = await conn.execute(
-                    comp_runs.insert()  # pylint: disable=no-value-for-parameter
+                    comp_runs.insert()
                     .values(
                         user_id=user_id,
                         project_uuid=f"{project_id}",
