@@ -427,10 +427,17 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
+    CLUSTERS_KEEPER_DASK_NPROCS: Annotated[
+        int,
+        Field(
+            description="overrides the default number of worker processes in the dask-sidecars, setting it to negative values will use dask defaults (see description in 'dask worker --help')",
+        ),
+    ]
+
     CLUSTERS_KEEPER_DASK_NTHREADS: Annotated[
         NonNegativeInt,
         Field(
-            description="overrides the default number of threads in the dask-sidecars, setting it to 0 will use the default (see description in dask-sidecar)",
+            description="overrides the default number of threads per process in the dask-sidecars, setting it to 0 will use the default (see description in dask-sidecar)",
         ),
     ]
 
