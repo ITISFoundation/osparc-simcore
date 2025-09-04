@@ -78,7 +78,6 @@ class TaskScheduleModel(BaseModel):
     result: Annotated[
         TaskExecutionResult | None,
         Field(
-            default=None,
             description=(
                 f"Populated by {TaskState.WORKER}. It always has a value after worker handles it."
                 "Will be used "
