@@ -1515,7 +1515,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/conversations/{conversationId}"
           },
-          renameConversation: {
+          patchConversation: {
             method: "PATCH",
             url: statics.API + "/conversations/{conversationId}"
           },
