@@ -313,7 +313,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         maxWidth: 500
       });
 
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("For Privacy reasons, you might want to hide some personal data."));
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Choose what other see."));
       box.add(label);
 
       const hideUsername = new qx.ui.form.CheckBox().set({
