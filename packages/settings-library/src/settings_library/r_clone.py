@@ -36,3 +36,29 @@ class RCloneSettings(BaseCustomSettings):
             description="`--buffer-size X`: sets the amount of RAM to use for each individual transfer",
         ),
     ] = "16M"
+
+    R_CLONE_OPTION_CHECKERS: Annotated[
+        NonNegativeInt,
+        Field(
+            description="`--checkers X`: sets the number checkers",
+        ),
+    ] = 32
+
+    R_CLONE_S3_UPLOAD_CONCURRENCY: Annotated[
+        NonNegativeInt,
+        Field(
+            description="`--s3-upload-concurrency X`: sets the number of concurrent uploads to S3",
+        ),
+    ] = 8
+
+    R_CLONE_CHUNK_SIZE: Annotated[
+        str,
+        Field(description="`--s3-chunk-size X`: sets the chunk size for S3"),
+    ] = "128M"
+
+    R_CLONE_ORDER_BY: Annotated[
+        str,
+        Field(
+            description="`--order-by X`: sets the order of file upload, e.g., 'size,mixed'",
+        ),
+    ] = "size,mixed"
