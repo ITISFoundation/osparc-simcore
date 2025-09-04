@@ -120,7 +120,6 @@ async def run_function(
     )
 
     return await function_job_service.run_function(
-        job_creation_task_id=task_id,
         function=function,
         pre_registered_function_job_data=pre_registered_function_job_data,
         pricing_spec=pricing_spec,
@@ -149,7 +148,6 @@ async def function_map(
     )
 
     return await function_job_service.map_function(
-        job_creation_task_id=task_id,
         function=function,
         pre_registered_function_job_data_list=pre_registered_function_job_data_list,
         pricing_spec=pricing_spec,
