@@ -299,5 +299,14 @@ qx.Class.define("osparc.data.model.Conversation", {
       }
       return null;
     },
+
+    setAppointment: function(appointment) {
+      const extraContext = this.getExtraContext() || {};
+      extraContext["appointment"] = appointment ? appointment.toISOString() : null;
+      return osparc.store.ConversationsSupport.getInstance().patchExtraContext(this.getConversationId(), extraContext)
+        .then(() => {
+          this.setExtraContext(extraContext);
+        });
+    },
   },
 });

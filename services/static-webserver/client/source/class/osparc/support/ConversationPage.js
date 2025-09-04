@@ -233,13 +233,14 @@ qx.Class.define("osparc.support.ConversationPage", {
     },
 
     __openAppointmentDetails: function() {
-      const dateTimeField = new osparc.ui.form.DateTimeField();
-      const title = this.tr("Choose a Date and Time");
-      const win = osparc.ui.window.Window.popUpInWindow(dateTimeField, title, 260, 26).set({
-        clickAwayClose: false,
-        resizable: false,
-        showClose: true
-      });
+      const win = new osparc.widget.DateTimeChooser();
+      win.addListener("dateChanged", e => {
+        const newValue = e.getData()["newValue"];
+        this.getConversation().setAppointment(newValue)
+          .catch(err => console.error(err));
+        win.close();
+      }, this);
+      win.open();
     },
 
     __renameConversation: function() {
