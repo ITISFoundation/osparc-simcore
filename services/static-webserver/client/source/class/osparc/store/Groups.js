@@ -259,6 +259,7 @@ qx.Class.define("osparc.store.Groups", {
     getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {
       const potentialCollaborators = {};
       const orgs = this.getOrganizations();
+      const supportGroup = this.getSupportGroup();
       const productEveryone = this.getEveryoneProductGroup();
 
       if (includeProductEveryone && productEveryone) {
@@ -277,6 +278,11 @@ qx.Class.define("osparc.store.Groups", {
           potentialCollaborators[org.getGroupId()] = org;
         }
       });
+
+      if (supportGroup && !(supportGroup.getGroupId() in potentialCollaborators)) {
+        supportGroup["collabType"] = 1;
+        potentialCollaborators[supportGroup.getGroupId()] = supportGroup;
+      }
 
       if (includeMe) {
         const myGroup = this.getGroupMe();
