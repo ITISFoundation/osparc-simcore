@@ -9284,35 +9284,6 @@ components:
       - name
       - email
       title: Author
-    BasicGroupGet:
-      properties:
-        gid:
-          type: integer
-          exclusiveMinimum: true
-          title: Gid
-          description: the group's unique ID
-          minimum: 0
-        label:
-          type: string
-          title: Label
-          description: the group's display name
-        description:
-          type: string
-          title: Description
-        thumbnail:
-          anyOf:
-          - type: string
-            minLength: 1
-            format: uri
-          - type: 'null'
-          title: Thumbnail
-          description: a link to the group's thumbnail
-      type: object
-      required:
-      - gid
-      - label
-      - description
-      title: BasicGroupGet
     Body_service_submission:
       properties:
         file:
@@ -12942,6 +12913,35 @@ components:
       - description
       - accessRights
       title: GroupGet
+    GroupGetBase:
+      properties:
+        gid:
+          type: integer
+          exclusiveMinimum: true
+          title: Gid
+          description: the group's unique ID
+          minimum: 0
+        label:
+          type: string
+          title: Label
+          description: the group's display name
+        description:
+          type: string
+          title: Description
+        thumbnail:
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Thumbnail
+          description: a link to the group's thumbnail
+      type: object
+      required:
+      - gid
+      - label
+      - description
+      title: GroupGetBase
     GroupUpdate:
       properties:
         label:
@@ -13635,7 +13635,7 @@ components:
           - type: 'null'
         support:
           anyOf:
-          - $ref: '#/components/schemas/BasicGroupGet'
+          - $ref: '#/components/schemas/GroupGetBase'
           - type: 'null'
           description: Group ID of the app support team or None if no support is defined
             for this product
