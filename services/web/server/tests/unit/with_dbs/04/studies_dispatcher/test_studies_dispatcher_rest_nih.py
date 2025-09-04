@@ -4,10 +4,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import AsyncIterator
-from contextlib import AsyncExitStack
+from collections.abc import Iterator
+from contextlib import ExitStack
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient, TestServer
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
@@ -19,7 +20,7 @@ from pytest_simcore.helpers.faker_factories import (
     random_service_meta_data,
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
+from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from settings_library.rabbit import RabbitSettings
@@ -34,7 +35,6 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 from simcore_service_webserver.studies_dispatcher._controller.rest.nih_schemas import (
     ServiceGet,
 )
-from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -43,9 +43,9 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture(scope="module")
-async def services_metadata_in_db(
-    asyncpg_engine: AsyncEngine,
-) -> AsyncIterator[list[dict]]:
+def services_metadata_in_db(
+    postgres_db: sa.engine.Engine,
+) -> Iterator[list[dict]]:
     """Pre-populate services metadata table with test data maintaining original structure."""
     services_data = [
         random_service_meta_data(
@@ -78,12 +78,12 @@ async def services_metadata_in_db(
         ),
     ]
 
-    async with AsyncExitStack() as stack:
+    with ExitStack() as stack:
         created_services = []
         for service_data in services_data:
-            row = await stack.enter_async_context(
-                insert_and_get_row_lifespan(
-                    asyncpg_engine,
+            row = stack.enter_context(
+                sync_insert_and_get_row_lifespan(
+                    postgres_db,
                     table=services_meta_data,
                     values=service_data,
                     pk_cols=[services_meta_data.c.key, services_meta_data.c.version],
@@ -95,9 +95,9 @@ async def services_metadata_in_db(
 
 
 @pytest.fixture(scope="module")
-async def services_consume_filetypes_in_db(
-    asyncpg_engine: AsyncEngine, services_metadata_in_db: list[dict]
-) -> AsyncIterator[list[dict]]:
+def services_consume_filetypes_in_db(
+    postgres_db: sa.engine.Engine, services_metadata_in_db: list[dict]
+) -> Iterator[list[dict]]:
     """Pre-populate services consume filetypes table with test data."""
     filetypes_data = [
         random_service_consume_filetype(
@@ -183,12 +183,12 @@ async def services_consume_filetypes_in_db(
         ),
     ]
 
-    async with AsyncExitStack() as stack:
+    with ExitStack() as stack:
         created_filetypes = []
         for filetype_data in filetypes_data:
-            row = await stack.enter_async_context(
-                insert_and_get_row_lifespan(
-                    asyncpg_engine,
+            row = stack.enter_context(
+                sync_insert_and_get_row_lifespan(
+                    postgres_db,
                     table=services_consume_filetypes,
                     values=filetype_data,
                     pk_cols=[
@@ -204,9 +204,9 @@ async def services_consume_filetypes_in_db(
 
 
 @pytest.fixture(scope="module")
-async def services_access_rights_in_db(
-    asyncpg_engine: AsyncEngine, services_metadata_in_db: list[dict]
-) -> AsyncIterator[list[dict]]:
+def services_access_rights_in_db(
+    postgres_db: sa.engine.Engine, services_metadata_in_db: list[dict]
+) -> Iterator[list[dict]]:
     """Pre-populate services access rights table with test data."""
     access_rights_data = [
         random_service_access_rights(
@@ -235,12 +235,12 @@ async def services_access_rights_in_db(
         ),
     ]
 
-    async with AsyncExitStack() as stack:
+    with ExitStack() as stack:
         created_access_rights = []
         for access_data in access_rights_data:
-            row = await stack.enter_async_context(
-                insert_and_get_row_lifespan(
-                    asyncpg_engine,
+            row = stack.enter_context(
+                sync_insert_and_get_row_lifespan(
+                    postgres_db,
                     table=services_access_rights,
                     values=access_data,
                     pk_cols=[
