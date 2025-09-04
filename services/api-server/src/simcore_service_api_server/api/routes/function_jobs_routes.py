@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from logging import getLogger
 from typing import Annotated, Final
 
@@ -14,7 +13,7 @@ from models_library.api_schemas_webserver.functions import (
     FunctionOutputs,
     RegisteredFunctionJob,
 )
-from models_library.functions import RegisteredFunction, RegisteredFunctionJobWithStatus
+from models_library.functions import RegisteredFunction
 from models_library.functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
@@ -31,7 +30,8 @@ from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
 from ...exceptions.function_errors import FunctionJobProjectMissingError
-from ...models.pagination import Page, PaginationParams
+from ...models.domain.functions import PageRegisteredFunctionJobWithorWithoutStatus
+from ...models.pagination import PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.functions_filters import FunctionJobsListFilters
 from ...services_rpc.wb_api_server import WbApiRpcClient
@@ -116,9 +116,7 @@ for endpoint in ENDPOINTS:
 
 @function_job_router.get(
     "",
-    response_model=Page[
-        RegisteredFunctionJobWithStatus | RegisteredFunctionJob
-    ],  # left-right order is important here
+    response_model=PageRegisteredFunctionJobWithorWithoutStatus,
     description=create_route_description(
         base="List function jobs", changelog=CHANGE_LOGS["list_function_jobs"]
     ),
@@ -138,9 +136,6 @@ async def list_function_jobs(
         bool, Query(description="Include job status in response")
     ] = False,
 ):
-    function_jobs_list: Sequence[
-        RegisteredFunctionJobWithStatus | RegisteredFunctionJob
-    ] = []
     if include_status:
         function_jobs_list, meta = (
             await function_job_service.list_function_jobs_with_status(
@@ -183,14 +178,20 @@ async def list_function_jobs(
                             async_pg_engine=async_pg_engine,
                         )
                     )
-    else:
-        function_jobs_list, meta = await function_job_service.list_function_jobs(
-            pagination_offset=page_params.offset,
-            pagination_limit=page_params.limit,
-            filter_by_function_job_ids=filters.function_job_ids,
-            filter_by_function_job_collection_id=filters.function_job_collection_id,
-            filter_by_function_id=filters.function_id,
+
+        return create_page(
+            function_jobs_list,
+            total=meta.total,
+            params=page_params,
         )
+
+    function_jobs_list, meta = await function_job_service.list_function_jobs(
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+        filter_by_function_job_ids=filters.function_job_ids,
+        filter_by_function_job_collection_id=filters.function_job_collection_id,
+        filter_by_function_id=filters.function_id,
+    )
 
     return create_page(
         function_jobs_list,
