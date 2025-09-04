@@ -9,9 +9,14 @@ from typing import Any
 from urllib.parse import parse_qs
 
 import pytest
+import simcore_service_webserver.studies_dispatcher
 from aiohttp.test_utils import make_mocked_request
 from models_library.utils.pydantic_tools_extension import parse_obj_or_none
-from pydantic import ByteSize, TypeAdapter
+from pydantic import BaseModel, ByteSize, TypeAdapter
+from pytest_simcore.pydantic_models import (
+    assert_validation_model,
+    walk_model_examples_in_package,
+)
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from simcore_service_webserver.studies_dispatcher._controller.rest.redirects_schemas import (
     FileQueryParams,
@@ -22,6 +27,19 @@ from simcore_service_webserver.studies_dispatcher._models import (
     ServiceParams,
 )
 from yarl import URL
+
+
+@pytest.mark.parametrize(
+    "model_cls, example_name, example_data",
+    walk_model_examples_in_package(simcore_service_webserver.studies_dispatcher),
+)
+def test_model_examples(
+    model_cls: type[BaseModel], example_name: str, example_data: Any
+):
+    assert_validation_model(
+        model_cls, example_name=example_name, example_data=example_data
+    )
+
 
 _SIZEBYTES = TypeAdapter(ByteSize).validate_python("3MiB")
 
