@@ -44,13 +44,6 @@ qx.Class.define("osparc.data.model.User", {
     } else if (userData["lastName"]) {
       lastName = userData["lastName"];
     }
-    let description = [firstName, lastName].join(" ").trim(); // the null values will be replaced by empty strings
-    if (email) {
-      if (description) {
-        description += " - "
-      }
-      description += email;
-    }
 
     this.set({
       userId,
@@ -60,6 +53,16 @@ qx.Class.define("osparc.data.model.User", {
       lastName,
       email,
       phoneNumber: userData["phone"] || null,
+    });
+
+    let description = this.getFullName();
+    if (email) {
+      if (description) {
+        description += " - "
+      }
+      description += email;
+    }
+    this.set({
       label: userData["userName"] || description,
       description,
     });
@@ -196,9 +199,30 @@ qx.Class.define("osparc.data.model.User", {
     },
   },
 
+  statics: {
+    concatFullName: function(firstName, lastName) {
+      return [firstName, lastName].filter(Boolean).join(" ");
+    },
+
+    userDataToDescription: function(firstName, lastName, email) {
+      let description = this.concatFullName(firstName, lastName);
+      if (email) {
+        if (description) {
+          description += " - "
+        }
+        description += email;
+      }
+      return description;
+    },
+  },
+
   members: {
     createThumbnail: function(size) {
       return osparc.utils.Avatar.emailToThumbnail(this.getEmail(), this.getUsername(), size);
+    },
+
+    getFullName: function() {
+      return this.self().concatFullName(this.getFirstName(), this.getLastName());
     },
   },
 });
