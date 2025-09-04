@@ -46,16 +46,18 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
   },
 
   statics: {
-    createMiniProfileView: function(withSpacer = true) {
+    createMiniProfileView: function(userData) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
         alignX: "center",
         minWidth: 120,
         maxWidth: 150
       });
 
-      const authData = osparc.auth.Data.getInstance();
-      const username = authData.getUsername();
-      const email = authData.getEmail();
+      if (!userData) {
+        userData = osparc.auth.Data.getInstance();
+      }
+      const username = userData.getUsername();
+      const email = userData.getEmail();
       const avatarSize = 80;
       const img = new qx.ui.basic.Image().set({
         source: osparc.utils.Avatar.emailToThumbnail(email, username, avatarSize),
@@ -73,7 +75,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
         font: "text-14",
         alignX: "center"
       });
-      authData.bind("username", usernameLabel, "value");
+      userData.bind("username", usernameLabel, "value");
       layout.add(usernameLabel);
 
       const fullNameLabel = new qx.ui.basic.Label().set({
@@ -81,15 +83,15 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
         alignX: "center"
       });
       layout.add(fullNameLabel);
-      authData.bind("firstName", fullNameLabel, "value", {
-        converter: () => authData.getFullName()
+      userData.bind("firstName", fullNameLabel, "value", {
+        converter: () => userData.getFullName()
       });
-      authData.bind("lastName", fullNameLabel, "value", {
-        converter: () => authData.getFullName()
+      userData.bind("lastName", fullNameLabel, "value", {
+        converter: () => userData.getFullName()
       });
 
-      if (authData.getRole() !== "user") {
-        const role = authData.getFriendlyRole();
+      if (userData.getRole() !== "user") {
+        const role = userData.getFriendlyRole();
         const roleLabel = new qx.ui.basic.Label(role).set({
           font: "text-13",
           alignX: "center"
@@ -97,9 +99,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
         layout.add(roleLabel);
       }
 
-      if (withSpacer) {
-        layout.add(new qx.ui.core.Spacer(15, 15));
-      }
+      layout.add(new qx.ui.core.Spacer(15, 15));
 
       return layout;
     }
