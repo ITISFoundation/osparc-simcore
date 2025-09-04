@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field, HttpUrl, PositiveInt, TypeAdapter
+from pydantic import BaseModel, Field, HttpUrl, PositiveInt
 
 
 class ServiceInfo(BaseModel):
@@ -10,9 +10,7 @@ class ServiceInfo(BaseModel):
 
     label: Annotated[str, Field(description="Display name")]
 
-    thumbnail: Annotated[HttpUrl, Field()] = TypeAdapter(HttpUrl).validate_python(
-        "https://via.placeholder.com/170x120.png"
-    )
+    thumbnail: HttpUrl = HttpUrl("https://via.placeholder.com/170x120.png")
 
     is_guest_allowed: bool = True
 
