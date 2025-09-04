@@ -279,6 +279,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         allowGrowX: false,
         alignX: "center"
       });
+      osparc.utils.Utils.setIdToWidget(probeBtn, "connect_input_btn_" + field.key);
       this.__fieldOptsBtnMap[field.key] = fieldOptsBtn;
       // populate the button/menu when the it appears
       fieldOptsBtn.addListenerOnce("appear", () => {
@@ -425,6 +426,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
     __getNewParamButton: function(portId) {
       const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
+      osparc.utils.Utils.setIdToWidget(newParamBtn, "connect_new_parameter_btn_" + portId);
       newParamBtn.addListener("execute", () => this.fireDataEvent("parameterRequested", portId), this);
       return newParamBtn;
     },
