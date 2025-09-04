@@ -62,6 +62,17 @@ class MyProfilePrivacyPatch(InputSchema):
     hide_email: bool | None = None
 
 
+class MyProfileAddressGet(OutputSchema):
+    """Details provided upon registration and used e.g. for invoicing"""
+
+    institution: str | None
+    address: str | None
+    city: str | None
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
+    postal_code: str | None
+    country: str | None
+
+
 class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
     user_name: Annotated[
@@ -86,6 +97,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
 
     privacy: MyProfilePrivacyGet
     preferences: AggregatedPreferences
+    contact: MyProfileAddressGet | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -103,6 +115,25 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
                             "hide_username": 0,
                             "hide_fullname": 0,
                             "hide_email": 1,
+                        },
+                    },
+                    {
+                        "id": 1,
+                        "login": "minimal@user.com",
+                        "userName": "minuser",
+                        "role": "USER",
+                        "preferences": {},
+                        "privacy": {
+                            "hide_username": False,
+                            "hide_fullname": False,
+                            "hide_email": False,
+                        },
+                        "provided": {
+                            "address": "123 Main St",
+                            "city": "Sampleville",
+                            "state": "CA",
+                            "postal_code": "12345",
+                            "country": "Wonderland",
                         },
                     },
                 ]
@@ -133,8 +164,9 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         my_product_group: tuple[Group, AccessRightsDict] | None,
         my_preferences: AggregatedPreferences,
         my_support_group: Group | None,
+        profile_contact: MyProfileAddressGet | None = None,
     ) -> Self:
-        data = remap_keys(
+        profile_data = remap_keys(
             my_profile.model_dump(
                 include={
                     "id",
@@ -152,11 +184,12 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
             rename={"email": "login"},
         )
         return cls(
-            **data,
+            **profile_data,
             groups=MyGroupsGet.from_domain_model(
                 my_groups_by_type, my_product_group, my_support_group
             ),
             preferences=my_preferences,
+            contact=profile_contact,
         )
 
 
