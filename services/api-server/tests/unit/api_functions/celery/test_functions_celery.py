@@ -670,7 +670,9 @@ async def test_map_function(
     assert response.status_code == status.HTTP_200_OK
 
     job_collection = FunctionJobCollection.model_validate(response.json())
-    assert job_collection.job_ids == _generated_function_job_ids
+    assert (
+        job_collection.job_ids == _generated_function_job_ids
+    ), "Job ID did not preserve order or were incorrectly propagated"
     celery_task_ids = {
         elm.kwargs["registered_function_job_patch"].job_creation_task_id
         for elm in patch_mock.call_args_list

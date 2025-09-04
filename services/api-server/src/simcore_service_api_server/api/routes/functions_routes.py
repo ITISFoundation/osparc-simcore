@@ -29,12 +29,10 @@ from servicelib.fastapi.dependencies import get_reverse_url_mapper
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
-from ...celery_worker.worker_tasks.functions_tasks import function_map as map_task
 from ...celery_worker.worker_tasks.functions_tasks import (
     run_function as run_function_task,
 )
 from ...exceptions.function_errors import FunctionJobCacheNotFoundError
-from ...models.domain.functions import PreRegisteredFunctionJobData
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import JobPricingSpecification
@@ -454,81 +452,23 @@ async def map_function(
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
 
-    task_manager = get_task_manager(request.app)
-    parent_project_uuid = (
-        x_simcore_parent_project_uuid
-        if isinstance(x_simcore_parent_project_uuid, ProjectID)
-        else None
-    )
-    parent_node_id = (
-        x_simcore_parent_node_id
-        if isinstance(x_simcore_parent_node_id, NodeID)
-        else None
-    )
-    pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
-    job_links = await function_service.get_function_job_links(to_run_function, url_for)
-
-    job_inputs_list = [
-        await function_jobs_service.create_function_job_inputs(
-            function=to_run_function, function_inputs=function_inputs
-        )
-        for function_inputs in function_inputs_list
-    ]
-
     job_ids: list[FunctionJobID] = []
-    pre_registered_function_job_data_list: list[PreRegisteredFunctionJobData] = []
 
-    for job_inputs in job_inputs_list:
-        try:
-            cached_job = await function_jobs_service.get_cached_function_job(
-                function=to_run_function,
-                job_inputs=job_inputs,
-            )
-            job_ids.append(cached_job.uid)
-        except FunctionJobCacheNotFoundError:
-            data = await function_jobs_service.pre_register_function_job(
-                function=to_run_function,
-                job_inputs=job_inputs,
-            )
-            pre_registered_function_job_data_list.append(data)
-            job_ids.append(data.function_job_id)
-
-    # run map in celery task
-    job_filter = AsyncJobFilter(
-        user_id=user_identity.user_id,
-        product_name=user_identity.product_name,
-        client_name=ASYNC_JOB_CLIENT_NAME,
-    )
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
-    task_name = map_task.__name__
-
-    task_uuid = await task_manager.submit_task(
-        TaskMetadata(
-            name=task_name,
-            ephemeral=True,
-            queue=TasksQueue.API_WORKER_QUEUE,
-        ),
-        task_filter=task_filter,
-        user_identity=user_identity,
-        function=to_run_function,
-        pre_registered_function_job_data_list=pre_registered_function_job_data_list,
-        pricing_spec=pricing_spec,
-        job_links=job_links,
-        x_simcore_parent_project_uuid=parent_project_uuid,
-        x_simcore_parent_node_id=parent_node_id,
-    )
-
-    # patch pre-registered function jobs
-    for data in pre_registered_function_job_data_list:
-        await function_jobs_service.patch_registered_function_job(
-            user_id=user_identity.user_id,
-            product_name=user_identity.product_name,
-            function_job_id=data.function_job_id,
-            function_class=to_run_function.function_class,
-            job_creation_task_id=TaskID(task_uuid),
+    for function_inputs in function_inputs_list:
+        job = await run_function(
+            request=request,
+            user_identity=user_identity,
+            to_run_function=to_run_function,
+            url_for=url_for,
+            function_inputs=function_inputs,
+            function_service=function_service,
+            function_job_service=function_jobs_service,
+            x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
+            x_simcore_parent_node_id=x_simcore_parent_node_id,
         )
+        job_ids.append(job.uid)
 
-    function_job_collection_description = f"Function job collection of map of function {to_run_function.uid} with {len(pre_registered_function_job_data_list)} inputs"
+    function_job_collection_description = f"Function job collection of map of function {to_run_function.uid} with {len(function_inputs_list)} inputs"
     return await web_api_rpc_client.register_function_job_collection(
         function_job_collection=FunctionJobCollection(
             title="Function job collection of function map",
