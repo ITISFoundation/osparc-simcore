@@ -13,8 +13,7 @@ class ProfileCommon(BaseModel):
     last_name: LastNameStr | None = Field(None, examples=["Maxwell"])
 
 
-class ProfileUpdate(ProfileCommon):
-    ...
+class ProfileUpdate(ProfileCommon): ...
 
 
 class UserRoleEnum(StrAutoEnum):
@@ -23,6 +22,7 @@ class UserRoleEnum(StrAutoEnum):
     GUEST = auto()
     USER = auto()
     TESTER = auto()
+    PRODUCT_SUPPORT = auto()
     PRODUCT_OWNER = auto()
     ADMIN = auto()
 

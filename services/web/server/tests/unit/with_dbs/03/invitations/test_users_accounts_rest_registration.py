@@ -498,7 +498,7 @@ async def test_reject_user_account(
     # Check that account_request_status is REJECTED
     user_data = found[0]
     assert user_data["accountRequestStatus"] == "REJECTED"
-    assert user_data["accountRequestReviewedBy"] == logged_user["id"]
+    assert user_data["accountRequestReviewedBy"] == logged_user["name"]
     assert user_data["accountRequestReviewedAt"] is not None
 
     # 7. Verify that a rejected user cannot be approved
@@ -586,7 +586,7 @@ async def test_approve_user_account_with_full_invitation_details(
 
     user_data = found[0]
     assert user_data["accountRequestStatus"] == "APPROVED"
-    assert user_data["accountRequestReviewedBy"] == logged_user["id"]
+    assert user_data["accountRequestReviewedBy"] == logged_user["name"]
     assert user_data["accountRequestReviewedAt"] is not None
 
     # 5. Verify invitation data is stored in extras

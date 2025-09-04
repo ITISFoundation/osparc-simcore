@@ -83,7 +83,15 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     login: LowerCaseEmailStr
     phone: str | None = None
 
-    role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
+    role: Literal[
+        "ANONYMOUS",
+        "GUEST",
+        "USER",
+        "TESTER",
+        "PRODUCT_SUPPORT",
+        "PRODUCT_OWNER",
+        "ADMIN",
+    ]
     groups: MyGroupsGet | None = None
     gravatar_id: Annotated[str | None, Field(deprecated=True)] = None
 
