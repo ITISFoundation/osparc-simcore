@@ -79,7 +79,7 @@ qx.Class.define("osparc.store.Groups", {
           const everyoneGroup = this.__addToGroupsCache(resp["all"], "everyone");
           const productEveryoneGroup = this.__addToGroupsCache(resp["product"], "productEveryone");
           let supportGroup = null;
-          if ("support" && resp["support"]) {
+          if ("support" in resp && resp["support"]) {
             resp["support"]["accessRights"] = {
               "read": false,
               "write": false,
