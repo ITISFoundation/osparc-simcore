@@ -150,9 +150,9 @@ async def _patch_registered_function_job_side_effect(
     registered_function_job_patch = kwargs["registered_function_job_patch"]
     assert isinstance(registered_function_job_patch, RegisteredProjectFunctionJobPatch)
     job_creation_task_id = registered_function_job_patch.job_creation_task_id
-    assert job_creation_task_id is not None
+    uid = kwargs["function_job_uuid"]
     return mock_registered_project_function_job.model_copy(
-        update={"job_creation_task_id": job_creation_task_id}
+        update={"job_creation_task_id": job_creation_task_id, "uid": uid}
     )
 
 
@@ -551,3 +551,130 @@ async def test_map_function_parent_info(
         ].job_creation_task_id
         await wait_for_task_result(client, auth, f"{task_id}")
         assert side_effect_checks["headers_checked"] is True
+
+
+@pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
+@pytest.mark.parametrize("mocked_app_dependencies", [None])
+async def test_map_function(
+    app: FastAPI,
+    with_api_server_celery_worker: TestWorkController,
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[
+        [str, Any, Exception | None, Callable | None], MockType
+    ],
+    mock_registered_project_function: RegisteredProjectFunction,
+    mock_registered_project_function_job: RegisteredFunctionJob,
+    auth: httpx.BasicAuth,
+    user_id: UserID,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_directorv2_rest_api_base: respx.MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    create_respx_mock_from_capture,
+    project_tests_dir: Path,
+    capture: str,
+) -> None:
+
+    def _default_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        return capture.response_body
+
+    create_respx_mock_from_capture(
+        respx_mocks=[mocked_webserver_rest_api_base, mocked_directorv2_rest_api_base],
+        capture_path=project_tests_dir / "mocks" / capture,
+        side_effects_callbacks=[_default_side_effect] * 50,
+    )
+
+    mock_handler_in_functions_rpc_interface(
+        "get_function_user_permissions",
+        FunctionUserAccessRights(
+            user_id=user_id,
+            execute=True,
+            read=True,
+            write=True,
+        ),
+        None,
+        None,
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_function", mock_registered_project_function, None, None
+    )
+    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
+
+    _generated_function_job_ids: list[FunctionJobID] = []
+
+    async def _register_function_job_side_effect(
+        generated_function_job_ids: list[FunctionJobID], *args, **kwargs
+    ):
+        uid = FunctionJobID(_faker.uuid4())
+        generated_function_job_ids.append(uid)
+        return mock_registered_project_function_job.model_copy(update={"uid": uid})
+
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job",
+        None,
+        None,
+        partial(_register_function_job_side_effect, _generated_function_job_ids),
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_functions_user_api_access_rights",
+        FunctionUserApiAccessRights(
+            user_id=user_id,
+            execute_functions=True,
+            write_functions=True,
+            read_functions=True,
+        ),
+        None,
+        None,
+    )
+
+    async def _register_function_job_collection_side_effect(*args, **kwargs):
+        job_collection = kwargs["function_job_collection"]
+        return RegisteredFunctionJobCollection(
+            uid=FunctionJobID(_faker.uuid4()),
+            title="Test Collection",
+            description="A test function job collection",
+            job_ids=job_collection.job_ids,
+            created_at=datetime.datetime.now(datetime.UTC),
+        )
+
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job_collection",
+        None,
+        None,
+        _register_function_job_collection_side_effect,
+    )
+
+    patch_mock = mock_handler_in_functions_rpc_interface(
+        "patch_registered_function_job",
+        None,
+        None,
+        partial(
+            _patch_registered_function_job_side_effect,
+            mock_registered_project_function_job,
+        ),
+    )
+
+    _inputs = [{}, {}]
+    response = await client.post(
+        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:map",
+        json=_inputs,
+        auth=auth,
+        headers={
+            X_SIMCORE_PARENT_PROJECT_UUID: "null",
+            X_SIMCORE_PARENT_NODE_ID: "null",
+        },
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    job_collection = FunctionJobCollection.model_validate(response.json())
+    assert job_collection.job_ids == _generated_function_job_ids
+    celery_task_ids = {
+        elm.kwargs["registered_function_job_patch"].job_creation_task_id
+        for elm in patch_mock.call_args_list
+    }
+    assert len(celery_task_ids) == len(_inputs)
+    for task_id in celery_task_ids:
+        await wait_for_task_result(client, auth, f"{task_id}")
