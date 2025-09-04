@@ -978,42 +978,47 @@ class BaseCompScheduler(ABC):
         comp_run: CompRunsAtDB,
         comp_tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> dict[NodeIDStr, CompTaskAtDB]:
-        if comp_run.result is RunningState.WAITING_FOR_CLUSTER:
-            tasks_waiting_for_cluster = [
-                t
-                for t in comp_tasks.values()
-                if t.state is RunningState.WAITING_FOR_CLUSTER
-            ]
-            # get latest modified task
-            latest_modified_of_all_tasks = max(
-                tasks_waiting_for_cluster, key=lambda task: task.modified
-            ).modified
+        if comp_run.result is not RunningState.WAITING_FOR_CLUSTER:
+            return comp_tasks
 
-            if (
-                arrow.utcnow().datetime - latest_modified_of_all_tasks
-            ) > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT:
-                await CompTasksRepository.instance(
-                    self.db_engine
-                ).update_project_tasks_state(
-                    project_id,
-                    comp_run.run_id,
-                    [task.node_id for task in tasks_waiting_for_cluster],
-                    RunningState.FAILED,
-                    optional_progress=1.0,
-                    optional_stopped=arrow.utcnow().datetime,
-                )
-                for task in tasks_waiting_for_cluster:
-                    task.state = RunningState.FAILED
-                msg = user_message(
-                    "The system has timed out while waiting for computational resources. Please try running your project again or contact oSparc support if this issue persists.",
-                    _version=1,
-                )
-                _logger.error(msg)
-                await publish_project_log(
-                    self.rabbitmq_client,
-                    user_id,
-                    project_id,
-                    log=msg,
-                    log_level=logging.ERROR,
-                )
+        tasks_waiting_for_cluster = [
+            t
+            for t in comp_tasks.values()
+            if t.state is RunningState.WAITING_FOR_CLUSTER
+        ]
+        if not tasks_waiting_for_cluster:
+            return comp_tasks
+
+        # get latest modified task
+        latest_modified_of_all_tasks = max(
+            tasks_waiting_for_cluster, key=lambda task: task.modified
+        ).modified
+
+        if (
+            arrow.utcnow().datetime - latest_modified_of_all_tasks
+        ) > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT:
+            await CompTasksRepository.instance(
+                self.db_engine
+            ).update_project_tasks_state(
+                project_id,
+                comp_run.run_id,
+                [task.node_id for task in tasks_waiting_for_cluster],
+                RunningState.FAILED,
+                optional_progress=1.0,
+                optional_stopped=arrow.utcnow().datetime,
+            )
+            for task in tasks_waiting_for_cluster:
+                task.state = RunningState.FAILED
+            msg = user_message(
+                "The system has timed out while waiting for computational resources. Please try running your project again or contact oSparc support if this issue persists.",
+                _version=1,
+            )
+            _logger.error(msg)
+            await publish_project_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                log=msg,
+                log_level=logging.ERROR,
+            )
         return comp_tasks
