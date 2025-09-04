@@ -206,12 +206,13 @@ async def get_user_invoice_address(
     user_billing_details = await get_user_billing_details(
         app, user_id=user_id, product_name=product_name
     )
+
     return UserInvoiceAddress(
         line1=user_billing_details.address,
         state=user_billing_details.state,
         postal_code=user_billing_details.postal_code,
         city=user_billing_details.city,
-        country=pycountry.countries.lookup(user_billing_details.country).apha_2,
+        country=pycountry.countries.lookup(user_billing_details.country).alpha_2,
     )
 
 
