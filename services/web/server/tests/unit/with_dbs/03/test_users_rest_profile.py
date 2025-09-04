@@ -28,6 +28,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.products._models import Product
 from simcore_service_webserver.user_preferences._service import (
     get_frontend_user_preferences_aggregation,
 )
@@ -133,6 +134,14 @@ async def test_access_update_profile(
     await assert_status(resp, expected)
 
 
+@pytest.fixture
+def product(client: TestClient, osparc_product_name: str) -> Product:
+    assert client.app
+    from simcore_service_webserver.products import products_service
+
+    return products_service.get_product(client.app, osparc_product_name)
+
+
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_profile_user_not_in_support_group(
     support_group_before_app_starts: dict[str, Any],
@@ -143,6 +152,7 @@ async def test_get_profile_user_not_in_support_group(
     primary_group: dict[str, Any],
     standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
+    product: Product,
 ):
     assert client.app
 
@@ -168,7 +178,7 @@ async def test_get_profile_user_not_in_support_group(
     assert got_profile_groups["product"] == {
         "accessRights": {"delete": False, "read": False, "write": False},
         "description": "osparc product group",
-        "gid": 3,
+        "gid": product.group_id,
         "label": "osparc",
         "thumbnail": None,
     }
@@ -210,6 +220,7 @@ async def test_get_profile_user_in_support_group(
     primary_group: dict[str, Any],
     standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
+    product: Product,
 ):
     assert client.app
     from simcore_service_webserver.groups import _groups_repository
@@ -244,7 +255,7 @@ async def test_get_profile_user_in_support_group(
     assert got_profile_groups["product"] == {
         "accessRights": {"delete": False, "read": False, "write": False},
         "description": "osparc product group",
-        "gid": 3,
+        "gid": product.group_id,
         "label": "osparc",
         "thumbnail": None,
     }
