@@ -405,7 +405,6 @@ class FunctionJobService:
     async def run_function(
         self,
         *,
-        job_creation_task_id: TaskID | None,
         function: RegisteredFunction,
         pre_registered_function_job_data: PreRegisteredFunctionJobData,
         pricing_spec: JobPricingSpecification | None,
@@ -434,7 +433,7 @@ class FunctionJobService:
                 product_name=self.product_name,
                 function_job_id=pre_registered_function_job_data.function_job_id,
                 function_class=FunctionClass.PROJECT,
-                job_creation_task_id=job_creation_task_id,
+                job_creation_task_id=None,
                 project_job_id=study_job.id,
             )
 
@@ -459,7 +458,7 @@ class FunctionJobService:
                 product_name=self.product_name,
                 function_job_id=pre_registered_function_job_data.function_job_id,
                 function_class=FunctionClass.SOLVER,
-                job_creation_task_id=job_creation_task_id,
+                job_creation_task_id=None,
                 solver_job_id=solver_job.id,
             )
 
@@ -470,7 +469,6 @@ class FunctionJobService:
     async def map_function(
         self,
         *,
-        job_creation_task_id: TaskID | None,
         function: RegisteredFunction,
         pre_registered_function_job_data_list: list[PreRegisteredFunctionJobData],
         job_links: JobLinks,
@@ -481,7 +479,6 @@ class FunctionJobService:
 
         for data in pre_registered_function_job_data_list:
             await self.run_function(
-                job_creation_task_id=job_creation_task_id,
                 function=function,
                 pre_registered_function_job_data=data,
                 pricing_spec=pricing_spec,
