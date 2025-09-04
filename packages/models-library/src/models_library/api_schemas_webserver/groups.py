@@ -54,7 +54,7 @@ class GroupAccessRights(BaseModel):
     )
 
 
-class BasicGroupGet(OutputSchema):
+class GroupGetBase(OutputSchema):
     gid: Annotated[GroupID, Field(description="the group's unique ID")]
     label: Annotated[str, Field(description="the group's display name")]
     description: str
@@ -94,7 +94,7 @@ class BasicGroupGet(OutputSchema):
         )
 
 
-class GroupGet(BasicGroupGet):
+class GroupGet(GroupGetBase):
     access_rights: Annotated[GroupAccessRights, Field(alias="accessRights")]
 
     inclusion_rules: Annotated[
@@ -196,7 +196,7 @@ class MyGroupsGet(OutputSchema):
     all: GroupGet
     product: GroupGet | None = None
     support: Annotated[
-        BasicGroupGet | None,
+        GroupGetBase | None,
         Field(
             description="Group ID of the app support team or None if no support is defined for this product"
         ),
@@ -271,8 +271,8 @@ class MyGroupsGet(OutputSchema):
                 else None
             ),
             support=(
-                BasicGroupGet.model_validate(
-                    BasicGroupGet.dump_basic_group_data(product_support_group)
+                GroupGetBase.model_validate(
+                    GroupGetBase.dump_basic_group_data(product_support_group)
                 )
                 if product_support_group
                 else None
