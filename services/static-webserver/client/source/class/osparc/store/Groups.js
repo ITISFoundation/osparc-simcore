@@ -39,6 +39,7 @@ qx.Class.define("osparc.store.Groups", {
     supportGroup: {
       check: "osparc.data.model.Group",
       init: null, // this will stay null for guest users
+      nullable: true,
       event: "changeSupportGroup",
     },
 
