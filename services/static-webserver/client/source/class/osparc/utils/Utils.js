@@ -637,9 +637,9 @@ qx.Class.define("osparc.utils.Utils", {
 
     /**
      * @param {Date} date - The date to format.
-     * @returns {String} - The formatted date string with city name. Sep 4, 1986, 17:00 Zurich
+     * @returns {String} - The formatted date string with city name and timezone. Sep 4, 1986, 17:00 Zurich (GMT+02:00)
      */
-    formatDateWithCity: function(date) {
+    formatDateWithCityAndTZ: function(date) {
       // Short date/time formatter
       const options = {
         year: "numeric",  // 1986
@@ -653,12 +653,19 @@ qx.Class.define("osparc.utils.Utils", {
       const dtf = new Intl.DateTimeFormat("en-US", options);
       const formatted = dtf.format(date);
 
-      // Extract timezone, e.g. "Europe/Zurich"
+      // Timezone city
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-      // Get the city part (last token after /)
       const city = tz.split("/").pop().replace("_", " ");
-      return `${formatted} (${city})`;
+
+      // UTC offset (minutes → +HH:MM)
+      const offsetMinutes = -date.getTimezoneOffset(); // JS returns opposite sign
+      const sign = offsetMinutes >= 0 ? "+" : "-";
+      const absMinutes = Math.abs(offsetMinutes);
+      const hours = String(Math.floor(absMinutes / 60)).padStart(2, "0");
+      const minutes = String(absMinutes % 60).padStart(2, "0");
+      const offsetStr = `GMT${sign}${hours}:${minutes}`;
+
+      return `${formatted} ${city} (${offsetStr})`;
     },
 
     formatMsToHHMMSS: function(ms) {
