@@ -174,8 +174,9 @@ qx.Class.define("osparc.store.Groups", {
         this.getMyGroupId(),
         ...this.getOrganizationIds().map(gId => parseInt(gId))
       ];
-      if (this.getEveryoneProductGroup()) {
-        allMyGroupIds.push(this.getEveryoneProductGroup().getGroupId());
+      const supportGroup = this.getSupportGroup();
+      if (supportGroup && !allMyGroupIds.includes(supportGroup.getGroupId())) {
+        allMyGroupIds.push(supportGroup.getGroupId());
       }
       if (this.getEveryoneGroup()) {
         allMyGroupIds.push(this.getEveryoneGroup().getGroupId());
