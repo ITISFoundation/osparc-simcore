@@ -64,7 +64,7 @@ class BasicGroupGet(OutputSchema):
 
     @field_validator("thumbnail", mode="before")
     @classmethod
-    def _sanitize_legacy_data(cls, v):
+    def _sanitize_thumbnail_input(cls, v):
         if v:
             # Enforces null if thumbnail is not valid URL or empty
             with suppress(ValidationError):
