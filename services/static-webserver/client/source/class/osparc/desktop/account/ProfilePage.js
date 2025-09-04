@@ -338,7 +338,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
       const box = this.self().createSectionBox(this.tr("Privacy"));
 
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Choose what other see."));
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Choose what others see."));
       box.add(label);
 
       const hideUsername = new qx.ui.form.CheckBox().set({

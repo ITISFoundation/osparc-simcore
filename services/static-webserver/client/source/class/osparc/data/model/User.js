@@ -65,7 +65,7 @@ qx.Class.define("osparc.data.model.User", {
     });
 
     if (userData["contact"]) {
-      const contact = userData["contact"]
+      const contact = userData["contact"];
       this.set({
         institution: contact["institution"] || null,
         address: contact["address"] || null,
