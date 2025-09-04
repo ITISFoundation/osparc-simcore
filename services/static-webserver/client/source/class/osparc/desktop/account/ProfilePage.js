@@ -56,11 +56,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         PHONE: 4,
       },
     },
-  },
 
-  statics: {
     createSectionBox: function(title) {
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr(title)).set({
+      const box = osparc.ui.window.TabbedView.createSectionBox(title).set({
         alignX: "left",
         maxWidth: 500
       });
