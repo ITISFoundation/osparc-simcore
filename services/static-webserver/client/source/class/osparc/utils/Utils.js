@@ -642,10 +642,10 @@ qx.Class.define("osparc.utils.Utils", {
     formatDateWithCityAndTZ: function(date) {
       // Short date/time formatter
       const options = {
-        year: "numeric",  // 1986
-        month: "short",   // Sep
-        day: "numeric",   // 4
-        hour: "numeric",  // 9
+        year: "numeric",   // 1986
+        month: "short",    // Sep
+        day: "numeric",    // 4
+        hour: "numeric",   // 9
         minute: "2-digit",
         hour12: false,     // 24h format
       };
