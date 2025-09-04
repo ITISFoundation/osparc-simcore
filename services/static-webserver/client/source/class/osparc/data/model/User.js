@@ -44,13 +44,7 @@ qx.Class.define("osparc.data.model.User", {
     } else if (userData["lastName"]) {
       lastName = userData["lastName"];
     }
-    let description = [firstName, lastName].join(" ").trim(); // the null values will be replaced by empty strings
-    if (email) {
-      if (description) {
-        description += " - "
-      }
-      description += email;
-    }
+    const description = osparc.data.model.User.userDataToDescription(firstName, lastName, email);
 
     this.set({
       userId,
@@ -140,6 +134,18 @@ qx.Class.define("osparc.data.model.User", {
       init: "",
       event: "changeThumbnail",
     },
+  },
+
+  statics: {
+    userDataToDescription: function(firstName, lastName, email) {
+      let description = [(firstName || ""), (lastName || "")].join(" ").trim(); // the null values will be replaced by empty strings
+      if (email) {
+        if (description) {
+          description += " - "
+        }
+        description += email;
+      }
+    }
   },
 
   members: {
