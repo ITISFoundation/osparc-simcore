@@ -635,6 +635,10 @@ qx.Class.define("osparc.utils.Utils", {
       return osparc.utils.Utils.formatDate(date) + " " + osparc.utils.Utils.formatTime(date);
     },
 
+    /**
+     * @param {Date} date - The date to format.
+     * @returns {String} - The formatted date string with city name. Sep 4, 1986, 17:00 Zurich
+     */
     formatDateWithCity: function(date) {
       // Short date/time formatter
       const options = {
