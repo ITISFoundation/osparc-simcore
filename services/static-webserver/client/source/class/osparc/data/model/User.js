@@ -62,6 +62,12 @@ qx.Class.define("osparc.data.model.User", {
       phoneNumber: userData["phone"] || null,
       label: userData["userName"] || description,
       description,
+      institution: userData["institution"] || null,
+      address: userData["address"] || null,
+      city: userData["city"] || null,
+      state: userData["state"] || null,
+      country: userData["country"] || null,
+      postalCode: userData["postal_code"] || null,
     });
 
     // create the thumbnail after setting email and username
@@ -139,6 +145,48 @@ qx.Class.define("osparc.data.model.User", {
       nullable: true,
       init: "",
       event: "changeThumbnail",
+    },
+
+    institution: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeInstitution",
+    },
+
+    address: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeAddress",
+    },
+
+    city: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeCity",
+    },
+
+    state: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeState",
+    },
+
+    country: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeCountry",
+    },
+
+    postalCode: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changePostalCode",
     },
   },
 
