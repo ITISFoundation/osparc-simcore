@@ -188,17 +188,25 @@ qx.Class.define("osparc.dashboard.CardBase", {
       // Icon
       const groupsStore = osparc.store.Groups.getInstance();
       const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
+      const supportGroup = groupsStore.getSupportGroup();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
       const organizationIds = Object.keys(organizations).map(key => parseInt(key));
       if (gids.some(gid => everyoneGroupIds.includes(gid))) {
+        // shared with "1" or product everyone
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
+      } else if (supportGroup && gids.includes(supportGroup.getGroupId())) {
+        // shared with support group, show as if it was a group
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
       } else if (organizationIds.filter(value => gids.includes(value)).length) { // find intersection
+        // shared with at least one organization
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
       } else if (gids.length === 1 && gids[0] === myGroupId) {
+        // not shared
         shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
       } else {
+        // shared with some users
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
       }
 
