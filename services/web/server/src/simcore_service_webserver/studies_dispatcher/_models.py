@@ -8,12 +8,10 @@ class ServiceInfo(BaseModel):
     key: ServiceKey
     version: ServiceVersion
 
-    label: Annotated[str, Field(..., description="Display name")]
+    label: Annotated[str, Field(description="Display name")]
 
-    thumbnail: HttpUrl = Field(
-        default=TypeAdapter(HttpUrl).validate_python(
-            "https://via.placeholder.com/170x120.png"
-        )
+    thumbnail: Annotated[HttpUrl, Field()] = TypeAdapter(HttpUrl).validate_python(
+        "https://via.placeholder.com/170x120.png"
     )
 
     is_guest_allowed: bool = True
@@ -37,12 +35,12 @@ class ViewerInfo(ServiceInfo):
     to visualize a file of that type
     """
 
-    filetype: str = Field(..., description="Filetype associated to this viewer")
+    filetype: Annotated[str, Field(description="Filetype associated to this viewer")]
 
-    input_port_key: str = Field(
-        ...,
-        description="Name of the connection port, since it is service-dependent",
-    )
+    input_port_key: Annotated[
+        str,
+        Field(description="Name of the connection port, since it is service-dependent"),
+    ]
 
 
 class ServiceParams(BaseModel):
