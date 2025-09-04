@@ -242,7 +242,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const text = this.getChildControl("text-filter").getChildControl("textfield").getValue();
       osparc.store.Users.getInstance().searchUsers(text)
         .then(users => {
-          users.forEach(user => user["collabType"] = 2);
+          users.forEach(user => user["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER);
           this.__addPotentialCollaborators(users);
         })
         .catch(err => osparc.FlashMessenger.logError(err))
@@ -338,18 +338,21 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const potentialCollaborators = Object.values(this.__potentialCollaborators).concat(foundCollaborators);
       const potentialCollaboratorList = this.getChildControl("potential-collaborators-list");
 
+      // define the priority order
+      const collabTypeOrder = [
+        osparc.store.Groups.COLLAB_TYPE.EVERYONE,
+        osparc.store.Groups.COLLAB_TYPE.SUPPORT,
+        osparc.store.Groups.COLLAB_TYPE.ORGANIZATION,
+        osparc.store.Groups.COLLAB_TYPE.USER
+      ];
       // sort them first
       potentialCollaborators.sort((a, b) => {
-        if (a["collabType"] > b["collabType"]) {
-          return 1;
+        const typeDiff = collabTypeOrder.indexOf(a["collabType"]) - collabTypeOrder.indexOf(b["collabType"]);
+        if (typeDiff !== 0) {
+          return typeDiff;
         }
-        if (a["collabType"] < b["collabType"]) {
-          return -1;
-        }
-        if (a.getLabel() > b.getLabel()) {
-          return 1;
-        }
-        return -1;
+        // fallback: sort alphabetically by label
+        return a.getLabel().localeCompare(b.getLabel());
       });
 
       let existingCollabs = [];
@@ -383,7 +386,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           return;
         }
         // maybe, do not list the organizations
-        if (this.__showOrganizations === false && potentialCollaborator["collabType"] !== 2) {
+        if (this.__showOrganizations === false && potentialCollaborator["collabType"] !== osparc.store.Groups.COLLAB_TYPE.USER) {
           return;
         }
         potentialCollaboratorList.add(this.__collaboratorButton(potentialCollaborator));

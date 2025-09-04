@@ -55,6 +55,15 @@ qx.Class.define("osparc.store.Groups", {
     },
   },
 
+  statics: {
+    COLLAB_TYPE: {
+      EVERYONE: "everyone",
+      SUPPORT: "support",
+      ORGANIZATION: "organization",
+      USER: "user",
+    },
+  },
+
   members: {
     groupsCached: null,
 
@@ -217,36 +226,36 @@ qx.Class.define("osparc.store.Groups", {
       const groups = [];
 
       const groupMe = this.getGroupMe();
-      groupMe["collabType"] = 2;
+      groupMe["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER;
       groups.push(groupMe);
 
       const usersStore = osparc.store.Users.getInstance();
       const users = usersStore.getUsers();
       users.forEach(user => {
-        user["collabType"] = 2;
+        user["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER;
         groups.push(user);
       });
 
       Object.values(this.getOrganizations()).forEach(org => {
-        org["collabType"] = 1;
+        org["collabType"] = osparc.store.Groups.COLLAB_TYPE.ORGANIZATION;
         groups.push(org);
       });
 
       const supportGroup = this.getSupportGroup();
       if (supportGroup && groups.findIndex(g => g.getGroupId() === supportGroup.getGroupId()) === -1) {
-        supportGroup["collabType"] = 1;
+        supportGroup["collabType"] = osparc.store.Groups.COLLAB_TYPE.SUPPORT;
         groups.push(supportGroup);
       }
 
       const groupProductEveryone = this.getEveryoneProductGroup();
       if (groupProductEveryone) {
-        groupProductEveryone["collabType"] = 0;
+        groupProductEveryone["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE;
         groups.push(groupProductEveryone);
       }
 
       const groupEveryone = this.getEveryoneGroup();
       if (groupEveryone) {
-        groupEveryone["collabType"] = 0;
+        groupEveryone["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE;
         groups.push(groupEveryone);
       }
       const idx = groups.findIndex(group => group.getGroupId() === parseInt(groupId));
@@ -263,7 +272,7 @@ qx.Class.define("osparc.store.Groups", {
       const productEveryone = this.getEveryoneProductGroup();
 
       if (includeProductEveryone && productEveryone) {
-        productEveryone["collabType"] = 0;
+        productEveryone["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE;
         potentialCollaborators[productEveryone.getGroupId()] = productEveryone;
       }
 
@@ -274,26 +283,26 @@ qx.Class.define("osparc.store.Groups", {
           if (org.getGroupId() === productEveryone.getGroupId() && !includeProductEveryone) {
             return;
           }
-          org["collabType"] = 1;
+          org["collabType"] = osparc.store.Groups.COLLAB_TYPE.ORGANIZATION;
           potentialCollaborators[org.getGroupId()] = org;
         }
       });
 
       if (supportGroup && !(supportGroup.getGroupId() in potentialCollaborators)) {
-        supportGroup["collabType"] = 1;
+        supportGroup["collabType"] = osparc.store.Groups.COLLAB_TYPE.SUPPORT;
         potentialCollaborators[supportGroup.getGroupId()] = supportGroup;
       }
 
       if (includeMe) {
         const myGroup = this.getGroupMe();
-        myGroup["collabType"] = 2;
+        myGroup["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER;
         potentialCollaborators[myGroup.getGroupId()] = myGroup;
       }
 
       const usersStore = osparc.store.Users.getInstance();
       const users = usersStore.getUsers();
       users.forEach(user => {
-        user["collabType"] = 2;
+        user["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER;
         potentialCollaborators[user.getGroupId()] = user;
       });
 
