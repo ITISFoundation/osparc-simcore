@@ -163,17 +163,16 @@ async def test_schedule_data_store_proxy_workflow(
 async def test_step_store_proxy_workflow(
     store: Store, schedule_id: ScheduleId, is_creating: bool
 ):
-    step_name = "MyStep"
     proxy = StepStoreProxy(
         store=store,
         schedule_id=schedule_id,
         operation_name="op1",
         step_group_name="sg1",
-        step_name=step_name,
+        step_name="step",
         is_creating=is_creating,
     )
     is_creating_str = "C" if is_creating else "D"
-    hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{is_creating_str}:{step_name}"
+    hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{is_creating_str}:step"
 
     # set
     await proxy.set("status", StepStatus.RUNNING)
@@ -190,12 +189,18 @@ async def test_step_store_proxy_workflow(
 
     # set multiple
     await proxy.set_multiple(
-        {"status": StepStatus.SUCCESS, "deferred_task_uid": TaskUID("mytask")}
+        {
+            "status": StepStatus.SUCCESS,
+            "deferred_task_uid": TaskUID("mytask"),
+            "error_traceback": "mock_traceback",
+        }
     )
     await _assert_keys(store, {hash_key})
-    await _assert_keys_in_hash(store, hash_key, {"status", "deferred_task_uid"})
+    await _assert_keys_in_hash(
+        store, hash_key, {"status", "deferred_task_uid", "error_traceback"}
+    )
 
     # remove all keys an even missing ones
-    await proxy.delete("status", "deferred_task_uid")
+    await proxy.delete("status", "deferred_task_uid", "error_traceback")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())

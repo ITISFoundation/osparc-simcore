@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
+from datetime import timedelta
 from typing import Annotated, ClassVar, Final, TypeAlias, TypedDict
 
 from fastapi import FastAPI
 from pydantic import Field, NonNegativeInt, TypeAdapter, validate_call
+from servicelib.deferred_tasks import DeferredContext
 
 from ._errors import (
     OperationAlreadyRegisteredError,
@@ -17,12 +19,30 @@ class BaseStep(ABC):
     def get_step_name(cls) -> StepName:
         return cls.__name__
 
+    ### CREATE
+
     @classmethod
     @abstractmethod
     async def create(cls, app: FastAPI) -> None:
         """
         [mandatory] handler to be implemented with the code resposible for achieving a goal
+        NOTE: Ensure this is successful if:
+            - `create` is called multiple times and does not cause duplicate resources
         """
+
+    @classmethod
+    async def get_create_retries(cls, context: DeferredContext) -> int:
+        """[optional] amount of retires in case of creation"""
+        assert context  # nosec
+        return 0
+
+    @classmethod
+    async def get_create_timeout(cls, context: DeferredContext) -> timedelta:
+        """[optional] timeout between retires case of creation"""
+        assert context  # nosec
+        return timedelta(seconds=0)
+
+    ### DESTROY
 
     @classmethod
     async def destroy(cls, app: FastAPI) -> None:
@@ -34,6 +54,18 @@ class BaseStep(ABC):
             - `destory` is called multiple times
         """
         _ = app
+
+    @classmethod
+    async def get_destroy_retries(cls, context: DeferredContext) -> int:
+        """[optional] amount of retires in case of failure"""
+        assert context  # nosec
+        return 0
+
+    @classmethod
+    async def get_destroy_timeout(cls, context: DeferredContext) -> timedelta:
+        """[optional] timeout between retires in case of failure"""
+        assert context  # nosec
+        return timedelta(seconds=0)
 
 
 StepsSubGroup: TypeAlias = Annotated[tuple[type[BaseStep], ...], Field(min_length=1)]
