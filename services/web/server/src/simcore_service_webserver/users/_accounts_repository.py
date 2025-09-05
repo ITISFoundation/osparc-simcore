@@ -453,7 +453,7 @@ async def list_merged_pre_and_registered_users(
             users.c.email,
             users.c.first_name,
             users.c.last_name,
-            users.c.phone,
+            users.c.phone,  # verified phone!
             sa.literal(None).label("institution"),
             sa.literal(None).label("address"),
             sa.literal(None).label("city"),
