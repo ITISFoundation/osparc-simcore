@@ -437,6 +437,7 @@ qx.Class.define("osparc.share.Collaborators", {
       const usersStore = osparc.store.Users.getInstance();
       const groupsStore = osparc.store.Groups.getInstance();
       const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
+      const supportGroup = groupsStore.getSupportGroup();
       const allGroups = groupsStore.getAllGroups();
       const showOptions = this.__canIChangePermissions();
       const accessRights = this._serializedDataCopy["accessRights"];
@@ -461,6 +462,8 @@ qx.Class.define("osparc.share.Collaborators", {
             // organization
             if (everyoneGroupIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
+            } else if (supportGroup && supportGroup.getGroupId() === parseInt(gid)) {
+              collaborator["thumbnail"] = supportGroup.getThumbnail();
             } else if (!collaborator["thumbnail"]) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/users/26";
             }
