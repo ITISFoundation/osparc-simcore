@@ -8,7 +8,7 @@
 from fastapi import APIRouter
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.studies_dispatcher._rest_handlers import (
+from simcore_service_webserver.studies_dispatcher._controller.rest.nih_schemas import (
     ServiceGet,
     Viewer,
 )
