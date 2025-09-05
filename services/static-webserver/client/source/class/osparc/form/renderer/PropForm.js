@@ -358,7 +358,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const inputNodeIDs = thisNode.getInputNodes();
         inputNodeIDs.forEach(inputNodeId => {
           const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
-          if (inputNode) {
+          if (inputNode && inputNode.getMetadata()) {
             for (const outputKey in inputNode.getOutputs()) {
               const paramButton = new qx.ui.menu.Button();
               inputNode.bind("label", paramButton, "label", {
@@ -400,7 +400,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       menu.removeAll();
 
       const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
-      if (inputNode) {
+      if (inputNode && inputNode.getMetadata()) {
         for (const outputKey in inputNode.getOutputs()) {
           osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
             .then(compatible => {

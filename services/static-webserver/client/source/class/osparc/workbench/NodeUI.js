@@ -168,6 +168,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     "nodeMovingStop": "qx.event.type.Event",
     "updateNodeDecorator": "qx.event.type.Event",
     "requestOpenLogger": "qx.event.type.Event",
+    "highlightEdge": "qx.event.type.Data",
   },
 
   members: {
@@ -336,7 +337,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       }
     },
 
-    populateNodeLayout: function(svgWorkbenchCanvas) {
+    __populateNodeLayout: function(svgWorkbenchCanvas) {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
@@ -370,6 +371,18 @@ qx.Class.define("osparc.workbench.NodeUI", {
       this.addListener("resize", () => {
         setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
       });
+
+      if (node.getPropsForm()) {
+        node.getPropsForm().addListener("highlightEdge", e => this.fireDataEvent("highlightEdge", e.getData()), this);
+      }
+    },
+
+    populateNodeLayout: function(svgWorkbenchCanvas) {
+      if (this.getNode().getMetadata()) {
+        this.__populateNodeLayout(svgWorkbenchCanvas);
+      } else {
+        this.getNode().addListenerOnce("changeMetadata", () => this.__populateNodeLayout(svgWorkbenchCanvas), this);
+      }
     },
 
     __applyNode: function(node) {
