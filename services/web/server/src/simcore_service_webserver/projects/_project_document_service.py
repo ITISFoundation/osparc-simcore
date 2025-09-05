@@ -64,26 +64,25 @@ async def create_project_document_and_increment_version(
         - the project document and its version must be kept in sync
         """
         # Get the full project with workbench for document creation
-        project_with_workbench = await _projects_repository.get_project_with_workbench(
+        project = await _projects_repository.get_project_with_workbench(
             app=app, project_uuid=project_uuid
         )
+
         # Create project document
         project_document = ProjectDocument(
-            uuid=project_with_workbench.uuid,
-            workspace_id=project_with_workbench.workspace_id,
-            name=project_with_workbench.name,
-            description=project_with_workbench.description,
-            thumbnail=project_with_workbench.thumbnail,
-            last_change_date=project_with_workbench.last_change_date,
-            classifiers=project_with_workbench.classifiers,
-            dev=project_with_workbench.dev,
-            quality=project_with_workbench.quality,
-            workbench=project_with_workbench.workbench,
-            ui=project_with_workbench.ui,
-            type=cast(ProjectTypeAPI, project_with_workbench.type),
-            template_type=cast(
-                ProjectTemplateType, project_with_workbench.template_type
-            ),
+            uuid=project.uuid,
+            workspace_id=project.workspace_id,
+            name=project.name,
+            description=project.description,
+            thumbnail=project.thumbnail,
+            last_change_date=project.last_change_date,
+            classifiers=project.classifiers,
+            dev=project.dev,
+            quality=project.quality,
+            workbench=project.workbench,
+            ui=project.ui,
+            type=cast(ProjectTypeAPI, project.type),
+            template_type=cast(ProjectTemplateType, project.template_type),
         )
         # Increment document version
         redis_client_sdk = get_redis_document_manager_client_sdk(app)
