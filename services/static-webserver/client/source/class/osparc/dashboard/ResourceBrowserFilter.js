@@ -57,8 +57,35 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     __tagButtons: null,
     __appTypeButtons: null,
 
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "filters-spacer":
+          control = new qx.ui.core.Spacer(10, 10);
+          this._add(control);
+          break;
+        case "shared-with-layout":
+          control = this.__createSharedWithFilterLayout();
+          this._add(control);
+          break;
+        case "app-type-layout":
+          control = this.__createAppTypeFilterLayout();
+          this._add(control);
+          break;
+        case "tags-layout": {
+          control = this.__createTagsFilterLayout();
+          const scrollView = new qx.ui.container.Scroll();
+          scrollView.add(control);
+          this._add(scrollView, {
+            flex: 1
+          });
+          break;
+        }
+      }
+      return control || null;
+    },
+
     __buildLayout: function() {
-      const filtersSpacer = new qx.ui.core.Spacer(10, 10);
       switch (this.__resourceType) {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
@@ -72,28 +99,19 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
             this._add(this.__createFunctions());
           }
           this._add(this.__createTrashBin());
-          this._add(filtersSpacer);
-          const scrollView = new qx.ui.container.Scroll();
-          scrollView.add(this.__createTagsFilterLayout());
-          this._add(scrollView, {
-            flex: 1
-          });
+          this.getChildControl("filters-spacer");
+          this.getChildControl("tags-layout");
           break;
         }
-        case "template": {
-          this._add(filtersSpacer);
-          this._add(this.__createSharedWithFilterLayout());
-          const scrollView = new qx.ui.container.Scroll();
-          scrollView.add(this.__createTagsFilterLayout());
-          this._add(scrollView, {
-            flex: 1
-          });
+        case "template":
+          this.getChildControl("filters-spacer");
+          this.getChildControl("shared-with-layout");
+          this.getChildControl("tags-layout");
           break;
-        }
         case "service":
-          this._add(filtersSpacer);
-          this._add(this.__createSharedWithFilterLayout());
-          this._add(this.__createAppTypeFilterLayout());
+          this.getChildControl("filters-spacer");
+          this.getChildControl("shared-with-layout");
+          this.getChildControl("app-type-layout");
           break;
       }
     },
