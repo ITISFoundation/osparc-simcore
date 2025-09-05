@@ -315,7 +315,13 @@ qx.Class.define("osparc.workbench.NodeUI", {
       });
       this.resetThumbnail();
 
-      this.__createContentLayout();
+      // make sure metadata is ready
+      if (this.getNode().getMetadata()) {
+        this.__createContentLayout();
+      } else {
+        this.getNode().addListenerOnce("changeMetadata", () => this.__createContentLayout(), this);
+      }
+      ;
     },
 
     __createContentLayout: function() {
