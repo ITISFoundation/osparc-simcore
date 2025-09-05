@@ -322,8 +322,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     __groupByChanged: function(groupBy) {
       this._resourcesContainer.setGroupBy(groupBy);
       this._reloadCards();
-      if (this._resourceFilter) {
-        this._resourceFilter.groupByChanged(groupBy);
+
+      const isTemplate = this._resourceType === "template";;
+      if (this._resourceFilter && isTemplate) {
+        this._resourceFilter.getChildControl("tags-layout").setVisibility(isTemplate && groupBy === "tags" ? "visible" : "excluded");
       }
     },
 
