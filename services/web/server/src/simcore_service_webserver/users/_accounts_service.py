@@ -193,7 +193,7 @@ async def search_users_accounts(
             pre_registration_id=r.id,
             pre_registration_created=r.created,
             account_request_status=r.account_request_status,
-            account_request_reviewed_by=r.account_request_reviewed_by,
+            account_request_reviewed_by=r.account_request_reviewed_by_username,
             account_request_reviewed_at=r.account_request_reviewed_at,
             products=await _list_products_or_none(r.user_id),
             # NOTE: old users will not have extra details

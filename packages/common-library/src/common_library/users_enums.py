@@ -6,6 +6,7 @@ _USER_ROLE_TO_LEVEL = {
     "GUEST": 10,
     "USER": 20,
     "TESTER": 30,
+    "PRODUCT_SUPPORT": 35,
     "PRODUCT_OWNER": 40,
     "ADMIN": 100,
 }
@@ -33,6 +34,7 @@ class UserRole(Enum):
     GUEST = "GUEST"
     USER = "USER"
     TESTER = "TESTER"
+    PRODUCT_SUPPORT = "PRODUCT_SUPPORT"
     PRODUCT_OWNER = "PRODUCT_OWNER"
     ADMIN = "ADMIN"
 

@@ -1,7 +1,6 @@
 from contextlib import suppress
 
 from aiohttp import web
-from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import (
     AccessRightsDict,
@@ -13,7 +12,7 @@ from models_library.groups import (
     StandardGroupUpdate,
 )
 from models_library.products import ProductName
-from models_library.users import UserID
+from models_library.users import UserID, UserNameID
 from pydantic import EmailStr
 
 from ..products.models import Product
@@ -288,7 +287,7 @@ async def add_user_in_group(
     *,
     # identifies
     new_by_user_id: UserID | None = None,
-    new_by_user_name: IDStr | None = None,
+    new_by_user_name: UserNameID | None = None,
     new_by_user_email: EmailStr | None = None,
     access_rights: AccessRightsDict | None = None,
 ) -> None:
