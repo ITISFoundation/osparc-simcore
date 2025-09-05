@@ -20,23 +20,25 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addSupportConversationsToMenu: function(menu) {
-      if (osparc.product.Utils.isSupportEnabled()) {
-        const supportCenterButton = new qx.ui.menu.Button().set({
-          icon: "@FontAwesome5Regular/question-circle/16",
+      const supportCenterButton = new qx.ui.menu.Button().set({
+        icon: "@FontAwesome5Regular/question-circle/16",
+        visibility: "excluded",
+      });
+      supportCenterButton.addListener("execute", () => osparc.support.SupportCenter.openWindow());
+      menu.add(supportCenterButton);
+
+      const updateSupportButton = () => {
+        const isSupportEnabled = osparc.store.Groups.getInstance().isSupportEnabled();
+        const isSupportUser = osparc.store.Groups.getInstance().amIASupportUser();
+        supportCenterButton.set({
+          visibility: isSupportEnabled ? "visible" : "excluded",
+          label: isSupportUser ? qx.locale.Manager.tr("Support Center") : qx.locale.Manager.tr("Support"),
         });
-        const amISupporter = () => {
-          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
-          supportCenterButton.set({
-            label: isSupportUser ? qx.locale.Manager.tr("Support Center") : qx.locale.Manager.tr("Support"),
-          });
-        };
-        amISupporter();
-        osparc.store.Groups.getInstance().addListener("organizationsChanged", () => amISupporter());
-        supportCenterButton.addListener("execute", () => {
-          osparc.support.SupportCenter.openWindow();
-        });
-        menu.add(supportCenterButton);
       }
+
+      updateSupportButton();
+      osparc.store.Groups.getInstance().addListener("changeSupportGroup", () => updateSupportButton());
+      osparc.store.Groups.getInstance().addListener("organizationsChanged", () => updateSupportButton());
     },
 
     addQuickStartToMenu: function(menu) {
