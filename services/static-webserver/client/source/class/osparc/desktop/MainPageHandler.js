@@ -70,7 +70,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
             const msg = qx.locale.Manager.tr("Project not found");
             throw new Error(msg);
           }
-          this.loadStudy(studyData);
+          return this.loadStudy(studyData); // return so errors propagate
         })
         .catch(err => {
           osparc.FlashMessenger.logError(err);
@@ -108,7 +108,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + studyData.name);
       this.showLoadingPage();
 
-      osparc.store.Services.getStudyServicesMetadata(studyData)
+      return osparc.store.Services.getStudyServicesMetadata(studyData)
         .finally(() => {
           const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
           if (inaccessibleServices.length) {
