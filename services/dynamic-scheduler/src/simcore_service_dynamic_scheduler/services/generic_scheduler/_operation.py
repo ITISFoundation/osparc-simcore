@@ -1,10 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Annotated, ClassVar, Final, TypeAlias
+from typing import Annotated, ClassVar, Final, TypeAlias, TypedDict
 
 from fastapi import FastAPI
 from pydantic import Field, NonNegativeInt, TypeAdapter, validate_call
 
-from ._errors import OperationAlreadyRegisteredError, OperationNotFoundError
+from ._errors import (
+    OperationAlreadyRegisteredError,
+    OperationNotFoundError,
+    StepNotFoundInoperationError,
+)
 from ._models import OperationName, StepGroupName, StepName
 
 
@@ -98,8 +102,8 @@ Operation: TypeAlias = Annotated[list[BaseStepGroup], Field(min_length=1)]
 
 
 @validate_call(config={"arbitrary_types_allowed": True})
-def _validate_operation(operation: Operation) -> None:
-    detected_steps_names: set[StepName] = set()
+def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
+    detected_steps_names: dict[StepName, type[BaseStep]] = {}
 
     for k, step_group in enumerate(operation):
         if isinstance(step_group, ParallelStepGroup):
@@ -121,30 +125,57 @@ def _validate_operation(operation: Operation) -> None:
                 msg = f"Step {step_name=} is already used in this operation {detected_steps_names=}"
                 raise ValueError(msg)
 
-            detected_steps_names.add(step_name)
+            detected_steps_names[step_name] = step
+
+    return detected_steps_names
+
+
+class _UpdateScheduleDataDict(TypedDict):
+    operation: Operation
+    steps: dict[StepName, type[BaseStep]]
 
 
 class OperationRegistry:
-    _OPERATIONS: ClassVar[dict[str, Operation]] = {}
+    _OPERATIONS: ClassVar[dict[OperationName, _UpdateScheduleDataDict]] = {}
 
     @classmethod
     def register(cls, operation_name: OperationName, operation: Operation) -> None:
-        _validate_operation(operation)
+        steps = _validate_operation(operation)
 
         if operation_name in cls._OPERATIONS:
             raise OperationAlreadyRegisteredError(operation_name=operation_name)
 
-        cls._OPERATIONS[operation_name] = operation
+        cls._OPERATIONS[operation_name] = {"operation": operation, "steps": steps}
 
     @classmethod
-    def get(cls, operation_name: OperationName) -> Operation:
+    def get_operation(cls, operation_name: OperationName) -> Operation:
         if operation_name not in cls._OPERATIONS:
             raise OperationNotFoundError(
                 operation_name=operation_name,
                 registerd_operations=list(cls._OPERATIONS.keys()),
             )
 
-        return cls._OPERATIONS[operation_name]
+        return cls._OPERATIONS[operation_name]["operation"]
+
+    @classmethod
+    def get_step(
+        cls, operation_name: OperationName, step_name: StepName
+    ) -> type[BaseStep]:
+        if operation_name not in cls._OPERATIONS:
+            raise OperationNotFoundError(
+                operation_name=operation_name,
+                registerd_operations=list(cls._OPERATIONS.keys()),
+            )
+
+        steps_names = list(cls._OPERATIONS[operation_name]["steps"].keys())
+        if step_name not in steps_names:
+            raise StepNotFoundInoperationError(
+                step_name=step_name,
+                operation_name=operation_name,
+                steps_names=steps_names,
+            )
+
+        return cls._OPERATIONS[operation_name]["steps"][step_name]
 
     @classmethod
     def unregister(cls, operation_name: OperationName) -> None:

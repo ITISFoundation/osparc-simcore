@@ -4,6 +4,7 @@ import pytest
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     OperationAlreadyRegisteredError,
     OperationNotFoundError,
+    StepNotFoundInoperationError,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._operation import (
     BaseStep,
@@ -103,13 +104,15 @@ def test_operation_registry_workflow():
     OperationRegistry.register("op1", operation)
     assert len(OperationRegistry._OPERATIONS) == 1
 
-    assert OperationRegistry.get("op1") == operation
+    assert OperationRegistry.get_operation("op1") == operation
+
+    assert OperationRegistry.get_step("op1", "BS1") == BS1
 
     OperationRegistry.unregister("op1")
     assert len(OperationRegistry._OPERATIONS) == 0
 
 
-def test_operation_registry_register_twice_fails():
+def test_operation_registry_raises_errors():
     operation: Operation = [SingleStepGroup(BS1)]
     OperationRegistry.register("op1", operation)
 
@@ -117,7 +120,13 @@ def test_operation_registry_register_twice_fails():
         OperationRegistry.register("op1", operation)
 
     with pytest.raises(OperationNotFoundError):
-        OperationRegistry.get("non_existing")
+        OperationRegistry.get_operation("non_existing")
 
     with pytest.raises(OperationNotFoundError):
         OperationRegistry.unregister("non_existing")
+
+    with pytest.raises(OperationNotFoundError):
+        OperationRegistry.get_step("non_existing", "BS1")
+
+    with pytest.raises(StepNotFoundInoperationError):
+        OperationRegistry.get_step("op1", "non_existing")
