@@ -1,14 +1,18 @@
 import base64
 import pickle
+from collections.abc import AsyncIterator
 from typing import Any, Final, Literal, NotRequired, TypedDict, overload
 
 import redis.asyncio as aioredis
+from fastapi import FastAPI
+from fastapi_lifespan_manager import State
 from pydantic import NonNegativeInt
 from servicelib.deferred_tasks import TaskUID
 from servicelib.redis._client import RedisClientSDK
 from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase, RedisSettings
 
+from ...core.settings import ApplicationSettings
 from ._errors import KeyNotFoundInHashError
 from ._models import (
     OperationContext,
@@ -55,10 +59,12 @@ def _get_step_hash_key(
 
 
 def _dumps(obj: Any) -> str:
+    # TODO: replace with json_dumps if they are copatible
     return base64.b85encode(pickle.dumps(obj)).decode("utf-8")
 
 
 def _loads(obj_str: str) -> Any:
+    # TODO: replace with json_loads if they are copatible
     return pickle.loads(base64.b85decode(obj_str))  # noqa: S301
 
 
@@ -238,3 +244,16 @@ class StepStoreProxy:
 
     async def delete(self, *keys: _DeleteStepKeys) -> None:
         await self._store.delete(self._get_hash_key(), *keys)
+
+
+async def lifespan(app: FastAPI) -> AsyncIterator[State]:
+    settings: ApplicationSettings = app.state.settings
+    app.state.generic_scheduler_store = store = Store(settings.DYNAMIC_SCHEDULER_REDIS)
+    await store.setup()
+    yield {}
+    await store.shutdown()
+
+
+def get_store(app: FastAPI) -> Store:
+    assert isinstance(app.state.generic_scheduler_store, Store)  # nosec
+    return app.state.generic_scheduler_store
