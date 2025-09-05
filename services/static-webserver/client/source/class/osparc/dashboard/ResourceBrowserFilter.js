@@ -385,8 +385,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       tagsLayout.removeAll();
       const maxTags = 10;
       this.__tagButtons = [];
-      osparc.store.Tags.getInstance().getTags().forEach(tag => {
-        if (!presentTagIds.includes(tag.getTagId())) {
+      presentTagIds.forEach(tagId => {
+        const tag = osparc.store.Tags.getInstance().getTag(tagId);
+        if (!tag) {
           return;
         }
         const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/16");
