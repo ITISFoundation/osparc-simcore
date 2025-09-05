@@ -311,11 +311,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __resetNodeUILayout: function() {
-      this.set({
-        width: this.self(arguments).NODE_WIDTH,
-        maxWidth: this.self(arguments).NODE_WIDTH,
-        minWidth: this.self(arguments).NODE_WIDTH
-      });
+      this.__setNodeUIWidth(this.self().NODE_WIDTH);
       this.resetThumbnail();
 
       // make sure metadata is ready
