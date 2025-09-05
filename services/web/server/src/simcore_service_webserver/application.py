@@ -8,9 +8,6 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.collaboration.bootstrap import (
-    setup_realtime_collaboration,
-)
 
 from ._meta import (
     WELCOME_AUTH_APP_MSG,
@@ -24,6 +21,9 @@ from .announcements.plugin import setup_announcements
 from .api_keys.plugin import setup_api_keys
 from .application_settings import get_application_settings, setup_settings
 from .catalog.plugin import setup_catalog
+from .collaboration.bootstrap import (
+    setup_realtime_collaboration,
+)
 from .conversations.plugin import setup_conversations
 from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
