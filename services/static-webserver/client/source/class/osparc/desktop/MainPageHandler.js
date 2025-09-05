@@ -98,11 +98,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       // check if there is any linked node missing
       if (osparc.study.Utils.isAnyLinkedNodeMissing(studyData)) {
         const msg = `${qx.locale.Manager.tr("We encountered an issue with the")} ${studyAlias} <br>${qx.locale.Manager.tr("Please contact support.")}`;
-        if (osparc.utils.Utils.isDevelopmentPlatform()) {
-          osparc.FlashMessenger.logError(msg);
-        } else {
-          throw new Error(msg);
-        }
+        throw new Error(msg);
       }
 
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + studyData.name);
