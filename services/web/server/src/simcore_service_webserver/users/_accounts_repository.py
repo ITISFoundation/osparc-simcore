@@ -276,7 +276,6 @@ async def search_merged_pre_and_registered_users(
     product_name: ProductName | None = None,
 ) -> list[Row]:
     users_alias = sa.alias(users, name="users_alias")
-    reviewer_alias = sa.alias(users, name="reviewer_alias")
 
     invited_by = (
         sa.select(
@@ -286,6 +285,7 @@ async def search_merged_pre_and_registered_users(
         .label("invited_by")
     )
 
+    reviewer_alias = sa.alias(users, name="reviewer_alias")
     account_request_reviewed_by_username = (
         sa.select(
             reviewer_alias.c.name,
@@ -400,6 +400,18 @@ async def list_merged_pre_and_registered_users(
 
     # Query for pre-registered users that are not yet in the users table
     # We need to left join with users to identify if the pre-registered user is already in the system
+
+    reviewer_alias = sa.alias(users, name="reviewer_alias")
+    account_request_reviewed_by_username = (
+        sa.select(
+            reviewer_alias.c.name,
+        )
+        .where(
+            users_pre_registration_details.c.account_request_reviewed_by
+            == reviewer_alias.c.id
+        )
+        .label("account_request_reviewed_by_username")
+    )
     pre_reg_query = (
         sa.select(
             users_pre_registration_details.c.id,
@@ -417,7 +429,7 @@ async def list_merged_pre_and_registered_users(
             users_pre_registration_details.c.extras,
             users_pre_registration_details.c.created,
             users_pre_registration_details.c.account_request_status,
-            users_pre_registration_details.c.account_request_reviewed_by,
+            account_request_reviewed_by_username,
             users_pre_registration_details.c.account_request_reviewed_at,
             users.c.id.label("user_id"),
             users.c.name.label("user_name"),

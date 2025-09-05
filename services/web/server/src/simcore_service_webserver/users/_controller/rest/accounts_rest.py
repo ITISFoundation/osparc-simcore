@@ -64,7 +64,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
         # ALL
         filter_any_account_request_status = None
 
-    users, total_count = await _accounts_service.list_user_accounts(
+    user_accounts, total_count = await _accounts_service.list_user_accounts(
         request.app,
         product_name=req_ctx.product_name,
         filter_any_account_request_status=filter_any_account_request_status,
@@ -72,17 +72,17 @@ async def list_users_accounts(request: web.Request) -> web.Response:
         pagination_offset=query_params.offset,
     )
 
-    def _to_domain_model(user: dict[str, Any]) -> UserAccountGet:
+    def _to_domain_model(account_details: dict[str, Any]) -> UserAccountGet:
         return UserAccountGet(
-            extras=user.pop("extras") or {},
-            pre_registration_id=user.pop("id"),
-            pre_registration_created=user.pop("created"),
-            **user,
+            extras=account_details.pop("extras") or {},
+            pre_registration_id=account_details.pop("id"),
+            pre_registration_created=account_details.pop("created"),
+            **account_details,
         )
 
     page = Page[UserAccountGet].model_validate(
         paginate_data(
-            chunk=[_to_domain_model(user) for user in users],
+            chunk=[_to_domain_model(user) for user in user_accounts],
             request_url=request.url,
             total=total_count,
             limit=query_params.limit,
