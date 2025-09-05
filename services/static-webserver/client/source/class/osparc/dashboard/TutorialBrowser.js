@@ -126,12 +126,11 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
         this._resourceFilter.getChildControl("tags-layout").setVisibility(groupBy === "tags" ? "visible" : "excluded");
 
         if (groupBy === "tags") {
-          const existingTags = new Set();
+          const presentTags = new Set();
           this._resourcesList.forEach(template => {
-            (template["tags"] || []).forEach(tagId => existingTags.add(tagId));
+            (template["tags"] || []).forEach(tagId => presentTags.add(tagId));
           });
-          console.log("Existing tags", existingTags);
-          // this._resourceFilter.setSelectedTagIds(Array.from(existingTags));
+          this._resourceFilter.showPresentTags(Array.from(presentTags));
         }
       }
     },
