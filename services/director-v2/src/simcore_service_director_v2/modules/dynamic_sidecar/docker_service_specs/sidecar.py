@@ -152,7 +152,6 @@ def _get_environment_variables(
         "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",
         "POSTGRES_DB": f"{app_settings.POSTGRES.POSTGRES_DB}",
-        "POSTGRES_ENDPOINT": f"{app_settings.POSTGRES.POSTGRES_HOST}:{app_settings.POSTGRES.POSTGRES_PORT}",
         "POSTGRES_HOST": f"{app_settings.POSTGRES.POSTGRES_HOST}",
         "POSTGRES_PASSWORD": f"{app_settings.POSTGRES.POSTGRES_PASSWORD.get_secret_value()}",
         "POSTGRES_PORT": f"{app_settings.POSTGRES.POSTGRES_PORT}",
@@ -458,9 +457,9 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
     )
 
-    assert scheduler_data.product_name is not None, (
-        "ONLY for legacy. This function should not be called with product_name==None"
-    )  # nosec
+    assert (
+        scheduler_data.product_name is not None
+    ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
 
     standard_simcore_docker_labels: dict[DockerLabelKey, str] = SimcoreContainerLabels(
         user_id=scheduler_data.user_id,
