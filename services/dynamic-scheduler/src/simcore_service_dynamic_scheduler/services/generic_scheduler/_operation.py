@@ -13,6 +13,9 @@ from ._errors import (
 )
 from ._models import OperationName, StepGroupName, StepName
 
+_DEFAULT_STEP_RETRIES: Final[NonNegativeInt] = 0
+_DEFAULT_STEP_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
+
 
 class BaseStep(ABC):
     @classmethod
@@ -34,13 +37,13 @@ class BaseStep(ABC):
     async def get_create_retries(cls, context: DeferredContext) -> int:
         """[optional] amount of retires in case of creation"""
         assert context  # nosec
-        return 0
+        return _DEFAULT_STEP_RETRIES
 
     @classmethod
     async def get_create_timeout(cls, context: DeferredContext) -> timedelta:
         """[optional] timeout between retires case of creation"""
         assert context  # nosec
-        return timedelta(seconds=0)
+        return _DEFAULT_STEP_TIMEOUT
 
     ### DESTROY
 
@@ -59,13 +62,13 @@ class BaseStep(ABC):
     async def get_destroy_retries(cls, context: DeferredContext) -> int:
         """[optional] amount of retires in case of failure"""
         assert context  # nosec
-        return 0
+        return _DEFAULT_STEP_RETRIES
 
     @classmethod
     async def get_destroy_timeout(cls, context: DeferredContext) -> timedelta:
         """[optional] timeout between retires in case of failure"""
         assert context  # nosec
-        return timedelta(seconds=0)
+        return _DEFAULT_STEP_TIMEOUT
 
 
 StepsSubGroup: TypeAlias = Annotated[tuple[type[BaseStep], ...], Field(min_length=1)]
