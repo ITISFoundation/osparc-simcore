@@ -237,6 +237,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
           let nodeType = this.getNode().getMetadata().type;
           if (this.getNode().isIterator()) {
             nodeType = "iterator";
+          } else if (this.getNode().isParameter()) {
+            nodeType = "parameter";
           } else if (this.getNode().isProbe()) {
             nodeType = "probe";
           }
