@@ -279,7 +279,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         allowGrowX: false,
         alignX: "center"
       });
-      osparc.utils.Utils.setIdToWidget(probeBtn, "connect_input_btn_" + field.key);
+      osparc.utils.Utils.setIdToWidget(fieldOptsBtn, "connect_input_btn_" + field.key);
       this.__fieldOptsBtnMap[field.key] = fieldOptsBtn;
       // populate the button/menu when the it appears
       fieldOptsBtn.addListenerOnce("appear", () => {
