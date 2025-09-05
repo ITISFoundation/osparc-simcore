@@ -1,28 +1,50 @@
+from common_library.user_messages import user_message
+
 from ..errors import WebServerBaseError
 
 
-class StudyDispatcherError(WebServerBaseError, ValueError):
-    ...
+class StudyDispatcherError(WebServerBaseError, ValueError): ...
 
 
-class IncompatibleService(StudyDispatcherError):
-    msg_template = "None of the registered services can handle '{file_type}'"
+class IncompatibleServiceError(StudyDispatcherError):
+    msg_template = user_message(
+        "None of the registered services can handle '{file_type}' files.", _version=1
+    )
 
 
-class FileToLarge(StudyDispatcherError):
-    msg_template = "File size {file_size_in_mb} MB is over allowed limit"
+class FileToLargeError(StudyDispatcherError):
+    msg_template = user_message(
+        "File size {file_size_in_mb} MB exceeds the allowed limit.", _version=1
+    )
 
 
-class ServiceNotFound(StudyDispatcherError):
-    msg_template = "Service {service_key}:{service_version} not found"
+class ServiceNotFoundError(StudyDispatcherError):
+    msg_template = user_message(
+        "Service {service_key}:{service_version} could not be found.", _version=1
+    )
 
 
-class InvalidRedirectionParams(StudyDispatcherError):
-    msg_template = (
-        "The link you provided is invalid because it doesn't contain any information related to data or a service."
-        " Please check the link and make sure it is correct."
+class InvalidRedirectionParamsError(StudyDispatcherError):
+    msg_template = user_message(
+        "The provided link is invalid or incomplete.", _version=1
     )
 
 
 class GuestUsersLimitError(StudyDispatcherError):
-    msg_template = "Maximum number of guests was reached. Please login with a registered user or try again later"
+    msg_template = user_message(
+        "Maximum number of guest users has been reached. Please log in with a registered account or try again later.",
+        _version=1,
+    )
+
+
+class GuestUserNotAllowedError(StudyDispatcherError):
+    msg_template = user_message(
+        "Guest users are not allowed to access this resource.", _version=1
+    )
+
+
+class ProjectWorkbenchMismatchError(StudyDispatcherError):
+    msg_template = user_message(
+        "Project {project_uuid} appears to be corrupted and cannot be accessed properly.",
+        _version=1,
+    )

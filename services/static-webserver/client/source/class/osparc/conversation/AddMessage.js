@@ -70,11 +70,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
         }
         case "thumbnail": {
           control = osparc.utils.Utils.createThumbnail(32);
-          const authData = osparc.auth.Data.getInstance();
-          const myUsername = authData.getUsername();
-          const myEmail = authData.getEmail();
+          const meGroup = osparc.store.Groups.getInstance().getGroupMe();
           control.set({
-            source: osparc.utils.Avatar.emailToThumbnail(myEmail, myUsername, 32),
+            source: meGroup.getThumbnail(),
             alignX: "center",
             alignY: "middle",
             marginRight: 8,
