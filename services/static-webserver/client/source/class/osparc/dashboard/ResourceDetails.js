@@ -945,6 +945,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       const createFunction = new osparc.study.CreateFunction(this.__resourceData);
       const createFunctionButton = createFunction.getCreateFunctionButton();
+      osparc.utils.Utils.setIdToWidget(createFunctionButton, "create_function_page_btn");
       osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(createFunctionButton);
       const toolbar = this.self().createToolbar();
       toolbar.add(createFunctionButton);
