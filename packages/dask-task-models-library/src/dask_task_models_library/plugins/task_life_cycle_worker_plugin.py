@@ -34,6 +34,7 @@ class TaskLifecycleWorkerPlugin(WorkerPlugin):
     ):
         _logger.info("Task '%s' transition from %s to %s", key, start, finish)
         assert self._worker  # nosec
+        assert isinstance(self._worker, Worker)  # nosec
         self._worker.log_event(
             TASK_LIFE_CYCLE_EVENT.format(key=key),
             TaskLifeCycleState.from_worker_task_state(
