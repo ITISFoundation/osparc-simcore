@@ -124,6 +124,15 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
       if (this._resourceFilter) {
         this._resourceFilter.getChildControl("tags-layout").setVisibility(groupBy === "tags" ? "visible" : "excluded");
+
+        if (groupBy === "tags") {
+          const existingTags = new Set();
+          this._resourcesList.forEach(template => {
+            (template["tags"] || []).forEach(tagId => existingTags.add(tagId));
+          });
+          console.log("Existing tags", existingTags);
+          // this._resourceFilter.setSelectedTagIds(Array.from(existingTags));
+        }
       }
     },
 

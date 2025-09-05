@@ -106,6 +106,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
           this.getChildControl("filters-spacer");
           this.getChildControl("shared-with-layout");
           this.getChildControl("tags-layout");
+          this.__populateTags();
+          osparc.store.Tags.getInstance().addListener("tagsChanged", () => this.__populateTags(), this);
           break;
         case "service":
           this.getChildControl("filters-spacer");
@@ -371,12 +373,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     __createTagsFilterLayout: function() {
       const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
       osparc.utils.Utils.setIdToWidget(tagsLayout, this.__resourceType + "-tagsFilter");
-
-      this.__populateTags(tagsLayout, []);
-      osparc.store.Tags.getInstance().addListener("tagsChanged", () => {
-        this.__populateTags(tagsLayout, this.__getSelectedTagIds());
-      }, this);
-
       return tagsLayout;
     },
 
@@ -385,10 +381,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       return selectedTagIds;
     },
 
-    __populateTags: function(tagsLayout, selectedTagIds) {
+    __populateTags: function() {
+      const selectedTagIds = this.__getSelectedTagIds();
+      const tagsLayout = this.getChildControl("tags-layout");
+      tagsLayout.removeAll();
       const maxTags = 10;
       this.__tagButtons = [];
-      tagsLayout.removeAll();
       osparc.store.Tags.getInstance().getTags().forEach((tag, idx) => {
         const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/16");
         button.id = tag.getTagId();
