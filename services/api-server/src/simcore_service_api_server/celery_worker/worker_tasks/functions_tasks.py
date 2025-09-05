@@ -120,38 +120,8 @@ async def run_function(
     )
 
     return await function_job_service.run_function(
-        job_creation_task_id=task_id,
         function=function,
         pre_registered_function_job_data=pre_registered_function_job_data,
-        pricing_spec=pricing_spec,
-        job_links=job_links,
-        x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
-        x_simcore_parent_node_id=x_simcore_parent_node_id,
-    )
-
-
-async def function_map(
-    task: Task,
-    task_id: TaskID,
-    *,
-    user_identity: Identity,
-    function: RegisteredFunction,
-    pre_registered_function_job_data_list: list[PreRegisteredFunctionJobData],
-    job_links: JobLinks,
-    pricing_spec: JobPricingSpecification | None,
-    x_simcore_parent_project_uuid: ProjectID | None,
-    x_simcore_parent_node_id: NodeID | None,
-) -> None:
-    assert task_id  # nosec
-    app = get_app_server(task.app).app
-    function_job_service = await _assemble_function_job_service(
-        app=app, user_identity=user_identity
-    )
-
-    return await function_job_service.map_function(
-        job_creation_task_id=task_id,
-        function=function,
-        pre_registered_function_job_data_list=pre_registered_function_job_data_list,
         pricing_spec=pricing_spec,
         job_links=job_links,
         x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,

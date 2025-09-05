@@ -467,3 +467,182 @@ async def test_get_profile_with_failing_db_connection(
         data, error = await assert_status(resp, expected)
         assert not data
         assert error["message"] == "Authentication service is temporary unavailable"
+
+
+@pytest.fixture
+async def user_pre_registration(
+    client: TestClient,
+    logged_user: UserInfoDict,
+) -> AsyncIterator[int]:
+    """Creates pre-registration data for the logged user and yields the pre-registration ID.
+    Automatically cleans up after the test."""
+    from simcore_postgres_database.models.users_details import (
+        users_pre_registration_details,
+    )
+    from simcore_service_webserver.db.plugin import get_asyncpg_engine
+    from simcore_service_webserver.users._accounts_repository import (
+        create_user_pre_registration,
+    )
+
+    asyncpg_engine = get_asyncpg_engine(client.app)
+
+    # Create pre-registration data for the logged user
+    pre_registration_details = {
+        "pre_first_name": "Pre-Registered",
+        "pre_last_name": "User",
+        "institution": "Test University",
+        "address": "123 Test Street",
+        "city": "Test City",
+        "state": "Test State",
+        "postal_code": "12345",
+        "country": "US",
+    }
+
+    pre_registration_id = await create_user_pre_registration(
+        asyncpg_engine,
+        email=logged_user["email"],
+        created_by=None,  # Self-registration
+        product_name="osparc",
+        link_to_existing_user=True,
+        **pre_registration_details,
+    )
+
+    try:
+        yield pre_registration_id
+    finally:
+        # Clean up pre-registration data
+        async with asyncpg_engine.connect() as conn:
+            await conn.execute(
+                sa.delete(users_pre_registration_details).where(
+                    users_pre_registration_details.c.id == pre_registration_id
+                )
+            )
+            await conn.commit()
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_profile_user_with_pre_registration(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    primary_group: dict[str, Any],
+    standard_groups: list[dict[str, Any]],
+    all_group: dict[str, str],
+    product: Product,
+    user_pre_registration: int,
+):
+    """Test getting profile of a user that has pre-registration data"""
+    assert client.app
+
+    url = client.app.router["get_my_profile"].url_for()
+    assert url.path == "/v0/me"
+
+    resp = await client.get(f"{url}")
+    data, error = await assert_status(resp, status.HTTP_200_OK)
+
+    assert not error
+    profile = MyProfileRestGet.model_validate(data)
+
+    assert profile.login == logged_user["email"]
+    assert profile.first_name == logged_user.get("first_name", None)
+    assert profile.last_name == logged_user.get("last_name", None)
+    assert profile.role == user_role.name
+    assert profile.groups
+    assert profile.expiration_date is None
+
+    # Verify profile groups structure is intact
+    got_profile_groups = profile.groups.model_dump(**RESPONSE_MODEL_POLICY, mode="json")
+    assert got_profile_groups["me"] == primary_group
+    assert got_profile_groups["all"] == all_group
+
+    # Verify contact information from pre-registration is populated
+    assert profile.contact is not None
+    assert profile.contact.institution == "Test University"
+    assert profile.contact.address == "123 Test Street"
+    assert profile.contact.city == "Test City"
+    assert profile.contact.state == "Test State"
+    assert profile.contact.postal_code == "12345"
+    assert profile.contact.country == "US"
+
+    # Verify preferences are still working
+    assert profile.preferences == await get_frontend_user_preferences_aggregation(
+        client.app, user_id=logged_user["id"], product_name="osparc"
+    )
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_profile_user_without_pre_registration(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    primary_group: dict[str, Any],
+    standard_groups: list[dict[str, Any]],
+    all_group: dict[str, str],
+    product: Product,
+):
+    """Test getting profile of a user that does not have pre-registration data"""
+    assert client.app
+
+    from simcore_service_webserver.db.plugin import get_asyncpg_engine
+    from simcore_service_webserver.users._accounts_repository import (
+        search_merged_pre_and_registered_users,
+    )
+
+    asyncpg_engine = get_asyncpg_engine(client.app)
+
+    # Verify user has no pre-registration data
+    pre_reg_users = await search_merged_pre_and_registered_users(
+        asyncpg_engine,
+        email_like=logged_user["email"],
+        product_name="osparc",
+    )
+
+    # Filter for exact email match and pre-registration records
+    user_pre_regs = [
+        row
+        for row in pre_reg_users
+        if row.pre_email == logged_user["email"] and row.id is not None
+    ]
+    assert len(user_pre_regs) == 0, "User should not have pre-registration data"
+
+    url = client.app.router["get_my_profile"].url_for()
+    assert url.path == "/v0/me"
+
+    resp = await client.get(f"{url}")
+    data, error = await assert_status(resp, status.HTTP_200_OK)
+
+    assert not error
+    profile = MyProfileRestGet.model_validate(data)
+
+    assert profile.login == logged_user["email"]
+    assert profile.first_name == logged_user.get("first_name", None)
+    assert profile.last_name == logged_user.get("last_name", None)
+    assert profile.role == user_role.name
+    assert profile.groups
+    assert profile.expiration_date is None
+
+    # Verify profile groups structure
+    got_profile_groups = profile.groups.model_dump(**RESPONSE_MODEL_POLICY, mode="json")
+    assert got_profile_groups["me"] == primary_group
+    assert got_profile_groups["all"] == all_group
+    assert got_profile_groups["product"] == {
+        "accessRights": {"delete": False, "read": False, "write": False},
+        "description": "osparc product group",
+        "gid": product.group_id,
+        "label": "osparc",
+        "thumbnail": None,
+    }
+
+    # Verify no contact information since no pre-registration exists
+    assert profile.contact is None
+
+    # Verify standard groups
+    sorted_by_group_id = functools.partial(sorted, key=lambda d: d["gid"])
+    assert sorted_by_group_id(
+        got_profile_groups["organizations"]
+    ) == sorted_by_group_id(standard_groups)
+
+    # Verify preferences are working
+    assert profile.preferences == await get_frontend_user_preferences_aggregation(
+        client.app, user_id=logged_user["id"], product_name="osparc"
+    )
