@@ -8,6 +8,7 @@ from typing import Any, Self
 
 import pytest
 from faker import Faker
+from servicelib.deferred_tasks import TaskUID
 from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
@@ -183,9 +184,11 @@ async def test_step_store_proxy_workflow(store: Store, schedule_id: ScheduleId):
     await _assert_keys_in_hash(store, hash_key, set())
 
     # set multiple
-    await proxy.set_multiple({"status": StepStatus.SUCCESS})
+    await proxy.set_multiple(
+        {"status": StepStatus.SUCCESS, "deferred_task_uid": TaskUID("mytask")}
+    )
     await _assert_keys(store, {hash_key})
-    await _assert_keys_in_hash(store, hash_key, {"status"})
+    await _assert_keys_in_hash(store, hash_key, {"status", "deferred_task_uid"})
 
     # remove all keys an even missing ones
     await proxy.delete("status")

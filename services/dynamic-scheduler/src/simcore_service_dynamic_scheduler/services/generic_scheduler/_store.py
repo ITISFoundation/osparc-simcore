@@ -4,6 +4,7 @@ from typing import Any, Final, Literal, NotRequired, TypedDict, overload
 
 import redis.asyncio as aioredis
 from pydantic import NonNegativeInt
+from servicelib.deferred_tasks import TaskUID
 from servicelib.redis._client import RedisClientSDK
 from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -170,9 +171,10 @@ class ScheduleDataStoreProxy:
 
 class _StepDict(TypedDict):
     status: NotRequired[StepStatus]
+    deferred_task_uid: NotRequired[TaskUID]
 
 
-_DeleteStepKeys = Literal["status"]
+_DeleteStepKeys = Literal["status", "deferred_task_uid"]
 
 
 class StepStoreProxy:
@@ -201,6 +203,8 @@ class StepStoreProxy:
 
     @overload
     async def get(self, key: Literal["status"]) -> StepStatus: ...
+    @overload
+    async def get(self, key: Literal["deferred_task_uid"]) -> TaskUID: ...
     async def get(self, key: str) -> Any:
         """raises KeyNotFoundInHashError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
@@ -213,6 +217,8 @@ class StepStoreProxy:
 
     @overload
     async def set(self, key: Literal["status"], value: StepStatus) -> None: ...
+    @overload
+    async def set(self, key: Literal["deferred_task_uid"], value: TaskUID) -> None: ...
     async def set(self, key: str, value: Any) -> None:
         await self._store.set(self._get_hash_key(), key, value)
 
