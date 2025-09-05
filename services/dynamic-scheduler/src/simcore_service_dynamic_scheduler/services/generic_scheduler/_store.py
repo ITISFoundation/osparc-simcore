@@ -8,7 +8,14 @@ from servicelib.redis._client import RedisClientSDK
 from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase, RedisSettings
 
-from ._models import OperationName, ScheduleId, StepGroup, StepName
+from ._errors import KeyNotFoundInHashError
+from ._models import (
+    OperationContext,
+    OperationName,
+    ScheduleId,
+    StepGroupName,
+    StepName,
+)
 
 _SCHEDULE_NAMESPACE: Final[str] = "SCH"
 _STEPS_KEY: Final[str] = "STEPS"
@@ -26,7 +33,7 @@ def _get_step_hash_key(
     *,
     schedule_id: ScheduleId,
     operation_name: OperationName,
-    group: StepGroup,
+    group: StepGroupName,
     step_name: StepName,
 ) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_INDEX:STEP_NAME:KEY
@@ -102,11 +109,14 @@ class Store:
 
 class _UpdateScheduleDataDict(TypedDict):
     operation_name: NotRequired[OperationName]
+    operation_context: NotRequired[OperationContext]
     group_index: NotRequired[NonNegativeInt]
     is_creating: NotRequired[bool]
 
 
-_DeleteScheduleDataKeys = Literal["operation_name", "group_index", "is_creating"]
+_DeleteScheduleDataKeys = Literal[
+    "operation_name", "operation_context", "group_index", "is_creating"
+]
 
 
 class ScheduleDataStoreProxy:
@@ -118,19 +128,33 @@ class ScheduleDataStoreProxy:
         return _get_scheduler_data_hash_key(schedule_id=self._schedule_id)
 
     @overload
-    async def get(self, key: Literal["operation_name"]) -> str: ...
+    async def get(self, key: Literal["operation_name"]) -> OperationName: ...
     @overload
-    async def get(self, key: Literal["group_index"]) -> int: ...
+    async def get(self, key: Literal["operation_context"]) -> OperationContext: ...
+    @overload
+    async def get(self, key: Literal["group_index"]) -> NonNegativeInt: ...
     @overload
     async def get(self, key: Literal["is_creating"]) -> bool: ...
     async def get(self, key: str) -> Any:
-        (result,) = await self._store.get(self._get_hash_key(), key)
+        """raises KeyNotFoundInHashError if the key is not present in the hash"""
+        hash_key = self._get_hash_key()
+        (result,) = await self._store.get(hash_key, key)
+        if result is None:
+            raise KeyNotFoundInHashError(
+                schedule_id=self._schedule_id, hash_key=hash_key
+            )
         return result
 
     @overload
-    async def set(self, key: Literal["operation_name"], value: str) -> None: ...
+    async def set(
+        self, key: Literal["operation_name"], value: OperationName
+    ) -> None: ...
     @overload
-    async def set(self, key: Literal["group_index"], value: int) -> None: ...
+    async def set(
+        self, key: Literal["operation_context"], value: OperationContext
+    ) -> None: ...
+    @overload
+    async def set(self, key: Literal["group_index"], value: NonNegativeInt) -> None: ...
     @overload
     async def set(self, key: Literal["is_creating"], *, value: bool) -> None: ...
     async def set(self, key: str, value: Any) -> None:
@@ -150,7 +174,7 @@ class StepStoreProxy:
         store: Store,
         schedule_id: ScheduleId,
         operation_name: OperationName,
-        group: StepGroup,
+        group: StepGroupName,
         step_name: StepName,
     ) -> None:
         self._store = store
