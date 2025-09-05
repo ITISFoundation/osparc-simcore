@@ -159,7 +159,10 @@ async def test_schedule_data_store_proxy_workflow(
     await _assert_keys_in_hash(store, hash_key, set())
 
 
-async def test_step_store_proxy_workflow(store: Store, schedule_id: ScheduleId):
+@pytest.mark.parametrize("is_creating", [True, False])
+async def test_step_store_proxy_workflow(
+    store: Store, schedule_id: ScheduleId, is_creating: bool
+):
     step_name = "MyStep"
     proxy = StepStoreProxy(
         store=store,
@@ -167,8 +170,10 @@ async def test_step_store_proxy_workflow(store: Store, schedule_id: ScheduleId):
         operation_name="op1",
         step_group_name="sg1",
         step_name=step_name,
+        is_creating=is_creating,
     )
-    hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{step_name}"
+    is_creating_str = "C" if is_creating else "D"
+    hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{is_creating_str}:{step_name}"
 
     # set
     await proxy.set("status", StepStatus.RUNNING)
@@ -191,6 +196,6 @@ async def test_step_store_proxy_workflow(store: Store, schedule_id: ScheduleId):
     await _assert_keys_in_hash(store, hash_key, {"status", "deferred_task_uid"})
 
     # remove all keys an even missing ones
-    await proxy.delete("status")
+    await proxy.delete("status", "deferred_task_uid")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())

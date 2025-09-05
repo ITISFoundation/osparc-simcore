@@ -37,18 +37,21 @@ def _get_step_hash_key(
     operation_name: OperationName,
     group: StepGroupName,
     step_name: StepName,
+    is_creating: bool,
 ) -> str:
-    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_INDEX:STEP_NAME:KEY
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_INDEX:STEP_NAME:IS_CREATING:KEY
     # - SCHEDULE_NAMESPACE: something short to identify tgis
     # - SCHEDULE_ID: the unique scheudle_id assigned
     # - STEPS: the constant "STEPS"
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_INDEX
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
+    # - IS_CREATING: "C" or "D" for creation or destruction
     # - STEP_NAME form it's class
     # Example:
-    # - SCH:00000000-0000-0000-0000-000000000000:STEPS:START_SERVICE:0S:BS1
-    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group}:{step_name}"
+    # - SCH:00000000-0000-0000-0000-000000000000:STEPS:START_SERVICE:0S:C:BS1
+    is_creating_str = "C" if is_creating else "D"
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group}:{is_creating_str}:{step_name}"
 
 
 def _dumps(obj: Any) -> str:
@@ -186,12 +189,14 @@ class StepStoreProxy:
         operation_name: OperationName,
         step_group_name: StepGroupName,
         step_name: StepName,
+        is_creating: bool,
     ) -> None:
         self._store = store
         self._schedule_id = schedule_id
         self._operation_name = operation_name
         self._group = step_group_name
         self._step_name = step_name
+        self._is_creating = is_creating
 
     def _get_hash_key(self) -> str:
         return _get_step_hash_key(
@@ -199,6 +204,7 @@ class StepStoreProxy:
             operation_name=self._operation_name,
             group=self._group,
             step_name=self._step_name,
+            is_creating=self._is_creating,
         )
 
     @overload
