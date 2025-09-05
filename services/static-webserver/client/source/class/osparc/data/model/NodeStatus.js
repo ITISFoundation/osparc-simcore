@@ -26,6 +26,9 @@ qx.Class.define("osparc.data.model.NodeStatus", {
   construct: function(node) {
     this.base(arguments);
 
+    const lockState = new osparc.data.model.NodeLockState();
+    this.setLockState(lockState);
+
     this.setNode(node);
   },
 
@@ -151,11 +154,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
           const progressSequence = new osparc.data.model.NodeProgressSequence();
           this.setProgressSequence(progressSequence);
         }
-
-        const lockState = new osparc.data.model.NodeLockState();
-        this.setLockState(lockState);
       };
-
       if (node.getMetadata()) {
         initNode();
       } else {
