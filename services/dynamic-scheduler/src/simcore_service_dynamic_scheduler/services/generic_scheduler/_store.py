@@ -15,6 +15,7 @@ from ._models import (
     ScheduleId,
     StepGroupName,
     StepName,
+    StepStatus,
 )
 
 _SCHEDULE_NAMESPACE: Final[str] = "SCH"
@@ -167,6 +168,13 @@ class ScheduleDataStoreProxy:
         await self._store.delete(self._get_hash_key(), *keys)
 
 
+class _StepDict(TypedDict):
+    status: NotRequired[StepStatus]
+
+
+_DeleteStepKeys = Literal["status"]
+
+
 class StepStoreProxy:
     def __init__(
         self,
@@ -174,13 +182,13 @@ class StepStoreProxy:
         store: Store,
         schedule_id: ScheduleId,
         operation_name: OperationName,
-        group: StepGroupName,
+        step_group_name: StepGroupName,
         step_name: StepName,
     ) -> None:
         self._store = store
         self._schedule_id = schedule_id
         self._operation_name = operation_name
-        self._group = group
+        self._group = step_group_name
         self._step_name = step_name
 
     def _get_hash_key(self) -> str:
@@ -190,3 +198,26 @@ class StepStoreProxy:
             group=self._group,
             step_name=self._step_name,
         )
+
+    @overload
+    async def get(self, key: Literal["status"]) -> StepStatus: ...
+    async def get(self, key: str) -> Any:
+        """raises KeyNotFoundInHashError if the key is not present in the hash"""
+        hash_key = self._get_hash_key()
+        (result,) = await self._store.get(hash_key, key)
+        if result is None:
+            raise KeyNotFoundInHashError(
+                schedule_id=self._schedule_id, hash_key=hash_key
+            )
+        return result
+
+    @overload
+    async def set(self, key: Literal["status"], value: StepStatus) -> None: ...
+    async def set(self, key: str, value: Any) -> None:
+        await self._store.set(self._get_hash_key(), key, value)
+
+    async def set_multiple(self, values: _StepDict) -> None:
+        await self._store.set_multiple(self._get_hash_key(), updates=values)
+
+    async def delete(self, *keys: _DeleteStepKeys) -> None:
+        await self._store.delete(self._get_hash_key(), *keys)

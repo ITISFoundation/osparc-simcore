@@ -12,9 +12,11 @@ from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     ScheduleId,
+    StepStatus,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
     ScheduleDataStoreProxy,
+    StepStoreProxy,
     Store,
 )
 
@@ -152,5 +154,40 @@ async def test_schedule_data_store_proxy_workflow(
 
     # remove all keys an even missing ones
     await proxy.delete("operation_name", "is_creating", "group_index")
+    await _assert_keys(store, set())
+    await _assert_keys_in_hash(store, hash_key, set())
+
+
+async def test_step_store_proxy_workflow(store: Store, schedule_id: ScheduleId):
+    step_name = "MyStep"
+    proxy = StepStoreProxy(
+        store=store,
+        schedule_id=schedule_id,
+        operation_name="op1",
+        step_group_name="sg1",
+        step_name=step_name,
+    )
+    hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{step_name}"
+
+    # set
+    await proxy.set("status", StepStatus.RUNNING)
+    await _assert_keys(store, {hash_key})
+    await _assert_keys_in_hash(store, hash_key, {"status"})
+
+    # get
+    assert await proxy.get("status") == StepStatus.RUNNING
+
+    # remove
+    await proxy.delete("status")
+    await _assert_keys(store, set())
+    await _assert_keys_in_hash(store, hash_key, set())
+
+    # set multiple
+    await proxy.set_multiple({"status": StepStatus.SUCCESS})
+    await _assert_keys(store, {hash_key})
+    await _assert_keys_in_hash(store, hash_key, {"status"})
+
+    # remove all keys an even missing ones
+    await proxy.delete("status")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
