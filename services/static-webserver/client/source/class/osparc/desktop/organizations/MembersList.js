@@ -328,8 +328,10 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const readAccessRole = osparc.data.Roles.ORG["read"];
       const newAccessRights = readAccessRole.accessRights;
+      const orgId = this.__currentOrg.getGroupId();
+      const userId = "id" in listedMember ? listedMember["id"] : listedMember["key"];
       const groupsStore = osparc.store.Groups.getInstance();
-      groupsStore.patchMember(this.__currentOrg.getGroupId(), listedMember["id"], newAccessRights)
+      groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
           osparc.FlashMessenger.logAs(this.tr(`Successfully promoted to ${readAccessRole.label}`));
           this.__reloadOrgMembers();
@@ -348,7 +350,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const noReadAccessRole = osparc.data.Roles.ORG["noRead"];
       const newAccessRights = noReadAccessRole.accessRights;
       const orgId = this.__currentOrg.getGroupId();
-      const userId = "id" in listedMember ? listedMember["id"] : listedMember["key"]
+      const userId = "id" in listedMember ? listedMember["id"] : listedMember["key"];
       const groupsStore = osparc.store.Groups.getInstance();
       groupsStore.patchAccessRights(orgId, userId, newAccessRights)
         .then(() => {
