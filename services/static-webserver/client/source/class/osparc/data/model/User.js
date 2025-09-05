@@ -55,13 +55,7 @@ qx.Class.define("osparc.data.model.User", {
       phoneNumber: userData["phone"] || null,
     });
 
-    let description = this.getFullName();
-    if (email) {
-      if (description) {
-        description += " - "
-      }
-      description += email;
-    }
+    const description = osparc.data.model.User.userDataToDescription(firstName, lastName, email);
     this.set({
       label: userData["userName"] || description,
       description,

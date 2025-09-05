@@ -20,7 +20,12 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
   properties: {
     collabType: {
-      check: [0, 1, 2], // 0:all, 1:org, 2:user
+      check: [
+        "everyone",     // osparc.store.Groups.COLLAB_TYPE.EVERYONE
+        "support",      // osparc.store.Groups.COLLAB_TYPE.SUPPORT
+        "organization", // osparc.store.Groups.COLLAB_TYPE.ORGANIZATION
+        "user",         // osparc.store.Groups.COLLAB_TYPE.USER
+      ],
       event: "changeCollabType",
       nullable: true
     },
@@ -143,13 +148,13 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       if (value === null) {
         const collabType = this.getCollabType();
         switch (collabType) {
-          case 0:
+          case osparc.store.Groups.COLLAB_TYPE.EVERYONE:
             value = "@FontAwesome5Solid/globe/28";
             break;
-          case 1:
+          case osparc.store.Groups.COLLAB_TYPE.ORGANIZATION:
             value = "@FontAwesome5Solid/users/28";
             break;
-          case 2:
+          case osparc.store.Groups.COLLAB_TYPE.USER:
             value = "@FontAwesome5Solid/user/28";
             break;
         }

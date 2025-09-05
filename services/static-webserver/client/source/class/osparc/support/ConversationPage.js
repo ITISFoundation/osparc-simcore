@@ -154,7 +154,7 @@ qx.Class.define("osparc.support.ConversationPage", {
       }
 
       const extraContextLayout = this.getChildControl("conversation-extra-layout");
-      const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
+      const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
       if (conversation) {
         const createExtraContextLabel = text => {
           return new qx.ui.basic.Label(text).set({
