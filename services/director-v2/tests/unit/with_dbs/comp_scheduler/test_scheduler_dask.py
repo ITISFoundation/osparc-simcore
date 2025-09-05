@@ -2300,16 +2300,24 @@ async def test_getting_task_result_raises_exception(
         return [RunningState.SUCCESS for j in job_ids]
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
-    mocked_dask_client.get_task_result.side_effect = exception_type
+    call_count = 0
 
-    # calling apply should not raise, but log the error
+    async def mocked_get_task_result(_job_id: str) -> TaskOutputData:
+        nonlocal call_count
+        call_count += 1
+        if call_count > 1:
+            raise exception_type
+        return TaskOutputData.model_validate({"whatever_output": 123})
+
+    mocked_dask_client.get_task_result.side_effect = mocked_get_task_result
+    # calling apply should not raise
     assert running_project.project.prj_owner
     await scheduler_api.apply(
         user_id=running_project.project.prj_owner,
         project_id=running_project.project.uuid,
         iteration=1,
     )
-
+    # calling again should not raise neither
     assert running_project.project.prj_owner
     await scheduler_api.apply(
         user_id=running_project.project.prj_owner,
