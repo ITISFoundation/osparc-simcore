@@ -1,4 +1,3 @@
-import logging
 from datetime import timedelta
 
 from fastapi import FastAPI
@@ -8,8 +7,6 @@ from servicelib.deferred_tasks._models import TaskResultError
 from ._models import OperationName, ScheduleId, StepGroupName, StepName, StepStatus
 from ._operation import BaseStep, OperationRegistry
 from ._store import StepStoreProxy, Store, get_store
-
-_logger = logging.getLogger(__name__)
 
 
 def _get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
