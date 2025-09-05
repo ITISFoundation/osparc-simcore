@@ -446,11 +446,14 @@ class DaskClient:
             if parsed_event.state == RunningState.FAILED:
                 try:
                     # find out if this was a cancellation
-                    var = distributed.Variable(job_id, client=self.backend.client)
-                    future: distributed.Future = await var.get(
+                    task_future: distributed.Future = (
+                        await dask_utils.wrap_client_async_routine(
+                            self.backend.client.get_dataset(name=job_id)
+                        )
+                    )
+                    exception = await task_future.exception(
                         timeout=_DASK_DEFAULT_TIMEOUT_S
                     )
-                    exception = await future.exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
                     assert isinstance(exception, Exception)  # nosec
 
                     if isinstance(exception, TaskCancelledError):
