@@ -597,7 +597,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoParameterUI: function() {
-      const width = 100;
+      const width = 120;
       this.__setNodeUIWidth(width);
 
       const label = new qx.ui.basic.Label().set({
