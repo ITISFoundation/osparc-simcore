@@ -319,14 +319,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._addToLayout(resourcesContainer);
     },
 
-    __groupByChanged: function(groupBy) {
+    _groupByChanged: function(groupBy) {
       this._resourcesContainer.setGroupBy(groupBy);
       this._reloadCards();
-
-      const isTemplate = this._resourceType === "template";;
-      if (this._resourceFilter && isTemplate) {
-        this._resourceFilter.getChildControl("tags-layout").setVisibility(isTemplate && groupBy === "tags" ? "visible" : "excluded");
-      }
     },
 
     __viewModeChanged: function(viewMode) {
@@ -353,14 +348,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
-      dontGroup.addListener("execute", () => this.__groupByChanged(null));
+      dontGroup.addListener("execute", () => this._groupByChanged(null));
 
       groupByMenu.add(dontGroup);
       groupOptions.add(dontGroup);
 
       if (this._resourceType === "template") {
         const groupByTag = new qx.ui.menu.RadioButton(this.tr("Tags"));
-        groupByTag.addListener("execute", () => this.__groupByChanged("tags"));
+        groupByTag.addListener("execute", () => this._groupByChanged("tags"));
         groupByMenu.add(groupByTag);
         groupOptions.add(groupByTag);
         if (
@@ -372,7 +367,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         }
       } else if (this._resourceType === "service" && osparc.product.Utils.groupServices()) {
         const groupByFeatured = new qx.ui.menu.RadioButton(this.tr("Featured"));
-        groupByFeatured.addListener("execute", () => this.__groupByChanged("groupedServices"));
+        groupByFeatured.addListener("execute", () => this._groupByChanged("groupedServices"));
         groupByMenu.add(groupByFeatured);
         groupOptions.add(groupByFeatured);
         groupByFeatured.execute();
@@ -380,7 +375,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
 
       const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
-      groupByShared.addListener("execute", () => this.__groupByChanged("shared"));
+      groupByShared.addListener("execute", () => this._groupByChanged("shared"));
       groupByMenu.add(groupByShared);
       groupOptions.add(groupByShared);
 

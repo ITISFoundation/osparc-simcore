@@ -118,6 +118,15 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
+    // overridden
+    _groupByChanged: function(groupBy) {
+      this.base(arguments, groupBy);
+
+      if (this._resourceFilter) {
+        this._resourceFilter.getChildControl("tags-layout").setVisibility(groupBy === "tags" ? "visible" : "excluded");
+      }
+    },
+
     __itemClicked: function(card) {
       if (!card.getBlocked()) {
         const templateData = this.__getTemplateData(card.getUuid());
