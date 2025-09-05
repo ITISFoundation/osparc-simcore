@@ -11,8 +11,6 @@ from typing import Any
 from unittest import mock
 
 import pytest
-import simcore_service_webserver.studies_dispatcher
-import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
@@ -20,69 +18,22 @@ from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from common_library.users_enums import UserRole
 from models_library.projects_state import ProjectShareState, ProjectStatus
-from pydantic import BaseModel, ByteSize, TypeAdapter
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
-from pytest_simcore.pydantic_models import (
-    assert_validation_model,
-    walk_model_examples_in_package,
-)
 from servicelib.aiohttp import status
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
-from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
-from sqlalchemy.sql import text
+from simcore_service_webserver.studies_dispatcher._models import ViewerInfo
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
-
-#
-# FIXTURES OVERRIDES
-#
-
-
-@pytest.fixture(scope="module")
-def postgres_db(postgres_db: sa.engine.Engine) -> sa.engine.Engine:
-    #
-    # Extends postgres_db fixture (called with web_server) to inject tables and start redis
-    #
-    stmt_create_services = text(
-        'INSERT INTO "services_meta_data" ("key", "version", "owner", "name", "description", "thumbnail", "classifiers", "created", "modified", "quality") VALUES'
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	NULL,	'2D plot',	'2D plots powered by RAW Graphs',	NULL,	'{}',	'2021-03-02 16:08:28.655207',	'2021-03-02 16:08:28.655207',	'{}'),"
-        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	NULL,	'bio-formats',	'Bio-Formats image viewer',	'https://www.openmicroscopy.org/img/logos/bio-formats.svg',	'{}',	'2021-03-02 16:08:28.420722',	'2021-03-02 16:08:28.420722',	'{}'),"
-        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	NULL,	'JupyterLab Math',	'JupyterLab Math with octave and python',	NULL,	'{}',	'2021-03-02 16:08:28.420722',	'2021-03-02 16:08:28.420722',	'{}');"
-    )
-    stmt_create_services_consume_filetypes = text(
-        'INSERT INTO "services_consume_filetypes" ("service_key", "service_version", "service_display_name", "service_input_port", "filetype", "preference_order", "is_guest_allowed") VALUES'
-        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	'bio-formats',	'input_1',	'PNG',	0, '1'),"
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'CSV',	0, '1'),"
-        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	'bio-formats',	'input_1',	'JPEG',	0, '1'),"
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'TSV',	0, '1'),"
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'XLSX',	0, '1'),"
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'JSON',	0, '1'),"
-        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'PY',	0, '0'),"
-        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'IPYNB',0, '0');"
-    )
-
-    # NOTE: users default osparc project and everyone group (which should be by default already in tables)
-    stmt_create_services_access_rights = text(
-        ' INSERT INTO "services_access_rights" ("key", "version", "gid", "execute_access", "write_access", "created", "modified", "product_name") VALUES'
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	1,	't',	'f',	'2022-05-23 08:44:45.418376',	'2022-05-23 08:44:45.418376',	'osparc'),"
-        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	1,	't',	'f',	'2022-05-23 08:44:45.418376',	'2022-05-23 08:44:45.418376',	'osparc');"
-    )
-    with postgres_db.connect() as conn:
-        conn.execute(stmt_create_services)
-        conn.execute(stmt_create_services_consume_filetypes)
-        conn.execute(stmt_create_services_access_rights)
-
-    return postgres_db
 
 
 @pytest.fixture
@@ -103,10 +54,16 @@ def app_environment(
 
 @pytest.fixture
 def web_server(
-    redis_service: RedisSettings, rabbit_service: RabbitSettings, web_server: TestServer
+    redis_service: RedisSettings,
+    rabbit_service: RabbitSettings,
+    web_server: TestServer,
+    # Add dependencies to ensure database is populated before app starts
+    services_metadata_in_db: list[dict],
+    services_consume_filetypes_in_db: list[dict],
+    services_access_rights_in_db: list[dict],
 ) -> TestServer:
     #
-    # Extends web_server to start redis_service
+    # Extends web_server to start redis_service and ensure DB is populated
     #
     print(
         "Redis service started with settings: ", redis_service.model_dump_json(indent=1)
@@ -179,123 +136,6 @@ FAKE_VIEWS_LIST = [
         input_port_key="input_1",
     ),
 ]
-
-
-# REST-API
-#  Samples taken from trials on http://127.0.0.1:9081/dev/doc#/viewer/get_viewer_for_file
-#
-
-
-def _get_base_url(client: TestClient) -> str:
-    s = client.server
-    assert isinstance(s.scheme, str)
-    url = URL.build(scheme=s.scheme, host=s.host, port=s.port)
-    return f"{url}"
-
-
-async def test_api_get_viewer_for_file(client: TestClient):
-    resp = await client.get("/v0/viewers/default?file_type=JPEG")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-
-    base_url = _get_base_url(client)
-    assert data == [
-        {
-            "file_type": "JPEG",
-            "title": "Bio-formats v1.0.1",
-            "view_url": f"{base_url}/view?file_type=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
-        },
-    ]
-
-
-async def test_api_get_viewer_for_unsupported_type(client: TestClient):
-    resp = await client.get("/v0/viewers/default?file_type=UNSUPPORTED_TYPE")
-    data, error = await assert_status(resp, status.HTTP_200_OK)
-    assert data == []
-    assert error is None
-
-
-async def test_api_list_supported_filetypes(client: TestClient):
-    resp = await client.get("/v0/viewers/default")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-
-    base_url = _get_base_url(client)
-    assert data == [
-        {
-            "title": "Rawgraphs v2.11.1",
-            "file_type": "CSV",
-            "view_url": f"{base_url}/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
-        },
-        {
-            "title": "Jupyterlab math v1.6.9",
-            "file_type": "IPYNB",
-            "view_url": f"{base_url}/view?file_type=IPYNB&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
-        },
-        {
-            "title": "Bio-formats v1.0.1",
-            "file_type": "JPEG",
-            "view_url": f"{base_url}/view?file_type=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
-        },
-        {
-            "title": "Rawgraphs v2.11.1",
-            "file_type": "JSON",
-            "view_url": f"{base_url}/view?file_type=JSON&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
-        },
-        {
-            "title": "Bio-formats v1.0.1",
-            "file_type": "PNG",
-            "view_url": f"{base_url}/view?file_type=PNG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
-        },
-        {
-            "title": "Jupyterlab math v1.6.9",
-            "file_type": "PY",
-            "view_url": f"{base_url}/view?file_type=PY&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
-        },
-        {
-            "title": "Rawgraphs v2.11.1",
-            "file_type": "TSV",
-            "view_url": f"{base_url}/view?file_type=TSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
-        },
-        {
-            "title": "Rawgraphs v2.11.1",
-            "file_type": "XLSX",
-            "view_url": f"{base_url}/view?file_type=XLSX&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
-        },
-    ]
-
-
-@pytest.mark.parametrize(
-    "model_cls, example_name, example_data",
-    walk_model_examples_in_package(simcore_service_webserver.studies_dispatcher),
-)
-def test_model_examples(
-    model_cls: type[BaseModel], example_name: str, example_data: Any
-):
-    assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
-
-
-async def test_api_list_services(client: TestClient):
-    assert client.app
-
-    url = client.app.router["list_latest_services"].url_for()
-    response = await client.get(f"{url}")
-
-    data, error = await assert_status(response, status.HTTP_200_OK)
-
-    services = TypeAdapter(list[ServiceGet]).validate_python(data)
-    assert services
-
-    # latest versions of services with everyone + ospar-product (see stmt_create_services_access_rights)
-    assert services[0].key == "simcore/services/dynamic/raw-graphs"
-    assert services[0].file_extensions == ["CSV", "JSON", "TSV", "XLSX"]
-    assert "2.11.1" in services[0].view_url.query
-
-    assert services[1].key == "simcore/services/dynamic/jupyter-octave-python-math"
-    assert services[1].file_extensions == ["IPYNB", "PY"]
-    assert "1.6.9" in services[1].view_url.query
-
-    assert error is None
 
 
 # REDIRECT ROUTES --------------------------------------------------------------------------------
@@ -430,7 +270,7 @@ async def test_dispatch_study_anonymously(
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_service.update_projects_networks",
+        "simcore_service_webserver.studies_dispatcher._controller.rest.redirects.dynamic_scheduler_service.update_projects_networks",
         return_value=None,
     )
 
@@ -496,7 +336,7 @@ async def test_dispatch_logged_in_user(
         return_value=None,
     )
     mock_dynamic_scheduler_update_project_networks = mocker.patch(
-        "simcore_service_webserver.studies_dispatcher._redirects_handlers.dynamic_scheduler_service.update_projects_networks",
+        "simcore_service_webserver.studies_dispatcher._controller.rest.redirects.dynamic_scheduler_service.update_projects_networks",
         return_value=None,
     )
 
@@ -580,7 +420,7 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
     message, status_code = assert_error_in_fragment(resp)
 
     assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert "type" in message.lower()
+    assert "link" in message.lower()
 
 
 async def test_viewer_redirect_with_client_errors(client: TestClient):
