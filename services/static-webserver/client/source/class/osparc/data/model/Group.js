@@ -82,7 +82,7 @@ qx.Class.define("osparc.data.model.Group", {
     },
 
     groupType: {
-      check: ["me", "organization", "productEveryone", "everyone"],
+      check: ["me", "organization", "support", "productEveryone", "everyone"],
       nullable: false,
       init: null,
     },
