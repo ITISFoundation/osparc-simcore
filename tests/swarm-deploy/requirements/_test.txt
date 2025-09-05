@@ -204,6 +204,12 @@ importlib-metadata==8.5.0
     # via opentelemetry-api
 iniconfig==2.0.0
     # via pytest
+jsonref==1.1.0
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema==4.23.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in

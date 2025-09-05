@@ -109,6 +109,10 @@ idna==3.10
     #   yarl
 importlib-metadata==8.6.1
     # via opentelemetry-api
+jsonref==1.1.0
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema==4.23.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in

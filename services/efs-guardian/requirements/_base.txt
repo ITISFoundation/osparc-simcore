@@ -265,6 +265,12 @@ jmespath==1.0.1
     #   aiobotocore
     #   boto3
     #   botocore
+jsonref==1.1.0
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema==4.24.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
