@@ -2273,3 +2273,54 @@ async def test_run_new_pipeline_called_twice_prevents_duplicate_runs(
         0,  # No new messages expected
         ComputationalPipelineStatusMessage.model_validate_json,
     )
+
+
+@pytest.mark.parametrize(
+    "exception_type",
+    [
+        ComputationalBackendTaskResultsNotReadyError,
+    ],
+)
+async def test_getting_task_result_raises_exception(
+    exception_type: Exception,
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    mocked_dask_client: mock.MagicMock,
+    initialized_app: FastAPI,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    running_project: RunningProject,
+    mocked_parse_output_data_fct: mock.Mock,
+):
+    # this tests the behavior of the scheduling when the dask client cannot retrieve
+    # the result of a task because of some communication error. In this case the task
+    # it should be retrieved again in the next iteration and not marked as failed
+    # immediately.
+    async def mocked_get_tasks_status(job_ids: list[str]) -> list[RunningState]:
+        return [RunningState.SUCCESS for j in job_ids]
+
+    mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
+    call_count = 0
+
+    async def mocked_get_task_result(_job_id: str) -> TaskOutputData:
+        nonlocal call_count
+        call_count += 1
+        if call_count > 1:
+            raise exception_type
+        return TaskOutputData.model_validate({"whatever_output": 123})
+
+    mocked_dask_client.get_task_result.side_effect = mocked_get_task_result
+    # calling apply should not raise
+    assert running_project.project.prj_owner
+    await scheduler_api.apply(
+        user_id=running_project.project.prj_owner,
+        project_id=running_project.project.uuid,
+        iteration=1,
+    )
+    # calling again should not raise neither
+    assert running_project.project.prj_owner
+    await scheduler_api.apply(
+        user_id=running_project.project.prj_owner,
+        project_id=running_project.project.uuid,
+        iteration=1,
+    )
