@@ -56,7 +56,7 @@ services:
       - cluster
     environment:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
-      DASK_NPROCS: 1
+      DASK_NPROCS: ${DASK_NPROCS}
       DASK_NTHREADS: ${DASK_NTHREADS}
       DASK_SCHEDULER_URL: tls://dask-scheduler:8786
       DASK_SIDECAR_NON_USABLE_RAM: 0
