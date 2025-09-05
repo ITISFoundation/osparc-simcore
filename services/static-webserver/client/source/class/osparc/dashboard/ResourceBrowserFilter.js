@@ -106,8 +106,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
           this.getChildControl("filters-spacer");
           this.getChildControl("shared-with-layout");
           this.getChildControl("tags-layout");
-          this.__populateTags();
-          osparc.store.Tags.getInstance().addListener("tagsChanged", () => this.__populateTags(), this);
           break;
         case "service":
           this.getChildControl("filters-spacer");
@@ -381,7 +379,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       return selectedTagIds;
     },
 
-    __populateTags: function(presentTagIds = []) {
+    populateTags: function(presentTagIds = []) {
       const selectedTagIds = this.__getSelectedTagIds();
       const tagsLayout = this.getChildControl("tags-layout");
       tagsLayout.removeAll();
@@ -449,10 +447,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       if (this.__resourceType === "study") {
         tagsLayout.getChildren().forEach(item => item.setPaddingLeft(10)); // align them with the context
       }
-    },
-
-    showPresentTags: function(presentTagIds) {
-      this.__populateTags(presentTagIds);
     },
     /* /TAGS */
 

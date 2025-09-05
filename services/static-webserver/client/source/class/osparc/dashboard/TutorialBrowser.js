@@ -116,6 +116,18 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       });
       this.__evaluateUpdateAllButton();
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
+
+      this.__populateTags();
+    },
+
+    __populateTags: function() {
+      if (this._resourceFilter) {
+        const presentTags = new Set();
+        this._resourcesList.forEach(template => {
+          (template["tags"] || []).forEach(tagId => presentTags.add(tagId));
+        });
+        this._resourceFilter.populateTags(Array.from(presentTags));
+      }
     },
 
     // overridden
@@ -124,14 +136,6 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
       if (this._resourceFilter) {
         this._resourceFilter.getChildControl("tags-layout").setVisibility(groupBy === "tags" ? "visible" : "excluded");
-
-        if (groupBy === "tags") {
-          const presentTags = new Set();
-          this._resourcesList.forEach(template => {
-            (template["tags"] || []).forEach(tagId => presentTags.add(tagId));
-          });
-          this._resourceFilter.showPresentTags(Array.from(presentTags));
-        }
       }
     },
 
@@ -160,6 +164,8 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       this._addViewModeButton();
 
       this._addResourceFilter();
+      this.__populateTags();
+      osparc.store.Tags.getInstance().addListener("tagsChanged", () => this.__populateTags(), this);
 
       this._resourcesContainer.addListener("changeVisibility", () => this.__evaluateUpdateAllButton());
 
