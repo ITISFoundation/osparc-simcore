@@ -381,13 +381,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       return selectedTagIds;
     },
 
-    __populateTags: function() {
+    __populateTags: function(presentTagIds = []) {
       const selectedTagIds = this.__getSelectedTagIds();
       const tagsLayout = this.getChildControl("tags-layout");
       tagsLayout.removeAll();
       const maxTags = 10;
       this.__tagButtons = [];
-      osparc.store.Tags.getInstance().getTags().forEach((tag, idx) => {
+      osparc.store.Tags.getInstance().getTags().forEach(tag => {
+        if (!presentTagIds.includes(tag.getTagId())) {
+          return;
+        }
         const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/16");
         button.id = tag.getTagId();
         tag.bind("name", button, "label");
@@ -406,7 +409,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
           this.fireDataEvent("changeSelectedTags", selection);
         }, this);
 
-        button.setVisibility(idx >= maxTags ? "excluded" : "visible");
+        button.setVisibility(this.__tagButtons.length >= maxTags ? "excluded" : "visible");
 
         this.__tagButtons.push(button);
       });
@@ -446,6 +449,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       if (this.__resourceType === "study") {
         tagsLayout.getChildren().forEach(item => item.setPaddingLeft(10)); // align them with the context
       }
+    },
+
+    showPresentTags: function(presentTagIds) {
+      this.__populateTags(presentTagIds);
     },
     /* /TAGS */
 
