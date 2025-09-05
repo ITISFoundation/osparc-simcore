@@ -24,10 +24,12 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.utils import limited_as_completed
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
+    ComputationalBackendTaskResultsNotReadyError,
     TaskSchedulingError,
 )
 from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
@@ -289,39 +291,31 @@ class DaskScheduler(BaseCompScheduler):
         iteration: Iteration,
         comp_run: CompRunsAtDB,
     ) -> None:
-        try:
-            async with _cluster_dask_client(
-                user_id,
-                self,
-                use_on_demand_clusters=comp_run.use_on_demand_clusters,
-                project_id=comp_run.project_uuid,
-                run_id=comp_run.run_id,
-                run_metadata=comp_run.metadata,
-            ) as client:
-                tasks_results = await asyncio.gather(
-                    *[client.get_task_result(t.job_id or "undefined") for t in tasks],
-                    return_exceptions=True,
-                )
-            await asyncio.gather(
-                *[
+        async with _cluster_dask_client(
+            user_id,
+            self,
+            use_on_demand_clusters=comp_run.use_on_demand_clusters,
+            project_id=comp_run.project_uuid,
+            run_id=comp_run.run_id,
+            run_metadata=comp_run.metadata,
+        ) as client:
+            tasks_results = await asyncio.gather(
+                *[client.get_task_result(t.job_id or "undefined") for t in tasks],
+                return_exceptions=True,
+            )
+            async for future in limited_as_completed(
+                (
                     self._process_task_result(
                         task, result, comp_run.metadata, iteration, comp_run.run_id
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
-                ]
-            )
-        finally:
-            async with _cluster_dask_client(
-                user_id,
-                self,
-                use_on_demand_clusters=comp_run.use_on_demand_clusters,
-                project_id=comp_run.project_uuid,
-                run_id=comp_run.run_id,
-                run_metadata=comp_run.metadata,
-            ) as client:
-                await asyncio.gather(
-                    *[client.release_task_result(t.job_id) for t in tasks if t.job_id]
-                )
+                ),
+                limit=10,
+            ):
+                with log_catch(_logger, reraise=False):
+                    task_can_be_cleaned, job_id = await future
+                    if task_can_be_cleaned:
+                        await client.release_task_result(job_id)
 
     async def _process_task_result(
         self,
@@ -330,7 +324,8 @@ class DaskScheduler(BaseCompScheduler):
         run_metadata: RunMetadataDict,
         iteration: Iteration,
         run_id: PositiveInt,
-    ) -> None:
+    ) -> tuple[bool, str]:
+        """will return True and the job id if the task was successfully processed and can be released from the dask cluster"""
         _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
         simcore_platform_status = SimcorePlatformStatus.OK
@@ -357,17 +352,15 @@ class DaskScheduler(BaseCompScheduler):
                         result,
                     )
                     task_final_state = RunningState.SUCCESS
-
+                elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
+                    # we did not manage to get the current state of the task
+                    # so we keep it as is
+                    assert task.job_id  # nosec
+                    return False, task.job_id
                 else:
                     if isinstance(result, TaskCancelledError):
                         task_final_state = RunningState.ABORTED
-                    # elif isinstance(
-                    #     result, ComputationalBackendTaskResultsNotReadyError
-                    # ):
-                    #     # we did not manage to get the current state of the task
-                    #     # so we keep it as is
-                    #     task_final_state = task.state
-                    # elif isinstance(result, ComputationalBackendNotConnectedError):
+
                     else:
                         task_final_state = RunningState.FAILED
                         errors.append(
@@ -424,6 +417,8 @@ class DaskScheduler(BaseCompScheduler):
             optional_progress=1,
             optional_stopped=arrow.utcnow().datetime,
         )
+        assert task.job_id  # nosec
+        return True, task.job_id
 
     async def _task_progress_change_handler(
         self, event: tuple[UnixTimestamp, Any]
