@@ -100,7 +100,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
           }
           this._add(this.__createTrashBin());
           this.getChildControl("filters-spacer");
-          this.getChildControl("tags-layout");
           break;
         }
         case "template":
@@ -448,6 +447,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       if (this.__resourceType === "study") {
         tagsLayout.getChildren().forEach(item => item.setPaddingLeft(10)); // align them with the context
       }
+    },
+
+    groupByChanged: function(groupBy) {
+      const isTemplate = this.__resourceType === "template";
+      this.getChildControl("tags-layout").setVisibility(isTemplate && groupBy === "tags" ? "visible" : "excluded");
     },
     /* /TAGS */
 
