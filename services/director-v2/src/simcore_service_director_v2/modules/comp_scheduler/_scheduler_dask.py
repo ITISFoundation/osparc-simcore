@@ -361,6 +361,13 @@ class DaskScheduler(BaseCompScheduler):
                 else:
                     if isinstance(result, TaskCancelledError):
                         task_final_state = RunningState.ABORTED
+                    # elif isinstance(
+                    #     result, ComputationalBackendTaskResultsNotReadyError
+                    # ):
+                    #     # we did not manage to get the current state of the task
+                    #     # so we keep it as is
+                    #     task_final_state = task.state
+                    # elif isinstance(result, ComputationalBackendNotConnectedError):
                     else:
                         task_final_state = RunningState.FAILED
                         errors.append(
