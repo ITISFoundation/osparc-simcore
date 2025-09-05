@@ -12,10 +12,9 @@ import asyncio
 import logging
 import traceback
 from collections.abc import Callable, Iterable
-from copy import deepcopy
 from dataclasses import dataclass
 from http.client import HTTPException
-from typing import Any, Final, cast
+from typing import Final, cast
 
 import distributed
 from aiohttp import ClientResponseError
@@ -49,7 +48,6 @@ from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
 from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -57,9 +55,9 @@ from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
 from models_library.services import ServiceRunID
 from models_library.users import UserID
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 from pydantic.networks import AnyUrl
-from servicelib.logging_utils import log_catch, log_context
+from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -538,50 +536,3 @@ class DaskClient:
 
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
-
-    async def get_cluster_details(self) -> ClusterDetails:
-        dask_utils.check_scheduler_is_still_the_same(
-            self.backend.scheduler_id, self.backend.client
-        )
-        dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
-        dask_utils.check_scheduler_status(self.backend.client)
-        scheduler_info = self.backend.client.scheduler_info()
-        scheduler_status = self.backend.client.status
-        dashboard_link = self.backend.client.dashboard_link
-
-        def _get_worker_used_resources(
-            dask_scheduler: distributed.Scheduler,
-        ) -> dict[str, dict]:
-            used_resources = {}
-            for worker_name, worker_state in dask_scheduler.workers.items():
-                used_resources[worker_name] = worker_state.used_resources
-            return used_resources
-
-        with log_catch(_logger, reraise=False):
-            # NOTE: this runs directly on the dask-scheduler and may rise exceptions
-            used_resources_per_worker: dict[str, dict[str, Any]] = (
-                await dask_utils.wrap_client_async_routine(
-                    self.backend.client.run_on_scheduler(_get_worker_used_resources)
-                )
-            )
-
-            # let's update the scheduler info, with default to 0s since sometimes
-            # workers are destroyed/created without us knowing right away
-            for worker_name, worker_info in scheduler_info.get("workers", {}).items():
-                used_resources: dict[str, float] = deepcopy(
-                    worker_info.get("resources", {})
-                )
-                # reset default values
-                for res_name in used_resources:
-                    used_resources[res_name] = 0
-                # if the scheduler has info, let's override them
-                used_resources = used_resources_per_worker.get(
-                    worker_name, used_resources
-                )
-                worker_info.update(used_resources=used_resources)
-
-        assert dashboard_link  # nosec
-        return ClusterDetails(
-            scheduler=Scheduler(status=scheduler_status, **scheduler_info),
-            dashboard_link=TypeAdapter(AnyUrl).validate_python(dashboard_link),
-        )
