@@ -508,26 +508,26 @@ qx.Class.define("osparc.data.model.Workbench", {
         // reload also before port connection happens
         this.fireEvent("reloadModel");
         requesterNode.addPortLink(portId, filePickerId, "outFile")
-        .then(success => {
-          if (success) {
-            if (file) {
-              const fileObj = file.data;
-              osparc.file.FilePicker.setOutputValueFromStore(
-                filePicker,
-                fileObj.getLocation(),
-                fileObj.getDatasetId(),
-                fileObj.getFileId(),
-                fileObj.getLabel()
-              );
+          .then(success => {
+            if (success) {
+              if (file) {
+                const fileObj = file.data;
+                osparc.file.FilePicker.setOutputValueFromStore(
+                  filePicker,
+                  fileObj.getLocation(),
+                  fileObj.getDatasetId(),
+                  fileObj.getFileId(),
+                  fileObj.getLabel()
+                );
+              }
+              this.fireDataEvent("openNode", filePicker.getNodeId());
+              this.fireEvent("reloadModel");
+            } else {
+              this.removeNode(filePickerId);
+              const msg = qx.locale.Manager.tr("File couldn't be assigned");
+              osparc.FlashMessenger.logError(msg);
             }
-            this.fireDataEvent("openNode", filePicker.getNodeId());
-            this.fireEvent("reloadModel");
-          } else {
-            this.removeNode(filePickerId);
-            const msg = qx.locale.Manager.tr("File couldn't be assigned");
-            osparc.FlashMessenger.logError(msg);
-          }
-        });
+          });
       };
       if (filePicker.getMetadata()) {
         populateNewNode();
