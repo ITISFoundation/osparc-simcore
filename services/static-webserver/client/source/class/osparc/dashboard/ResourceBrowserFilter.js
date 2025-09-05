@@ -386,7 +386,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     },
 
     __populateTags: function(tagsLayout, selectedTagIds) {
-      const maxTags = 5;
+      const maxTags = 10;
       this.__tagButtons = [];
       tagsLayout.removeAll();
       osparc.store.Tags.getInstance().getTags().forEach((tag, idx) => {
@@ -443,6 +443,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         myAccountWindow.openTags();
       });
       tagsLayout.add(editTagsButton);
+      editTagsButton.exclude(); // excluded for now, they will be used as categories
 
       if (this.__resourceType === "study") {
         tagsLayout.getChildren().forEach(item => item.setPaddingLeft(10)); // align them with the context
