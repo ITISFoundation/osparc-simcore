@@ -127,7 +127,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         ]).then(([wallet, latestStudyData]) => {
             const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(latestStudyData["state"]);
             const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
-            if (isStudyCreation || wallet === null || currentUserGroupIds.length === 0) {
+            if (
+              isStudyCreation ||
+              wallet === null ||
+              currentUserGroupIds.length === 0
+            ) {
               // pop up StudyOptions if:
               // - the study was just created
               // - it has no wallet assigned
