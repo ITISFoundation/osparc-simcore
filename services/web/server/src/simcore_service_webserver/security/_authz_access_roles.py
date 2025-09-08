@@ -133,3 +133,14 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
 assert set(ROLES_PERMISSIONS) == set(  # nosec
     UserRole
 ), "All user roles must be part define permissions"  # nosec
+
+
+# Group-based permissions for support groups
+# Maps group type to list of permissions that group members can perform
+GROUP_PERMISSIONS: dict[str, list[str]] = {
+    "support_group": [
+        "product.details.*",
+        "admin.users.read",
+    ],
+    # NOTE: Future group types can be added here
+}

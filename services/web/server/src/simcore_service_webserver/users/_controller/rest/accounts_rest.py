@@ -26,7 +26,10 @@ from servicelib.utils import fire_and_forget_task
 from ...._meta import API_VTAG
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
-from ....security.decorators import permission_required
+from ....security.decorators import (
+    group_or_role_permission_required,
+    permission_required,
+)
 from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
 from ... import _accounts_service
 from ._rest_exceptions import handle_rest_requests_exceptions
@@ -43,7 +46,7 @@ _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 
 @routes.get(f"/{API_VTAG}/admin/user-accounts", name="list_users_accounts")
 @login_required
-@permission_required("admin.users.read")
+@group_or_role_permission_required("admin.users.read")
 @handle_rest_requests_exceptions
 async def list_users_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
