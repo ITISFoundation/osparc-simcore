@@ -69,9 +69,8 @@ def test_response_surface_modeling(
         ].click()
         page.get_by_test_id("connect_input_btn_number_1").click()
         page.get_by_text("set existing parameter").nth(1).click()
-        page.get_by_text("set existing parameter").nth(1).filter(
-            has_text="number parameter"
-        ).click()
+        page.wait_for_timeout(1000)
+        page.get_by_text("Number Parameter").click()
         page.wait_for_timeout(5000)
         # page.get_by_test_id("connect_input_btn_number_1").click()
         # page.get_by_text("new parameter").click()
