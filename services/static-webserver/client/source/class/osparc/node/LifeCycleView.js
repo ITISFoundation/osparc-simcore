@@ -119,6 +119,7 @@ qx.Class.define("osparc.node.LifeCycleView", {
           newData["version"] = latestCompatible["version"];
         }
         node.set(newData);
+        const nodeId = node.getNodeId();
         node.fireDataEvent("projectDocumentChanged", [{
           "op": "replace",
           "path": `/workbench/${nodeId}/key`,
