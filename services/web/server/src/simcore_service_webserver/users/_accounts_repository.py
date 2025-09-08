@@ -345,9 +345,9 @@ async def search_merged_pre_and_registered_users(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    email_like: str | None = None,
-    user_name_like: str | None = None,
-    primary_group_id: int | None = None,
+    filter_by_email_like: str | None = None,
+    filter_by_user_name_like: str | None = None,
+    filter_by_primary_group_id: int | None = None,
     product_name: ProductName | None = None,
 ) -> list[Row]:
     """Searches and merges users from both users and pre-registration tables"""
@@ -392,9 +392,15 @@ async def search_merged_pre_and_registered_users(
         users_pre_registration_details.c.created,
     )
 
-    left_outer_join = _build_left_outer_join_query(email_like, product_name, columns)
+    left_outer_join = _build_left_outer_join_query(
+        filter_by_email_like, product_name, columns
+    )
     right_outer_join = _build_right_outer_join_query(
-        email_like, user_name_like, primary_group_id, product_name, columns
+        filter_by_email_like,
+        filter_by_user_name_like,
+        filter_by_primary_group_id,
+        product_name,
+        columns,
     )
 
     queries = []

@@ -555,7 +555,7 @@ async def test_get_profile_user_without_pre_registration(
     # Verify user has no pre-registration data
     pre_reg_users = await search_merged_pre_and_registered_users(
         asyncpg_engine,
-        email_like=logged_user["email"],
+        filter_by_email_like=logged_user["email"],
         product_name="osparc",
     )
 

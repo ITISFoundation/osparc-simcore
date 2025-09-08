@@ -164,7 +164,7 @@ async def search_users_accounts(
 
     rows = await _accounts_repository.search_merged_pre_and_registered_users(
         get_asyncpg_engine(app),
-        email_like=_glob_to_sql_like(email_glob),
+        filter_by_email_like=_glob_to_sql_like(email_glob),
         product_name=product_name,
     )
 

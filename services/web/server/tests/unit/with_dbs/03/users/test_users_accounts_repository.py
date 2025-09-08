@@ -852,7 +852,7 @@ async def test_search_merged_users_by_email(
     # Act
     rows = await _accounts_repository.search_merged_pre_and_registered_users(
         asyncpg_engine,
-        email_like=email_pattern,
+        filter_by_email_like=email_pattern,
         product_name=product_name,
     )
 
@@ -894,7 +894,7 @@ async def test_search_merged_users_by_username(
     # Act
     rows = await _accounts_repository.search_merged_pre_and_registered_users(
         asyncpg_engine,
-        user_name_like=username_pattern,
+        filter_by_user_name_like=username_pattern,
         product_name=product_name,
     )
 
@@ -939,7 +939,7 @@ async def test_search_merged_users_by_primary_group_id(
     # Act
     results = await _accounts_repository.search_merged_pre_and_registered_users(
         asyncpg_engine,
-        primary_group_id=primary_group_id,
+        filter_by_primary_group_id=primary_group_id,
         product_name=product_name,
     )
 
