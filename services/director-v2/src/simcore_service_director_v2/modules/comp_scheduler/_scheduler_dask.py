@@ -404,8 +404,8 @@ class DaskScheduler(BaseCompScheduler):
         # state is kept as STARTED so it will be retried
         return RunningState.STARTED, SimcorePlatformStatus.BAD, task_errors, False
 
+    @staticmethod
     async def _handle_computational_backend_not_connected_error(
-        self,
         task: CompTaskAtDB,
         result: ComputationalBackendNotConnectedError,
         log_error_context: dict[str, Any],
@@ -424,8 +424,8 @@ class DaskScheduler(BaseCompScheduler):
         # state is kept as STARTED so it will be retried
         return RunningState.STARTED, SimcorePlatformStatus.BAD, [], False
 
+    @staticmethod
     async def _handle_task_error(
-        self,
         task: CompTaskAtDB,
         result: BaseException,
         log_error_context: dict[str, Any],
