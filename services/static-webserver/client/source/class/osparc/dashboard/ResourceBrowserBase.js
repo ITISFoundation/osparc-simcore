@@ -157,7 +157,24 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                 }
               });
             } else {
-              openStudy();
+              // Check if I have access to the current wallet. If I don't, I won't be able to open it
+              const found = osparc.store.Store.getInstance().getWallets().find(w => w.getWalletId() === wallet["walletId"]);
+              if (found) {
+                // switch to the wallet and inform the user
+                if (osparc.store.Store.getInstance().getContextWallet() !== found) {
+                  const text = qx.locale.Manager.tr("Switched to Credit Account") + " '" + found.getName() + "'";
+                  osparc.FlashMessenger.logAs(text);
+                }
+                osparc.store.Store.getInstance().setActiveWallet(found);
+                openStudy();
+              } else {
+                // cancel and explain the user why
+                const msg = qx.locale.Manager.tr("You can't join the project because you don't have access to the Credit Account associated with it. Please contact the project owner.");
+                osparc.FlashMessenger.logAs(msg, "ERROR");
+                if (cancelCB) {
+                  cancelCB();
+                }
+              }
             }
           });
       } else {
@@ -203,7 +220,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       let openText = qx.locale.Manager.tr("New") + " " + studyAlias;
       if (resourceData["resourceType"] === "study") {
         // if it's in use call it join
-        if (osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"])) {
+        if (osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"]).length) {
           openText = qx.locale.Manager.tr("Join");
         } else {
           openText = qx.locale.Manager.tr("Open");
