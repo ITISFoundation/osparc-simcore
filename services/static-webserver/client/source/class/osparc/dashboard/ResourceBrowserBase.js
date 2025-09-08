@@ -200,13 +200,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     getOpenText: function(resourceData) {
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      let openText = this.tr("New") + " " + studyAlias;
+      let openText = qx.locale.Manager.tr("New") + " " + studyAlias;
       if (resourceData["resourceType"] === "study") {
         // if it's in use call it join
         if (osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"])) {
-          openText = this.tr("Join");
+          openText = qx.locale.Manager.tr("Join");
         } else {
-          openText = this.tr("Open");
+          openText = qx.locale.Manager.tr("Open");
         }
       }
       return openText;
