@@ -165,15 +165,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             } else {
               const found = osparc.store.Store.getInstance().getWallets().find(w => w.getWalletId() === wallet["walletId"]);
               if (found) {
-                // switch to that wallet
+                // I have access to the wallet
                 if (osparc.store.Store.getInstance().getContextWallet() !== found) {
-                  // inform the user that the context wallet has changed
+                  // switch to that wallet and inform the user that the context wallet has changed
                   const text = qx.locale.Manager.tr("Switched to Credit Account") + " '" + found.getName() + "'";
                   osparc.FlashMessenger.logAs(text);
                 }
                 osparc.store.Store.getInstance().setActiveWallet(found);
                 openStudy();
               } else {
+                // I do not have access to the wallet or it's being used
                 // cancel and explain the user why
                 const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
                 const msg = isRTCEnabled ?
