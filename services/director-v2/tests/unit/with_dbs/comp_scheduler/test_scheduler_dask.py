@@ -27,7 +27,10 @@ from _helpers import (
     assert_comp_runs_empty,
     assert_comp_tasks_and_comp_run_snapshot_tasks,
 )
-from dask_task_models_library.container_tasks.errors import TaskCancelledError
+from dask_task_models_library.container_tasks.errors import (
+    ServiceRuntimeError,
+    TaskCancelledError,
+)
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from dask_task_models_library.container_tasks.protocol import TaskOwner
@@ -838,7 +841,13 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_2nd_task_failed
-    mocked_dask_client.get_task_result.side_effect = None
+    mocked_dask_client.get_task_result.side_effect = ServiceRuntimeError(
+        service_key="simcore/services/dynamic/some-service",
+        service_version="1.0.0",
+        container_id="some-container-id",
+        exit_code=1,
+        service_logs="simulated error",
+    )
     await scheduler_api.apply(
         user_id=run_in_db.user_id,
         project_id=run_in_db.project_uuid,
@@ -2301,7 +2310,7 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
     computational_tasks = [
         t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL
     ]
-    expected_timeouted_tasks = random.choices(  # noqa: S311
+    expected_timeouted_tasks = random.sample(
         computational_tasks, k=len(computational_tasks) - 1
     )
     successful_tasks = [
@@ -2309,10 +2318,9 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
     ]
 
     async def mocked_get_task_result(job_id: str) -> TaskOutputData:
-        nonlocal expected_timeouted_tasks
-        if job_id in [t.job_id for t in expected_timeouted_tasks]:
-            raise ComputationalBackendTaskResultsNotReadyError(job_id=job_id)
-        return TaskOutputData.model_validate({"whatever_output": 123})
+        if job_id in [t.job_id for t in successful_tasks]:
+            return TaskOutputData.model_validate({"whatever_output": 123})
+        raise ComputationalBackendTaskResultsNotReadyError(job_id=job_id)
 
     mocked_dask_client.get_task_result.side_effect = mocked_get_task_result
     # calling apply should not raise
@@ -2346,6 +2354,7 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
         retrieval_times.append(
             error_dict["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY]
         )
+    assert len(retrieval_times) == len(expected_timeouted_tasks)
 
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
@@ -2374,14 +2383,7 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
             iteration=1,
         )
         assert mocked_dask_client.get_task_result.call_count == (
-            len(
-                [
-                    t
-                    for t in running_project.tasks
-                    if t.node_class is NodeClass.COMPUTATIONAL
-                ]
-            )
-            - 1
+            len(expected_timeouted_tasks)
         )
         mocked_dask_client.get_task_result.reset_mock()
         await asyncio.sleep(0.5)  # wait a bit to ensure the retry decorator has reset
