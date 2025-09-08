@@ -121,14 +121,17 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
       if (walletsEnabled) {
-        osparc.store.Study.getInstance().getWallet(studyId)
-          .then(wallet => {
-            if (
-              isStudyCreation ||
-              wallet === null ||
-              osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null
-            ) {
-              // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
+        Promise.all([
+          osparc.store.Study.getInstance().getWallet(studyId),
+          osparc.store.Study.getInstance().getOne(studyId),
+        ]).then(([wallet, latestStudyData]) => {
+            const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(latestStudyData["state"]);
+            const isRTCEnabled = osparc.settings.Utils.isRTCEnabled();
+            if (isStudyCreation || wallet === null || currentUserGroupIds.length === 0) {
+              // pop up StudyOptions if:
+              // - the study was just created
+              // - it has no wallet assigned
+              // - the project is not being used
               const resourceSelector = new osparc.study.StudyOptions(studyId);
               if (isStudyCreation) {
                 resourceSelector.getChildControl("open-button").setLabel(qx.locale.Manager.tr("New"));
@@ -156,12 +159,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                   cancelCB();
                 }
               });
-            } else {
-              // Check if I have access to the current wallet. If I don't, I won't be able to open it
+            } else if (currentUserGroupIds.length && isRTCEnabled) {
+              // if the project is being used, I just want to join
+              // check if I have access to the associated wallet
               const found = osparc.store.Store.getInstance().getWallets().find(w => w.getWalletId() === wallet["walletId"]);
               if (found) {
-                // switch to the wallet and inform the user
+                // switch to that wallet
                 if (osparc.store.Store.getInstance().getContextWallet() !== found) {
+                  // inform the user that the context wallet has changed
                   const text = qx.locale.Manager.tr("Switched to Credit Account") + " '" + found.getName() + "'";
                   osparc.FlashMessenger.logAs(text);
                 }
@@ -169,7 +174,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                 openStudy();
               } else {
                 // cancel and explain the user why
-                const msg = qx.locale.Manager.tr("You can't join the project because you don't have access to the Credit Account associated with it. Please contact the project owner.");
+                const msg = isRTCEnabled ?
+                  qx.locale.Manager.tr("You can't join the project because you don't have access to the Credit Account associated with it. Please contact the project owner.") :
+                  qx.locale.Manager.tr("You can't join the project because it's already open by another user.");
                 osparc.FlashMessenger.logAs(msg, "ERROR");
                 if (cancelCB) {
                   cancelCB();
