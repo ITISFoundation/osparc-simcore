@@ -126,7 +126,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           osparc.store.Study.getInstance().getOne(studyId),
         ]).then(([wallet, latestStudyData]) => {
             const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(latestStudyData["state"]);
-            const isRTCEnabled = osparc.settings.Utils.isRTCEnabled();
+            const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
             if (isStudyCreation || wallet === null || currentUserGroupIds.length === 0) {
               // pop up StudyOptions if:
               // - the study was just created
@@ -227,7 +227,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       let openText = qx.locale.Manager.tr("New") + " " + studyAlias;
       if (resourceData["resourceType"] === "study") {
         // if it's in use call it join
-        if (osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"]).length) {
+        const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
+        if (osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"]).length && isRTCEnabled) {
           openText = qx.locale.Manager.tr("Join");
         } else {
           openText = qx.locale.Manager.tr("Open");
