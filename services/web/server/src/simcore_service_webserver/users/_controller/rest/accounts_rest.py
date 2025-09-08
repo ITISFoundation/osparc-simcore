@@ -76,10 +76,14 @@ async def list_users_accounts(request: web.Request) -> web.Response:
     )
 
     def _to_domain_model(account_details: dict[str, Any]) -> UserAccountGet:
+        account_details.pop("account_request_reviewed_by", None)
         return UserAccountGet(
             extras=account_details.pop("extras") or {},
             pre_registration_id=account_details.pop("id"),
             pre_registration_created=account_details.pop("created"),
+            account_request_reviewed_by=account_details.pop(
+                "account_request_reviewed_by_username"
+            ),
             **account_details,
         )
 
