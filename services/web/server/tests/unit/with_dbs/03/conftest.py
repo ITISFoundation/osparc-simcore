@@ -45,7 +45,10 @@ async def support_group_before_app_starts(
     asyncpg_engine: AsyncEngine,
     product_name: str,
 ) -> AsyncIterator[dict[str, Any]]:
-    """Creates a standard support group and assigns it to the current product"""
+    """Creates a standard support group and assigns it to the current product
+
+    NOTE: this has to be added BEFORE any client fixture in the tests
+    """
     from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
     from simcore_postgres_database.models.groups import groups
     from simcore_postgres_database.models.products import products
