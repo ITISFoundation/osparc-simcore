@@ -6,9 +6,11 @@ import asyncio
 from collections.abc import AsyncIterable
 from enum import Enum
 from typing import ClassVar
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -84,6 +86,16 @@ async def registed_operation(
     OperationRegistry.register(operation_name, operation)
     yield
     OperationRegistry.unregister(operation_name)
+
+
+@pytest.fixture
+def mock_enqueue_event(mocker: MockerFixture) -> AsyncMock:
+    mock = AsyncMock()
+    mocker.patch(
+        "simcore_service_dynamic_scheduler.services.generic_scheduler._deferred_runner.enqueue_event",
+        mock,
+    )
+    return mock
 
 
 async def _assert_finshed_with_status(
@@ -190,7 +202,9 @@ class _Action(str, Enum):
 )
 @pytest.mark.parametrize("is_creating", [True, False])
 async def test_something(
+    mock_enqueue_event: AsyncMock,
     registed_operation: None,
+    app: FastAPI,
     store: Store,
     schedule_id: ScheduleId,
     operation_name: OperationName,
@@ -254,3 +268,6 @@ async def test_something(
     if expected_step_status == StepStatus.FAILED:
         error_traceback = await step_proxy.get("error_traceback")
         assert "I failed" in error_traceback
+
+    # ensure called once with arguments
+    assert mock_enqueue_event.call_args_list == [((app, schedule_id),)]

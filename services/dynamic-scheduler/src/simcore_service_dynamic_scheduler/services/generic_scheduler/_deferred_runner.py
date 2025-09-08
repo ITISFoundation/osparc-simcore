@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from servicelib.deferred_tasks import BaseDeferredHandler, DeferredContext, TaskUID
 from servicelib.deferred_tasks._models import TaskResultError
 
+from ._event_scheduler import enqueue_event
 from ._models import OperationName, ScheduleId, StepGroupName, StepName, StepStatus
 from ._operation import BaseStep, OperationRegistry
 from ._store import StepStoreProxy, Store, get_store
@@ -32,6 +33,12 @@ def _get_step(context: DeferredContext) -> type[BaseStep]:
     operation_name: OperationName = context["operation_name"]
     step_name: StepName = context["step_name"]
     return OperationRegistry.get_step(operation_name, step_name)
+
+
+async def _send_schedule_event(context: DeferredContext) -> None:
+    app: FastAPI = context["app"]
+    schedule_id: ScheduleId = context["schedule_id"]
+    await enqueue_event(app, schedule_id)
 
 
 class DeferredRunner(BaseDeferredHandler[None]):
@@ -97,6 +104,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
     async def on_result(cls, result: None, context: DeferredContext) -> None:
         _ = result
         await _get_step_store_proxy(context).set("status", StepStatus.SUCCESS)
+        await _send_schedule_event(context)
 
     @classmethod
     async def on_finished_with_error(
@@ -105,7 +113,9 @@ class DeferredRunner(BaseDeferredHandler[None]):
         await _get_step_store_proxy(context).set_multiple(
             {"status": StepStatus.FAILED, "error_traceback": error.format_error()}
         )
+        await _send_schedule_event(context)
 
     @classmethod
     async def on_cancelled(cls, context: DeferredContext) -> None:
         await _get_step_store_proxy(context).set("status", StepStatus.CANCELLED)
+        await _send_schedule_event(context)
