@@ -100,7 +100,7 @@ def _to_snake_case(string: str) -> str:
 
 async def create_service_and_get_id(
     create_service_data: AioDockerServiceSpec | dict[str, Any],
-    docker_hub_registry_settings: RegistrySettings | None,
+    registry_settings: RegistrySettings | None,
 ) -> ServiceId:
     # NOTE: ideally the argument should always be AioDockerServiceSpec
     # but for that we need get_dynamic_proxy_spec to return that type
@@ -109,13 +109,13 @@ async def create_service_and_get_id(
             create_service_data, by_alias=True, exclude_unset=True
         )
         kwargs = {_to_snake_case(k): v for k, v in kwargs.items()}
-        if docker_hub_registry_settings:
+        if registry_settings:
             kwargs["auth"] = {
-                "username": docker_hub_registry_settings.REGISTRY_USER,
-                "password": docker_hub_registry_settings.REGISTRY_PW.get_secret_value(),
-                "serveraddress": docker_hub_registry_settings.resolved_registry_url,
+                "username": registry_settings.REGISTRY_USER,
+                "password": registry_settings.REGISTRY_PW.get_secret_value(),
+                "serveraddress": registry_settings.resolved_registry_url,
             }
-            kwargs["registry"] = docker_hub_registry_settings.resolved_registry_url
+            kwargs["registry"] = registry_settings.resolved_registry_url
 
         logging.debug("Creating service with\n%s", json_dumps(kwargs, indent=1))
         service_start_result = await client.services.create(**kwargs)
