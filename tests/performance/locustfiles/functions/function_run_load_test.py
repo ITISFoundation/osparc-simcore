@@ -7,6 +7,7 @@
 
 import json
 from datetime import timedelta
+from uuid import UUID
 
 import jsf
 from common.base_user import OsparcWebUserBase
@@ -25,14 +26,14 @@ from tenacity import (
 def _(parser: LocustArgumentParser) -> None:
     parser.add_argument(
         "--function-uuid",
-        type=str,
-        required=True,
+        type=UUID,
+        default=None,
         help="The function UUID to test",
     )
     parser.add_argument(
         "--function-input-json-schema",
         type=str,
-        required=True,
+        default=None,
         help="JSON schema for the function job inputs",
     )
     parser.add_argument(
@@ -48,7 +49,13 @@ class WebApiUser(OsparcWebUserBase):
     def run_function(self) -> None:
 
         function_uuid = self.environment.parsed_options.function_uuid
-        job_input_schema = json.loads(self.environment.parsed_options.body_json_schema)
+        if function_uuid is None:
+            raise ValueError("function-uuid argument is required")
+        if self.environment.parsed_options.function_input_json_schema is None:
+            raise ValueError("function-input-json-schema argument is required")
+        job_input_schema = json.loads(
+            self.environment.parsed_options.function_input_json_schema
+        )
         max_poll_time = timedelta(
             seconds=self.environment.parsed_options.max_poll_time_seconds
         )
@@ -62,6 +69,7 @@ class WebApiUser(OsparcWebUserBase):
                 "x-simcore-parent-project-uuid": "null",
                 "x-simcore-parent-node-id": "null",
             },
+            name="/v0/functions/[function_uuid]:run",
         )
         response.raise_for_status()
         job_uuid = response.json().get("uid")
@@ -75,7 +83,8 @@ class WebApiUser(OsparcWebUserBase):
         ):
             with attempt:
                 job_status_response = self.authenticated_get(
-                    f"/v0/function_jobs/{job_uuid}/status"
+                    f"/v0/function_jobs/{job_uuid}/status",
+                    name="/v0/function_jobs/[job_uuid]/status",
                 )
                 job_status_response.raise_for_status()
                 status = job_status_response.json().get("status")
