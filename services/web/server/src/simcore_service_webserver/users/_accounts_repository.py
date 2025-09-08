@@ -14,7 +14,6 @@ from simcore_postgres_database.models.users import UserStatus, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
-from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -268,6 +267,21 @@ async def review_user_pre_registration(
 #
 
 
+def _create_account_request_reviewed_by_username_subquery() -> Any:
+    """Creates a reusable subquery for getting reviewer username by ID."""
+    reviewer_alias = sa.alias(users, name="reviewer_alias")
+    return (
+        sa.select(
+            reviewer_alias.c.name,
+        )
+        .where(
+            users_pre_registration_details.c.account_request_reviewed_by
+            == reviewer_alias.c.id
+        )
+        .label("account_request_reviewed_by_username")
+    )
+
+
 def _build_left_outer_join_query(
     email_like: str | None,
     product_name: ProductName | None,
@@ -338,7 +352,6 @@ async def search_merged_pre_and_registered_users(
 ) -> list[Row]:
     """Searches and merges users from both users and pre-registration tables"""
     users_alias = sa.alias(users, name="users_alias")
-    reviewer_alias = sa.alias(users, name="reviewer_alias")
 
     invited_by = (
         sa.select(
@@ -349,14 +362,7 @@ async def search_merged_pre_and_registered_users(
     )
 
     account_request_reviewed_by_username = (
-        sa.select(
-            reviewer_alias.c.name,
-        )
-        .where(
-            users_pre_registration_details.c.account_request_reviewed_by
-            == reviewer_alias.c.id
-        )
-        .label("account_request_reviewed_by_username")
+        _create_account_request_reviewed_by_username_subquery()
     )
 
     columns = (
@@ -454,7 +460,12 @@ async def list_merged_pre_and_registered_users(
     if not filter_include_deleted:
         users_where.append(users.c.status != UserStatus.DELETED)
 
-    # Query for pre-registered users that are not yet in the users table
+    # Create subquery for reviewer username
+    account_request_reviewed_by_username = (
+        _create_account_request_reviewed_by_username_subquery()
+    )
+
+    # Query for pre-registered users
     # We need to left join with users to identify if the pre-registered user is already in the system
     pre_reg_query = (
         sa.select(
@@ -480,7 +491,8 @@ async def list_merged_pre_and_registered_users(
             users.c.status,
             # Use created_by directly instead of a subquery
             users_pre_registration_details.c.created_by.label("created_by"),
-            sa.literal(True).label("is_pre_registered"),
+            account_request_reviewed_by_username,
+            sa.literal_column("true").label("is_pre_registered"),
         )
         .select_from(
             users_pre_registration_details.outerjoin(
@@ -515,7 +527,8 @@ async def list_merged_pre_and_registered_users(
             users.c.status,
             # Match the created_by field from the pre_reg query
             sa.literal(None).label("created_by"),
-            sa.literal(False).label("is_pre_registered"),
+            sa.literal(None).label("account_request_reviewed_by_username"),
+            sa.literal_column("false").label("is_pre_registered"),
         )
         .select_from(
             users.join(user_to_groups, user_to_groups.c.uid == users.c.id)
@@ -555,14 +568,6 @@ async def list_merged_pre_and_registered_users(
         .select_from(merged_query_subq)
         .distinct()
         .subquery()
-    )
-
-    _logger.debug(
-        "%s\n%s\n%s\n%s",
-        "-" * 100,
-        as_postgres_sql_query_str(distinct_query),
-        "-" * 100,
-        as_postgres_sql_query_str(count_query),
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:
