@@ -126,7 +126,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           osparc.store.Study.getInstance().getOne(studyId),
         ]).then(([wallet, latestStudyData]) => {
             const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(latestStudyData["state"]);
-            const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
             if (
               isStudyCreation ||
               wallet === null ||
@@ -176,6 +175,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                 openStudy();
               } else {
                 // cancel and explain the user why
+                const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
                 const msg = isRTCEnabled ?
                   qx.locale.Manager.tr("You can't join the project because you don't have access to the Credit Account associated with it. Please contact the project owner.") :
                   qx.locale.Manager.tr("You can't join the project because it's already open by another user.");
