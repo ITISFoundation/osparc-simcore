@@ -174,9 +174,6 @@ class ScheduleDataStoreProxy:
     @overload
     async def set(self, key: Literal["group_index"], value: NonNegativeInt) -> None: ...
     @overload
-    async def set(
-        self, key: Literal["unknown_statuses_retry_count"], value: NonNegativeInt
-    ) -> None: ...
     @overload
     async def set(self, key: Literal["is_creating"], *, value: bool) -> None: ...
     async def set(self, key: str, value: Any) -> None:
