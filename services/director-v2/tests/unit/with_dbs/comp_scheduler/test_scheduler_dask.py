@@ -2294,7 +2294,7 @@ async def test_getting_task_result_raises_exception(
 ):
     # this tests the behavior of the scheduling when the dask client cannot retrieve
     # the result of a task because of some communication error. In this case the task
-    # it should be retrieved again in the next iteration and not marked as failed
+    # should be retrieved again in the next iteration and not marked as failed
     # immediately.
     async def mocked_get_tasks_status(job_ids: list[str]) -> list[RunningState]:
         return [RunningState.SUCCESS for j in job_ids]
