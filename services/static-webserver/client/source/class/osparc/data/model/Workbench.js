@@ -50,9 +50,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Event",
     "projectDocumentChanged": "qx.event.type.Data",
-    "restartAutoSaveTimer": "qx.event.type.Event",
     "pipelineChanged": "qx.event.type.Event",
     "nodeAdded": "qx.event.type.Data",
     "nodeRemoved": "qx.event.type.Data",
@@ -352,7 +350,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
 
-      this.fireEvent("restartAutoSaveTimer");
       // create the node in the backend first
       const params = {
         url: {
@@ -368,7 +365,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         const resp = await osparc.data.Resources.fetch("studies", "addNode", params);
         const nodeId = resp["node_id"];
 
-        this.fireEvent("restartAutoSaveTimer");
         const node = this.__createNode(key, version, nodeId);
         node.fetchMetadataAndPopulate()
           .then(() => {
@@ -394,15 +390,11 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __initNodeSignals: function(node) {
-      if (osparc.utils.Utils.eventDrivenPatch()) {
-        node.listenToChanges();
-        node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
-      }
+      node.listenToChanges();
+      node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
-      node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
-
       node.addListener("showInLogger", e => this.fireDataEvent("showInLogger", e.getData()), this);
       node.addListener("retrieveInputs", e => this.fireDataEvent("retrieveInputs", e.getData()), this);
       node.addListener("fileRequested", e => this.fireDataEvent("fileRequested", e.getData()), this);
@@ -633,7 +625,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         return;
       }
 
-      this.fireEvent("restartAutoSaveTimer");
       let node = this.getNode(nodeId);
       if (node) {
         // remove the node in the backend first
@@ -645,8 +636,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __nodeRemoved: function(nodeId) {
-      this.fireEvent("restartAutoSaveTimer");
-
       delete this.__nodes[nodeId];
 
       // remove first the connected edges
@@ -1002,14 +991,11 @@ qx.Class.define("osparc.data.model.Workbench", {
     __createNodeOld: function(metadata, nodeId) {
       const node = new osparc.data.model.Node(this.getStudy(), metadata["key"], metadata["version"], nodeId);
       node.setMetadata(metadata);
-      if (osparc.utils.Utils.eventDrivenPatch()) {
-        node.listenToChanges();
-        node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
-      }
+      node.listenToChanges();
+      node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
-      node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
       osparc.utils.Utils.localCache.serviceToFavs(metadata["key"]);
 
       this.__initNodeSignals(node);
