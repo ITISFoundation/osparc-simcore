@@ -98,7 +98,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
 
 @routes.get(f"/{API_VTAG}/admin/user-accounts:search", name="search_user_accounts")
 @login_required
-@permission_required("admin.users.read")
+@group_or_role_permission_required("admin.users.read")
 @handle_rest_requests_exceptions
 async def search_user_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
