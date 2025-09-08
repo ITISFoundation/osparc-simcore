@@ -95,9 +95,8 @@ def mock_email_session(mocker: MockerFixture) -> AsyncMock:
         *(
             (role, status.HTTP_403_FORBIDDEN)
             for role in UserRole
-            if UserRole.ANONYMOUS < role < UserRole.PRODUCT_SUPPORT
+            if UserRole.ANONYMOUS < role < UserRole.PRODUCT_OWNER
         ),
-        (UserRole.PRODUCT_SUPPORT, status.HTTP_200_OK),
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
         (UserRole.ADMIN, status.HTTP_200_OK),
     ],

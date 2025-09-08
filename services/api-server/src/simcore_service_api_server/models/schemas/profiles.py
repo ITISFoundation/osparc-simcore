@@ -22,7 +22,6 @@ class UserRoleEnum(StrAutoEnum):
     GUEST = auto()
     USER = auto()
     TESTER = auto()
-    PRODUCT_SUPPORT = auto()
     PRODUCT_OWNER = auto()
     ADMIN = auto()
 

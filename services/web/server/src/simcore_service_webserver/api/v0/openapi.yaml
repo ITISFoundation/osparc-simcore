@@ -13838,7 +13838,6 @@ components:
           - GUEST
           - USER
           - TESTER
-          - PRODUCT_SUPPORT
           - PRODUCT_OWNER
           - ADMIN
           title: Role

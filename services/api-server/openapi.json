@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.13.0"
+    "version": "0.13.1"
   },
   "paths": {
     "/v0/meta": {
@@ -12582,7 +12582,6 @@
           "GUEST",
           "USER",
           "TESTER",
-          "PRODUCT_SUPPORT",
           "PRODUCT_OWNER",
           "ADMIN"
         ],

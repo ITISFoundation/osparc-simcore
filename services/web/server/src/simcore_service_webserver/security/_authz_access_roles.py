@@ -104,20 +104,15 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
         ],
         inherits=[UserRole.USER],
     ),
-    UserRole.PRODUCT_SUPPORT: PermissionDict(
-        can=[
-            "product.details.*",
-            "admin.users.read",
-        ],
-        inherits=[UserRole.TESTER],
-    ),
     UserRole.PRODUCT_OWNER: PermissionDict(
         # NOTE: Add `tags=["po"]` to entrypoints with this access requirements
         can=[
-            "product.invitations.create",
+            "admin.users.read",
             "admin.users.write",
+            "product.details.*",
+            "product.invitations.create",
         ],
-        inherits=[UserRole.PRODUCT_SUPPORT],
+        inherits=[UserRole.TESTER],
     ),
     UserRole.ADMIN: PermissionDict(
         can=[

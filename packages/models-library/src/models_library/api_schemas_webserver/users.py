@@ -88,7 +88,6 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         "GUEST",
         "USER",
         "TESTER",
-        "PRODUCT_SUPPORT",
         "PRODUCT_OWNER",
         "ADMIN",
     ]
