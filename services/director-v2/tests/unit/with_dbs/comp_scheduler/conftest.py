@@ -76,7 +76,7 @@ def with_disabled_scheduler_publisher(mocker: MockerFixture) -> mock.Mock:
 def with_short_max_wait_for_clusters_keeper(
     monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
 ) -> datetime.timedelta:
-    short_time = datetime.timedelta(seconds=5)
+    short_time = datetime.timedelta(seconds=2)
     setenvs_from_dict(
         monkeypatch,
         {"COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT": f"{short_time}"},
