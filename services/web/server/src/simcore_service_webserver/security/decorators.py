@@ -30,7 +30,7 @@ def permission_required(permissions: str):
 
 
 def group_or_role_permission_required(permission: str):
-    """Decorator that checks user permissions via both roles AND groups (OR logic).
+    """Decorator that checks user permissions via role or gorup membership
 
     User gets access if they have permission via role OR group membership.
 
