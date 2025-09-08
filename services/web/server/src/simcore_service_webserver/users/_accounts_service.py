@@ -36,7 +36,10 @@ async def pre_register_user(
 ) -> UserAccountGet:
 
     found = await search_users_accounts(
-        app, email_glob=profile.email, product_name=product_name, include_products=False
+        app,
+        filter_by_email_glob=profile.email,
+        product_name=product_name,
+        include_products=False,
     )
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
@@ -70,7 +73,10 @@ async def pre_register_user(
     )
 
     found = await search_users_accounts(
-        app, email_glob=profile.email, product_name=product_name, include_products=False
+        app,
+        filter_by_email_glob=profile.email,
+        product_name=product_name,
+        include_products=False,
     )
 
     assert len(found) == 1  # nosec
@@ -143,7 +149,9 @@ async def list_user_accounts(
 async def search_users_accounts(
     app: web.Application,
     *,
-    email_glob: str,
+    filter_by_email_glob: str | None = None,
+    filter_by_primary_group_id: int | None = None,
+    filter_by_user_name_glob: str | None = None,
     product_name: ProductName | None = None,
     include_products: bool = False,
 ) -> list[UserAccountGet]:
@@ -156,6 +164,14 @@ async def search_users_accounts(
     no caller or context is available.
     """
 
+    if (
+        filter_by_email_glob is None
+        and filter_by_user_name_glob is None
+        and filter_by_primary_group_id is None
+    ):
+        msg = "At least one filter (email glob, user name like, or primary group ID) must be provided"
+        raise ValueError(msg)
+
     def _glob_to_sql_like(glob_pattern: str) -> str:
         # Escape SQL LIKE special characters in the glob pattern
         sql_like_pattern = glob_pattern.replace("%", r"\%").replace("_", r"\_")
@@ -164,7 +180,15 @@ async def search_users_accounts(
 
     rows = await _accounts_repository.search_merged_pre_and_registered_users(
         get_asyncpg_engine(app),
-        filter_by_email_like=_glob_to_sql_like(email_glob),
+        filter_by_email_like=(
+            _glob_to_sql_like(filter_by_email_glob) if filter_by_email_glob else None
+        ),
+        filter_by_primary_group_id=filter_by_primary_group_id,
+        filter_by_user_name_like=(
+            _glob_to_sql_like(filter_by_user_name_glob)
+            if filter_by_user_name_glob
+            else None
+        ),
         product_name=product_name,
     )
 

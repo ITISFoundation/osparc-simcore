@@ -1,7 +1,8 @@
 import re
+from ast import TypeAlias
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
@@ -18,6 +19,7 @@ from pydantic import (
     StringConstraints,
     ValidationInfo,
     field_validator,
+    model_validator,
 )
 from pydantic.config import JsonDict
 
@@ -313,15 +315,40 @@ class UserAccountReject(InputSchema):
     email: EmailStr
 
 
+GlobString: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        min_length=3, max_length=200, strip_whitespace=True, pattern=r"^[^%]*$"
+    ),
+]
+
+
 class UserAccountSearchQueryParams(RequestParameters):
     email: Annotated[
-        str,
+        GlobString | None,
         Field(
-            min_length=3,
-            max_length=200,
             description="complete or glob pattern for an email",
         ),
-    ]
+    ] = None
+    primary_group_id: Annotated[
+        GroupID | None,
+        Field(
+            description="Filter by primary group ID",
+        ),
+    ] = None
+    user_name: Annotated[
+        GlobString | None,
+        Field(
+            description="complete or glob pattern for a username",
+        ),
+    ] = None
+
+    @model_validator(mode="after")
+    def _validate_at_least_one_filter(self) -> Self:
+        if not any([self.email, self.primary_group_id, self.user_name]):
+            msg = "At least one filter (email, primary_group_id, or user_name) must be provided"
+            raise ValueError(msg)
+        return self
 
 
 class UserAccountGet(OutputSchema):

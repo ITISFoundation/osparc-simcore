@@ -113,7 +113,11 @@ async def search_user_accounts(request: web.Request) -> web.Response:
     )
 
     found = await _accounts_service.search_users_accounts(
-        request.app, email_glob=query_params.email, include_products=True
+        request.app,
+        filter_by_email_glob=query_params.email,
+        filter_by_primary_group_id=query_params.primary_group_id,
+        filter_by_user_name_glob=query_params.user_name,
+        include_products=True,
     )
 
     return envelope_json_response(
@@ -214,7 +218,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
             # get pre-registration data
             found = await _accounts_service.search_users_accounts(
                 request.app,
-                email_glob=approval_data.email,
+                filter_by_email_glob=approval_data.email,
                 product_name=req_ctx.product_name,
                 include_products=False,
             )
@@ -270,7 +274,7 @@ async def reject_user_account(request: web.Request) -> web.Response:
         # get pre-registration data
         found = await _accounts_service.search_users_accounts(
             request.app,
-            email_glob=rejection_data.email,
+            filter_by_email_glob=rejection_data.email,
             product_name=req_ctx.product_name,
             include_products=False,
         )
