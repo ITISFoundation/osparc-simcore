@@ -77,31 +77,18 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           break;
       }
 
-      const phone = new qx.ui.form.TextField();
+      const phone = new osparc.ui.form.IntlTelInput().set({
+        compactField: true,
+      });
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
 
 
-      const organization = new qx.ui.form.TextField();
-      doubleSpaced.push(organization);
-      switch (osparc.product.Utils.getProductName()) {
-        case "s4l":
-          this._form.add(organization, this.tr("Company Name"), null, "company");
-          organization.setRequired(true);
-          break;
-        case "s4lacad":
-        case "s4ldesktopacad":
-          this._form.add(organization, this.tr("University"), null, "university");
-          organization.setRequired(true);
-          break;
-        case "tiplite":
-          this._form.add(organization, this.tr("University"), null, "university");
-          break;
-        case "tis":
-          this._form.add(organization, this.tr("Organization"), null, "organization");
-          break;
-        case "osparc":
-          this._form.add(organization, this.tr("Research Group/Organization"), null, "organization");
-          break;
+      const institution = new qx.ui.form.TextField();
+      doubleSpaced.push(institution);
+      const institutionAlias = osparc.product.Utils.getInstitutionAlias();
+      this._form.add(institution, institutionAlias.label, null, institutionAlias.key);
+      if (institutionAlias.required) {
+        institution.setRequired(true);
       }
 
 
@@ -127,7 +114,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       doubleSpaced.push(country);
-      const countries = osparc.store.StaticInfo.getInstance().getCountries();
+      const countries = osparc.store.StaticInfo.getCountries();
       countries.forEach(c => {
         const cItem = new qx.ui.form.ListItem(c.name, null, c.alpha2).set({
           rich: true
@@ -416,6 +403,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           this.fireDataEvent("done");
         })
         .catch(err => {
+          if ("errors" in err) {
+            osparc.utils.Utils.errorsToForm(this._form, err.errors);
+          }
           osparc.FlashMessenger.logError(err);
           this.__restartCaptcha();
         });

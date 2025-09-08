@@ -29,6 +29,7 @@ from models_library.functions import (
     RegisteredFunctionDB,
     RegisteredFunctionJobCollectionDB,
     RegisteredFunctionJobDB,
+    RegisteredFunctionJobWithStatusDB,
 )
 from models_library.functions_errors import (
     FunctionBaseError,
@@ -232,6 +233,44 @@ async def create_function_job(  # noqa: PLR0913
         )
 
     return registered_function_job
+
+
+async def patch_function_job(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    registered_function_job_db: RegisteredFunctionJobDB,
+) -> RegisteredFunctionJobDB:
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
+        await check_user_api_access_rights(
+            app,
+            connection=transaction,
+            user_id=user_id,
+            product_name=product_name,
+            api_access_rights=[
+                FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
+            ],
+        )
+        result = await transaction.execute(
+            function_jobs_table.update()
+            .where(function_jobs_table.c.uuid == f"{registered_function_job_db.uuid}")
+            .values(
+                inputs=registered_function_job_db.inputs,
+                outputs=registered_function_job_db.outputs,
+                function_class=registered_function_job_db.function_class,
+                class_specific_data=registered_function_job_db.class_specific_data,
+                title=registered_function_job_db.title,
+                description=registered_function_job_db.description,
+                status="created",
+            )
+            .returning(*_FUNCTION_JOBS_TABLE_COLS)
+        )
+        row = result.one()
+
+        return RegisteredFunctionJobDB.model_validate(row)
 
 
 async def create_function_job_collection(
@@ -466,7 +505,7 @@ async def list_functions(
         )
 
 
-async def list_function_jobs(
+async def list_function_jobs_with_status(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -477,7 +516,7 @@ async def list_function_jobs(
     filter_by_function_id: FunctionID | None = None,
     filter_by_function_job_ids: list[FunctionJobID] | None = None,
     filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
-) -> tuple[list[RegisteredFunctionJobDB], PageMetaInfoLimitOffset]:
+) -> tuple[list[RegisteredFunctionJobWithStatusDB], PageMetaInfoLimitOffset]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         await check_user_api_access_rights(
             app,
@@ -539,7 +578,7 @@ async def list_function_jobs(
                 total=0, offset=pagination_offset, limit=pagination_limit, count=0
             )
         results = [
-            RegisteredFunctionJobDB.model_validate(row)
+            RegisteredFunctionJobWithStatusDB.model_validate(row)
             async for row in await conn.stream(
                 function_jobs_table.select()
                 .where(filter_conditions)

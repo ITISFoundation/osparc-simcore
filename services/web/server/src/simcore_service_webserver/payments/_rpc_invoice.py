@@ -31,7 +31,9 @@ async def get_invoice_data(
         app, product_name=product_name
     )
     user_invoice_address: UserInvoiceAddress = (
-        await users_service.get_user_invoice_address(app, user_id=user_id)
+        await users_service.get_user_invoice_address(
+            app, product_name=product_name, user_id=user_id
+        )
     )
     user_info = await users_service.get_user_display_and_id_names(app, user_id=user_id)
 

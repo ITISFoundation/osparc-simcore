@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     this._resourcesInitialized = false;
 
-    this._showLoadingPage(this.tr("Starting") + " " + osparc.store.StaticInfo.getInstance().getDisplayName());
+    this._showLoadingPage(this.tr("Starting") + " " + osparc.store.StaticInfo.getDisplayName());
 
     const padding = osparc.dashboard.Dashboard.PADDING;
     const leftColumnWidth = this.self().SIDE_SPACER_WIDTH;
@@ -737,6 +737,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           win.close();
         }
         win.addListener("cancel", () => cancelStudyOptions());
+        win.getChildControl("close-button").addListener("tap", () => cancelStudyOptions());
         studyOptions.addListener("cancel", () => cancelStudyOptions());
         studyOptions.addListener("startStudy", () => {
           const newName = studyOptions.getChildControl("title-field").getValue();

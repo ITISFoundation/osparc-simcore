@@ -4,7 +4,7 @@
 
 
 import json
-import random
+import secrets
 
 import pytest
 from aws_library.ec2 import EC2InstanceBootSpecific
@@ -53,10 +53,8 @@ def test_multiple_primary_ec2_instances_raises(
         {
             "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
-                    ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                    ec2_type_name: secrets.choice(
+                        EC2InstanceBootSpecific.model_json_schema()["examples"]
                     )
                     for ec2_type_name in ec2_instances
                 }

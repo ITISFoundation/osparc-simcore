@@ -268,6 +268,7 @@ async def _test_monitor_buffer_machines(
 
 
 async def test_monitor_buffer_machines(
+    patch_ec2_client_launch_instances_min_number_of_instances: None,
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,
@@ -374,6 +375,7 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
 
 
 async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_pulled_images(
+    patch_ec2_client_launch_instances_min_number_of_instances: None,
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,
@@ -457,6 +459,7 @@ def unneeded_instance_type(
     ],
 )
 async def test_monitor_buffer_machines_terminates_unneeded_pool(
+    patch_ec2_client_launch_instances_min_number_of_instances: None,
     minimal_configuration: None,
     ec2_client: EC2Client,
     buffer_count: int,

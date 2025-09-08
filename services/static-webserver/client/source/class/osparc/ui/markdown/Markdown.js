@@ -100,6 +100,9 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
           }
         };
         marked.use({ renderer });
+        // By default, Markdown requires two spaces at the end of a line or a blank line between paragraphs to produce a line break.
+        // With this, a single line break (Enter) in your Markdown input will render as a <br> in HTML.
+        marked.setOptions({ breaks: true }); //
 
         const html = marked.parse(value);
 

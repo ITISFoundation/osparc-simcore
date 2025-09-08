@@ -22,7 +22,10 @@ from servicelib.fastapi.http_client_thin import (
     BaseHttpClientError,
     UnexpectedStatusError,
 )
-from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.fastapi.long_running_tasks.client import (
+    HttpClient,
+    periodic_task_result,
+)
 from servicelib.logging_utils import log_context, log_decorator
 from servicelib.long_running_tasks.models import (
     ProgressCallback,
@@ -288,8 +291,8 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             dynamic_sidecar_endpoint, compose_spec=compose_spec
         )
 
-    def _get_client(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Client:
-        return Client(
+    def _get_client(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> HttpClient:
+        return HttpClient(
             app=self._app,
             async_client=self._async_client,
             base_url=f"{dynamic_sidecar_endpoint}",

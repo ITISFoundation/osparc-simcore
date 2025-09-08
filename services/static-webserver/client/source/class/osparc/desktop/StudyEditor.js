@@ -254,7 +254,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       // Count dynamic services.
       // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
-      const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
+      const maxNumber = osparc.store.StaticInfo.getMaxNumberDyNodes();
       const dontCheck = study.getDisableServiceAutoStart();
       if (maxNumber && !dontCheck) {
         const nodes = study.getWorkbench().getNodes();

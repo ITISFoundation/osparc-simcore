@@ -44,14 +44,7 @@ qx.Class.define("osparc.data.model.User", {
     } else if (userData["lastName"]) {
       lastName = userData["lastName"];
     }
-    let description = [firstName, lastName].join(" ").trim(); // the null values will be replaced by empty strings
-    if (email) {
-      if (description) {
-        description += " - "
-      }
-      description += email;
-    }
-    const thumbnail = osparc.utils.Avatar.emailToThumbnail(email, username);
+
     this.set({
       userId,
       groupId,
@@ -60,9 +53,29 @@ qx.Class.define("osparc.data.model.User", {
       lastName,
       email,
       phoneNumber: userData["phone"] || null,
-      thumbnail,
+    });
+
+    const description = osparc.data.model.User.userDataToDescription(firstName, lastName, email);
+    this.set({
       label: userData["userName"] || description,
       description,
+    });
+
+    if (userData["contact"]) {
+      const contact = userData["contact"];
+      this.set({
+        institution: contact["institution"] || null,
+        address: contact["address"] || null,
+        city: contact["city"] || null,
+        state: contact["state"] || null,
+        country: contact["country"] || null,
+        postalCode: contact["postalCode"] || null,
+      });
+    }
+
+    // create the thumbnail after setting email and username
+    this.set({
+      thumbnail: this.createThumbnail(),
     });
   },
 
@@ -135,6 +148,75 @@ qx.Class.define("osparc.data.model.User", {
       nullable: true,
       init: "",
       event: "changeThumbnail",
+    },
+
+    institution: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeInstitution",
+    },
+
+    address: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeAddress",
+    },
+
+    city: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeCity",
+    },
+
+    state: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeState",
+    },
+
+    country: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeCountry",
+    },
+
+    postalCode: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changePostalCode",
+    },
+  },
+
+  statics: {
+    concatFullName: function(firstName, lastName) {
+      return [firstName, lastName].filter(Boolean).join(" ");
+    },
+
+    userDataToDescription: function(firstName, lastName, email) {
+      let description = this.concatFullName(firstName, lastName);
+      if (email) {
+        if (description) {
+          description += " - "
+        }
+        description += email;
+      }
+      return description;
+    },
+  },
+
+  members: {
+    createThumbnail: function(size) {
+      return osparc.utils.Avatar.emailToThumbnail(this.getEmail(), this.getUsername(), size);
+    },
+
+    getFullName: function() {
+      return this.self().concatFullName(this.getFirstName(), this.getLastName());
     },
   },
 });

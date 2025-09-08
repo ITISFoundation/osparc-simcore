@@ -155,6 +155,39 @@ qx.Class.define("osparc.product.Utils", {
       return resourceType;
     },
 
+    getInstitutionAlias: function() {
+      switch (osparc.product.Utils.getProductName()) {
+        case "s4l":
+          return {
+            label: qx.locale.Manager.tr("Company Name"),
+            key: "company",
+            required: true,
+          };
+        case "s4lacad":
+        case "s4ldesktopacad":
+          return {
+            label: qx.locale.Manager.tr("University"),
+            key: "university",
+            required: true,
+          };
+        case "tiplite":
+          return {
+            label: qx.locale.Manager.tr("University"),
+            key: "university",
+          };
+        case "tis":
+          return {
+            label: qx.locale.Manager.tr("Organization"),
+            key: "organization",
+          };
+        case "osparc":
+          return {
+            label: qx.locale.Manager.tr("Research Group/Organization"),
+            key: "organization",
+          };
+      }
+    },
+
     getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
@@ -218,7 +251,7 @@ qx.Class.define("osparc.product.Utils", {
     getCreateAccountAction: function() {
       const config = osparc.store.Store.getInstance().get("config");
       if (config["invitation_required"]) {
-        const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+        const vendor = osparc.store.VendorInfo.getVendor();
         if (vendor["invitation_form"]) {
           // If invitation_required (login_settings) and invitation_form (vendor)
           return "REQUEST_ACCOUNT_FORM";
@@ -289,7 +322,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showTemplates: function() {
-      if (osparc.data.Permissions.getInstance().isTester()) {
+      if (osparc.data.Permissions.getInstance().isProductOwner()) {
         return true;
       }
 
@@ -300,7 +333,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showPublicProjects: function() {
-      if (osparc.data.Permissions.getInstance().isTester()) {
+      if (osparc.data.Permissions.getInstance().isProductOwner()) {
         return true;
       }
 
@@ -416,10 +449,6 @@ qx.Class.define("osparc.product.Utils", {
 
     groupServices: function() {
       return Boolean(osparc.store.Products.getInstance().getGroupedServicesUiConfig());
-    },
-
-    isSupportEnabled: function() {
-      return Boolean(osparc.store.Products.getInstance().getSupportGroupId());
     },
   }
 });

@@ -22,6 +22,8 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
+    RegisteredFunctionJobPatch,
+    RegisteredFunctionJobWithStatus,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -192,6 +194,40 @@ async def list_function_jobs(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+async def list_function_jobs_with_status(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    pagination_offset: int,
+    pagination_limit: int,
+    filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+) -> tuple[
+    list[RegisteredFunctionJobWithStatus],
+    PageMetaInfoLimitOffset,
+]:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_function_jobs_with_status"),
+        user_id=user_id,
+        product_name=product_name,
+        pagination_offset=pagination_offset,
+        pagination_limit=pagination_limit,
+        filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+    )
+    return TypeAdapter(
+        tuple[
+            list[RegisteredFunctionJobWithStatus],
+            PageMetaInfoLimitOffset,
+        ]
+    ).validate_python(result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
 async def list_function_job_collections(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
@@ -291,6 +327,28 @@ async def register_function_job(
         function_job=function_job,
         user_id=user_id,
         product_name=product_name,
+    )
+    return TypeAdapter(RegisteredFunctionJob).validate_python(
+        result
+    )  # Validates the result as a RegisteredFunctionJob
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def patch_registered_function_job(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_uuid: FunctionJobID,
+    registered_function_job_patch: RegisteredFunctionJobPatch,
+) -> RegisteredFunctionJob:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("patch_registered_function_job"),
+        user_id=user_id,
+        product_name=product_name,
+        function_job_uuid=function_job_uuid,
+        registered_function_job_patch=registered_function_job_patch,
     )
     return TypeAdapter(RegisteredFunctionJob).validate_python(
         result

@@ -144,6 +144,27 @@ qx.Class.define("osparc.support.Conversation", {
     __applyConversation: function(conversation) {
       this.__reloadMessages(true);
 
+      if (conversation) {
+        conversation.addListener("messageAdded", e => {
+          const data = e.getData();
+          this.addMessage(data);
+        });
+        conversation.addListener("messageUpdated", e => {
+          const data = e.getData();
+          this.updateMessage(data);
+        });
+        conversation.addListener("messageDeleted", e => {
+          const data = e.getData();
+          this.deleteMessage(data);
+        });
+      }
+
+      this.__populateShareProjectCheckbox();
+    },
+
+    __populateShareProjectCheckbox: function() {
+      const conversation = this.getConversation();
+
       const shareProjectCB = this.getChildControl("share-project-checkbox");
       const shareProjectLayout = this.getChildControl("share-project-layout");
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
@@ -169,7 +190,7 @@ qx.Class.define("osparc.support.Conversation", {
           .then(studyData => {
             let isAlreadyShared = false;
             const accessRights = studyData["accessRights"];
-            const supportGroupId = osparc.store.Products.getInstance().getSupportGroupId();
+            const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
             if (supportGroupId && supportGroupId in accessRights) {
               isAlreadyShared = true;
             } else {
@@ -186,7 +207,7 @@ qx.Class.define("osparc.support.Conversation", {
 
     __shareProjectWithSupport: function(e) {
       const share = e.getData();
-      const supportGroupId = osparc.store.Products.getInstance().getSupportGroupId();
+      const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
       const projectId = this.getConversation().getContextProjectId();
       osparc.store.Study.getInstance().getOne(projectId)
         .then(studyData => {
@@ -302,12 +323,13 @@ qx.Class.define("osparc.support.Conversation", {
 
       // Update the UI element from the messages list
       const messagesContainer = this.getChildControl("messages-container");
-      messagesContainer.getChildren().forEach(control => {
-        if ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]) {
-          control.setMessage(message);
-          return;
-        }
+      const messageUI = messagesContainer.getChildren().find(control => {
+        return "getMessage" in control && control.getMessage()["messageId"] === message["messageId"];
       });
+      if (messageUI) {
+        // Force a new reference
+        messageUI.setMessage(Object.assign({}, message));
+      }
     },
   }
 });

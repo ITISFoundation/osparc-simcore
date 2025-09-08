@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.12.0"
+    "version": "0.13.0"
   },
   "paths": {
     "/v0/meta": {
@@ -5457,7 +5457,7 @@
           "function_jobs"
         ],
         "summary": "List Function Jobs",
-        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
+        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`\n\nAdded in *version 0.13.0*: add include_status bool query parameter to list function jobs with their status",
         "operationId": "list_function_jobs",
         "security": [
           {
@@ -5465,6 +5465,18 @@
           }
         ],
         "parameters": [
+          {
+            "name": "include_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include job status in response",
+              "default": false,
+              "title": "Include Status"
+            },
+            "description": "Include job status in response"
+          },
           {
             "name": "limit",
             "in": "query",
@@ -5555,7 +5567,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                  "$ref": "#/components/schemas/PageRegisteredFunctionJobWithorWithoutStatus"
                 }
               }
             }
@@ -9934,6 +9946,108 @@
         ],
         "title": "OnePage[StudyPort]"
       },
+      "PageRegisteredFunctionJobWithorWithoutStatus": {
+        "properties": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJobWithStatus"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJobWithStatus",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJobWithStatus",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJobWithStatus"
+                    }
+                  }
+                },
+                {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "function_class",
+                    "mapping": {
+                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
+                    }
+                  }
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "links"
+        ],
+        "title": "PageRegisteredFunctionJobWithorWithoutStatus"
+      },
       "Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____": {
         "properties": {
           "items": {
@@ -10749,9 +10863,27 @@
             "default": "PROJECT"
           },
           "project_job_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Project Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
           }
         },
         "type": "object",
@@ -10759,7 +10891,8 @@
           "function_uid",
           "inputs",
           "outputs",
-          "project_job_id"
+          "project_job_id",
+          "job_creation_task_id"
         ],
         "title": "ProjectFunctionJob"
       },
@@ -11079,9 +11212,27 @@
             "title": "Created At"
           },
           "project_job_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Project Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
           }
         },
         "type": "object",
@@ -11091,9 +11242,107 @@
           "outputs",
           "uid",
           "created_at",
-          "project_job_id"
+          "project_job_id",
+          "job_creation_task_id"
         ],
         "title": "RegisteredProjectFunctionJob"
+      },
+      "RegisteredProjectFunctionJobWithStatus": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "function_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Function Uid"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "PROJECT",
+            "title": "Function Class",
+            "default": "PROJECT"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FunctionJobStatus"
+          },
+          "project_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function_uid",
+          "inputs",
+          "outputs",
+          "uid",
+          "created_at",
+          "status",
+          "project_job_id",
+          "job_creation_task_id"
+        ],
+        "title": "RegisteredProjectFunctionJobWithStatus"
       },
       "RegisteredPythonCodeFunction": {
         "properties": {
@@ -11253,6 +11502,78 @@
         ],
         "title": "RegisteredPythonCodeFunctionJob"
       },
+      "RegisteredPythonCodeFunctionJobWithStatus": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "function_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Function Uid"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "PYTHON_CODE",
+            "title": "Function Class",
+            "default": "PYTHON_CODE"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FunctionJobStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function_uid",
+          "inputs",
+          "outputs",
+          "uid",
+          "created_at",
+          "status"
+        ],
+        "title": "RegisteredPythonCodeFunctionJobWithStatus"
+      },
       "RegisteredSolverFunction": {
         "properties": {
           "function_class": {
@@ -11408,9 +11729,27 @@
             "title": "Created At"
           },
           "solver_job_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Solver Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
           }
         },
         "type": "object",
@@ -11420,9 +11759,107 @@
           "outputs",
           "uid",
           "created_at",
-          "solver_job_id"
+          "solver_job_id",
+          "job_creation_task_id"
         ],
         "title": "RegisteredSolverFunctionJob"
+      },
+      "RegisteredSolverFunctionJobWithStatus": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "function_uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Function Uid"
+          },
+          "inputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inputs"
+          },
+          "outputs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs"
+          },
+          "function_class": {
+            "type": "string",
+            "const": "SOLVER",
+            "title": "Function Class",
+            "default": "SOLVER"
+          },
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/FunctionJobStatus"
+          },
+          "solver_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solver Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function_uid",
+          "inputs",
+          "outputs",
+          "uid",
+          "created_at",
+          "status",
+          "solver_job_id",
+          "job_creation_task_id"
+        ],
+        "title": "RegisteredSolverFunctionJobWithStatus"
       },
       "RunningState": {
         "type": "string",
@@ -11701,9 +12138,27 @@
             "default": "SOLVER"
           },
           "solver_job_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Solver Job Id"
+          },
+          "job_creation_task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Creation Task Id"
           }
         },
         "type": "object",
@@ -11711,7 +12166,8 @@
           "function_uid",
           "inputs",
           "outputs",
-          "solver_job_id"
+          "solver_job_id",
+          "job_creation_task_id"
         ],
         "title": "SolverFunctionJob"
       },

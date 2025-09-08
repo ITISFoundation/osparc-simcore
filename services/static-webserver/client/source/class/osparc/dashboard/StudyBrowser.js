@@ -642,7 +642,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _trashFolderRequested: function(folderId) {
-      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
       let msg = this.tr("Are you sure you want to delete the Folder and all its content?");
       msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
@@ -806,6 +806,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           currentParams[key] = value;
         }
       });
+      if ([
+        osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS,
+        osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
+      ].includes(this.getCurrentContext())) {
+        currentParams.orderBy = osparc.store.Functions.curateOrderBy(currentParams.orderBy);
+      }
 
       // check the entries in currentParams are the same as the reqParams
       let sameContext = true;
@@ -890,7 +896,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
-          delete requestParams.orderBy; // functions do not support ordering yet
           requestParams.includeExtras = "true";
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS: {
@@ -972,7 +977,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     invalidateFunctions: function() {
-      osparc.store.Functions.invalidateFunctions();
       this.__resetStudiesList();
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
@@ -1360,8 +1364,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._searchBarFilter.setEnabled(true);
       // workspaces will exclude it
       this._toolbar.show();
-      // functions will exclude it
-      this.__sortByButton.show();
+      // functions will hide some option
+      this.__sortByButton.showAllOptions();
 
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
@@ -1413,8 +1417,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._searchBarFilter.resetFilters();
           }
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Functions");
-          // functions can't be sorted yet
-          this.__sortByButton.exclude();
+          // functions don't support all options yet
+          this.__sortByButton.hideOptionButton("name");
+          this.__sortByButton.hideOptionButton("prj_owner");
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateFunctions();
           this.__reloadStudies();
@@ -2365,7 +2370,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         msg += ` '${studyNames[0]}'?`;
       }
-      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
       msg += "<br><br>" + (studyNames.length > 1 ? "They" : "It") + this.tr(` will be permanently deleted after ${trashDays} days.`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete"),

@@ -1,6 +1,5 @@
-""" Computational Pipeline Table
+"""Computational Pipeline Table"""
 
-"""
 import enum
 import uuid
 
@@ -24,6 +23,7 @@ class StateType(enum.Enum):
     ABORTED = "ABORTED"
     WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
     WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
+    UNKNOWN = "UNKNOWN"
 
 
 def _new_uuid():

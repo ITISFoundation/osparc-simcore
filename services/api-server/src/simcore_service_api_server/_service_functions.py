@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from common_library.exclude import as_dict_exclude_none
-from models_library.functions import FunctionClass, RegisteredFunction
+from models_library.functions import FunctionClass, FunctionID, RegisteredFunction
 from models_library.functions_errors import UnsupportedFunctionClassError
 from models_library.products import ProductName
 from models_library.rest_pagination import (
@@ -67,4 +67,12 @@ class FunctionService:
             )
         raise UnsupportedFunctionClassError(
             function_class=function.function_class,
+        )
+
+    async def get_function(self, function_id: FunctionID) -> RegisteredFunction:
+        """Fetch a function by its ID"""
+        return await self._web_rpc_client.get_function(
+            user_id=self.user_id,
+            product_name=self.product_name,
+            function_id=function_id,
         )

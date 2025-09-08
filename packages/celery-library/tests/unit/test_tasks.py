@@ -11,9 +11,9 @@ from collections.abc import Callable
 from random import randint
 
 import pytest
-from celery import Celery, Task
-from celery.contrib.abortable import AbortableTask
-from celery.worker.worker import WorkController
+from celery import Celery, Task  # pylint: disable=no-name-in-module
+from celery.contrib.abortable import AbortableTask  # pylint: disable=no-name-in-module
+from celery.worker.worker import WorkController # pylint: disable=no-name-in-module
 from celery_library.errors import TransferrableCeleryError
 from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager

@@ -12,20 +12,23 @@ from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI, status
 from httpx import ASGITransport, AsyncClient
+from models_library.api_schemas_directorv2.dynamic_services import (
+    ContainersComposeSpec,
+    ContainersCreate,
+)
 from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.fastapi.long_running_tasks.client import (
+    HttpClient,
+    periodic_task_result,
+)
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.models import TaskId
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
-from simcore_service_dynamic_sidecar.models.schemas.containers import (
-    ContainersComposeSpec,
-    ContainersCreate,
-)
 from simcore_service_dynamic_sidecar.modules.prometheus_metrics import (
     _USER_SERVICES_NOT_STARTED,
     UserServicesMetrics,
@@ -98,10 +101,12 @@ async def httpx_async_client(
 
 
 @pytest.fixture
-def client(
+def http_client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
-) -> Client:
-    return Client(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
+) -> HttpClient:
+    return HttpClient(
+        app=app, async_client=httpx_async_client, base_url=f"{backend_url}"
+    )
 
 
 @pytest.fixture
@@ -157,7 +162,7 @@ async def test_metrics_enabled_containers_will_start(
     enable_prometheus_metrics: None,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    http_client: HttpClient,
     compose_spec: str,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
@@ -167,7 +172,7 @@ async def test_metrics_enabled_containers_will_start(
     assert _USER_SERVICES_NOT_STARTED in response.text
 
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
