@@ -2387,7 +2387,7 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
             len(expected_timeouted_tasks)
         )
         mocked_dask_client.get_task_result.reset_mock()
-        await asyncio.sleep(0.5)  # wait a bit to ensure the retry decorator has reset
+
     comp_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=running_project.project.uuid,
@@ -2412,6 +2412,28 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
         sqlalchemy_async_engine,
         expected_total=1,
         expected_state=RunningState.STARTED,
+        where_statement=and_(
+            comp_runs.c.user_id == running_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{running_project.project.uuid}",
+        ),
+    )
+
+    # now we wait for the max time and the task should be marked as FAILED
+    await asyncio.sleep(with_short_max_wait_for_retrieving_results.total_seconds() + 1)
+    await scheduler_api.apply(
+        user_id=running_project.project.prj_owner,
+        project_id=running_project.project.uuid,
+        iteration=1,
+    )
+    assert mocked_dask_client.get_task_result.call_count == len(
+        expected_timeouted_tasks
+    )
+    # NOTE: we do not check all tasks here as some are depending on random others
+    # so some are ABORTED and others are FAILED depending on the random sample above
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.FAILED,
         where_statement=and_(
             comp_runs.c.user_id == running_project.project.prj_owner,
             comp_runs.c.project_uuid == f"{running_project.project.uuid}",

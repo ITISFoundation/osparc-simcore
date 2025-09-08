@@ -363,11 +363,19 @@ class DaskScheduler(BaseCompScheduler):
             )
         )
         task_errors: list[ErrorDict] = []
+        check_time = arrow.utcnow()
         if task.errors:
             for error in task.errors:
                 if error["type"] == _TASK_RETRIEVAL_ERROR_TYPE:
                     # already had a timeout error, let's keep it
                     task_errors.append(error)
+                    assert "ctx" in error  # nosec
+                    assert (
+                        _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error["ctx"]
+                    )  # nosec
+                    check_time = arrow.get(
+                        error["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY]
+                    )
                     break
         if not task_errors:
             # first time we have this error
@@ -377,7 +385,7 @@ class DaskScheduler(BaseCompScheduler):
                     msg=f"{result}",
                     type=_TASK_RETRIEVAL_ERROR_TYPE,
                     ctx={
-                        _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: f"{arrow.utcnow()}",
+                        _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: f"{check_time}",
                         "user_id": user_id,
                         "project_id": f"{task.project_id}",
                         "node_id": f"{task.node_id}",
@@ -385,6 +393,14 @@ class DaskScheduler(BaseCompScheduler):
                     },
                 )
             )
+
+        # if the task has been running for too long, we consider it failed
+        elapsed_time = arrow.utcnow() - check_time
+        if (
+            elapsed_time
+            > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_RETRIEVING_RESULTS
+        ):
+            return RunningState.FAILED, SimcorePlatformStatus.BAD, task_errors, True
         # state is kept as STARTED so it will be retried
         return RunningState.STARTED, SimcorePlatformStatus.BAD, task_errors, False
 
@@ -457,10 +473,6 @@ class DaskScheduler(BaseCompScheduler):
     ) -> tuple[bool, str]:
         """Returns True and the job ID if the task was successfully processed and can be released from the Dask cluster."""
         _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
-        task_final_state = RunningState.FAILED
-        simcore_platform_status = SimcorePlatformStatus.OK
-        task_errors: list[ErrorDict] = []
-        task_completed = True
 
         assert task.job_id  # nosec
         (
