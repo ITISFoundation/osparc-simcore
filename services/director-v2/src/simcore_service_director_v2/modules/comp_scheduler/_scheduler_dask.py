@@ -320,7 +320,7 @@ class DaskScheduler(BaseCompScheduler):
                     if task_can_be_cleaned:
                         await client.release_task_result(job_id)
 
-    async def _handle_succesfull_run(
+    async def _handle_successful_run(
         self,
         task: CompTaskAtDB,
         result: TaskOutputData,
