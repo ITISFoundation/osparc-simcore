@@ -130,12 +130,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             if (
               isStudyCreation ||
               wallet === null ||
-              currentUserGroupIds.length === 0
+              (osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null && currentUserGroupIds.length === 0)
             ) {
               // pop up StudyOptions if:
               // - the study was just created
               // - it has no wallet assigned
-              // - the project is not being used
+              // - I have no access to it and the project is not being used
               const resourceSelector = new osparc.study.StudyOptions(studyId);
               if (isStudyCreation) {
                 resourceSelector.getChildControl("open-button").setLabel(qx.locale.Manager.tr("New"));
