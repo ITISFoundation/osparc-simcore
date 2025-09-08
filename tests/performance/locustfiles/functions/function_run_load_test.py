@@ -54,16 +54,14 @@ class WebApiUser(OsparcWebUserBase):
         )
 
         # run function
-        kwargs = {}
         job_input_faker = jsf.JSF(job_input_schema)
-        kwargs["json"] = job_input_faker.generate()
-        kwargs["headers"] = {
-            "x-simcore-parent-project-uuid": "null",
-            "x-simcore-parent-node-id": "null",
-        }
-
         response = self.authenticated_post(
-            url=f"/v0/functions/{function_uid}:run", kwargs=kwargs
+            url=f"/v0/functions/{function_uid}:run",
+            json=job_input_faker.generate(),
+            headers={
+                "x-simcore-parent-project-uuid": "null",
+                "x-simcore-parent-node-id": "null",
+            },
         )
         response.raise_for_status()
         job_uid = response.json().get("uid")
