@@ -74,6 +74,12 @@ async def test_store_workflow(store: Store):
     await _assert_keys_in_hash(store, "hash2", {"key2"})
     assert await store.get("hash2", "key1", "key2", "key3") == (None, 2, None)
 
+    # increase a key in the hahs
+    assert await store.increase_and_get("hash2", "key4") == 1
+    assert await store.increase_and_get("hash2", "key4") == 2
+    assert await store.increase_and_get("hash2", "key4") == 3
+    assert await store.increase_and_get("hash2", "key4") == 4
+
     # remove hash completely
     await store.remove("hash2")
     await _assert_keys(store, set())
@@ -153,8 +159,13 @@ async def test_schedule_data_store_proxy_workflow(
     await _assert_keys(store, {hash_key})
     await _assert_keys_in_hash(store, hash_key, {"group_index", "is_creating"})
 
+    # increase and get
+    assert await proxy.increase_and_get("unknown_statuses_retry_count") == 1
+
     # remove all keys an even missing ones
-    await proxy.delete("operation_name", "is_creating", "group_index")
+    await proxy.delete(
+        "operation_name", "is_creating", "group_index", "unknown_statuses_retry_count"
+    )
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
 

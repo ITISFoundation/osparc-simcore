@@ -117,6 +117,12 @@ class Store:
         """removes the entire hash"""
         await handle_redis_returns_union_types(self._redis.delete(hash_key))
 
+    async def increase_and_get(self, hash_key: str, key: str) -> NonNegativeInt:
+        """increasea a key in a hash by 1 and returns the new value"""
+        return await handle_redis_returns_union_types(
+            self._redis.hincrby(hash_key, key, amount=1)
+        )
+
 
 class _UpdateScheduleDataDict(TypedDict):
     operation_name: NotRequired[OperationName]
@@ -126,7 +132,11 @@ class _UpdateScheduleDataDict(TypedDict):
 
 
 _DeleteScheduleDataKeys = Literal[
-    "operation_name", "operation_context", "group_index", "is_creating"
+    "operation_name",
+    "operation_context",
+    "group_index",
+    "is_creating",
+    "unknown_statuses_retry_count",
 ]
 
 
@@ -176,6 +186,11 @@ class ScheduleDataStoreProxy:
 
     async def delete(self, *keys: _DeleteScheduleDataKeys) -> None:
         await self._store.delete(self._get_hash_key(), *keys)
+
+    async def increase_and_get(
+        self, key: Literal["unknown_statuses_retry_count"]
+    ) -> NonNegativeInt:
+        return await self._store.increase_and_get(self._get_hash_key(), key)
 
 
 class _StepDict(TypedDict):
