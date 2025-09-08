@@ -11,6 +11,7 @@
 
 import asyncio
 import datetime
+import random
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass
@@ -33,6 +34,7 @@ from dask_task_models_library.container_tasks.protocol import TaskOwner
 from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.computations import CollectionRunID
+from models_library.errors import ErrorDict
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -72,6 +74,8 @@ from simcore_service_director_v2.modules.comp_scheduler._scheduler_base import (
     BaseCompScheduler,
 )
 from simcore_service_director_v2.modules.comp_scheduler._scheduler_dask import (
+    _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY,
+    _TASK_RETRIEVAL_ERROR_TYPE,
     DaskScheduler,
 )
 from simcore_service_director_v2.modules.comp_scheduler._utils import COMPLETED_STATES
@@ -2275,14 +2279,7 @@ async def test_run_new_pipeline_called_twice_prevents_duplicate_runs(
     )
 
 
-@pytest.mark.parametrize(
-    "exception_type",
-    [
-        ComputationalBackendTaskResultsNotReadyError,
-    ],
-)
 async def test_getting_task_result_raises_exception_does_not_fail_task_and_retries(
-    exception_type: Exception,
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
     mocked_dask_client: mock.MagicMock,
@@ -2300,13 +2297,21 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
         return [RunningState.SUCCESS for j in job_ids]
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
-    call_count = 0
 
-    async def mocked_get_task_result(_job_id: str) -> TaskOutputData:
-        nonlocal call_count
-        call_count += 1
-        if call_count > 1:
-            raise exception_type
+    computational_tasks = [
+        t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL
+    ]
+    expected_timeouted_tasks = random.choices(  # noqa: S311
+        computational_tasks, k=len(computational_tasks) - 1
+    )
+    successful_tasks = [
+        t for t in computational_tasks if t not in expected_timeouted_tasks
+    ]
+
+    async def mocked_get_task_result(job_id: str) -> TaskOutputData:
+        nonlocal expected_timeouted_tasks
+        if job_id in [t.job_id for t in expected_timeouted_tasks]:
+            raise ComputationalBackendTaskResultsNotReadyError(job_id=job_id)
         return TaskOutputData.model_validate({"whatever_output": 123})
 
     mocked_dask_client.get_task_result.side_effect = mocked_get_task_result
@@ -2317,10 +2322,49 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
         project_id=running_project.project.uuid,
         iteration=1,
     )
-    assert mocked_dask_client.get_task_result.call_count == len(
-        [t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL]
-    )
+    assert mocked_dask_client.get_task_result.call_count == len(computational_tasks)
     mocked_dask_client.get_task_result.reset_mock()
+
+    # check the tasks in the DB, the error shall be set there and the task state is set back to STARTED
+    comp_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=running_project.project.uuid,
+        task_ids=[t.node_id for t in expected_timeouted_tasks],
+        expected_state=RunningState.STARTED,
+        expected_progress=0,
+        run_id=running_project.runs.run_id,
+    )
+    # we should have an error in all these comp_tasks
+    retrieval_times = []
+    for t in comp_tasks:
+        assert t.errors
+        assert len(t.errors) == 1
+        error_dict = TypeAdapter(ErrorDict).validate_python(t.errors[0])
+        assert error_dict["type"] == _TASK_RETRIEVAL_ERROR_TYPE
+        assert "ctx" in error_dict
+        assert _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error_dict["ctx"]
+        retrieval_times.append(
+            error_dict["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY]
+        )
+
+    await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=running_project.project.uuid,
+        task_ids=[t.node_id for t in successful_tasks],
+        expected_state=RunningState.SUCCESS,
+        expected_progress=1.0,
+        run_id=running_project.runs.run_id,
+    )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.STARTED,
+        where_statement=and_(
+            comp_runs.c.user_id == running_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{running_project.project.uuid}",
+        ),
+    )
+
     # calling again should not raise neither but try again
     assert running_project.project.prj_owner
     for _ in range(3):
@@ -2341,3 +2385,32 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
         )
         mocked_dask_client.get_task_result.reset_mock()
         await asyncio.sleep(0.5)  # wait a bit to ensure the retry decorator has reset
+    comp_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
+        sqlalchemy_async_engine,
+        project_uuid=running_project.project.uuid,
+        task_ids=[t.node_id for t in expected_timeouted_tasks],
+        expected_state=RunningState.STARTED,
+        expected_progress=0,
+        run_id=running_project.runs.run_id,
+    )
+    # the times shall remain the same
+    for t in comp_tasks:
+        assert t.errors
+        assert len(t.errors) == 1
+        error_dict = TypeAdapter(ErrorDict).validate_python(t.errors[0])
+        assert error_dict["type"] == _TASK_RETRIEVAL_ERROR_TYPE
+        assert "ctx" in error_dict
+        assert _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error_dict["ctx"]
+        # the time shall be the same as before
+        assert (
+            error_dict["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY] in retrieval_times
+        )
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.STARTED,
+        where_statement=and_(
+            comp_runs.c.user_id == running_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{running_project.project.uuid}",
+        ),
+    )

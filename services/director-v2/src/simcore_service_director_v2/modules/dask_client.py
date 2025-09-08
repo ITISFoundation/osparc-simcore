@@ -524,6 +524,8 @@ class DaskClient:
 
     async def get_task_result(self, job_id: str) -> TaskOutputData:
         _logger.debug("getting result of %s", f"{job_id=}")
+        dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
+        dask_utils.check_scheduler_status(self.backend.client)
         try:
             task_future: distributed.Future = (
                 await dask_utils.wrap_client_async_routine(

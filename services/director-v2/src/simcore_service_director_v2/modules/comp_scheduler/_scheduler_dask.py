@@ -23,6 +23,7 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed
 
@@ -30,7 +31,7 @@ from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
     ComputationalBackendTaskResultsNotReadyError,
-    TaskSchedulingError,
+    PortsValidationError,
 )
 from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
@@ -59,6 +60,9 @@ from ._utils import (
 _logger = logging.getLogger(__name__)
 
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
+_TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
+_TASK_RETRIEVAL_ERROR_MSG: Final[str] = "Retrieval of task result timed-out"
+_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
 
 
 @asynccontextmanager
@@ -329,66 +333,121 @@ class DaskScheduler(BaseCompScheduler):
         _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
         simcore_platform_status = SimcorePlatformStatus.OK
-        errors: list[ErrorDict] = []
+        task_errors: list[ErrorDict] = []
+        task_completed = True
 
-        if task.job_id is not None:
-            (
-                _service_key,
-                _service_version,
-                user_id,
-                project_id,
-                node_id,
-            ) = parse_dask_job_id(task.job_id)
+        assert task.job_id  # nosec
+        (
+            _service_key,
+            _service_version,
+            user_id,
+            project_id,
+            node_id,
+        ) = parse_dask_job_id(task.job_id)
 
-            assert task.project_id == project_id  # nosec
-            assert task.node_id == node_id  # nosec
+        assert task.project_id == project_id  # nosec
+        assert task.node_id == node_id  # nosec
+        assert task.job_id  # nosec
+        log_error_context = {
+            "user_id": user_id,
+            "project_id": project_id,
+            "node_id": node_id,
+            "job_id": task.job_id,
+        }
 
+        if isinstance(result, TaskOutputData):
+            # That means the task successfully completed
             try:
-                if isinstance(result, TaskOutputData):
-                    # success!
-                    await parse_output_data(
-                        self.db_engine,
-                        task.job_id,
-                        result,
+                await parse_output_data(
+                    self.db_engine,
+                    task.job_id,
+                    result,
+                )
+                task_final_state = RunningState.SUCCESS
+            except PortsValidationError as err:
+                _logger.exception(
+                    **create_troubleshootting_log_kwargs(
+                        "Unexpected error while parsing output data, comp_tasks/comp_pipeline is not in sync with what was started",
+                        error=err,
+                        error_context=log_error_context,
                     )
-                    task_final_state = RunningState.SUCCESS
-                elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
-                    # Task result retrieval failed due to communication error, task will be retried
-                    # so we keep it as is
-                    assert task.job_id  # nosec
-                    return False, task.job_id
-                else:
-                    if isinstance(result, TaskCancelledError):
-                        task_final_state = RunningState.ABORTED
-
-                    else:
-                        task_final_state = RunningState.FAILED
-                        errors.append(
-                            {
-                                "loc": (
-                                    f"{task.project_id}",
-                                    f"{task.node_id}",
-                                ),
-                                "msg": f"{result}",
-                                "type": "runtime",
-                            }
-                        )
-                        if isinstance(result, ComputationalBackendNotConnectedError):
-                            simcore_platform_status = SimcorePlatformStatus.BAD
-                    # we need to remove any invalid files in the storage
-                    await clean_task_output_and_log_files_if_invalid(
-                        self.db_engine, user_id, project_id, node_id
-                    )
-            except TaskSchedulingError as err:
+                )
+                task_errors.extend(err.get_errors())
                 task_final_state = RunningState.FAILED
-                simcore_platform_status = SimcorePlatformStatus.BAD
-                errors = err.get_errors()
-                _logger.debug(
-                    "Unexpected failure while processing results of %s: %s",
-                    f"{task=}",
-                    f"{errors=}",
+                # NOTE: simcore platform state is still OK as the task ran fine, the issue is likely due to the service labels
+        elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
+            # Task result retrieval failed due to communication error, task will be retried
+            # so we keep it as is
+            _logger.warning(
+                **create_troubleshootting_log_kwargs(
+                    f"Retrieval of task {task.job_id} result timed-out",
+                    error=result,
+                    error_context=log_error_context,
+                    tip="This can happen if the computational backend is overloaded with requests. It will be automatically retried again.",
+                )
+            )
+
+            if task.errors:
+                for error in task.errors:
+                    if error["type"] == _TASK_RETRIEVAL_ERROR_TYPE:
+                        # already had a timeout error, let's keep it
+                        task_errors.append(error)
+                        break
+            if not task_errors:
+                # first time we have this error
+                task_errors.append(
+                    ErrorDict(
+                        loc=(f"{task.project_id}", f"{task.node_id}"),
+                        msg=f"{result}",
+                        type=_TASK_RETRIEVAL_ERROR_TYPE,
+                        ctx={
+                            _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: f"{arrow.utcnow()}",
+                            "user_id": user_id,
+                            "project_id": project_id,
+                            "node_id": node_id,
+                            "job_id": task.job_id,
+                        },
+                    )
                 )
 
+            task_completed = False
+        else:
+            # the task itself failed, check why
+            if isinstance(result, TaskCancelledError):
+                _logger.info(
+                    **create_troubleshootting_log_kwargs(
+                        f"Task {task.job_id} was cancelled",
+                        error=result,
+                        error_context=log_error_context,
+                    )
+                )
+                task_final_state = RunningState.ABORTED
+
+            else:
+                _logger.info(
+                    **create_troubleshootting_log_kwargs(
+                        f"Task {task.job_id} completed with errors",
+                        error=result,
+                        error_context=log_error_context,
+                    )
+                )
+                task_final_state = RunningState.FAILED
+                task_errors.append(
+                    ErrorDict(
+                        loc=(f"{task.project_id}", f"{task.node_id}"),
+                        msg=f"{result}",
+                        type="runtime",
+                    )
+                )
+
+                if isinstance(result, ComputationalBackendNotConnectedError):
+                    simcore_platform_status = SimcorePlatformStatus.BAD
+            # we need to remove any invalid files in the storage
+            await clean_task_output_and_log_files_if_invalid(
+                self.db_engine, user_id, project_id, node_id
+            )
+
+        if task_completed:
             # resource tracking
             await publish_service_resource_tracking_stopped(
                 self.rabbitmq_client,
@@ -408,17 +467,25 @@ class DaskScheduler(BaseCompScheduler):
                 task_final_state=task_final_state,
             )
 
-        await CompTasksRepository(self.db_engine).update_project_tasks_state(
-            task.project_id,
-            run_id,
-            [task.node_id],
-            task_final_state,
-            errors=errors,
-            optional_progress=1,
-            optional_stopped=arrow.utcnow().datetime,
-        )
-        assert task.job_id  # nosec
-        return True, task.job_id
+            await CompTasksRepository(self.db_engine).update_project_tasks_state(
+                task.project_id,
+                run_id,
+                [task.node_id],
+                task_final_state,
+                errors=task_errors,
+                optional_progress=1,
+                optional_stopped=arrow.utcnow().datetime,
+            )
+        else:
+            await CompTasksRepository(self.db_engine).update_project_tasks_state(
+                task.project_id,
+                run_id,
+                [task.node_id],
+                RunningState.STARTED,  # keep the same state as before
+                errors=task_errors,
+            )
+
+        return task_completed, task.job_id
 
     async def _task_progress_change_handler(
         self, event: tuple[UnixTimestamp, Any]
