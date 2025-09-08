@@ -229,8 +229,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         flex: 1
       });
       if (showCurrently) {
-        const selectColumn = new qx.ui.basic.Label(this.tr("Currently in use")).set({
-          marginRight: 18
+        const selectColumn = new qx.ui.basic.Label(this.tr("Preferred")).set({
+          marginRight: 8 // align it with the "preferred-button"
         });
         header.add(selectColumn)
       }
