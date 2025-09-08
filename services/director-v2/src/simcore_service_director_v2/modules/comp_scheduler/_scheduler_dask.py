@@ -403,8 +403,8 @@ class DaskScheduler(BaseCompScheduler):
                         ctx={
                             _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: f"{arrow.utcnow()}",
                             "user_id": user_id,
-                            "project_id": project_id,
-                            "node_id": node_id,
+                            "project_id": f"{project_id}",
+                            "node_id": f"{node_id}",
                             "job_id": task.job_id,
                         },
                     )
