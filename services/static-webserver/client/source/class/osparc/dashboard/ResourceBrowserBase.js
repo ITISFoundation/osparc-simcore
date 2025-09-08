@@ -196,7 +196,21 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         osparc.utils.Utils.addBorderRightRadius(rButton);
       }
       return rButton;
-    }
+    },
+
+    getOpenText: function(resourceData) {
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      let openText = this.tr("New") + " " + studyAlias;
+      if (resourceData["resourceType"] === "study") {
+        // if it's in use call it join
+        if (osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"])) {
+          openText = this.tr("Join");
+        } else {
+          openText = this.tr("Open");
+        }
+      }
+      return openText;
+    },
   },
 
   members: {
@@ -899,8 +913,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _getOpenMenuButton: function(resourceData) {
-      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      const openText = (resourceData["resourceType"] === "study") ? this.tr("Open") : this.tr("New") + " " + studyAlias;
+      const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(resourceData);
       const openButton = new qx.ui.menu.Button(openText);
       openButton["openResourceButton"] = true;
       openButton.addListener("execute", () => {

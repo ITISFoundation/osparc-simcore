@@ -446,7 +446,7 @@ qx.Class.define("osparc.study.Utils", {
           return "UNKNOWN_SERVICES";
         }
       }
-      if (this.isProjectLocked(studyData)) {
+      if (this.state.isProjectLocked(studyData["state"])) {
         return "IN_USE";
       }
       if (this.isInDebt(studyData)) {

@@ -225,8 +225,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         toolbar.add(serviceVersionSelector);
       }
 
-      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      const openText = (this.__resourceData["resourceType"] === "study") ? this.tr("Open") : this.tr("New") + " " + studyAlias;
+      const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(this.__resourceData);
       const openButton = new osparc.ui.form.FetchButton(openText).set({
         enabled: true
       });
