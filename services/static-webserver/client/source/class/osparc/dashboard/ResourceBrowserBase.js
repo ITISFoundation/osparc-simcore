@@ -165,7 +165,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               });
             } else if (currentUserGroupIds.length && isRTCEnabled) {
               // if the project is being used, I just want to join
-              // check if I have access to the associated wallet
+              // current limitation: I need to have access to the wallet
               const found = osparc.store.Store.getInstance().getWallets().find(w => w.getWalletId() === wallet["walletId"]);
               if (found) {
                 // switch to that wallet
