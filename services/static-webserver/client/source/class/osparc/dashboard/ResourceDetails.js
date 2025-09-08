@@ -157,7 +157,14 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         maxHeight: 40
       });
       return toolbar;
-    }
+    },
+
+    disableIfInUse: function(resourceData, widget) {
+      if (resourceData["resourceType"] === "study") {
+        // disable if it's being used
+        widget.setEnabled(!osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"]).length);
+      }
+    },
   },
 
   properties: {
@@ -535,6 +542,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
+          this.self().disableIfInUse(resourceData, billingSettings);
           billingSettings.addListener("debtPayed", () => {
             page.payDebtButton.set({
               visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
@@ -784,6 +792,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const servicesUpdate = new osparc.metadata.ServicesInStudyUpdate(resourceData);
+        this.self().disableIfInUse(resourceData, servicesUpdate);
         servicesUpdate.addListener("updateService", e => {
           const updatedData = e.getData();
           this.__fireUpdateEvent(resourceData, updatedData);
@@ -817,6 +826,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const servicesBootOpts = new osparc.metadata.ServicesInStudyBootOpts(resourceData);
+        this.self().disableIfInUse(resourceData, servicesBootOpts);
         servicesBootOpts.addListener("updateService", e => {
           const updatedData = e.getData();
           this.__fireUpdateEvent(resourceData, updatedData);
