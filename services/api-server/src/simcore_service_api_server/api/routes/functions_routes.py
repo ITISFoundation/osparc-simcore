@@ -474,7 +474,7 @@ async def map_function(
             for function_inputs in function_inputs_list
         ],
         reraise=False,
-        limit=10,
+        limit=1,
     )
 
     # Check if any tasks raised exceptions and raise the first one found
