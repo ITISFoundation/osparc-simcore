@@ -663,26 +663,10 @@ async def update_function_job_status(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    user_id: UserID,
-    product_name: ProductName,
     function_job_id: FunctionJobID,
     job_status: FunctionJobStatus,
-    check_write_permissions: bool = True,
 ) -> FunctionJobStatus:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
-        if check_write_permissions:
-            checked_permissions.append("write")
-        await check_user_permissions(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            object_type="function_job",
-            object_id=function_job_id,
-            permissions=checked_permissions,
-        )
-
         result = await transaction.execute(
             function_jobs_table.update()
             .where(function_jobs_table.c.uuid == function_job_id)
@@ -701,26 +685,10 @@ async def update_function_job_outputs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    user_id: UserID,
-    product_name: ProductName,
     function_job_id: FunctionJobID,
     outputs: FunctionOutputs,
-    check_write_permissions: bool = True,
 ) -> FunctionOutputs:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
-        if check_write_permissions:
-            checked_permissions.append("write")
-        await check_user_permissions(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            object_type="function_job",
-            object_id=function_job_id,
-            permissions=checked_permissions,
-        )
-
         result = await transaction.execute(
             function_jobs_table.update()
             .where(function_jobs_table.c.uuid == function_job_id)
@@ -1257,8 +1225,13 @@ async def _internal_get_group_permissions(
     *,
     product_name: ProductName,
     object_type: Literal["function", "function_job", "function_job_collection"],
-    object_ids: list[UUID],
-) -> list[tuple[UUID, list[FunctionGroupAccessRights]]]:
+    object_ids: list[FunctionID | FunctionJobID | FunctionJobCollectionID],
+) -> list[
+    tuple[
+        FunctionID | FunctionJobID | FunctionJobCollectionID,
+        list[FunctionGroupAccessRights],
+    ]
+]:
     access_rights_table = None
     field_name = None
     if object_type == "function":

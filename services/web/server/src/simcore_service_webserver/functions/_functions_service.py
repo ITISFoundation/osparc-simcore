@@ -677,13 +677,22 @@ async def update_function_job_outputs(
     outputs: FunctionOutputs,
     check_write_permissions: bool = True,
 ) -> FunctionOutputs:
-    return await _functions_repository.update_function_job_outputs(
-        app=app,
+    checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
+    if check_write_permissions:
+        checked_permissions.append("write")
+    await _functions_repository.check_user_permissions(
+        app,
         user_id=user_id,
         product_name=product_name,
+        object_type="function_job",
+        object_id=function_job_id,
+        permissions=checked_permissions,
+    )
+
+    return await _functions_repository.update_function_job_outputs(
+        app=app,
         function_job_id=function_job_id,
         outputs=outputs,
-        check_write_permissions=check_write_permissions,
     )
 
 
@@ -696,13 +705,22 @@ async def update_function_job_status(
     job_status: FunctionJobStatus,
     check_write_permissions: bool = True,
 ) -> FunctionJobStatus:
-    return await _functions_repository.update_function_job_status(
-        app=app,
+    checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
+
+    if check_write_permissions:
+        checked_permissions.append("write")
+    await _functions_repository.check_user_permissions(
+        app,
         user_id=user_id,
         product_name=product_name,
+        object_type="function_job",
+        object_id=function_job_id,
+        permissions=checked_permissions,
+    )
+    return await _functions_repository.update_function_job_status(
+        app=app,
         function_job_id=function_job_id,
         job_status=job_status,
-        check_write_permissions=check_write_permissions,
     )
 
 
