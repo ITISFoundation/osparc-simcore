@@ -3,8 +3,7 @@
 # pylint: disable=unused-argument
 
 from collections.abc import AsyncIterable
-from enum import Enum
-from typing import Any, Self
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -87,39 +86,19 @@ async def test_store_workflow(store: Store):
     assert await store.get("hash2", "key1", "key2", "key3") == (None, None, None)
 
 
-class _BS(str, Enum):
-    A = "A"
-    B = "B"
-    C = "C"
-
-
-class _CustomObj:
-    def __init__(self, a: int, b: str) -> None:
-        self.a = a
-        self.b = b
-
-    def __eq__(self, other: Self) -> bool:
-        if not isinstance(other, _CustomObj):
-            return False
-        return self.a == other.a and self.b == other.b
-
-
 @pytest.mark.parametrize(
     "value",
     [
         1,
         "a",
-        b"some_bytes",
         3.14,
         True,
         None,
         {"dict": "with_data"},
-        {"a", "set"},
-        {"some": _BS.A, "enum": _BS.B},
-        _CustomObj(1, "a"),
     ],
 )
 async def test_store_supporse_multiple_python_base_types(store: Store, value: Any):
+    # values are stored and recovered in their original type
     await store.set("hash1", "key1", value)
     assert (await store.get("hash1", "key1")) == (value,)
 
@@ -161,6 +140,7 @@ async def test_schedule_data_store_proxy_workflow(
 
     # increase and get
     assert await proxy.increase_and_get("unknown_statuses_retry_count") == 1
+    assert await proxy.get("unknown_statuses_retry_count") == 1
 
     # remove all keys an even missing ones
     await proxy.delete(

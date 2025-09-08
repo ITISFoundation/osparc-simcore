@@ -1,9 +1,8 @@
-import base64
-import pickle
 from collections.abc import AsyncIterator
 from typing import Any, Final, Literal, NotRequired, TypedDict, overload
 
 import redis.asyncio as aioredis
+from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from pydantic import NonNegativeInt
@@ -59,13 +58,11 @@ def _get_step_hash_key(
 
 
 def _dumps(obj: Any) -> str:
-    # TODO: replace with json_dumps if they are copatible
-    return base64.b85encode(pickle.dumps(obj)).decode("utf-8")
+    return json_dumps(obj)
 
 
 def _loads(obj_str: str) -> Any:
-    # TODO: replace with json_loads if they are copatible
-    return pickle.loads(base64.b85decode(obj_str))  # noqa: S301
+    return json_loads(obj_str)
 
 
 class Store:
@@ -176,6 +173,10 @@ class ScheduleDataStoreProxy:
     ) -> None: ...
     @overload
     async def set(self, key: Literal["group_index"], value: NonNegativeInt) -> None: ...
+    @overload
+    async def set(
+        self, key: Literal["unknown_statuses_retry_count"], value: NonNegativeInt
+    ) -> None: ...
     @overload
     async def set(self, key: Literal["is_creating"], *, value: bool) -> None: ...
     async def set(self, key: str, value: Any) -> None:
