@@ -467,23 +467,15 @@ class DaskScheduler(BaseCompScheduler):
                 task_final_state=task_final_state,
             )
 
-            await CompTasksRepository(self.db_engine).update_project_tasks_state(
-                task.project_id,
-                run_id,
-                [task.node_id],
-                task_final_state,
-                errors=task_errors,
-                optional_progress=1,
-                optional_stopped=arrow.utcnow().datetime,
-            )
-        else:
-            await CompTasksRepository(self.db_engine).update_project_tasks_state(
-                task.project_id,
-                run_id,
-                [task.node_id],
-                RunningState.STARTED,  # keep the same state as before
-                errors=task_errors,
-            )
+        await CompTasksRepository(self.db_engine).update_project_tasks_state(
+            task.project_id,
+            run_id,
+            [task.node_id],
+            task_final_state if task_completed else RunningState.STARTED,
+            errors=task_errors,
+            optional_progress=1 if task_completed else None,
+            optional_stopped=arrow.utcnow().datetime if task_completed else None,
+        )
 
         return task_completed, task.job_id
 
