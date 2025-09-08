@@ -10,6 +10,7 @@ from aiohttp import web
 from aiohttp_security.abc import (  # type: ignore[import-untyped]
     AbstractAuthorizationPolicy,
 )
+from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
@@ -17,12 +18,14 @@ from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
 from sqlalchemy.exc import DatabaseError as SQLAlchemyDatabaseError
 
+from ..groups import api as groups_service
 from ._authz_access_model import (
     AuthContextDict,
     OptionalContext,
     RoleBasedAccessModel,
     has_access_by_role,
 )
+from ._authz_access_roles import NAMED_GROUP_PERMISSIONS
 from ._authz_repository import (
     ActiveUserIdAndRole,
     get_active_user_or_none,
@@ -161,17 +164,39 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             "authorized_uid"
         ), f"{user_id}!={context.get('authorized_uid')}"
 
-        # product access
+        # PRODUCT access
         if permission == PERMISSION_PRODUCT_LOGIN_KEY:
             ok: bool = product_name is not None and await self._has_access_to_product(
                 user_id=user_id, product_name=product_name
             )
             return ok
 
-        # role-based access
-        return await has_access_by_role(
+        # ROLE-BASED access policy
+        role_allowed = await has_access_by_role(
             self._access_model,
             role=user_role,
             operation=permission,
             context=context,
         )
+
+        if role_allowed:
+            return True
+
+        # GROUP-BASED access policy (only if enabled in context and user is above GUEST role)
+        product_support_group_id = context.get("product_support_group_id", None)
+        if (
+            product_support_group_id is not None
+            and user_role > UserRole.GUEST
+            and permission in NAMED_GROUP_PERMISSIONS.get("PRODUCT_SUPPORT_GROUP", [])
+        ):
+            with contextlib.suppress(
+                Exception
+                # If product or group check fails, continue to deny access
+                # NOTE: Logging omitted to avoid exposing internal errors
+            ):
+                if await groups_service.is_user_in_group(
+                    self._app, user_id=user_id, group_id=product_support_group_id
+                ):
+                    return True
+
+        return False
