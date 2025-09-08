@@ -455,16 +455,16 @@ class DaskClient:
                         timeout=_DASK_DEFAULT_TIMEOUT_S
                     )
                     assert isinstance(exception, Exception)  # nosec
-
+                    log_error_context = {
+                        "job_id": job_id,
+                        "dask-scheduler": self.backend.scheduler_id,
+                    }
                     if isinstance(exception, TaskCancelledError):
                         _logger.info(
                             **create_troubleshootting_log_kwargs(
                                 f"Task {job_id} was aborted by user",
                                 error=exception,
-                                error_context={
-                                    "job_id": job_id,
-                                    "dask-scheduler": self.backend.scheduler_id,
-                                },
+                                error_context=log_error_context,
                             )
                         )
                         return RunningState.ABORTED
@@ -473,10 +473,7 @@ class DaskClient:
                         **create_troubleshootting_log_kwargs(
                             f"Task {job_id} completed with an error",
                             error=exception,
-                            error_context={
-                                "job_id": job_id,
-                                "dask-scheduler": self.backend.scheduler_id,
-                            },
+                            error_context=log_error_context,
                         )
                     )
                     return RunningState.FAILED
@@ -485,10 +482,7 @@ class DaskClient:
                         **create_troubleshootting_log_kwargs(
                             f"Task {job_id} exception could not be retrieved due to timeout",
                             error=exc,
-                            error_context={
-                                "job_id": job_id,
-                                "dask-scheduler": self.backend.scheduler_id,
-                            },
+                            error_context=log_error_context,
                             tip="The dask-scheduler is probably under load, this should resolve itself later.",
                         ),
                     )
