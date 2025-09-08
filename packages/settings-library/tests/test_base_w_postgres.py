@@ -200,7 +200,9 @@ def test_parse_from_individual_envs(
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
             "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 2,
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_MAX_POOLSIZE": 10,
+            "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
         }
     }
@@ -215,7 +217,9 @@ def test_parse_from_individual_envs(
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
             "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 2,
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_MAX_POOLSIZE": 10,
+            "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
         }
     }
@@ -262,7 +266,9 @@ def test_parse_compact_env(
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
                 "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 2,
+                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MAX_POOLSIZE": 10,
+                "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
             }
         }
@@ -372,7 +378,9 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
                 "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 2,
+                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MAX_POOLSIZE": 10,
+                "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
             }
         }

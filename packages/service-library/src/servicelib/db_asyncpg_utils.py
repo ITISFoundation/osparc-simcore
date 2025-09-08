@@ -4,6 +4,7 @@ import time
 from collections.abc import AsyncIterator
 from datetime import timedelta
 
+import orjson
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 from settings_library.postgres import PostgresSettings
 from sqlalchemy.exc import SQLAlchemyError
@@ -39,11 +40,13 @@ async def create_async_engine_and_database_ready(
 
     engine = create_async_engine(
         settings.dsn_with_async_sqlalchemy,
-        pool_size=settings.POSTGRES_MINSIZE,
-        max_overflow=settings.POSTGRES_MAXSIZE - settings.POSTGRES_MINSIZE,
+        pool_size=settings.POSTGRES_MAX_POOLSIZE,
+        max_overflow=settings.POSTGRES_MAX_OVERFLOW,
         connect_args={"server_settings": server_settings},
         pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
         future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
+        json_serializer=orjson.dumps,
+        json_deserializer=orjson.loads,
     )
 
     try:
@@ -90,11 +93,13 @@ async def with_async_pg_engine(
 
             engine = create_async_engine(
                 settings.dsn_with_async_sqlalchemy,
-                pool_size=settings.POSTGRES_MINSIZE,
-                max_overflow=settings.POSTGRES_MAXSIZE - settings.POSTGRES_MINSIZE,
+                pool_size=settings.POSTGRES_MAX_POOLSIZE,
+                max_overflow=settings.POSTGRES_MAX_OVERFLOW,
                 connect_args={"server_settings": server_settings},
                 pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
                 future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
+                json_serializer=orjson.dumps,
+                json_deserializer=orjson.loads,
             )
         yield engine
     finally:
