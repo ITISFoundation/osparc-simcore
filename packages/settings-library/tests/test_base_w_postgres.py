@@ -55,8 +55,10 @@ def model_classes_factory() -> Callable:
             POSTGRES_PASSWORD: str
 
             POSTGRES_DB: str
-            POSTGRES_MINSIZE: Annotated[int, Field(ge=2)] = 2
-            POSTGRES_MAXSIZE: Annotated[int, Field(ge=2)] = 50
+            POSTGRES_MINSIZE: Annotated[int, Field(ge=1)] = 1
+            POSTGRES_MAXSIZE: Annotated[int, Field(ge=1)] = 50
+            POSTGRES_MAX_POOLSIZE: int = 10
+            POSTGRES_MAX_OVERFLOW: Annotated[int, Field(ge=0)] = 20
 
             POSTGRES_CLIENT_NAME: Annotated[
                 str | None,
@@ -126,7 +128,6 @@ def model_classes_factory() -> Callable:
 def test_parse_from_empty_envs(
     postgres_envvars_unset: None, model_classes_factory: Callable
 ):
-
     S1, S2, S3, S4, S5 = model_classes_factory()
 
     with pytest.raises(ValidationError, match="WEBSERVER_POSTGRES") as exc_info:
@@ -160,7 +161,6 @@ def test_parse_from_individual_envs(
     monkeypatch: pytest.MonkeyPatch,
     model_classes_factory: Callable,
 ):
-
     S1, S2, S3, S4, S5 = model_classes_factory()
 
     # environment
@@ -200,7 +200,9 @@ def test_parse_from_individual_envs(
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
             "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 2,
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_MAX_POOLSIZE": 10,
+            "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
         }
     }
@@ -215,7 +217,9 @@ def test_parse_from_individual_envs(
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
             "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 2,
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_MAX_POOLSIZE": 10,
+            "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
         }
     }
@@ -228,7 +232,6 @@ def test_parse_from_individual_envs(
 def test_parse_compact_env(
     postgres_envvars_unset: None, monkeypatch, model_classes_factory
 ):
-
     S1, S2, S3, S4, S5 = model_classes_factory()
 
     # environment
@@ -262,7 +265,9 @@ def test_parse_compact_env(
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
                 "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 2,
+                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MAX_POOLSIZE": 10,
+                "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
             }
         }
@@ -342,7 +347,6 @@ def test_parse_compact_env(
 def test_parse_from_mixed_envs(
     postgres_envvars_unset: None, monkeypatch, model_classes_factory
 ):
-
     S1, S2, S3, S4, S5 = model_classes_factory()
 
     # environment
@@ -372,7 +376,9 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
                 "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 2,
+                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MAX_POOLSIZE": 10,
+                "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
             }
         }
@@ -472,7 +478,6 @@ def test_parse_from_mixed_envs(
 def test_toggle_plugin_1(
     postgres_envvars_unset: None, monkeypatch, model_classes_factory
 ):
-
     *_, S4, S5 = model_classes_factory()
 
     # empty environ
@@ -535,7 +540,6 @@ def test_toggle_plugin_3(
 def test_toggle_plugin_4(
     postgres_envvars_unset: None, monkeypatch, model_classes_factory
 ):
-
     *_, S4, S5 = model_classes_factory()
     JSON_VALUE = '{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
 
@@ -565,7 +569,6 @@ def test_toggle_plugin_4(
         )
 
     with monkeypatch.context() as patch:
-
         # Enables both but remove individuals
         setenvs_from_envfile(
             patch,
