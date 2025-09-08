@@ -1798,12 +1798,36 @@ paths:
       parameters:
       - name: email
         in: query
-        required: true
+        required: false
         schema:
-          type: string
-          minLength: 3
-          maxLength: 200
+          anyOf:
+          - type: string
+            minLength: 3
+            maxLength: 200
+            pattern: ^[^%]*$
+          - type: 'null'
           title: Email
+      - name: primary_group_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Primary Group Id
+      - name: user_name
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            minLength: 3
+            maxLength: 200
+            pattern: ^[^%]*$
+          - type: 'null'
+          title: User Name
       responses:
         '200':
           description: Successful Response
