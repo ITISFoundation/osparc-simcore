@@ -45,7 +45,7 @@ def _(parser: LocustArgumentParser) -> None:
 
 class WebApiUser(OsparcWebUserBase):
     @task
-    def get_endpoint(self) -> None:
+    def run_function(self) -> None:
 
         function_uid = self.environment.parsed_options.function_uid
         job_input_schema = json.loads(self.environment.parsed_options.body_json_schema)
