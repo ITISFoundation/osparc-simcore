@@ -24,7 +24,7 @@ from tenacity import (
 @events.init_command_line_parser.add_listener
 def _(parser: LocustArgumentParser) -> None:
     parser.add_argument(
-        "--function_uid",
+        "--function-uuid",
         type=str,
         required=True,
         help="The function UUID to test",
@@ -47,7 +47,7 @@ class WebApiUser(OsparcWebUserBase):
     @task
     def run_function(self) -> None:
 
-        function_uid = self.environment.parsed_options.function_uid
+        function_uuid = self.environment.parsed_options.function_uuid
         job_input_schema = json.loads(self.environment.parsed_options.body_json_schema)
         max_poll_time = timedelta(
             seconds=self.environment.parsed_options.max_poll_time_seconds
@@ -56,7 +56,7 @@ class WebApiUser(OsparcWebUserBase):
         # run function
         job_input_faker = jsf.JSF(job_input_schema)
         response = self.authenticated_post(
-            url=f"/v0/functions/{function_uid}:run",
+            url=f"/v0/functions/{function_uuid}:run",
             json=job_input_faker.generate(),
             headers={
                 "x-simcore-parent-project-uuid": "null",
@@ -64,7 +64,7 @@ class WebApiUser(OsparcWebUserBase):
             },
         )
         response.raise_for_status()
-        job_uid = response.json().get("uid")
+        job_uuid = response.json().get("uid")
 
         # wait for the job to complete
         for attempt in Retrying(
@@ -75,11 +75,11 @@ class WebApiUser(OsparcWebUserBase):
         ):
             with attempt:
                 job_status_response = self.authenticated_get(
-                    f"/v0/function_jobs/{job_uid}/status"
+                    f"/v0/function_jobs/{job_uuid}/status"
                 )
                 job_status_response.raise_for_status()
                 status = job_status_response.json().get("status")
                 if status != "SUCCESS":
                     raise ValueError(
-                        f"Function job ({job_uid=}) for function ({function_uid=}) returned {status=}"
+                        f"Function job ({job_uuid=}) for function ({function_uuid=}) returned {status=}"
                     )
