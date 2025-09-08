@@ -1,3 +1,5 @@
+from typing import Literal
+
 from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.functions import (
@@ -607,6 +609,35 @@ async def remove_function_group_permissions(
     )
 
 
+async def set_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    permission_group_id: GroupID,
+    product_name: ProductName,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    object_ids: list[FunctionID | FunctionJobID | FunctionJobCollectionID],
+    read: bool | None = None,
+    write: bool | None = None,
+    execute: bool | None = None,
+) -> list[
+    tuple[
+        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
+    ]
+]:
+    return await _functions_repository.set_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_type=object_type,
+        object_ids=object_ids,
+        permission_group_id=permission_group_id,
+        read=read,
+        write=write,
+        execute=execute,
+    )
+
+
 async def get_function_job_status(
     app: web.Application,
     *,
@@ -644,6 +675,7 @@ async def update_function_job_outputs(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     outputs: FunctionOutputs,
+    check_write_permissions: bool = True,
 ) -> FunctionOutputs:
     return await _functions_repository.update_function_job_outputs(
         app=app,
@@ -651,6 +683,7 @@ async def update_function_job_outputs(
         product_name=product_name,
         function_job_id=function_job_id,
         outputs=outputs,
+        check_write_permissions=check_write_permissions,
     )
 
 
@@ -661,6 +694,7 @@ async def update_function_job_status(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     job_status: FunctionJobStatus,
+    check_write_permissions: bool = True,
 ) -> FunctionJobStatus:
     return await _functions_repository.update_function_job_status(
         app=app,
@@ -668,6 +702,7 @@ async def update_function_job_status(
         product_name=product_name,
         function_job_id=function_job_id,
         job_status=job_status,
+        check_write_permissions=check_write_permissions,
     )
 
 

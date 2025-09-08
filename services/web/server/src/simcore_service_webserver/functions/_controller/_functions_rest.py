@@ -169,7 +169,7 @@ async def register_function(request: web.Request) -> web.Response:
 @login_required
 @permission_required("function.read")
 @handle_rest_requests_exceptions
-async def list_functions(request: web.Request) -> web.Response:
+async def list_functions(request: web.Request) -> web.Response:  # noqa: C901
     query_params: FunctionsListQueryParams = parse_request_query_parameters_as(
         FunctionsListQueryParams, request
     )
