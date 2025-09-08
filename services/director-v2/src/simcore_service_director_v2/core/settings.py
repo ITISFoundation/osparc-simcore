@@ -102,7 +102,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_RETRIEVING_RESULTS: Annotated[
         datetime.timedelta,
         Field(
-            description="maximum time the computational scheduler waits until retriving results from the computational backend is failed"
+            description="maximum time the computational scheduler waits until retrieving results from the computational backend is failed"
             "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
         ),
     ] = datetime.timedelta(minutes=10)
