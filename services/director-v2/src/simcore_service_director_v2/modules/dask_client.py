@@ -10,7 +10,6 @@ loads(dumps(my_object))
 
 import asyncio
 import logging
-import traceback
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from http.client import HTTPException
@@ -57,6 +56,7 @@ from models_library.services import ServiceRunID
 from models_library.users import UserID
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_context
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_common.exceptions import NodeportsException
@@ -457,20 +457,40 @@ class DaskClient:
                     assert isinstance(exception, Exception)  # nosec
 
                     if isinstance(exception, TaskCancelledError):
+                        _logger.info(
+                            **create_troubleshootting_log_kwargs(
+                                f"Task {job_id} was aborted by user",
+                                error=exception,
+                                error_context={
+                                    "job_id": job_id,
+                                    "dask-scheduler": self.backend.scheduler_id,
+                                },
+                            )
+                        )
                         return RunningState.ABORTED
                     assert exception  # nosec
-                    _logger.warning(
-                        "Task  %s completed in error:\n%s\nTrace:\n%s",
-                        job_id,
-                        exception,
-                        "".join(traceback.format_exception(exception)),
+                    _logger.info(
+                        **create_troubleshootting_log_kwargs(
+                            f"Task {job_id} completed with an error",
+                            error=exception,
+                            error_context={
+                                "job_id": job_id,
+                                "dask-scheduler": self.backend.scheduler_id,
+                            },
+                        )
                     )
                     return RunningState.FAILED
-                except TimeoutError:
-                    _logger.warning(
-                        "Task  %s could not be retrieved from dask-scheduler, it is lost\n"
-                        "TIP:If the task was unpublished this can happen, or if the dask-scheduler was restarted.",
-                        job_id,
+                except TimeoutError as exc:
+                    _logger.exception(
+                        **create_troubleshootting_log_kwargs(
+                            f"Task {job_id} exception could not be retrieved due to timeout",
+                            error=exc,
+                            error_context={
+                                "job_id": job_id,
+                                "dask-scheduler": self.backend.scheduler_id,
+                            },
+                            tip="The dask-scheduler is probably under load, this should resolve itself later.",
+                        ),
                     )
                     return RunningState.UNKNOWN
 
