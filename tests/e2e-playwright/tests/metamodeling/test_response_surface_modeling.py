@@ -45,18 +45,41 @@ def test_response_surface_modeling(
         ), "Expected workbench to be a dict!"
         node_ids: list[str] = list(jsonifier_project_data["workbench"])
         assert len(node_ids) == 1, "Expected 1 node in the workbench!"
-        # create the number parameter
-        page.get_by_test_id("newNodeBtn").click()
-        page.get_by_placeholder("Filter").click()
-        page.get_by_placeholder("Filter").fill("number parameter")
-        page.get_by_placeholder("Filter").press("Enter")
 
-        # connect the jsonifier to the parameter
-        page.get_by_test_id("nodeTreeItem").filter(has_text="jsonifier").click()
-        page.locator(
-            "body > div:nth-child(5) > div:nth-child(5) > div:nth-child(3) > div:nth-child(3) > div > div:nth-child(2) > div > div > div:nth-child(3) > div:nth-child(4) > div:nth-child(1) > div > div > div:nth-child(2) > div:nth-child(2) > div > div > div > div:nth-child(2) > div.qx-panelview-content > div > div:nth-child(18)"
+        # select the jsonifier, it's the second one as the study has the same name
+        page.get_by_test_id("nodeTreeItem").filter(has_text="jsonifier").all()[
+            1
+        ].click()
+
+        # create the probe
+        page.get_by_test_id("connect_probe_btn_number_3").click()
+
+        # create the parameter
+        with page.expect_response(
+            re.compile(rf"/projects/{jsonifier_project_data['uuid']}/nodes")
+        ):
+            page.get_by_test_id("newNodeBtn").click()
+            page.get_by_placeholder("Filter").click()
+            page.get_by_placeholder("Filter").fill("number parameter")
+            page.get_by_placeholder("Filter").press("Enter")
+
+        # connect the parameter
+        page.get_by_test_id("nodeTreeItem").filter(has_text="jsonifier").all()[
+            1
+        ].click()
+        page.get_by_test_id("connect_input_btn_number_1").click()
+        page.get_by_text("set existing parameter").nth(1).click()
+        page.get_by_text("set existing parameter").nth(1).filter(
+            has_text="number parameter"
         ).click()
+        page.wait_for_timeout(5000)
+        # page.get_by_test_id("connect_input_btn_number_1").click()
+        # page.get_by_text("new parameter").click()
 
+        # rename the project to identify it
+        page.get_by_test_id("nodesTree").first.click()
+        page.get_by_test_id("nodesTree").first.press("F2")
+        page.get_by_test_id("nodesTree").first.fill("RSM study")
     # 2. convert it to a function
     # 3. start a RSM with that function
 
