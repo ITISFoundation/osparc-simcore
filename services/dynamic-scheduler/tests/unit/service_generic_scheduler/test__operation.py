@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 
 import pytest
+from fastapi import FastAPI
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     OperationAlreadyRegisteredError,
     OperationNotFoundError,
@@ -16,15 +17,21 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._operation imp
 )
 
 
-class BS1(BaseStep):
+class BaseBS(BaseStep):
+    @classmethod
+    async def create(cls, app: FastAPI) -> None:
+        _ = app
+
+
+class BS1(BaseBS):
     pass
 
 
-class BS2(BaseStep):
+class BS2(BaseBS):
     pass
 
 
-class BS3(BaseStep):
+class BS3(BaseBS):
     pass
 
 
