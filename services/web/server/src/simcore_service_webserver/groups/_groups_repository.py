@@ -731,6 +731,22 @@ async def is_user_by_email_in_group(
         return user_id is not None
 
 
+async def is_user_in_group(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    group_id: GroupID,
+) -> bool:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.scalar(
+            sa.select(user_to_groups.c.uid).where(
+                (user_to_groups.c.uid == user_id) & (user_to_groups.c.gid == group_id)
+            )
+        )
+        return result is not None
+
+
 async def add_new_user_in_group(
     app: web.Application,
     connection: AsyncConnection | None = None,

@@ -261,6 +261,14 @@ async def is_user_by_email_in_group(
     )
 
 
+async def is_user_in_group(
+    app: web.Application, *, user_id: UserID, group_id: GroupID
+) -> bool:
+    return await _groups_repository.is_user_in_group(
+        app, user_id=user_id, group_id=group_id
+    )
+
+
 async def auto_add_user_to_groups(app: web.Application, user_id: UserID) -> None:
     user: dict = await users_service.get_user(app, user_id)
     return await _groups_repository.auto_add_user_to_groups(app, user=user)

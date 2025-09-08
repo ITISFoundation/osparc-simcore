@@ -4,9 +4,6 @@ from functools import wraps
 import aiohttp_security.api  # type: ignore[import-untyped]
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
-from simcore_service_webserver.security._authz_service import (
-    is_user_in_product_support_group,
-)
 
 from ..products import products_web
 from ._authz_access_model import AuthContextDict
@@ -67,9 +64,8 @@ def group_or_role_permission_required(permission: str):
             ):
                 if permission in NAMED_GROUP_PERMISSIONS.get(
                     "PRODUCT_SUPPORT_GROUP", []
-                ) and await is_user_in_product_support_group(
-                    request.app,
-                    product=products_web.get_current_product(request),
+                ) and await products_web.is_user_in_product_support_group(
+                    request,
                     user_id=user_id,
                 ):
                     return await handler(request)
