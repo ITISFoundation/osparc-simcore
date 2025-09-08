@@ -61,7 +61,6 @@ _logger = logging.getLogger(__name__)
 
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
-_TASK_RETRIEVAL_ERROR_MSG: Final[str] = "Retrieval of task result timed-out"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
 
 
