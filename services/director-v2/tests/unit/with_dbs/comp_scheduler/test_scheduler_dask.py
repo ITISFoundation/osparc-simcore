@@ -2281,7 +2281,7 @@ async def test_run_new_pipeline_called_twice_prevents_duplicate_runs(
         ComputationalBackendTaskResultsNotReadyError,
     ],
 )
-async def test_getting_task_result_raises_exception(
+async def test_getting_task_result_raises_exception_does_not_fail_task(
     exception_type: Exception,
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
