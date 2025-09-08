@@ -72,8 +72,10 @@ def default_app_env_vars(
     env_vars["API_SERVER_DEV_FEATURES_ENABLED"] = "1"
     env_vars["API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED"] = "1"
     env_vars["API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED"] = "0"
-    env_vars["POSTGRES_MINSIZE"] = "2"
+    env_vars["POSTGRES_MINSIZE"] = "1"
     env_vars["POSTGRES_MAXSIZE"] = "10"
+    env_vars["POSTGRES_MAX_POOLSIZE"] = "10"
+    env_vars["POSTGRES_MAX_OVERFLOW"] = "20"
     env_vars["API_SERVER_CELERY"] = "null"
     env_vars["API_SERVER_RABBITMQ"] = "null"
 

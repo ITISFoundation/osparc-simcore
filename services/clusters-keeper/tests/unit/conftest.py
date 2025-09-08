@@ -130,6 +130,7 @@ def app_environment(
             "CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES": "{}",
             "CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX": faker.pystr(),
+            "CLUSTERS_KEEPER_DASK_NPROCS": f"{faker.pyint()}",
             "CLUSTERS_KEEPER_DASK_NTHREADS": f"{faker.pyint(min_value=0)}",
             "CLUSTERS_KEEPER_DASK_WORKER_SATURATION": f"{faker.pyfloat(min_value=0.1)}",
             "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": "{}",
