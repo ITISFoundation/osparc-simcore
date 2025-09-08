@@ -250,7 +250,6 @@ def postgres_env_vars_dict(postgres_dsn: PostgresTestConfig) -> EnvVarsDict:
         "POSTGRES_DB": postgres_dsn["database"],
         "POSTGRES_HOST": postgres_dsn["host"],
         "POSTGRES_PORT": f"{postgres_dsn['port']}",
-        "POSTGRES_ENDPOINT": f"{postgres_dsn['host']}:{postgres_dsn['port']}",
     }
 
 
