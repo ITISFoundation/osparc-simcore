@@ -353,7 +353,7 @@ class DaskScheduler(BaseCompScheduler):
                     )
                     task_final_state = RunningState.SUCCESS
                 elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
-                    # we did not manage to get the current state of the task
+                    # Task result retrieval failed due to communication error, task will be retried
                     # so we keep it as is
                     assert task.job_id  # nosec
                     return False, task.job_id
