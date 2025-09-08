@@ -10,6 +10,9 @@ from faker import Faker
 from servicelib.deferred_tasks import TaskUID
 from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisSettings
+from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
+    KeyNotFoundInHashError,
+)
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     ScheduleId,
     StepStatus,
@@ -139,6 +142,8 @@ async def test_schedule_data_store_proxy_workflow(
     await _assert_keys_in_hash(store, hash_key, {"group_index", "is_creating"})
 
     # increase and get
+    with pytest.raises(KeyNotFoundInHashError):
+        await proxy.get("unknown_statuses_retry_count")
     assert await proxy.increase_and_get("unknown_statuses_retry_count") == 1
     assert await proxy.get("unknown_statuses_retry_count") == 1
 

@@ -128,6 +128,8 @@ class _UpdateScheduleDataDict(TypedDict):
     is_creating: NotRequired[bool]
 
 
+# TODO: need a model for reading the tnire thing as a dict with optinal keys
+
 _DeleteScheduleDataKeys = Literal[
     "operation_name",
     "operation_context",
