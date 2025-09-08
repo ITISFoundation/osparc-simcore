@@ -390,7 +390,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __initNodeSignals: function(node) {
-      node.listenToChanges();
       node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);

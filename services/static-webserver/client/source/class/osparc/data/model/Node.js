@@ -489,6 +489,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.populateNodeUIData(nodeData);
           // new place to store the position and marker
           this.populateNodeUIData(nodeUiData);
+          this.listenToChanges();
         })
         .catch(err => {
           console.log(err);
@@ -1350,28 +1351,26 @@ qx.Class.define("osparc.data.model.Node", {
       this.self().ListenChangesProps.forEach(key => {
         switch (key) {
           case "inputs":
-            if (this.hasPropsForm()) {
-              // listen to changes in the props form
-              this.getPropsForm().addListener("changeData", () => {
-                const data = this.__getInputData();
-                this.fireDataEvent("projectDocumentChanged", {
-                  "op": "replace",
-                  "path": `/workbench/${nodeId}/inputs`,
-                  "value": data,
-                  "osparc-resource": "node",
-                });
+            // listen to changes in the props form
+            this.getPropsForm().addListener("changeData", () => {
+              const data = this.__getInputData();
+              this.fireDataEvent("projectDocumentChanged", {
+                "op": "replace",
+                "path": `/workbench/${nodeId}/inputs`,
+                "value": data,
+                "osparc-resource": "node",
               });
-              // listen to changes in link and unlink of ports
-              this.getPropsForm().addListener("linkFieldModified", () => {
-                const data = this.__getInputData();
-                this.fireDataEvent("projectDocumentChanged", {
-                  "op": "replace",
-                  "path": `/workbench/${nodeId}/inputs`,
-                  "value": data,
-                  "osparc-resource": "node",
-                });
+            });
+            // listen to changes in link and unlink of ports
+            this.getPropsForm().addListener("linkFieldModified", () => {
+              const data = this.__getInputData();
+              this.fireDataEvent("projectDocumentChanged", {
+                "op": "replace",
+                "path": `/workbench/${nodeId}/inputs`,
+                "value": data,
+                "osparc-resource": "node",
               });
-            }
+            });
             break;
           case "inputsUnits":
             if (this.hasPropsForm()) {
