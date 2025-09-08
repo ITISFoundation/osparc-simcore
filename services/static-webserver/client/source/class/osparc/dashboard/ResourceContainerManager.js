@@ -580,11 +580,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
               let icon = "";
               if (group.getThumbnail()) {
                 icon = group.getThumbnail();
-              } else if (group["collabType"] === 0) {
+              } else if (group["collabType"] === osparc.store.Groups.COLLAB_TYPE.EVERYONE) {
                 icon = "@FontAwesome5Solid/globe/24";
-              } else if (group["collabType"] === 1) {
+              } else if (group["collabType"] === osparc.store.Groups.COLLAB_TYPE.ORGANIZATION) {
                 icon = "@FontAwesome5Solid/users/24";
-              } else if (group["collabType"] === 2) {
+              } else if (group["collabType"] === osparc.store.Groups.COLLAB_TYPE.USER) {
                 icon = "@FontAwesome5Solid/user/24";
               }
               groupContainer.set({

@@ -497,36 +497,43 @@ qx.Class.define("osparc.data.model.Workbench", {
         return;
       }
 
-      const requesterNode = this.getNode(nodeId);
-      const freePos = this.getFreePosition(requesterNode);
-      filePicker.setPosition(freePos);
+      const populateNewNode = () => {
+        const requesterNode = this.getNode(nodeId);
+        const freePos = this.getFreePosition(requesterNode);
+        filePicker.setPosition(freePos);
 
-      // create connection
-      const filePickerId = filePicker.getNodeId();
-      requesterNode.addInputNode(filePickerId);
-      // reload also before port connection happens
-      this.fireEvent("reloadModel");
-      requesterNode.addPortLink(portId, filePickerId, "outFile")
-        .then(success => {
-          if (success) {
-            if (file) {
-              const fileObj = file.data;
-              osparc.file.FilePicker.setOutputValueFromStore(
-                filePicker,
-                fileObj.getLocation(),
-                fileObj.getDatasetId(),
-                fileObj.getFileId(),
-                fileObj.getLabel()
-              );
+        // create connection
+        const filePickerId = filePicker.getNodeId();
+        requesterNode.addInputNode(filePickerId);
+        // reload also before port connection happens
+        this.fireEvent("reloadModel");
+        requesterNode.addPortLink(portId, filePickerId, "outFile")
+          .then(success => {
+            if (success) {
+              if (file) {
+                const fileObj = file.data;
+                osparc.file.FilePicker.setOutputValueFromStore(
+                  filePicker,
+                  fileObj.getLocation(),
+                  fileObj.getDatasetId(),
+                  fileObj.getFileId(),
+                  fileObj.getLabel()
+                );
+              }
+              this.fireDataEvent("openNode", filePicker.getNodeId());
+              this.fireEvent("reloadModel");
+            } else {
+              this.removeNode(filePickerId);
+              const msg = qx.locale.Manager.tr("File couldn't be assigned");
+              osparc.FlashMessenger.logError(msg);
             }
-            this.fireDataEvent("openNode", filePicker.getNodeId());
-            this.fireEvent("reloadModel");
-          } else {
-            this.removeNode(filePickerId);
-            const msg = qx.locale.Manager.tr("File couldn't be assigned");
-            osparc.FlashMessenger.logError(msg);
-          }
-        });
+          });
+      };
+      if (filePicker.getMetadata()) {
+        populateNewNode();
+      } else {
+        filePicker.addListenerOnce("changeMetadata", () => populateNewNode(), this);
+      }
     },
 
     __parameterNodeRequested: async function(nodeId, portId) {
@@ -541,20 +548,27 @@ qx.Class.define("osparc.data.model.Workbench", {
           return;
         }
 
-        // do not overlap the new Parameter Node with other nodes
-        const freePos = this.getFreePosition(requesterNode);
-        parameterNode.setPosition(freePos);
+        const populateNewNode = () => {
+          // do not overlap the new Parameter Node with other nodes
+          const freePos = this.getFreePosition(requesterNode);
+          parameterNode.setPosition(freePos);
 
-        // create connection
-        const pmId = parameterNode.getNodeId();
-        requesterNode.addInputNode(pmId);
-        // bypass the compatibility check
-        if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
-          this.removeNode(pmId);
-          const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
-          osparc.FlashMessenger.logError(msg);
+          // create connection
+          const pmId = parameterNode.getNodeId();
+          requesterNode.addInputNode(pmId);
+          // bypass the compatibility check
+          if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
+            this.removeNode(pmId);
+            const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
+            osparc.FlashMessenger.logError(msg);
+          }
+          this.fireEvent("reloadModel");
+        };
+        if (parameterNode.getMetadata()) {
+          populateNewNode();
+        } else {
+          parameterNode.addListenerOnce("changeMetadata", () => populateNewNode(), this);
         }
-        this.fireEvent("reloadModel");
       }
     },
 
@@ -571,22 +585,29 @@ qx.Class.define("osparc.data.model.Workbench", {
           return;
         }
 
-        probeNode.setLabel(requesterPortMD.label);
+        const populateNewNode = () => {
+          probeNode.setLabel(requesterPortMD.label);
 
-        // do not overlap the new Parameter Node with other nodes
-        const freePos = this.getFreePosition(requesterNode, false);
-        probeNode.setPosition(freePos);
+          // do not overlap the new Parameter Node with other nodes
+          const freePos = this.getFreePosition(requesterNode, false);
+          probeNode.setPosition(freePos);
 
-        // create connection
-        const probeId = probeNode.getNodeId();
-        probeNode.addInputNode(nodeId);
-        // bypass the compatibility check
-        if (probeNode.getPropsForm().addPortLink("in_1", nodeId, portId) !== true) {
-          this.removeNode(probeId);
-          const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
-          osparc.FlashMessenger.logError(msg);
+          // create connection
+          const probeId = probeNode.getNodeId();
+          probeNode.addInputNode(nodeId);
+          // bypass the compatibility check
+          if (probeNode.getPropsForm().addPortLink("in_1", nodeId, portId) !== true) {
+            this.removeNode(probeId);
+            const msg = qx.locale.Manager.tr("Probe couldn't be assigned");
+            osparc.FlashMessenger.logError(msg);
+          }
+          this.fireEvent("reloadModel");
+        };
+        if (probeNode.getMetadata()) {
+          populateNewNode();
+        } else {
+          probeNode.addListenerOnce("changeMetadata", () => populateNewNode(), this);
         }
-        this.fireEvent("reloadModel");
       }
     },
 

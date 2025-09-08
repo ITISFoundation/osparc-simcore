@@ -168,6 +168,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     "nodeMovingStop": "qx.event.type.Event",
     "updateNodeDecorator": "qx.event.type.Event",
     "requestOpenLogger": "qx.event.type.Event",
+    "highlightEdge": "qx.event.type.Data",
   },
 
   members: {
@@ -236,6 +237,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
           let nodeType = this.getNode().getMetadata().type;
           if (this.getNode().isIterator()) {
             nodeType = "iterator";
+          } else if (this.getNode().isParameter()) {
+            nodeType = "parameter";
           } else if (this.getNode().isProbe()) {
             nodeType = "probe";
           }
@@ -308,14 +311,15 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __resetNodeUILayout: function() {
-      this.set({
-        width: this.self(arguments).NODE_WIDTH,
-        maxWidth: this.self(arguments).NODE_WIDTH,
-        minWidth: this.self(arguments).NODE_WIDTH
-      });
+      this.__setNodeUIWidth(this.self().NODE_WIDTH);
       this.resetThumbnail();
 
-      this.__createContentLayout();
+      // make sure metadata is ready
+      if (this.getNode().getMetadata()) {
+        this.__createContentLayout();
+      } else {
+        this.getNode().addListenerOnce("changeMetadata", () => this.__createContentLayout(), this);
+      }
     },
 
     __createContentLayout: function() {
@@ -330,7 +334,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       }
     },
 
-    populateNodeLayout: function(svgWorkbenchCanvas) {
+    __populateNodeLayout: function(svgWorkbenchCanvas) {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
@@ -364,6 +368,18 @@ qx.Class.define("osparc.workbench.NodeUI", {
       this.addListener("resize", () => {
         setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
       });
+
+      if (node.getPropsForm()) {
+        node.getPropsForm().addListener("highlightEdge", e => this.fireDataEvent("highlightEdge", e.getData()), this);
+      }
+    },
+
+    populateNodeLayout: function(svgWorkbenchCanvas) {
+      if (this.getNode().getMetadata()) {
+        this.__populateNodeLayout(svgWorkbenchCanvas);
+      } else {
+        this.getNode().addListenerOnce("changeMetadata", () => this.__populateNodeLayout(svgWorkbenchCanvas), this);
+      }
     },
 
     __applyNode: function(node) {
@@ -576,7 +592,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoParameterUI: function() {
-      const width = 100;
+      const width = 120;
       this.__setNodeUIWidth(width);
 
       const label = new qx.ui.basic.Label().set({
