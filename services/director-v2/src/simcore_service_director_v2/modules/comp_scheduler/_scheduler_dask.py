@@ -347,7 +347,6 @@ class DaskScheduler(BaseCompScheduler):
 
         assert task.project_id == project_id  # nosec
         assert task.node_id == node_id  # nosec
-        assert task.job_id  # nosec
         log_error_context = {
             "user_id": user_id,
             "project_id": project_id,
