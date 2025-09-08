@@ -2281,7 +2281,7 @@ async def test_run_new_pipeline_called_twice_prevents_duplicate_runs(
         ComputationalBackendTaskResultsNotReadyError,
     ],
 )
-async def test_getting_task_result_raises_exception_does_not_fail_task(
+async def test_getting_task_result_raises_exception_does_not_fail_task_and_retries(
     exception_type: Exception,
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
@@ -2317,10 +2317,27 @@ async def test_getting_task_result_raises_exception_does_not_fail_task(
         project_id=running_project.project.uuid,
         iteration=1,
     )
-    # calling again should not raise neither
-    assert running_project.project.prj_owner
-    await scheduler_api.apply(
-        user_id=running_project.project.prj_owner,
-        project_id=running_project.project.uuid,
-        iteration=1,
+    assert mocked_dask_client.get_task_result.call_count == len(
+        [t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL]
     )
+    mocked_dask_client.get_task_result.reset_mock()
+    # calling again should not raise neither but try again
+    assert running_project.project.prj_owner
+    for _ in range(3):
+        await scheduler_api.apply(
+            user_id=running_project.project.prj_owner,
+            project_id=running_project.project.uuid,
+            iteration=1,
+        )
+        assert mocked_dask_client.get_task_result.call_count == (
+            len(
+                [
+                    t
+                    for t in running_project.tasks
+                    if t.node_class is NodeClass.COMPUTATIONAL
+                ]
+            )
+            - 1
+        )
+        mocked_dask_client.get_task_result.reset_mock()
+        await asyncio.sleep(0.5)  # wait a bit to ensure the retry decorator has reset
