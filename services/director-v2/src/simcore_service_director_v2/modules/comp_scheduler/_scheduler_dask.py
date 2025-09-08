@@ -497,7 +497,7 @@ class DaskScheduler(BaseCompScheduler):
                 simcore_platform_status,
                 task_errors,
                 task_completed,
-            ) = await self._handle_succesfull_run(task, result, log_error_context)
+            ) = await self._handle_successful_run(task, result, log_error_context)
 
         elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
             (
