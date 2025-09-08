@@ -268,6 +268,65 @@ async def review_user_pre_registration(
 #
 
 
+def _build_left_outer_join_query(
+    email_like: str | None,
+    product_name: ProductName | None,
+    columns: tuple,
+) -> sa.sql.Select | None:
+    left_where_conditions = []
+    if email_like is not None:
+        left_where_conditions.append(
+            users_pre_registration_details.c.pre_email.like(email_like)
+        )
+    join_condition = users.c.id == users_pre_registration_details.c.user_id
+    if product_name:
+        join_condition = join_condition & (
+            users_pre_registration_details.c.product_name == product_name
+        )
+    left_outer_join = sa.select(*columns).select_from(
+        users_pre_registration_details.outerjoin(users, join_condition)
+    )
+
+    return (
+        left_outer_join.where(sa.and_(*left_where_conditions))
+        if left_where_conditions
+        else None
+    )
+
+
+def _build_right_outer_join_query(
+    email_like: str | None,
+    user_name_like: str | None,
+    primary_group_id: int | None,
+    product_name: ProductName | None,
+    columns: tuple,
+) -> sa.sql.Select | None:
+    right_where_conditions = []
+    if email_like is not None:
+        right_where_conditions.append(users.c.email.like(email_like))
+    if user_name_like is not None:
+        right_where_conditions.append(users.c.name.like(user_name_like))
+    if primary_group_id is not None:
+        right_where_conditions.append(users.c.primary_gid == primary_group_id)
+    join_condition = users.c.id == users_pre_registration_details.c.user_id
+    if product_name:
+        join_condition = join_condition & (
+            users_pre_registration_details.c.product_name == product_name
+        )
+    right_outer_join = sa.select(*columns).select_from(
+        users.outerjoin(
+            users_pre_registration_details,
+            join_condition,
+        )
+    )
+
+    return (
+        right_outer_join.where(sa.and_(*right_where_conditions))
+        if right_where_conditions
+        else None
+    )
+
+
 async def search_merged_pre_and_registered_users(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
@@ -288,87 +347,50 @@ async def search_merged_pre_and_registered_users(
         .label("invited_by")
     )
 
+    columns = (
+        users_pre_registration_details.c.id,
+        users.c.first_name,
+        users.c.last_name,
+        users.c.email,
+        users.c.phone,
+        users_pre_registration_details.c.pre_email,
+        users_pre_registration_details.c.pre_first_name,
+        users_pre_registration_details.c.pre_last_name,
+        users_pre_registration_details.c.institution,
+        users_pre_registration_details.c.pre_phone,
+        users_pre_registration_details.c.address,
+        users_pre_registration_details.c.city,
+        users_pre_registration_details.c.state,
+        users_pre_registration_details.c.postal_code,
+        users_pre_registration_details.c.country,
+        users_pre_registration_details.c.user_id,
+        users_pre_registration_details.c.extras,
+        users_pre_registration_details.c.account_request_status,
+        users_pre_registration_details.c.account_request_reviewed_by,
+        users_pre_registration_details.c.account_request_reviewed_at,
+        users.c.status,
+        invited_by,
+        users_pre_registration_details.c.created,
+    )
+
+    left_outer_join = _build_left_outer_join_query(email_like, product_name, columns)
+    right_outer_join = _build_right_outer_join_query(
+        email_like, user_name_like, primary_group_id, product_name, columns
+    )
+
+    queries = []
+    if left_outer_join is not None:
+        queries.append(left_outer_join)
+    if right_outer_join is not None:
+        queries.append(right_outer_join)
+
+    if not queries:
+        # No search criteria provided, return empty result
+        return []
+
+    final_query = queries[0] if len(queries) == 1 else sa.union(*queries)
+
     async with pass_or_acquire_connection(engine, connection) as conn:
-        columns = (
-            users_pre_registration_details.c.id,
-            users.c.first_name,
-            users.c.last_name,
-            users.c.email,
-            users.c.phone,
-            users_pre_registration_details.c.pre_email,
-            users_pre_registration_details.c.pre_first_name,
-            users_pre_registration_details.c.pre_last_name,
-            users_pre_registration_details.c.institution,
-            users_pre_registration_details.c.pre_phone,
-            users_pre_registration_details.c.address,
-            users_pre_registration_details.c.city,
-            users_pre_registration_details.c.state,
-            users_pre_registration_details.c.postal_code,
-            users_pre_registration_details.c.country,
-            users_pre_registration_details.c.user_id,
-            users_pre_registration_details.c.extras,
-            users_pre_registration_details.c.account_request_status,
-            users_pre_registration_details.c.account_request_reviewed_by,
-            users_pre_registration_details.c.account_request_reviewed_at,
-            users.c.status,
-            invited_by,
-            users_pre_registration_details.c.created,
-        )
-
-        # Build where conditions for left outer join (pre-registered users)
-        left_where_conditions = []
-        if email_like is not None:
-            left_where_conditions.append(
-                users_pre_registration_details.c.pre_email.like(email_like)
-            )
-
-        # Build join condition
-        join_condition = users.c.id == users_pre_registration_details.c.user_id
-        if product_name:
-            join_condition = join_condition & (
-                users_pre_registration_details.c.product_name == product_name
-            )
-
-        # Build where conditions for right outer join (registered users)
-        right_where_conditions = []
-        if email_like is not None:
-            right_where_conditions.append(users.c.email.like(email_like))
-        if user_name_like is not None:
-            right_where_conditions.append(users.c.name.like(user_name_like))
-        if primary_group_id is not None:
-            # Join with user_to_groups to filter by primary group
-            right_where_conditions.append(users.c.primary_gid == primary_group_id)
-
-        # Left outer join query (pre-registered users)
-        left_outer_join = sa.select(*columns).select_from(
-            users_pre_registration_details.outerjoin(users, join_condition)
-        )
-        if left_where_conditions:
-            left_outer_join = left_outer_join.where(sa.and_(*left_where_conditions))
-
-        # Right outer join query (registered users)
-        right_outer_join = sa.select(*columns).select_from(
-            users.outerjoin(
-                users_pre_registration_details,
-                join_condition,
-            )
-        )
-        if right_where_conditions:
-            right_outer_join = right_outer_join.where(sa.and_(*right_where_conditions))
-
-        # Only execute queries if we have meaningful search criteria
-        queries = []
-        if left_where_conditions:
-            queries.append(left_outer_join)
-        if right_where_conditions:
-            queries.append(right_outer_join)
-
-        if not queries:
-            # No search criteria provided, return empty result
-            return []
-
-        final_query = queries[0] if len(queries) == 1 else sa.union(*queries)
-
         result = await conn.execute(final_query)
         return result.fetchall()
 
