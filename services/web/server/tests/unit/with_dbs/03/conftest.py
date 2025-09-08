@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 import sqlalchemy as sa
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.user_preferences import user_preferences_frontend
 from sqlalchemy.ext.asyncio import AsyncEngine
