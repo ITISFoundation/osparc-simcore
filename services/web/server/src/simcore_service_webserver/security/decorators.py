@@ -1,11 +1,9 @@
 from functools import wraps
 
-import aiohttp_security.api  # type: ignore[import-untyped]
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
-from simcore_service_webserver.products import products_web
 
-from ._authz_web import check_user_authorized
+from ._authz_web import check_user_permission_with_groups
 from .security_web import check_user_permission
 
 
@@ -43,20 +41,9 @@ def group_or_role_permission_required(permission: str):
     def _decorator(handler: Handler):
         @wraps(handler)
         async def _wrapped(request: web.Request):
-            context = {
-                "authorized_uid": await check_user_authorized(request),
-                "product_support_group_id": products_web.get_current_product(
-                    request
-                ).support_standard_group_id,
-            }
+            await check_user_permission_with_groups(request, permission)
 
-            # Check both role-based and group-based permissions
-            if await aiohttp_security.api.permits(request, permission, context):
-                return await handler(request)
-
-            # Neither role nor group permissions granted
-            msg = f"You do not have sufficient access rights for {permission}"
-            raise web.HTTPForbidden(text=msg)
+            return await handler(request)
 
         return _wrapped
 
