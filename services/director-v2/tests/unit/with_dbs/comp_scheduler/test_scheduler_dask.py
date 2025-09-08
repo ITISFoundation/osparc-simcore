@@ -2064,7 +2064,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
 async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_waits_and_eventually_timesout_fails(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
-    with_short_max_wait_for_clusters_keeper: datetime.timedelta,
+    with_short_max_wait_for_cluster: datetime.timedelta,
     initialized_app: FastAPI,
     scheduler_api: BaseCompScheduler,
     sqlalchemy_async_engine: AsyncEngine,
@@ -2178,7 +2178,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_waits_and
         expected_progress=None,
         run_id=run_in_db.run_id,
     )
-    await asyncio.sleep(with_short_max_wait_for_clusters_keeper.total_seconds() + 1)
+    await asyncio.sleep(with_short_max_wait_for_cluster.total_seconds() + 1)
     # again will trigger the call again, but now it will start failing, first the task will be mark as FAILED
     await scheduler_api.apply(
         user_id=run_in_db.user_id,
@@ -2291,6 +2291,7 @@ async def test_run_new_pipeline_called_twice_prevents_duplicate_runs(
 async def test_getting_task_result_raises_exception_does_not_fail_task_and_retries(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
+    with_short_max_wait_for_retrieving_results: datetime.timedelta,
     mocked_dask_client: mock.MagicMock,
     initialized_app: FastAPI,
     scheduler_api: BaseCompScheduler,
