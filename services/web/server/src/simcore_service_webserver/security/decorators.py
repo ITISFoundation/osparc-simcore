@@ -62,6 +62,7 @@ def group_or_role_permission_required(permission: str):
                 # If product or group check fails, continue to deny access
                 # NOTE: Logging omitted to avoid exposing internal errors
             ):
+                # FIXME: must be >GUEST !!
                 if permission in NAMED_GROUP_PERMISSIONS.get(
                     "PRODUCT_SUPPORT_GROUP", []
                 ) and await products_web.is_user_in_product_support_group(
