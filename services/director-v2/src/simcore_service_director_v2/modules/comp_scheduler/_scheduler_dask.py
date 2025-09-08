@@ -325,7 +325,7 @@ class DaskScheduler(BaseCompScheduler):
         iteration: Iteration,
         run_id: PositiveInt,
     ) -> tuple[bool, str]:
-        """will return True and the job id if the task was successfully processed and can be released from the dask cluster"""
+        """Returns True and the job ID if the task was successfully processed and can be released from the Dask cluster."""
         _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
         simcore_platform_status = SimcorePlatformStatus.OK
