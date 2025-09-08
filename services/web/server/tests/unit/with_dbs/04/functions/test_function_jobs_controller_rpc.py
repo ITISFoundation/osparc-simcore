@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=too-many-arguments
 
 import datetime
 from collections.abc import Callable
@@ -662,13 +663,26 @@ async def test_incompatible_patch_model_error(
     "user_role",
     [UserRole.USER],
 )
-async def test_update_function_job_status(
+@pytest.mark.parametrize(
+    "access_by_other_user, check_write_permissions, expected_to_raise",
+    [(False, False, None), (True, True, FunctionJobWriteAccessDeniedError)],
+)
+@pytest.mark.parametrize(
+    "status_or_output",
+    ["status", "output"],
+)
+async def test_update_function_job_status_output(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     add_user_function_api_access_rights: None,
     logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
     mock_function_factory: Callable[[FunctionClass], Function],
     osparc_product_name: ProductName,
+    access_by_other_user: bool,
+    check_write_permissions: bool,
+    expected_to_raise: type[Exception] | None,
+    status_or_output: str,
 ):
     # Register the function first
     registered_function = await functions_rpc.register_function(
@@ -704,18 +718,54 @@ async def test_update_function_job_status(
     )
     assert old_job_status.status == "created"
 
-    # Update the function job status
-    new_status = FunctionJobStatus(status="COMPLETED")
-    updated_job_status = await functions_rpc.update_function_job_status(
+    await functions_rpc.set_group_permissions(
         rabbitmq_rpc_client=rpc_client,
-        function_job_id=registered_job.uid,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
-        job_status=new_status,
+        object_type="function_job",
+        object_ids=[registered_job.uid],
+        permission_group_id=int(other_logged_user["primary_gid"]),
+        read=True,
     )
 
-    # Assert the updated job status matches the new status
-    assert updated_job_status == new_status
+    async def update_job_status_or_output(new_status, new_outputs):
+        if status_or_output == "status":
+            return await functions_rpc.update_function_job_status(
+                rabbitmq_rpc_client=rpc_client,
+                function_job_id=registered_job.uid,
+                user_id=(
+                    other_logged_user["id"]
+                    if access_by_other_user
+                    else logged_user["id"]
+                ),
+                product_name=osparc_product_name,
+                job_status=new_status,
+                check_write_permissions=check_write_permissions,
+            )
+        return await functions_rpc.update_function_job_outputs(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_id=registered_job.uid,
+            user_id=(
+                other_logged_user["id"] if access_by_other_user else logged_user["id"]
+            ),
+            product_name=osparc_product_name,
+            outputs=new_outputs,
+            check_write_permissions=check_write_permissions,
+        )
+
+    # Update the function job status
+    new_status = FunctionJobStatus(status="COMPLETED")
+    new_outputs = {"output1": "new_result1", "output2": "new_result2"}
+    if expected_to_raise:
+        with pytest.raises(expected_to_raise):
+            await update_job_status_or_output(new_status, new_outputs)
+        return
+
+    return_value = await update_job_status_or_output(new_status, new_outputs)
+    if status_or_output == "status":
+        assert return_value == new_status
+    else:
+        assert return_value == new_outputs
 
 
 @pytest.mark.parametrize(
