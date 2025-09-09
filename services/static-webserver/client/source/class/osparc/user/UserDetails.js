@@ -33,15 +33,16 @@ qx.Class.define("osparc.user.UserDetails", {
   },
 
   statics: {
-    WIDTH: 300,
-    HEIGHT: 200,
+    WIDTH: 400,
+    HEIGHT: 300,
 
     GRID_POS: {
       USERNAME: 0,
       FULLNAME: 1,
       EMAIL: 2,
-      USER_ID: 3,
-      GROUP_ID: 4,
+      PHONE: 3,
+      USER_ID: 4,
+      GROUP_ID: 5,
     }
   },
 
@@ -127,6 +128,19 @@ qx.Class.define("osparc.user.UserDetails", {
           });
           break;
         }
+        case "phone": {
+          const title = new qx.ui.basic.Label("Phone");
+          this.getChildControl("main-info").add(title, {
+            row: this.self().GRID_POS.PHONE,
+            column: 0
+          });
+          control = new qx.ui.basic.Label();
+          this.getChildControl("main-info").add(control, {
+            row: this.self().GRID_POS.PHONE,
+            column: 1
+          });
+          break;
+        }
         case "user-id": {
           const title = new qx.ui.basic.Label("User ID");
           this.getChildControl("main-info").add(title, {
@@ -172,6 +186,7 @@ qx.Class.define("osparc.user.UserDetails", {
             userData["userId"] = -1; // fix this
             userData["userName"] = "userName"; // fix this
             const user = new osparc.data.model.User(userData);
+            user.setContactData(userData);
             this.setUser(user);
           }
         })
@@ -188,6 +203,7 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("username").setValue(user.getUsername());
       this.getChildControl("fullname").setValue([user.getFirstName(), user.getLastName()].filter(Boolean).join(" "));
       this.getChildControl("email").setValue(user.getEmail());
+      this.getChildControl("phone").setValue(user.getPhoneNumber());
       this.getChildControl("user-id").setValue(String(user.getUserId()));
       this.getChildControl("group-id").setValue(String(user.getGroupId()));
     },
