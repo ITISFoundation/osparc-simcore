@@ -507,7 +507,7 @@ qx.Class.define("osparc.share.Collaborators", {
       }
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
 
-      // add a separator right after the product groups
+      // insert a separator between product and non-product groups
       const productGroup = [
         osparc.store.Groups.COLLAB_TYPE.EVERYONE,
         osparc.store.Groups.COLLAB_TYPE.SUPPORT,

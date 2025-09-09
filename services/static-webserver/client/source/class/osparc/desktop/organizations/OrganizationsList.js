@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     getOrgModel: function(orgId) {
       let org = null;
       this.__orgsModel.forEach(orgModel => {
-        if (orgModel.getGroupId() === parseInt(orgId)) {
+        if ("getGroupId" in orgModel && orgModel.getGroupId() === parseInt(orgId)) {
           org = orgModel;
         }
       });
@@ -146,6 +146,10 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("groupMembers", "groupMembers", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
+          // handle separator
+          ctrl.bindProperty("isSeparator", "enabled", {
+            converter: val => !val // disable clicks on separator
+          }, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("organizationsList");
@@ -164,6 +168,15 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           item.addListener("deleteOrganization", e => {
             const orgKey = e.getData();
             this.__deleteOrganization(orgKey);
+          });
+          item.addListener("changeEnabled", e => {
+            if (!e.getData()) {
+              item.set({
+                minHeight: 1,
+                maxHeight: 1,
+                decorator: "separator-strong",
+              });
+            }
           });
         }
       });
@@ -189,7 +202,28 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       const groupsStore = osparc.store.Groups.getInstance();
       const orgs = Object.values(groupsStore.getOrganizations());
       orgs.sort(this.self().sortOrganizations);
-      orgs.forEach(org => orgsModel.append(org));
+
+      // insert a separator between product and non-product groups
+      const productGroup = [
+        osparc.store.Groups.COLLAB_TYPE.EVERYONE,
+        osparc.store.Groups.COLLAB_TYPE.SUPPORT,
+      ];
+      const hasProductGroup = orgs.some(org => productGroup.includes(org.getGroupType()));
+      const hasNonProductGroup = orgs.some(org => !productGroup.includes(org.getGroupType()));
+      let separatorInserted = false;
+      orgs.forEach(org => {
+        const isProductGroup = productGroup.includes(org.getGroupType());
+        // Only insert separator if both sides exist
+        if (!isProductGroup && hasProductGroup && hasNonProductGroup && !separatorInserted) {
+          const separator = {
+            isSeparator: true
+          };
+          orgsModel.append(qx.data.marshal.Json.createModel(separator));
+          separatorInserted = true;
+        }
+        orgsModel.append(org);
+      });
+
       this.setOrganizationsLoaded(true);
       if (orgId) {
         this.fireDataEvent("organizationSelected", orgId);
