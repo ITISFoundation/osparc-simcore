@@ -164,9 +164,15 @@ qx.Class.define("osparc.user.UserDetails", {
         }
       };
       osparc.data.Resources.fetch("poUsers", "searchByGroupId", params)
-        .then(userData => {
-          if (userData.length === 1) {
-            console.log(userData[0]);
+        .then(usersData => {
+          if (usersData.length === 1) {
+            const userData = usersData[0];
+            // curate data
+            userData["groupId"] = userGroupId;
+            userData["userId"] = -1; // fix this
+            userData["userName"] = "userName"; // fix this
+            const user = new osparc.data.model.User(userData);
+            this.setUser(user);
           }
         })
         .catch(err => {
