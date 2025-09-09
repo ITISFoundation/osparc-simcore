@@ -13,8 +13,8 @@ _logger = logging.getLogger(__name__)
 
 
 def on_worker_init(
-    app_server: BaseAppServer,
     sender: WorkController,
+    app_server: BaseAppServer,
     **_kwargs,
 ) -> None:
     startup_complete_event = threading.Event()

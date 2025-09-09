@@ -1,4 +1,5 @@
 """Main application to be deployed in for example uvicorn."""
+
 from celery.signals import worker_init, worker_shutdown  # type: ignore[import-untyped]
 from celery_library.common import create_app as create_celery_app
 from celery_library.signals import (
@@ -29,8 +30,8 @@ app = create_celery_app(_settings.STORAGE_CELERY)
 app_server = FastAPIAppServer(app=create_app(_settings))
 
 
-def worker_init_wrapper(sender, **_kwargs):
-    return on_worker_init(sender, app_server, **_kwargs)
+def worker_init_wrapper(sender, **kwargs):
+    return on_worker_init(sender, app_server, **kwargs)
 
 
 worker_init.connect(worker_init_wrapper)
