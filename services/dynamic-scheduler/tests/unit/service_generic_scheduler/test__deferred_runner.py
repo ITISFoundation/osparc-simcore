@@ -56,6 +56,9 @@ pytest_simcore_ops_services_selection = [
 @pytest.fixture
 def app_environment(
     disable_postgres_lifespan: None,
+    disable_service_tracker_lifespan: None,
+    disable_notifier_lifespan: None,
+    disable_status_monitor_lifespan: None,
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
