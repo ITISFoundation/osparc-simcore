@@ -217,19 +217,19 @@ class StepStoreProxy:
         is_creating: bool,
     ) -> None:
         self._store = store
-        self._schedule_id = schedule_id
-        self._operation_name = operation_name
-        self._group = step_group_name
-        self._step_name = step_name
-        self._is_creating = is_creating
+        self.schedule_id = schedule_id
+        self.operation_name = operation_name
+        self.step_group_name = step_group_name
+        self.step_name = step_name
+        self.is_creating = is_creating
 
     def _get_hash_key(self) -> str:
         return _get_step_hash_key(
-            schedule_id=self._schedule_id,
-            operation_name=self._operation_name,
-            group=self._group,
-            step_name=self._step_name,
-            is_creating=self._is_creating,
+            schedule_id=self.schedule_id,
+            operation_name=self.operation_name,
+            group=self.step_group_name,
+            step_name=self.step_name,
+            is_creating=self.is_creating,
         )
 
     @overload
@@ -244,7 +244,7 @@ class StepStoreProxy:
         (result,) = await self._store.get(hash_key, key)
         if result is None:
             raise KeyNotFoundInHashError(
-                schedule_id=self._schedule_id, hash_key=hash_key
+                schedule_id=self.schedule_id, hash_key=hash_key
             )
         return result
 
@@ -262,6 +262,9 @@ class StepStoreProxy:
 
     async def delete(self, *keys: _DeleteStepKeys) -> None:
         await self._store.delete(self._get_hash_key(), *keys)
+
+    async def remove(self) -> None:
+        await self._store.remove(self._get_hash_key())
 
 
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:

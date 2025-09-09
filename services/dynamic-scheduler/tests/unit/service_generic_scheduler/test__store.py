@@ -156,8 +156,9 @@ async def test_schedule_data_store_proxy_workflow(
 
 
 @pytest.mark.parametrize("is_creating", [True, False])
+@pytest.mark.parametrize("use_remove", [True, False])
 async def test_step_store_proxy_workflow(
-    store: Store, schedule_id: ScheduleId, is_creating: bool
+    store: Store, schedule_id: ScheduleId, is_creating: bool, use_remove: bool
 ):
     proxy = StepStoreProxy(
         store=store,
@@ -197,6 +198,9 @@ async def test_step_store_proxy_workflow(
     )
 
     # remove all keys an even missing ones
-    await proxy.delete("status", "deferred_task_uid", "error_traceback")
+    if use_remove:
+        await proxy.remove()
+    else:
+        await proxy.delete("status", "deferred_task_uid", "error_traceback")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
