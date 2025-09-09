@@ -403,7 +403,6 @@ qx.Class.define("osparc.share.Collaborators", {
           item.addListener("changeEnabled", e => {
             if (!e.getData()) {
               item.set({
-                // label: "",
                 minHeight: 1,
                 maxHeight: 1,
                 decorator: "separator-strong",
