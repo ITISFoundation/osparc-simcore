@@ -1,9 +1,12 @@
+from typing import Literal
+
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.functions import (
     Function,
     FunctionAccessRights,
     FunctionClass,
+    FunctionGroupAccessRights,
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
@@ -43,6 +46,7 @@ from models_library.functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -495,7 +499,13 @@ async def get_function_job_outputs(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(
+        FunctionJobIDNotFoundError,
+        FunctionJobWriteAccessDeniedError,
+        FunctionJobReadAccessDeniedError,
+    )
+)
 async def update_function_job_status(
     app: web.Application,
     *,
@@ -503,6 +513,7 @@ async def update_function_job_status(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     job_status: FunctionJobStatus,
+    check_write_permissions: bool = True,
 ) -> FunctionJobStatus:
     return await _functions_service.update_function_job_status(
         app=app,
@@ -510,10 +521,17 @@ async def update_function_job_status(
         product_name=product_name,
         function_job_id=function_job_id,
         job_status=job_status,
+        check_write_permissions=check_write_permissions,
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(
+        FunctionJobIDNotFoundError,
+        FunctionJobWriteAccessDeniedError,
+        FunctionJobReadAccessDeniedError,
+    )
+)
 async def update_function_job_outputs(
     app: web.Application,
     *,
@@ -521,6 +539,7 @@ async def update_function_job_outputs(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     outputs: FunctionOutputs,
+    check_write_permissions: bool = True,
 ) -> FunctionOutputs:
     return await _functions_service.update_function_job_outputs(
         app=app,
@@ -528,6 +547,7 @@ async def update_function_job_outputs(
         product_name=product_name,
         function_job_id=function_job_id,
         outputs=outputs,
+        check_write_permissions=check_write_permissions,
     )
 
 
@@ -586,3 +606,33 @@ async def get_functions_user_api_access_rights(
 async def register_rpc_routes_on_startup(app: web.Application):
     rpc_server = get_rabbitmq_rpc_server(app)
     await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+
+
+@router.expose(reraise_if_error_type=())
+async def set_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    permission_group_id: GroupID,
+    product_name: ProductName,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    object_ids: list[FunctionID | FunctionJobID | FunctionJobCollectionID],
+    read: bool | None = None,
+    write: bool | None = None,
+    execute: bool | None = None,
+) -> list[
+    tuple[
+        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
+    ]
+]:
+    return await _functions_service.set_group_permissions(
+        app=app,
+        user_id=user_id,
+        permission_group_id=permission_group_id,
+        product_name=product_name,
+        object_type=object_type,
+        object_ids=object_ids,
+        read=read,
+        write=write,
+        execute=execute,
+    )

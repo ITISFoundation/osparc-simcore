@@ -540,7 +540,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       nodeUI.addListener("dbltap", e => {
         this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
-        if (nodeUI.getNode().canNodeStart()) {
+        if (nodeUI.getNode().canNodeStart() && !nodeUI.getNode().getStudy().getDisableServiceAutoStart()) {
           nodeUI.getNode().requestStartNode();
         }
         e.stopPropagation();
