@@ -25,7 +25,7 @@ from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.utils import limited_as_completed
+from servicelib.utils import limited_as_completed, limited_gather
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
@@ -197,25 +197,32 @@ class DaskScheduler(BaseCompScheduler):
                 run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
-                task_progresses = await client.get_tasks_progress(
-                    [f"{t.job_id}" for t in tasks],
-                )
-            for task_progress_event in task_progresses:
-                if task_progress_event:
-                    await CompTasksRepository(
-                        self.db_engine
-                    ).update_project_task_progress(
-                        task_progress_event.task_owner.project_id,
-                        task_progress_event.task_owner.node_id,
-                        comp_run.run_id,
-                        task_progress_event.progress,
+                task_progresses = [
+                    t
+                    for t in await client.get_tasks_progress(
+                        [f"{t.job_id}" for t in tasks],
                     )
+                    if t is not None
+                ]
+            await limited_gather(
+                *(
+                    CompTasksRepository(self.db_engine).update_project_task_progress(
+                        t.task_owner.project_id,
+                        t.task_owner.node_id,
+                        comp_run.run_id,
+                        t.progress,
+                    )
+                    for t in task_progresses
+                ),
+                log=_logger,
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
+            )
 
         except ComputationalBackendOnDemandNotReadyError:
             _logger.info("The on demand computational backend is not ready yet...")
 
         comp_tasks_repo = CompTasksRepository(self.db_engine)
-        await asyncio.gather(
+        await limited_gather(
             *(
                 comp_tasks_repo.update_project_task_progress(
                     t.task_owner.project_id,
@@ -225,9 +232,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
                 for t in task_progresses
                 if t
-            )
-        )
-        await asyncio.gather(
+            ),
             *(
                 publish_service_progress(
                     self.rabbitmq_client,
@@ -238,7 +243,9 @@ class DaskScheduler(BaseCompScheduler):
                 )
                 for t in task_progresses
                 if t
-            )
+            ),
+            log=_logger,
+            limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
         )
 
     async def _release_resources(self, comp_run: CompRunsAtDB) -> None:
