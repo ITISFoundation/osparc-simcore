@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator
 from typing import Any, Final
 
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
@@ -25,7 +25,13 @@ _FUNCTION_NAME: Final[str] = "playwright_test_function"
 
 
 @pytest.fixture
-def create_function_from_project() -> Iterator[Callable[[Page, str], dict[str, Any]]]:
+def create_function_from_project(
+    api_request_context: APIRequestContext,
+    is_product_billable: bool,
+    product_url: AnyUrl,
+) -> Iterator[Callable[[Page, str], dict[str, Any]]]:
+    created_function_uuids: list[str] = []
+
     def _create_function_from_project(
         page: Page,
         project_uuid: str,
@@ -55,11 +61,24 @@ def create_function_from_project() -> Iterator[Callable[[Page, str], dict[str, A
                 "Created function: %s", f"{json.dumps(function_data['data'], indent=2)}"
             )
 
+            page.click("body")  # to close any dialog
+            created_function_uuids.append(function_data["data"]["uuid"])
         return function_data["data"]
 
     yield _create_function_from_project
 
-    # cleanup the function
+    # cleanup the functions
+    for function_uuid in created_function_uuids:
+        with log_context(
+            logging.INFO,
+            f"Delete function with {function_uuid=} in {product_url=} as {is_product_billable=}",
+        ):
+            response = api_request_context.delete(
+                f"{product_url}v0/functions/{function_uuid}"
+            )
+            assert (
+                response.status == 204
+            ), f"Unexpected error while deleting project: '{response.json()}'"
 
 
 def test_response_surface_modeling(
