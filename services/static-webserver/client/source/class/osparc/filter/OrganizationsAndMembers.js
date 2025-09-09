@@ -64,13 +64,7 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
 
       const visibleCollaborators = Object.values(this.__visibleCollaborators);
 
-      // define the priority order
-      const collabTypeOrder = [
-        osparc.store.Groups.COLLAB_TYPE.EVERYONE,
-        osparc.store.Groups.COLLAB_TYPE.SUPPORT,
-        osparc.store.Groups.COLLAB_TYPE.ORGANIZATION,
-        osparc.store.Groups.COLLAB_TYPE.USER
-      ];
+      const collabTypeOrder = osparc.store.Groups.COLLAB_TYPE_ORDER;
       // sort them first
       visibleCollaborators.sort((a, b) => {
         const typeDiff = collabTypeOrder.indexOf(a["collabType"]) - collabTypeOrder.indexOf(b["collabType"]);

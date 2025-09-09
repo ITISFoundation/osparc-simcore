@@ -69,6 +69,11 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
 
   statics: {
     sortOrganizations: function(a, b) {
+      const collabTypeOrder = osparc.store.Groups.COLLAB_TYPE_ORDER;
+      const typeDiff = collabTypeOrder.indexOf(a.getGroupType()) - collabTypeOrder.indexOf(b.getGroupType());
+      if (typeDiff !== 0) {
+        return typeDiff;
+      }
       const sorted = osparc.share.Collaborators.sortByAccessRights(a.getAccessRights(), b.getAccessRights());
       if (sorted !== 0) {
         return sorted;

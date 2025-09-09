@@ -96,7 +96,14 @@ qx.Class.define("osparc.data.model.Group", {
   statics: {
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Group));
-    }
+    },
+
+    COLLAB_TYPE_ORDER: [
+      osparc.store.Groups.COLLAB_TYPE.EVERYONE,
+      osparc.store.Groups.COLLAB_TYPE.SUPPORT,
+      osparc.store.Groups.COLLAB_TYPE.ORGANIZATION,
+      osparc.store.Groups.COLLAB_TYPE.USER
+    ],
   },
 
   members: {
