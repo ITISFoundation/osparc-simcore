@@ -135,7 +135,6 @@ _DeleteScheduleDataKeys = Literal[
     "operation_context",
     "group_index",
     "is_creating",
-    "unknown_statuses_retry_count",
 ]
 
 
@@ -153,10 +152,6 @@ class ScheduleDataStoreProxy:
     async def get(self, key: Literal["operation_context"]) -> OperationContext: ...
     @overload
     async def get(self, key: Literal["group_index"]) -> NonNegativeInt: ...
-    @overload
-    async def get(
-        self, key: Literal["unknown_statuses_retry_count"]
-    ) -> NonNegativeInt: ...
     @overload
     async def get(self, key: Literal["is_creating"]) -> bool: ...
     async def get(self, key: str) -> Any:
@@ -189,11 +184,6 @@ class ScheduleDataStoreProxy:
 
     async def delete(self, *keys: _DeleteScheduleDataKeys) -> None:
         await self._store.delete(self._get_hash_key(), *keys)
-
-    async def increase_and_get(
-        self, key: Literal["unknown_statuses_retry_count"]
-    ) -> NonNegativeInt:
-        return await self._store.increase_and_get(self._get_hash_key(), key)
 
 
 class _StepDict(TypedDict):
