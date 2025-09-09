@@ -34,6 +34,7 @@ from models_library.functions import (
 from models_library.functions_errors import (
     FunctionBaseError,
     FunctionExecuteAccessDeniedError,
+    FunctionHasJobsCannotDeleteError,
     FunctionIDNotFoundError,
     FunctionJobCollectionExecuteAccessDeniedError,
     FunctionJobCollectionIDNotFoundError,
@@ -819,6 +820,7 @@ async def delete_function(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
+    force: bool = False,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_permissions(
@@ -839,6 +841,20 @@ async def delete_function(
 
         if row is None:
             raise FunctionIDNotFoundError(function_id=function_id)
+
+        # Check for existing function jobs if force is not True
+        if not force:
+            jobs_result = await transaction.execute(
+                function_jobs_table.select()
+                .with_only_columns(func.count())
+                .where(function_jobs_table.c.function_uuid == function_id)
+            )
+            jobs_count = jobs_result.scalar() or 0
+
+            if jobs_count > 0:
+                raise FunctionHasJobsCannotDeleteError(
+                    function_id=function_id, jobs_count=jobs_count
+                )
 
         # Proceed with deletion
         await transaction.execute(
