@@ -508,14 +508,17 @@ qx.Class.define("osparc.share.Collaborators", {
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
 
       // add a separator right after the product groups
-      const collabTypeOrder = osparc.store.Groups.COLLAB_TYPE_ORDER;
-      const hasProductGroup = collaboratorsList.some(c => collabTypeOrder.includes(c.collabType));
-      const hasNonProductGroup = collaboratorsList.some(c => !collabTypeOrder.includes(c.collabType));
+      const productGroup = [
+        osparc.store.Groups.COLLAB_TYPE.EVERYONE,
+        osparc.store.Groups.COLLAB_TYPE.SUPPORT,
+      ];
+      const hasProductGroup = collaboratorsList.some(c => productGroup.includes(c.collabType));
+      const hasNonProductGroup = collaboratorsList.some(c => !productGroup.includes(c.collabType));
       let separatorInserted = false;
       collaboratorsList.forEach(c => {
-        const hasCollabType = collabTypeOrder.includes(c.collabType);
+        const isProductGroup = productGroup.includes(c.collabType);
         // Only insert separator if both sides exist
-        if (!hasCollabType && hasProductGroup && hasNonProductGroup && !separatorInserted) {
+        if (!isProductGroup && hasProductGroup && hasNonProductGroup && !separatorInserted) {
           const separator = {
             isSeparator: true
           };
