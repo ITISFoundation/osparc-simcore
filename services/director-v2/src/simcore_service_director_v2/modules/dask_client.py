@@ -88,7 +88,7 @@ from .db import get_db_engine
 _logger = logging.getLogger(__name__)
 
 
-_DASK_DEFAULT_TIMEOUT_S: Final[int] = 35
+_DASK_DEFAULT_TIMEOUT_S: Final[int] = 10
 
 
 _UserCallbackInSepThread = Callable[[], None]
