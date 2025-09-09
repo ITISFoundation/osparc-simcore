@@ -207,9 +207,12 @@ class _StepDict(TypedDict):
     status: NotRequired[StepStatus]
     deferred_task_uid: NotRequired[TaskUID]
     error_traceback: NotRequired[str]
+    requires_manual_intervention: NotRequired[bool]
 
 
-_DeleteStepKeys = Literal["status", "deferred_task_uid", "error_traceback"]
+_DeleteStepKeys = Literal[
+    "status", "deferred_task_uid", "error_traceback", "requires_manual_intervention"
+]
 
 
 class StepStoreProxy:
@@ -245,6 +248,8 @@ class StepStoreProxy:
     async def get(self, key: Literal["deferred_task_uid"]) -> TaskUID: ...
     @overload
     async def get(self, key: Literal["error_traceback"]) -> str: ...
+    @overload
+    async def get(self, key: Literal["requires_manual_intervention"]) -> bool: ...
     async def get(self, key: str) -> Any:
         """raises KeyNotFoundInHashError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
@@ -261,6 +266,10 @@ class StepStoreProxy:
     async def set(self, key: Literal["deferred_task_uid"], value: TaskUID) -> None: ...
     @overload
     async def set(self, key: Literal["error_traceback"], value: str) -> None: ...
+    @overload
+    async def set(
+        self, key: Literal["requires_manual_intervention"], value: bool
+    ) -> None: ...
     async def set(self, key: str, value: Any) -> None:
         await self._store.set(self._get_hash_key(), key, value)
 

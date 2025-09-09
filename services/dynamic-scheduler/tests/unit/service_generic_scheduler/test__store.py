@@ -202,17 +202,30 @@ async def test_step_store_proxy_workflow(
             "status": StepStatus.SUCCESS,
             "deferred_task_uid": TaskUID("mytask"),
             "error_traceback": "mock_traceback",
+            "requires_manual_intervention": True,
         }
     )
     await _assert_keys(store, {hash_key})
     await _assert_keys_in_hash(
-        store, hash_key, {"status", "deferred_task_uid", "error_traceback"}
+        store,
+        hash_key,
+        {
+            "status",
+            "deferred_task_uid",
+            "error_traceback",
+            "requires_manual_intervention",
+        },
     )
 
     # remove all keys an even missing ones
     if use_remove:
         await proxy.remove()
     else:
-        await proxy.delete("status", "deferred_task_uid", "error_traceback")
+        await proxy.delete(
+            "status",
+            "deferred_task_uid",
+            "error_traceback",
+            "requires_manual_intervention",
+        )
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
