@@ -54,26 +54,26 @@ def test_response_surface_modeling(
         # create the probe
         page.get_by_test_id("connect_probe_btn_number_3").click()
 
-        # create the parameter
-        with page.expect_response(
-            re.compile(rf"/projects/{jsonifier_project_data['uuid']}/nodes")
-        ):
-            page.get_by_test_id("newNodeBtn").click()
-            page.get_by_placeholder("Filter").click()
-            page.get_by_placeholder("Filter").fill("number parameter")
-            page.get_by_placeholder("Filter").press("Enter")
+        # # create the parameter
+        # with page.expect_response(
+        #     re.compile(rf"/projects/{jsonifier_project_data['uuid']}/nodes")
+        # ):
+        #     page.get_by_test_id("newNodeBtn").click()
+        #     page.get_by_placeholder("Filter").click()
+        #     page.get_by_placeholder("Filter").fill("number parameter")
+        #     page.get_by_placeholder("Filter").press("Enter")
 
-        # connect the parameter
-        page.get_by_test_id("nodeTreeItem").filter(has_text="jsonifier").all()[
-            1
-        ].click()
-        page.get_by_test_id("connect_input_btn_number_1").click()
-        page.get_by_text("set existing parameter").nth(1).click()
-        page.wait_for_timeout(1000)
-        page.get_by_text("Number Parameter").click()
-        page.wait_for_timeout(5000)
+        # # connect the parameter
+        # page.get_by_test_id("nodeTreeItem").filter(has_text="jsonifier").all()[
+        #     1
+        # ].click()
         # page.get_by_test_id("connect_input_btn_number_1").click()
-        # page.get_by_text("new parameter").click()
+        # page.get_by_text("set existing parameter").nth(1).click()
+        # page.wait_for_timeout(1000)
+        # page.get_by_text("Number Parameter").click()
+        # page.wait_for_timeout(5000)
+        page.get_by_test_id("connect_input_btn_number_1").click()
+        page.get_by_text("new parameter").click()
 
         # rename the project to identify it
         page.get_by_test_id("nodesTree").first.click()
