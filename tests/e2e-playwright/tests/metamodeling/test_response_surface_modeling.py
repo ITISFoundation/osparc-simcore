@@ -1,3 +1,12 @@
+# pylint: disable=logging-fstring-interpolation
+# pylint:disable=no-value-for-parameter
+# pylint:disable=protected-access
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+# pylint:disable=too-many-statements
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
+
 import json
 import logging
 import re
@@ -92,7 +101,7 @@ def test_response_surface_modeling(
     service_version: str | None,
     product_url: AnyUrl,
     is_service_legacy: bool,
-    create_function_from_project: Callable[..., dict[str, Any]],
+    create_function_from_project: Callable[[Page, str], dict[str, Any]],
 ):
     # 1. create the initial study with jsonifier
     with log_context(logging.INFO, "Create new study for function"):
