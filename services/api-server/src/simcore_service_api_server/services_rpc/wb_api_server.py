@@ -587,6 +587,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
         job_status: FunctionJobStatus,
+        check_write_permissions: bool = True,
     ) -> FunctionJobStatus:
         return await functions_rpc_interface.update_function_job_status(
             self._client,
@@ -594,6 +595,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             product_name=product_name,
             job_status=job_status,
+            check_write_permissions=check_write_permissions,
         )
 
     async def update_function_job_outputs(
@@ -603,6 +605,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
         outputs: FunctionOutputs,
+        check_write_permissions: bool = True,
     ) -> FunctionOutputs:
         return await functions_rpc_interface.update_function_job_outputs(
             self._client,
@@ -610,6 +613,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             product_name=product_name,
             outputs=outputs,
+            check_write_permissions=check_write_permissions,
         )
 
     async def find_cached_function_jobs(
