@@ -283,7 +283,7 @@ qx.Class.define("osparc.file.FilePicker", {
         this.__buildInfoLayout();
       } else {
         this.__addProgressBar();
-        if (viewContext === "workbench") {
+        if (["workbench", "pipeline"].includes(viewContext)) {
           this.__buildWorkbenchLayout();
         } else {
           this.setMargin(10);

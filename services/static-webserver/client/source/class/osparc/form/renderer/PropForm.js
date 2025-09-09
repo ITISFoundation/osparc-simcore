@@ -313,7 +313,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (["FileButton"].includes(field.widgetType)) {
         const menuButton = this.__getSelectFileButton(field.key);
         studyUI.bind("mode", menuButton, "visibility", {
-          converter: mode => mode === "workbench" ? "visible" : "excluded"
+          converter: mode => ["workbench", "pipeline"].includes(mode) ? "visible" : "excluded"
         });
         optionsMenu.add(menuButton);
       }
@@ -329,7 +329,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           paramsMenuBtn
         ].forEach(btn => {
           studyUI.bind("mode", btn, "visibility", {
-            converter: mode => mode === "workbench" ? "visible" : "excluded"
+          converter: mode => ["workbench", "pipeline"].includes(mode) ? "visible" : "excluded"
           });
         });
       }
