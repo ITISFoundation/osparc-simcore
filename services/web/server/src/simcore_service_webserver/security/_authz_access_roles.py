@@ -107,10 +107,10 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
     UserRole.PRODUCT_OWNER: PermissionDict(
         # NOTE: Add `tags=["po"]` to entrypoints with this access requirements
         can=[
-            "product.details.*",
-            "product.invitations.create",
             "admin.users.read",
             "admin.users.write",
+            "product.details.*",
+            "product.invitations.create",
         ],
         inherits=[UserRole.TESTER],
     ),
@@ -128,3 +128,14 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
 assert set(ROLES_PERMISSIONS) == set(  # nosec
     UserRole
 ), "All user roles must be part define permissions"  # nosec
+
+
+# Group-based permissions for named groups (e.g. PRODUCT_SUPPORT_GROUP)
+# Maps group type to list of permissions that group members can perform
+NAMED_GROUP_PERMISSIONS: dict[str, list[str]] = {
+    "PRODUCT_SUPPORT_GROUP": [
+        "product.details.*",
+        "admin.users.read",
+    ],
+    # NOTE: Future group types can be added here
+}
