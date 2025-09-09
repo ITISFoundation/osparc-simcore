@@ -36,7 +36,7 @@ from ..api.rpc.routes import setup_rpc_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
-from ..modules.celery import setup_celery
+from ..modules.celery import setup_task_manager
 from ..modules.db import setup_db
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
@@ -71,7 +71,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     setup_client_session(app, tracing_settings=settings.STORAGE_TRACING)
 
     if settings.STORAGE_CELERY:
-        setup_celery(app, settings=settings.STORAGE_CELERY)
+        setup_task_manager(app, settings=settings.STORAGE_CELERY)
 
         if not settings.STORAGE_WORKER_MODE:
             setup_rabbitmq(app)
