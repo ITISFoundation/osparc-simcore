@@ -11,6 +11,7 @@ from servicelib.deferred_tasks import TaskUID
 from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
+    OperationErrorType,
     ScheduleId,
     StepStatus,
 )
@@ -134,12 +135,34 @@ async def test_schedule_data_store_proxy_workflow(
     await _assert_keys_in_hash(store, hash_key, set())
 
     # set multiple
-    await proxy.set_multiple({"group_index": 2, "is_creating": False})
+    await proxy.set_multiple(
+        {
+            "group_index": 2,
+            "is_creating": False,
+            "operation_error_type": OperationErrorType.STEP_ISSUE,
+            "operation_error_message": "mock_error_message",
+        }
+    )
     await _assert_keys(store, {hash_key})
-    await _assert_keys_in_hash(store, hash_key, {"group_index", "is_creating"})
+    await _assert_keys_in_hash(
+        store,
+        hash_key,
+        {
+            "group_index",
+            "is_creating",
+            "operation_error_type",
+            "operation_error_message",
+        },
+    )
 
     # remove all keys an even missing ones
-    await proxy.delete("operation_name", "is_creating", "group_index")
+    await proxy.delete(
+        "operation_name",
+        "is_creating",
+        "group_index",
+        "operation_error_type",
+        "operation_error_message",
+    )
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
 

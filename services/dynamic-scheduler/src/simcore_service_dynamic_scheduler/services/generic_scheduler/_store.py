@@ -15,6 +15,7 @@ from ...core.settings import ApplicationSettings
 from ._errors import KeyNotFoundInHashError
 from ._models import (
     OperationContext,
+    OperationErrorType,
     OperationName,
     ScheduleId,
     StepGroupName,
@@ -126,16 +127,20 @@ class _UpdateScheduleDataDict(TypedDict):
     operation_context: NotRequired[OperationContext]
     group_index: NotRequired[NonNegativeInt]
     is_creating: NotRequired[bool]
+    operation_error_type: NotRequired[OperationErrorType]
+    operation_error_message: NotRequired[str]
 
-
-# TODO: need a model for reading the tnire thing as a dict with optinal keys
 
 _DeleteScheduleDataKeys = Literal[
     "operation_name",
     "operation_context",
     "group_index",
     "is_creating",
+    "operation_error_type",
+    "operation_error_message",
 ]
+
+# TODO: need a model for reading the entire thing as a dict with optinal keys (for the UI)
 
 
 class ScheduleDataStoreProxy:
@@ -154,6 +159,10 @@ class ScheduleDataStoreProxy:
     async def get(self, key: Literal["group_index"]) -> NonNegativeInt: ...
     @overload
     async def get(self, key: Literal["is_creating"]) -> bool: ...
+    @overload
+    async def get(self, key: Literal["operation_error_type"]) -> OperationErrorType: ...
+    @overload
+    async def get(self, key: Literal["operation_error_message"]) -> str: ...
     async def get(self, key: str) -> Any:
         """raises KeyNotFoundInHashError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
@@ -176,6 +185,14 @@ class ScheduleDataStoreProxy:
     async def set(self, key: Literal["group_index"], value: NonNegativeInt) -> None: ...
     @overload
     async def set(self, key: Literal["is_creating"], *, value: bool) -> None: ...
+    @overload
+    async def set(
+        self, key: Literal["operation_error_type"], *, value: OperationErrorType
+    ) -> None: ...
+    @overload
+    async def set(
+        self, key: Literal["operation_error_message"], *, value: str
+    ) -> None: ...
     async def set(self, key: str, value: Any) -> None:
         await self._store.set(self._get_hash_key(), key, value)
 
