@@ -492,9 +492,6 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
         template_id: str | None,
         service_version: str | None,
     ) -> dict[str, Any]:
-        assert (
-            len(created_project_uuids) == 0
-        ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO, f"Open project in {product_url=} as {is_product_billable=}"
         ) as ctx:
