@@ -487,6 +487,17 @@ class DaskClient:
                         ),
                     )
                     return RunningState.UNKNOWN
+                except KeyError as exc:
+                    # the task does not exist
+                    _logger.warning(
+                        **create_troubleshootting_log_kwargs(
+                            f"Task {job_id} not found. State is UNKNOWN.",
+                            error=exc,
+                            error_context=log_error_context,
+                            tip="If the task is supposed to exist, the dask-schdeler has probably restarted. Check its status.",
+                        ),
+                    )
+                    return RunningState.UNKNOWN
 
             return parsed_event.state
 
