@@ -43,6 +43,15 @@ qx.Class.define("osparc.share.Collaborators", {
   },
 
   statics: {
+    sortProductGroupsFirst: function(a, b) {
+      const collabTypeOrder = osparc.store.Groups.COLLAB_TYPE_ORDER;
+      const indexA = collabTypeOrder.indexOf(a["collabType"]);
+      const indexB = collabTypeOrder.indexOf(b["collabType"]);
+      const posA = indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA;
+      const posB = indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB;
+      return posA - posB;
+    },
+
     sortByAccessRights: function(aAccessRights, bAccessRights) {
       if (aAccessRights["delete"] !== bAccessRights["delete"]) {
         return bAccessRights["delete"] - aAccessRights["delete"];
@@ -57,9 +66,16 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     sortStudyOrServiceCollabs: function(a, b) {
+      // product related groups first
+      let sorted = null;
+      sorted = this.self().sortProductGroupsFirst(a, b);
+      if (sorted !== 0) {
+        return sorted;
+      }
+
+      // then by access rights
       const aAccessRights = a["accessRights"];
       const bAccessRights = b["accessRights"];
-      let sorted = null;
       if ("delete" in aAccessRights) {
         // studies
         sorted = this.self().sortByAccessRights(aAccessRights, bAccessRights);
@@ -462,8 +478,10 @@ qx.Class.define("osparc.share.Collaborators", {
             // organization
             if (everyoneGroupIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
+              collaborator["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE; // needed for sorting per product related groups
             } else if (supportGroup && supportGroup.getGroupId() === parseInt(gid)) {
               collaborator["thumbnail"] = supportGroup.getThumbnail();
+              collaborator["collabType"] = osparc.store.Groups.COLLAB_TYPE.SUPPORT; // needed for sorting per product related groups
             } else if (!collaborator["thumbnail"]) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/users/26";
             }
