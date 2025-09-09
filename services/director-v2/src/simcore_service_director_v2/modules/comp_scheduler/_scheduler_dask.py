@@ -322,7 +322,7 @@ class DaskScheduler(BaseCompScheduler):
                     client.get_task_result(t.current.job_id or "undefined")
                     for t in tasks
                 ),
-                reraise=True,
+                reraise=False,
                 log=_logger,
                 limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
             )
