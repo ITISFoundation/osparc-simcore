@@ -62,15 +62,8 @@ qx.Class.define("osparc.data.model.User", {
     });
 
     if (userData["contact"]) {
-      const contact = userData["contact"];
-      this.set({
-        institution: contact["institution"] || null,
-        address: contact["address"] || null,
-        city: contact["city"] || null,
-        state: contact["state"] || null,
-        country: contact["country"] || null,
-        postalCode: contact["postalCode"] || null,
-      });
+      const contactData = userData["contact"];
+      this.setContactData(contactData);
     }
 
     // create the thumbnail after setting email and username
@@ -217,6 +210,17 @@ qx.Class.define("osparc.data.model.User", {
 
     getFullName: function() {
       return this.self().concatFullName(this.getFirstName(), this.getLastName());
+    },
+
+    setContactData: function(contactData) {
+      this.set({
+        institution: contactData["institution"] || null,
+        address: contactData["address"] || null,
+        city: contactData["city"] || null,
+        state: contactData["state"] || null,
+        country: contactData["country"] || null,
+        postalCode: contactData["postalCode"] || null,
+      });
     },
   },
 });
