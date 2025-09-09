@@ -55,7 +55,7 @@ def _(parser: LocustArgumentParser) -> None:
 
 class WebApiUser(OsparcWebUserBase):
     @task
-    def get_endpoint(self) -> None:
+    def call_endpoint(self) -> None:
         http_method = self.environment.parsed_options.http_method.lower()
         method = getattr(self, f"authenticated_{http_method}")
         if not isinstance(method, Callable):

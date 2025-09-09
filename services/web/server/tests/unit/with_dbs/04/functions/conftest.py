@@ -71,7 +71,6 @@ async def rpc_client(
 
 @pytest.fixture
 def mock_function_factory() -> Callable[[FunctionClass], Function]:
-
     def _(function_class: FunctionClass) -> Function:
         if function_class == FunctionClass.PROJECT:
             return ProjectFunction(
@@ -112,9 +111,8 @@ def mock_function_factory() -> Callable[[FunctionClass], Function]:
                 solver_key="simcore/services/comp/mysolver",
                 solver_version="1.0.0",
             )
-        raise AssertionError(
-            f"Please implement the mock for {function_class=} yourself"
-        )
+        msg = f"Please implement the mock for {function_class=} yourself"
+        raise AssertionError(msg)
 
     return _
 
