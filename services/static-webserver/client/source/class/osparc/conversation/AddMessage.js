@@ -70,11 +70,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
         }
         case "thumbnail": {
           control = osparc.utils.Utils.createThumbnail(32);
-          const authData = osparc.auth.Data.getInstance();
-          const myUsername = authData.getUsername();
-          const myEmail = authData.getEmail();
+          const meGroup = osparc.store.Groups.getInstance().getGroupMe();
           control.set({
-            source: osparc.utils.Avatar.emailToThumbnail(myEmail, myUsername, 32),
+            source: meGroup.getThumbnail(),
             alignX: "center",
             alignY: "middle",
             marginRight: 8,
@@ -175,7 +173,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     addComment: function() {
       const conversationId = this.getConversationId();
       if (conversationId) {
-        this.__postMessage();
+        return this.__postMessage();
       } else {
         const studyData = this.getStudyData();
         let promise = null;
@@ -191,10 +189,10 @@ qx.Class.define("osparc.conversation.AddMessage", {
           }
           promise = osparc.store.ConversationsSupport.getInstance().postConversation(extraContext);
         }
-        promise
+        return promise
           .then(data => {
             this.setConversationId(data["conversationId"]);
-            this.__postMessage();
+            return this.__postMessage();
           });
       }
     },
@@ -211,12 +209,14 @@ qx.Class.define("osparc.conversation.AddMessage", {
         } else {
           promise = osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
         }
-        promise
+        return promise
           .then(data => {
             this.fireDataEvent("messageAdded", data);
             commentField.getChildControl("text-area").setValue("");
+            return data;
           });
       }
+      return Promise.reject();
     },
 
     __editComment: function() {

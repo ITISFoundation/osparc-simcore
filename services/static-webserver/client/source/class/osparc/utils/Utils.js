@@ -577,9 +577,9 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     /**
-      * @param value {Date Object} Date Object
+      * @param date {Date Object} Date Object
       */
-    formatDate: function(value) {
+    formatDate: function(date) {
       // create a date format like "Oct. 19, 11:31 AM" if it's this year
       const dateFormat = new qx.util.format.DateFormat(
         qx.locale.Date.getDateFormat("medium")
@@ -592,20 +592,20 @@ qx.Class.define("osparc.utils.Utils", {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      if (today.toDateString() === value.toDateString()) {
+      if (today.toDateString() === date.toDateString()) {
         dateStr = qx.locale.Manager.tr("Today");
-      } else if (yesterday.toDateString() === value.toDateString()) {
+      } else if (yesterday.toDateString() === date.toDateString()) {
         dateStr = qx.locale.Manager.tr("Yesterday");
-      } else if (tomorrow.toDateString() === value.toDateString()) {
+      } else if (tomorrow.toDateString() === date.toDateString()) {
         dateStr = qx.locale.Manager.tr("Tomorrow");
       } else {
         const currentYear = today.getFullYear();
-        if (value.getFullYear() === currentYear) {
+        if (date.getFullYear() === currentYear) {
           // Remove the year if it's the current year
           const shortDateFormat = new qx.util.format.DateFormat("MMM d");
-          dateStr = shortDateFormat.format(value);
+          dateStr = shortDateFormat.format(date);
         } else {
-          dateStr = dateFormat.format(value);
+          dateStr = dateFormat.format(date);
         }
       }
       return dateStr;
@@ -618,21 +618,54 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     /**
-      * @param value {Date Object} Date Object
+      * @param date {Date Object} Date Object
       */
-    formatTime: function(value, long = false) {
+    formatTime: function(date, long = false) {
       const timeFormat = new qx.util.format.DateFormat(
         qx.locale.Date.getTimeFormat(long ? "long" : "short")
       );
-      const timeStr = timeFormat.format(value);
+      const timeStr = timeFormat.format(date);
       return timeStr;
     },
 
     /**
-      * @param value {Date Object} Date Object
+      * @param date {Date Object} Date Object
       */
-    formatDateAndTime: function(value) {
-      return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
+    formatDateAndTime: function(date) {
+      return osparc.utils.Utils.formatDate(date) + " " + osparc.utils.Utils.formatTime(date);
+    },
+
+    /**
+     * @param {Date} date - The date to format.
+     * @returns {String} - The formatted date string with city name and timezone. Sep 4, 1986, 17:00 Zurich (GMT+02:00)
+     */
+    formatDateWithCityAndTZ: function(date) {
+      // Short date/time formatter
+      const options = {
+        year: "numeric",   // 1986
+        month: "short",    // Sep
+        day: "numeric",    // 4
+        hour: "numeric",   // 9
+        minute: "2-digit",
+        hour12: false,     // 24h format
+      };
+
+      const dtf = new Intl.DateTimeFormat("en-US", options);
+      const formatted = dtf.format(date);
+
+      // Timezone city
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const city = tz.split("/").pop().replace("_", " ");
+
+      // UTC offset (minutes → +HH:MM)
+      const offsetMinutes = -date.getTimezoneOffset(); // JS returns opposite sign
+      const sign = offsetMinutes >= 0 ? "+" : "-";
+      const absMinutes = Math.abs(offsetMinutes);
+      const hours = String(Math.floor(absMinutes / 60)).padStart(2, "0");
+      const minutes = String(absMinutes % 60).padStart(2, "0");
+      const offsetStr = `GMT${sign}${hours}:${minutes}`;
+
+      return `${formatted} ${city} (${offsetStr})`;
     },
 
     formatMsToHHMMSS: function(ms) {

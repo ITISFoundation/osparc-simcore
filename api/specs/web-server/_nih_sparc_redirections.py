@@ -1,5 +1,4 @@
-""" Helper script to generate OAS automatically NIH-sparc portal API section
-"""
+"""Helper script to generate OAS automatically NIH-sparc portal API section"""
 
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
@@ -11,7 +10,7 @@
 from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
-from models_library.services import ServiceKey, ServiceKeyVersion
+from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import HttpUrl, PositiveInt
 
 router = APIRouter(
@@ -31,7 +30,7 @@ router = APIRouter(
 async def get_redirection_to_viewer(
     file_type: str,
     viewer_key: ServiceKey,
-    viewer_version: ServiceKeyVersion,
+    viewer_version: ServiceVersion,
     file_size: PositiveInt,
     download_link: HttpUrl,
     file_name: str | None = "unknown",

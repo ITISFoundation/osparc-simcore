@@ -203,6 +203,7 @@ class FunctionJobService:
             user_id=self.user_id,
             product_name=self.product_name,
             job_status=new_job_status,
+            check_write_permissions=False,
         )
 
     async def create_function_job_inputs(  # pylint: disable=no-self-use
@@ -405,7 +406,6 @@ class FunctionJobService:
     async def run_function(
         self,
         *,
-        job_creation_task_id: TaskID | None,
         function: RegisteredFunction,
         pre_registered_function_job_data: PreRegisteredFunctionJobData,
         pricing_spec: JobPricingSpecification | None,
@@ -434,7 +434,7 @@ class FunctionJobService:
                 product_name=self.product_name,
                 function_job_id=pre_registered_function_job_data.function_job_id,
                 function_class=FunctionClass.PROJECT,
-                job_creation_task_id=job_creation_task_id,
+                job_creation_task_id=None,
                 project_job_id=study_job.id,
             )
 
@@ -459,36 +459,13 @@ class FunctionJobService:
                 product_name=self.product_name,
                 function_job_id=pre_registered_function_job_data.function_job_id,
                 function_class=FunctionClass.SOLVER,
-                job_creation_task_id=job_creation_task_id,
+                job_creation_task_id=None,
                 solver_job_id=solver_job.id,
             )
 
         raise UnsupportedFunctionClassError(
             function_class=function.function_class,
         )
-
-    async def map_function(
-        self,
-        *,
-        job_creation_task_id: TaskID | None,
-        function: RegisteredFunction,
-        pre_registered_function_job_data_list: list[PreRegisteredFunctionJobData],
-        job_links: JobLinks,
-        pricing_spec: JobPricingSpecification | None,
-        x_simcore_parent_project_uuid: ProjectID | None,
-        x_simcore_parent_node_id: NodeID | None,
-    ) -> None:
-
-        for data in pre_registered_function_job_data_list:
-            await self.run_function(
-                job_creation_task_id=job_creation_task_id,
-                function=function,
-                pre_registered_function_job_data=data,
-                pricing_spec=pricing_spec,
-                job_links=job_links,
-                x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
-                x_simcore_parent_node_id=x_simcore_parent_node_id,
-            )
 
     async def function_job_outputs(
         self,
@@ -553,4 +530,5 @@ class FunctionJobService:
             user_id=user_id,
             product_name=product_name,
             outputs=new_outputs,
+            check_write_permissions=False,
         )

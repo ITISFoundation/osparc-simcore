@@ -141,6 +141,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           focusable: false,
           toolTipText: this.tr("Connects a Probe to this output")
         });
+        osparc.utils.Utils.setIdToWidget(probeBtn, "connect_probe_btn_" + portKey);
         this.bind("offerProbes", probeBtn, "visibility", {
           converter: val => val ? "visible" : "excluded"
         });

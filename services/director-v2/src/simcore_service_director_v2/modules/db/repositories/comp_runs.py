@@ -323,11 +323,14 @@ class CompRunsRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
 
             items = [
-                ComputationRunRpcGet.model_validate(
-                    {
-                        **row,
-                        "state": DB_TO_RUNNING_STATE[row.state],
-                    }
+                ComputationRunRpcGet(
+                    project_uuid=row.project_uuid,
+                    iteration=row.iteration,
+                    state=DB_TO_RUNNING_STATE[row.state],
+                    info=row.info,
+                    submitted_at=row.submitted_at,
+                    started_at=row.started_at,
+                    ended_at=row.ended_at,
                 )
                 async for row in await conn.stream(list_query)
             ]
@@ -525,7 +528,7 @@ class CompRunsRepository(BaseRepository):
                     iteration = await _get_next_iteration(conn, user_id, project_id)
 
                 result = await conn.execute(
-                    comp_runs.insert()  # pylint: disable=no-value-for-parameter
+                    comp_runs.insert()
                     .values(
                         user_id=user_id,
                         project_uuid=f"{project_id}",

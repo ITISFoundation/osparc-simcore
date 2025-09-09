@@ -157,7 +157,14 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         maxHeight: 40
       });
       return toolbar;
-    }
+    },
+
+    disableIfInUse: function(resourceData, widget) {
+      if (resourceData["resourceType"] === "study") {
+        // disable if it's being used
+        widget.setEnabled(!osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"]).length);
+      }
+    },
   },
 
   properties: {
@@ -225,8 +232,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         toolbar.add(serviceVersionSelector);
       }
 
-      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      const openText = (this.__resourceData["resourceType"] === "study") ? this.tr("Open") : this.tr("New") + " " + studyAlias;
+      const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(this.__resourceData);
       const openButton = new osparc.ui.form.FetchButton(openText).set({
         enabled: true
       });
@@ -536,6 +542,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
+          this.self().disableIfInUse(resourceData, billingSettings);
           billingSettings.addListener("debtPayed", () => {
             page.payDebtButton.set({
               visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
@@ -785,6 +792,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const servicesUpdate = new osparc.metadata.ServicesInStudyUpdate(resourceData);
+        this.self().disableIfInUse(resourceData, servicesUpdate);
         servicesUpdate.addListener("updateService", e => {
           const updatedData = e.getData();
           this.__fireUpdateEvent(resourceData, updatedData);
@@ -818,6 +826,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const servicesBootOpts = new osparc.metadata.ServicesInStudyBootOpts(resourceData);
+        this.self().disableIfInUse(resourceData, servicesBootOpts);
         servicesBootOpts.addListener("updateService", e => {
           const updatedData = e.getData();
           this.__fireUpdateEvent(resourceData, updatedData);
@@ -945,6 +954,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       const createFunction = new osparc.study.CreateFunction(this.__resourceData);
       const createFunctionButton = createFunction.getCreateFunctionButton();
+      osparc.utils.Utils.setIdToWidget(createFunctionButton, "create_function_page_btn");
       osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(createFunctionButton);
       const toolbar = this.self().createToolbar();
       toolbar.add(createFunctionButton);
