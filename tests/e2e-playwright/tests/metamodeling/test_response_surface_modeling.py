@@ -18,6 +18,7 @@ _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(
     r"/flask/list_function_job_collections_for_functionid"
 )
 
+_STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
 
 
@@ -33,7 +34,7 @@ def test_response_surface_modeling(
     is_service_legacy: bool,
 ):
     # 1. create the initial study with jsonifier
-    with log_context(logging.INFO, "Create new study..."):
+    with log_context(logging.INFO, "Create new study for function"):
         jsonifier_project_data = create_project_from_service_dashboard(
             ServiceType.COMPUTATIONAL, "jsonifier", None, service_version
         )
@@ -52,34 +53,81 @@ def test_response_surface_modeling(
         ].click()
 
         # create the probe
-        page.get_by_test_id("connect_probe_btn_number_3").click()
+        with page.expect_response(
+            lambda response: re.compile(
+                rf"/projects/{jsonifier_project_data['uuid']}"
+            ).search(response.url)
+            is not None
+            and response.request.method == "PATCH"
+        ):
+            page.get_by_test_id("connect_probe_btn_number_3").click()
 
         # # create the parameter
-        # with page.expect_response(
-        #     re.compile(rf"/projects/{jsonifier_project_data['uuid']}/nodes")
-        # ):
-        #     page.get_by_test_id("newNodeBtn").click()
-        #     page.get_by_placeholder("Filter").click()
-        #     page.get_by_placeholder("Filter").fill("number parameter")
-        #     page.get_by_placeholder("Filter").press("Enter")
-
-        # # connect the parameter
-        # page.get_by_test_id("nodeTreeItem").filter(has_text="jsonifier").all()[
-        #     1
-        # ].click()
-        # page.get_by_test_id("connect_input_btn_number_1").click()
-        # page.get_by_text("set existing parameter").nth(1).click()
-        # page.wait_for_timeout(1000)
-        # page.get_by_text("Number Parameter").click()
-        # page.wait_for_timeout(5000)
         page.get_by_test_id("connect_input_btn_number_1").click()
-        page.get_by_text("new parameter").click()
+        with page.expect_response(
+            lambda response: re.compile(
+                rf"/projects/{jsonifier_project_data['uuid']}"
+            ).search(response.url)
+            is not None
+            and response.request.method == "PATCH"
+        ):
+            page.get_by_text("new parameter").click()
 
         # rename the project to identify it
-        page.get_by_test_id("nodesTree").first.click()
-        page.get_by_test_id("nodesTree").first.press("F2")
-        page.get_by_test_id("nodesTree").first.fill("RSM study")
-    # 2. convert it to a function
+        page.get_by_test_id("studyTitleRenamer").click()
+        with page.expect_response(
+            lambda response: re.compile(
+                rf"/projects/{jsonifier_project_data['uuid']}"
+            ).search(response.url)
+            is not None
+            and response.request.method == "PATCH"
+        ):
+            page.get_by_test_id("studyTitleRenamer").locator("input").fill(
+                _STUDY_FUNCTION_NAME
+            )
+
+    # 2. go back to dashboard
+    with (
+        log_context(logging.INFO, "Go back to dashboard"),
+        page.expect_response(re.compile(r"/projects\?.+")) as list_projects_response,
+    ):
+        page.get_by_test_id("dashboardBtn").click()
+        page.get_by_test_id("confirmDashboardBtn").click()
+    assert (
+        list_projects_response.value.ok
+    ), f"Failed to list projects: {list_projects_response.value.status}"
+    project_listing = list_projects_response.value.json()
+    assert "data" in project_listing
+    assert len(project_listing["data"]) > 0
+    # find the project we just created, it's the first one
+    our_project = project_listing["data"][0]
+    assert (
+        our_project["name"] == _STUDY_FUNCTION_NAME
+    ), f"Expected to find our project named {_STUDY_FUNCTION_NAME} in {project_listing}"
+    our_project_uuid = our_project["uuid"]
+
+    # 3. convert it to a function
+    with log_context(
+        logging.INFO,
+        f"Convert {our_project_uuid=} / {our_project['name']} to a function",
+    ) as ctx:
+        with page.expect_response(re.compile(rf"/projects/{our_project_uuid}")):
+            page.get_by_test_id(f"studyBrowserListItem_{our_project_uuid}").click()
+        page.wait_for_timeout(2000)
+        page.get_by_text("create function").first.click()
+        page.wait_for_timeout(2000)
+
+        with page.expect_response(
+            lambda response: re.compile(r"/functions").search(response.url) is not None
+            and response.request.method == "POST"
+        ) as create_function_response:
+            page.get_by_test_id("create_function_page_btn").click()
+        assert (
+            create_function_response.value.ok
+        ), f"Failed to create function: {create_function_response.value.status}"
+        function_data = create_function_response.value.json()
+        ctx.logger.info("Created function: %s", function_data)
+
     # 3. start a RSM with that function
 
     # with log_context(

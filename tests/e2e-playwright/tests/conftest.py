@@ -597,22 +597,29 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
     yield _
 
     # go back to dashboard and wait for project to close
-    with ExitStack() as stack:
-        for project_uuid in created_project_uuids:
-            ctx = stack.enter_context(
-                log_context(logging.INFO, f"Wait for closed project {project_uuid=}")
+    with log_context(logging.INFO, "Go back to dashboard") as ctx1:
+        if page.get_by_test_id("dashboardBtn").is_visible():
+            with ExitStack() as stack:
+                for project_uuid in created_project_uuids:
+                    ctx = stack.enter_context(
+                        log_context(
+                            logging.INFO, f"Wait for closed project {project_uuid=}"
+                        )
+                    )
+                    stack.enter_context(
+                        log_in_and_out.expect_event(
+                            "framereceived",
+                            SocketIOProjectClosedWaiter(ctx.logger),
+                            timeout=_PROJECT_CLOSING_TIMEOUT,
+                        )
+                    )
+                if created_project_uuids:
+                    page.get_by_test_id("dashboardBtn").click()
+                    page.get_by_test_id("confirmDashboardBtn").click()
+        else:
+            ctx1.logger.warning(
+                "Cannot go back to dashboard, 'dashboard' button is not visible, we are probably already there"
             )
-            stack.enter_context(
-                log_in_and_out.expect_event(
-                    "framereceived",
-                    SocketIOProjectClosedWaiter(ctx.logger),
-                    timeout=_PROJECT_CLOSING_TIMEOUT,
-                )
-            )
-        if created_project_uuids:
-            with log_context(logging.INFO, "Go back to dashboard"):
-                page.get_by_test_id("dashboardBtn").click()
-                page.get_by_test_id("confirmDashboardBtn").click()
 
     for project_uuid in created_project_uuids:
         with log_context(
