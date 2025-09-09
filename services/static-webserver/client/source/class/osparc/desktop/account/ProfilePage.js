@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     this.__userProfileData = {};
     this.__userPrivacyData = {};
 
-    this.__fetchProfile();
+    this.__fetchMyProfile();
   },
 
   statics: {
@@ -80,7 +80,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     __personalInfoModel: null,
     __personalInfoRenderer: null,
 
-    __fetchProfile: function() {
+    __fetchMyProfile: function() {
       this.__userProfileRenderer.setEnabled(false);
       this.__privacyRenderer.setEnabled(false);
       this.__personalInfoRenderer.setEnabled(false);
@@ -693,7 +693,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
       verifyPhoneNumberView.addListener("done", () => {
         win.close();
-        this.__fetchProfile();
+        this.__fetchMyProfile();
       }, this);
     },
   }
