@@ -218,7 +218,7 @@ qx.Class.define("osparc.share.Collaborators", {
           canIShare = osparc.data.model.Function.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
         case "service":
-          canIShare = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+          canIShare = osparc.data.model.Service.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
         case "workspace":
           canIShare = osparc.share.CollaboratorsWorkspace.canIDelete(this._serializedDataCopy["myAccessRights"]);
@@ -247,7 +247,7 @@ qx.Class.define("osparc.share.Collaborators", {
           fullOptions = osparc.data.model.Function.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
         case "service":
-          fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+          fullOptions = osparc.data.model.Service.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
         case "workspace":
           fullOptions = osparc.share.CollaboratorsWorkspace.canIDelete(this._serializedDataCopy["myAccessRights"]);
