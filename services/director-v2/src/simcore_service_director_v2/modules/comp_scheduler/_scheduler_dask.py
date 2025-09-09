@@ -52,6 +52,9 @@ from ..db.repositories.comp_runs import (
     CompRunsRepository,
 )
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ._constants import (
+    MAX_CONCURRENT_PIPELINE_SCHEDULING,
+)
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
     WAITING_FOR_START_STATES,
@@ -313,7 +316,7 @@ class DaskScheduler(BaseCompScheduler):
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ),
-                limit=10,
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
             ):
                 with log_catch(_logger, reraise=False):
                     task_can_be_cleaned, job_id = await future
