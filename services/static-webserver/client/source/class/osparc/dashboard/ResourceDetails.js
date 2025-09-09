@@ -637,7 +637,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __addPermissionsPage: function() {
-      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]) ) {
+      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
         return;
       }
 
@@ -786,7 +786,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       if (osparc.utils.Resources.isService(resourceData)) {
         return;
       }
-      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]) ) {
+      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
         return;
       }
 
@@ -823,7 +823,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       ) {
         return;
       }
-      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]) ) {
+      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
         return;
       }
 
