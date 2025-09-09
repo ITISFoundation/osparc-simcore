@@ -1,8 +1,10 @@
+import json
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any, Final
 
+import pytest
 from playwright.sync_api import Page
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
@@ -22,6 +24,44 @@ _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
 
 
+@pytest.fixture
+def create_function_from_project() -> Iterator[Callable[[Page, str], dict[str, Any]]]:
+    def _create_function_from_project(
+        page: Page,
+        project_uuid: str,
+    ) -> dict[str, Any]:
+        with log_context(
+            logging.INFO,
+            f"Convert {project_uuid=} / {_STUDY_FUNCTION_NAME} to a function",
+        ) as ctx:
+            with page.expect_response(re.compile(rf"/projects/{project_uuid}")):
+                page.get_by_test_id(f"studyBrowserListItem_{project_uuid}").click()
+            page.wait_for_timeout(2000)
+            page.get_by_text("create function").first.click()
+            page.wait_for_timeout(2000)
+
+            with page.expect_response(
+                lambda response: re.compile(r"/functions").search(response.url)
+                is not None
+                and response.request.method == "POST"
+            ) as create_function_response:
+                page.get_by_test_id("create_function_page_btn").click()
+            assert (
+                create_function_response.value.ok
+            ), f"Failed to create function: {create_function_response.value.status}"
+            function_data = create_function_response.value.json()
+
+            ctx.logger.info(
+                "Created function: %s", f"{json.dumps(function_data['data'], indent=2)}"
+            )
+
+        return function_data["data"]
+
+    yield _create_function_from_project
+
+    # cleanup the function
+
+
 def test_response_surface_modeling(
     page: Page,
     create_project_from_service_dashboard: Callable[
@@ -32,6 +72,7 @@ def test_response_surface_modeling(
     service_version: str | None,
     product_url: AnyUrl,
     is_service_legacy: bool,
+    create_function_from_project: Callable[..., dict[str, Any]],
 ):
     # 1. create the initial study with jsonifier
     with log_context(logging.INFO, "Create new study for function"):
@@ -104,29 +145,9 @@ def test_response_surface_modeling(
     assert (
         our_project["name"] == _STUDY_FUNCTION_NAME
     ), f"Expected to find our project named {_STUDY_FUNCTION_NAME} in {project_listing}"
-    our_project_uuid = our_project["uuid"]
 
     # 3. convert it to a function
-    with log_context(
-        logging.INFO,
-        f"Convert {our_project_uuid=} / {our_project['name']} to a function",
-    ) as ctx:
-        with page.expect_response(re.compile(rf"/projects/{our_project_uuid}")):
-            page.get_by_test_id(f"studyBrowserListItem_{our_project_uuid}").click()
-        page.wait_for_timeout(2000)
-        page.get_by_text("create function").first.click()
-        page.wait_for_timeout(2000)
-
-        with page.expect_response(
-            lambda response: re.compile(r"/functions").search(response.url) is not None
-            and response.request.method == "POST"
-        ) as create_function_response:
-            page.get_by_test_id("create_function_page_btn").click()
-        assert (
-            create_function_response.value.ok
-        ), f"Failed to create function: {create_function_response.value.status}"
-        function_data = create_function_response.value.json()
-        ctx.logger.info("Created function: %s", function_data)
+    create_function_from_project(page, our_project["uuid"])
 
     # 3. start a RSM with that function
 
