@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from servicelib.deferred_tasks import BaseDeferredHandler, DeferredContext, TaskUID
 from servicelib.deferred_tasks._models import TaskResultError
 
-from ._event_scheduler import enqueue_event
+from ._dependencies import enqueue_event
 from ._models import OperationName, ScheduleId, StepGroupName, StepName, StepStatus
 from ._operation import BaseStep, OperationRegistry
 from ._store import StepStoreProxy, Store, get_store
@@ -67,7 +67,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
         return (
             await step.get_create_retries(context)
             if is_creating
-            else await step.get_destroy_retries(context)
+            else await step.get_revert_retries(context)
         )
 
     @classmethod
@@ -77,7 +77,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
         return (
             await step.get_create_timeout(context)
             if is_creating
-            else await step.get_destroy_timeout(context)
+            else await step.get_revert_timeout(context)
         )
 
     @classmethod
@@ -98,7 +98,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
         if is_creating:
             await step.create(app)
         else:
-            await step.destroy(app)
+            await step.revert(app)
 
     @classmethod
     async def on_result(cls, result: None, context: DeferredContext) -> None:

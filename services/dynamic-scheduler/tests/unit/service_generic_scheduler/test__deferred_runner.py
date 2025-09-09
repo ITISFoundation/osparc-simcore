@@ -137,7 +137,7 @@ class _StepFinisheWithSuccess(BaseStep):
         _StepResultStore.set_result(cls.__name__, "created")
 
     @classmethod
-    async def destroy(cls, app: FastAPI) -> None:
+    async def revert(cls, app: FastAPI) -> None:
         _ = app
         _StepResultStore.set_result(cls.__name__, "destroyed")
 
@@ -151,7 +151,7 @@ class _StepFinisheError(BaseStep):
         raise RuntimeError(msg)
 
     @classmethod
-    async def destroy(cls, app: FastAPI) -> None:
+    async def revert(cls, app: FastAPI) -> None:
         _ = app
         _StepResultStore.set_result(cls.__name__, "destroyed")
         msg = "I failed destorying"
@@ -166,7 +166,7 @@ class _StepLongRunningToCancel(BaseStep):
         await asyncio.sleep(10000)
 
     @classmethod
-    async def destroy(cls, app: FastAPI) -> None:
+    async def revert(cls, app: FastAPI) -> None:
         _ = app
         _StepResultStore.set_result(cls.__name__, "destroyed")
         await asyncio.sleep(10000)

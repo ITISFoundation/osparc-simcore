@@ -15,6 +15,7 @@ from ._models import OperationName, StepGroupName, StepName
 
 _DEFAULT_STEP_RETRIES: Final[NonNegativeInt] = 0
 _DEFAULT_STEP_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
+_DEFAULT_MANUAL_INTERVENTION: Final[bool] = False
 
 
 class BaseStep(ABC):
@@ -34,6 +35,13 @@ class BaseStep(ABC):
         """
 
     @classmethod
+    async def get_create_error_for_manual_intervention(cls) -> bool:
+        """
+        [optional] if True scheduler will block waiting for manual intervention form a user
+        """
+        return _DEFAULT_MANUAL_INTERVENTION
+
+    @classmethod
     async def get_create_retries(cls, context: DeferredContext) -> int:
         """[optional] amount of retires in case of creation"""
         assert context  # nosec
@@ -45,27 +53,27 @@ class BaseStep(ABC):
         assert context  # nosec
         return _DEFAULT_STEP_TIMEOUT
 
-    ### DESTROY
+    ### REVERT
 
     @classmethod
-    async def destroy(cls, app: FastAPI) -> None:
+    async def revert(cls, app: FastAPI) -> None:
         """
         [optional] handler resposible for celanup of resources created above.
         NOTE: Ensure this is successful if:
             - `create` is not executed
             - `create` is executed partially
-            - `destory` is called multiple times
+            - `revert` is called multiple times
         """
         _ = app
 
     @classmethod
-    async def get_destroy_retries(cls, context: DeferredContext) -> int:
+    async def get_revert_retries(cls, context: DeferredContext) -> int:
         """[optional] amount of retires in case of failure"""
         assert context  # nosec
         return _DEFAULT_STEP_RETRIES
 
     @classmethod
-    async def get_destroy_timeout(cls, context: DeferredContext) -> timedelta:
+    async def get_revert_timeout(cls, context: DeferredContext) -> timedelta:
         """[optional] timeout between retires in case of failure"""
         assert context  # nosec
         return _DEFAULT_STEP_TIMEOUT
@@ -75,11 +83,12 @@ StepsSubGroup: TypeAlias = Annotated[tuple[type[BaseStep], ...], Field(min_lengt
 
 
 class BaseStepGroup(ABC):
-    def __init__(self, *, repeat_steps: bool) -> None:
+    def __init__(self, *, repeat_steps: bool, wait_before_repeat: timedelta) -> None:
         """
         if repeat_steps is True, the steps in this group will be repeated forever
         """
         self.repeat_steps = repeat_steps
+        self.wait_before_repeat = wait_before_repeat
 
     @abstractmethod
     def get_step_group_name(self, *, index: NonNegativeInt) -> StepGroupName:
@@ -94,10 +103,22 @@ class BaseStepGroup(ABC):
         """returns subgroups of steps to run"""
 
 
+_DEFAULT_REPEAT_STEPS: Final[bool] = False
+_DEFAULT_WAIT_BEFORE_REPEAT: Final[timedelta] = timedelta(seconds=5)
+
+
 class SingleStepGroup(BaseStepGroup):
-    def __init__(self, step: type[BaseStep], *, repeat_steps: bool = False) -> None:
+    def __init__(
+        self,
+        step: type[BaseStep],
+        *,
+        repeat_steps: bool = _DEFAULT_REPEAT_STEPS,
+        wait_before_repeat: timedelta = _DEFAULT_WAIT_BEFORE_REPEAT,
+    ) -> None:
         self._step: type[BaseStep] = step
-        super().__init__(repeat_steps=repeat_steps)
+        super().__init__(
+            repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat
+        )
 
     def get_step_group_name(self, *, index: NonNegativeInt) -> StepGroupName:
         return f"{index}S{'R' if self.repeat_steps else ''}"
@@ -113,11 +134,18 @@ _MIN_PARALLEL_STEPS: Final[int] = 2
 
 
 class ParallelStepGroup(BaseStepGroup):
-    def __init__(self, *steps: type[BaseStep], repeat_steps: bool = False) -> None:
+    def __init__(
+        self,
+        *steps: type[BaseStep],
+        repeat_steps: bool = _DEFAULT_REPEAT_STEPS,
+        wait_before_repeat: timedelta = _DEFAULT_WAIT_BEFORE_REPEAT,
+    ) -> None:
 
         self._steps: list[type[BaseStep]] = list(steps)
 
-        super().__init__(repeat_steps=repeat_steps)
+        super().__init__(
+            repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat
+        )
 
     @property
     def steps(self) -> list[type[BaseStep]]:
@@ -136,18 +164,24 @@ class ParallelStepGroup(BaseStepGroup):
 Operation: TypeAlias = Annotated[list[BaseStepGroup], Field(min_length=1)]
 
 
+def _has_abstract_methods(cls: type[object]) -> bool:
+    return bool(getattr(cls, "__abstractmethods__", set()))
+
+
 @validate_call(config={"arbitrary_types_allowed": True})
 def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
     detected_steps_names: dict[StepName, type[BaseStep]] = {}
 
     for k, step_group in enumerate(operation):
-        if isinstance(step_group, ParallelStepGroup):
-            if len(step_group.steps) < _MIN_PARALLEL_STEPS:
-                msg = (
-                    f"{ParallelStepGroup.__name__} needs at least {_MIN_PARALLEL_STEPS} "
-                    f"steps. TIP: use {SingleStepGroup.__name__} instead."
-                )
-                raise ValueError(msg)
+        if (
+            isinstance(step_group, ParallelStepGroup)
+            and len(step_group.steps) < _MIN_PARALLEL_STEPS
+        ):
+            msg = (
+                f"{ParallelStepGroup.__name__} needs at least {_MIN_PARALLEL_STEPS} "
+                f"steps. TIP: use {SingleStepGroup.__name__} instead."
+            )
+            raise ValueError(msg)
 
         if k < len(operation) - 1 and step_group.repeat_steps is True:
             msg = f"Only the last step group can have repeat_steps=True. Error at index {k=}"
@@ -155,6 +189,10 @@ def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
 
         for step in step_group.get_step_subgroup_to_run():
             step_name = step.get_step_name()
+
+            if _has_abstract_methods(step):
+                msg = f"Step {step_name=} has abstract methods and cannot be registered"
+                raise ValueError(msg)
 
             if step_name in detected_steps_names:
                 msg = f"Step {step_name=} is already used in this operation {detected_steps_names=}"
