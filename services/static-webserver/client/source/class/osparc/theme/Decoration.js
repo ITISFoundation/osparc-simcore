@@ -26,6 +26,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "separator-strong": {
+      style: {
+        widthTop: 1,
+        colorTop: "product-color",
+      }
+    },
+
     "border-simple": {
       include: "border",
       style: {

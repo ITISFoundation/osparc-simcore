@@ -350,6 +350,10 @@ qx.Class.define("osparc.share.Collaborators", {
           ctrl.bindProperty("resourceType", "resourceType", null, item, id); // Resource type
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
+          // handle separator
+          ctrl.bindProperty("isSeparator", "enabled", {
+            converter: val => !val // disable clicks on separator
+          }, item, id);
         },
         configureItem: item => {
           item.getChildControl("thumbnail").getContentElement()
@@ -395,6 +399,16 @@ qx.Class.define("osparc.share.Collaborators", {
               return;
             }
             this._deleteMember(orgMember, item);
+          });
+          item.addListener("changeEnabled", e => {
+            if (!e.getData()) {
+              item.set({
+                // label: "",
+                minHeight: 1,
+                maxHeight: 1,
+                decorator: "separator-strong",
+              });
+            }
           });
         }
       });
@@ -493,7 +507,22 @@ qx.Class.define("osparc.share.Collaborators", {
         }
       }
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
-      collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
+
+      // add a separator right after the product groups
+      const collabTypeOrder = osparc.store.Groups.COLLAB_TYPE_ORDER;
+      let separatorInserted = false;
+      collaboratorsList.forEach(c => {
+        const hasCollabType = collabTypeOrder.includes(c.collabType);
+        // Insert separator just before the first item with no collabType
+        if (!hasCollabType && !separatorInserted) {
+          const separator = {
+            isSeparator: true
+          };
+          this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(separator));
+          separatorInserted = true;
+        }
+        this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c));
+      });
     },
 
     _addEditors: function(gids) {
