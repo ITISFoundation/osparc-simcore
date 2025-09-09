@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import overload
+from typing import Final, overload
 
 import jsonschema
 from common_library.exclude import as_dict_exclude_none
@@ -38,20 +38,27 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetIn
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import ValidationError
+from servicelib.celery.models import TaskUUID
+from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_jobs import JobService
+from .api.routes.tasks import _get_task_filter
 from .exceptions.function_errors import (
     FunctionJobCacheNotFoundError,
-    FunctionJobProjectMissingError,
 )
 from .models.api_resources import JobLinks
 from .models.domain.functions import PreRegisteredFunctionJobData
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.wb_api_server import WbApiRpcClient
+
+_JOB_CREATION_TASK_STATUS_PREFIX: Final[str] = "JOB_CREATION_TASK_STATUS_"
+_JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS: Final[str] = (
+    f"{_JOB_CREATION_TASK_STATUS_PREFIX}NOT_YET_SCHEDULED"
+)
 
 
 def join_inputs(
@@ -66,6 +73,23 @@ def join_inputs(
 
     # last dict will override defaults
     return {**default_inputs, **function_inputs}
+
+
+async def _celery_task_status(
+    job_creation_task_id: TaskID | None,
+    task_manager: TaskManager,
+    user_id: UserID,
+    product_name: ProductName,
+) -> FunctionJobStatus:
+    if job_creation_task_id is None:
+        return FunctionJobStatus(status=_JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS)
+    task_filter = _get_task_filter(user_id, product_name)
+    task_status = await task_manager.get_task_status(
+        task_uuid=TaskUUID(job_creation_task_id), task_filter=task_filter
+    )
+    return FunctionJobStatus(
+        status=f"{_JOB_CREATION_TASK_STATUS_PREFIX}{task_status.task_state}"
+    )
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -159,7 +183,10 @@ class FunctionJobService:
         )
 
     async def inspect_function_job(
-        self, function: RegisteredFunction, function_job: RegisteredFunctionJob
+        self,
+        function: RegisteredFunction,
+        function_job: RegisteredFunctionJob,
+        task_manager: TaskManager,
     ) -> FunctionJobStatus:
         """Raises FunctionJobProjectNotRegisteredError if no project is associated with job"""
         stored_job_status = await self._web_rpc_client.get_function_job_status(
@@ -176,7 +203,12 @@ class FunctionJobService:
             and function_job.function_class == FunctionClass.PROJECT
         ):
             if function_job.project_job_id is None:
-                raise FunctionJobProjectMissingError
+                return await _celery_task_status(
+                    job_creation_task_id=function_job.job_creation_task_id,
+                    task_manager=task_manager,
+                    user_id=self.user_id,
+                    product_name=self.product_name,
+                )
             job_status = await self._job_service.inspect_study_job(
                 job_id=function_job.project_job_id,
             )
@@ -184,7 +216,12 @@ class FunctionJobService:
             function_job.function_class == FunctionClass.SOLVER
         ):
             if function_job.solver_job_id is None:
-                raise FunctionJobProjectMissingError
+                return await _celery_task_status(
+                    job_creation_task_id=function_job.job_creation_task_id,
+                    task_manager=task_manager,
+                    user_id=self.user_id,
+                    product_name=self.product_name,
+                )
             job_status = await self._job_service.inspect_solver_job(
                 solver_key=function.solver_key,
                 version=function.solver_version,
@@ -225,6 +262,7 @@ class FunctionJobService:
         *,
         function: RegisteredFunction,
         job_inputs: JobInputs,
+        task_manager: TaskManager,
     ) -> RegisteredFunctionJob:
         """
         N.B. this function checks access rights
@@ -266,6 +304,7 @@ class FunctionJobService:
                 job_status = await self.inspect_function_job(
                     function=function,
                     function_job=cached_function_job,
+                    task_manager=task_manager,
                 )
                 if job_status.status == RunningState.SUCCESS:
                     return cached_function_job
@@ -476,18 +515,15 @@ class FunctionJobService:
         product_name: ProductName,
         stored_job_outputs: FunctionOutputs | None,
         async_pg_engine: AsyncEngine,
+        task_manager: TaskManager,
     ) -> FunctionOutputs:
 
         if stored_job_outputs is not None:
             return stored_job_outputs
 
-        try:
-            job_status = await self.inspect_function_job(
-                function=function,
-                function_job=function_job,
-            )
-        except FunctionJobProjectMissingError:
-            return None
+        job_status = await self.inspect_function_job(
+            function=function, function_job=function_job, task_manager=task_manager
+        )
 
         if job_status.status != RunningState.SUCCESS:
             return None

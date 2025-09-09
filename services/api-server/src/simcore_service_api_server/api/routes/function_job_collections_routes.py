@@ -1,6 +1,6 @@
 from typing import Annotated, Final
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi_pagination.api import create_page
 from fastapi_pagination.bases import AbstractPage
 from models_library.api_schemas_webserver.functions import (
@@ -14,12 +14,14 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.utils import limited_gather
-from simcore_service_api_server._service_function_jobs import FunctionJobService
 
+from ..._service_function_jobs import FunctionJobService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...services_rpc.wb_api_server import WbApiRpcClient
+from ..dependencies.application import get_app
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.celery import get_task_manager
 from ..dependencies.functions import (
     get_function_from_functionjobid,
 )
@@ -254,6 +256,7 @@ async def function_job_collection_list_function_jobs_list(
     ),
 )
 async def function_job_collection_status(
+    app: Annotated[FastAPI, Depends(get_app)],
     function_job_collection_id: FunctionJobCollectionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
@@ -262,6 +265,7 @@ async def function_job_collection_status(
         FunctionJobService, Depends(get_function_job_service)
     ],
 ) -> FunctionJobCollectionStatus:
+    task_manager = get_task_manager(app)
     function_job_collection = await get_function_job_collection(
         function_job_collection_id=function_job_collection_id,
         wb_api_rpc=wb_api_rpc,
@@ -284,6 +288,7 @@ async def function_job_collection_status(
                     user_id=user_id,
                     product_name=product_name,
                 ),
+                task_manager=task_manager,
             )
             for function_job_id in function_job_collection.job_ids
         ]
