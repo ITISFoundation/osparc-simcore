@@ -321,6 +321,19 @@ class BaseCompScheduler(ABC):
         def _need_heartbeat(task: CompTaskAtDB) -> bool:
             if task.state not in RUNNING_STATES:
                 return False
+            if task.start is None:
+                _logger.warning(
+                    "Task %s is in state %s but has no start time. This should not happen. Skipping heartbeat as this cannot be computed. (%s, %s, %s, %s, %s)",
+                    task.job_id,
+                    task.state,
+                    user_id,
+                    project_id,
+                    iteration,
+                    run_id,
+                    task.node_id,
+                )
+                return False
+
             if task.last_heartbeat is None:
                 assert task.start  # nosec
                 return bool(
