@@ -12,6 +12,7 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     RobustWebSocket,
     ServiceType,
+    wait_for_service_running,
 )
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
@@ -61,7 +62,7 @@ def create_function_from_project(
                 "Created function: %s", f"{json.dumps(function_data['data'], indent=2)}"
             )
 
-            page.click("body")  # to close any dialog
+            page.keyboard.press("Escape")
             created_function_uuids.append(function_data["data"]["uuid"])
         return function_data["data"]
 
@@ -170,35 +171,37 @@ def test_response_surface_modeling(
 
     # 3. start a RSM with that function
 
-    # with log_context(
-    #     logging.INFO,
-    #     f"Waiting for {service_key} to be responsive (waiting for {_DEFAULT_RESPONSE_TO_WAIT_FOR})",
-    # ):
-    #     project_data = create_project_from_service_dashboard(
-    #         ServiceType.DYNAMIC, service_key, None, service_version
-    #     )
-    #     assert "workbench" in project_data, "Expected workbench to be in project data!"
-    #     assert isinstance(project_data["workbench"], dict), (
-    #         "Expected workbench to be a dict!"
-    #     )
-    #     node_ids: list[str] = list(project_data["workbench"])
-    #     assert len(node_ids) == 1, "Expected 1 node in the workbench!"
+    with log_context(
+        logging.INFO,
+        f"Waiting for {service_key} to be responsive (waiting for {_DEFAULT_RESPONSE_TO_WAIT_FOR})",
+    ):
+        project_data = create_project_from_service_dashboard(
+            ServiceType.DYNAMIC, service_key, None, service_version
+        )
+        assert "workbench" in project_data, "Expected workbench to be in project data!"
+        assert isinstance(
+            project_data["workbench"], dict
+        ), "Expected workbench to be a dict!"
+        node_ids: list[str] = list(project_data["workbench"])
+        assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
-    #     wait_for_service_running(
-    #         page=page,
-    #         node_id=node_ids[0],
-    #         websocket=log_in_and_out,
-    #         timeout=_WAITING_FOR_SERVICE_TO_START,
-    #         press_start_button=False,
-    #         product_url=product_url,
-    #         is_service_legacy=is_service_legacy,
-    #     )
+        wait_for_service_running(
+            page=page,
+            node_id=node_ids[0],
+            websocket=log_in_and_out,
+            timeout=_WAITING_FOR_SERVICE_TO_START,
+            press_start_button=False,
+            product_url=product_url,
+            is_service_legacy=is_service_legacy,
+        )
 
-    # service_iframe = page.frame_locator("iframe")
-    # with log_context(logging.INFO, "Waiting for the RSM to be ready..."):
-    #     service_iframe.get_by_role("grid").wait_for(
-    #         state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
-    #     )
+    service_iframe = page.frame_locator("iframe")
+    with log_context(logging.INFO, "Waiting for the RSM to be ready..."):
+        service_iframe.get_by_role("grid").wait_for(
+            state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
+        )
+
+    page.wait_for_timeout(10000)
 
     # # select the function
     # service_iframe.get_by_role("gridcell", name=_FUNCTION_NAME).click()
