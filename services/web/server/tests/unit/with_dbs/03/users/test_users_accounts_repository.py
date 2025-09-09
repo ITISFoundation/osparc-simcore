@@ -12,6 +12,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
+from models_library.users import UserID
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
@@ -477,9 +478,9 @@ async def test_create_pre_registration_with_existing_user_linking(
 class MixedUserTestData:
     """Test data for user pre-registration tests with mixed states."""
 
-    created_by_user_id: str
+    created_by_user_id: UserID
     product_owner_email: str
-    product_owner_id: str
+    product_owner_id: UserID
     pre_reg_email: str
     pre_reg_id: int
     owner_pre_reg_id: int
@@ -829,3 +830,132 @@ async def test_list_merged_users_pagination(
     assert not set(page1_emails).intersection(
         set(page2_emails)
     ), "Pages should have different users"
+
+
+@pytest.mark.parametrize(
+    "email_pattern,expected_count",
+    [
+        ("%pre.registered%", 1),  # Valid: matches pre-registered user
+        ("%nonexistent%", 0),  # Invalid: no matches
+    ],
+)
+async def test_search_merged_users_by_email(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+    email_pattern: str,
+    expected_count: int,
+):
+    """Test searching merged users by email pattern."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act
+    rows = await _accounts_repository.search_merged_pre_and_registered_users(
+        asyncpg_engine,
+        filter_by_email_like=email_pattern,
+        product_name=product_name,
+    )
+
+    # Assert
+    assert len(rows) == expected_count
+
+    if expected_count > 0:
+        row = rows[0]
+        assert row.pre_email == mixed_user_data.pre_reg_email
+        assert row.pre_first_name == "Pre-Registered"
+        assert row.pre_last_name == "Only"
+        assert row.institution == "Pre-Reg Institution"
+
+
+@pytest.mark.parametrize(
+    "use_valid_username,expected_count",
+    [
+        (True, 1),  # Valid: use actual product owner username
+        (False, 0),  # Invalid: use non-existent username
+    ],
+)
+async def test_search_merged_users_by_username(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+    use_valid_username: bool,
+    expected_count: int,
+):
+    """Test searching merged users by username pattern."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Arrange
+    username_pattern = (
+        f"{product_owner_user['name']}"
+        if use_valid_username
+        else "%nonexistent_username%"
+    )
+
+    # Act
+    rows = await _accounts_repository.search_merged_pre_and_registered_users(
+        asyncpg_engine,
+        filter_by_user_name_like=username_pattern,
+        product_name=product_name,
+    )
+
+    # Assert
+    assert len(rows) >= expected_count
+
+    if expected_count > 0:
+        # Find the product owner in rows
+        found_user = next(
+            (row for row in rows if row.email == product_owner_user["email"]),
+            None,
+        )
+        assert found_user is not None
+        assert found_user.first_name == product_owner_user["first_name"]
+        assert found_user.last_name == product_owner_user["last_name"]
+
+
+@pytest.mark.parametrize(
+    "use_valid_group_id,expected_count",
+    [
+        (True, 1),  # Valid: use actual product owner primary group ID
+        (False, 0),  # Invalid: use non-existent group ID
+    ],
+)
+async def test_search_merged_users_by_primary_group_id(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+    use_valid_group_id: bool,
+    expected_count: int,
+):
+    """Test searching merged users by primary group ID."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Arrange
+    primary_group_id = (
+        product_owner_user["primary_gid"]
+        if use_valid_group_id
+        else 99999  # Non-existent group ID
+    )
+
+    # Act
+    results = await _accounts_repository.search_merged_pre_and_registered_users(
+        asyncpg_engine,
+        filter_by_primary_group_id=primary_group_id,
+        product_name=product_name,
+    )
+
+    # Assert
+    assert len(results) >= expected_count
+
+    if expected_count > 0:
+        # Find the product owner in results
+        found_user = next(
+            (
+                result
+                for result in results
+                if result.email == product_owner_user["email"]
+            ),
+            None,
+        )
+        assert found_user is not None
+        assert found_user.first_name == product_owner_user["first_name"]
+        assert found_user.last_name == product_owner_user["last_name"]

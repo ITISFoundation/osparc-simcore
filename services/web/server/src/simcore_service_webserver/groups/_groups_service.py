@@ -1,7 +1,6 @@
 from contextlib import suppress
 
 from aiohttp import web
-from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import (
     AccessRightsDict,
@@ -13,7 +12,7 @@ from models_library.groups import (
     StandardGroupUpdate,
 )
 from models_library.products import ProductName
-from models_library.users import UserID
+from models_library.users import UserID, UserNameID
 from pydantic import EmailStr
 
 from ..products.models import Product
@@ -262,6 +261,14 @@ async def is_user_by_email_in_group(
     )
 
 
+async def is_user_in_group(
+    app: web.Application, *, user_id: UserID, group_id: GroupID
+) -> bool:
+    return await _groups_repository.is_user_in_group(
+        app, user_id=user_id, group_id=group_id
+    )
+
+
 async def auto_add_user_to_groups(app: web.Application, user_id: UserID) -> None:
     user: dict = await users_service.get_user(app, user_id)
     return await _groups_repository.auto_add_user_to_groups(app, user=user)
@@ -288,7 +295,7 @@ async def add_user_in_group(
     *,
     # identifies
     new_by_user_id: UserID | None = None,
-    new_by_user_name: IDStr | None = None,
+    new_by_user_name: UserNameID | None = None,
     new_by_user_email: EmailStr | None = None,
     access_rights: AccessRightsDict | None = None,
 ) -> None:
