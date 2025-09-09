@@ -76,8 +76,11 @@ from ._utils import (
 _logger = logging.getLogger(__name__)
 
 
-_Previous = CompTaskAtDB
-_Current = CompTaskAtDB
+@dataclass(frozen=True, slots=True)
+class TaskStateTracker:
+    previous: CompTaskAtDB
+    current: CompTaskAtDB
+
 
 _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
     seconds=30
@@ -123,34 +126,36 @@ class SortedTasks:
 
 
 async def _triage_changed_tasks(
-    changed_tasks: list[tuple[_Previous, _Current]],
+    changed_tasks: list[TaskStateTracker],
 ) -> SortedTasks:
     started_tasks = [
-        current
-        for previous, current in changed_tasks
-        if current.state in RUNNING_STATES
+        tracker.current
+        for tracker in changed_tasks
+        if tracker.current.state in RUNNING_STATES
         or (
-            previous.state in WAITING_FOR_START_STATES
-            and current.state in COMPLETED_STATES
+            tracker.previous.state in WAITING_FOR_START_STATES
+            and tracker.current.state in COMPLETED_STATES
         )
     ]
 
     completed_tasks = [
-        current for _, current in changed_tasks if current.state in COMPLETED_STATES
+        tracker.current
+        for tracker in changed_tasks
+        if tracker.current.state in COMPLETED_STATES
     ]
 
     waiting_for_resources_tasks = [
-        current
-        for previous, current in changed_tasks
-        if current.state in WAITING_FOR_START_STATES
+        tracker.current
+        for tracker in changed_tasks
+        if tracker.current.state in WAITING_FOR_START_STATES
     ]
 
     lost_tasks = [
-        current
-        for previous, current in changed_tasks
-        if (current.state is RunningState.UNKNOWN)
+        tracker.current
+        for tracker in changed_tasks
+        if (tracker.current.state is RunningState.UNKNOWN)
         and (
-            (arrow.utcnow().datetime - previous.modified)
+            (arrow.utcnow().datetime - tracker.previous.modified)
             > _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS
         )
     ]
@@ -323,7 +328,7 @@ class BaseCompScheduler(ABC):
                 return False
             if task.start is None:
                 _logger.warning(
-                    "Task %s is in state %s but has no start time. This should not happen. Skipping heartbeat as this cannot be computed. (%s, %s, %s, %s, %s)",
+                    "Task %s is in state %s but has no start time. TIP: this can happen if the task went from PENDING to UNKNOWN to SUCCESS and back to STARTED due to not responding when retrieving the results. Skipping heartbeat as this cannot be computed. (%s, %s, %s, %s, %s)",
                     task.job_id,
                     task.state,
                     user_id,
@@ -375,14 +380,14 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         processing_tasks: list[CompTaskAtDB],
         comp_run: CompRunsAtDB,
-    ) -> tuple[list[tuple[_Previous, _Current]], list[CompTaskAtDB]]:
+    ) -> tuple[list[TaskStateTracker], list[CompTaskAtDB]]:
         tasks_backend_status = await self._get_tasks_status(
             user_id, processing_tasks, comp_run
         )
 
         return (
             [
-                (
+                TaskStateTracker(
                     task,
                     task.model_copy(update={"state": backend_state}),
                 )
