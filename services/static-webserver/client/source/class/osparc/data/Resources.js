@@ -1131,9 +1131,9 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/admin/user-accounts:search?email={email}"
           },
-          searchByGid: {
+          searchByGroupId: {
             method: "GET",
-            url: statics.API + "/admin/user-accounts:search?gid={gid}"
+            url: statics.API + "/admin/user-accounts:search?primary_group_id={gId}"
           },
           getPendingUsers: {
             method: "GET",

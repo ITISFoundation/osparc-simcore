@@ -18,7 +18,7 @@
 qx.Class.define("osparc.user.UserDetails", {
   extend: osparc.ui.window.Window,
 
-  construct: function(user) {
+  construct: function(userGroupId) {
     this.base(arguments);
 
     this.set({
@@ -29,7 +29,7 @@ qx.Class.define("osparc.user.UserDetails", {
       clickAwayClose: true,
     });
 
-    this.setUser(user);
+    this.setUserGroupId(userGroupId);
   },
 
   statics: {
@@ -46,6 +46,13 @@ qx.Class.define("osparc.user.UserDetails", {
   },
 
   properties: {
+    userGroupId: {
+      check: "Number",
+      init: null,
+      nullable: false,
+      apply: "__applyUserGroupId",
+    },
+
     user: {
       check: "osparc.data.model.User",
       init: null,
@@ -148,6 +155,24 @@ qx.Class.define("osparc.user.UserDetails", {
         }
       }
       return control || this.base(arguments, id);
+    },
+
+    __applyUserGroupId: function(userGroupId) {
+      const params = {
+        url: {
+          gId: userGroupId
+        }
+      };
+      osparc.data.Resources.fetch("poUsers", "searchByGroupId", params)
+        .then(userData => {
+          if (userData.length === 1) {
+            console.log(userData[0]);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          this.close();
+        });
     },
 
     __applyUser: function(user) {
