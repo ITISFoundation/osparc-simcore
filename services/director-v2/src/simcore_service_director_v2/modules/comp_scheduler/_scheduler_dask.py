@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator, Callable
@@ -132,7 +131,7 @@ class DaskScheduler(BaseCompScheduler):
                 RunningState.PENDING,
             )
             # each task is started independently
-            results: list[list[PublishedComputationTask]] = await asyncio.gather(
+            results: list[list[PublishedComputationTask]] = await limited_gather(
                 *(
                     client.send_computation_tasks(
                         user_id=user_id,
@@ -147,17 +146,21 @@ class DaskScheduler(BaseCompScheduler):
                     )
                     for node_id, task in scheduled_tasks.items()
                 ),
+                log=_logger,
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
             )
 
             # update the database so we do have the correct job_ids there
-            await asyncio.gather(
+            await limited_gather(
                 *(
                     comp_tasks_repo.update_project_task_job_id(
                         project_id, task.node_id, comp_run.run_id, task.job_id
                     )
                     for task_sents in results
                     for task in task_sents
-                )
+                ),
+                log=_logger,
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
             )
 
     async def _get_tasks_status(
@@ -279,23 +282,24 @@ class DaskScheduler(BaseCompScheduler):
                 run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
-                await asyncio.gather(
-                    *[
+                await limited_gather(
+                    *(
                         client.abort_computation_task(t.job_id)
                         for t in tasks
                         if t.job_id
-                    ]
+                    ),
+                    log=_logger,
+                    limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
                 )
                 # tasks that have no-worker must be unpublished as these are blocking forever
-                tasks_with_no_worker = [
-                    t for t in tasks if t.state is RunningState.WAITING_FOR_RESOURCES
-                ]
-                await asyncio.gather(
-                    *[
+                await limited_gather(
+                    *(
                         client.release_task_result(t.job_id)
-                        for t in tasks_with_no_worker
-                        if t.job_id
-                    ]
+                        for t in tasks
+                        if t.state is RunningState.WAITING_FOR_RESOURCES and t.job_id
+                    ),
+                    log=_logger,
+                    limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
                 )
 
     async def _process_completed_tasks(
@@ -313,12 +317,14 @@ class DaskScheduler(BaseCompScheduler):
             run_id=comp_run.run_id,
             run_metadata=comp_run.metadata,
         ) as client:
-            tasks_results = await asyncio.gather(
-                *[
+            tasks_results = await limited_gather(
+                *(
                     client.get_task_result(t.current.job_id or "undefined")
                     for t in tasks
-                ],
-                return_exceptions=True,
+                ),
+                reraise=True,
+                log=_logger,
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
             )
             async for future in limited_as_completed(
                 (
