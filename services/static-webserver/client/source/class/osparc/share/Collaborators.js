@@ -493,7 +493,7 @@ qx.Class.define("osparc.share.Collaborators", {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
               collaborator["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE; // needed for sorting per product related groups
             } else if (supportGroup && supportGroup.getGroupId() === parseInt(gid)) {
-              collaborator["thumbnail"] = supportGroup.getThumbnail();
+              collaborator["thumbnail"] = "@FontAwesome5Solid/question-circle/32";
               collaborator["collabType"] = osparc.store.Groups.COLLAB_TYPE.SUPPORT; // needed for sorting per product related groups
             } else if (!collaborator["thumbnail"]) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/users/26";
