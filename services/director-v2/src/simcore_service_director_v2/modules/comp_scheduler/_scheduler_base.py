@@ -63,6 +63,7 @@ from ...utils.rabbitmq import (
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ._models import TaskStateTracker
 from ._publisher import request_pipeline_scheduling
 from ._utils import (
     COMPLETED_STATES,
@@ -74,12 +75,6 @@ from ._utils import (
 )
 
 _logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True, slots=True)
-class TaskStateTracker:
-    previous: CompTaskAtDB
-    current: CompTaskAtDB
 
 
 _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
@@ -120,9 +115,9 @@ def _auto_schedule_callback(
 @dataclass(frozen=True, slots=True)
 class SortedTasks:
     started: list[CompTaskAtDB]
-    completed: list[CompTaskAtDB]
-    waiting: list[CompTaskAtDB]
-    potentially_lost: list[CompTaskAtDB]
+    completed: list[TaskStateTracker]
+    waiting: list[TaskStateTracker]
+    potentially_lost: list[TaskStateTracker]
 
 
 async def _triage_changed_tasks(
@@ -139,19 +134,19 @@ async def _triage_changed_tasks(
     ]
 
     completed_tasks = [
-        tracker.current
+        tracker
         for tracker in changed_tasks
         if tracker.current.state in COMPLETED_STATES
     ]
 
     waiting_for_resources_tasks = [
-        tracker.current
+        tracker
         for tracker in changed_tasks
         if tracker.current.state in WAITING_FOR_START_STATES
     ]
 
     lost_tasks = [
-        tracker.current
+        tracker
         for tracker in changed_tasks
         if (tracker.current.state is RunningState.UNKNOWN)
         and (
@@ -162,7 +157,7 @@ async def _triage_changed_tasks(
     if lost_tasks:
         _logger.warning(
             "%s are currently in unknown state. TIP: If they are running in an external cluster and it is not yet ready, that might explain it. But inform @sanderegg nevertheless!",
-            [t.node_id for t in lost_tasks],
+            [t.current.node_id for t in lost_tasks],
         )
 
     return SortedTasks(
@@ -508,16 +503,16 @@ class BaseCompScheduler(ABC):
         )
 
     async def _process_waiting_tasks(
-        self, tasks: list[CompTaskAtDB], run_id: PositiveInt
+        self, tasks: list[TaskStateTracker], run_id: PositiveInt
     ) -> None:
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         await asyncio.gather(
             *(
                 comp_tasks_repo.update_project_tasks_state(
-                    t.project_id,
+                    t.current.project_id,
                     run_id,
-                    [t.node_id],
-                    t.state,
+                    [t.current.node_id],
+                    t.current.state,
                 )
                 for t in tasks
             )
@@ -608,7 +603,7 @@ class BaseCompScheduler(ABC):
     async def _process_completed_tasks(
         self,
         user_id: UserID,
-        tasks: list[CompTaskAtDB],
+        tasks: list[TaskStateTracker],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
     ) -> None:

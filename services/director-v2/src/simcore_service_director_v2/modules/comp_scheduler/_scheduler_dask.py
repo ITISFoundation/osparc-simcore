@@ -55,6 +55,7 @@ from ..db.repositories.comp_tasks import CompTasksRepository
 from ._constants import (
     MAX_CONCURRENT_PIPELINE_SCHEDULING,
 )
+from ._models import TaskStateTracker
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
     WAITING_FOR_START_STATES,
@@ -293,7 +294,7 @@ class DaskScheduler(BaseCompScheduler):
     async def _process_completed_tasks(
         self,
         user_id: UserID,
-        tasks: list[CompTaskAtDB],
+        tasks: list[TaskStateTracker],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
     ) -> None:
@@ -306,13 +307,20 @@ class DaskScheduler(BaseCompScheduler):
             run_metadata=comp_run.metadata,
         ) as client:
             tasks_results = await asyncio.gather(
-                *[client.get_task_result(t.job_id or "undefined") for t in tasks],
+                *[
+                    client.get_task_result(t.current.job_id or "undefined")
+                    for t in tasks
+                ],
                 return_exceptions=True,
             )
             async for future in limited_as_completed(
                 (
                     self._process_task_result(
-                        task, result, comp_run.metadata, iteration, comp_run.run_id
+                        task,
+                        result,
+                        comp_run.metadata,
+                        iteration,
+                        comp_run.run_id,
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ),
@@ -467,7 +475,7 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _process_task_result(
         self,
-        task: CompTaskAtDB,
+        task: TaskStateTracker,
         result: BaseException | TaskOutputData,
         run_metadata: RunMetadataDict,
         iteration: Iteration,
@@ -475,23 +483,22 @@ class DaskScheduler(BaseCompScheduler):
     ) -> tuple[bool, str]:
         """Returns True and the job ID if the task was successfully processed and can be released from the Dask cluster."""
         _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
-
-        assert task.job_id  # nosec
+        assert task.current.job_id  # nosec
         (
             _service_key,
             _service_version,
             user_id,
             project_id,
             node_id,
-        ) = parse_dask_job_id(task.job_id)
+        ) = parse_dask_job_id(task.current.job_id)
 
-        assert task.project_id == project_id  # nosec
-        assert task.node_id == node_id  # nosec
+        assert task.current.project_id == project_id  # nosec
+        assert task.current.node_id == node_id  # nosec
         log_error_context = {
             "user_id": user_id,
             "project_id": project_id,
             "node_id": node_id,
-            "job_id": task.job_id,
+            "job_id": task.current.job_id,
         }
 
         if isinstance(result, TaskOutputData):
@@ -500,7 +507,9 @@ class DaskScheduler(BaseCompScheduler):
                 simcore_platform_status,
                 task_errors,
                 task_completed,
-            ) = await self._handle_successful_run(task, result, log_error_context)
+            ) = await self._handle_successful_run(
+                task.current, result, log_error_context
+            )
 
         elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
             (
@@ -509,7 +518,7 @@ class DaskScheduler(BaseCompScheduler):
                 task_errors,
                 task_completed,
             ) = await self._handle_computational_retrieval_error(
-                task, user_id, result, log_error_context
+                task.current, user_id, result, log_error_context
             )
         elif isinstance(result, ComputationalBackendNotConnectedError):
             (
@@ -518,7 +527,7 @@ class DaskScheduler(BaseCompScheduler):
                 task_errors,
                 task_completed,
             ) = await self._handle_computational_backend_not_connected_error(
-                task, result, log_error_context
+                task.current, result, log_error_context
             )
         else:
             (
@@ -526,7 +535,7 @@ class DaskScheduler(BaseCompScheduler):
                 simcore_platform_status,
                 task_errors,
                 task_completed,
-            ) = await self._handle_task_error(task, result, log_error_context)
+            ) = await self._handle_task_error(task.current, result, log_error_context)
 
             # we need to remove any invalid files in the storage
             await clean_task_output_and_log_files_if_invalid(
@@ -549,21 +558,21 @@ class DaskScheduler(BaseCompScheduler):
                 simcore_user_agent=run_metadata.get(
                     "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
                 ),
-                task=task,
+                task=task.current,
                 task_final_state=task_final_state,
             )
 
         await CompTasksRepository(self.db_engine).update_project_tasks_state(
-            task.project_id,
+            task.current.project_id,
             run_id,
-            [task.node_id],
-            task_final_state if task_completed else RunningState.STARTED,
+            [task.current.node_id],
+            task_final_state if task_completed else task.previous.state,
             errors=task_errors,
             optional_progress=1 if task_completed else None,
             optional_stopped=arrow.utcnow().datetime if task_completed else None,
         )
 
-        return task_completed, task.job_id
+        return task_completed, task.current.job_id
 
     async def _task_progress_change_handler(
         self, event: tuple[UnixTimestamp, Any]
