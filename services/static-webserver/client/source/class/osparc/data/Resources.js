@@ -1127,9 +1127,13 @@ qx.Class.define("osparc.data.Resources", {
       },
       "poUsers": {
         endpoints: {
-          search: {
+          searchByEmail: {
             method: "GET",
             url: statics.API + "/admin/user-accounts:search?email={email}"
+          },
+          searchByGid: {
+            method: "GET",
+            url: statics.API + "/admin/user-accounts:search?gid={gid}"
           },
           getPendingUsers: {
             method: "GET",
