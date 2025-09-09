@@ -344,8 +344,9 @@ class UserAccountSearchQueryParams(RequestParameters):
 
     @model_validator(mode="after")
     def _validate_at_least_one_filter(self) -> Self:
-        if not any([self.email, self.primary_group_id, self.user_name]):
-            msg = "At least one filter (email, primary_group_id, or user_name) must be provided"
+        field_names = list(self.__class__.model_fields)
+        if not any(getattr(self, field_name, None) for field_name in field_names):
+            msg = f"At least one filter {field_names} must be provided"
             raise ValueError(msg)
         return self
 
