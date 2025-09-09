@@ -640,6 +640,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
         return;
       }
+      if (osparc.utils.Resources.isService(this.__resourceData) && !osparc.data.model.Service.canIWrite(this.__resourceData["accessRights"])) {
+        return;
+      }
 
       const id = "Permissions";
       const title = this.tr("Sharing");
@@ -702,7 +705,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         let classifiers = null;
         if (
           (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) && osparc.data.model.Study.canIWrite(resourceData["accessRights"]) ||
-          osparc.utils.Resources.isService(resourceData) && osparc.service.Utils.canIWrite(resourceData["accessRights"])
+          osparc.utils.Resources.isService(resourceData) && osparc.data.model.Service.canIWrite(resourceData["accessRights"])
         ) {
           classifiers = new osparc.metadata.ClassifiersEditor(resourceData);
           classifiers.addListener("updateClassifiers", e => {
