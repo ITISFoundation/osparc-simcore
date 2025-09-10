@@ -52,7 +52,11 @@ async def test_workflow(store: RedisStore, task_data: TaskData) -> None:
     # cancelled tasks
     assert await store.list_tasks_to_remove() == {}
 
+    assert await store.is_maked_for_removal(task_data.task_id) is False
+
     await store.mark_task_for_removal(task_data.task_id, task_data.task_context)
+
+    assert await store.is_maked_for_removal(task_data.task_id) is True
 
     assert await store.list_tasks_to_remove() == {
         task_data.task_id: task_data.task_context
