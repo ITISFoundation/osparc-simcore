@@ -2234,7 +2234,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.FlashMessenger.logAs(msg, "INFO");
         })
         .catch(err => {
-          if (err && err.message && err.message.includes("409")) {
+          if (err && err.status && err.status === 409) {
             this.__popUpDeleteFunctionWindow(functionData, true);
           } else {
             osparc.FlashMessenger.logError(err);
