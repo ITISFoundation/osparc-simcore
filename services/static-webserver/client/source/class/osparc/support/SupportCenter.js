@@ -58,8 +58,12 @@ qx.Class.define("osparc.support.SupportCenter", {
       return Math.min(600, parseInt(clientHeight * 0.8));
     },
 
-    openWindow: function() {
+    openWindow: function(stackPage) {
       const supportCenterWindow = new osparc.support.SupportCenter();
+
+      if (stackPage === "conversations") {
+        supportCenterWindow.showConversations();
+      }
 
       const positionWindow = () => {
         supportCenterWindow.set({
@@ -117,7 +121,7 @@ qx.Class.define("osparc.support.SupportCenter", {
             allowGrowX: true,
             center: true,
           });
-          control.addListener("execute", () => this.__showConversations(), this);
+          control.addListener("execute", () => this.showConversations(), this);
           this.getChildControl("buttons-layout").add(control, { flex: 1 });
           break;
         case "home-page":
@@ -139,7 +143,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "conversation-page":
           control = new osparc.support.ConversationPage();
-          control.addListener("showConversations", () => this.__showConversations(), this);
+          control.addListener("showConversations", () => this.showConversations(), this);
           this.getChildControl("conversations-stack").add(control);
           break;
       }
@@ -157,7 +161,7 @@ qx.Class.define("osparc.support.SupportCenter", {
       });
     },
 
-    __showConversations: function() {
+    showConversations: function() {
       this.setCaption(this.tr("Conversations"));
       this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
       this.getChildControl("home-button").set({
