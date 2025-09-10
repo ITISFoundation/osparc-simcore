@@ -13,8 +13,11 @@ from ._errors import RPCServerError
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
 
-# NOTE: this is equivalent to http access logs
-_logger = logging.getLogger("rpc.access")
+
+_logger = logging.getLogger(
+    # NOTE: this logger is equivalent to http access logs
+    "rpc.access"
+)
 
 
 def _create_func_msg(func, args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
@@ -64,10 +67,14 @@ class RPCRouter:
                         ):
                             raise
 
-                        _logger.exception(
-                            "Unhandled exception on the rpc-server side. Re-raising as %s.",
+                        _logger.debug(
+                            "Unhandled exception on call %s on the rpc-server side: %s (%s). **Re-raising** as %s.",
+                            func.__name__,
+                            exc,
+                            f"{exc.__class__.__module__}.{exc.__class__.__name__}",
                             RPCServerError.__name__,
                         )
+
                         # NOTE: we do not return internal exceptions over RPC
                         formatted_traceback = "\n".join(
                             traceback.format_tb(exc.__traceback__)
