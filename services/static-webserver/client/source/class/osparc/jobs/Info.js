@@ -42,21 +42,4 @@ qx.Class.define("osparc.jobs.Info", {
       return win;
     }
   },
-
-  members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "job-info-viewer": {
-          control = new osparc.ui.basic.JsonTreeWidget();
-          const container = new qx.ui.container.Scroll();
-          container.add(control);
-          this._add(container);
-          break;
-        }
-      }
-
-      return control || this.base(arguments, id);
-    },
-  }
 })
