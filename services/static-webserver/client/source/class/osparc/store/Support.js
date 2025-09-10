@@ -46,20 +46,45 @@ qx.Class.define("osparc.store.Support", {
       osparc.store.Groups.getInstance().addListener("changeSupportGroup", () => updateAskAQuestionButton());
     },
 
-    addQuickStartToMenu: function(menu) {
+    __getQuickStartInfo: function() {
       const quickStart = osparc.product.quickStart.Utils.getQuickStart();
       if (quickStart) {
-        const qsButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"), "@FontAwesome5Solid/graduation-cap/14");
+        return {
+          label: qx.locale.Manager.tr("Quick Start"),
+          icon: "@FontAwesome5Solid/graduation-cap/14",
+          callback: () => {
+            const tutorialWindow = quickStart.tutorial();
+            tutorialWindow.center();
+            tutorialWindow.open();
+          }
+        }
+      }
+      return null;
+    },
+
+    addQuickStartToMenu: function(menu) {
+      const quickStartInfo = this.__getQuickStartInfo();
+      if (quickStartInfo) {
+        const qsButton = new qx.ui.menu.Button(quickStartInfo.label, quickStartInfo.icon);
         qsButton.getChildControl("label").set({
           rich: true
         });
-        qsButton.addListener("execute", () => {
-          const tutorialWindow = quickStart.tutorial();
-          tutorialWindow.center();
-          tutorialWindow.open();
-        });
+        qsButton.addListener("execute", () => quickStartInfo.callback());
         menu.add(qsButton);
       }
+    },
+
+    getQuickStartButton: function() {
+      const quickStartInfo = this.__getQuickStartInfo();
+      if (quickStartInfo) {
+        const qsButton = new qx.ui.form.Button(quickStartInfo.label, quickStartInfo.icon);
+        qsButton.getChildControl("label").set({
+          rich: true
+        });
+        qsButton.addListener("execute", () => quickStartInfo.callback());
+        return qsButton;
+      }
+      return null;
     },
 
     addGuidedToursToMenu: function(menu) {

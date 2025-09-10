@@ -25,6 +25,8 @@ qx.Class.define("osparc.support.HomePage", {
     this._setLayout(new qx.ui.layout.VBox(15));
 
     this.getChildControl("conversations-intro-text");
+
+    this.__populateButtons();
   },
 
   members: {
@@ -47,6 +49,13 @@ qx.Class.define("osparc.support.HomePage", {
         }
       }
       return control || this.base(arguments, id);
+    },
+
+    __populateButtons: function() {
+      const quickStartButton = osparc.store.Support.getQuickStartButton();
+      if (quickStartButton) {
+        this._add(quickStartButton);
+      }
     },
   }
 });
