@@ -80,7 +80,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
         .then(usersResult => {
           usersResult.forEach(user => {
             users.push({
-              name: user.getUsername(),
+              name: user.getUserName(),
               avatar: user.getThumbnail(),
             });
           });
