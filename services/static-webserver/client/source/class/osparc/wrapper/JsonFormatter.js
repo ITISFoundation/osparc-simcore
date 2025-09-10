@@ -63,6 +63,10 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
         ]);
 
         dynLoader.addListenerOnce("ready", () => {
+          if (typeof JSONFormatter === "undefined") {
+            reject(new Error("JSONFormatter loaded but did not export to window.JSONFormatter"));
+            return;
+          }
           console.log(jsonFormatterPath + " loaded");
           this.setLibReady(true);
           resolve();
