@@ -2205,17 +2205,41 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       osparc.utils.Utils.setIdToWidget(deleteButton, "functionItemMenuDelete");
       deleteButton.addListener("execute", () => {
-        const win = this.__createConfirmDeleteWindow([functionData.title]);
-        win.setCaption(this.tr("Delete function"));
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__doDeleteFunction(functionData);
-          }
-        }, this);
+        this.__popUpDeleteFunctionWindow(functionData, false);
       }, this);
       return deleteButton;
+    },
+
+    __popUpDeleteFunctionWindow: function(functionData, force) {
+      const win = this.__createConfirmDeleteWindow([functionData.title]);
+      win.setCaption(this.tr("Delete function"));
+      if (force) {
+        const msg = this.tr("The function is still referenced by a study. Are you sure you want to delete it?");
+        win.setMessage(msg);
+      }
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          this.__doDeleteFunction(functionData, force);
+        }
+      }, this);
+    },
+
+    __doDeleteFunction: function(functionData, force = false) {
+      osparc.store.Functions.getInstance().deleteFunction(functionData.uuid, force)
+        .then(() => {
+          this.__removeFromStudyList(functionData.uuid);
+          const msg = this.tr("Successfully deleted");
+          osparc.FlashMessenger.logAs(msg, "INFO");
+        })
+        .catch(err => {
+          if (err && err.message && err.message.includes("409")) {
+            this.__popUpDeleteFunctionWindow(functionData, true);
+          } else {
+            osparc.FlashMessenger.logError(err);
+          }
+        });
     },
 
     __getStudyData: function(id) {
@@ -2386,17 +2410,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __doDeleteStudies: function(studiesData) {
       studiesData.forEach(studyData => this.__doDeleteStudy(studyData));
-    },
-
-    __doDeleteFunction: function(functionData, force = false) {
-      osparc.store.Functions.getInstance().deleteFunction(functionData.uuid, force)
-        .then(() => {
-          this.__removeFromStudyList(functionData.uuid);
-          const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.logAs(msg, "INFO");
-        })
-        .catch(err => osparc.FlashMessenger.logError(err))
-        .finally(() => this.resetSelection());
     },
 
     __createConfirmTrashWindow: function(studyNames) {
