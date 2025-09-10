@@ -77,6 +77,8 @@ qx.Class.define("osparc.user.UserDetails", {
   },
 
   members: {
+    __remainingUserData: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -97,6 +99,7 @@ qx.Class.define("osparc.user.UserDetails", {
           break;
         case "top-info": {
           const grid = new qx.ui.layout.Grid(10, 6);
+          grid.setColumnWidth(0, 80);
           grid.setColumnFlex(1, 1);
           grid.setColumnAlign(0, "right", "middle");
           control = new qx.ui.container.Composite(grid);
@@ -107,6 +110,7 @@ qx.Class.define("osparc.user.UserDetails", {
         }
         case "middle-info": {
           const grid = new qx.ui.layout.Grid(10, 6);
+          grid.setColumnWidth(0, 80);
           grid.setColumnFlex(1, 1);
           grid.setColumnAlign(0, "right", "middle");
           control = new qx.ui.container.Composite(grid);
@@ -251,14 +255,16 @@ qx.Class.define("osparc.user.UserDetails", {
             column: 1
           });
           break;
-        case "extra-info":
-          control = new osparc.ui.basic.JsonTreeWidget();
+        case "extra-info": {
+          const divId = this.getUserGroupId() + "_user_details";
+          control = osparc.wrapper.JsonFormatter.getInstance().createContainer(divId);
           const container = new qx.ui.container.Scroll();
           container.add(control);
           this._add(container, {
             flex: 1
           });
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -279,11 +285,11 @@ qx.Class.define("osparc.user.UserDetails", {
             userData["userName"] = "userName"; // fix this
             const user = new osparc.data.model.User(userData);
             user.setContactData(userData);
-            this.setUser(user);
             // remove the displayed properties from the contact info
             Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.User)).forEach(prop => delete userData[prop]);
+            this.__remainingUserData = userData;
             console.log("Remaining User data", userData);
-            this.getChildControl("extra-info").setJson(userData);
+            this.setUser(user);
           }
         })
         .catch(err => {
@@ -295,8 +301,6 @@ qx.Class.define("osparc.user.UserDetails", {
     __applyUser: function(user) {
       this.setCaption(user.getUserName());
 
-      this.getChildControl("thumbnail").setSource(user.createThumbnail(this.self().THUMBNAIL_SIZE));
-
       // top grid
       this.getChildControl("userName").setValue(user.getUserName());
       this.getChildControl("fullname").setValue([user.getFirstName(), user.getLastName()].filter(Boolean).join(" "));
@@ -305,6 +309,8 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("user-id").setValue(String(user.getUserId()));
       this.getChildControl("group-id").setValue(String(user.getGroupId()));
 
+      this.getChildControl("thumbnail").setSource(user.createThumbnail(this.self().THUMBNAIL_SIZE));
+
       // middle grid
       this.getChildControl("institution").setValue(user.getInstitution() || "-");
       this.getChildControl("address").setValue(user.getAddress() || "-");
@@ -312,6 +318,14 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("state").setValue(user.getState() || "-");
       this.getChildControl("country").setValue(user.getCountry() || "-");
       this.getChildControl("postal-code").setValue(user.getPostalCode() || "-");
+
+      this.getChildControl("extra-info");
+      setTimeout(() => this.__setExtraInfo(), 100);
+    },
+
+    __setExtraInfo: function() {
+      const divId = this.getUserGroupId() + "_user_details";
+      osparc.wrapper.JsonFormatter.getInstance().setJson(this.__remainingUserData, divId);
     },
   }
 });
