@@ -389,6 +389,8 @@ async def test_get_function_job_status(
 )
 async def test_get_function_job_outputs(
     client: AsyncClient,
+    mock_celery_task_manager: MockType,
+    mock_rabbitmq_rpc_client: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     mock_registered_project_function: RegisteredProjectFunction,
@@ -414,7 +416,9 @@ async def test_get_function_job_outputs(
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
     )
-
+    mock_handler_in_functions_rpc_interface(
+        "update_function_job_status", FunctionJobStatus(status="SUCCESS")
+    )
     if use_db_cache:
         mock_handler_in_functions_rpc_interface("get_function_job_outputs", job_outputs)
     else:

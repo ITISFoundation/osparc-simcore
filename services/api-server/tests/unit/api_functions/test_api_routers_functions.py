@@ -330,6 +330,7 @@ async def test_delete_function(
 async def test_run_map_function_not_allowed(
     client: AsyncClient,
     mocker: MockerFixture,
+    mock_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
