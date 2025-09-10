@@ -308,18 +308,7 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("country").setValue(user.getCountry() || "-");
       this.getChildControl("postal-code").setValue(user.getPostalCode() || "-");
 
-      /*
-      const divId = this.getUserGroupId() + "_user_details";
-      const htmlEmbed = osparc.wrapper.JsonFormatter.getInstance().createContainer(divId);
-      setTimeout(() => {
-        osparc.wrapper.JsonFormatter.getInstance().setJson(this.__remainingUserData, divId);
-      }, 100);
-      const container = new qx.ui.container.Scroll();
-      container.add(htmlEmbed);
-      this.add(container, {
-        flex: 1
-      });
-      */
+      // remaining data
       const jsonViewer = new osparc.widget.JsonFormatterWidget();
       jsonViewer.set({
         allowGrowX: true,
