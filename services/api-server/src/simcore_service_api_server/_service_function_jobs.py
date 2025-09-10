@@ -9,14 +9,11 @@ from models_library.functions import (
     FunctionInputs,
     FunctionJobCollectionID,
     FunctionJobID,
-    FunctionJobStatus,
-    FunctionOutputs,
     FunctionSchemaClass,
     ProjectFunctionJob,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobPatch,
-    RegisteredFunctionJobWithStatus,
     RegisteredProjectFunctionJobPatch,
     RegisteredSolverFunctionJobPatch,
     SolverFunctionJob,
@@ -24,16 +21,12 @@ from models_library.functions import (
     TaskID,
 )
 from models_library.functions_errors import (
-    FunctionExecuteAccessDeniedError,
     FunctionInputsValidationError,
-    FunctionsExecuteApiAccessDeniedError,
     UnsupportedFunctionClassError,
-    UnsupportedFunctionFunctionJobClassCombinationError,
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
@@ -42,13 +35,9 @@ from servicelib.celery.models import TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_jobs import JobService
 from .api.routes.tasks import _get_task_filter
-from .exceptions.function_errors import (
-    FunctionJobCacheNotFoundError,
-)
 from .models.api_resources import JobLinks
 from .models.domain.functions import PreRegisteredFunctionJobData
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
@@ -124,33 +113,6 @@ class FunctionJobService:
             **pagination_kwargs,
         )
 
-    async def list_function_jobs_with_status(
-        self,
-        *,
-        filter_by_function_id: FunctionID | None = None,
-        filter_by_function_job_ids: list[FunctionJobID] | None = None,
-        filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
-        pagination_offset: PageOffsetInt | None = None,
-        pagination_limit: PageLimitInt | None = None,
-    ) -> tuple[
-        list[RegisteredFunctionJobWithStatus],
-        PageMetaInfoLimitOffset,
-    ]:
-        """Lists all function jobs for a user with pagination"""
-
-        pagination_kwargs = as_dict_exclude_none(
-            pagination_offset=pagination_offset, pagination_limit=pagination_limit
-        )
-
-        return await self._web_rpc_client.list_function_jobs_with_status(
-            user_id=self.user_id,
-            product_name=self.product_name,
-            filter_by_function_id=filter_by_function_id,
-            filter_by_function_job_ids=filter_by_function_job_ids,
-            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
-            **pagination_kwargs,
-        )
-
     async def validate_function_inputs(
         self, *, function_id: FunctionID, inputs: FunctionInputs
     ) -> tuple[bool, str]:
@@ -180,72 +142,6 @@ class FunctionJobService:
             f"Unsupported function schema class {function.input_schema.schema_class}",
         )
 
-    async def inspect_function_job(
-        self,
-        function: RegisteredFunction,
-        function_job: RegisteredFunctionJob,
-        task_manager: TaskManager,
-    ) -> FunctionJobStatus:
-        """Raises FunctionJobProjectNotRegisteredError if no project is associated with job"""
-        stored_job_status = await self._web_rpc_client.get_function_job_status(
-            function_job_id=function_job.uid,
-            user_id=self.user_id,
-            product_name=self.product_name,
-        )
-
-        if stored_job_status.status in (RunningState.SUCCESS, RunningState.FAILED):
-            return stored_job_status
-
-        status: str
-        if (
-            function.function_class == FunctionClass.PROJECT
-            and function_job.function_class == FunctionClass.PROJECT
-        ):
-            if function_job.project_job_id is None:
-                status = await _celery_task_status(
-                    job_creation_task_id=function_job.job_creation_task_id,
-                    task_manager=task_manager,
-                    user_id=self.user_id,
-                    product_name=self.product_name,
-                )
-            else:
-                job_status = await self._job_service.inspect_study_job(
-                    job_id=function_job.project_job_id,
-                )
-                status = job_status.state
-        elif (function.function_class == FunctionClass.SOLVER) and (
-            function_job.function_class == FunctionClass.SOLVER
-        ):
-            if function_job.solver_job_id is None:
-                status = await _celery_task_status(
-                    job_creation_task_id=function_job.job_creation_task_id,
-                    task_manager=task_manager,
-                    user_id=self.user_id,
-                    product_name=self.product_name,
-                )
-            else:
-                job_status = await self._job_service.inspect_solver_job(
-                    solver_key=function.solver_key,
-                    version=function.solver_version,
-                    job_id=function_job.solver_job_id,
-                )
-                status = job_status.state
-        else:
-            raise UnsupportedFunctionFunctionJobClassCombinationError(
-                function_class=function.function_class,
-                function_job_class=function_job.function_class,
-            )
-
-        new_job_status = FunctionJobStatus(status=status)
-
-        return await self._web_rpc_client.update_function_job_status(
-            function_job_id=function_job.uid,
-            user_id=self.user_id,
-            product_name=self.product_name,
-            job_status=new_job_status,
-            check_write_permissions=False,
-        )
-
     async def create_function_job_inputs(  # pylint: disable=no-self-use
         self,
         *,
@@ -259,60 +155,6 @@ class FunctionJobService:
         return JobInputs(
             values=joined_inputs or {},
         )
-
-    async def get_cached_function_job(
-        self,
-        *,
-        function: RegisteredFunction,
-        job_inputs: JobInputs,
-        task_manager: TaskManager,
-    ) -> RegisteredFunctionJob:
-        """
-        N.B. this function checks access rights
-
-        raises FunctionsExecuteApiAccessDeniedError if user cannot execute functions
-        raises FunctionJobCacheNotFoundError if no cached job is found
-
-        """
-
-        user_api_access_rights = (
-            await self._web_rpc_client.get_functions_user_api_access_rights(
-                user_id=self.user_id, product_name=self.product_name
-            )
-        )
-        if not user_api_access_rights.execute_functions:
-            raise FunctionsExecuteApiAccessDeniedError(
-                user_id=self.user_id,
-                function_id=function.uid,
-            )
-
-        user_permissions = await self._web_rpc_client.get_function_user_permissions(
-            function_id=function.uid,
-            user_id=self.user_id,
-            product_name=self.product_name,
-        )
-        if not user_permissions.execute:
-            raise FunctionExecuteAccessDeniedError(
-                user_id=self.user_id,
-                function_id=function.uid,
-            )
-
-        if cached_function_jobs := await self._web_rpc_client.find_cached_function_jobs(
-            function_id=function.uid,
-            inputs=job_inputs.values,
-            user_id=self.user_id,
-            product_name=self.product_name,
-        ):
-            for cached_function_job in cached_function_jobs:
-                job_status = await self.inspect_function_job(
-                    function=function,
-                    function_job=cached_function_job,
-                    task_manager=task_manager,
-                )
-                if job_status.status == RunningState.SUCCESS:
-                    return cached_function_job
-
-        raise FunctionJobCacheNotFoundError
 
     async def pre_register_function_job(
         self,
@@ -507,67 +349,4 @@ class FunctionJobService:
 
         raise UnsupportedFunctionClassError(
             function_class=function.function_class,
-        )
-
-    async def function_job_outputs(
-        self,
-        *,
-        function: RegisteredFunction,
-        function_job: RegisteredFunctionJob,
-        user_id: UserID,
-        product_name: ProductName,
-        stored_job_outputs: FunctionOutputs | None,
-        async_pg_engine: AsyncEngine,
-        task_manager: TaskManager,
-    ) -> FunctionOutputs:
-
-        if stored_job_outputs is not None:
-            return stored_job_outputs
-
-        job_status = await self.inspect_function_job(
-            function=function, function_job=function_job, task_manager=task_manager
-        )
-
-        if job_status.status != RunningState.SUCCESS:
-            return None
-
-        if (
-            function.function_class == FunctionClass.PROJECT
-            and function_job.function_class == FunctionClass.PROJECT
-        ):
-            if function_job.project_job_id is None:
-                return None
-            new_outputs = dict(
-                (
-                    await self._job_service.get_study_job_outputs(
-                        study_id=function.project_id,
-                        job_id=function_job.project_job_id,
-                    )
-                ).results
-            )
-        elif (
-            function.function_class == FunctionClass.SOLVER
-            and function_job.function_class == FunctionClass.SOLVER
-        ):
-            if function_job.solver_job_id is None:
-                return None
-            new_outputs = dict(
-                (
-                    await self._job_service.get_solver_job_outputs(
-                        solver_key=function.solver_key,
-                        version=function.solver_version,
-                        job_id=function_job.solver_job_id,
-                        async_pg_engine=async_pg_engine,
-                    )
-                ).results
-            )
-        else:
-            raise UnsupportedFunctionClassError(function_class=function.function_class)
-
-        return await self._web_rpc_client.update_function_job_outputs(
-            function_job_id=function_job.uid,
-            user_id=user_id,
-            product_name=product_name,
-            outputs=new_outputs,
-            check_write_permissions=False,
         )

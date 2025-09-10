@@ -10,16 +10,13 @@ from models_library.functions import (
     FunctionJobID,
     FunctionJobStatus,
     FunctionOutputs,
-    ProjectFunctionJob,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobWithStatus,
-    SolverFunctionJob,
     TaskID,
 )
 from models_library.functions_errors import (
     FunctionExecuteAccessDeniedError,
-    FunctionInputsValidationError,
     FunctionsExecuteApiAccessDeniedError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
@@ -40,7 +37,6 @@ from .api.routes.tasks import _get_task_filter
 from .exceptions.function_errors import (
     FunctionJobCacheNotFoundError,
 )
-from .models.domain.functions import PreRegisteredFunctionJobData
 from .models.schemas.jobs import JobInputs
 from .services_http.webserver import AuthSession
 from .services_rpc.storage import StorageService
@@ -263,62 +259,6 @@ class FunctionJobTaskClientService:
                     return cached_function_job
 
         raise FunctionJobCacheNotFoundError
-
-    async def pre_register_function_job(
-        self,
-        *,
-        function: RegisteredFunction,
-        job_inputs: JobInputs,
-    ) -> PreRegisteredFunctionJobData:
-
-        if function.input_schema is not None:
-            is_valid, validation_str = (
-                await self._function_job_service.validate_function_inputs(
-                    function_id=function.uid,
-                    inputs=job_inputs.values,
-                )
-            )
-            if not is_valid:
-                raise FunctionInputsValidationError(error=validation_str)
-
-        if function.function_class == FunctionClass.PROJECT:
-            job = await self._web_rpc_client.register_function_job(
-                function_job=ProjectFunctionJob(
-                    function_uid=function.uid,
-                    title=f"Function job of function {function.uid}",
-                    description=function.description,
-                    inputs=job_inputs.values,
-                    outputs=None,
-                    project_job_id=None,
-                    job_creation_task_id=None,
-                ),
-                user_id=self.user_id,
-                product_name=self.product_name,
-            )
-
-        elif function.function_class == FunctionClass.SOLVER:
-            job = await self._web_rpc_client.register_function_job(
-                function_job=SolverFunctionJob(
-                    function_uid=function.uid,
-                    title=f"Function job of function {function.uid}",
-                    description=function.description,
-                    inputs=job_inputs.values,
-                    outputs=None,
-                    solver_job_id=None,
-                    job_creation_task_id=None,
-                ),
-                user_id=self.user_id,
-                product_name=self.product_name,
-            )
-        else:
-            raise UnsupportedFunctionClassError(
-                function_class=function.function_class,
-            )
-
-        return PreRegisteredFunctionJobData(
-            function_job_id=job.uid,
-            job_inputs=job_inputs,
-        )
 
     async def function_job_outputs(
         self,
