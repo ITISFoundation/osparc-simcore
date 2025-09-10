@@ -83,7 +83,7 @@ class FunctionDeleteQueryParams(BaseModel):
     force: Annotated[
         bool,
         Field(
-            description="If true, deletes the function even if it has associated jobs.",
+            description="If true, deletes the function even if it has associated jobs; otherwise, returns HTTP_409_CONFLICT if jobs exist.",
         ),
     ] = False
 
