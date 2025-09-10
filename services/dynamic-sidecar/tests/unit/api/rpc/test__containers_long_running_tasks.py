@@ -1,4 +1,5 @@
 # pylint: disable=no-member
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
@@ -34,7 +35,7 @@ from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningMan
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import TaskNotFoundError
 from servicelib.long_running_tasks.models import LRTNamespace, TaskId
-from servicelib.long_running_tasks.task import TaskRegistry
+from servicelib.long_running_tasks.task import TaskRegistry, TasksManager
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar import (
     containers,
@@ -53,6 +54,7 @@ from simcore_service_dynamic_sidecar.modules.outputs._manager import (
 )
 from tenacity import (
     AsyncRetrying,
+    TryAgain,
     retry_if_exception_type,
     stop_after_delay,
     wait_fixed,
@@ -186,6 +188,12 @@ async def rpc_client(
 def lrt_namespace(app: FastAPI) -> LRTNamespace:
     long_running_manager: FastAPILongRunningManager = app.state.long_running_manager
     return long_running_manager.lrt_namespace
+
+
+@pytest.fixture
+def tasks_manager(app: FastAPI) -> TasksManager:
+    tasks_manager: TasksManager = app.state.long_running_manager.tasks_manager
+    return tasks_manager
 
 
 @pytest.fixture
@@ -519,6 +527,7 @@ async def test_same_task_id_is_returned_if_task_exists(
     rpc_client: RabbitMQRPCClient,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
+    tasks_manager: TasksManager,
     mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable[TaskId]],
     mock_stop_heart_beat_task: AsyncMock,
@@ -537,8 +546,16 @@ async def test_same_task_id_is_returned_if_task_exists(
 
     async def _assert_task_removed(task_id: TaskId) -> None:
         await lrt_api.remove_task(rpc_client, lrt_namespace, {}, task_id)
-        with pytest.raises(TaskNotFoundError):
-            await lrt_api.get_task_status(rpc_client, lrt_namespace, {}, task_id)
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(5),
+            retry=retry_if_exception_type((AssertionError, TryAgain)),
+            reraise=True,
+        ):
+            with attempt:  # noqa: SIM117
+                with pytest.raises(TaskNotFoundError):  # noqa: PT012
+                    await tasks_manager._get_tracked_task(task_id, {})  # noqa: SLF001
+                    raise TryAgain
 
     task_id = await _get_awaitable()
     assert task_id.endswith("unique")
