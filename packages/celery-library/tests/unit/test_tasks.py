@@ -12,7 +12,6 @@ from random import randint
 
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
-from celery.contrib.abortable import AbortableTask  # pylint: disable=no-name-in-module
 from celery_library.errors import TransferrableCeleryError
 from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager
@@ -72,7 +71,7 @@ def failure_task(task: Task, task_id: TaskID) -> None:
     raise MyError(msg=msg)
 
 
-async def dreamer_task(task: AbortableTask, task_id: TaskID) -> list[int]:
+async def dreamer_task(task: Task, task_id: TaskID) -> list[int]:
     numbers = []
     for _ in range(30):
         numbers.append(randint(1, 90))  # noqa: S311
