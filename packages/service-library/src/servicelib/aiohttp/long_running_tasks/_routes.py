@@ -78,7 +78,7 @@ class _RemoveTaskQueryParams(RequestParameters):
                 "completly instead of returning immediately"
             )
         ),
-    ] = True
+    ] = False
 
 
 @routes.delete("/{task_id}", name="remove_task")

@@ -110,7 +110,7 @@ async def remove_task(
                 "completly instead of returning immediately"
             ),
         ),
-    ] = True,
+    ] = False,
 ) -> None:
     assert request  # nosec
     await lrt_api.remove_task(

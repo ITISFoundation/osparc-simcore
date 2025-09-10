@@ -282,7 +282,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             # we just print the status from where one can infer the above
             with suppress(TaskNotFoundError):
                 task_status = await self.get_task_status(
-                    task_id, with_task_context=task_context
+                    task_id, with_task_context=task_context, exclude_removed=False
                 )
                 with log_context(
                     _logger,
@@ -386,17 +386,26 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 await self._tasks_data.update_task_data(task_id, updates=updates)
 
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
-        if not with_task_context:
+        async def _() -> list[TaskBase]:
+            if not with_task_context:
+                return [
+                    TaskBase(task_id=task.task_id)
+                    for task in (await self._tasks_data.list_tasks_data())
+                ]
+
             return [
                 TaskBase(task_id=task.task_id)
                 for task in (await self._tasks_data.list_tasks_data())
+                if task.task_context == with_task_context
             ]
 
-        return [
-            TaskBase(task_id=task.task_id)
-            for task in (await self._tasks_data.list_tasks_data())
-            if task.task_context == with_task_context
-        ]
+        result = await _()
+
+        if len(result) == 0:
+            return []
+
+        to_remove = await self._tasks_data.list_tasks_to_remove()
+        return [r for r in result if r.task_id not in to_remove]
 
     async def _get_tracked_task(
         self, task_id: TaskId, with_task_context: TaskContext
@@ -412,7 +421,11 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         return task_data
 
     async def get_task_status(
-        self, task_id: TaskId, with_task_context: TaskContext
+        self,
+        task_id: TaskId,
+        with_task_context: TaskContext,
+        *,
+        exclude_removed: bool = True,
     ) -> TaskStatus:
         """
         returns: the status of the task, along with updates
@@ -420,6 +433,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         raises TaskNotFoundError if the task cannot be found
         """
+        if exclude_removed and await self._tasks_data.is_maked_for_removal(task_id):
+            raise TaskNotFoundError(task_id=task_id)
+
         task_data = await self._get_tracked_task(task_id, with_task_context)
 
         await self._tasks_data.update_task_data(
@@ -454,6 +470,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         raises TaskNotFoundError if the task cannot be found
         raises TaskNotCompletedError if the task is not completed
         """
+        if await self._tasks_data.is_maked_for_removal(task_id):
+            raise TaskNotFoundError(task_id=task_id)
+
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
 
         if not tracked_task.is_done or tracked_task.result_field is None:
@@ -481,6 +500,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         cancels and removes task
         raises TaskNotFoundError if the task cannot be found
         """
+        if await self._tasks_data.is_maked_for_removal(task_id):
+            raise TaskNotFoundError(task_id=task_id)
+
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
 
         await self._tasks_data.mark_task_for_removal(
