@@ -80,16 +80,14 @@ async def _celery_task_status(
     task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
-) -> FunctionJobStatus:
+) -> str:
     if job_creation_task_id is None:
-        return FunctionJobStatus(status=_JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS)
+        return _JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS
     task_filter = _get_task_filter(user_id, product_name)
     task_status = await task_manager.get_task_status(
         task_uuid=TaskUUID(job_creation_task_id), task_filter=task_filter
     )
-    return FunctionJobStatus(
-        status=f"{_JOB_CREATION_TASK_STATUS_PREFIX}{task_status.task_state}"
-    )
+    return f"{_JOB_CREATION_TASK_STATUS_PREFIX}{task_status.task_state}"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -198,42 +196,47 @@ class FunctionJobService:
         if stored_job_status.status in (RunningState.SUCCESS, RunningState.FAILED):
             return stored_job_status
 
+        status: str
         if (
             function.function_class == FunctionClass.PROJECT
             and function_job.function_class == FunctionClass.PROJECT
         ):
             if function_job.project_job_id is None:
-                return await _celery_task_status(
+                status = await _celery_task_status(
                     job_creation_task_id=function_job.job_creation_task_id,
                     task_manager=task_manager,
                     user_id=self.user_id,
                     product_name=self.product_name,
                 )
-            job_status = await self._job_service.inspect_study_job(
-                job_id=function_job.project_job_id,
-            )
+            else:
+                job_status = await self._job_service.inspect_study_job(
+                    job_id=function_job.project_job_id,
+                )
+                status = job_status.state
         elif (function.function_class == FunctionClass.SOLVER) and (
             function_job.function_class == FunctionClass.SOLVER
         ):
             if function_job.solver_job_id is None:
-                return await _celery_task_status(
+                status = await _celery_task_status(
                     job_creation_task_id=function_job.job_creation_task_id,
                     task_manager=task_manager,
                     user_id=self.user_id,
                     product_name=self.product_name,
                 )
-            job_status = await self._job_service.inspect_solver_job(
-                solver_key=function.solver_key,
-                version=function.solver_version,
-                job_id=function_job.solver_job_id,
-            )
+            else:
+                job_status = await self._job_service.inspect_solver_job(
+                    solver_key=function.solver_key,
+                    version=function.solver_version,
+                    job_id=function_job.solver_job_id,
+                )
+                status = job_status.state
         else:
             raise UnsupportedFunctionFunctionJobClassCombinationError(
                 function_class=function.function_class,
                 function_job_class=function_job.function_class,
             )
 
-        new_job_status = FunctionJobStatus(status=job_status.state)
+        new_job_status = FunctionJobStatus(status=status)
 
         return await self._web_rpc_client.update_function_job_status(
             function_job_id=function_job.uid,
