@@ -1,11 +1,12 @@
 import asyncio
 import datetime
+import functools
 import logging
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import asynccontextmanager
 from types import TracebackType
-from typing import Any, Final
+from typing import Any, Final, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
 
@@ -281,6 +282,91 @@ class DistributedRedSemaphore:
             f"DistributedRedSemaphore(name={self._key!r}, "
             f"capacity={self._capacity}, acquired={self._acquired})"
         )
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def with_limited_concurrency(
+    redis_client: RedisClientSDK | Callable[..., RedisClientSDK],
+    *,
+    key: str | Callable[..., str],
+    capacity: int | Callable[..., int],
+    ttl: datetime.timedelta = _DEFAULT_SEMAPHORE_TTL,
+    blocking: bool = True,
+    blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
+    """
+    Decorator to limit concurrent execution of a function using a distributed semaphore.
+
+    This decorator ensures that only a specified number of instances of the decorated
+    function can run concurrently across multiple processes/instances using Redis
+    as the coordination backend.
+
+    Args:
+        redis_client: Redis client for coordination (can be callable)
+        key: Unique identifier for the semaphore (can be callable)
+        capacity: Maximum number of concurrent executions (can be callable)
+        ttl: Time-to-live for semaphore entries (default: 5 minutes)
+        blocking: Whether to block when semaphore is full (default: True)
+        blocking_timeout: Maximum time to wait when blocking (default: socket timeout)
+
+    Example:
+        @with_limited_concurrency(
+            redis_client,
+            key=f"{user_id}-{wallet_id}",
+            capacity=20,
+            blocking=True,
+            blocking_timeout=None
+        )
+        async def process_user_wallet(user_id: str, wallet_id: str):
+            # Only 20 instances of this function can run concurrently
+            # for the same user_id-wallet_id combination
+            await do_processing()
+
+    Raises:
+        SemaphoreAcquisitionError: If semaphore cannot be acquired and blocking=True
+    """
+
+    def _decorator(
+        coro: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
+        @functools.wraps(coro)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            # Resolve callable parameters
+            semaphore_key = key(*args, **kwargs) if callable(key) else key
+            semaphore_capacity = (
+                capacity(*args, **kwargs) if callable(capacity) else capacity
+            )
+            client = (
+                redis_client(*args, **kwargs)
+                if callable(redis_client)
+                else redis_client
+            )
+
+            assert isinstance(semaphore_key, str)  # nosec
+            assert isinstance(semaphore_capacity, int)  # nosec
+            assert isinstance(client, RedisClientSDK)  # nosec
+
+            # Create and use the semaphore
+            semaphore = DistributedRedSemaphore(
+                redis_client=client,
+                key=semaphore_key,
+                capacity=semaphore_capacity,
+                ttl=ttl,
+                blocking=blocking,
+                timeout=blocking_timeout,
+            )
+
+            async with semaphore:
+                return await coro(*args, **kwargs)
+
+        return _wrapper
+
+    return _decorator
 
 
 @asynccontextmanager
