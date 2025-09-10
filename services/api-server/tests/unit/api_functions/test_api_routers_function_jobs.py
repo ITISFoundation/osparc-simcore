@@ -36,10 +36,11 @@ from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskFilter, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server._service_function_jobs_task_client import (
+    _JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS,
     _JOB_CREATION_TASK_STATUS_PREFIX,
     FunctionJobTaskClientService,
 )
-from simcore_service_api_server.api.routes import function_jobs_routes
+from simcore_service_api_server.api.dependencies import services as service_dependencies
 from simcore_service_api_server.models.schemas.jobs import JobStatus
 
 _faker = Faker()
@@ -275,7 +276,9 @@ async def test_get_function_job_status(
     mocked_app_dependencies: None,
     client: AsyncClient,
     mocker: MockerFixture,
-    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_handler_in_functions_rpc_interface: Callable[
+        [str, Any, Exception | None, Callable | None], MockType
+    ],
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     mock_registered_project_function: RegisteredProjectFunction,
     mock_method_in_jobs_service: Callable[[str, Any], None],
@@ -286,12 +289,12 @@ async def test_get_function_job_status(
     celery_task_state: TaskState,
 ) -> None:
 
-    _expected_return_status = (
-        status.HTTP_500_INTERNAL_SERVER_ERROR
-        if job_status not in ("SUCCESS", "FAILED")
-        and (project_job_id is None and job_creation_task_id is None)
-        else status.HTTP_200_OK
-    )
+    _expected_return_status = status.HTTP_200_OK
+    #     status.HTTP_500_INTERNAL_SERVER_ERROR
+    #     if job_status not in ("SUCCESS", "FAILED")
+    #     and (project_job_id is None and job_creation_task_id is None)
+    #     else status.HTTP_200_OK
+    # )
 
     def _mock_task_manager(*args, **kwargs) -> CeleryTaskManager:
         async def _get_task_status(
@@ -318,7 +321,7 @@ async def test_get_function_job_status(
         obj.get_task_status = _get_task_status
         return obj
 
-    mocker.patch.object(function_jobs_routes, "get_task_manager", _mock_task_manager)
+    mocker.patch.object(service_dependencies, "get_task_manager", _mock_task_manager)
 
     mock_handler_in_functions_rpc_interface(
         "get_function_job",
@@ -329,13 +332,14 @@ async def test_get_function_job_status(
                 "job_creation_task_id": job_creation_task_id,
             }
         ),
+        None,
+        None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", mock_registered_project_function, None, None
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function_job_status",
-        FunctionJobStatus(status=job_status),
+        "get_function_job_status", FunctionJobStatus(status=job_status), None, None
     )
     mock_method_in_jobs_service(
         "inspect_study_job",
@@ -347,9 +351,15 @@ async def test_get_function_job_status(
             state=RunningState(value=job_status),
         ),
     )
+
+    async def _update_function_job_status_side_effect(*args, **kwargs):
+        return kwargs["job_status"]
+
     mock_handler_in_functions_rpc_interface(
         "update_function_job_status",
-        FunctionJobStatus(status=job_status),
+        None,
+        None,
+        _update_function_job_status_side_effect,
     )
 
     response = await client.get(
@@ -357,15 +367,19 @@ async def test_get_function_job_status(
         auth=auth,
     )
     assert response.status_code == _expected_return_status
-    if response.status_code == status.HTTP_200_OK:
-        data = response.json()
-        if project_job_id is not None or job_status in ("SUCCESS", "FAILED"):
-            assert data["status"] == job_status
-        else:
-            assert (
-                data["status"]
-                == f"{_JOB_CREATION_TASK_STATUS_PREFIX}{celery_task_state}"
-            )
+    data = response.json()
+    if (project_job_id is not None and job_creation_task_id is not None) or (
+        job_status in ("SUCCESS", "FAILED")
+    ):
+        assert data["status"] == job_status
+    elif project_job_id is None and job_creation_task_id is None:
+        assert data["status"] == _JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS
+    elif project_job_id is None and job_creation_task_id is not None:
+        assert (
+            data["status"] == f"{_JOB_CREATION_TASK_STATUS_PREFIX}{celery_task_state}"
+        )
+    else:
+        pytest.fail("Unexpected combination of parameters")
 
 
 @pytest.mark.parametrize(

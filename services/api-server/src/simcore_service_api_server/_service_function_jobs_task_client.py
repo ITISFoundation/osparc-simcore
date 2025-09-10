@@ -1,7 +1,9 @@
+import contextlib
 from dataclasses import dataclass
 from typing import Final
 
 from common_library.exclude import as_dict_exclude_none
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -22,22 +24,27 @@ from models_library.functions_errors import (
     UnsupportedFunctionFunctionJobClassCombinationError,
 )
 from models_library.products import ProductName
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from servicelib.celery.models import TaskUUID
+from servicelib.celery.models import TaskFilter, TaskMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_function_jobs import FunctionJobService
 from ._service_functions import FunctionService
 from ._service_jobs import JobService
+from .api.dependencies.authentication import Identity
+from .api.dependencies.celery import ASYNC_JOB_CLIENT_NAME
 from .api.routes.tasks import _get_task_filter
 from .exceptions.function_errors import (
     FunctionJobCacheNotFoundError,
 )
-from .models.schemas.jobs import JobInputs
+from .models.api_resources import JobLinks
+from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.storage import StorageService
 from .services_rpc.wb_api_server import WbApiRpcClient
@@ -318,4 +325,66 @@ class FunctionJobTaskClientService:
             product_name=self.product_name,
             outputs=new_outputs,
             check_write_permissions=False,
+        )
+
+    async def create_function_job_creation_task(
+        self,
+        *,
+        function: RegisteredFunction,
+        function_inputs: FunctionInputs,
+        user_identity: Identity,
+        pricing_spec: JobPricingSpecification | None,
+        job_links: JobLinks,
+        parent_project_uuid: ProjectID | None = None,
+        parent_node_id: NodeID | None = None,
+    ) -> RegisteredFunctionJob:
+
+        job_inputs = await self._function_job_service.create_function_job_inputs(
+            function=function, function_inputs=function_inputs
+        )
+
+        # check if results are cached
+        with contextlib.suppress(FunctionJobCacheNotFoundError):
+            return await self.get_cached_function_job(
+                function=function,
+                job_inputs=job_inputs,
+            )
+
+        pre_registered_function_job_data = (
+            await self._function_job_service.pre_register_function_job(
+                function=function,
+                job_inputs=job_inputs,
+            )
+        )
+
+        # run function in celery task
+        job_filter = AsyncJobFilter(
+            user_id=user_identity.user_id,
+            product_name=user_identity.product_name,
+            client_name=ASYNC_JOB_CLIENT_NAME,
+        )
+        task_filter = TaskFilter.model_validate(job_filter.model_dump())
+
+        task_uuid = await self._celery_task_manager.submit_task(
+            TaskMetadata(
+                name="run_function",
+                ephemeral=True,
+                queue=TasksQueue.API_WORKER_QUEUE,
+            ),
+            task_filter=task_filter,
+            user_identity=user_identity,
+            function=function,
+            pre_registered_function_job_data=pre_registered_function_job_data,
+            pricing_spec=pricing_spec,
+            job_links=job_links,
+            x_simcore_parent_project_uuid=parent_project_uuid,
+            x_simcore_parent_node_id=parent_node_id,
+        )
+
+        return await self._function_job_service.patch_registered_function_job(
+            user_id=user_identity.user_id,
+            product_name=user_identity.product_name,
+            function_job_id=pre_registered_function_job_data.function_job_id,
+            function_class=function.function_class,
+            job_creation_task_id=TaskID(task_uuid),
         )

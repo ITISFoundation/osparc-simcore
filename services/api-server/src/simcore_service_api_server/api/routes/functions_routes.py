@@ -1,5 +1,3 @@
-import contextlib
-
 # pylint: disable=too-many-positional-arguments
 from collections.abc import Callable
 from typing import Annotated, Final, Literal
@@ -18,23 +16,17 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
 )
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.functions import FunctionJobCollection, FunctionJobID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata, TasksQueue
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from servicelib.utils import limited_gather
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_function_jobs_task_client import FunctionJobTaskClientService
 from ..._service_functions import FunctionService
-from ...celery_worker.worker_tasks.functions_tasks import (
-    run_function as run_function_task,
-)
-from ...exceptions.function_errors import FunctionJobCacheNotFoundError
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import JobPricingSpecification
@@ -45,7 +37,6 @@ from ..dependencies.authentication import (
     get_current_user_id,
     get_product_name,
 )
-from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager
 from ..dependencies.services import (
     get_function_job_service,
     get_function_job_task_client_service,
@@ -344,7 +335,6 @@ async def run_function(
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJob:
     # preprocess inputs
-    task_manager = get_task_manager(request.app)
     parent_project_uuid = (
         x_simcore_parent_project_uuid
         if isinstance(x_simcore_parent_project_uuid, ProjectID)
@@ -357,55 +347,15 @@ async def run_function(
     )
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
-    job_inputs = await function_job_service.create_function_job_inputs(
-        function=to_run_function, function_inputs=function_inputs
-    )
 
-    # check if results are cached
-    with contextlib.suppress(FunctionJobCacheNotFoundError):
-        return await function_job_task_client_service.get_cached_function_job(
-            function=to_run_function,
-            job_inputs=job_inputs,
-        )
-
-    pre_registered_function_job_data = (
-        await function_job_service.pre_register_function_job(
-            function=to_run_function,
-            job_inputs=job_inputs,
-        )
-    )
-
-    # run function in celery task
-    job_filter = AsyncJobFilter(
-        user_id=user_identity.user_id,
-        product_name=user_identity.product_name,
-        client_name=ASYNC_JOB_CLIENT_NAME,
-    )
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
-    task_name = run_function_task.__name__
-
-    task_uuid = await task_manager.submit_task(
-        TaskMetadata(
-            name=task_name,
-            ephemeral=True,
-            queue=TasksQueue.API_WORKER_QUEUE,
-        ),
-        task_filter=task_filter,
-        user_identity=user_identity,
+    return await function_job_task_client_service.create_function_job_creation_task(
         function=to_run_function,
-        pre_registered_function_job_data=pre_registered_function_job_data,
+        function_inputs=function_inputs,
+        user_identity=user_identity,
         pricing_spec=pricing_spec,
         job_links=job_links,
-        x_simcore_parent_project_uuid=parent_project_uuid,
-        x_simcore_parent_node_id=parent_node_id,
-    )
-
-    return await function_job_service.patch_registered_function_job(
-        user_id=user_identity.user_id,
-        product_name=user_identity.product_name,
-        function_job_id=pre_registered_function_job_data.function_job_id,
-        function_class=to_run_function.function_class,
-        job_creation_task_id=TaskID(task_uuid),
+        parent_project_uuid=parent_project_uuid,
+        parent_node_id=parent_node_id,
     )
 
 
@@ -463,19 +413,30 @@ async def map_function(
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
+    parent_project_uuid = (
+        x_simcore_parent_project_uuid
+        if isinstance(x_simcore_parent_project_uuid, ProjectID)
+        else None
+    )
+    parent_node_id = (
+        x_simcore_parent_node_id
+        if isinstance(x_simcore_parent_node_id, NodeID)
+        else None
+    )
+    pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
+    job_links = await function_service.get_function_job_links(to_run_function, url_for)
 
     async def _run_single_function(function_inputs: FunctionInputs) -> FunctionJobID:
-        result = await run_function(
-            request=request,
-            user_identity=user_identity,
-            to_run_function=to_run_function,
-            url_for=url_for,
-            function_inputs=function_inputs,
-            function_service=function_service,
-            function_job_service=function_jobs_service,
-            function_job_task_client_service=function_job_task_client_service,
-            x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
-            x_simcore_parent_node_id=x_simcore_parent_node_id,
+        result = (
+            await function_job_task_client_service.create_function_job_creation_task(
+                function=to_run_function,
+                function_inputs=function_inputs,
+                user_identity=user_identity,
+                pricing_spec=pricing_spec,
+                job_links=job_links,
+                parent_project_uuid=parent_project_uuid,
+                parent_node_id=parent_node_id,
+            )
         )
         return result.uid
 
