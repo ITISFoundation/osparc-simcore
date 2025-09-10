@@ -536,9 +536,7 @@ async def test_same_task_id_is_returned_if_task_exists(
         )
 
     async def _assert_task_removed(task_id: TaskId) -> None:
-        await lrt_api.remove_task(
-            rpc_client, lrt_namespace, {}, task_id, wait_for_removal=True
-        )
+        await lrt_api.remove_task(rpc_client, lrt_namespace, {}, task_id)
         with pytest.raises(TaskNotFoundError):
             await lrt_api.get_task_status(rpc_client, lrt_namespace, {}, task_id)
 
