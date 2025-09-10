@@ -26,6 +26,9 @@ class TaskState(StrEnum):
     ABORTED = "ABORTED"
 
 
+TASK_FINAL_STATES = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
+
+
 class TasksQueue(StrEnum):
     CPU_BOUND = "cpu_bound"
     DEFAULT = "default"
@@ -76,9 +79,6 @@ class Task(BaseModel):
         )
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
-
-
-_TASK_DONE = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
 
 
 class TaskInfoStore(Protocol):
@@ -138,4 +138,4 @@ class TaskStatus(BaseModel):
 
     @property
     def is_done(self) -> bool:
-        return self.task_state in _TASK_DONE
+        return self.task_state in TASK_FINAL_STATES
