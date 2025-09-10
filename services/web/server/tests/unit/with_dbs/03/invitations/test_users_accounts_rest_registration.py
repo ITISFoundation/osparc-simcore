@@ -7,7 +7,7 @@
 
 
 import asyncio
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import AsyncMock
@@ -23,6 +23,7 @@ from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.api_schemas_webserver.users import (
     UserAccountGet,
 )
+from models_library.groups import AccessRightsDict
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
@@ -36,6 +37,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import (
     UserInfoDict,
 )
+from pytest_simcore.helpers.webserver_users import NewUser
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.users_details import (
@@ -88,6 +90,36 @@ def mock_email_session(mocker: MockerFixture) -> AsyncMock:
     return mock_session
 
 
+@pytest.fixture
+async def support_user(
+    support_group_before_app_starts: dict,
+    client: TestClient,
+) -> AsyncIterator[UserInfoDict]:
+    """Creates an active user that belongs to the product's support group."""
+    async with NewUser(
+        user_data={
+            "name": "support-user",
+            "status": UserStatus.ACTIVE.name,
+            "role": UserRole.USER.name,
+        },
+        app=client.app,
+    ) as user_info:
+        # Add the user to the support group
+        assert client.app
+
+        from simcore_service_webserver.groups import _groups_repository
+
+        # Now add user to support group with read-only access
+        await _groups_repository.add_new_user_in_group(
+            client.app,
+            group_id=support_group_before_app_starts["gid"],
+            new_user_id=user_info["id"],
+            access_rights=AccessRightsDict(read=True, write=False, delete=False),
+        )
+
+        yield user_info
+
+
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -95,7 +127,7 @@ def mock_email_session(mocker: MockerFixture) -> AsyncMock:
         *(
             (role, status.HTTP_403_FORBIDDEN)
             for role in UserRole
-            if role not in {UserRole.PRODUCT_OWNER, UserRole.ADMIN, UserRole.ANONYMOUS}
+            if UserRole.ANONYMOUS < role < UserRole.PRODUCT_OWNER
         ),
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
         (UserRole.ADMIN, status.HTTP_200_OK),
@@ -114,6 +146,26 @@ async def test_access_rights_on_search_users_only_product_owners_can_access(
 
     resp = await client.get(url.path, params={"email": "do-not-exists@foo.com"})
     await assert_status(resp, expected)
+
+
+async def test_access_rights_on_search_users_support_user_can_access_when_above_guest(
+    support_user: UserInfoDict,
+    # keep support_user first since it has to be created before the app starts
+    client: TestClient,
+    pre_registration_details_db_cleanup: None,
+):
+    """Test that support users with role > GUEST can access the search endpoint."""
+    assert client.app
+
+    from pytest_simcore.helpers.webserver_login import switch_client_session_to
+
+    # Switch client session to the support user
+    async with switch_client_session_to(client, support_user):
+        url = client.app.router["search_user_accounts"].url_for()
+        assert url.path == "/v0/admin/user-accounts:search"
+
+        resp = await client.get(url.path, params={"email": "do-not-exists@foo.com"})
+        await assert_status(resp, status.HTTP_200_OK)
 
 
 @pytest.fixture
@@ -497,7 +549,7 @@ async def test_reject_user_account(
     # Check that account_request_status is REJECTED
     user_data = found[0]
     assert user_data["accountRequestStatus"] == "REJECTED"
-    assert user_data["accountRequestReviewedBy"] == logged_user["id"]
+    assert user_data["accountRequestReviewedBy"] == logged_user["name"]
     assert user_data["accountRequestReviewedAt"] is not None
 
     # 7. Verify that a rejected user cannot be approved
@@ -585,7 +637,7 @@ async def test_approve_user_account_with_full_invitation_details(
 
     user_data = found[0]
     assert user_data["accountRequestStatus"] == "APPROVED"
-    assert user_data["accountRequestReviewedBy"] == logged_user["id"]
+    assert user_data["accountRequestReviewedBy"] == logged_user["name"]
     assert user_data["accountRequestReviewedAt"] is not None
 
     # 5. Verify invitation data is stored in extras
