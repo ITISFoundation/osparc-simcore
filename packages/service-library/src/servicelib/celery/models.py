@@ -1,10 +1,11 @@
 import datetime
+from collections.abc import Callable
 from enum import StrEnum
-from typing import Annotated, Protocol, TypeAlias
+from typing import Annotated, Final, Protocol, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from pydantic.config import JsonDict
 
 TaskID: TypeAlias = str
@@ -12,10 +13,28 @@ TaskName: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1)
 ]
 TaskUUID: TypeAlias = UUID
+_TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 
 
 class TaskFilter(BaseModel):
     model_config = ConfigDict(extra="allow")
+    field_sorting_key: Annotated[Callable[[str], int] | None, Field(exclude=True)] = (
+        None
+    )
+
+    def _build_task_id_prefix(self) -> str:
+        filter_dict = self.model_dump()
+        return _TASK_ID_KEY_DELIMITATOR.join(
+            [
+                f"{key}={filter_dict[key]}"
+                for key in sorted(filter_dict, key=self.field_sorting_key)
+            ]
+        )
+
+    def task_id(self, task_uuid: TaskUUID) -> TaskID:
+        return _TASK_ID_KEY_DELIMITATOR.join(
+            [self._build_task_id_prefix(), f"task_uuid={task_uuid}"]
+        )
 
 
 class TaskState(StrEnum):
