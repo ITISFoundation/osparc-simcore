@@ -28,6 +28,8 @@ qx.Class.define("osparc.user.UserDetails", {
       showMinimize: false,
       clickAwayClose: true,
       contentPadding: 10,
+      width: this.self().WIDTH,
+      height: this.self().HEIGHT,
     });
 
     this.setUserGroupId(userGroupId);
@@ -35,7 +37,7 @@ qx.Class.define("osparc.user.UserDetails", {
 
   statics: {
     WIDTH: 400,
-    HEIGHT: 300,
+    HEIGHT: 600,
     THUMBNAIL_SIZE: 110,
 
     TOP_GRID: {
