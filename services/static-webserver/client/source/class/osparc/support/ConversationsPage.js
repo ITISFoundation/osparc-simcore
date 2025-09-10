@@ -67,7 +67,7 @@ qx.Class.define("osparc.support.ConversationsPage", {
           break;
         }
         case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(15).set({
             alignX: "center",
           }));
           this._add(control);
