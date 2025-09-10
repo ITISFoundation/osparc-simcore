@@ -1640,8 +1640,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return deleteButton;
     },
 
-
-
     __createSelectButton: function() {
       const selectButton = new qx.ui.form.ToggleButton().set({
         appearance: "form-button-outlined",
@@ -2208,6 +2206,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(deleteButton, "functionItemMenuDelete");
       deleteButton.addListener("execute", () => {
         const win = this.__createConfirmDeleteWindow([functionData.title]);
+        win.setCaption(this.tr("Delete function"));
         win.center();
         win.open();
         win.addListener("close", () => {
