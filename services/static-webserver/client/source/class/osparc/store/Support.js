@@ -153,6 +153,20 @@ qx.Class.define("osparc.store.Support", {
       }
     },
 
+    getManualButtons: function() {
+      const manuals = osparc.store.Support.getManuals();
+      const manualButtons = [];
+      manuals.forEach(manual => {
+        const manualBtn = new qx.ui.form.Button(manual.label, "@FontAwesome5Solid/book/14");
+        manualBtn.getChildControl("label").set({
+          rich: true
+        });
+        manualBtn.addListener("execute", () => window.open(manual.url), this);
+        manualButtons.push(manualBtn);
+      });
+      return manualButtons;
+    },
+
     addSupportButtonsToMenu: function(menu) {
       const issues = osparc.store.VendorInfo.getIssues();
       const supports = osparc.store.VendorInfo.getSupports();

@@ -59,6 +59,13 @@ qx.Class.define("osparc.support.HomePage", {
 
       const guidedToursButton = osparc.store.Support.getGuidedToursButton();
       this._add(guidedToursButton);
+
+      const manualButtons = osparc.store.Support.getManualButtons();
+      if (manualButtons) {
+        manualButtons.forEach(manualButton => {
+          this._add(manualButton);
+        });
+      }
     },
   }
 });
