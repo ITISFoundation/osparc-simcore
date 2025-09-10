@@ -644,6 +644,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/functions"
           },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/functions/{functionId}?force={force}"
+          },
           patch: {
             method: "PATCH",
             url: statics.API + "/functions/{functionId}?include_extras=true"
