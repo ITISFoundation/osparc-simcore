@@ -93,7 +93,6 @@ class FunctionJobTaskClientService:
     async def list_function_jobs_with_status(
         self,
         *,
-        function: RegisteredFunction,
         filter_by_function_id: FunctionID | None = None,
         filter_by_function_job_ids: list[FunctionJobID] | None = None,
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
@@ -138,7 +137,9 @@ class FunctionJobTaskClientService:
                 if function_job_wso.status.status == RunningState.SUCCESS:
                     function_job_wso.outputs = await self.function_job_outputs(
                         function_job=function_job_wso,
-                        function=function,
+                        function=await self._function_service.get_function(
+                            function_id=function_job_wso.function_uid,
+                        ),
                         stored_job_outputs=None,
                     )
         return function_jobs_list_ws, meta

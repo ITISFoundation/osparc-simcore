@@ -29,6 +29,7 @@ from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from servicelib.utils import limited_gather
 
 from ..._service_function_jobs import FunctionJobService
+from ..._service_function_jobs_task_client import FunctionJobTaskClientService
 from ..._service_functions import FunctionService
 from ...celery_worker.worker_tasks.functions_tasks import (
     run_function as run_function_task,
@@ -45,7 +46,11 @@ from ..dependencies.authentication import (
     get_product_name,
 )
 from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager
-from ..dependencies.services import get_function_job_service, get_function_service
+from ..dependencies.services import (
+    get_function_job_service,
+    get_function_job_task_client_service,
+    get_function_service,
+)
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
@@ -332,6 +337,9 @@ async def run_function(
     function_job_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
+    function_job_task_client_service: Annotated[
+        FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
+    ],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJob:
@@ -355,7 +363,7 @@ async def run_function(
 
     # check if results are cached
     with contextlib.suppress(FunctionJobCacheNotFoundError):
-        return await function_job_service.get_cached_function_job(
+        return await function_job_task_client_service.get_cached_function_job(
             function=to_run_function,
             job_inputs=job_inputs,
         )
@@ -447,6 +455,9 @@ async def map_function(
     function_jobs_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
+    function_job_task_client_service: Annotated[
+        FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
+    ],
     function_service: Annotated[FunctionService, Depends(get_function_service)],
     web_api_rpc_client: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
@@ -462,6 +473,7 @@ async def map_function(
             function_inputs=function_inputs,
             function_service=function_service,
             function_job_service=function_jobs_service,
+            function_job_task_client_service=function_job_task_client_service,
             x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
             x_simcore_parent_node_id=x_simcore_parent_node_id,
         )

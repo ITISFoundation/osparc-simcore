@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Final, overload
+from typing import overload
 
 import jsonschema
 from common_library.exclude import as_dict_exclude_none
@@ -31,23 +31,15 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetIn
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import ValidationError
-from servicelib.celery.models import TaskUUID
-from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
 
 from ._service_jobs import JobService
-from .api.routes.tasks import _get_task_filter
 from .models.api_resources import JobLinks
 from .models.domain.functions import PreRegisteredFunctionJobData
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.wb_api_server import WbApiRpcClient
-
-_JOB_CREATION_TASK_STATUS_PREFIX: Final[str] = "JOB_CREATION_TASK_STATUS_"
-_JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS: Final[str] = (
-    f"{_JOB_CREATION_TASK_STATUS_PREFIX}NOT_YET_SCHEDULED"
-)
 
 
 def join_inputs(
@@ -62,21 +54,6 @@ def join_inputs(
 
     # last dict will override defaults
     return {**default_inputs, **function_inputs}
-
-
-async def _celery_task_status(
-    job_creation_task_id: TaskID | None,
-    task_manager: TaskManager,
-    user_id: UserID,
-    product_name: ProductName,
-) -> str:
-    if job_creation_task_id is None:
-        return _JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS
-    task_filter = _get_task_filter(user_id, product_name)
-    task_status = await task_manager.get_task_status(
-        task_uuid=TaskUUID(job_creation_task_id), task_filter=task_filter
-    )
-    return f"{_JOB_CREATION_TASK_STATUS_PREFIX}{task_status.task_state}"
 
 
 @dataclass(frozen=True, kw_only=True)

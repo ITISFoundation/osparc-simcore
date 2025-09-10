@@ -22,7 +22,6 @@ from servicelib.fastapi.dependencies import get_app
 from simcore_service_api_server._service_function_jobs_task_client import (
     FunctionJobTaskClientService,
 )
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
@@ -33,8 +32,6 @@ from ...models.schemas.errors import ErrorGet
 from ...models.schemas.functions_filters import FunctionJobsListFilters
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.celery import get_task_manager
-from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.functions import (
     get_function_from_functionjob,
     get_function_job_dependency,
@@ -127,7 +124,6 @@ async def list_function_jobs(
         FunctionJobService, Depends(get_function_job_service)
     ],
     filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
-    function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
     include_status: Annotated[  # noqa: FBT002
         bool, Query(description="Include job status in response")
     ] = False,
@@ -135,7 +131,6 @@ async def list_function_jobs(
     if include_status:
         function_jobs_list_ws, meta = (
             await function_job_task_client_service.list_function_jobs_with_status(
-                function=function,
                 pagination_offset=page_params.offset,
                 pagination_limit=page_params.limit,
                 filter_by_function_job_ids=filters.function_job_ids,
@@ -240,13 +235,12 @@ async def function_job_status(
         RegisteredFunctionJob, Depends(get_function_job_dependency)
     ],
     function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
+    function_job_task_client_service: Annotated[
+        FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
 ) -> FunctionJobStatus:
-    task_manager = get_task_manager(app)
-    return await function_job_service.inspect_function_job(
-        function=function, function_job=function_job, task_manager=task_manager
+    return await function_job_task_client_service.inspect_function_job(
+        function=function, function_job=function_job
     )
 
 
@@ -285,22 +279,16 @@ async def function_job_outputs(
     function_job: Annotated[
         RegisteredFunctionJob, Depends(get_function_job_dependency)
     ],
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
+    function_job_task_client_service: Annotated[
+        FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
     function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
     stored_job_outputs: Annotated[FunctionOutputs, Depends(get_stored_job_outputs)],
-    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ) -> FunctionOutputs:
-    return await function_job_service.function_job_outputs(
+    return await function_job_task_client_service.function_job_outputs(
         function_job=function_job,
-        user_id=user_id,
-        product_name=product_name,
         function=function,
         stored_job_outputs=stored_job_outputs,
-        async_pg_engine=async_pg_engine,
     )
 
 
