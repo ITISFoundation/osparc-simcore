@@ -2210,12 +2210,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return deleteButton;
     },
 
-    __popUpDeleteFunctionWindow: function(functionData, force) {
+    __popUpDeleteFunctionWindow: function(functionData, force, message) {
       const win = this.__createConfirmDeleteWindow([functionData.title]);
       win.setCaption(this.tr("Delete function"));
       if (force) {
-        const msg = this.tr("The function is still referenced by a study. Are you sure you want to delete it?");
-        win.setMessage(msg);
+        if (message) {
+          win.setMessage(message);
+        } else {
+          const msg = this.tr("The function has associated jobs. Are you sure you want to delete it?");
+          win.setMessage(msg);
+        }
       }
       win.center();
       win.open();
@@ -2235,7 +2239,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => {
           if (err && err.status && err.status === 409) {
-            this.__popUpDeleteFunctionWindow(functionData, true);
+            this.__popUpDeleteFunctionWindow(functionData, true, err.message);
           } else {
             osparc.FlashMessenger.logError(err);
           }
