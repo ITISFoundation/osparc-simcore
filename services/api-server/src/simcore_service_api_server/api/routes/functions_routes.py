@@ -402,9 +402,6 @@ async def map_function(
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     function_inputs_list: FunctionInputsList,
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    function_jobs_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
     function_job_task_client_service: Annotated[
         FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
