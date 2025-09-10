@@ -87,17 +87,21 @@ qx.Class.define("osparc.store.Support", {
       return null;
     },
 
-    addGuidedToursToMenu: function(menu) {
-      const guidedToursButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Guided Tours"), "@FontAwesome5Solid/graduation-cap/14");
-      guidedToursButton.exclude();
-      menu.add(guidedToursButton);
+    __getGuidedToursInfo: function() {
+      return {
+        label: qx.locale.Manager.tr("Guided Tours"),
+        icon: "@FontAwesome5Solid/graduation-cap/14",
+      }
+    },
+
+    populateGuidedToursButton: function(button) {
       const fetchTours = osparc.product.tours.Tours.getTours();
       if (fetchTours) {
         fetchTours
           .then(tours => {
             if (tours) {
-              guidedToursButton.show();
-              guidedToursButton.addListener("execute", () => {
+              button.show();
+              button.addListener("execute", () => {
                 const toursManager = new osparc.tours.Manager();
                 toursManager.setTours(tours);
                 toursManager.start();
@@ -105,6 +109,22 @@ qx.Class.define("osparc.store.Support", {
             }
           });
       }
+    },
+
+    addGuidedToursToMenu: function(menu) {
+      const guidedToursInfo = this.__getGuidedToursInfo();
+      const guidedToursButton = new qx.ui.menu.Button(guidedToursInfo.label, guidedToursInfo.icon);
+      guidedToursButton.exclude();
+      menu.add(guidedToursButton);
+      this.populateGuidedToursButton(guidedToursButton);
+    },
+
+    getGuidedToursButton: function() {
+      const guidedToursInfo = this.__getGuidedToursInfo();
+      const guidedToursButton = new qx.ui.form.Button(guidedToursInfo.label, guidedToursInfo.icon);
+      guidedToursButton.exclude();
+      this.populateGuidedToursButton(guidedToursButton);
+      return guidedToursButton;
     },
 
     addManualsToMenu: function(menu) {
