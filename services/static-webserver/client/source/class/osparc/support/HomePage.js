@@ -22,14 +22,14 @@ qx.Class.define("osparc.support.HomePage", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.set({
       padding: 5,
     });
 
     this.getChildControl("conversations-intro-text");
-
+    this.getChildControl("ask-a-question");
     this.__populateButtons();
   },
 
@@ -52,6 +52,19 @@ qx.Class.define("osparc.support.HomePage", {
           this._add(control);
           break;
         }
+        case "ask-a-question":
+          control = new qx.ui.form.Button(this.tr("Ask a Question"), "@FontAwesome5Solid/comments/16").set({
+            appearance: "strong-button",
+            font: "text-14",
+            center: true,
+          });
+          control.addListener("execute", () => this.fireEvent("ask-a-question"));
+          this._add(control);
+          break;
+        case "links-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          this._add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -59,30 +72,30 @@ qx.Class.define("osparc.support.HomePage", {
     __populateButtons: function() {
       const quickStartButton = osparc.store.Support.getQuickStartButton();
       if (quickStartButton) {
-        this._add(quickStartButton);
+        this.getChildControl("links-layout").add(quickStartButton);
       }
 
       const guidedToursButton = osparc.store.Support.getGuidedToursButton();
-      this._add(guidedToursButton);
+      this.getChildControl("links-layout").add(guidedToursButton);
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
         const tutorialsBtn = new qx.ui.form.Button("Tutorials");
-        this._add(tutorialsBtn);
+        this.getChildControl("links-layout").add(tutorialsBtn);
       }
 
       const manualButtons = osparc.store.Support.getManualButtons();
       manualButtons.forEach(manualButton => {
-        this._add(manualButton);
+        this.getChildControl("links-layout").add(manualButton);
       });
 
       const supportButtons = osparc.store.Support.getSupportButtons();
       supportButtons.forEach(supportButton => {
-        this._add(supportButton);
+        this.getChildControl("links-layout").add(supportButton);
       });
 
       const releaseNotesButton = osparc.store.Support.getReleaseNotesButton();
-      this._add(releaseNotesButton);
+      this.getChildControl("links-layout").add(releaseNotesButton);
     },
   }
 });
