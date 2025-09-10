@@ -251,6 +251,14 @@ qx.Class.define("osparc.user.UserDetails", {
             column: 1
           });
           break;
+        case "extra-info":
+          control = new osparc.ui.basic.JsonTreeWidget();
+          const container = new qx.ui.container.Scroll();
+          container.add(control);
+          this._add(container, {
+            flex: 1
+          });
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -275,6 +283,7 @@ qx.Class.define("osparc.user.UserDetails", {
             // remove the displayed properties from the contact info
             Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.User)).forEach(prop => delete userData[prop]);
             console.log("Remaining User data", userData);
+            this.getChildControl("extra-info").setJson(userData);
           }
         })
         .catch(err => {
