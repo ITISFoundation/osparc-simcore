@@ -67,7 +67,7 @@ qx.Class.define("osparc.store.Services", {
       const services = this.__servicesCached;
       if (key in services && version in services[key]) {
         const historyEntry = osparc.service.Utils.getHistoryEntry(services[key][version]);
-        if (historyEntry["compatibility"] && historyEntry["compatibility"]["canUpdateTo"]) {
+        if (historyEntry && historyEntry["compatibility"] && historyEntry["compatibility"]["canUpdateTo"]) {
           const canUpdateTo = historyEntry["compatibility"]["canUpdateTo"];
           return {
             key: "key" in canUpdateTo ? canUpdateTo["key"] : key, // key is optional

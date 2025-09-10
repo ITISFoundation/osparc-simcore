@@ -1664,6 +1664,8 @@ qx.Class.define("osparc.data.Resources", {
             status = errorData.status;
             if (errorData["support_id"]) {
               supportId = errorData["support_id"];
+            } else if (errorData["supportId"]) {
+              supportId = errorData["supportId"];
             }
           } else {
             const req = e.getRequest();
