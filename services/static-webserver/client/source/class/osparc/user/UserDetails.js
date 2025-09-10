@@ -255,16 +255,6 @@ qx.Class.define("osparc.user.UserDetails", {
             column: 1
           });
           break;
-        case "extra-info": {
-          const divId = this.getUserGroupId() + "_user_details";
-          control = osparc.wrapper.JsonFormatter.getInstance().createContainer(divId);
-          const container = new qx.ui.container.Scroll();
-          container.add(control);
-          this.add(container, {
-            flex: 1
-          });
-          break;
-        }
       }
       return control || this.base(arguments, id);
     },
@@ -288,7 +278,6 @@ qx.Class.define("osparc.user.UserDetails", {
             // remove the displayed properties from the contact info
             Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.User)).forEach(prop => delete userData[prop]);
             this.__remainingUserData = userData;
-            console.log("Remaining User data", userData);
             this.setUser(user);
           }
         })
@@ -319,13 +308,29 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("country").setValue(user.getCountry() || "-");
       this.getChildControl("postal-code").setValue(user.getPostalCode() || "-");
 
-      this.getChildControl("extra-info");
-      setTimeout(() => this.__setExtraInfo(), 100);
-    },
-
-    __setExtraInfo: function() {
+      /*
       const divId = this.getUserGroupId() + "_user_details";
-      osparc.wrapper.JsonFormatter.getInstance().setJson(this.__remainingUserData, divId);
+      const htmlEmbed = osparc.wrapper.JsonFormatter.getInstance().createContainer(divId);
+      setTimeout(() => {
+        osparc.wrapper.JsonFormatter.getInstance().setJson(this.__remainingUserData, divId);
+      }, 100);
+      const container = new qx.ui.container.Scroll();
+      container.add(htmlEmbed);
+      this.add(container, {
+        flex: 1
+      });
+      */
+      const jsonViewer = new osparc.widget.JsonFormatterWidget();
+      jsonViewer.set({
+        allowGrowX: true,
+        allowGrowY: true,
+        width: null,
+        height: null
+      });
+      const scroll = new qx.ui.container.Scroll();
+      scroll.add(jsonViewer, { flex: 1 });
+      this.add(scroll, { flex: 1 });
+      jsonViewer.setJson(this.__remainingUserData);
     },
   }
 });
