@@ -3788,6 +3788,13 @@ paths:
           type: string
           format: uuid
           title: Function Id
+      - name: force
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Force
       responses:
         '204':
           description: Successful Response
