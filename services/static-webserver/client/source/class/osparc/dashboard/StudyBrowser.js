@@ -1792,12 +1792,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._reloadCards();
     },
 
-    __removeFromStudyList: function(studyId) {
-      const idx = this._resourcesList.findIndex(study => study["uuid"] === studyId);
+    __removeFromList: function(resourceUuid) {
+      const idx = this._resourcesList.findIndex(resource => resource["uuid"] === resourceUuid);
       if (idx > -1) {
         this._resourcesList.splice(idx, 1);
       }
-      this._resourcesContainer.removeCard(studyId);
+      this._resourcesContainer.removeCard(resourceUuid);
     },
 
     _populateCardMenu: function(card) {
@@ -2000,7 +2000,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __doMoveStudy: function(studyData, destWorkspaceId, destFolderId) {
       this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
         .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
-        .then(() => this.__removeFromStudyList(studyData["uuid"]))
+        .then(() => this.__removeFromList(studyData["uuid"]))
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -2227,9 +2227,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __doDeleteFunction: function(functionData, force = false) {
-      osparc.store.Functions.getInstance().deleteFunction(functionData.uuid, force)
+      osparc.store.Functions.deleteFunction(functionData.uuid, force)
         .then(() => {
-          this.__removeFromStudyList(functionData.uuid);
+          this.__removeFromList(functionData.uuid);
           const msg = this.tr("Successfully deleted");
           osparc.FlashMessenger.logAs(msg, "INFO");
         })
@@ -2353,7 +2353,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __untrashStudy: function(studyData) {
       osparc.store.Study.getInstance().untrashStudy(studyData.uuid)
         .then(() => {
-          this.__removeFromStudyList(studyData.uuid);
+          this.__removeFromList(studyData.uuid);
           const msg = this.tr("Successfully restored");
           osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.evaluateTrashEmpty();
@@ -2365,7 +2365,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __trashStudy: function(studyData) {
       osparc.store.Study.getInstance().trashStudy(studyData.uuid)
         .then(() => {
-          this.__removeFromStudyList(studyData.uuid);
+          this.__removeFromList(studyData.uuid);
           const msg = this.tr("Successfully deleted");
           osparc.FlashMessenger.logAs(msg, "INFO");
           this._resourceFilter.setTrashEmpty(false);
@@ -2403,7 +2403,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
       }
       operationPromise
-        .then(() => this.__removeFromStudyList(studyData.uuid))
+        .then(() => this.__removeFromList(studyData.uuid))
         .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.resetSelection());
     },
