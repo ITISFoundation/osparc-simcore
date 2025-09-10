@@ -31,6 +31,7 @@ from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
+from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskFilter, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
@@ -306,9 +307,9 @@ async def test_get_function_job_status(
                     attempt=1,
                     unit=None,
                     message=ProgressStructuredMessage.model_validate(
-                        ProgressStructuredMessage.model_json_schema()["$defs"][
-                            "ProgressStructuredMessage"
-                        ]["examples"][0]
+                        ProgressStructuredMessage.model_json_schema(
+                            schema_generator=GenerateResolvedJsonSchema
+                        )["examples"][0]
                     ),
                 ),
             )

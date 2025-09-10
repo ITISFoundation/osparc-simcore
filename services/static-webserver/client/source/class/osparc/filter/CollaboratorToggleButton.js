@@ -56,6 +56,10 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
       }
     }
     this.setIcon(iconPath);
+    this.getChildControl("icon").set({
+      width: 17, // align with widest icon: "users"
+      scale: true,
+    });
     this.setLabel(label);
     if (toolTipText) {
       const infoButton = new osparc.ui.hint.InfoHint(toolTipText);
