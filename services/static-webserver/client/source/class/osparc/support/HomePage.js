@@ -65,6 +65,12 @@ qx.Class.define("osparc.support.HomePage", {
       const guidedToursButton = osparc.store.Support.getGuidedToursButton();
       this._add(guidedToursButton);
 
+      const permissions = osparc.data.Permissions.getInstance();
+      if (permissions.canDo("dashboard.templates.read")) {
+        const tutorialsBtn = new qx.ui.form.Button("Tutorials");
+        this._add(tutorialsBtn);
+      }
+
       const manualButtons = osparc.store.Support.getManualButtons();
       manualButtons.forEach(manualButton => {
         this._add(manualButton);
