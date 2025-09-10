@@ -7,7 +7,7 @@
 from collections.abc import AsyncIterator
 from http import HTTPStatus
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -306,3 +306,43 @@ async def test_list_user_functions_permissions(
     function_permissions = MyFunctionPermissionsGet.model_validate(data)
     assert function_permissions.read_functions == expected_read_functions
     assert function_permissions.write_functions == expected_write_functions
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_read_functions,expected_write_functions",
+    [(UserRole.USER, True, True)],
+)
+async def test_delete_function_with_associated_jobs(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    fake_function_with_associated_job: UUID,
+    logged_user_function_api_access_rights: dict[str, Any],
+) -> None:
+    function_id = fake_function_with_associated_job
+
+    url = client.app.router["get_function"].url_for(function_id=f"{function_id}")
+    response = await client.get(url)
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+    function = TypeAdapter(RegisteredFunctionGet).validate_python(data)
+    assert function.uid == function_id
+
+    url = client.app.router["delete_function"].url_for(function_id=f"{function_id}")
+    response = await client.delete(url)
+    data, error = await assert_status(response, status.HTTP_409_CONFLICT)
+    assert error is not None
+
+    url = client.app.router["get_function"].url_for(function_id=f"{function_id}")
+    response = await client.get(url)
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+
+    url = client.app.router["delete_function"].url_for(function_id=f"{function_id}")
+    response = await client.delete(url, params={"force": "true"})
+    data, error = await assert_status(response, status.HTTP_204_NO_CONTENT)
+    assert not error
+
+    url = client.app.router["get_function"].url_for(function_id=f"{function_id}")
+    response = await client.get(url)
+    data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
+    assert error is not None

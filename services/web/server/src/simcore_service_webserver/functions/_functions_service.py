@@ -353,12 +353,14 @@ async def delete_function(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
+    force: bool = False,
 ) -> None:
     await _functions_repository.delete_function(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
+        force=force,
     )
 
 
