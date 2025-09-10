@@ -2201,13 +2201,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDeleteFunctionMenuButton: function(functionData) {
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete permanently"), "@FontAwesome5Solid/trash/12");
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       deleteButton.set({
         appearance: "menu-button"
       });
       osparc.utils.Utils.setIdToWidget(deleteButton, "functionItemMenuDelete");
       deleteButton.addListener("execute", () => {
-        const win = this.__createConfirmDeleteWindow([functionData.name]);
+        const win = this.__createConfirmDeleteWindow([functionData.title]);
         win.center();
         win.open();
         win.addListener("close", () => {
