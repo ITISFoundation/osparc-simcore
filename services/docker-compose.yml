@@ -1466,7 +1466,7 @@ services:
       retries: 50
 
   traefik:
-    image: "traefik:v3.4.0@sha256:4cf907247939b5d20bf4eff73abd21cb413c339600dde76dbc94a874b2578a27"
+    image: "traefik:v3.5.2@sha256:07ff0c6c2114233b82e1de8e9f4fee9974470cd8d42c22e4e158538d950e19ae"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     command:
