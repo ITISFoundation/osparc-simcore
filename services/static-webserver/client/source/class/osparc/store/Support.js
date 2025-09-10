@@ -167,71 +167,136 @@ qx.Class.define("osparc.store.Support", {
       return manualButtons;
     },
 
-    addSupportButtonsToMenu: function(menu) {
+    __getIssueInfos: function() {
+      const issuesInfos = [];
       const issues = osparc.store.VendorInfo.getIssues();
-      const supports = osparc.store.VendorInfo.getSupports();
       issues.forEach(issueInfo => {
-        const label = issueInfo["label"];
-        const issueButton = new qx.ui.menu.Button(label, "@FontAwesome5Solid/comments/14");
-        issueButton.getChildControl("label").set({
-          rich: true
+        issuesInfos.push({
+          label: issueInfo["label"],
+          icon: "@FontAwesome5Solid/comments/14",
+          callback: () => {
+            const issueConfirmationWindow = new osparc.ui.window.Dialog(issueInfo["label"] + " " + qx.locale.Manager.tr("Information"), null,
+              qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
+            );
+            const continueBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/14");
+            continueBtn.addListener("execute", () => {
+              window.open(issueInfo["new_url"]);
+              issueConfirmationWindow.close();
+            }, this);
+            const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/14");
+            loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
+            issueConfirmationWindow.addButton(continueBtn);
+            issueConfirmationWindow.addButton(loginBtn);
+            issueConfirmationWindow.addCancelButton();
+            issueConfirmationWindow.open();
+          },
         });
-        issueButton.addListener("execute", () => {
-          const issueConfirmationWindow = new osparc.ui.window.Dialog(label + " " + qx.locale.Manager.tr("Information"), null,
-            qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
-          );
-          const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/14");
-          contBtn.addListener("execute", () => {
-            window.open(issueInfo["new_url"]);
-            issueConfirmationWindow.close();
-          }, this);
-          const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/14");
-          loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
-          issueConfirmationWindow.addButton(contBtn);
-          issueConfirmationWindow.addButton(loginBtn);
-          issueConfirmationWindow.addCancelButton();
-          issueConfirmationWindow.open();
-        }, this);
-        menu.add(issueButton);
       });
+      return issuesInfos;
+    },
 
-      if (issues.length && supports.length) {
-        menu.addSeparator();
-      }
-
+    __getSupportInfos: function() {
+      const supportInfos = [];
+      const supports = osparc.store.VendorInfo.getSupports();
       supports.forEach(supportInfo => {
-        const supportBtn = new qx.ui.menu.Button(supportInfo["label"]);
-        supportBtn.getChildControl("label").set({
-          rich: true
-        });
+        const label = supportInfo["label"];
         let icon = null;
-        let cb = null;
+        let callback = null;
         switch (supportInfo["kind"]) {
           case "web":
             icon = "@FontAwesome5Solid/link/14";
-            cb = () => window.open(supportInfo["url"]);
+            callback = () => window.open(supportInfo["url"]);
             break;
           case "forum":
             icon = "@FontAwesome5Solid/comments/14";
-            cb = () => window.open(supportInfo["url"]);
+            callback = () => window.open(supportInfo["url"]);
             break;
           case "email":
             icon = "@FontAwesome5Solid/envelope/14";
-            cb = () => this.__openSendEmailFeedbackDialog(supportInfo["email"]);
+            callback = () => this.__openSendEmailFeedbackDialog(supportInfo["email"]);
             break;
         }
-        supportBtn.setIcon(icon);
-        supportBtn.addListener("execute", () => cb(), this);
+        supportInfos.push({
+          label,
+          icon,
+          callback,
+        });
+      });
+      return supportInfos;
+    },
+
+    addSupportButtonsToMenu: function(menu) {
+      const issuesInfos = this.__getIssueInfos();
+      issuesInfos.forEach(issueInfo => {
+        const issueButton = new qx.ui.menu.Button(issueInfo.label, issueInfo.icon);
+        issueButton.getChildControl("label").set({
+          rich: true
+        });
+        issueButton.addListener("execute", issueInfo.callback, this);
+        menu.add(issueButton);
+      });
+
+      const supportInfos = this.__getSupportInfos();
+      if (issuesInfos.length && supportInfos.length) {
+        menu.addSeparator();
+      }
+
+      supportInfos.forEach(supportInfo => {
+        const supportBtn = new qx.ui.menu.Button(supportInfo.label, supportInfo.icon);
+        supportBtn.getChildControl("label").set({
+          rich: true
+        });
+        supportBtn.addListener("execute", supportInfo.callback, this);
         menu.add(supportBtn);
       });
     },
 
-    addReleaseNotesToMenu: function(menu) {
+    getSupportButtons: function() {
+      const buttons = [];
+      const issuesInfos = this.__getIssueInfos();
+      issuesInfos.forEach(issueInfo => {
+        const issueButton = new qx.ui.form.Button(issueInfo.label, issueInfo.icon);
+        issueButton.getChildControl("label").set({
+          rich: true
+        });
+        issueButton.addListener("execute", issueInfo.callback, this);
+        buttons.push(issueButton);
+      });
+
+      const supportInfos = this.__getSupportInfos();
+      supportInfos.forEach(supportInfo => {
+        const supportBtn = new qx.ui.form.Button(supportInfo.label, supportInfo.icon);
+        supportBtn.getChildControl("label").set({
+          rich: true
+        });
+        supportBtn.addListener("execute", supportInfo.callback, this);
+        buttons.push(supportBtn);
+      });
+      return buttons;
+    },
+
+    __getReleaseInfo: function() {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
       const releaseLink = osparc.utils.Utils.getReleaseLink();
-      const releaseBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("What's new in") + " " + releaseTag, "@FontAwesome5Solid/bullhorn/14");
-      releaseBtn.addListener("execute", () => window.open(releaseLink), this);
+      return {
+        label: qx.locale.Manager.tr("What's new in") + " " + releaseTag,
+        icon: "@FontAwesome5Solid/bullhorn/14",
+        callback: () => { window.open(releaseLink); },
+      };
+    },
+
+    addReleaseNotesToMenu: function(menu) {
+      const releaseInfo = this.__getReleaseInfo();
+      const releaseBtn = new qx.ui.menu.Button(releaseInfo.label, releaseInfo.icon);
+      releaseBtn.addListener("execute", releaseInfo.callback, this);
       menu.add(releaseBtn);
+    },
+
+    getReleaseNotesButton: function() {
+      const releaseInfo = this.__getReleaseInfo();
+      const releaseBtn = new qx.ui.form.Button(releaseInfo.label, releaseInfo.icon);
+      releaseBtn.addListener("execute", releaseInfo.callback, this);
+      return releaseBtn;
     },
 
     mailToLink: function(email, subject, centered = true) {

@@ -24,6 +24,10 @@ qx.Class.define("osparc.support.HomePage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    this.set({
+      padding: 5,
+    });
+
     this.getChildControl("conversations-intro-text");
 
     this.__populateButtons();
@@ -36,13 +40,14 @@ qx.Class.define("osparc.support.HomePage", {
         case "conversations-intro-text": {
           control = new qx.ui.basic.Label().set({
             rich: true,
-            font: "text-14",
+            font: "text-16",
           });
           const isSupportUser = osparc.store.Groups.getInstance().amIASupportUser();
+          const userName = osparc.auth.Data.getInstance().getUserName();
           control.set({
             value: isSupportUser ?
-              this.tr("Hello Support User!") :
-              this.tr("Hello User!"),
+              userName + ", " + this.tr("thanks for being here!<br>Let's help every user feel supported.") :
+              this.tr("Hi there 👋<br>How can we help?"),
           });
           this._add(control);
           break;
@@ -61,11 +66,17 @@ qx.Class.define("osparc.support.HomePage", {
       this._add(guidedToursButton);
 
       const manualButtons = osparc.store.Support.getManualButtons();
-      if (manualButtons) {
-        manualButtons.forEach(manualButton => {
-          this._add(manualButton);
-        });
-      }
+      manualButtons.forEach(manualButton => {
+        this._add(manualButton);
+      });
+
+      const supportButtons = osparc.store.Support.getSupportButtons();
+      supportButtons.forEach(supportButton => {
+        this._add(supportButton);
+      });
+
+      const releaseNotesButton = osparc.store.Support.getReleaseNotesButton();
+      this._add(releaseNotesButton);
     },
   }
 });
