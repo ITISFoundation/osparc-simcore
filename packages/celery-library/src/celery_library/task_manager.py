@@ -74,8 +74,8 @@ class CeleryTaskManager:
             msg=f"task cancellation: {task_filter=} {task_uuid=}",
         ):
             task_id = build_task_id(task_filter, task_uuid)
-            await self._forget_task(task_id)
             await self._task_info_store.remove_task(task_id)
+            await self._forget_task(task_id)
 
     async def exists_task(self, task_id: TaskID) -> bool:
         return await self._task_info_store.exists_task(task_id)
@@ -98,8 +98,8 @@ class CeleryTaskManager:
             if async_result.ready():
                 task_metadata = await self._task_info_store.get_task_metadata(task_id)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    await self._forget_task(task_id)
                     await self._task_info_store.remove_task(task_id)
+                    await self._forget_task(task_id)
             return result
 
     async def _get_task_progress_report(
