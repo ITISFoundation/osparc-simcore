@@ -92,17 +92,13 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
         const style = document.createElement("style");
         style.id = styleId;
         style.innerHTML = `
-          .osparc-json-formatter-root .json-formatter-row,
-          .osparc-json-formatter-root .json-formatter-key,
-          .osparc-json-formatter-root .json-formatter-value {
-            color: ${color} !important;
-            font-family: "Manrope", sans-serif !important;
-          }
-          .osparc-json-formatter-root .json-formatter-key {
-            font-size: 13px !important;
+          .osparc-json-formatter-root * {
+            color: ${color} !important; /* Use osparc text color */
+            font-family: "Manrope", sans-serif !important; /* Use osparc font */
+            font-size: 13px !important; /* Force all fonts to 13px */
           }
           .osparc-json-formatter-root .json-formatter-constructor-name {
-            display: none !important;
+          display: none !important; /* Hide "Object" and "Array(n)" labels */
           }
         `;
         document.head.appendChild(style);
