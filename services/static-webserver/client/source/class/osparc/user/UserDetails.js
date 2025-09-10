@@ -310,12 +310,6 @@ qx.Class.define("osparc.user.UserDetails", {
 
       // remaining data
       const jsonViewer = new osparc.widget.JsonFormatterWidget();
-      jsonViewer.set({
-        allowGrowX: true,
-        allowGrowY: true,
-        width: null,
-        height: null
-      });
       const scroll = new qx.ui.container.Scroll();
       scroll.add(jsonViewer, { flex: 1 });
       this.add(scroll, { flex: 1 });

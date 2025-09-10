@@ -23,6 +23,14 @@ qx.Class.define("osparc.widget.JsonFormatterWidget", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Grow());
+
+    this.set({
+      allowGrowX: true,
+      allowGrowY: true,
+      width: null,
+      height: null
+    });
+
     if (json) {
       this.setJson(json);
     }
