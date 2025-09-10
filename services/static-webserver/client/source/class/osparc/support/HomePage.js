@@ -92,16 +92,16 @@ qx.Class.define("osparc.support.HomePage", {
         this.self().decorateButton(quickStartButton);
       }
 
-      const guidedToursButton = osparc.store.Support.getGuidedToursButton();
-      this.getChildControl("links-layout").add(guidedToursButton);
-      this.self().decorateButton(guidedToursButton);
-
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
         const tutorialsBtn = new qx.ui.form.Button(this.tr("Tutorials"), "@FontAwesome5Solid/graduation-cap/14");
         this.getChildControl("links-layout").add(tutorialsBtn);
         this.self().decorateButton(tutorialsBtn);
       }
+
+      const guidedToursButton = osparc.store.Support.getGuidedToursButton();
+      this.getChildControl("links-layout").add(guidedToursButton);
+      this.self().decorateButton(guidedToursButton);
 
       const manualButtons = osparc.store.Support.getManualButtons();
       manualButtons.forEach(manualButton => {
