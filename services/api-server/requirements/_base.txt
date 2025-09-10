@@ -381,6 +381,14 @@ jinja2==3.1.6
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+jsonref==1.1.0
+    # via
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema==3.2.0
     # via
     #   -c requirements/./constraints.txt
