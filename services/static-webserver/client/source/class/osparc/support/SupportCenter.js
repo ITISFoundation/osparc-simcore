@@ -127,6 +127,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "home-page":
           control = new osparc.support.HomePage();
+          control.addListener("openConversation", () => this.openConversation(), this);
           this.getChildControl("main-stack").add(control);
           break;
         case "conversations-stack":

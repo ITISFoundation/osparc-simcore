@@ -33,6 +33,10 @@ qx.Class.define("osparc.support.HomePage", {
     this.__populateButtons();
   },
 
+  events: {
+    "openConversation": "qx.event.type.Event",
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -58,7 +62,7 @@ qx.Class.define("osparc.support.HomePage", {
             font: "text-14",
             center: true,
           });
-          control.addListener("execute", () => this.fireEvent("ask-a-question"));
+          control.addListener("execute", () => this.fireEvent("openConversation"));
           this._add(control);
           break;
         case "links-layout":
