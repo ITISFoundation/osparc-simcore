@@ -260,7 +260,7 @@ qx.Class.define("osparc.user.UserDetails", {
           control = osparc.wrapper.JsonFormatter.getInstance().createContainer(divId);
           const container = new qx.ui.container.Scroll();
           container.add(control);
-          this._add(container, {
+          this.add(container, {
             flex: 1
           });
           break;
