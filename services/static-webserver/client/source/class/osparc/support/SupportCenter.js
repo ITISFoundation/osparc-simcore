@@ -35,8 +35,13 @@ qx.Class.define("osparc.support.SupportCenter", {
       showClose: true,
     });
 
+    this.getChildControl("home-page");
     this.getChildControl("conversations-page");
     this.getChildControl("conversation-page");
+    this.getChildControl("home-button");
+    this.getChildControl("conversations-button");
+
+    this.__showHome();
   },
 
   statics: {
@@ -75,11 +80,49 @@ qx.Class.define("osparc.support.SupportCenter", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "stack-layout":
+        case "main-stack":
           control = new qx.ui.container.Stack();
           this.add(control, {
             flex: 1
           });
+          break;
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignX: "center",
+          }));
+          this.add(control);
+          break;
+        case "home-button":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Support"),
+            icon: "@FontAwesome5Solid/question-circle/16",
+            backgroundColor: "transparent",
+            iconPosition: "top",
+            allowGrowX: true,
+            center: true,
+          });
+          control.addListener("execute", () => this.__showHome(), this);
+          this.getChildControl("buttons-layout").add(control, { flex: 1 });
+          break;
+        case "conversations-button":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Conversations"),
+            icon: "@FontAwesome5Solid/comments/16",
+            backgroundColor: "transparent",
+            iconPosition: "top",
+            allowGrowX: true,
+            center: true,
+          });
+          control.addListener("execute", () => this.__showConversations(), this);
+          this.getChildControl("buttons-layout").add(control, { flex: 1 });
+          break;
+        case "home-page":
+          control = new osparc.support.HomePage();
+          this.getChildControl("main-stack").add(control);
+          break;
+        case "conversations-stack":
+          control = new qx.ui.container.Stack();
+          this.getChildControl("main-stack").add(control);
           break;
         case "conversations-page":
           control = new osparc.support.ConversationsPage();
@@ -88,23 +131,47 @@ qx.Class.define("osparc.support.SupportCenter", {
             this.openConversation(conversationId);
           }, this);
           control.addListener("createConversationBookCall", () => this.createConversationBookCall(), this);
-          this.getChildControl("stack-layout").add(control);
+          this.getChildControl("conversations-stack").add(control);
           break;
         case "conversation-page":
           control = new osparc.support.ConversationPage();
           control.addListener("showConversations", () => this.__showConversations(), this);
-          this.getChildControl("stack-layout").add(control);
+          this.getChildControl("conversations-stack").add(control);
           break;
       }
       return control || this.base(arguments, id);
     },
 
+    __showHome: function() {
+      this.getChildControl("main-stack").setSelection([this.getChildControl("home-page")]);
+      this.getChildControl("home-button").set({
+        textColor: "strong-main",
+      });
+      this.getChildControl("conversations-button").set({
+        textColor: "text",
+      });
+    },
+
     __showConversations: function() {
-      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversations-page")]);
+      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
+      this.getChildControl("home-button").set({
+        textColor: "text",
+      });
+      this.getChildControl("conversations-button").set({
+        textColor: "strong-main",
+      });
+      this.getChildControl("conversations-stack").setSelection([this.getChildControl("conversations-page")]);
     },
 
     __showConversation: function() {
-      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversation-page")]);
+      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
+      this.getChildControl("home-button").set({
+        textColor: "text",
+      });
+      this.getChildControl("conversations-button").set({
+        textColor: "strong-main",
+      });
+      this.getChildControl("conversations-stack").setSelection([this.getChildControl("conversation-page")]);
     },
 
     openConversation: function(conversationId) {
