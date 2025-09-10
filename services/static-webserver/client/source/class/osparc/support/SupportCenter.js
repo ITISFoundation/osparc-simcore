@@ -19,7 +19,7 @@ qx.Class.define("osparc.support.SupportCenter", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "support-center", "Support");
+    this.base(arguments, "support-center");
 
     this.getChildControl("title").set({
       textAlign: "center",
