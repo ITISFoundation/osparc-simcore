@@ -1,3 +1,4 @@
+# pylint: disable=too-many-instance-attributes
 import contextlib
 from dataclasses import dataclass
 from typing import Final

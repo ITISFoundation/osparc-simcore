@@ -325,9 +325,6 @@ async def run_function(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     function_inputs: FunctionInputs,
     function_service: Annotated[FunctionService, Depends(get_function_service)],
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
     function_job_task_client_service: Annotated[
         FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],

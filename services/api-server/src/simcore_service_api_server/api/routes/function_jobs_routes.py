@@ -115,7 +115,6 @@ for endpoint in ENDPOINTS:
     ),
 )
 async def list_function_jobs(
-    app: Annotated[FastAPI, Depends(get_app)],
     page_params: Annotated[PaginationParams, Depends()],
     function_job_task_client_service: Annotated[
         FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
@@ -228,9 +227,6 @@ async def delete_function_job(
     ),
 )
 async def function_job_status(
-    app: Annotated[FastAPI, Depends(get_app)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
     function_job: Annotated[
         RegisteredFunctionJob, Depends(get_function_job_dependency)
     ],
