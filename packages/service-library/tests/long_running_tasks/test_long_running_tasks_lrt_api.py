@@ -185,6 +185,7 @@ _TASK_COUNT: Final[list[int]] = [5]
 @pytest.mark.parametrize("is_unique", _IS_UNIQUE)
 @pytest.mark.parametrize("to_return", [{"key": "value"}])
 async def test_workflow_with_result(
+    disable_stale_tasks_monitor: None,
     long_running_managers: list[LongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     task_count: int,
@@ -241,6 +242,7 @@ async def test_workflow_with_result(
 @pytest.mark.parametrize("task_context", _TASK_CONTEXT)
 @pytest.mark.parametrize("is_unique", _IS_UNIQUE)
 async def test_workflow_raises_error(
+    disable_stale_tasks_monitor: None,
     long_running_managers: list[LongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     task_count: int,
