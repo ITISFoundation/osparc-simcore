@@ -1812,7 +1812,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._populateTemplateCardMenu(card);
           break;
         case "function":
-          card.getChildControl("menu-selection-stack").exclude();
+          this.__populateFunctionCardMenu(card);
           break;
       }
     },
@@ -1917,6 +1917,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       card.evaluateMenuButtons();
+    },
+
+    __populateFunctionCardMenu: function(card) {
+      const menu = card.getMenu();
+      const functionData = card.getResourceData();
+
+      const deleteButton = this.__getDeleteFunctionMenuButton(functionData);
+      menu.add(deleteButton);
     },
 
     __getOpenLocationMenuButton: function(studyData) {
@@ -2192,6 +2200,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return deleteButton;
     },
 
+    __getDeleteFunctionMenuButton: function(functionData) {
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete permanently"), "@FontAwesome5Solid/trash/12");
+      deleteButton.set({
+        appearance: "menu-button"
+      });
+      osparc.utils.Utils.setIdToWidget(deleteButton, "functionItemMenuDelete");
+      deleteButton.addListener("execute", () => {
+        const win = this.__createConfirmDeleteWindow([functionData.name]);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__doDeleteFunction(functionData);
+          }
+        }, this);
+      }, this);
+      return deleteButton;
+    },
+
     __getStudyData: function(id) {
       return this._resourcesList.find(study => study.uuid === id);
     },
@@ -2360,6 +2387,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __doDeleteStudies: function(studiesData) {
       studiesData.forEach(studyData => this.__doDeleteStudy(studyData));
+    },
+
+    __doDeleteFunction: function(functionData, force = false) {
+      osparc.store.Functions.getInstance().deleteFunction(functionData.uuid, force)
+        .then(() => {
+          this.__removeFromStudyList(functionData.uuid);
+          const msg = this.tr("Successfully deleted");
+          osparc.FlashMessenger.logAs(msg, "INFO");
+        })
+        .catch(err => osparc.FlashMessenger.logError(err))
+        .finally(() => this.resetSelection());
     },
 
     __createConfirmTrashWindow: function(studyNames) {
