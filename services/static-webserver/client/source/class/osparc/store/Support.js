@@ -21,7 +21,7 @@ qx.Class.define("osparc.store.Support", {
 
     addSupportConversationsToMenu: function(menu) {
       const supportCenterButton = new qx.ui.menu.Button().set({
-        label: qx.locale.Manager.tr("Support Center"),
+        label: qx.locale.Manager.tr("Help & Support"),
         icon: "@FontAwesome5Solid/question-circle/16",
       });
       supportCenterButton.addListener("execute", () => osparc.support.SupportCenter.openWindow());

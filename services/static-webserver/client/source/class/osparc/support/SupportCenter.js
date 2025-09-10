@@ -103,7 +103,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "home-button":
           control = new qx.ui.form.Button().set({
-            label: this.tr("Support"),
+            label: this.tr("Help & Support"),
             icon: "@FontAwesome5Solid/question-circle/18",
             backgroundColor: "transparent",
             iconPosition: "top",
@@ -153,7 +153,7 @@ qx.Class.define("osparc.support.SupportCenter", {
     },
 
     __showHome: function() {
-      this.setCaption(this.tr("Support"));
+      this.setCaption(this.tr("Help & Support"));
       this.getChildControl("main-stack").setSelection([this.getChildControl("home-page")]);
       this.getChildControl("home-button").set({
         textColor: "strong-main",
