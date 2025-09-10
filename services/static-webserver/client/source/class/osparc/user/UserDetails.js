@@ -27,7 +27,7 @@ qx.Class.define("osparc.user.UserDetails", {
       showMaximize: false,
       showMinimize: false,
       clickAwayClose: true,
-      padding: 10,
+      contentPadding: 10,
     });
 
     this.setUserGroupId(userGroupId);
@@ -83,7 +83,10 @@ qx.Class.define("osparc.user.UserDetails", {
           this.add(control);
           break;
         case "thumbnail":
-          control = new osparc.ui.basic.Thumbnail(null, this.self().THUMBNAIL_SIZE, this.self().THUMBNAIL_SIZE);
+          control = new osparc.ui.basic.Thumbnail(null, this.self().THUMBNAIL_SIZE, this.self().THUMBNAIL_SIZE).set({
+            width: this.self().THUMBNAIL_SIZE,
+            height: this.self().THUMBNAIL_SIZE,
+          });
           control.getChildControl("image").set({
             anonymous: true,
             decorator: "rounded",
@@ -267,6 +270,9 @@ qx.Class.define("osparc.user.UserDetails", {
             const user = new osparc.data.model.User(userData);
             user.setContactData(userData);
             this.setUser(user);
+            // remove the displayed properties from the contact info
+            Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.User)).forEach(prop => delete userData[prop]);
+            console.log("Remaining User data", userData);
           }
         })
         .catch(err => {
@@ -284,7 +290,7 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("username").setValue(user.getUsername());
       this.getChildControl("fullname").setValue([user.getFirstName(), user.getLastName()].filter(Boolean).join(" "));
       this.getChildControl("email").setValue(user.getEmail());
-      this.getChildControl("phone").setValue(user.getPhoneNumber() || "-");
+      this.getChildControl("phone").setValue(user.getPhone() || "-");
       this.getChildControl("user-id").setValue(String(user.getUserId()));
       this.getChildControl("group-id").setValue(String(user.getGroupId()));
 

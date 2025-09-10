@@ -201,7 +201,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       profileForm.add(lastName, "Last Name", null, "lastName");
       profileForm.add(email, "Email", null, "email");
       if (osparc.store.StaticInfo.is2FARequired()) {
-        profileForm.add(phoneNumber, "Phone Number", null, "phoneNumber");
+        profileForm.add(phoneNumber, "Phone Number", null, "phone");
       }
       this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithWidget(profileForm);
       box.add(this.__userProfileRenderer);
