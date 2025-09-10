@@ -58,6 +58,7 @@ from pydantic import ValidationError
 from pydantic.networks import AnyUrl
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_context
+from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -88,10 +89,11 @@ from .db import get_db_engine
 _logger = logging.getLogger(__name__)
 
 
-_DASK_DEFAULT_TIMEOUT_S: Final[int] = 35
+_DASK_DEFAULT_TIMEOUT_S: Final[int] = 10
 
 
 _UserCallbackInSepThread = Callable[[], None]
+_MAX_CONCURRENT_CLIENT_CONNECTIONS: Final[int] = 10
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -423,7 +425,11 @@ class DaskClient:
             # we are interested in the last event
             return TaskProgressEvent.model_validate_json(dask_events[-1][1])
 
-        return await asyncio.gather(*(_get_task_progress(job_id) for job_id in job_ids))
+        return await limited_gather(
+            *(_get_task_progress(job_id) for job_id in job_ids),
+            log=_logger,
+            limit=_MAX_CONCURRENT_CLIENT_CONNECTIONS,
+        )
 
     async def get_tasks_status(self, job_ids: Iterable[str]) -> list[RunningState]:
         dask_utils.check_scheduler_is_still_the_same(
@@ -501,7 +507,11 @@ class DaskClient:
 
             return parsed_event.state
 
-        return await asyncio.gather(*(_get_task_state(job_id) for job_id in job_ids))
+        return await limited_gather(
+            *(_get_task_state(job_id) for job_id in job_ids),
+            log=_logger,
+            limit=_MAX_CONCURRENT_CLIENT_CONNECTIONS,
+        )
 
     async def abort_computation_task(self, job_id: str) -> None:
         # Dask future may be cancelled, but only a future that was not already taken by
