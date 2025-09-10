@@ -35,6 +35,10 @@ qx.Class.define("osparc.support.SupportCenter", {
       showClose: true,
     });
 
+    this.getLayout().set({
+      separator: "separator-vertical"
+    });
+
     this.getChildControl("home-page");
     this.getChildControl("conversations-page");
     this.getChildControl("conversation-page");
@@ -95,7 +99,7 @@ qx.Class.define("osparc.support.SupportCenter", {
         case "home-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Support"),
-            icon: "@FontAwesome5Solid/question-circle/16",
+            icon: "@FontAwesome5Solid/question-circle/18",
             backgroundColor: "transparent",
             iconPosition: "top",
             allowGrowX: true,
@@ -107,7 +111,7 @@ qx.Class.define("osparc.support.SupportCenter", {
         case "conversations-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Conversations"),
-            icon: "@FontAwesome5Solid/comments/16",
+            icon: "@FontAwesome5Solid/comments/18",
             backgroundColor: "transparent",
             iconPosition: "top",
             allowGrowX: true,
@@ -143,6 +147,7 @@ qx.Class.define("osparc.support.SupportCenter", {
     },
 
     __showHome: function() {
+      this.setCaption(this.tr("Support"));
       this.getChildControl("main-stack").setSelection([this.getChildControl("home-page")]);
       this.getChildControl("home-button").set({
         textColor: "strong-main",
@@ -153,6 +158,7 @@ qx.Class.define("osparc.support.SupportCenter", {
     },
 
     __showConversations: function() {
+      this.setCaption(this.tr("Conversations"));
       this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
       this.getChildControl("home-button").set({
         textColor: "text",
