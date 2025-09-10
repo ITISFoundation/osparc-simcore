@@ -27,6 +27,7 @@ qx.Class.define("osparc.user.UserDetails", {
       showMaximize: false,
       showMinimize: false,
       clickAwayClose: true,
+      padding: 10,
     });
 
     this.setUserGroupId(userGroupId);
@@ -35,6 +36,7 @@ qx.Class.define("osparc.user.UserDetails", {
   statics: {
     WIDTH: 400,
     HEIGHT: 300,
+    THUMBNAIL_SIZE: 110,
 
     TOP_GRID: {
       USERNAME: 0,
@@ -77,11 +79,11 @@ qx.Class.define("osparc.user.UserDetails", {
       let control;
       switch (id) {
         case "top-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(30));
           this.add(control);
           break;
         case "thumbnail":
-          control = new osparc.ui.basic.Thumbnail(null, 100, 100);
+          control = new osparc.ui.basic.Thumbnail(null, this.self().THUMBNAIL_SIZE, this.self().THUMBNAIL_SIZE);
           control.getChildControl("image").set({
             anonymous: true,
             decorator: "rounded",
@@ -276,7 +278,7 @@ qx.Class.define("osparc.user.UserDetails", {
     __applyUser: function(user) {
       this.setCaption(user.getUsername());
 
-      this.getChildControl("thumbnail").setSource(user.createThumbnail(96));
+      this.getChildControl("thumbnail").setSource(user.createThumbnail(this.self().THUMBNAIL_SIZE));
 
       // top grid
       this.getChildControl("username").setValue(user.getUsername());
