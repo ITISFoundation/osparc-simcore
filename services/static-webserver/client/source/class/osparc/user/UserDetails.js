@@ -277,7 +277,7 @@ qx.Class.define("osparc.user.UserDetails", {
             user.setContactData(userData);
             // remove the displayed properties from the contact info
             Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.User)).forEach(prop => delete userData[prop]);
-            this.__remainingUserData = userData;
+            this.__remainingUserData = osparc.utils.Utils.convertKeysToTitles(userData);
             this.setUser(user);
           }
         })
