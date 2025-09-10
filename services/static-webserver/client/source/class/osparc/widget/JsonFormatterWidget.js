@@ -38,9 +38,20 @@ qx.Class.define("osparc.widget.JsonFormatterWidget", {
       this.__root.setStyles({
         width: "100%",
         height: "100%",
-        boxSizing: "border-box"
+        boxSizing: "border-box",
+        overflow: "auto" // ensure local overflow is visible
       });
       return this.__root;
+    },
+
+    _getContentHint: function() {
+      if (this.__formatterEl) {
+        return {
+          width: this.__formatterEl.scrollWidth,
+          height: this.__formatterEl.scrollHeight
+        };
+      }
+      return { width: 100, height: 50 };
     },
 
     setJson: function(json) {
@@ -49,8 +60,6 @@ qx.Class.define("osparc.widget.JsonFormatterWidget", {
       } else {
         this._mountJson(json);
       }
-
-      this.__applyStyles();
     },
 
     _mountJson: function(json) {
@@ -73,31 +82,14 @@ qx.Class.define("osparc.widget.JsonFormatterWidget", {
         return;
       }
 
-      // Hardcoded options
-      const formatter = new JSONFormatter(jsonObj, 2, {
-
-      });
+      const formatter = new JSONFormatter(jsonObj, 2, {});
       this.__formatterEl = formatter.render();
-
-      // Apply styling
-      const color = qx.theme.manager.Color.getInstance().resolve("text");
-      this.__formatterEl.style.setProperty("color", color, "important");
-      this.__formatterEl.style.setProperty("font-family", '"Manrope", sans-serif', "important");
-
-      // Keys font-size
-      this.__formatterEl.querySelectorAll(".json-formatter-key").forEach(el => {
-        el.style.setProperty("font-size", "13px", "important");
-      });
-
-      // Hide constructor names
-      this.__formatterEl.querySelectorAll(".json-formatter-constructor-name").forEach(el => {
-        el.style.setProperty("display", "none", "important");
-      });
 
       const rootDom = this.getContentElement().getDomElement();
       if (rootDom) {
         rootDom.appendChild(this.__formatterEl);
       }
+      this.invalidateLayoutCache(); // notify qooxdoo to recalc size
     },
   },
 
