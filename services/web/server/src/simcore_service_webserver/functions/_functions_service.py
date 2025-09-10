@@ -861,9 +861,9 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
-            job_creation_task_id=functionjob_db.class_specific_data[
+            job_creation_task_id=functionjob_db.class_specific_data.get(
                 "job_creation_task_id"
-            ],
+            ),
             created_at=functionjob_db.created,
         )
 
@@ -876,9 +876,9 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
-            job_creation_task_id=functionjob_db.class_specific_data[
+            job_creation_task_id=functionjob_db.class_specific_data.get(
                 "job_creation_task_id"
-            ],
+            ),
             created_at=functionjob_db.created,
         )
 
