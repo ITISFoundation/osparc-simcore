@@ -36,14 +36,23 @@ qx.Class.define("osparc.user.UserDetails", {
     WIDTH: 400,
     HEIGHT: 300,
 
-    GRID_POS: {
+    TOP_GRID: {
       USERNAME: 0,
       FULLNAME: 1,
       EMAIL: 2,
       PHONE: 3,
       USER_ID: 4,
       GROUP_ID: 5,
-    }
+    },
+
+    MIDDLE_GRID: {
+      INSTITUTION: 0,
+      ADDRESS: 1,
+      CITY: 2,
+      STATE: 3,
+      COUNTRY: 4,
+      POSTAL_CODE: 5,
+    },
   },
 
   properties: {
@@ -79,7 +88,7 @@ qx.Class.define("osparc.user.UserDetails", {
           });
           this.getChildControl("top-layout").add(control);
           break;
-        case "main-info": {
+        case "top-info": {
           const grid = new qx.ui.layout.Grid(10, 6);
           grid.setColumnFlex(1, 1);
           grid.setColumnAlign(0, "right", "middle");
@@ -89,84 +98,152 @@ qx.Class.define("osparc.user.UserDetails", {
           });
           break;
         }
+        case "middle-info": {
+          const grid = new qx.ui.layout.Grid(10, 6);
+          grid.setColumnFlex(1, 1);
+          grid.setColumnAlign(0, "right", "middle");
+          control = new qx.ui.container.Composite(grid);
+          this.add(control);
+          break;
+        }
         case "username": {
-          const title = new qx.ui.basic.Label("Username");
-          this.getChildControl("main-info").add(title, {
-            row: this.self().GRID_POS.USERNAME,
+          this.getChildControl("top-info").add(new qx.ui.basic.Label("Username"), {
+            row: this.self().TOP_GRID.USERNAME,
             column: 0
           });
           control = new qx.ui.basic.Label();
-          this.getChildControl("main-info").add(control, {
-            row: this.self().GRID_POS.USERNAME,
+          this.getChildControl("top-info").add(control, {
+            row: this.self().TOP_GRID.USERNAME,
             column: 1
           });
           break;
         }
         case "fullname": {
-          const title = new qx.ui.basic.Label("Full Name");
-          this.getChildControl("main-info").add(title, {
-            row: this.self().GRID_POS.FULLNAME,
+          this.getChildControl("top-info").add(new qx.ui.basic.Label("Full Name"), {
+            row: this.self().TOP_GRID.FULLNAME,
             column: 0
           });
           control = new qx.ui.basic.Label();
-          this.getChildControl("main-info").add(control, {
-            row: this.self().GRID_POS.FULLNAME,
+          this.getChildControl("top-info").add(control, {
+            row: this.self().TOP_GRID.FULLNAME,
             column: 1
           });
           break;
         }
         case "email": {
-          const title = new qx.ui.basic.Label("Email");
-          this.getChildControl("main-info").add(title, {
-            row: this.self().GRID_POS.EMAIL,
+          this.getChildControl("top-info").add(new qx.ui.basic.Label("Email"), {
+            row: this.self().TOP_GRID.EMAIL,
             column: 0
           });
           control = new qx.ui.basic.Label();
-          this.getChildControl("main-info").add(control, {
-            row: this.self().GRID_POS.EMAIL,
+          this.getChildControl("top-info").add(control, {
+            row: this.self().TOP_GRID.EMAIL,
             column: 1
           });
           break;
         }
         case "phone": {
-          const title = new qx.ui.basic.Label("Phone");
-          this.getChildControl("main-info").add(title, {
-            row: this.self().GRID_POS.PHONE,
+          this.getChildControl("top-info").add(new qx.ui.basic.Label("Phone"), {
+            row: this.self().TOP_GRID.PHONE,
             column: 0
           });
           control = new qx.ui.basic.Label();
-          this.getChildControl("main-info").add(control, {
-            row: this.self().GRID_POS.PHONE,
+          this.getChildControl("top-info").add(control, {
+            row: this.self().TOP_GRID.PHONE,
             column: 1
           });
           break;
         }
         case "user-id": {
-          const title = new qx.ui.basic.Label("User ID");
-          this.getChildControl("main-info").add(title, {
-            row: this.self().GRID_POS.USER_ID,
+          this.getChildControl("top-info").add(new qx.ui.basic.Label("User ID"), {
+            row: this.self().TOP_GRID.USER_ID,
             column: 0
           });
           control = new qx.ui.basic.Label();
-          this.getChildControl("main-info").add(control, {
-            row: this.self().GRID_POS.USER_ID,
+          this.getChildControl("top-info").add(control, {
+            row: this.self().TOP_GRID.USER_ID,
             column: 1
           });
           break;
         }
         case "group-id": {
-          const title = new qx.ui.basic.Label("Group ID");
-          this.getChildControl("main-info").add(title, {
-            row: this.self().GRID_POS.GROUP_ID,
+          this.getChildControl("top-info").add(new qx.ui.basic.Label("Group ID"), {
+            row: this.self().TOP_GRID.GROUP_ID,
             column: 0
           });
           control = new qx.ui.basic.Label();
-          this.getChildControl("main-info").add(control, {
-            row: this.self().GRID_POS.GROUP_ID,
+          this.getChildControl("top-info").add(control, {
+            row: this.self().TOP_GRID.GROUP_ID,
             column: 1
           });
           break;
         }
+        case "institution":
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label("Institution"), {
+            row: this.self().MIDDLE_GRID.INSTITUTION,
+            column: 0
+          });
+          control = new qx.ui.basic.Label();
+          this.getChildControl("middle-info").add(control, {
+            row: this.self().MIDDLE_GRID.INSTITUTION,
+            column: 1
+          });
+          break;
+        case "address":
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label("Address"), {
+            row: this.self().MIDDLE_GRID.ADDRESS,
+            column: 0
+          });
+          control = new qx.ui.basic.Label();
+          this.getChildControl("middle-info").add(control, {
+            row: this.self().MIDDLE_GRID.ADDRESS,
+            column: 1
+          });
+          break;
+        case "city":
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label("City"), {
+            row: this.self().MIDDLE_GRID.CITY,
+            column: 0
+          });
+          control = new qx.ui.basic.Label();
+          this.getChildControl("middle-info").add(control, {
+            row: this.self().MIDDLE_GRID.CITY,
+            column: 1
+          });
+          break;
+        case "state":
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label("State"), {
+            row: this.self().MIDDLE_GRID.STATE,
+            column: 0
+          });
+          control = new qx.ui.basic.Label();
+          this.getChildControl("middle-info").add(control, {
+            row: this.self().MIDDLE_GRID.STATE,
+            column: 1
+          });
+          break;
+        case "country":
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label("Country"), {
+            row: this.self().MIDDLE_GRID.COUNTRY,
+            column: 0
+          });
+          control = new qx.ui.basic.Label();
+          this.getChildControl("middle-info").add(control, {
+            row: this.self().MIDDLE_GRID.COUNTRY,
+            column: 1
+          });
+          break;
+        case "postal-code":
+          this.getChildControl("middle-info").add(new qx.ui.basic.Label("Postal Code"), {
+            row: this.self().MIDDLE_GRID.POSTAL_CODE,
+            column: 0
+          });
+          control = new qx.ui.basic.Label();
+          this.getChildControl("middle-info").add(control, {
+            row: this.self().MIDDLE_GRID.POSTAL_CODE,
+            column: 1
+          });
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -200,12 +277,22 @@ qx.Class.define("osparc.user.UserDetails", {
       this.setCaption(user.getUsername());
 
       this.getChildControl("thumbnail").setSource(user.createThumbnail(96));
+
+      // top grid
       this.getChildControl("username").setValue(user.getUsername());
       this.getChildControl("fullname").setValue([user.getFirstName(), user.getLastName()].filter(Boolean).join(" "));
       this.getChildControl("email").setValue(user.getEmail());
-      this.getChildControl("phone").setValue(user.getPhoneNumber());
+      this.getChildControl("phone").setValue(user.getPhoneNumber() || "-");
       this.getChildControl("user-id").setValue(String(user.getUserId()));
       this.getChildControl("group-id").setValue(String(user.getGroupId()));
+
+      // middle grid
+      this.getChildControl("institution").setValue(user.getInstitution() || "-");
+      this.getChildControl("address").setValue(user.getAddress() || "-");
+      this.getChildControl("city").setValue(user.getCity() || "-");
+      this.getChildControl("state").setValue(user.getState() || "-");
+      this.getChildControl("country").setValue(user.getCountry() || "-");
+      this.getChildControl("postal-code").setValue(user.getPostalCode() || "-");
     },
   }
 });
