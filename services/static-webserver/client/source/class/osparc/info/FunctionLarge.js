@@ -61,14 +61,11 @@ qx.Class.define("osparc.info.FunctionLarge", {
         "Default Inputs": this.getFunction().getDefaultInputs(),
         "Outputs": this.getFunction().getOutputSchema()["schema_content"],
       };
-      const divId = "function-info-viewer";
-      const htmlEmbed = osparc.wrapper.JsonFormatter.getInstance().createContainer(divId);
-      vBox.add(htmlEmbed, {
-        flex: 1
-      });
-      vBox.addListener("appear", () => {
-        osparc.wrapper.JsonFormatter.getInstance().setJson(info, divId);
-      });
+      const jsonViewer = new osparc.widget.JsonFormatterWidget();
+      const scroll = new qx.ui.container.Scroll();
+      scroll.add(jsonViewer, { flex: 1 });
+      vBox.add(scroll, { flex: 1 });
+      jsonViewer.setJson(info);
 
       // Copy Id button
       const text = "Function Id";
