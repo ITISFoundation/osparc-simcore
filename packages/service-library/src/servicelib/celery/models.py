@@ -14,7 +14,8 @@ TaskName: TypeAlias = Annotated[
 TaskUUID: TypeAlias = UUID
 
 
-class TaskFilter(BaseModel): ...
+class TaskFilter(BaseModel):
+    model_config = ConfigDict(extra="allow")
 
 
 class TaskState(StrEnum):
