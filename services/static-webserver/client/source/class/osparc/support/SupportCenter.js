@@ -35,10 +35,8 @@ qx.Class.define("osparc.support.SupportCenter", {
       showClose: true,
     });
 
-    this.getChildControl("conversations-intro-text");
-    this.getChildControl("conversations-list");
-    this.getChildControl("ask-a-question-button");
-    this.getChildControl("book-a-call-button");
+    this.getChildControl("conversations-page");
+    this.getChildControl("conversation-page");
   },
 
   statics: {
@@ -83,60 +81,14 @@ qx.Class.define("osparc.support.SupportCenter", {
             flex: 1
           });
           break;
-        case "conversations-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-          this.getChildControl("stack-layout").add(control);
-          break;
-        case "conversations-intro-text": {
-          control = new qx.ui.basic.Label().set({
-            rich: true,
-            font: "text-14",
-          });
-          const isSupportUser = osparc.store.Groups.getInstance().amIASupportUser();
-          control.set({
-            value: isSupportUser ?
-              this.tr("Thanks for being here! Let's help every user feel supported.") :
-              this.tr("Need help or want to share feedback? You're in the right place."),
-          });
-          this.getChildControl("conversations-layout").add(control);
-          break;
-        }
-        case "conversations-list": {
-          control = new osparc.support.Conversations();
+        case "conversations-page":
+          control = new osparc.support.ConversationsPage();
           control.addListener("openConversation", e => {
             const conversationId = e.getData();
             this.openConversation(conversationId);
           }, this);
-          const scroll = new qx.ui.container.Scroll();
-          scroll.add(control);
-          this.getChildControl("conversations-layout").add(scroll, {
-            flex: 1,
-          });
-          break;
-        }
-        case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-            alignX: "center",
-          }));
-          this.getChildControl("conversations-layout").add(control);
-          break;
-        case "ask-a-question-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Ask a Question")).set({
-            appearance: "strong-button",
-            allowGrowX: false,
-            center: true,
-          });
-          control.addListener("execute", () => this.openConversation(null), this);
-          this.getChildControl("buttons-layout").add(control);
-          break;
-        case "book-a-call-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Book a Call")).set({
-            appearance: "strong-button",
-            allowGrowX: false,
-            center: true,
-          });
-          control.addListener("execute", () => this.createConversationBookCall(null), this);
-          this.getChildControl("buttons-layout").add(control);
+          control.addListener("createConversationBookCall", () => this.createConversationBookCall(), this);
+          this.getChildControl("stack-layout").add(control);
           break;
         case "conversation-page":
           control = new osparc.support.ConversationPage();
@@ -148,7 +100,7 @@ qx.Class.define("osparc.support.SupportCenter", {
     },
 
     __showConversations: function() {
-      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversations-layout")]);
+      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversations-page")]);
     },
 
     __showConversation: function() {
