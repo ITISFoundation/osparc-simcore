@@ -450,6 +450,10 @@ class DaskClient:
             parsed_event = TaskLifeCycleState.model_validate(dask_events[-1][1])
 
             if parsed_event.state == RunningState.FAILED:
+                log_error_context = {
+                    "job_id": job_id,
+                    "dask-scheduler": self.backend.scheduler_id,
+                }
                 try:
                     # find out if this was a cancellation
                     task_future: distributed.Future = (
@@ -461,10 +465,7 @@ class DaskClient:
                         timeout=_DASK_DEFAULT_TIMEOUT_S
                     )
                     assert isinstance(exception, Exception)  # nosec
-                    log_error_context = {
-                        "job_id": job_id,
-                        "dask-scheduler": self.backend.scheduler_id,
-                    }
+
                     if isinstance(exception, TaskCancelledError):
                         _logger.info(
                             **create_troubleshootting_log_kwargs(
