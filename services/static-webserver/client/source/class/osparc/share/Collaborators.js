@@ -43,6 +43,15 @@ qx.Class.define("osparc.share.Collaborators", {
   },
 
   statics: {
+    sortProductGroupsFirst: function(a, b) {
+      const collabTypeOrder = osparc.store.Groups.COLLAB_TYPE_ORDER;
+      const indexA = collabTypeOrder.indexOf(a["collabType"]);
+      const indexB = collabTypeOrder.indexOf(b["collabType"]);
+      const posA = indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA;
+      const posB = indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB;
+      return posA - posB;
+    },
+
     sortByAccessRights: function(aAccessRights, bAccessRights) {
       if (aAccessRights["delete"] !== bAccessRights["delete"]) {
         return bAccessRights["delete"] - aAccessRights["delete"];
@@ -57,9 +66,16 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     sortStudyOrServiceCollabs: function(a, b) {
+      // product related groups first
+      let sorted = null;
+      sorted = this.self().sortProductGroupsFirst(a, b);
+      if (sorted !== 0) {
+        return sorted;
+      }
+
+      // then by access rights
       const aAccessRights = a["accessRights"];
       const bAccessRights = b["accessRights"];
-      let sorted = null;
       if ("delete" in aAccessRights) {
         // studies
         sorted = this.self().sortByAccessRights(aAccessRights, bAccessRights);
@@ -334,6 +350,10 @@ qx.Class.define("osparc.share.Collaborators", {
           ctrl.bindProperty("resourceType", "resourceType", null, item, id); // Resource type
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
+          // handle separator
+          ctrl.bindProperty("isSeparator", "enabled", {
+            converter: val => !val // disable clicks on separator
+          }, item, id);
         },
         configureItem: item => {
           item.getChildControl("thumbnail").getContentElement()
@@ -379,6 +399,15 @@ qx.Class.define("osparc.share.Collaborators", {
               return;
             }
             this._deleteMember(orgMember, item);
+          });
+          item.addListener("changeEnabled", e => {
+            if (!e.getData()) {
+              item.set({
+                minHeight: 1,
+                maxHeight: 1,
+                decorator: "separator-strong",
+              });
+            }
           });
         }
       });
@@ -462,8 +491,10 @@ qx.Class.define("osparc.share.Collaborators", {
             // organization
             if (everyoneGroupIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
+              collaborator["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE; // needed for sorting per product related groups
             } else if (supportGroup && supportGroup.getGroupId() === parseInt(gid)) {
-              collaborator["thumbnail"] = supportGroup.getThumbnail();
+              collaborator["thumbnail"] = "@FontAwesome5Solid/question-circle/32";
+              collaborator["collabType"] = osparc.store.Groups.COLLAB_TYPE.SUPPORT; // needed for sorting per product related groups
             } else if (!collaborator["thumbnail"]) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/users/26";
             }
@@ -475,7 +506,27 @@ qx.Class.define("osparc.share.Collaborators", {
         }
       }
       collaboratorsList.sort(this.self().sortStudyOrServiceCollabs);
-      collaboratorsList.forEach(c => this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c)));
+
+      // insert a separator between product and non-product groups
+      const productGroup = [
+        osparc.store.Groups.COLLAB_TYPE.EVERYONE,
+        osparc.store.Groups.COLLAB_TYPE.SUPPORT,
+      ];
+      const hasProductGroup = collaboratorsList.some(c => productGroup.includes(c.collabType));
+      const hasNonProductGroup = collaboratorsList.some(c => !productGroup.includes(c.collabType));
+      let separatorInserted = false;
+      collaboratorsList.forEach(c => {
+        const isProductGroup = productGroup.includes(c.collabType);
+        // Only insert separator if both sides exist
+        if (!isProductGroup && hasProductGroup && hasNonProductGroup && !separatorInserted) {
+          const separator = {
+            isSeparator: true
+          };
+          this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(separator));
+          separatorInserted = true;
+        }
+        this.__collaboratorsModel.append(qx.data.marshal.Json.createModel(c));
+      });
     },
 
     _addEditors: function(gids) {

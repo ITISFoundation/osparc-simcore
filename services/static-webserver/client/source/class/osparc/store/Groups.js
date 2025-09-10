@@ -62,6 +62,13 @@ qx.Class.define("osparc.store.Groups", {
       ORGANIZATION: "organization",
       USER: "user",
     },
+
+    COLLAB_TYPE_ORDER: [
+      "everyone", // osparc.store.Groups.COLLAB_TYPE.EVERYONE
+      "support",  // osparc.store.Groups.COLLAB_TYPE.SUPPORT,
+      "organization", // osparc.store.Groups.COLLAB_TYPE.ORGANIZATION
+      "user", // osparc.store.Groups.COLLAB_TYPE.USER
+    ],
   },
 
   members: {
