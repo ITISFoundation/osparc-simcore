@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
@@ -161,18 +162,19 @@ async def _assert_list_tasks_from_all_managers(
 
 
 async def _assert_task_is_no_longer_present(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
     long_running_managers: list[LongRunningManager],
     task_context: TaskContext,
     task_id: TaskId,
 ) -> None:
-    with pytest.raises(TaskNotFoundError):
-        await lrt_api.get_task_status(
-            rabbitmq_rpc_client,
-            _get_long_running_manager(long_running_managers).lrt_namespace,
-            task_context,
-            task_id,
-        )
+    manager = _get_long_running_manager(long_running_managers)
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:  # noqa: SIM117
+            with pytest.raises(TaskNotFoundError):  # noqa: PT012
+                # use internals to detirmine when it's no longer here
+                await manager._tasks_manager._get_tracked_task(  # noqa: SLF001
+                    task_id, task_context
+                )
+                raise TryAgain
 
 
 _TASK_CONTEXT: Final[list[TaskContext | None]] = [{"a": "context"}, None]
@@ -234,7 +236,7 @@ async def test_workflow_with_result(
         assert result == to_return
 
         await _assert_task_is_no_longer_present(
-            rabbitmq_rpc_client, long_running_managers, saved_context, task_id
+            long_running_managers, saved_context, task_id
         )
 
 
@@ -289,13 +291,14 @@ async def test_workflow_raises_error(
             )
 
         await _assert_task_is_no_longer_present(
-            rabbitmq_rpc_client, long_running_managers, saved_context, task_id
+            long_running_managers, saved_context, task_id
         )
 
 
 @pytest.mark.parametrize("task_context", _TASK_CONTEXT)
 @pytest.mark.parametrize("is_unique", _IS_UNIQUE)
 async def test_remove_task(
+    disable_stale_tasks_monitor: None,
     long_running_managers: list[LongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     is_unique: bool,
@@ -321,9 +324,8 @@ async def test_remove_task(
         _get_long_running_manager(long_running_managers).lrt_namespace,
         saved_context,
         task_id,
-        wait_for_removal=True,
     )
 
     await _assert_task_is_no_longer_present(
-        rabbitmq_rpc_client, long_running_managers, saved_context, task_id
+        long_running_managers, saved_context, task_id
     )

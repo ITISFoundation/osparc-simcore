@@ -104,7 +104,6 @@ async def remove_task(
     task_context: TaskContext,
     task_id: TaskId,
     *,
-    wait_for_removal: bool,
     cancellation_timeout: timedelta | None = None,
 ) -> None:
     """cancels and removes a task
@@ -116,6 +115,5 @@ async def remove_task(
         lrt_namespace,
         task_id=task_id,
         task_context=task_context,
-        wait_for_removal=wait_for_removal,
         cancellation_timeout=cancellation_timeout,
     )

@@ -118,7 +118,6 @@ async def remove_task(
     *,
     task_context: TaskContext,
     task_id: TaskId,
-    wait_for_removal: bool,
     cancellation_timeout: timedelta | None,
 ) -> None:
     timeout_s = (
@@ -127,17 +126,11 @@ async def remove_task(
         else int(cancellation_timeout.total_seconds())
     )
 
-    # NOTE: task always gets cancelled even if not waiting for it
-    # request will return immediatlye, no need to wait so much
-    if wait_for_removal is False:
-        timeout_s = _RPC_TIMEOUT_SHORT_REQUESTS
-
     result = await rabbitmq_rpc_client.request(
         get_rabbit_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("remove_task"),
         task_context=task_context,
         task_id=task_id,
-        wait_for_removal=wait_for_removal,
         timeout_s=timeout_s,
     )
     assert result is None  # nosec
