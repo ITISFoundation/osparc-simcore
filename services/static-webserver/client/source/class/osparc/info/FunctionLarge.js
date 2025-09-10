@@ -61,11 +61,12 @@ qx.Class.define("osparc.info.FunctionLarge", {
         "Default Inputs": this.getFunction().getDefaultInputs(),
         "Outputs": this.getFunction().getOutputSchema()["schema_content"],
       };
-      const jsonViewer = new osparc.widget.JsonFormatterWidget();
+      const jsonViewer = new osparc.widget.JsonFormatterWidget(info);
       const scroll = new qx.ui.container.Scroll();
-      scroll.add(jsonViewer, { flex: 1 });
-      vBox.add(scroll, { flex: 1 });
-      jsonViewer.setJson(info);
+      scroll.add(jsonViewer);
+      vBox.add(scroll, {
+        flex: 1
+      });
 
       // Copy Id button
       const text = "Function Id";

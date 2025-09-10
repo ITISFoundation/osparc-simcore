@@ -309,11 +309,12 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("postal-code").setValue(user.getPostalCode() || "-");
 
       // remaining data
-      const jsonViewer = new osparc.widget.JsonFormatterWidget();
+      const jsonViewer = new osparc.widget.JsonFormatterWidget(this.__remainingUserData);
       const scroll = new qx.ui.container.Scroll();
-      scroll.add(jsonViewer, { flex: 1 });
-      this.add(scroll, { flex: 1 });
-      jsonViewer.setJson(this.__remainingUserData);
+      scroll.add(jsonViewer);
+      this.add(scroll, {
+        flex: 1
+      });
     },
   }
 });
