@@ -30,7 +30,7 @@ qx.Class.define("osparc.data.model.User", {
 
     const userId = ("id" in userData) ? parseInt(userData["id"]) : parseInt(userData["userId"]);
     const groupId = ("gid" in userData) ? parseInt(userData["gid"]) : parseInt(userData["groupId"]);
-    const username = userData["userName"] || "-";
+    const userName = userData["userName"] || "-";
     const email = ("login" in userData) ? userData["login"] : userData["email"];
     let firstName = "";
     if (userData["first_name"]) {
@@ -48,11 +48,11 @@ qx.Class.define("osparc.data.model.User", {
     this.set({
       userId,
       groupId,
-      username,
+      userName,
       firstName,
       lastName,
       email,
-      phoneNumber: userData["phone"] || null,
+      phone: userData["phone"] || null,
     });
 
     const description = osparc.data.model.User.userDataToDescription(firstName, lastName, email);
@@ -62,18 +62,11 @@ qx.Class.define("osparc.data.model.User", {
     });
 
     if (userData["contact"]) {
-      const contact = userData["contact"];
-      this.set({
-        institution: contact["institution"] || null,
-        address: contact["address"] || null,
-        city: contact["city"] || null,
-        state: contact["state"] || null,
-        country: contact["country"] || null,
-        postalCode: contact["postalCode"] || null,
-      });
+      const contactData = userData["contact"];
+      this.setContactData(contactData);
     }
 
-    // create the thumbnail after setting email and username
+    // create the thumbnail after setting email and userName
     this.set({
       thumbnail: this.createThumbnail(),
     });
@@ -108,11 +101,11 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeDescription",
     },
 
-    username: {
+    userName: {
       check: "String",
       nullable: false,
       init: null,
-      event: "changeUsername",
+      event: "changeUserName",
     },
 
     firstName: {
@@ -136,11 +129,11 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeEmail",
     },
 
-    phoneNumber: {
+    phone: {
       check: "String",
       nullable: true,
       init: null,
-      event: "changePhoneNumber"
+      event: "changePhone",
     },
 
     thumbnail: {
@@ -212,11 +205,22 @@ qx.Class.define("osparc.data.model.User", {
 
   members: {
     createThumbnail: function(size) {
-      return osparc.utils.Avatar.emailToThumbnail(this.getEmail(), this.getUsername(), size);
+      return osparc.utils.Avatar.emailToThumbnail(this.getEmail(), this.getUserName(), size);
     },
 
     getFullName: function() {
       return this.self().concatFullName(this.getFirstName(), this.getLastName());
+    },
+
+    setContactData: function(contactData) {
+      this.set({
+        institution: contactData["institution"] || null,
+        address: contactData["address"] || null,
+        city: contactData["city"] || null,
+        state: contactData["state"] || null,
+        country: contactData["country"] || null,
+        postalCode: contactData["postalCode"] || null,
+      });
     },
   },
 });

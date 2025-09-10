@@ -1197,6 +1197,18 @@ qx.Class.define("osparc.utils.Utils", {
       return str;
     },
 
+    camelToTitle: function(str) {
+      return str
+        .replace(/([A-Z])/g, ' $1')          // insert space before capital letters
+        .replace(/^./, c => c.toUpperCase()); // capitalize first letter
+    },
+
+    convertKeysToTitles: function(obj) {
+      return Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [this.camelToTitle(key), value])
+      );
+    },
+
     setIdToWidget: (qWidget, id) => {
       if (qWidget.getContentElement && qWidget.getContentElement() && id) {
         qWidget.getContentElement().setAttribute("osparc-test-id", id);
