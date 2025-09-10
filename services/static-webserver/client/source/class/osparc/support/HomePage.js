@@ -37,6 +37,18 @@ qx.Class.define("osparc.support.HomePage", {
     "openConversation": "qx.event.type.Event",
   },
 
+  statics: {
+    decorateButton: function(button) {
+      button.set({
+        font: "text-14",
+        gap: 10,
+      });
+      button.getChildControl("label").set({
+        rich: true
+      });
+    },
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -77,29 +89,35 @@ qx.Class.define("osparc.support.HomePage", {
       const quickStartButton = osparc.store.Support.getQuickStartButton();
       if (quickStartButton) {
         this.getChildControl("links-layout").add(quickStartButton);
+        this.self().decorateButton(quickStartButton);
       }
 
       const guidedToursButton = osparc.store.Support.getGuidedToursButton();
       this.getChildControl("links-layout").add(guidedToursButton);
+      this.self().decorateButton(guidedToursButton);
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
-        const tutorialsBtn = new qx.ui.form.Button("Tutorials");
+        const tutorialsBtn = new qx.ui.form.Button(this.tr("Tutorials"), "@FontAwesome5Solid/graduation-cap/14");
         this.getChildControl("links-layout").add(tutorialsBtn);
+        this.self().decorateButton(tutorialsBtn);
       }
 
       const manualButtons = osparc.store.Support.getManualButtons();
       manualButtons.forEach(manualButton => {
         this.getChildControl("links-layout").add(manualButton);
+        this.self().decorateButton(manualButton);
       });
 
       const supportButtons = osparc.store.Support.getSupportButtons();
       supportButtons.forEach(supportButton => {
         this.getChildControl("links-layout").add(supportButton);
+        this.self().decorateButton(supportButton);
       });
 
       const releaseNotesButton = osparc.store.Support.getReleaseNotesButton();
       this.getChildControl("links-layout").add(releaseNotesButton);
+      this.self().decorateButton(releaseNotesButton);
     },
   }
 });
