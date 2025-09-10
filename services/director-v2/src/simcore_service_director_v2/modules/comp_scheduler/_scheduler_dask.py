@@ -20,10 +20,12 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.redis._semaphore import with_limited_concurrency
 from servicelib.utils import limited_as_completed, limited_gather
 
 from ...core.errors import (
@@ -53,11 +55,14 @@ from ..db.repositories.comp_runs import (
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._constants import (
     MAX_CONCURRENT_PIPELINE_SCHEDULING,
+    MODULE_NAME_WORKER,
 )
 from ._models import TaskStateTracker
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
     WAITING_FOR_START_STATES,
+    get_redis_client_from_app,
+    get_redis_lock_key,
 )
 
 _logger = logging.getLogger(__name__)
@@ -65,6 +70,12 @@ _logger = logging.getLogger(__name__)
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
+
+
+def create_cluster_client_lock_key(
+    _app, user_id: UserID, wallet_id: WalletID | None
+) -> str:
+    return f"cluster-client-{user_id}-{wallet_id or 'None'}"
 
 
 @asynccontextmanager
@@ -84,13 +95,26 @@ async def _cluster_dask_client(
             user_id=user_id,
             wallet_id=run_metadata.get("wallet_id"),
         )
-    async with scheduler.dask_clients_pool.acquire(
-        cluster,
-        ref=_DASK_CLIENT_RUN_REF.format(
-            user_id=user_id, project_id=project_id, run_id=run_id
+
+    @with_limited_concurrency(
+        get_redis_client_from_app,
+        key=get_redis_lock_key(
+            MODULE_NAME_WORKER, unique_lock_key_builder=create_cluster_client_lock_key
         ),
-    ) as client:
-        yield client
+        capacity=20,
+        blocking=True,
+        blocking_timeout=None,
+    )
+    async def _limited_client_pool() -> AsyncIterator[DaskClient]:
+        async with scheduler.dask_clients_pool.acquire(
+            cluster,
+            ref=_DASK_CLIENT_RUN_REF.format(
+                user_id=user_id, project_id=project_id, run_id=run_id
+            ),
+        ) as client:
+            yield client
+
+    return await _limited_client_pool()
 
 
 @dataclass
