@@ -69,6 +69,7 @@ from .. import _nodes_service, _projects_service, nodes_utils
 from .._nodes_service import NodeScreenshot, get_node_screenshots
 from ..api import has_user_project_access_rights
 from ..exceptions import (
+    BaseProjectError,
     NodeNotFoundError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
@@ -299,6 +300,10 @@ async def start_node(request: web.Request) -> web.Response:
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
+class StopDynamicServiceTaskError(BaseProjectError):
+    msg_template = "Could not stop dynamic service {project_id}.{node_id}: {cause}"
+
+
 async def _stop_dynamic_service_task(
     progress: TaskProgress,
     *,
@@ -323,8 +328,15 @@ async def _stop_dynamic_service_task(
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
-        # in case there is an error reply as not found
-        raise web.HTTPNotFound(text=f"{exc}") from exc
+
+        raise StopDynamicServiceTaskError(
+            project_id=dynamic_service_stop.project_id,
+            node_id=dynamic_service_stop.node_id,
+            user_id=dynamic_service_stop.user_id,
+            save_state=dynamic_service_stop.save_state,
+            simcore_user_agent=dynamic_service_stop.simcore_user_agent,
+            cause=str(exc),
+        ) from exc
 
     except ServiceWasNotFoundError:
         # in case the service is not found reply as all OK
@@ -333,7 +345,9 @@ async def _stop_dynamic_service_task(
 
 def register_stop_dynamic_service_task(app: web.Application) -> None:
     TaskRegistry.register(
-        _stop_dynamic_service_task, allowed_errors=(web.HTTPNotFound,), app=app
+        _stop_dynamic_service_task,
+        allowed_errors=(StopDynamicServiceTaskError,),
+        app=app,
     )
 
 
