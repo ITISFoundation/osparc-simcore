@@ -26,8 +26,8 @@ qx.Class.define("osparc.io.rest.AbstractResource", {
     API: "/v0",
     AUTHENTICATION: null,
 
-    setAutheticationHeader: function(usernameOrToken, password=null) {
-      osparc.io.rest.AbstractResource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
+    setAutheticationHeader: function(userNameOrToken, password=null) {
+      osparc.io.rest.AbstractResource.AUTHENTICATION = new qx.io.request.authentication.Basic(userNameOrToken, password);
     }
 
   },
