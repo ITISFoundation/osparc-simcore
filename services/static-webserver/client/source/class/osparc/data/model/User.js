@@ -30,7 +30,7 @@ qx.Class.define("osparc.data.model.User", {
 
     const userId = ("id" in userData) ? parseInt(userData["id"]) : parseInt(userData["userId"]);
     const groupId = ("gid" in userData) ? parseInt(userData["gid"]) : parseInt(userData["groupId"]);
-    const username = userData["userName"] || "-";
+    const userName = userData["userName"] || "-";
     const email = ("login" in userData) ? userData["login"] : userData["email"];
     let firstName = "";
     if (userData["first_name"]) {
@@ -48,7 +48,7 @@ qx.Class.define("osparc.data.model.User", {
     this.set({
       userId,
       groupId,
-      username,
+      userName,
       firstName,
       lastName,
       email,
@@ -66,7 +66,7 @@ qx.Class.define("osparc.data.model.User", {
       this.setContactData(contactData);
     }
 
-    // create the thumbnail after setting email and username
+    // create the thumbnail after setting email and userName
     this.set({
       thumbnail: this.createThumbnail(),
     });
@@ -101,11 +101,11 @@ qx.Class.define("osparc.data.model.User", {
       event: "changeDescription",
     },
 
-    username: {
+    userName: {
       check: "String",
       nullable: false,
       init: null,
-      event: "changeUsername",
+      event: "changeUserName",
     },
 
     firstName: {
@@ -205,7 +205,7 @@ qx.Class.define("osparc.data.model.User", {
 
   members: {
     createThumbnail: function(size) {
-      return osparc.utils.Avatar.emailToThumbnail(this.getEmail(), this.getUsername(), size);
+      return osparc.utils.Avatar.emailToThumbnail(this.getEmail(), this.getUserName(), size);
     },
 
     getFullName: function() {

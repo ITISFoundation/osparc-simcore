@@ -108,9 +108,9 @@ qx.Class.define("osparc.store.Groups", {
           const myAuthData = osparc.auth.Data.getInstance();
           const description = osparc.data.model.User.userDataToDescription(myAuthData.getFirstName(), myAuthData.getLastName(), myAuthData.getEmail());
           groupMe.set({
-            label: myAuthData.getUsername(),
+            label: myAuthData.getUserName(),
             description,
-            thumbnail: osparc.utils.Avatar.emailToThumbnail(myAuthData.getEmail(), myAuthData.getUsername()),
+            thumbnail: osparc.utils.Avatar.emailToThumbnail(myAuthData.getEmail(), myAuthData.getUserName()),
           })
           return orgs;
         });
@@ -347,10 +347,10 @@ qx.Class.define("osparc.store.Groups", {
       return null;
     },
 
-    getGroupMemberByUsername: function(orgId, username) {
+    getGroupMemberByUserName: function(orgId, userName) {
       const org = this.getGroup(orgId);
       if (org) {
-        return org.getGroupMemberByUsername(username);
+        return org.getGroupMemberByUserName(userName);
       }
       return null;
     },
@@ -424,7 +424,7 @@ qx.Class.define("osparc.store.Groups", {
     // CRUD GROUP
 
     // CRUD GROUP MEMBERS
-    addMember: function(orgId, username, email = null) {
+    addMember: function(orgId, userName, email = null) {
       const gid = parseInt(orgId);
       const params = {
         url: {
@@ -435,7 +435,7 @@ qx.Class.define("osparc.store.Groups", {
       if (email) {
         params.data["email"] = email;
       } else {
-        params.data["userName"] = username;
+        params.data["userName"] = userName;
       }
       return osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
@@ -444,7 +444,7 @@ qx.Class.define("osparc.store.Groups", {
           return this.__fetchGroupMembers(gid);
         })
         .then(() => {
-          const groupMember = email ? this.getGroupMemberByLogin(gid, email) : this.getGroupMemberByUsername(gid, username);
+          const groupMember = email ? this.getGroupMemberByLogin(gid, email) : this.getGroupMemberByUserName(gid, userName);
           if (groupMember) {
             return groupMember;
           }

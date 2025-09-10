@@ -111,8 +111,8 @@ qx.Class.define("osparc.user.UserDetails", {
           this.add(control);
           break;
         }
-        case "username": {
-          this.getChildControl("top-info").add(new qx.ui.basic.Label("Username"), {
+        case "userName": {
+          this.getChildControl("top-info").add(new qx.ui.basic.Label("UserName"), {
             row: this.self().TOP_GRID.USERNAME,
             column: 0
           });
@@ -282,12 +282,12 @@ qx.Class.define("osparc.user.UserDetails", {
     },
 
     __applyUser: function(user) {
-      this.setCaption(user.getUsername());
+      this.setCaption(user.getUserName());
 
       this.getChildControl("thumbnail").setSource(user.createThumbnail(this.self().THUMBNAIL_SIZE));
 
       // top grid
-      this.getChildControl("username").setValue(user.getUsername());
+      this.getChildControl("userName").setValue(user.getUserName());
       this.getChildControl("fullname").setValue([user.getFirstName(), user.getLastName()].filter(Boolean).join(" "));
       this.getChildControl("email").setValue(user.getEmail());
       this.getChildControl("phone").setValue(user.getPhone() || "-");
