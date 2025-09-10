@@ -914,13 +914,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
       const usersStore = osparc.store.Users.getInstance();
       const userPromises = currentUserGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
-      const usernames = [];
+      const userNames = [];
       let toolTip = "";
       let image = null;
       Promise.all(userPromises)
         .then(usersResult => {
           usersResult.forEach(user => {
-            usernames.push(user.getUsername());
+            userNames.push(user.getUserName());
           });
         })
         .catch(error => {
@@ -952,8 +952,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
               image = "@FontAwesome5Solid/lock/";
               break;
           }
-          usernames.forEach(username => {
-            toolTip += "<br>" + username;
+          userNames.forEach(userName => {
+            toolTip += "<br>" + userName;
           });
           this.__showBlockedCard(image, toolTip);
         });
