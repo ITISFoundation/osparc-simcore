@@ -337,9 +337,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       const privacyModel = this.__userPrivacyModel = qx.data.marshal.Json.createModel(defaultModel, true);
 
       const box = this.self().createSectionBox(this.tr("Privacy"));
-
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Choose what others see."));
-      box.add(label);
+      box.addHelper(this.tr("Choose what others see."));
 
       const hideUserName = new qx.ui.form.CheckBox().set({
         value: defaultModel.hideUserName
@@ -453,9 +451,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
     __create2FASection: function() {
       const box = this.self().createSectionBox(this.tr("Two-Factor Authentication"));
-
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Set your preferred method to use for two-factor authentication when signing in:"));
-      box.add(label);
+      box.addHelper(this.tr("Set your preferred method to use for two-factor authentication when signing in:"));
 
       const form = new qx.ui.form.Form();
 
@@ -659,9 +655,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     __createDeleteAccount: function() {
       // layout
       const box = this.self().createSectionBox(this.tr("Delete Account"));
-
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Request the deletion of your account."));
-      box.add(label);
+      box.addHelper(this.tr("Request the deletion of your account."));
 
       const deleteBtn = new qx.ui.form.Button(this.tr("Delete Account")).set({
         appearance: "danger-button",
