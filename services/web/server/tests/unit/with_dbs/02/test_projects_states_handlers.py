@@ -67,7 +67,6 @@ from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
@@ -1152,6 +1151,7 @@ async def test_close_project(
     ],
 )
 async def test_get_active_project(
+    with_disabled_rtc_collaboration: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -1199,25 +1199,7 @@ async def test_get_active_project(
             client.app, ProjectID(user_project["uuid"])
         )
         assert not error
-
-        # The realtime collaboration feature  unlocks the projects since they can be edited by multiple users simultaneously
-        realtime_collaboration_settings = get_application_settings(
-            client.app
-        ).WEBSERVER_REALTIME_COLLABORATION
-        realtime_collaboration_enabled = (
-            realtime_collaboration_settings
-            and realtime_collaboration_settings.RTC_MAX_NUMBER_OF_USERS
-            and realtime_collaboration_settings.RTC_MAX_NUMBER_OF_USERS > 1
-        )
-
-        share_state_locked = ProjectStateOutputSchema(
-            **data.pop("state")
-        ).share_state.locked
-        assert (
-            not share_state_locked
-            if realtime_collaboration_enabled
-            else share_state_locked
-        )
+        assert ProjectStateOutputSchema(**data.pop("state")).share_state.locked
         data.pop("folderId")
 
         user_project_last_change_date = user_project.pop("lastChangeDate")
@@ -1815,6 +1797,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_is_defaulted(
+    with_disabled_rtc_collaboration: None,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
