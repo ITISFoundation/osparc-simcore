@@ -6,10 +6,19 @@ from copy import deepcopy
 
 import pytest
 from pydantic import TypeAdapter
-from servicelib.long_running_tasks._redis_store import RedisStore
+from servicelib.long_running_tasks._redis_store import (
+    _MARKED_FOR_REMOVAL_FIELD,
+    RedisStore,
+)
 from servicelib.long_running_tasks.models import TaskData
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
+
+
+def test_ensure_task_data_field_name_and_type():
+    # ensure this does not change since it's queied for the remal as a single entity
+    field = TaskData.model_fields[_MARKED_FOR_REMOVAL_FIELD]
+    assert field.annotation is bool
 
 
 @pytest.fixture
