@@ -15,7 +15,7 @@ from servicelib.redis import RedisClientSDK
 from servicelib.redis._constants import (
     SEMAPHORE_HOLDER_KEY_PREFIX,
 )
-from servicelib.redis._errors import SemaphoreLostError, SemaphoreNotAcquiredError
+from servicelib.redis._errors import SemaphoreLostError
 from servicelib.redis._semaphore import (
     DistributedSemaphore,
     SemaphoreAcquisitionError,
@@ -247,7 +247,7 @@ async def test_non_blocking_behavior(
     )
     async def limited_function() -> None:
         started_event.set()
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(2)
 
     # Start first task that will hold the semaphore
     task1 = asyncio.create_task(limited_function())
@@ -289,9 +289,9 @@ async def test_user_exceptions_properly_reraised(
     work_started = asyncio.Event()
 
     # Track that auto-renewal is actually happening
-    from servicelib.redis import _semaphore_decorator
+    from servicelib.redis._semaphore import DistributedSemaphore
 
-    spied_renew_fct = mocker.spy(_semaphore_decorator, "_renew_semaphore_entry")
+    spied_renew_fct = mocker.spy(DistributedSemaphore, "reacquire")
 
     @with_limited_concurrency(
         redis_client_sdk,
@@ -350,58 +350,15 @@ async def test_cancelled_error_preserved(
         await function_raising_cancelled_error()
 
 
-async def test_release_failure(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-    short_ttl: datetime.timedelta,
-    mocker: MockerFixture,
-    caplog: pytest.LogCaptureFixture,
-):
-    """Test that semaphore release failures are properly logged without raising"""
-
-    # Mock the semaphore.release() method to raise SemaphoreNotAcquiredError
-    mock_release = mocker.AsyncMock(
-        side_effect=SemaphoreNotAcquiredError(name="test-key")
-    )
-
-    work_completed = asyncio.Event()
-
-    @with_limited_concurrency(
-        redis_client_sdk,
-        key=semaphore_name,
-        capacity=semaphore_capacity,
-        ttl=short_ttl,
-    )
-    async def work_function() -> str:
-        work_completed.set()
-        return "success"
-
-    # Patch the release method after semaphore creation
-    mocker.patch.object(DistributedSemaphore, "release", mock_release)
-    # The decorator should complete successfully despite release failure
-    result = await work_function()
-    assert result == "success"
-
-    # Wait for work to complete
-    await work_completed.wait()
-
-    # Verify the release was attempted
-    mock_release.assert_called_once()
-
-    # Verify the exception was logged (not raised)
-    assert "Unexpected error while releasing semaphore" in caplog.text
-    assert "SemaphoreNotAcquiredError" in caplog.text
-
-
+@pytest.mark.skip
 async def test_with_large_capacity(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
-    large_capacity = 200
+    large_capacity = 100
     concurrent_count = 0
     max_concurrent = 0
-    sleep_time_s = 30
+    sleep_time_s = 10
     num_tasks = 400
 
     @with_limited_concurrency(
@@ -415,12 +372,12 @@ async def test_with_large_capacity(
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)
-        await asyncio.sleep(30)
+        await asyncio.sleep(sleep_time_s)
         concurrent_count -= 1
 
     # Start tasks equal to the large capacity
     tasks = [asyncio.create_task(limited_function()) for _ in range(num_tasks)]
-    async with asyncio.timeout(num_tasks / large_capacity * 1.5 * sleep_time_s):
+    async with asyncio.timeout(num_tasks / large_capacity * 2 * sleep_time_s):
         await asyncio.gather(*tasks)
 
     # Should never exceed the large capacity

@@ -6,6 +6,8 @@ from ._errors import (
     CouldNotConnectToRedisError,
     LockLostError,
     ProjectLockError,
+    SemaphoreAcquisitionError,
+    SemaphoreNotAcquiredError,
 )
 from ._models import RedisManagerDBConfig
 from ._project_document_version import (
@@ -17,10 +19,6 @@ from ._project_lock import (
     get_project_locked_state,
     is_project_locked,
     with_project_locked,
-)
-from ._semaphore import (
-    SemaphoreAcquisitionError,
-    SemaphoreNotAcquiredError,
 )
 from ._semaphore_decorator import with_limited_concurrency
 from ._utils import handle_redis_returns_union_types
