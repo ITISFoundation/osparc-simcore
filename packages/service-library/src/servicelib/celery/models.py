@@ -1,6 +1,6 @@
 import datetime
 from enum import StrEnum
-from typing import Annotated, Final, Protocol, Self, TypeAlias, TypeVar
+from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
@@ -15,6 +15,7 @@ TaskName: TypeAlias = Annotated[
 ]
 TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
+WILDCARD_VALUE: Final[str] = "*"
 
 
 class TaskFilter(BaseModel):
@@ -40,7 +41,7 @@ class TaskFilter(BaseModel):
             [f"{key}={filter_dict[key]}" for key in sorted(filter_dict)]
         )
 
-    def task_id(self, task_uuid: TaskUUID) -> TaskID:
+    def task_id(self, task_uuid: TaskUUID | Literal["*"]) -> TaskID:
         return _TASK_ID_KEY_DELIMITATOR.join(
             [self._build_task_id_prefix(), f"task_uuid={task_uuid}"]
         )
@@ -51,7 +52,7 @@ class TaskFilter(BaseModel):
         return model.model_validate(filter_dict)
 
     @classmethod
-    def recreate_data(cls, task_id: TaskID) -> dict:
+    def recreate_data(cls, task_id: TaskID) -> dict[str, Any]:
         """Recreates the filter data from a task_id string
         Careful: does not validate types. For that use `recreate_model` instead
         """

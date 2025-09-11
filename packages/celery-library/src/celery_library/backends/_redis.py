@@ -5,16 +5,8 @@ from typing import Final
 
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
-from servicelib.celery.models import (
-    Task,
-    TaskFilter,
-    TaskID,
-    TaskMetadata,
-    TaskUUID,
-)
+from servicelib.celery.models import Task, TaskFilter, TaskID, TaskMetadata, TaskUUID
 from servicelib.redis import RedisClientSDK
-
-from ..utils import build_task_id_prefix
 
 _CELERY_TASK_INFO_PREFIX: Final[str] = "celery-task-info-"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
@@ -83,17 +75,13 @@ class RedisTaskInfoStore:
             return None
 
     async def list_tasks(self, task_filter: TaskFilter) -> list[Task]:
-        search_key = (
-            _CELERY_TASK_INFO_PREFIX
-            + build_task_id_prefix(task_filter)
-            + _CELERY_TASK_ID_KEY_SEPARATOR
-        )
+        search_key = _CELERY_TASK_INFO_PREFIX + task_filter.task_id("*")
         search_key_len = len(search_key)
 
         keys: list[str] = []
         pipeline = self._redis_client_sdk.redis.pipeline()
         async for key in self._redis_client_sdk.redis.scan_iter(
-            match=search_key + "*", count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
+            match=search_key, count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
         ):
             # fake redis (tests) returns bytes, real redis returns str
             _key = (
