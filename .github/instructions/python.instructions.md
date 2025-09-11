@@ -1,14 +1,7 @@
-# GitHub Copilot Instructions
-
-This document provides guidelines and best practices for using GitHub Copilot in the `osparc-simcore` repository and other Python and Node.js projects.
-
-## General Guidelines
-
-1. **Test-Driven Development**: Write unit tests for all new functions and features. Use `pytest` for Python and appropriate testing frameworks for Node.js.
-2. **Environment Variables**: Use [Environment Variables Guide](../docs/env-vars.md) for configuration. Avoid hardcoding sensitive information.
-3. **Documentation**: Prefer self-explanatory code; add documentation only if explicitly requested by the developer.
-
 ---
+applyTo: '**/*.py'
+---
+Provide project context and coding guidelines that AI should follow when generating code, answering questions, or reviewing changes.
 
 ## 🛠️Coding Instructions for Python in This Repository
 
@@ -50,12 +43,3 @@ Ensure compatibility with the following library versions:
 
 * Prefer `json_dumps` / `json_loads` from `common_library.json_serialization` instead of the built-in `json.dumps` / `json.loads`.
 * When using Pydantic models, prefer methods like `model.model_dump_json()` for serialization.
-
----
-
-## 🛠️Coding Instructions for Node.js in This Repository
-
-* Use ES6+ syntax and features.
-* Follow the `package.json` configuration for dependencies and scripts.
-* Use `eslint` for linting and `prettier` for code formatting.
-* Write modular and reusable code, adhering to the project's structure.
