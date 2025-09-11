@@ -15,42 +15,10 @@ from ._constants import (
 )
 from ._errors import (
     SemaphoreAcquisitionError,
-    SemaphoreLostError,
-    SemaphoreNotAcquiredError,
 )
 from ._semaphore import DistributedSemaphore
 
 _logger = logging.getLogger(__name__)
-
-
-async def _renew_semaphore_entry(semaphore: DistributedSemaphore) -> None:
-    """
-    Manually renew a semaphore entry by updating its timestamp and TTL.
-
-    This function is intended to be called by decorators or external renewal mechanisms.
-
-    Args:
-        semaphore: The semaphore instance to renew
-
-    Raises:
-        Exception: If the renewal operation fails
-    """
-
-    current_time = await semaphore.get_redis_time()
-    ttl_seconds = semaphore.ttl.total_seconds()
-
-    # Update timestamp in sorted set and refresh holder key
-    async with semaphore.redis_client.redis.pipeline(transaction=True) as pipe:
-        await pipe.zadd(semaphore.semaphore_key, {semaphore.instance_id: current_time})
-        await pipe.expire(semaphore.holder_key, int(ttl_seconds))
-        results = await pipe.execute()
-
-        # Check if EXPIRE succeeded (returns 1 if key existed, 0 if not)
-        expire_result = results[1]
-        if expire_result == 0:
-            raise SemaphoreLostError(
-                name=semaphore.key, instance_id=semaphore.instance_id
-            )
 
 
 P = ParamSpec("P")
@@ -144,7 +112,7 @@ def with_limited_concurrency(
                     # Create auto-renewal task
                     @periodic(interval=ttl / 3, raise_on_error=True)
                     async def _periodic_renewer() -> None:
-                        await _renew_semaphore_entry(semaphore)
+                        await semaphore.reacquire()
                         started_event.set()
 
                     # Start the renewal task
@@ -178,25 +146,26 @@ def with_limited_concurrency(
                 raise eg.exceptions[0] from eg
 
             finally:
-                # Always release the semaphore
-                if semaphore.is_acquired():
-                    try:
-                        await semaphore.release()
-                    except SemaphoreNotAcquiredError as exc:
-                        _logger.exception(
-                            **create_troubleshootting_log_kwargs(
-                                "Unexpected error while releasing semaphore",
-                                error=exc,
-                                error_context={
-                                    "semaphore_key": semaphore_key,
-                                    "client_name": client.client_name,
-                                    "hostname": socket.gethostname(),
-                                    "coroutine": coro.__name__,
-                                },
-                                tip="This might happen if the semaphore was lost before releasing it. "
-                                "Look for synchronous code that prevents refreshing the semaphore or asyncio loop overload.",
-                            )
+                # Always attempt to release the semaphore, regardless of Python state
+                # The Redis-side state is the source of truth, not the Python _acquired flag
+                try:
+                    await semaphore.release()
+                except Exception as exc:
+                    # Log any other release errors but don't re-raise
+                    _logger.exception(
+                        **create_troubleshootting_log_kwargs(
+                            "Unexpected error while releasing semaphore",
+                            error=exc,
+                            error_context={
+                                "semaphore_key": semaphore_key,
+                                "client_name": client.client_name,
+                                "hostname": socket.gethostname(),
+                                "coroutine": coro.__name__,
+                            },
+                            tip="This might happen if the semaphore was lost before releasing it. "
+                            "Look for synchronous code that prevents refreshing the semaphore or asyncio loop overload.",
                         )
+                    )
 
         return _wrapper
 

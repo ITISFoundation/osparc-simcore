@@ -7,7 +7,6 @@
 
 import asyncio
 import datetime
-from unittest import mock
 
 import pytest
 from faker import Faker
@@ -18,6 +17,7 @@ from servicelib.redis._constants import (
     SEMAPHORE_HOLDER_KEY_PREFIX,
     SEMAPHORE_KEY_PREFIX,
 )
+from servicelib.redis._errors import SemaphoreLostError
 from servicelib.redis._semaphore import (
     DistributedSemaphore,
     SemaphoreAcquisitionError,
@@ -57,7 +57,6 @@ async def test_semaphore_initialization(
     assert semaphore.capacity == semaphore_capacity
     assert semaphore.ttl == DEFAULT_SEMAPHORE_TTL
     assert semaphore.blocking is True
-    assert semaphore._acquired is False
     assert semaphore.instance_id is not None
     assert semaphore.semaphore_key == f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}"
     assert semaphore.holder_key.startswith(
@@ -107,12 +106,10 @@ async def test_semaphore_acquire_release_single(
     )
 
     # Initially not acquired
-    assert semaphore._acquired is False
 
     # Acquire successfully
     result = await semaphore.acquire()
     assert result is True
-    assert semaphore._acquired is True
 
     # Check Redis state
     assert await semaphore.get_current_count() == 1
@@ -124,11 +121,22 @@ async def test_semaphore_acquire_release_single(
     assert await semaphore.get_current_count() == 1
     assert await semaphore.get_available_count() == semaphore_capacity - 1
 
+    # reacquire should just work
+    await semaphore.reacquire()
+    assert await semaphore.get_current_count() == 1
+    assert await semaphore.get_available_count() == semaphore_capacity - 1
+
     # Release
     await semaphore.release()
-    assert semaphore._acquired is False
     assert await semaphore.get_current_count() == 0
     assert await semaphore.get_available_count() == semaphore_capacity
+
+    # reacquire after release should fail
+    with pytest.raises(
+        SemaphoreLostError,
+        match=f"Semaphore '{semaphore_name}' was lost by this instance",
+    ):
+        await semaphore.reacquire()
 
 
 async def test_semaphore_context_manager(
@@ -139,11 +147,9 @@ async def test_semaphore_context_manager(
     async with DistributedSemaphore(
         redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
     ) as semaphore:
-        assert semaphore._acquired is True
         assert await semaphore.get_current_count() == 1
 
     # Should be released after context
-    assert semaphore._acquired is False
     assert await semaphore.get_current_count() == 0
 
 
@@ -272,7 +278,6 @@ async def test_semaphore_context_manager_with_exception(
         ) as sem:
             nonlocal captured_semaphore
             captured_semaphore = sem
-            assert captured_semaphore._acquired is True
             msg = "Test exception"
             raise RuntimeError(msg)
 
@@ -281,7 +286,6 @@ async def test_semaphore_context_manager_with_exception(
 
     # Should be released even after exception
     assert captured_semaphore is not None
-    assert captured_semaphore._acquired is False
     # captured_semaphore is guaranteed to be not None by the assert above
     assert await captured_semaphore.get_current_count() == 0
 
@@ -321,29 +325,6 @@ async def test_semaphore_ttl_cleanup(
     # Verify expired entry was removed
     remaining = await redis_client_sdk.redis.zcard(semaphore.semaphore_key)
     assert remaining == 0
-
-
-async def test_redis_connection_failure_during_acquire(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-):
-    semaphore = DistributedSemaphore(
-        redis_client=redis_client_sdk,
-        key=semaphore_name,
-        capacity=semaphore_capacity,
-        blocking=False,
-    )
-
-    # Mock Redis eval to raise an exception (which should trigger fallback)
-    # and also mock zcard in fallback to raise an error
-    with mock.patch.object(
-        redis_client_sdk.redis, "eval", side_effect=Exception("Redis eval error")
-    ), mock.patch.object(
-        redis_client_sdk.redis, "zcard", side_effect=Exception("Redis error")
-    ):
-        result = await semaphore.acquire()
-        assert result is False
 
 
 async def test_multiple_semaphores_different_keys(

@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Awaitable
-from typing import Any
+from typing import ParamSpec, TypeVar
 
 import redis.exceptions
 from redis.asyncio.lock import Lock
@@ -28,7 +28,11 @@ async def auto_extend_lock(lock: Lock) -> None:
         raise LockLostError(lock=lock) from exc
 
 
-async def handle_redis_returns_union_types(result: Any | Awaitable[Any]) -> Any:
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+async def handle_redis_returns_union_types(result: R | Awaitable[R]) -> R:
     """Used to handle mypy issues with redis 5.x return types"""
     if isinstance(result, Awaitable):
         return await result

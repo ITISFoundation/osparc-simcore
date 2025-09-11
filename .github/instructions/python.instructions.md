@@ -44,6 +44,6 @@ Ensure compatibility with the following library versions:
 * Prefer `json_dumps` / `json_loads` from `common_library.json_serialization` instead of the built-in `json.dumps` / `json.loads`.
 * When using Pydantic models, prefer methods like `model.model_dump_json()` for serialization.
 
-### 7. **Testing practices**
+### 7. **Running tests**
 * Use `--keep-docker-up` flag when testing to keep docker containers up between sessions.
 * Always activate the python virtual environment before running pytest.

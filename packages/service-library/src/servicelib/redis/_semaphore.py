@@ -8,12 +8,13 @@ from pydantic import (
     BaseModel,
     Field,
     PositiveInt,
-    PrivateAttr,
     computed_field,
     field_validator,
 )
+from redis.commands.core import AsyncScript
 from tenacity import (
     RetryError,
+    before_sleep_log,
     retry,
     retry_if_not_result,
     stop_after_delay,
@@ -21,7 +22,6 @@ from tenacity import (
     wait_fixed,
 )
 
-from ..logging_utils import log_catch
 from ._client import RedisClientSDK
 from ._constants import (
     DEFAULT_SEMAPHORE_TTL,
@@ -29,45 +29,19 @@ from ._constants import (
     SEMAPHORE_HOLDER_KEY_PREFIX,
     SEMAPHORE_KEY_PREFIX,
 )
-from ._errors import SemaphoreAcquisitionError, SemaphoreNotAcquiredError
+from ._errors import (
+    SemaphoreAcquisitionError,
+    SemaphoreLostError,
+    SemaphoreNotAcquiredError,
+)
+from ._semaphore_lua import (
+    ACQUIRE_SEMAPHORE_SCRIPT,
+    COUNT_SEMAPHORE_SCRIPT,
+    RELEASE_SEMAPHORE_SCRIPT,
+    RENEW_SEMAPHORE_SCRIPT,
+)
 
 _logger = logging.getLogger(__name__)
-
-# Lua script for atomic semaphore acquisition
-ACQUIRE_SEMAPHORE_SCRIPT = """
--- Atomic semaphore acquisition script
--- KEYS[1]: semaphore_key (ZSET storing holders with timestamps)
--- KEYS[2]: holder_key (individual holder TTL key)
--- ARGV[1]: instance_id
--- ARGV[2]: capacity (max concurrent holders)
--- ARGV[3]: ttl_seconds
--- ARGV[4]: current_time (Redis server time)
-
-local semaphore_key = KEYS[1]
-local holder_key = KEYS[2]
-local instance_id = ARGV[1]
-local capacity = tonumber(ARGV[2])
-local ttl_seconds = tonumber(ARGV[3])
-local current_time = tonumber(ARGV[4])
-
--- Step 1: Clean up expired entries
-local expiry_threshold = current_time - ttl_seconds
-local expired_count = redis.call('ZREMRANGEBYSCORE', semaphore_key, '-inf', expiry_threshold)
-
--- Step 2: Check current capacity after cleanup
-local current_count = redis.call('ZCARD', semaphore_key)
-
--- Step 3: Try to acquire if under capacity
-if current_count < capacity then
-    -- Atomically add to semaphore and set holder key
-    redis.call('ZADD', semaphore_key, current_time, instance_id)
-    redis.call('SETEX', holder_key, ttl_seconds, '1')
-
-    return {1, 'acquired', current_count + 1, expired_count}
-else
-    return {0, 'capacity_full', current_count, expired_count}
-end
-"""
 
 
 class DistributedSemaphore(BaseModel):
@@ -116,8 +90,28 @@ class DistributedSemaphore(BaseModel):
         Field(description="Maximum time to wait when blocking"),
     ] = DEFAULT_SOCKET_TIMEOUT
 
+    _acquire_script: AsyncScript
+    _count_script: AsyncScript
+    _release_script: AsyncScript
+    _renew_script: AsyncScript
+
+    def __init__(self, **data) -> None:
+        super().__init__(**data)
+        self._acquire_script = self.redis_client.redis.register_script(
+            ACQUIRE_SEMAPHORE_SCRIPT
+        )
+        self._count_script = self.redis_client.redis.register_script(
+            COUNT_SEMAPHORE_SCRIPT
+        )
+        self._release_script = self.redis_client.redis.register_script(
+            RELEASE_SEMAPHORE_SCRIPT
+        )
+        self._renew_script = self.redis_client.redis.register_script(
+            RENEW_SEMAPHORE_SCRIPT
+        )
+
     # Computed fields (read-only, automatically calculated)
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def instance_id(self) -> str:
         """Unique identifier for this semaphore instance."""
@@ -125,20 +119,19 @@ class DistributedSemaphore(BaseModel):
             self._instance_id = str(uuid.uuid4())
         return self._instance_id
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def semaphore_key(self) -> str:
         """Redis key for the semaphore sorted set."""
         return f"{SEMAPHORE_KEY_PREFIX}{self.key}"
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def holder_key(self) -> str:
         """Redis key for this instance's holder entry."""
         return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:{self.instance_id}"
 
     # Private state attributes (not part of the model)
-    _acquired: bool = PrivateAttr(default=False)
 
     # Additional validation
     @field_validator("ttl")
@@ -169,17 +162,14 @@ class DistributedSemaphore(BaseModel):
         Raises:
             SemaphoreAcquisitionError: If acquisition fails and blocking=True
         """
-        if self._acquired:
-            return True
 
         if not self.blocking:
             # Non-blocking: try once
-            self._acquired = await self._try_acquire()
-            return self._acquired
+            return await self._try_acquire()
 
         # Blocking
         @retry(
-            wait=wait_fixed(0.1),
+            wait=wait_fixed(0.5),
             reraise=True,
             stop=(
                 stop_after_delay(self.blocking_timeout.total_seconds())
@@ -187,13 +177,13 @@ class DistributedSemaphore(BaseModel):
                 else stop_never
             ),
             retry=retry_if_not_result(lambda acquired: acquired),
+            before_sleep=before_sleep_log(_logger, logging.INFO),
         )
         async def _blocking_acquire() -> bool:
             return await self._try_acquire()
 
         try:
-            self._acquired = await _blocking_acquire()
-            return self._acquired
+            return await _blocking_acquire()
         except RetryError as exc:
             raise SemaphoreAcquisitionError(
                 name=self.key, capacity=self.capacity
@@ -201,152 +191,145 @@ class DistributedSemaphore(BaseModel):
 
     async def release(self) -> None:
         """
-        Release the semaphore.
+        Release the semaphore atomically using Lua script.
 
         Raises:
             SemaphoreNotAcquiredError: If semaphore was not acquired by this instance
         """
-        if not self._acquired:
-            raise SemaphoreNotAcquiredError(name=self.key)
-
-        # Remove from Redis
-        async with self.redis_client.redis.pipeline(transaction=True) as pipe:
-            await pipe.zrem(self.semaphore_key, self.instance_id)
-            await pipe.delete(self.holder_key)
-            await pipe.execute()
-
-        self._acquired = False
-        _logger.debug(
-            "Released semaphore '%s' (instance: %s)",
-            self.key,
-            self.instance_id,
-        )
-
-    def is_acquired(self) -> bool:
-        """Check if this semaphore instance is currently acquired."""
-        return self._acquired
-
-    async def get_redis_time(self) -> float:
-        """
-        Get the current Redis server time as a float timestamp.
-
-        This provides a synchronized timestamp across all Redis clients,
-        avoiding clock drift issues between different machines.
-
-        Returns:
-            Current Redis server time as seconds since Unix epoch (float)
-        """
-        time_response = await self.redis_client.redis.time()
-        # Redis TIME returns (seconds, microseconds) tuple
-        seconds, microseconds = time_response
-        return float(seconds) + float(microseconds) / 1_000_000
-
-    async def _acquire_with_lua(self) -> bool:
-        """
-        Try to acquire the semaphore using atomic Lua script.
-
-        Returns:
-            True if acquired successfully, False otherwise
-        """
-        current_time = await self.get_redis_time()
         ttl_seconds = int(self.ttl.total_seconds())
 
-        try:
-            # Execute the Lua script atomically
-            result = await self.redis_client.redis.eval(
-                ACQUIRE_SEMAPHORE_SCRIPT,
-                2,  # Number of keys
+        # Execute the release Lua script atomically
+        result = await self._release_script(
+            keys=(
                 self.semaphore_key,
                 self.holder_key,
+            ),
+            args=(
                 self.instance_id,
-                str(self.capacity),
                 str(ttl_seconds),
-                str(current_time),
-            )
+            ),
+            client=self.redis_client.redis,
+        )
 
-            # Lua script returns: [success, status, current_count, expired_count]
-            result_list = list(result) if isinstance(result, list | tuple) else [result]
-            success, status, current_count, expired_count = result_list
+        assert isinstance(result, list)  # nosec
+        success, status, current_count, expired_count = result
+        result = status
 
-            if success == 1:
-                _logger.debug(
-                    "Acquired semaphore '%s' (instance: %s, count: %s, expired: %s)",
-                    self.key,
-                    self.instance_id,
-                    current_count,
-                    expired_count,
-                )
-                return True
-
+        if result == "released":
             _logger.debug(
-                "Failed to acquire semaphore '%s' - %s (count: %s, expired: %s)",
+                "Released semaphore '%s' (instance: %s)",
                 self.key,
-                status,
+                self.instance_id,
+            )
+        else:
+            # Instance wasn't in the semaphore set - this shouldn't happen
+            # but let's handle it gracefully
+            raise SemaphoreNotAcquiredError(name=self.key)
+
+    async def _try_acquire(self) -> bool:
+        ttl_seconds = int(self.ttl.total_seconds())
+
+        # Execute the Lua script atomically
+        result = await self._acquire_script(
+            keys=(self.semaphore_key, self.holder_key),
+            args=(self.instance_id, str(self.capacity), str(ttl_seconds)),
+            client=self.redis_client.redis,
+        )
+
+        # Lua script returns: [success, status, current_count, expired_count]
+        assert isinstance(result, list)  # nosec
+        success, status, current_count, expired_count = result
+
+        if success == 1:
+            _logger.debug(
+                "Acquired semaphore '%s' (instance: %s, count: %s, expired: %s)",
+                self.key,
+                self.instance_id,
                 current_count,
                 expired_count,
             )
-            return False
+            return True
 
-        except Exception as exc:
-            _logger.warning(
-                "Error executing acquisition Lua script for semaphore '%s': %s",
-                self.key,
-                exc,
-            )
-            # Fallback to original implementation
-            return await self._try_acquire_fallback()
-
-    async def _try_acquire_fallback(self) -> bool:
-        """Fallback implementation using Redis transactions (original method)"""
-        current_time = await self.get_redis_time()
-        ttl_seconds = self.ttl.total_seconds()
-
-        with log_catch(_logger, reraise=False):
-            # Clean up expired entries first
-            await self.redis_client.redis.zremrangebyscore(
-                self.semaphore_key, "-inf", current_time - ttl_seconds
-            )
-
-            # Use Redis transactions for atomic operations
-            async with self.redis_client.redis.pipeline(transaction=True) as pipe:
-                # Watch the semaphore key for changes
-                await pipe.watch(self.semaphore_key)
-
-                # Check current count
-                current_count = await self.redis_client.redis.zcard(self.semaphore_key)
-
-                if current_count < self.capacity:
-                    # Try to acquire
-                    pipe.multi()
-                    pipe.zadd(self.semaphore_key, {self.instance_id: current_time})
-                    pipe.setex(self.holder_key, int(ttl_seconds), "1")
-                    result = await pipe.execute()
-                    return bool(result)
-
-                # Cancel the transaction
-                await pipe.reset()
-                return False
-
+        _logger.debug(
+            "Failed to acquire semaphore '%s' - %s (count: %s, expired: %s)",
+            self.key,
+            status,
+            current_count,
+            expired_count,
+        )
         return False
 
-    async def _try_acquire(self) -> bool:
-        """Try to acquire the semaphore using Lua script with fallback"""
-        return await self._acquire_with_lua()
+    async def reacquire(self) -> None:
+        """
+        Atomically renew a semaphore entry using Lua script.
+
+        This function is intended to be called by decorators or external renewal mechanisms.
+
+
+        Raises:
+            SemaphoreLostError: If the semaphore was lost or expired
+        """
+
+        timeout_ms = int(self.ttl.total_seconds() * 1000)
+
+        # Execute the renewal Lua script atomically
+        result = await self._renew_script(
+            keys=(self.semaphore_key, self.holder_key),
+            args=(
+                self.instance_id,
+                str(timeout_ms),
+            ),
+            client=self.redis_client.redis,
+        )
+
+        assert isinstance(result, list)  # nosec
+        success, status, current_count, expired_count = result
+
+        # Lua script returns: 'renewed' or status message
+        if status == "renewed":
+            _logger.debug(
+                "Renewed semaphore '%s' (instance: %s)",
+                self.key,
+                self.instance_id,
+            )
+        else:
+            if status == "expired":
+                _logger.warning(
+                    "Semaphore '%s' holder key expired for instance %s",
+                    self.key,
+                    self.instance_id,
+                )
+            elif status == "not_held":
+                _logger.warning(
+                    "Semaphore '%s' not held by instance %s",
+                    self.key,
+                    self.instance_id,
+                )
+
+            raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
 
     async def get_current_count(self) -> int:
         """Get the current number of semaphore holders"""
-        current_time = await self.get_redis_time()
-        ttl_seconds = self.ttl.total_seconds()
+        ttl_seconds = int(self.ttl.total_seconds())
 
-        # Remove expired entries and count remaining
-        async with self.redis_client.redis.pipeline(transaction=True) as pipe:
-            await pipe.zremrangebyscore(
-                self.semaphore_key, "-inf", current_time - ttl_seconds
+        # Execute the count Lua script atomically
+        result = await self._count_script(
+            keys=(self.semaphore_key,),
+            args=(str(ttl_seconds),),
+            client=self.redis_client.redis,
+        )
+
+        assert isinstance(result, list)  # nosec
+        current_count, expired_count = result
+
+        if int(expired_count) > 0:
+            _logger.debug(
+                "Cleaned up %s expired entries from semaphore '%s'",
+                expired_count,
+                self.key,
             )
-            await pipe.zcard(self.semaphore_key)
-            results = await pipe.execute()
 
-        return int(results[1])
+        return int(current_count)
 
     async def get_available_count(self) -> int:
         """Get the number of available semaphore slots"""
@@ -364,5 +347,4 @@ class DistributedSemaphore(BaseModel):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        if self._acquired:
-            await self.release()
+        await self.release()
