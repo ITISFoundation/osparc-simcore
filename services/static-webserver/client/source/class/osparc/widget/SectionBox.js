@@ -100,7 +100,8 @@ qx.Class.define("osparc.widget.SectionBox", {
       return control || this.base(arguments, id);
     },
 
-    addHelper: function(message, font="text-13") {
+    addHelper: function(message, font) {
+      font = font || "text-13";
       const label = new qx.ui.basic.Label(message).set({
         font,
       });

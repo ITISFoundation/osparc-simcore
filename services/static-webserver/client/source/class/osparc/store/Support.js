@@ -183,7 +183,7 @@ qx.Class.define("osparc.store.Support", {
               window.open(issueInfo["new_url"]);
               issueConfirmationWindow.close();
             }, this);
-            const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/14");
+            const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + issueInfo["label"], "@FontAwesome5Solid/external-link-alt/14");
             loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
             issueConfirmationWindow.addButton(continueBtn);
             issueConfirmationWindow.addButton(loginBtn);
