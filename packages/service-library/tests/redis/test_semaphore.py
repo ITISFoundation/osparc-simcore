@@ -610,48 +610,6 @@ async def test_redis_connection_failure_during_acquire(
         assert result is False
 
 
-# async def test_semaphore_cleanup_on_auto_renew_failure(
-#     redis_client_sdk: RedisClientSDK,
-#     semaphore_name: str,
-#     semaphore_capacity: int,
-#     short_ttl: datetime.timedelta,
-#     caplog: pytest.LogCaptureFixture,
-# ):
-#     semaphore = DistributedSemaphore(
-#         redis_client=redis_client_sdk,
-#         key=semaphore_name,
-#         capacity=semaphore_capacity,
-#         ttl=short_ttl,
-#     )
-
-#     await semaphore.acquire()
-
-#     # Mock the pipeline to fail during renewal
-#     original_pipeline = redis_client_sdk.redis.pipeline
-
-#     def failing_pipeline(*args, **kwargs):
-#         pipe = original_pipeline(*args, **kwargs)
-
-#         async def failing_execute(*, raise_on_error: bool = True):
-#             raise RuntimeError("Redis error")
-
-#         pipe.execute = failing_execute  # type: ignore[assignment]
-#         return pipe
-
-#     with mock.patch.object(
-#         redis_client_sdk.redis, "pipeline", side_effect=failing_pipeline
-#     ):
-#         # Wait longer for renewal attempt - renewal happens at 1/3 of TTL
-#         await asyncio.sleep(short_ttl.total_seconds() / 2)
-
-#     # Should log warning about renewal failure
-#     assert any(
-#         "Failed to renew semaphore" in record.message for record in caplog.records
-#     )
-
-#     await semaphore.release()
-
-
 async def test_multiple_semaphores_different_keys(
     redis_client_sdk: RedisClientSDK,
     faker: Faker,
