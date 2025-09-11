@@ -19,7 +19,6 @@ from ._project_lock import (
     with_project_locked,
 )
 from ._semaphore import (
-    DistributedSemaphore,
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
     with_limited_concurrency,
@@ -31,7 +30,6 @@ __all__: tuple[str, ...] = (
     "PROJECT_DOCUMENT_VERSION_KEY",
     "CouldNotAcquireLockError",
     "CouldNotConnectToRedisError",
-    "DistributedSemaphore",
     "LockLostError",
     "ProjectLockError",
     "RedisClientSDK",
