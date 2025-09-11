@@ -360,9 +360,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             break;
           }
           case "openSupport": {
-            if (osparc.store.Groups.getInstance().isSupportEnabled()) {
-              osparc.support.SupportCenter.openWindow();
-            }
+            osparc.support.SupportCenter.openWindow();
             break;
           }
         }
