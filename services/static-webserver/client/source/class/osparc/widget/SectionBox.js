@@ -48,7 +48,7 @@ qx.Class.define("osparc.widget.SectionBox", {
     /** Background for the title; should match panel bg token */
     legendBackgroundColor: {
       check: "Color",
-      init: "background-pane",
+      init: "background-main-1",
       event: "changeLegendBackgroundColor",
     },
   },
@@ -57,7 +57,7 @@ qx.Class.define("osparc.widget.SectionBox", {
     _frame: null,
 
     // Children you add to this widget will be forwarded into the frame:
-    _getChildrenContainer: function() {
+    getChildrenContainer: function() {
       return this._frame || this.getChildControl("frame");
     },
 
@@ -72,7 +72,7 @@ qx.Class.define("osparc.widget.SectionBox", {
               color: "background-main-2",
               radius: 4,
             }),
-            padding: [10 + 4, 10, 10, 10],
+            padding: [10 + 6, 10, 10, 10],
             backgroundColor: "transparent",
           });
           // full size, but pushed down by frameTop

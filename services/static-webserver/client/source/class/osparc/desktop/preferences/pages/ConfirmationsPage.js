@@ -125,7 +125,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
     __createExperimentalSettings: function() {
       // layout
-      const box = osparc.ui.window.TabbedView.createSectionBox("Experimental preferences");
+      const box = new osparc.widget.SectionBox("Experimental preferences");
 
       const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr(
         "This is a list of experimental preferences"

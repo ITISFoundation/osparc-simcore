@@ -58,7 +58,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     },
 
     createSectionBox: function(title) {
-      const box = osparc.ui.window.TabbedView.createSectionBox(title).set({
+      const box = new osparc.widget.SectionBox(title).set({
         alignX: "left",
         maxWidth: 500
       });
