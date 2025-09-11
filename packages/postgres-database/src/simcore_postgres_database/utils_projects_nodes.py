@@ -76,6 +76,8 @@ class ProjectNodeCreate(BaseModel):
 
         Handles field mapping and excludes database-specific fields that are not
         part of the Node model.
+
+        NOTE: tested in services/web/server/tests/unit/isolated/test_models.py
         """
         # Get all ProjectNode fields except those that don't belong in Node
         exclude_fields = {"node_id", "required_resources"}
@@ -101,6 +103,8 @@ class ProjectNode(ProjectNodeCreate):
 
         Handles field mapping and excludes database-specific fields that are not
         part of the Node model.
+
+        NOTE: tested in services/web/server/tests/unit/isolated/test_models.py
         """
         # Get all ProjectNode fields except those that don't belong in Node
         exclude_fields = {"node_id", "required_resources", "created", "modified"}
