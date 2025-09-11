@@ -173,7 +173,6 @@ async def test_list_jobs(
     await list_jobs(
         rpc_client,
         rpc_namespace=namespace,
-        filter_="",
         job_filter=job_filter,
     )
 

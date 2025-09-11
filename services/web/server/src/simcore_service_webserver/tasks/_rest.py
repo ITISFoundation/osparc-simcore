@@ -76,7 +76,6 @@ async def get_async_jobs(request: web.Request) -> web.Response:
             product_name=_req_ctx.product_name,
             client_name=ASYNC_JOB_CLIENT_NAME,
         ),
-        filter_="",
     )
     return create_data_response(
         [

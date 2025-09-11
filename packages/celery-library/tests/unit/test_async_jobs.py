@@ -258,7 +258,6 @@ async def test_async_jobs_workflow(
     jobs = await async_jobs.list_jobs(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
-        filter_="",  # currently not used
         job_filter=job_filter,
     )
     assert len(jobs) > 0
@@ -317,7 +316,6 @@ async def test_async_jobs_cancel(
     jobs = await async_jobs.list_jobs(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
-        filter_="",  # currently not used
         job_filter=job_filter,
     )
     assert async_job_get.job_id not in [job.job_id for job in jobs]
