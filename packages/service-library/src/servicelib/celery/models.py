@@ -1,6 +1,6 @@
 import datetime
 from enum import StrEnum
-from typing import Annotated, Protocol, TypeAlias
+from typing import Annotated, Final, Protocol, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
@@ -25,7 +25,10 @@ class TaskState(StrEnum):
     FAILURE = "FAILURE"
 
 
-TASK_DONE_STATES = {TaskState.SUCCESS, TaskState.FAILURE}
+TASK_DONE_STATES: Final[tuple[TaskState, ...]] = (
+    TaskState.SUCCESS,
+    TaskState.FAILURE,
+)
 
 
 class TasksQueue(StrEnum):
