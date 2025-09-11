@@ -183,11 +183,9 @@ class DistributedSemaphore(BaseModel):
             if timeout_seconds is not None:
                 elapsed = asyncio.get_event_loop().time() - start_time
                 if elapsed >= timeout_seconds:
-                    if self.blocking:
-                        raise SemaphoreAcquisitionError(
-                            name=self.key, capacity=self.capacity
-                        )
-                    return False
+                    raise SemaphoreAcquisitionError(
+                        name=self.key, capacity=self.capacity
+                    )
 
             # Wait a bit before retrying
             await asyncio.sleep(0.1)
@@ -364,9 +362,8 @@ def with_limited_concurrency(
                 blocking_timeout=blocking_timeout,
             )
 
-            # Acquire the semaphore
-            if not await semaphore.acquire() and not blocking:
-                # Non-blocking mode, semaphore not available
+            # Acquire the semaphore first
+            if not await semaphore.acquire():
                 raise SemaphoreAcquisitionError(
                     name=semaphore_key, capacity=semaphore_capacity
                 )
