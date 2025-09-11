@@ -9,7 +9,14 @@ from types import TracebackType
 from typing import Annotated, Any, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
-from pydantic import BaseModel, Field, PrivateAttr, computed_field, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveInt,
+    PrivateAttr,
+    computed_field,
+    field_validator,
+)
 
 from ._client import RedisClientSDK
 from ._constants import (
@@ -59,17 +66,16 @@ class DistributedSemaphore(BaseModel):
         str, Field(min_length=1, description="Unique identifier for the semaphore")
     ]
     capacity: Annotated[
-        int, Field(gt=0, description="Maximum number of concurrent holders")
+        PositiveInt, Field(description="Maximum number of concurrent holders")
     ]
-    ttl: datetime.timedelta = Field(
-        default=DEFAULT_SEMAPHORE_TTL, description="Time-to-live for semaphore entries"
-    )
-    blocking: bool = Field(
-        default=True, description="Whether acquire() should block until available"
-    )
-    timeout: datetime.timedelta | None = Field(
-        default=DEFAULT_SOCKET_TIMEOUT, description="Maximum time to wait when blocking"
-    )
+    ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL
+    blocking: Annotated[
+        bool, Field(description="Whether acquire() should block until available")
+    ] = True
+    timeout: Annotated[
+        datetime.timedelta | None,
+        Field(description="Maximum time to wait when blocking"),
+    ] = DEFAULT_SOCKET_TIMEOUT
 
     # Computed fields (read-only, automatically calculated)
     @computed_field
