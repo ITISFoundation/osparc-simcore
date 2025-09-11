@@ -45,6 +45,7 @@ qx.Class.define("osparc.support.HomePage", {
         appearance: "help-list-button",
         icon: null,
         gap: 8,
+        paddingLeft: 16,
       });
       button.getChildControl("label").set({
         rich: true
@@ -135,8 +136,9 @@ qx.Class.define("osparc.support.HomePage", {
       this.self().decorateButton(releaseNotesButton);
       releaseNotesButton.set({
         icon: "@FontAwesome5Solid/bullhorn/14",
-        marginLeft: 10,
-        marginRight: 10,
+        // align it with the rest of the buttons in section boxes
+        marginLeft: 11,
+        marginRight: 11,
       });
     },
   }

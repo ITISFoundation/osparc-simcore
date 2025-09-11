@@ -34,7 +34,8 @@ qx.Theme.define("osparc.theme.Appearance", {
         return {
           font: "text-14",
           allowGrowX: true,
-          minHeight: 28
+          minHeight: 28,
+          center: false
         };
       }
     },
