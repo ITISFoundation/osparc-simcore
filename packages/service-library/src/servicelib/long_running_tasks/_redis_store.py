@@ -110,8 +110,6 @@ class RedisStore:
             self._redis.delete(self._get_redis_task_data_key(task_id))
         )
 
-    # to cancel
-
     async def mark_for_removal(self, task_id: TaskId) -> None:
         await handle_redis_returns_union_types(
             self._redis.hset(
