@@ -398,25 +398,30 @@ async def test_with_large_capacity(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
-    large_capacity = 1000
+    large_capacity = 200
     concurrent_count = 0
     max_concurrent = 0
+    sleep_time_s = 30
+    num_tasks = 400
 
     @with_limited_concurrency(
         redis_client_sdk,
         key=semaphore_name,
         capacity=large_capacity,
+        blocking=True,
+        blocking_timeout=None,
     )
     async def limited_function():
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)
-        await asyncio.sleep(60)
+        await asyncio.sleep(30)
         concurrent_count -= 1
 
     # Start tasks equal to the large capacity
-    tasks = [asyncio.create_task(limited_function()) for _ in range(large_capacity)]
-    await asyncio.gather(*tasks)
+    tasks = [asyncio.create_task(limited_function()) for _ in range(num_tasks)]
+    async with asyncio.timeout(num_tasks / large_capacity * 1.5 * sleep_time_s):
+        await asyncio.gather(*tasks)
 
     # Should never exceed the large capacity
     assert max_concurrent <= large_capacity
