@@ -2038,6 +2038,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_at_same_time(
+    with_disabled_rtc_collaboration: None,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
