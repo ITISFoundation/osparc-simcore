@@ -333,7 +333,7 @@ async def _stop_dynamic_service_task(
         user_error_msg = user_message(
             f"Could not stop dynamic service {dynamic_service_stop.project_id}.{dynamic_service_stop.node_id}"
         )
-        _logger.exception(
+        _logger.debug(
             **create_troubleshootting_log_kwargs(
                 user_error_msg,
                 error=exc,

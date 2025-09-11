@@ -75,7 +75,7 @@ class RPCRouter:
                         _logger.exception(
                             # NOTE: equivalent to a 500 http status code error
                             **create_troubleshootting_log_kwargs(
-                                f"Unhandled exception on the rpc-server side for {func.__name__}",
+                                f"Unhandled exception on the rpc-server side for '{func.__name__}'",
                                 error=exc,
                                 error_code=error_code,
                                 error_context={
