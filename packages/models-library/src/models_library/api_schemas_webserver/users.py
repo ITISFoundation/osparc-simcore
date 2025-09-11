@@ -389,6 +389,20 @@ class UserAccountGet(OutputSchema):
         ),
     ] = None
 
+    # user (if an account was created)
+    user_id: Annotated[
+        UserID | None,
+        Field(description="Unique identifier of the user if an account was created"),
+    ]
+    user_name: Annotated[
+        UserNameID | None,
+        Field(description="Username of the user if an account was created"),
+    ]
+    user_primary_group_id: Annotated[
+        GroupID | None,
+        Field(description="Primary group ID of the user if an account was created"),
+    ]
+
     @field_validator("status")
     @classmethod
     def _consistency_check(cls, v, info: ValidationInfo):
