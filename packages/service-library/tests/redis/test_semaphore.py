@@ -335,8 +335,11 @@ async def test_redis_connection_failure_during_acquire(
         blocking=False,
     )
 
-    # Mock Redis to raise an exception
+    # Mock Redis eval to raise an exception (which should trigger fallback)
+    # and also mock zcard in fallback to raise an error
     with mock.patch.object(
+        redis_client_sdk.redis, "eval", side_effect=Exception("Redis eval error")
+    ), mock.patch.object(
         redis_client_sdk.redis, "zcard", side_effect=Exception("Redis error")
     ):
         result = await semaphore.acquire()

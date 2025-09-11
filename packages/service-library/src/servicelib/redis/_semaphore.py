@@ -33,6 +33,42 @@ from ._errors import SemaphoreAcquisitionError, SemaphoreNotAcquiredError
 
 _logger = logging.getLogger(__name__)
 
+# Lua script for atomic semaphore acquisition
+ACQUIRE_SEMAPHORE_SCRIPT = """
+-- Atomic semaphore acquisition script
+-- KEYS[1]: semaphore_key (ZSET storing holders with timestamps)
+-- KEYS[2]: holder_key (individual holder TTL key)
+-- ARGV[1]: instance_id
+-- ARGV[2]: capacity (max concurrent holders)
+-- ARGV[3]: ttl_seconds
+-- ARGV[4]: current_time (Redis server time)
+
+local semaphore_key = KEYS[1]
+local holder_key = KEYS[2]
+local instance_id = ARGV[1]
+local capacity = tonumber(ARGV[2])
+local ttl_seconds = tonumber(ARGV[3])
+local current_time = tonumber(ARGV[4])
+
+-- Step 1: Clean up expired entries
+local expiry_threshold = current_time - ttl_seconds
+local expired_count = redis.call('ZREMRANGEBYSCORE', semaphore_key, '-inf', expiry_threshold)
+
+-- Step 2: Check current capacity after cleanup
+local current_count = redis.call('ZCARD', semaphore_key)
+
+-- Step 3: Try to acquire if under capacity
+if current_count < capacity then
+    -- Atomically add to semaphore and set holder key
+    redis.call('ZADD', semaphore_key, current_time, instance_id)
+    redis.call('SETEX', holder_key, ttl_seconds, '1')
+
+    return {1, 'acquired', current_count + 1, expired_count}
+else
+    return {0, 'capacity_full', current_count, expired_count}
+end
+"""
+
 
 class DistributedSemaphore(BaseModel):
     """
@@ -205,8 +241,63 @@ class DistributedSemaphore(BaseModel):
         seconds, microseconds = time_response
         return float(seconds) + float(microseconds) / 1_000_000
 
-    async def _try_acquire(self) -> bool:
-        """Atomically try to acquire the semaphore using Redis operations"""
+    async def _acquire_with_lua(self) -> bool:
+        """
+        Try to acquire the semaphore using atomic Lua script.
+
+        Returns:
+            True if acquired successfully, False otherwise
+        """
+        current_time = await self.get_redis_time()
+        ttl_seconds = int(self.ttl.total_seconds())
+
+        try:
+            # Execute the Lua script atomically
+            result = await self.redis_client.redis.eval(
+                ACQUIRE_SEMAPHORE_SCRIPT,
+                2,  # Number of keys
+                self.semaphore_key,
+                self.holder_key,
+                self.instance_id,
+                str(self.capacity),
+                str(ttl_seconds),
+                str(current_time),
+            )
+
+            # Lua script returns: [success, status, current_count, expired_count]
+            result_list = list(result) if isinstance(result, list | tuple) else [result]
+            success, status, current_count, expired_count = result_list
+
+            if success == 1:
+                _logger.debug(
+                    "Acquired semaphore '%s' (instance: %s, count: %s, expired: %s)",
+                    self.key,
+                    self.instance_id,
+                    current_count,
+                    expired_count,
+                )
+                return True
+
+            _logger.debug(
+                "Failed to acquire semaphore '%s' - %s (count: %s, expired: %s)",
+                self.key,
+                status,
+                current_count,
+                expired_count,
+            )
+            return False
+
+        except Exception as exc:
+            _logger.warning(
+                "Error executing acquisition Lua script for semaphore '%s': %s",
+                self.key,
+                exc,
+            )
+            # Fallback to original implementation
+            return await self._try_acquire_fallback()
+
+    async def _try_acquire_fallback(self) -> bool:
+        """Fallback implementation using Redis transactions (original method)"""
         current_time = await self.get_redis_time()
         ttl_seconds = self.ttl.total_seconds()
 
@@ -237,6 +328,10 @@ class DistributedSemaphore(BaseModel):
                 return False
 
         return False
+
+    async def _try_acquire(self) -> bool:
+        """Try to acquire the semaphore using Lua script with fallback"""
+        return await self._acquire_with_lua()
 
     async def get_current_count(self) -> int:
         """Get the current number of semaphore holders"""
