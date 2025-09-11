@@ -5,6 +5,7 @@ json-schemas.
 
 See how is used to validate input/output content-schemas of service models
 """
+
 # SEE possible enhancements in https://github.com/ITISFoundation/osparc-simcore/issues/3008
 
 
@@ -13,8 +14,11 @@ from contextlib import suppress
 from copy import deepcopy
 from typing import Any
 
+import jsonref  # type: ignore[import-untyped]
 import jsonschema
 from jsonschema import validators
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue
+from pydantic_core import CoreSchema
 
 # ERRORS
 
@@ -90,6 +94,19 @@ def any_ref_key(obj):
         return any(any_ref_key(v) for v in obj)
 
     return False
+
+
+class GenerateResolvedJsonSchema(GenerateJsonSchema):
+    """Generates a json-schema with all $ref resolved
+    Usage: pydantic_base_model.model_json_schema(schema_generator=GenerateResolvedJsonSchema) returns a json schema where it is guaranteed that all json references are resolved.
+    """
+
+    def generate(
+        self, schema: CoreSchema, mode: JsonSchemaMode = "validation"
+    ) -> JsonSchemaValue:
+        schema_value = super().generate(schema=schema, mode=mode)
+        schema_value = jsonref.replace_refs(schema_value, jsonschema=True)
+        return JsonSchemaValue(schema_value)
 
 
 __all__: tuple[str, ...] = (
