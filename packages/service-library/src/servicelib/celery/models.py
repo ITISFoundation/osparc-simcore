@@ -15,7 +15,7 @@ TaskName: TypeAlias = Annotated[
 ]
 TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
-WILDCARD_VALUE: Final[str] = "*"
+WILDCARD: Final[str] = "*"
 
 
 class TaskFilter(BaseModel):

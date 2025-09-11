@@ -41,7 +41,7 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_task_manager
 
-_ASYNC_JOB_CLIENT_NAME: Final[str] = "STORAGE"
+_ASYNC_JOB_CLIENT_NAME: Final[str] = "storage"
 
 
 _logger = logging.getLogger(__name__)

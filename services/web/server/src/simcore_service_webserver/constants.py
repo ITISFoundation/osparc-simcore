@@ -51,7 +51,7 @@ MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = user_message(
     "Please try again shortly. If the issue persists, contact support.", _version=1
 )
 
-ASYNC_JOB_CLIENT_NAME: Final[str] = "WEBSERVER"
+ASYNC_JOB_CLIENT_NAME: Final[str] = "webserver"
 
 
 __all__: tuple[str, ...] = (

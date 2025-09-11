@@ -29,7 +29,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
-_ASYNC_JOB_CLIENT_NAME: Final[str] = "PYTEST_CLIENT_NAME"
+_ASYNC_JOB_CLIENT_NAME: Final[str] = "pytest_client_name"
 
 
 @pytest.fixture
