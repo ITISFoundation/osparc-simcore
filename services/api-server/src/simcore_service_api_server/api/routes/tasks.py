@@ -18,6 +18,7 @@ from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
+from ...clients.celery_task_manager import get_task_filter
 from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
 from ..dependencies.authentication import get_current_user_id, get_product_name
@@ -60,7 +61,7 @@ async def list_tasks(
     task_manager = get_task_manager(app)
 
     tasks = await task_manager.list_tasks(
-        task_filter=_get_task_filter(user_id, product_name),
+        task_filter=get_task_filter(user_id, product_name),
     )
 
     app_router = app.router
@@ -102,7 +103,7 @@ async def get_task_status(
     task_manager = get_task_manager(app)
 
     task_status = await task_manager.get_task_status(
-        task_filter=_get_task_filter(user_id, product_name),
+        task_filter=get_task_filter(user_id, product_name),
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -137,7 +138,7 @@ async def cancel_task(
     task_manager = get_task_manager(app)
 
     await task_manager.cancel_task(
-        task_filter=_get_task_filter(user_id, product_name),
+        task_filter=get_task_filter(user_id, product_name),
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -171,7 +172,7 @@ async def get_task_result(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = _get_task_filter(user_id, product_name)
+    task_filter = get_task_filter(user_id, product_name)
 
     task_status = await task_manager.get_task_status(
         task_filter=task_filter,
