@@ -13,7 +13,6 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
 )
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
 )
 from models_library.api_schemas_storage.storage_schemas import (
@@ -50,7 +49,6 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
-from simcore_service_webserver.constants import ASYNC_JOB_CLIENT_NAME
 from yarl import URL
 
 from .._meta import API_VTAG
@@ -59,6 +57,7 @@ from ..models import AuthenticatedRequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ..tasks._exception_handlers import handle_export_data_exceptions
+from ..utils import get_job_filter
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
@@ -212,10 +211,9 @@ async def compute_path_size(request: web.Request) -> web.Response:
         rabbitmq_rpc_client,
         location_id=path_params.location_id,
         path=path_params.path,
-        job_filter=AsyncJobFilter(
+        job_filter=get_job_filter(
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
-            client_name=ASYNC_JOB_CLIENT_NAME,
         ),
     )
 
@@ -238,10 +236,9 @@ async def batch_delete_paths(request: web.Request):
         rabbitmq_rpc_client,
         location_id=path_params.location_id,
         paths=body.paths,
-        job_filter=AsyncJobFilter(
+        job_filter=get_job_filter(
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
-            client_name=ASYNC_JOB_CLIENT_NAME,
         ),
     )
     return _create_data_response_from_async_job(request, async_job)
@@ -506,10 +503,9 @@ async def export_data(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         paths_to_export=export_data_post.paths,
         export_as="path",
-        job_filter=AsyncJobFilter(
+        job_filter=get_job_filter(
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
-            client_name=ASYNC_JOB_CLIENT_NAME,
         ),
     )
     _job_id = f"{async_job_rpc_get.job_id}"

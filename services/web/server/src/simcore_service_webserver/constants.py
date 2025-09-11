@@ -53,8 +53,6 @@ MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = user_message(
     "Please try again shortly. If the issue persists, contact support.", _version=1
 )
 
-ASYNC_JOB_CLIENT_NAME: Final[str] = APP_NAME
-
 
 __all__: tuple[str, ...] = (
     "APP_AIOPG_ENGINE_KEY",
