@@ -86,6 +86,9 @@ qx.Class.define("osparc.support.HomePage", {
             gap: 8,
             appearance: "strong-button",
             center: true,
+            // align it with the rest of the buttons in section boxes
+            marginLeft: 11,
+            marginRight: 11,
           });
           control.addListener("execute", () => this.fireEvent("openConversation"));
           this._add(control);
@@ -119,6 +122,7 @@ qx.Class.define("osparc.support.HomePage", {
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
         const tutorialsBtn = new qx.ui.form.Button(this.tr("Explore Tutorials"), "@FontAwesome5Solid/graduation-cap/14");
+        tutorialsBtn.addListener("execute", () => qx.event.message.Bus.getInstance().dispatchByName("showTab", "tutorialsTab"), this);
         learningBox.add(tutorialsBtn);
         this.self().decorateButton(tutorialsBtn);
       }
