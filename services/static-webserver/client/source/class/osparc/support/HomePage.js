@@ -43,8 +43,9 @@ qx.Class.define("osparc.support.HomePage", {
     decorateButton: function(button) {
       button.set({
         font: "text-14",
+        icon: null,
         minHeight: 28,
-        gap: 10,
+        gap: 8,
       });
       button.getChildControl("label").set({
         rich: true
@@ -72,9 +73,10 @@ qx.Class.define("osparc.support.HomePage", {
           break;
         }
         case "ask-a-question":
-          control = new qx.ui.form.Button(this.tr("Ask a Question"), "@FontAwesome5Solid/comments/16");
+          control = new qx.ui.form.Button(this.tr("Ask a Question"));
           osparc.support.HomePage.decorateButton(control);
           control.set({
+            icon: "@FontAwesome5Solid/comments/16",
             appearance: "strong-button",
             center: true,
           });
@@ -82,11 +84,17 @@ qx.Class.define("osparc.support.HomePage", {
           this._add(control);
           break;
         case "learning-box":
-          control = new osparc.widget.SectionBox(this.tr("Learning"));
+          control = new osparc.widget.SectionBox(this.tr("Learning"), "@FontAwesome5Solid/graduation-cap/14");
+          control.getChildControl("legend").set({
+            gap: 8
+          });
           this._add(control);
           break;
         case "references-box":
-          control = new osparc.widget.SectionBox(this.tr("References"));
+          control = new osparc.widget.SectionBox(this.tr("References"), "@FontAwesome5Solid/book/14");
+          control.getChildControl("legend").set({
+            gap: 8
+          });
           this._add(control);
           break;
       }
@@ -128,6 +136,9 @@ qx.Class.define("osparc.support.HomePage", {
       const releaseNotesButton = osparc.store.Support.getReleaseNotesButton();
       this._add(releaseNotesButton);
       this.self().decorateButton(releaseNotesButton);
+      releaseNotesButton.set({
+        icon: "@FontAwesome5Solid/bullhorn/14"
+      });
     },
   }
 });

@@ -21,31 +21,39 @@ qx.Class.define("osparc.widget.SectionBox", {
   include: [qx.ui.core.MRemoteChildrenHandling, qx.ui.core.MLayoutHandling],
 
   /**
-   * @param legend {String?} Initial title
+   * @param legend {String?} Section title
+   * @param icon {String?} Section icon
    */
-  construct: function(legend) {
+  construct: function(legend, icon) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    if (legend) {
-      this.setLegend(legend);
-    }
-
     // ensure child controls exist
     this.getChildControl("frame");
     this.getChildControl("legend");
+
+    if (legend) {
+      this.setLegend(legend);
+    }
+    if (icon) {
+      this.setIcon(icon);
+    }
   },
 
   properties: {
-    /** Title text shown on top of the border */
     legend: {
       check: "String",
       init: "",
       event: "changeLegend",
     },
 
-    /** Background for the title; should match panel bg token */
+    icon: {
+      check: "String",
+      init: "",
+      event: "changeIcon",
+    },
+
     legendBackgroundColor: {
       check: "Color",
       init: "background-main-1",
@@ -84,6 +92,7 @@ qx.Class.define("osparc.widget.SectionBox", {
             padding: [0, 6],
           });
           this.bind("legend", control, "label");
+          this.bind("icon", control, "icon");
           this.bind("legendBackgroundColor", control, "backgroundColor");
           this._add(control, { left: 12, top: 0 });
           break;
