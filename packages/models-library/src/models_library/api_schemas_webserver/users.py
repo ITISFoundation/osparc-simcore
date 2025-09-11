@@ -401,7 +401,10 @@ class UserAccountGet(OutputSchema):
     user_primary_group_id: Annotated[
         PrimaryGroupID | None,
         Field(
-            description="Primary group ID of the user if an account was created", gt=2
+            description="Primary group ID of the user if an account was created",
+            gt=2,
+            alias="groupId",
+            # SEE https://github.com/ITISFoundation/osparc-simcore/pull/8358#issuecomment-3279491740
         ),
     ]
 
