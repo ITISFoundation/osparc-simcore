@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterable, Callable
 from contextlib import AbstractAsyncContextManager
+from copy import deepcopy
 
 import pytest
 from pydantic import TypeAdapter
@@ -64,20 +65,18 @@ async def test_cleanup_namespace(
 ) -> None:
     # create entries in both sides
     await store.add_task_data(task_data.task_id, task_data)
-    await store.mark_task_for_removal(task_data.task_id, task_data.task_context)
+    await store.mark_task_for_removal(task_data.task_id)
 
     # entries exit
-    assert await store.list_tasks_data() == [task_data]
-    assert await store.list_tasks_to_remove() == {
-        task_data.task_id: task_data.task_context
-    }
+    marked_for_removal = deepcopy(task_data)
+    marked_for_removal.marked_for_removal = True
+    assert await store.list_tasks_data() == [marked_for_removal]
 
     # removes
     await long_running_client_helper.cleanup(lrt_namespace)
 
     # entris were removed
     assert await store.list_tasks_data() == []
-    assert await store.list_tasks_to_remove() == {}
 
     # ensore it does not raise errors if there is nothing to remove
     await long_running_client_helper.cleanup(lrt_namespace)

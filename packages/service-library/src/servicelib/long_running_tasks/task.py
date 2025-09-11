@@ -300,11 +300,17 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         """
         self._started_event_task_cancelled_tasks_removal.set()
 
-        to_remove = await self._tasks_data.list_tasks_to_remove()
-        for task_id in to_remove:
-            await self._attempt_to_remove_local_task(task_id)
+        tasks_data = await self._tasks_data.list_tasks_data()
+        await limited_gather(
+            *(
+                self._attempt_to_remove_local_task(x.task_id)
+                for x in tasks_data
+                if x.marked_for_removal is True
+            ),
+            limit=_PARALLEL_TASKS_CANCELLATION,
+        )
 
-    async def _tasks_monitor(self) -> None:
+    async def _tasks_monitor(self) -> None:  # noqa: C901
         """
         A task which monitors locally running tasks and updates their status
         in the Redis store when they are done.
@@ -385,29 +391,20 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     updates["result_field"] = result_field
                 await self._tasks_data.update_task_data(task_id, updates=updates)
 
-    async def _list_tasks_unfiltered(
-        self, with_task_context: TaskContext | None
-    ) -> list[TaskBase]:
+    async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
             return [
                 TaskBase(task_id=task.task_id)
                 for task in (await self._tasks_data.list_tasks_data())
+                if task.marked_for_removal is False
             ]
 
         return [
             TaskBase(task_id=task.task_id)
             for task in (await self._tasks_data.list_tasks_data())
             if task.task_context == with_task_context
+            and task.marked_for_removal is False
         ]
-
-    async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
-        tasks_to_filter = await self._list_tasks_unfiltered(with_task_context)
-
-        if len(tasks_to_filter) == 0:
-            return []
-
-        to_exclude = await self._tasks_data.list_tasks_to_remove()
-        return [r for r in tasks_to_filter if r.task_id not in to_exclude]
 
     async def _get_tracked_task(
         self, task_id: TaskId, with_task_context: TaskContext
@@ -488,7 +485,6 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         task_to_cancel = self._created_tasks.pop(task_id, None)
         if task_to_cancel is not None:
             await cancel_wait_task(task_to_cancel)
-            await self._tasks_data.completed_task_removal(task_id)
             await self._tasks_data.delete_task_data(task_id)
 
     async def remove_task(
@@ -507,9 +503,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
 
-        await self._tasks_data.mark_task_for_removal(
-            tracked_task.task_id, tracked_task.task_context
-        )
+        await self._tasks_data.mark_task_for_removal(tracked_task.task_id)
 
         if not wait_for_removal:
             return

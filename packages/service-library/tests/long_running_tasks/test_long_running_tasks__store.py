@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterable, Callable
 from contextlib import AbstractAsyncContextManager
+from copy import deepcopy
 
 import pytest
 from pydantic import TypeAdapter
@@ -50,17 +51,13 @@ async def test_workflow(store: RedisStore, task_data: TaskData) -> None:
     assert await store.list_tasks_data() == []
 
     # cancelled tasks
-    assert await store.list_tasks_to_remove() == {}
+    await store.add_task_data(task_data.task_id, task_data)
 
     assert await store.is_marked_for_removal(task_data.task_id) is False
 
-    await store.mark_task_for_removal(task_data.task_id, task_data.task_context)
+    await store.mark_task_for_removal(task_data.task_id)
 
     assert await store.is_marked_for_removal(task_data.task_id) is True
-
-    assert await store.list_tasks_to_remove() == {
-        task_data.task_id: task_data.task_context
-    }
 
 
 @pytest.fixture
@@ -93,15 +90,15 @@ async def test_workflow_multiple_redis_stores_with_different_namespaces(
 
     for store in redis_stores:
         assert await store.list_tasks_data() == []
-        assert await store.list_tasks_to_remove() == {}
 
     for store in redis_stores:
         await store.add_task_data(task_data.task_id, task_data)
-        await store.mark_task_for_removal(task_data.task_id, {})
+        await store.mark_task_for_removal(task_data.task_id)
 
+    marked_as_removed_task_data = deepcopy(task_data)
+    marked_as_removed_task_data.marked_for_removal = True
     for store in redis_stores:
-        assert await store.list_tasks_data() == [task_data]
-        assert await store.list_tasks_to_remove() == {task_data.task_id: {}}
+        assert await store.list_tasks_data() == [marked_as_removed_task_data]
 
     for store in redis_stores:
         await store.delete_task_data(task_data.task_id)
