@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=protected-access
 import pydantic
 import pytest
 from faker import Faker
@@ -49,9 +51,7 @@ async def test_task_filter_task_uuid(
     assert TaskFilter.task_uuid(task_id=task_id) == task_uuid
 
 
-async def test_create_task_filter_from_task_id(
-    task_filter_data: dict[str, str | int | bool | None | list[str]],
-):
+async def test_create_task_filter_from_task_id():
 
     class MyModel(BaseModel):
         _int: int
