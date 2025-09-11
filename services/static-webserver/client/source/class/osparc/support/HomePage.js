@@ -97,7 +97,7 @@ qx.Class.define("osparc.support.HomePage", {
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
-        const tutorialsBtn = new qx.ui.form.Button(this.tr("Tutorials"), "@FontAwesome5Solid/graduation-cap/14");
+        const tutorialsBtn = new qx.ui.form.Button(this.tr("Explore Tutorials"), "@FontAwesome5Solid/graduation-cap/14");
         this.getChildControl("links-layout").add(tutorialsBtn);
         this.self().decorateButton(tutorialsBtn);
       }

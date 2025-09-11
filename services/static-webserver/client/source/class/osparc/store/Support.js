@@ -50,7 +50,7 @@ qx.Class.define("osparc.store.Support", {
       const quickStart = osparc.product.quickStart.Utils.getQuickStart();
       if (quickStart) {
         return {
-          label: qx.locale.Manager.tr("Welcome onboard"),
+          label: qx.locale.Manager.tr("Introduction"),
           icon: "@FontAwesome5Solid/graduation-cap/14",
           callback: () => {
             const tutorialWindow = quickStart.tutorial();
