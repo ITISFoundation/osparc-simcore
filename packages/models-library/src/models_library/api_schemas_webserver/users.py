@@ -24,7 +24,7 @@ from pydantic.config import JsonDict
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
-from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple
+from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
 from ..users import (
@@ -399,8 +399,10 @@ class UserAccountGet(OutputSchema):
         Field(description="Username of the user if an account was created"),
     ]
     user_primary_group_id: Annotated[
-        GroupID | None,
-        Field(description="Primary group ID of the user if an account was created"),
+        PrimaryGroupID | None,
+        Field(
+            description="Primary group ID of the user if an account was created", gt=2
+        ),
     ]
 
     @field_validator("status")
