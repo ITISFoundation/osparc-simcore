@@ -65,11 +65,6 @@ _FAST_STATUS_POLL: Final[float] = 0.1
 _CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
 _BASE_HEART_BEAT_INTERVAL: Final[float] = 0.1
 
-_RETRY_PRAMS: Final[dict[str, Any]] = {
-    "wait": wait_fixed(0.1),
-    "stop": stop_after_delay(5),
-}
-
 
 @pytest.fixture(params=[1, 2])
 def container_names(request: pytest.FixtureRequest) -> list[str]:
