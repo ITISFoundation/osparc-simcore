@@ -385,27 +385,29 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     updates["result_field"] = result_field
                 await self._tasks_data.update_task_data(task_id, updates=updates)
 
-    async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
-        async def _() -> list[TaskBase]:
-            if not with_task_context:
-                return [
-                    TaskBase(task_id=task.task_id)
-                    for task in (await self._tasks_data.list_tasks_data())
-                ]
-
+    async def _list_tasks_unfiltered(
+        self, with_task_context: TaskContext | None
+    ) -> list[TaskBase]:
+        if not with_task_context:
             return [
                 TaskBase(task_id=task.task_id)
                 for task in (await self._tasks_data.list_tasks_data())
-                if task.task_context == with_task_context
             ]
 
-        result = await _()
+        return [
+            TaskBase(task_id=task.task_id)
+            for task in (await self._tasks_data.list_tasks_data())
+            if task.task_context == with_task_context
+        ]
 
-        if len(result) == 0:
+    async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
+        tasks_to_filter = await self._list_tasks_unfiltered(with_task_context)
+
+        if len(tasks_to_filter) == 0:
             return []
 
-        to_remove = await self._tasks_data.list_tasks_to_remove()
-        return [r for r in result if r.task_id not in to_remove]
+        to_exclude = await self._tasks_data.list_tasks_to_remove()
+        return [r for r in tasks_to_filter if r.task_id not in to_exclude]
 
     async def _get_tracked_task(
         self, task_id: TaskId, with_task_context: TaskContext
