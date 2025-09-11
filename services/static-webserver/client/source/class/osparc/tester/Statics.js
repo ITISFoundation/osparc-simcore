@@ -23,7 +23,7 @@ qx.Class.define("osparc.tester.Statics", {
       let control;
       switch (id) {
         case "statics-container":
-          control = osparc.ui.window.TabbedView.createSectionBox(this.tr("Statics"));
+          control = new osparc.widget.SectionBox(this.tr("Statics"));
           this._add(control, {
             flex: 1
           });
@@ -44,7 +44,7 @@ qx.Class.define("osparc.tester.Statics", {
           break;
         }
         case "local-storage-container":
-          control = osparc.ui.window.TabbedView.createSectionBox(this.tr("Local Storage"));
+          control = new osparc.widget.SectionBox(this.tr("Local Storage"));
           this._add(control);
           break;
         case "local-storage-content": {

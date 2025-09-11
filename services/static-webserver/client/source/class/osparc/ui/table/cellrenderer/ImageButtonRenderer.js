@@ -36,6 +36,12 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
     },
   },
 
+  statics: {
+    getClosestItems: function(target, className = osparc.ui.table.cellrenderer.ButtonRenderer.BUTTON_CLASS) {
+      return target.closest("."+className)
+    },
+  },
+
   members: {
     __imageCache: null,
     __shouldShowFn: null,

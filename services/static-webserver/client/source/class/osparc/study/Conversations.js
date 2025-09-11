@@ -47,21 +47,29 @@ qx.Class.define("osparc.study.Conversations", {
   },
 
   statics: {
-    TYPES: {
-      PROJECT_STATIC: "PROJECT_STATIC",
-      PROJECT_ANNOTATION: "PROJECT_ANNOTATION",
-    },
-
     popUpInWindow: function(studyData, openConversationId = null) {
       const conversations = new osparc.study.Conversations(studyData, openConversationId);
       const title = qx.locale.Manager.tr("Conversations");
       const viewWidth = 600;
       const viewHeight = 700;
-      const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight);
+      const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight).set({
+        maxHeight: viewHeight,
+      });
       win.addListener("close", () => {
         conversations.destroy();
       }, this);
       return win;
+    },
+
+    makeButtonBlink: function(button) {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      Object.values(osparc.data.model.Conversation.CHANNELS).forEach(eventName => {
+        socket.on(eventName, () => {
+          if (button) {
+            osparc.utils.Utils.makeButtonBlink(button);
+          }
+        });
+      });
     },
   },
 
@@ -95,50 +103,24 @@ qx.Class.define("osparc.study.Conversations", {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
       [
-        "conversation:created",
-        "conversation:updated",
-        "conversation:deleted",
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
       ].forEach(eventName => {
         const eventHandler = conversation => {
           if (conversation) {
             switch (eventName) {
-              case "conversation:created":
-                this.__addConversationPage(conversation);
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
+                if (conversation["projectId"] === this.getStudyData()["uuid"]) {
+                  this.__addConversationPage(conversation);
+                }
                 break;
-              case "conversation:updated":
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
                 this.__updateConversationName(conversation);
                 break;
-              case "conversation:deleted":
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
                 this.__removeConversationPage(conversation["conversationId"]);
                 break;
-            }
-          }
-        };
-        socket.on(eventName, eventHandler, this);
-        this.__wsHandlers.push({ eventName, handler: eventHandler });
-      });
-
-      [
-        "conversation:message:created",
-        "conversation:message:updated",
-        "conversation:message:deleted",
-      ].forEach(eventName => {
-        const eventHandler = message => {
-          if (message) {
-            const conversationId = message["conversationId"];
-            const conversationPage = this.__getConversationPage(conversationId);
-            if (conversationPage) {
-              switch (eventName) {
-                case "conversation:message:created":
-                  conversationPage.addMessage(message);
-                  break;
-                case "conversation:message:updated":
-                  conversationPage.updateMessage(message);
-                  break;
-                case "conversation:message:deleted":
-                  conversationPage.deleteMessage(message);
-                  break;
-              }
             }
           }
         };
@@ -148,14 +130,14 @@ qx.Class.define("osparc.study.Conversations", {
     },
 
     __getConversationPage: function(conversationId) {
-      return this.__conversationsPages.find(conversation => conversation.getConversationId() === conversationId);
+      return this.__conversationsPages.find(conversationPage => conversationPage.getConversationId() === conversationId);
     },
 
     __applyStudyData: function(studyData) {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
-      osparc.store.Conversations.getInstance().getConversations(studyData["uuid"])
+      osparc.store.ConversationsProject.getInstance().getConversations(studyData["uuid"])
         .then(conversations => {
           if (conversations.length) {
             conversations.forEach(conversation => this.__addConversationPage(conversation));
@@ -181,10 +163,10 @@ qx.Class.define("osparc.study.Conversations", {
       const studyData = this.getStudyData();
       let conversationPage = null;
       if (conversationData) {
-        const conversationId = conversationData["conversationId"];
-        conversationPage = new osparc.conversation.Conversation(studyData, conversationId);
+        conversationPage = new osparc.study.Conversation(studyData, conversationData);
         conversationPage.setLabel(conversationData["name"]);
-        osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
+        const conversationId = conversationData["conversationId"];
+        osparc.store.ConversationsProject.getInstance().addListener("conversationDeleted", e => {
           const data = e.getData();
           if (conversationId === data["conversationId"]) {
             this.__removeConversationPage(conversationId, true);
@@ -192,7 +174,7 @@ qx.Class.define("osparc.study.Conversations", {
         });
       } else {
         // create a temporary conversation
-        conversationPage = new osparc.conversation.Conversation(studyData);
+        conversationPage = new osparc.study.Conversation(studyData);
         conversationPage.setLabel(this.tr("new"));
       }
       return conversationPage;
@@ -221,6 +203,12 @@ qx.Class.define("osparc.study.Conversations", {
 
     __addToPages: function(conversationPage) {
       const conversationsLayout = this.getChildControl("conversations-layout");
+      if (conversationsLayout.getChildren().length === 1) {
+        // remove the temporary conversation page
+        if (conversationsLayout.getChildren()[0].getConversationId() === null) {
+          conversationsLayout.remove(conversationsLayout.getChildren()[0]);
+        }
+      }
       conversationsLayout.add(conversationPage);
 
       if (this.__newConversationButton === null) {
@@ -234,7 +222,7 @@ qx.Class.define("osparc.study.Conversations", {
           enabled: osparc.data.model.Study.canIWrite(studyData["accessRights"]),
         });
         newConversationButton.addListener("execute", () => {
-          osparc.store.Conversations.getInstance().addConversation(studyData["uuid"], "new " + (this.__conversationsPages.length + 1))
+          osparc.store.ConversationsProject.getInstance().postConversation(studyData["uuid"], "new " + (this.__conversationsPages.length + 1))
             .then(conversationDt => {
               this.__addConversationPage(conversationDt);
               const newConversationPage = this.__getConversationPage(conversationDt["conversationId"]);
@@ -246,8 +234,11 @@ qx.Class.define("osparc.study.Conversations", {
         conversationsLayout.getChildControl("bar").add(newConversationButton);
       }
       // remove and add to move to last position
-      conversationsLayout.getChildControl("bar").remove(this.__newConversationButton);
-      conversationsLayout.getChildControl("bar").add(this.__newConversationButton);
+      const bar = conversationsLayout.getChildControl("bar");
+      if (bar.indexOf(this.__newConversationButton) > -1) {
+        bar.remove(this.__newConversationButton);
+      }
+      bar.add(this.__newConversationButton);
     },
 
     __removeConversationPage: function(conversationId, changeSelection = false) {

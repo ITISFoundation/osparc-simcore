@@ -43,6 +43,13 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     document.addEventListener("pointermove", this.__onGlobalPointerMove);
   },
 
+  properties: {
+    hideMyself: {
+      check: "Boolean",
+      init: false,
+    }
+  },
+
   members: {
     __avatarSize: null,
     __maxVisible: null,
@@ -53,10 +60,19 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __onGlobalPointerMove: null,
 
     setUserGroupIds: function(userGroupIds) {
-      if (JSON.stringify(userGroupIds) === JSON.stringify(this.__userGroupIds)) {
+      if (
+        userGroupIds.length &&
+        JSON.stringify(userGroupIds) === JSON.stringify(this.__userGroupIds)
+      ) {
         return;
       }
       this.__userGroupIds = userGroupIds || [];
+
+      if (this.isHideMyself()) {
+        // remove myself from the list of users
+        userGroupIds = userGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
+      }
+
       const usersStore = osparc.store.Users.getInstance();
       const userPromises = userGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
       const users = [];
@@ -64,7 +80,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
         .then(usersResult => {
           usersResult.forEach(user => {
             users.push({
-              name: user.getUsername(),
+              name: user.getUserName(),
               avatar: user.getThumbnail(),
             });
           });

@@ -67,7 +67,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       });
       form.add(publishWithData, this.tr("Publish with data"), null, "publishWithData");
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
+      if (osparc.data.Permissions.getInstance().isProductOwner()) {
         const templateTypeSB = osparc.study.Utils.createTemplateTypeSB();
         form.add(templateTypeSB, this.tr("Template Type"), null, "templateType");
       }

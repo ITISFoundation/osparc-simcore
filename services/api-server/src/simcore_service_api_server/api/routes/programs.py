@@ -16,6 +16,7 @@ from simcore_sdk.node_ports_common.filemanager import (
     complete_file_upload,
     get_upload_links_from_s3,
 )
+from simcore_service_api_server.models.api_resources import JobLinks
 
 from ..._service_jobs import JobService
 from ..._service_programs import ProgramService
@@ -153,7 +154,6 @@ async def create_program_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     program_service: Annotated[ProgramService, Depends(get_program_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
-    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
     name: Annotated[
@@ -171,15 +171,20 @@ async def create_program_job(
         name=program_key,
         version=version,
     )
+    job_rest_interface_links = JobLinks(
+        url_template=None,
+        runner_url_template=None,
+        outputs_url_template=None,
+    )
 
-    job, project = await job_service.create_job(
+    job, project = await job_service.create_project_marked_as_job(
         project_name=name,
         description=description,
         solver_or_program=program,
         inputs=inputs,
         parent_project_uuid=x_simcore_parent_project_uuid,
         parent_node_id=x_simcore_parent_node_id,
-        url_for=url_for,
+        job_links=job_rest_interface_links,
         hidden=False,
     )
 

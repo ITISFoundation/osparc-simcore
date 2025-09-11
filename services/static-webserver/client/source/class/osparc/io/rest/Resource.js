@@ -34,6 +34,9 @@ qx.Class.define("osparc.io.rest.Resource", {
       }, {
         key: "X-Simcore-Products-Name",
         value: qx.core.Environment.get("product.name")
+      }, {
+        key: "X-Client-Session-Id",
+        value: osparc.utils.Utils.getClientSessionID()
       }];
 
       if (this.AUTHENTICATION !== undefined && this.AUTHENTICATION !== null) {
@@ -51,8 +54,8 @@ qx.Class.define("osparc.io.rest.Resource", {
   statics: {
     AUTHENTICATION: null,
 
-    setAutheticationHeader: function(usernameOrToken, password=null) {
-      osparc.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(usernameOrToken, password);
+    setAutheticationHeader: function(userNameOrToken, password=null) {
+      osparc.io.rest.Resource.AUTHENTICATION = new qx.io.request.authentication.Basic(userNameOrToken, password);
     }
   },
 

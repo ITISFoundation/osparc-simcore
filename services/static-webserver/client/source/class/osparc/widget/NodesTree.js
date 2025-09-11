@@ -74,34 +74,40 @@ qx.Class.define("osparc.widget.NodesTree", {
 
   statics: {
     __getSortingValue: function(node) {
-      if (node.isFilePicker()) {
-        return osparc.service.Utils.getSorting("file");
-      } else if (node.isParameter()) {
-        return osparc.service.Utils.getSorting("parameter");
-      } else if (node.isIterator()) {
-        return osparc.service.Utils.getSorting("iterator");
-      } else if (node.isProbe()) {
-        return osparc.service.Utils.getSorting("probe");
+      if (node.getMetadata()) {
+        if (node.isFilePicker()) {
+          return osparc.service.Utils.getSorting("file");
+        } else if (node.isParameter()) {
+          return osparc.service.Utils.getSorting("parameter");
+        } else if (node.isIterator()) {
+          return osparc.service.Utils.getSorting("iterator");
+        } else if (node.isProbe()) {
+          return osparc.service.Utils.getSorting("probe");
+        }
+        return osparc.service.Utils.getSorting(node.getMetadata().type);
       }
-      return osparc.service.Utils.getSorting(node.getMetaData().type);
+      return null;
     },
 
     __getIcon: function(node) {
       let icon = null;
-      if (node.isFilePicker()) {
-        icon = osparc.service.Utils.getIcon("file");
-      } else if (node.isParameter()) {
-        icon = osparc.service.Utils.getIcon("parameter");
-      } else if (node.isIterator()) {
-        icon = osparc.service.Utils.getIcon("iterator");
-      } else if (node.isProbe()) {
-        icon = osparc.service.Utils.getIcon("probe");
-      } else {
-        icon = osparc.service.Utils.getIcon(node.getMetaData().type);
+      if (node.getMetadata()) {
+        if (node.isFilePicker()) {
+          icon = osparc.service.Utils.getIcon("file");
+        } else if (node.isParameter()) {
+          icon = osparc.service.Utils.getIcon("parameter");
+        } else if (node.isIterator()) {
+          icon = osparc.service.Utils.getIcon("iterator");
+        } else if (node.isProbe()) {
+          icon = osparc.service.Utils.getIcon("probe");
+        } else {
+          icon = osparc.service.Utils.getIcon(node.getMetadata().type);
+        }
+        if (icon) {
+          icon += "14";
+        }
       }
-      if (icon) {
-        icon += "14";
-      }
+
       return icon;
     },
 
@@ -125,22 +131,32 @@ qx.Class.define("osparc.widget.NodesTree", {
         id: node.getNodeId(),
         label: "Node",
         children: [],
-        icon: this.__getIcon(node),
+        icon: "",
         iconColor: "text",
         sortingValue: this.__getSortingValue(node),
         node
       };
+
       const nodeModel = qx.data.marshal.Json.createModel(nodeData, true);
       node.bind("label", nodeModel, "label");
-      if (node.isDynamic()) {
-        node.getStatus().bind("interactive", nodeModel, "iconColor", {
-          converter: status => osparc.service.StatusUI.getColor(status)
-        });
-      } else if (node.isComputational()) {
-        node.getStatus().bind("running", nodeModel, "iconColor", {
-          converter: status => osparc.service.StatusUI.getColor(status)
-        });
+      const populateWithMetadata = () => {
+        if (node.isDynamic()) {
+          node.getStatus().bind("interactive", nodeModel, "iconColor", {
+            converter: status => osparc.service.StatusUI.getColor(status)
+          });
+        } else if (node.isComputational()) {
+          node.getStatus().bind("running", nodeModel, "iconColor", {
+            converter: status => osparc.service.StatusUI.getColor(status)
+          });
+        }
+        nodeModel.setIcon(this.__getIcon(node));
       }
+      if (node.getMetadata()) {
+        populateWithMetadata();
+      } else {
+        node.addListenerOnce("changeMetadata", () => populateWithMetadata(), this);
+      }
+
       return nodeModel;
     }
   },
@@ -290,7 +306,7 @@ qx.Class.define("osparc.widget.NodesTree", {
           });
         } else {
           const node = study.getWorkbench().getNode(nodeId);
-          const metadata = node.getMetaData();
+          const metadata = node.getMetadata();
           const serviceDetails = new osparc.info.ServiceLarge(metadata, {
             nodeId,
             label: node.getLabel(),

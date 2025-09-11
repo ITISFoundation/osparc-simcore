@@ -14,7 +14,6 @@ from simcore_postgres_database.models.users import UserStatus, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
-from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -268,13 +267,90 @@ async def review_user_pre_registration(
 #
 
 
+def _create_account_request_reviewed_by_username_subquery() -> Any:
+    """Creates a reusable subquery for getting reviewer username by ID."""
+    reviewer_alias = sa.alias(users, name="reviewer_alias")
+    return (
+        sa.select(
+            reviewer_alias.c.name,
+        )
+        .where(
+            users_pre_registration_details.c.account_request_reviewed_by
+            == reviewer_alias.c.id
+        )
+        .label("account_request_reviewed_by_username")
+    )
+
+
+def _build_left_outer_join_query(
+    email_like: str | None,
+    product_name: ProductName | None,
+    columns: tuple,
+) -> sa.sql.Select | None:
+    left_where_conditions = []
+    if email_like is not None:
+        left_where_conditions.append(
+            users_pre_registration_details.c.pre_email.like(email_like)
+        )
+    join_condition = users.c.id == users_pre_registration_details.c.user_id
+    if product_name:
+        join_condition = join_condition & (
+            users_pre_registration_details.c.product_name == product_name
+        )
+    left_outer_join = sa.select(*columns).select_from(
+        users_pre_registration_details.outerjoin(users, join_condition)
+    )
+
+    return (
+        left_outer_join.where(sa.and_(*left_where_conditions))
+        if left_where_conditions
+        else None
+    )
+
+
+def _build_right_outer_join_query(
+    email_like: str | None,
+    user_name_like: str | None,
+    primary_group_id: int | None,
+    product_name: ProductName | None,
+    columns: tuple,
+) -> sa.sql.Select | None:
+    right_where_conditions = []
+    if email_like is not None:
+        right_where_conditions.append(users.c.email.like(email_like))
+    if user_name_like is not None:
+        right_where_conditions.append(users.c.name.like(user_name_like))
+    if primary_group_id is not None:
+        right_where_conditions.append(users.c.primary_gid == primary_group_id)
+    join_condition = users.c.id == users_pre_registration_details.c.user_id
+    if product_name:
+        join_condition = join_condition & (
+            users_pre_registration_details.c.product_name == product_name
+        )
+    right_outer_join = sa.select(*columns).select_from(
+        users.outerjoin(
+            users_pre_registration_details,
+            join_condition,
+        )
+    )
+
+    return (
+        right_outer_join.where(sa.and_(*right_where_conditions))
+        if right_where_conditions
+        else None
+    )
+
+
 async def search_merged_pre_and_registered_users(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
-    email_like: str,
+    filter_by_email_like: str | None = None,
+    filter_by_user_name_like: str | None = None,
+    filter_by_primary_group_id: int | None = None,
     product_name: ProductName | None = None,
 ) -> list[Row]:
+    """Searches and merges users from both users and pre-registration tables"""
     users_alias = sa.alias(users, name="users_alias")
 
     invited_by = (
@@ -285,59 +361,69 @@ async def search_merged_pre_and_registered_users(
         .label("invited_by")
     )
 
+    account_request_reviewed_by_username = (
+        _create_account_request_reviewed_by_username_subquery()
+    )
+
+    columns = (
+        users_pre_registration_details.c.id,
+        users.c.first_name,
+        users.c.last_name,
+        users.c.email,
+        users.c.phone,
+        users_pre_registration_details.c.pre_email,
+        users_pre_registration_details.c.pre_first_name,
+        users_pre_registration_details.c.pre_last_name,
+        users_pre_registration_details.c.institution,
+        users_pre_registration_details.c.pre_phone,
+        users_pre_registration_details.c.address,
+        users_pre_registration_details.c.city,
+        users_pre_registration_details.c.state,
+        users_pre_registration_details.c.postal_code,
+        users_pre_registration_details.c.country,
+        users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
+        users_pre_registration_details.c.extras,
+        users_pre_registration_details.c.account_request_status,
+        users_pre_registration_details.c.account_request_reviewed_by,
+        users_pre_registration_details.c.account_request_reviewed_at,
+        invited_by,
+        account_request_reviewed_by_username,  # account_request_reviewed_by converted to username
+        users_pre_registration_details.c.created,
+        # NOTE: some users have no pre-registration details (e.g. s4l-lite)
+        users.c.id.label("user_id"),  # real user_id from users table
+        users.c.name.label("user_name"),
+        users.c.primary_gid.label("user_primary_group_id"),
+        users.c.status,
+    )
+
+    left_outer_join = _build_left_outer_join_query(
+        filter_by_email_like,
+        product_name,
+        columns,
+    )
+    right_outer_join = _build_right_outer_join_query(
+        filter_by_email_like,
+        filter_by_user_name_like,
+        filter_by_primary_group_id,
+        product_name,
+        columns,
+    )
+
+    queries = []
+    if left_outer_join is not None:
+        queries.append(left_outer_join)
+    if right_outer_join is not None:
+        queries.append(right_outer_join)
+
+    if not queries:
+        # No search criteria provided, return empty result
+        return []
+
+    final_query = queries[0] if len(queries) == 1 else sa.union(*queries)
+
     async with pass_or_acquire_connection(engine, connection) as conn:
-        columns = (
-            users_pre_registration_details.c.id,
-            users.c.first_name,
-            users.c.last_name,
-            users.c.email,
-            users.c.phone,
-            users_pre_registration_details.c.pre_email,
-            users_pre_registration_details.c.pre_first_name,
-            users_pre_registration_details.c.pre_last_name,
-            users_pre_registration_details.c.institution,
-            users_pre_registration_details.c.pre_phone,
-            users_pre_registration_details.c.address,
-            users_pre_registration_details.c.city,
-            users_pre_registration_details.c.state,
-            users_pre_registration_details.c.postal_code,
-            users_pre_registration_details.c.country,
-            users_pre_registration_details.c.user_id,
-            users_pre_registration_details.c.extras,
-            users_pre_registration_details.c.account_request_status,
-            users_pre_registration_details.c.account_request_reviewed_by,
-            users_pre_registration_details.c.account_request_reviewed_at,
-            users.c.status,
-            invited_by,
-            users_pre_registration_details.c.created,
-        )
-
-        join_condition = users.c.id == users_pre_registration_details.c.user_id
-        if product_name:
-            join_condition = join_condition & (
-                users_pre_registration_details.c.product_name == product_name
-            )
-
-        left_outer_join = (
-            sa.select(*columns)
-            .select_from(
-                users_pre_registration_details.outerjoin(users, join_condition)
-            )
-            .where(users_pre_registration_details.c.pre_email.like(email_like))
-        )
-        right_outer_join = (
-            sa.select(*columns)
-            .select_from(
-                users.outerjoin(
-                    users_pre_registration_details,
-                    join_condition,
-                )
-            )
-            .where(users.c.email.like(email_like))
-        )
-
-        result = await conn.stream(sa.union(left_outer_join, right_outer_join))
-        return [row async for row in result]
+        result = await conn.execute(final_query)
+        return result.fetchall()
 
 
 async def list_merged_pre_and_registered_users(
@@ -386,7 +472,12 @@ async def list_merged_pre_and_registered_users(
     if not filter_include_deleted:
         users_where.append(users.c.status != UserStatus.DELETED)
 
-    # Query for pre-registered users that are not yet in the users table
+    # Create subquery for reviewer username
+    account_request_reviewed_by_username = (
+        _create_account_request_reviewed_by_username_subquery()
+    )
+
+    # Query for pre-registered users
     # We need to left join with users to identify if the pre-registered user is already in the system
     pre_reg_query = (
         sa.select(
@@ -409,10 +500,12 @@ async def list_merged_pre_and_registered_users(
             users_pre_registration_details.c.account_request_reviewed_at,
             users.c.id.label("user_id"),
             users.c.name.label("user_name"),
+            users.c.primary_gid.label("user_primary_group_id"),
             users.c.status,
             # Use created_by directly instead of a subquery
             users_pre_registration_details.c.created_by.label("created_by"),
-            sa.literal(True).label("is_pre_registered"),
+            account_request_reviewed_by_username,
+            sa.literal_column("true").label("is_pre_registered"),
         )
         .select_from(
             users_pre_registration_details.outerjoin(
@@ -444,10 +537,12 @@ async def list_merged_pre_and_registered_users(
             sa.literal(None).label("account_request_reviewed_at"),
             users.c.id.label("user_id"),
             users.c.name.label("user_name"),
+            users.c.primary_gid.label("user_primary_group_id"),
             users.c.status,
             # Match the created_by field from the pre_reg query
             sa.literal(None).label("created_by"),
-            sa.literal(False).label("is_pre_registered"),
+            sa.literal(None).label("account_request_reviewed_by_username"),
+            sa.literal_column("false").label("is_pre_registered"),
         )
         .select_from(
             users.join(user_to_groups, user_to_groups.c.uid == users.c.id)
@@ -487,14 +582,6 @@ async def list_merged_pre_and_registered_users(
         .select_from(merged_query_subq)
         .distinct()
         .subquery()
-    )
-
-    _logger.debug(
-        "%s\n%s\n%s\n%s",
-        "-" * 100,
-        as_postgres_sql_query_str(distinct_query),
-        "-" * 100,
-        as_postgres_sql_query_str(count_query),
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:

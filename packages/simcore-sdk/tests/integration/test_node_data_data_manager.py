@@ -292,6 +292,7 @@ async def test_delete_legacy_archive(
             project_id=project_id,
             node_uuid=node_uuid,
             path=content_path,
+            application_name=faker.pystr(),
         )
 
         assert (

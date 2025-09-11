@@ -13,18 +13,18 @@ from prometheus_client.openmetrics.exposition import (
     CONTENT_TYPE_LATEST,
     generate_latest,
 )
-from servicelib.prometheus_metrics import (
-    PrometheusMetrics,
-    get_prometheus_metrics,
-    record_request_metrics,
-    record_response_metrics,
-)
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
 
 from ..common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
+)
+from ..prometheus_metrics import (
+    PrometheusMetrics,
+    get_prometheus_metrics,
+    record_request_metrics,
+    record_response_metrics,
 )
 
 _logger = logging.getLogger(__name__)

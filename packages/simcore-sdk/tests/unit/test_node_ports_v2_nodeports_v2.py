@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -222,8 +223,7 @@ async def test_node_ports_v2_packages(
     node_uuid: str,
 ):
     db_manager = mock_db_manager(default_configuration)
-    node_ports = await ports(user_id, project_id, node_uuid)
-    node_ports = await ports(user_id, project_id, node_uuid, db_manager=db_manager)
+    await ports(user_id, project_id, node_uuid, db_manager=db_manager)
 
 
 @pytest.fixture

@@ -956,8 +956,9 @@ async def test_list_group_by_collection_run_id_with_unknown_returns_unknown(
     )
 
     # Test the function
+    assert "product_name" in run_metadata
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name"),
+        product_name=run_metadata["product_name"],
         user_id=published_project_1.user["id"],
         offset=0,
         limit=10,
@@ -967,7 +968,7 @@ async def test_list_group_by_collection_run_id_with_unknown_returns_unknown(
     assert total_count == 1
     assert len(items) == 1
     collection_item = items[0]
-    assert collection_item.state == RunningState.FAILED
+    assert collection_item.state == RunningState.UNKNOWN
 
 
 async def test_list_group_by_collection_run_id_with_project_filter(

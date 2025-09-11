@@ -86,10 +86,12 @@ qx.Class.define("osparc.FlashMessenger", {
         console.error(error);
       }
       const msg = this.extractMessage(error, defaultMessage);
-      const flashMessage = this.getInstance().logAs(msg, "ERROR", duration);
+      let flashMessage = null;
       if (error && error["supportId"]) {
-        flashMessage.addWidget(this.__createCopyOECWidget(msg, error["supportId"]));
-        flashMessage.setDuration(flashMessage.getDuration()*2);
+        flashMessage = new osparc.ui.message.FlashMessageOEC(msg, duration, error["supportId"]);
+        this.getInstance().addFlashMessage(flashMessage);
+      } else {
+        flashMessage = this.getInstance().logAs(msg, "ERROR", duration);
       }
       return flashMessage;
     },
@@ -142,14 +144,15 @@ qx.Class.define("osparc.FlashMessenger", {
 
     log: function(logMessage) {
       const message = this.self().extractMessage(logMessage);
-
       const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
-
       const flashMessage = new osparc.ui.message.FlashMessage(message, level, logMessage.duration);
+      this.addFlashMessage(flashMessage);
+      return flashMessage;
+    },
+
+    addFlashMessage: function(flashMessage) {
       flashMessage.addListener("closeMessage", () => this.removeMessage(flashMessage), this);
       this.__messages.push(flashMessage);
-
-      return flashMessage;
     },
 
     /**

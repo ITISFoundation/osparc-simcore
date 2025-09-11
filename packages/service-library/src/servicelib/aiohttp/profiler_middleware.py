@@ -1,9 +1,6 @@
 from aiohttp.web import HTTPInternalServerError, Request, StreamResponse, middleware
-from servicelib.mimetype_constants import (
-    MIMETYPE_APPLICATION_JSON,
-    MIMETYPE_APPLICATION_ND_JSON,
-)
 
+from ..mimetype_constants import MIMETYPE_APPLICATION_JSON, MIMETYPE_APPLICATION_ND_JSON
 from ..utils_profiling_middleware import _is_profiling, _profiler, append_profile
 
 

@@ -1,31 +1,70 @@
+# pylint: disable=too-many-instance-attributes
+
 import logging
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import UUID
 
 from common_library.exclude import as_dict_exclude_none
+from fastapi import status
+from fastapi.exceptions import HTTPException
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
-from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.projects import (
+    ProjectCreateNew,
+    ProjectGet,
+    ProjectPatch,
+)
+from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
+from models_library.function_services_catalog.services import file_picker
 from models_library.products import ProductName
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.rest_pagination import (
-    PageMetaInfoLimitOffset,
-    PageOffsetInt,
-)
+from models_library.projects_nodes import InputID, InputTypes
+from models_library.projects_nodes_io import BaseFileLink, NodeID
+from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
+from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from pydantic import HttpUrl
+from models_library.wallets import ZERO_CREDITS
 from servicelib.logging_utils import log_context
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from .models.basic_types import NameValueTuple
-from .models.schemas.jobs import Job, JobID, JobInputs
+from ._service_solvers import SolverService
+from .exceptions.backend_errors import JobAssetsMissingError
+from .exceptions.custom_errors import (
+    InsufficientCreditsError,
+    MissingWalletError,
+    SolverServiceListJobsFiltersError,
+)
+from .models.api_resources import JobLinks, RelativeResourceName, compose_resource_name
+from .models.basic_types import NameValueTuple, VersionStr
+from .models.domain.files import File as DomainFile
+from .models.schemas.files import File as SchemaFile
+from .models.schemas.jobs import (
+    ArgumentTypes,
+    Job,
+    JobID,
+    JobInputs,
+    JobOutputs,
+    JobPricingSpecification,
+    JobStatus,
+)
 from .models.schemas.programs import Program
-from .models.schemas.solvers import Solver
+from .models.schemas.solvers import Solver, SolverKeyId
+from .models.schemas.studies import Study, StudyID
+from .services_http.director_v2 import DirectorV2Api
+from .services_http.jobs import start_project
 from .services_http.solver_job_models_converters import (
     create_job_from_project,
     create_job_inputs_from_node_inputs,
+    create_jobstatus_from_task,
     create_new_project_for_job,
+)
+from .services_http.solver_job_outputs import ResultsTypes, get_solver_output_results
+from .services_http.storage import StorageApi, to_file_api_model
+from .services_http.study_job_models_converters import (
+    create_job_from_study,
+    create_job_outputs_from_project_outputs,
+    get_project_and_file_inputs_from_job_inputs,
 )
 from .services_http.webserver import AuthSession
 from .services_rpc.director_v2 import DirectorV2Service
@@ -35,16 +74,36 @@ from .services_rpc.wb_api_server import WbApiRpcClient
 _logger = logging.getLogger(__name__)
 
 
+def compose_solver_job_resource_name(solver_key, solver_version, job_id) -> str:
+    """Creates a unique resource name for solver's jobs"""
+    return Job.compose_resource_name(
+        parent_name=Solver.compose_resource_name(solver_key, solver_version),
+        job_id=job_id,
+    )
+
+
+def compose_study_job_resource_name(study_key, job_id) -> str:
+    """Creates a unique resource name for study's jobs"""
+    return Job.compose_resource_name(
+        parent_name=Study.compose_resource_name(study_key),
+        job_id=job_id,
+    )
+
+
 @dataclass(frozen=True, kw_only=True)
 class JobService:
     _web_rest_client: AuthSession
     _web_rpc_client: WbApiRpcClient
     _storage_rpc_client: StorageService
+    _director2_api: DirectorV2Api
+    _storage_rest_client: StorageApi
     _directorv2_rpc_client: DirectorV2Service
+    _solver_service: SolverService
+
     user_id: UserID
     product_name: ProductName
 
-    async def list_jobs(
+    async def _list_jobs(
         self,
         job_parent_resource_name: str,
         *,
@@ -97,14 +156,72 @@ class JobService:
 
         return jobs, projects_page.meta
 
-    async def create_job(
+    async def list_solver_jobs(
+        self,
+        *,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
+        filter_by_solver_key: SolverKeyId | None = None,
+        filter_by_solver_version: VersionStr | None = None,
+        filter_any_custom_metadata: list[NameValueTuple] | None = None,
+    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
+        """Lists all solver jobs for a user with pagination"""
+
+        # 1. Compose job parent resource name prefix
+        collection_or_resource_ids = [
+            "solvers",  # solver_id, "releases", solver_version, "jobs",
+        ]
+        if filter_by_solver_key:
+            collection_or_resource_ids.append(filter_by_solver_key)
+            if filter_by_solver_version:
+                collection_or_resource_ids.append("releases")
+                collection_or_resource_ids.append(filter_by_solver_version)
+        elif filter_by_solver_version:
+            raise SolverServiceListJobsFiltersError
+
+        job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
+
+        # 2. list jobs under job_parent_resource_name
+        return await self._list_jobs(
+            job_parent_resource_name=job_parent_resource_name,
+            filter_any_custom_metadata=filter_any_custom_metadata,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
+
+    async def list_study_jobs(
+        self,
+        *,
+        filter_by_study_id: StudyID | None = None,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
+    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
+        """Lists all solver jobs for a user with pagination"""
+
+        # 1. Compose job parent resource name prefix
+        collection_or_resource_ids: list[str] = [
+            "study",  # study_id, "jobs",
+        ]
+        if filter_by_study_id:
+            collection_or_resource_ids.append(f"{filter_by_study_id}")
+
+        job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
+
+        # 2. list jobs under job_parent_resource_name
+        return await self._list_jobs(
+            job_parent_resource_name=job_parent_resource_name,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
+
+    async def create_project_marked_as_job(
         self,
         *,
         solver_or_program: Solver | Program,
         inputs: JobInputs,
         parent_project_uuid: ProjectID | None,
         parent_node_id: NodeID | None,
-        url_for: Callable[..., HttpUrl],
+        job_links: JobLinks,
         hidden: bool,
         project_name: str | None,
         description: str | None,
@@ -137,6 +254,7 @@ class JobService:
                 user_id=self.user_id,
                 project_uuid=new_project.uuid,
                 job_parent_resource_name=pre_job.runner_name,
+                storage_assets_deleted=False,
             )
 
         assert new_project  # nosec
@@ -144,7 +262,9 @@ class JobService:
 
         # for consistency, it rebuild job
         job = create_job_from_project(
-            solver_or_program=solver_or_program, project=new_project, url_for=url_for
+            solver_or_program=solver_or_program,
+            project=new_project,
+            job_links=job_links,
         )
         assert job.id == pre_job.id  # nosec
         assert job.name == pre_job.name  # nosec
@@ -161,9 +281,297 @@ class JobService:
         file_ids = await self._directorv2_rpc_client.get_computation_task_log_file_ids(
             project_id=job_id
         )
-        async_job_get = await self._storage_rpc_client.start_data_export(
+        return await self._storage_rpc_client.start_data_export(
             paths_to_export=[
                 Path(elm.file_id) for elm in file_ids if elm.file_id is not None
             ],
         )
-        return async_job_get
+
+    async def get_job(
+        self, job_parent_resource_name: RelativeResourceName, job_id: JobID
+    ) -> ProjectJobRpcGet:
+        """This method can be used to check that the project exists and has the correct parent resource."""
+        return await self._web_rpc_client.get_project_marked_as_job(
+            product_name=self.product_name,
+            user_id=self.user_id,
+            project_id=job_id,
+            job_parent_resource_name=job_parent_resource_name,
+        )
+
+    async def get_solver_job_outputs(
+        self,
+        solver_key: SolverKeyId,
+        version: VersionStr,
+        job_id: JobID,
+        async_pg_engine: AsyncEngine,
+    ) -> JobOutputs:
+        job_name = compose_solver_job_resource_name(solver_key, version, job_id)
+        _logger.debug("Get Job '%s' outputs", job_name)
+
+        project_marked_as_job = await self.get_job(
+            job_id=job_id,
+            job_parent_resource_name=Solver.compose_resource_name(
+                key=solver_key, version=version
+            ),
+        )
+        node_ids = list(project_marked_as_job.workbench.keys())
+        assert len(node_ids) == 1  # nosec
+
+        if project_marked_as_job.storage_assets_deleted:
+            _logger.warning("Storage data for job '%s' has been deleted", job_name)
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Assets have been deleted"
+            )
+
+        product_price = await self._web_rest_client.get_product_price()
+        if product_price.usd_per_credit is not None:
+            wallet = await self._web_rest_client.get_project_wallet(
+                project_id=project_marked_as_job.uuid
+            )
+            if wallet is None:
+                raise MissingWalletError(job_id=project_marked_as_job.uuid)
+            wallet_with_credits = await self._web_rest_client.get_wallet(
+                wallet_id=wallet.wallet_id
+            )
+            if wallet_with_credits.available_credits <= ZERO_CREDITS:
+                raise InsufficientCreditsError(
+                    wallet_name=wallet_with_credits.name,
+                    wallet_credit_amount=wallet_with_credits.available_credits,
+                )
+
+        outputs: dict[str, ResultsTypes] = await get_solver_output_results(
+            user_id=self.user_id,
+            project_uuid=job_id,
+            node_uuid=UUID(node_ids[0]),
+            db_engine=async_pg_engine,
+        )
+
+        results: dict[str, ArgumentTypes] = {}
+        for name, value in outputs.items():
+            if isinstance(value, BaseFileLink):
+                file_id: UUID = DomainFile.create_id(*value.path.split("/"))
+
+                found = await self._storage_rest_client.search_owned_files(
+                    user_id=self.user_id, file_id=file_id, limit=1
+                )
+                if found:
+                    assert len(found) == 1  # nosec
+                    results[name] = SchemaFile.from_domain_model(
+                        to_file_api_model(found[0])
+                    )
+                else:
+                    api_file = await self._storage_rest_client.create_soft_link(
+                        user_id=self.user_id,
+                        target_s3_path=value.path,
+                        as_file_id=file_id,
+                    )
+                    results[name] = SchemaFile.from_domain_model(api_file)
+            else:
+                results[name] = value
+
+        return JobOutputs(job_id=job_id, results=results)
+
+    async def get_study_job_outputs(
+        self,
+        study_id: StudyID,
+        job_id: JobID,
+    ) -> JobOutputs:
+        job_name = compose_study_job_resource_name(study_id, job_id)
+        _logger.debug("Getting Job Outputs for '%s'", job_name)
+
+        project_outputs = await self._web_rest_client.get_project_outputs(
+            project_id=job_id
+        )
+        return await create_job_outputs_from_project_outputs(
+            job_id, project_outputs, self.user_id, self._storage_rest_client
+        )
+
+    async def delete_job_assets(
+        self, job_parent_resource_name: RelativeResourceName, job_id: JobID
+    ) -> None:
+        """Marks job project as hidden and deletes S3 assets associated it"""
+        await self._web_rest_client.patch_project(
+            project_id=job_id, patch_params=ProjectPatch(hidden=True)
+        )
+        await self._storage_rest_client.delete_project_s3_assets(
+            user_id=self.user_id, project_id=job_id
+        )
+        await self._web_rpc_client.mark_project_as_job(
+            product_name=self.product_name,
+            user_id=self.user_id,
+            project_uuid=job_id,
+            job_parent_resource_name=job_parent_resource_name,
+            storage_assets_deleted=True,
+        )
+
+    async def create_solver_job(
+        self,
+        *,
+        solver_key: SolverKeyId,
+        version: VersionStr,
+        inputs: JobInputs,
+        hidden: bool,
+        job_links: JobLinks,
+        x_simcore_parent_project_uuid: ProjectID | None,
+        x_simcore_parent_node_id: NodeID | None,
+    ) -> Job:
+
+        solver = await self._solver_service.get_solver(
+            solver_key=solver_key,
+            solver_version=version,
+        )
+        job, _ = await self.create_project_marked_as_job(
+            project_name=None,
+            description=None,
+            solver_or_program=solver,
+            inputs=inputs,
+            hidden=hidden,
+            parent_project_uuid=x_simcore_parent_project_uuid,
+            parent_node_id=x_simcore_parent_node_id,
+            job_links=job_links,
+        )
+
+        return job
+
+    async def inspect_solver_job(
+        self,
+        *,
+        solver_key: SolverKeyId,
+        version: VersionStr,
+        job_id: JobID,
+    ) -> JobStatus:
+        assert solver_key  # nosec
+        assert version  # nosec
+        task = await self._director2_api.get_computation(
+            project_id=job_id, user_id=self.user_id
+        )
+        job_status: JobStatus = create_jobstatus_from_task(task)
+        return job_status
+
+    async def start_solver_job(
+        self,
+        *,
+        solver_key: SolverKeyId,
+        version: VersionStr,
+        job_id: JobID,
+        pricing_spec: JobPricingSpecification | None,
+    ) -> JobStatus:
+        """
+        Raises ProjectAlreadyStartedError if the project is already started
+        """
+        job_name = compose_solver_job_resource_name(solver_key, version, job_id)
+        _logger.debug("Start Job '%s'", job_name)
+        job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
+        job = await self.get_job(
+            job_id=job_id, job_parent_resource_name=job_parent_resource_name
+        )
+        if job.storage_assets_deleted:
+            raise JobAssetsMissingError(job_id=job_id)
+        await start_project(
+            pricing_spec=pricing_spec,
+            job_id=job_id,
+            expected_job_name=job_name,
+            webserver_api=self._web_rest_client,
+        )
+        return await self.inspect_solver_job(
+            solver_key=solver_key,
+            version=version,
+            job_id=job_id,
+        )
+
+    async def create_studies_job(
+        self,
+        *,
+        study_id: StudyID,
+        job_inputs: JobInputs,
+        x_simcore_parent_project_uuid: ProjectID | None,
+        x_simcore_parent_node_id: NodeID | None,
+        job_links: JobLinks,
+        hidden: bool,
+    ) -> Job:
+
+        project = await self._web_rest_client.clone_project(
+            project_id=study_id,
+            hidden=hidden,
+            parent_project_uuid=x_simcore_parent_project_uuid,
+            parent_node_id=x_simcore_parent_node_id,
+        )
+        job = create_job_from_study(
+            study_key=study_id,
+            project=project,
+            job_inputs=job_inputs,
+            job_links=job_links,
+        )
+
+        await self._web_rest_client.patch_project(
+            project_id=job.id,
+            patch_params=ProjectPatch(name=job.name),
+        )
+
+        await self._web_rpc_client.mark_project_as_job(
+            product_name=self.product_name,
+            user_id=self.user_id,
+            project_uuid=job.id,
+            job_parent_resource_name=job.runner_name,
+            storage_assets_deleted=False,
+        )
+
+        project_inputs = await self._web_rest_client.get_project_inputs(
+            project_id=project.uuid
+        )
+
+        file_param_nodes = {}
+        for node_id, node in project.workbench.items():
+            if (
+                node.key == file_picker.META.key
+                and node.outputs is not None
+                and len(node.outputs) == 0
+            ):
+                file_param_nodes[node.label] = node_id
+
+        file_inputs: dict[InputID, InputTypes] = {}
+
+        (
+            new_project_inputs,
+            new_project_file_inputs,
+        ) = get_project_and_file_inputs_from_job_inputs(
+            project_inputs, file_inputs, job_inputs
+        )
+
+        for node_label, file_link in new_project_file_inputs.items():
+            await self._web_rest_client.update_node_outputs(
+                project_id=project.uuid,
+                node_id=UUID(file_param_nodes[node_label]),
+                new_node_outputs=NodeOutputs(outputs={"outFile": file_link}),
+            )
+
+        if len(new_project_inputs) > 0:
+            await self._web_rest_client.update_project_inputs(
+                project_id=project.uuid, new_inputs=new_project_inputs
+            )
+        return job
+
+    async def inspect_study_job(self, *, job_id: JobID) -> JobStatus:
+        task = await self._director2_api.get_computation(
+            project_id=job_id, user_id=self.user_id
+        )
+        job_status: JobStatus = create_jobstatus_from_task(task)
+        return job_status
+
+    async def start_study_job(
+        self,
+        *,
+        job_id: JobID,
+        study_id: StudyID,
+        pricing_spec: JobPricingSpecification | None,
+    ):
+        job_name = compose_study_job_resource_name(study_id, job_id)
+        await start_project(
+            job_id=job_id,
+            expected_job_name=job_name,
+            webserver_api=self._web_rest_client,
+            pricing_spec=pricing_spec,
+        )
+        return await self.inspect_study_job(
+            job_id=job_id,
+        )

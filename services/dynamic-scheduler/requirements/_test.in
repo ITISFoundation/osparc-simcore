@@ -15,6 +15,7 @@ asgi_lifespan
 coverage
 docker
 faker
+fakeredis[lua]
 hypercorn
 playwright
 pytest

@@ -116,6 +116,28 @@ qx.Class.define("osparc.auth.Manager", {
       return osparc.data.Resources.fetch("auth", "resendCode", params);
     },
 
+    updatePhoneNumber: function(newPhoneNumber) {
+      const params = {
+        data: {
+          phone: newPhoneNumber
+        }
+      };
+      return osparc.data.Resources.fetch("profile", "phoneRegister", params);
+    },
+
+    validateCodeUpdatePhoneNumber: function(code, loginCbk, failCbk, context) {
+      const params = {
+        data: {
+          code
+        }
+      };
+      osparc.data.Resources.fetch("profile", "phoneConfirm", params)
+        .then(data => {
+          loginCbk.call(context, data);
+        })
+        .catch(err => failCbk.call(context, err.message));
+    },
+
     isLoggedIn: function() {
       return osparc.auth.Data.getInstance().isLoggedIn();
     },
@@ -236,7 +258,7 @@ qx.Class.define("osparc.auth.Manager", {
       const authData = osparc.auth.Data.getInstance();
       authData.set({
         email: profile["login"],
-        username: profile["userName"],
+        userName: profile["userName"],
         firstName: profile["first_name"],
         lastName: profile["last_name"],
         expirationDate: profile["expirationDate"] ? new Date(profile["expirationDate"]) : null

@@ -98,7 +98,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       title = osparc.utils.Utils.replaceTokens(
         title,
         "replace_me_product_name",
-        osparc.store.StaticInfo.getInstance().getDisplayName()
+        osparc.store.StaticInfo.getDisplayName()
       );
       title = title.replace(/<br>/g, " ");
       const menuButton = new qx.ui.menu.Button().set({
@@ -118,7 +118,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         infoText = osparc.utils.Utils.replaceTokens(
           infoText,
           "replace_me_product_name",
-          osparc.store.StaticInfo.getInstance().getDisplayName()
+          osparc.store.StaticInfo.getDisplayName()
         );
         const infoHint = new osparc.ui.hint.InfoHint(infoText).set({
           source: osparc.ui.hint.InfoHint.INFO_ICON + "/16",

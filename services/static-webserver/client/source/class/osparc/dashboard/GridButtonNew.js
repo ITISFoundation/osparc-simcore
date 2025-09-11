@@ -40,7 +40,7 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
       title = osparc.utils.Utils.replaceTokens(
         title,
         "replace_me_product_name",
-        osparc.store.StaticInfo.getInstance().getDisplayName()
+        osparc.store.StaticInfo.getDisplayName()
       );
 
       const titleLabel = this.getChildControl("title");
@@ -54,7 +54,7 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
       description = osparc.utils.Utils.replaceTokens(
         description,
         "replace_me_product_name",
-        osparc.store.StaticInfo.getInstance().getDisplayName()
+        osparc.store.StaticInfo.getDisplayName()
       );
 
       const descLabel = this.getChildControl("subtitle-text");

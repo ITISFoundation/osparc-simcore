@@ -75,11 +75,11 @@ qx.Class.define("osparc.auth.Data", {
       check: "Number"
     },
 
-    username: {
+    userName: {
       check: "String",
       init: null,
       nullable: false,
-      event: "changeUsername",
+      event: "changeUserName",
     },
 
     email: {
@@ -139,12 +139,12 @@ qx.Class.define("osparc.auth.Data", {
       return osparc.utils.Utils.cookie.getCookie("user") === "logout";
     },
 
-    getFriendlyUsername: function() {
+    getFriendlyUserName: function() {
       const firstName = this.getFirstName();
       if (firstName) {
         return firstName;
       }
-      return this.getUsername();
+      return this.getUserName();
     },
 
     getFullName: function() {

@@ -279,6 +279,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         allowGrowX: false,
         alignX: "center"
       });
+      osparc.utils.Utils.setIdToWidget(fieldOptsBtn, "connect_input_btn_" + field.key);
       this.__fieldOptsBtnMap[field.key] = fieldOptsBtn;
       // populate the button/menu when the it appears
       fieldOptsBtn.addListenerOnce("appear", () => {
@@ -312,7 +313,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (["FileButton"].includes(field.widgetType)) {
         const menuButton = this.__getSelectFileButton(field.key);
         studyUI.bind("mode", menuButton, "visibility", {
-          converter: mode => mode === "workbench" ? "visible" : "excluded"
+          converter: mode => ["workbench", "pipeline"].includes(mode) ? "visible" : "excluded"
         });
         optionsMenu.add(menuButton);
       }
@@ -323,13 +324,12 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const paramsMenuBtn = this.__getParamsMenuButton(field.key);
         paramsMenuBtn.exclude();
         optionsMenu.add(paramsMenuBtn);
-        const areParamsEnabled = osparc.utils.Utils.isDevelopmentPlatform();
         [
           newParamBtn,
           paramsMenuBtn
         ].forEach(btn => {
           studyUI.bind("mode", btn, "visibility", {
-            converter: mode => mode === "workbench" && areParamsEnabled ? "visible" : "excluded"
+          converter: mode => ["workbench", "pipeline"].includes(mode) ? "visible" : "excluded"
           });
         });
       }
@@ -358,7 +358,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const inputNodeIDs = thisNode.getInputNodes();
         inputNodeIDs.forEach(inputNodeId => {
           const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
-          if (inputNode) {
+          if (inputNode && inputNode.getMetadata()) {
             for (const outputKey in inputNode.getOutputs()) {
               const paramButton = new qx.ui.menu.Button();
               inputNode.bind("label", paramButton, "label", {
@@ -400,7 +400,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       menu.removeAll();
 
       const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
-      if (inputNode) {
+      if (inputNode && inputNode.getMetadata()) {
         for (const outputKey in inputNode.getOutputs()) {
           osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
             .then(compatible => {
@@ -426,6 +426,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
     __getNewParamButton: function(portId) {
       const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
+      osparc.utils.Utils.setIdToWidget(newParamBtn, "connect_new_parameter_btn_" + portId);
       newParamBtn.addListener("execute", () => this.fireDataEvent("parameterRequested", portId), this);
       return newParamBtn;
     },
@@ -908,6 +909,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
+
       const ctrlLink = this.getControlLink(toPortId);
       ctrlLink.setEnabled(false);
       this._form.getControl(toPortId)["link"] = {
@@ -926,21 +928,28 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       ctrlLink.addListener("mouseover", () => highlightEdgeUI(true));
       ctrlLink.addListener("mouseout", () => highlightEdgeUI(false));
 
-      const workbench = study.getWorkbench();
-      const fromNode = workbench.getNode(fromNodeId);
-      const port = fromNode.getOutput(fromPortId);
-      const fromPortLabel = port ? port.label : null;
-      fromNode.bind("label", ctrlLink, "value", {
-        converter: label => label + ": " + fromPortLabel
-      });
-      // Hack: Show tooltip if element is disabled
-      const addToolTip = () => {
-        ctrlLink.getContentElement().removeAttribute("title");
-        const toolTipText = fromNode.getLabel() + ":\n" + fromPortLabel;
-        ctrlLink.getContentElement().setAttribute("title", toolTipText);
-      };
-      fromNode.addListener("changeLabel", () => addToolTip());
-      addToolTip();
+      const fromNode = study.getWorkbench().getNode(fromNodeId);
+      const prettifyLinkString = () => {
+        const port = fromNode.getOutput(fromPortId);
+        const fromPortLabel = port ? port.label : null;
+        fromNode.bind("label", ctrlLink, "value", {
+          converter: label => label + ": " + fromPortLabel
+        });
+
+        // Hack: Show tooltip if element is disabled
+        const addToolTip = () => {
+          ctrlLink.getContentElement().removeAttribute("title");
+          const toolTipText = fromNode.getLabel() + ":\n" + fromPortLabel;
+          ctrlLink.getContentElement().setAttribute("title", toolTipText);
+        };
+        fromNode.addListener("changeLabel", () => addToolTip());
+        addToolTip();
+      }
+      if (fromNode.getMetadata()) {
+        prettifyLinkString();
+      } else {
+        fromNode.addListenerOnce("changeMetadata", () => prettifyLinkString(), this);
+      }
 
       this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
 

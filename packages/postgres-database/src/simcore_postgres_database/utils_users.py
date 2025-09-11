@@ -172,7 +172,9 @@ class UsersRepo:
             pre_columns = (
                 users_pre_registration_details.c.pre_first_name,
                 users_pre_registration_details.c.pre_last_name,
-                # NOTE: pre_phone is not copied since it has to be validated.
+                # NOTE: pre_phone is NOT copied since it has to be validated.
+                # It remains here as informative. In the future it might be given
+                # as a hint to the front end?
                 # Otherwise, if phone is wrong, currently user won't be able to login!
             )
 
@@ -316,8 +318,17 @@ class UsersRepo:
             return bool(pre_registered)
 
     async def get_billing_details(
-        self, connection: AsyncConnection | None = None, *, user_id: int
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        product_name: str,
+        user_id: int,
     ) -> Any | None:
+        """Returns billing details for the specified user and product.
+
+        - If the user is registered without a product, returns details for that registration.
+        - Returns None if no billing details are found.
+        """
         async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
                 sa.select(
@@ -337,7 +348,13 @@ class UsersRepo:
                         users.c.id == users_pre_registration_details.c.user_id,
                     )
                 )
-                .where(users.c.id == user_id)
+                .where(
+                    (users.c.id == user_id)
+                    & (
+                        (users_pre_registration_details.c.product_name == product_name)
+                        | (users_pre_registration_details.c.product_name.is_(None))
+                    )
+                )
                 .order_by(users_pre_registration_details.c.created.desc())
                 .limit(1)
                 # NOTE: might want to copy billing details to users table??

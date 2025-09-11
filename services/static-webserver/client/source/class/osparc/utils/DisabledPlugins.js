@@ -63,11 +63,9 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     },
 
     __isPluginDisabled: function(key) {
-      const statics = osparc.store.Store.getInstance().get("statics");
-      if (statics) {
-        if ("pluginsDisabled" in statics) {
-          return statics["pluginsDisabled"].includes(key);
-        }
+      const pluginsDisabled = osparc.store.StaticInfo.getValue("pluginsDisabled");
+      if (pluginsDisabled) {
+        return pluginsDisabled.includes(key);
       }
       return false;
     }

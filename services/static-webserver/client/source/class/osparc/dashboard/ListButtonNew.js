@@ -37,7 +37,7 @@ qx.Class.define("osparc.dashboard.ListButtonNew", {
       title = osparc.utils.Utils.replaceTokens(
         title,
         "replace_me_product_name",
-        osparc.store.StaticInfo.getInstance().getDisplayName()
+        osparc.store.StaticInfo.getDisplayName()
       );
 
       const titleLabel = this.getChildControl("title");

@@ -171,14 +171,14 @@ else
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
   # because multi-processing library is used by the sidecar and the nanny does not like it
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
-  print_info "Starting as a dask worker "${DASK_WORKER_VERSION}" -> "${DASK_SCHEDULER_URL}" ..."
-  print_info "Worker resources set as: "$resources""
+  print_info "Starting as a dask worker ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_URL} ..."
+  print_info "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug" ]; then
     exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
       dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.worker \
-      --nworkers ${DASK_NPROCS} \
+      --nworkers "${DASK_NPROCS}" \
       --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
       --memory-limit "${DASK_MEMORY_LIMIT}" \
@@ -188,7 +188,7 @@ else
     exec dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.worker \
-      --nworkers ${DASK_NPROCS} \
+      --nworkers "${DASK_NPROCS}" \
       --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
       --memory-limit "${DASK_MEMORY_LIMIT}" \

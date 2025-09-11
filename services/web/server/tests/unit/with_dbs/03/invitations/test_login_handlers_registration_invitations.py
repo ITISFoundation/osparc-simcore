@@ -153,18 +153,22 @@ async def test_registration_to_different_product(
     invitation_product_a = await generate_invitation(
         client.app,
         ApiInvitationInputs(issuer="PO", guest=guest_email, product=product_a),
+        product_origin_url=URL("http://product_a.com/some/path").origin(),
     )
     # 2. PO creates invitation for product B
     invitation_product_b = await generate_invitation(
         client.app,
         ApiInvitationInputs(issuer="PO", guest=guest_email, product=product_b),
+        product_origin_url=URL("http://product_b.com/some/path").origin(),
     )
 
     # CAN register for product A in deploy of product A
+    assert invitation_product_a.invitation_url.host == "product_a.com"
     response = await _register_account(invitation_product_a.invitation_url, product_a)
     await assert_status(response, status.HTTP_200_OK)
 
     # CANNOT register in product B in deploy of product A
+    assert invitation_product_b.invitation_url.host == "product_b.com"
     response = await _register_account(invitation_product_b.invitation_url, product_a)
     await assert_status(response, status.HTTP_409_CONFLICT)
 

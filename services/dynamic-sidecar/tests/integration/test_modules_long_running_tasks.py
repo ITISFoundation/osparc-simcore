@@ -31,6 +31,8 @@ from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.storage import replace_storage_endpoint
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.utils import logged_gather
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.projects import projects
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -38,8 +40,8 @@ from simcore_sdk.node_ports_common.filemanager import upload_path
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME
 from simcore_service_dynamic_sidecar.modules.long_running_tasks import (
-    task_restore_state,
-    task_save_state,
+    restore_user_services_state_paths,
+    save_user_services_state_paths,
 )
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
@@ -89,7 +91,8 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
 def mock_environment(
     mock_storage_check: None,
     mock_rabbit_check: None,
-    rabbit_service,
+    redis_service: RedisSettings,
+    rabbit_service: RabbitSettings,
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,
     minio_s3_settings_envs: EnvVarsDict,
@@ -372,7 +375,7 @@ async def test_legacy_state_open_and_clone(
 
     # restore state from legacy archives
     for _ in range(repeat_count):
-        await task_restore_state(
+        await restore_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,
@@ -393,7 +396,7 @@ async def test_legacy_state_open_and_clone(
     )
 
     for _ in range(repeat_count):
-        await task_save_state(
+        await save_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,
@@ -433,7 +436,7 @@ async def test_state_open_and_close(
 
     # restoring finds nothing inside
     for _ in range(repeat_count):
-        await task_restore_state(
+        await restore_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,
@@ -459,7 +462,7 @@ async def test_state_open_and_close(
 
     # save them to S3
     for _ in range(repeat_count):
-        await task_save_state(
+        await save_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,
@@ -482,7 +485,7 @@ async def test_state_open_and_close(
 
     # restore them from S3
     for _ in range(repeat_count):
-        await task_restore_state(
+        await restore_user_services_state_paths(
             progress=task_progress,
             settings=app_state.settings,
             mounted_volumes=app_state.mounted_volumes,

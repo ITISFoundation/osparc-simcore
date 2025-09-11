@@ -28,8 +28,9 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
 )
+from settings_library.redis import RedisSettings
 from simcore_service_dynamic_sidecar.core.reserved_space import (
-    remove_reserved_disk_space,
+    free_reserved_disk_space,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.logging",
+    "pytest_simcore.long_running_tasks",
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
@@ -168,6 +170,8 @@ def mock_rabbit_check(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def base_mock_envs(
+    fast_long_running_tasks_cancellation: None,
+    use_in_memory_redis: RedisSettings,
     dy_volumes: Path,
     shared_store_dir: Path,
     compose_namespace: str,
@@ -209,6 +213,8 @@ def base_mock_envs(
 
 @pytest.fixture
 def mock_environment(
+    fast_long_running_tasks_cancellation: None,
+    use_in_memory_redis: RedisSettings,
     mock_storage_check: None,
     mock_postgres_check: None,
     mock_rabbit_check: None,
@@ -354,14 +360,12 @@ def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
 @pytest.fixture
 def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
     return TypeAdapter(CreateServiceMetricsAdditionalParams).validate_python(
-        CreateServiceMetricsAdditionalParams.model_config["json_schema_extra"][
-            "example"
-        ],
+        CreateServiceMetricsAdditionalParams.model_json_schema()["example"]
     )
 
 
 @pytest.fixture
 def cleanup_reserved_disk_space() -> Iterator[None]:
-    remove_reserved_disk_space()
+    free_reserved_disk_space()
     yield
-    remove_reserved_disk_space()
+    free_reserved_disk_space()

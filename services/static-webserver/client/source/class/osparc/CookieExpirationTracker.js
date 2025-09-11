@@ -39,7 +39,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     __messageInterval: null,
 
     startTracker: function() {
-      const cookieMaxAge = osparc.store.StaticInfo.getInstance().getCookieMaxAge(); // seconds
+      const cookieMaxAge = osparc.store.StaticInfo.getCookieMaxAge(); // seconds
       if (cookieMaxAge) {
         const nowDate = new Date();
         const expirationDateMilliseconds = nowDate.getTime() + cookieMaxAge*1000;

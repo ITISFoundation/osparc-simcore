@@ -4,7 +4,8 @@ from typing import Annotated, Protocol, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic.config import JsonDict
 
 TaskID: TypeAlias = str
 TaskName: TypeAlias = Annotated[
@@ -28,6 +29,7 @@ class TaskState(StrEnum):
 class TasksQueue(StrEnum):
     CPU_BOUND = "cpu_bound"
     DEFAULT = "default"
+    API_WORKER_QUEUE = "api_worker_queue"
 
 
 class TaskMetadata(BaseModel):
@@ -39,6 +41,41 @@ class TaskMetadata(BaseModel):
 class Task(BaseModel):
     uuid: TaskUUID
     metadata: TaskMetadata
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "uuid": "123e4567-e89b-12d3-a456-426614174000",
+                        "metadata": {
+                            "name": "task1",
+                            "ephemeral": True,
+                            "queue": "default",
+                        },
+                    },
+                    {
+                        "uuid": "223e4567-e89b-12d3-a456-426614174001",
+                        "metadata": {
+                            "name": "task2",
+                            "ephemeral": False,
+                            "queue": "cpu_bound",
+                        },
+                    },
+                    {
+                        "uuid": "323e4567-e89b-12d3-a456-426614174002",
+                        "metadata": {
+                            "name": "task3",
+                            "ephemeral": True,
+                            "queue": "default",
+                        },
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 _TASK_DONE = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
@@ -71,6 +108,33 @@ class TaskStatus(BaseModel):
     task_uuid: TaskUUID
     task_state: TaskState
     progress_report: ProgressReport
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "task_uuid": "123e4567-e89b-12d3-a456-426614174000",
+                        "task_state": "SUCCESS",
+                        "progress_report": {
+                            "actual_value": 0.5,
+                            "total": 1.0,
+                            "attempts": 1,
+                            "unit": "Byte",
+                            "message": {
+                                "description": "some description",
+                                "current": 12.2,
+                                "total": 123,
+                            },
+                        },
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     @property
     def is_done(self) -> bool:

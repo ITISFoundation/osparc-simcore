@@ -78,7 +78,7 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
           });
           break;
         }
-        case "json-viewer":
+        case "json-tree-widget":
           control = new osparc.ui.basic.JsonTreeWidget();
           this._add(control);
           break;
@@ -89,7 +89,7 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
     _buildLayout: function() {
       const filterMessage = this.getChildControl("filter-message");
       const table = this.getChildControl("messages-table");
-      const jsonViewer = this.getChildControl("json-viewer");
+      const jsonTreeWidget = this.getChildControl("json-tree-widget");
 
       const model = table.getTableModel();
       filterMessage.addListener("changeValue", e => {
@@ -101,7 +101,7 @@ qx.Class.define("osparc.tester.WebSocketMessages", {
       table.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);
-        jsonViewer.setJson(JSON.parse(rowData[2]));
+        jsonTreeWidget.setJson(JSON.parse(rowData[2]));
       }, this);
 
       this.__populateTable();

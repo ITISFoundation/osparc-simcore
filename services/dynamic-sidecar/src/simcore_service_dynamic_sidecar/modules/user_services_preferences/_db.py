@@ -32,6 +32,7 @@ async def save_preferences(
     user_preferences_path: Path,
     user_id: UserID,
     product_name: ProductName,
+    application_name: str,
 ):
     preference_class = get_model_class(service_key)
 
@@ -40,7 +41,10 @@ async def save_preferences(
         service_key=service_key, service_version=service_version, value=dir_content
     )
 
-    async with DBContextManager() as engine, engine.begin() as conn:
+    async with (
+        DBContextManager(application_name=application_name) as engine,
+        engine.begin() as conn,
+    ):
         await UserServicesUserPreferencesRepo.save(
             conn,
             user_id=user_id,
@@ -58,10 +62,14 @@ async def load_preferences(
     user_preferences_path: Path,
     user_id: UserID,
     product_name: ProductName,
+    application_name: str,
 ) -> None:
     preference_class = get_model_class(service_key)
 
-    async with DBContextManager() as engine, engine.connect() as conn:
+    async with (
+        DBContextManager(application_name=application_name) as engine,
+        engine.connect() as conn,
+    ):
         payload = await UserServicesUserPreferencesRepo.load(
             conn,
             user_id=user_id,

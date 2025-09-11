@@ -11,12 +11,14 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.api_schemas_directorv2.services import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
-from models_library.docker import DockerNodeID, to_simcore_runtime_docker_label_key
+from models_library.docker import DockerNodeID
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkName
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
+from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from servicelib.utils import logged_gather
+from settings_library.docker_registry import RegistrySettings
 from starlette import status
 from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
@@ -98,6 +100,7 @@ def _to_snake_case(string: str) -> str:
 
 async def create_service_and_get_id(
     create_service_data: AioDockerServiceSpec | dict[str, Any],
+    registry_settings: RegistrySettings | None,
 ) -> ServiceId:
     # NOTE: ideally the argument should always be AioDockerServiceSpec
     # but for that we need get_dynamic_proxy_spec to return that type
@@ -106,6 +109,13 @@ async def create_service_and_get_id(
             create_service_data, by_alias=True, exclude_unset=True
         )
         kwargs = {_to_snake_case(k): v for k, v in kwargs.items()}
+        if registry_settings:
+            kwargs["auth"] = {
+                "username": registry_settings.REGISTRY_USER,
+                "password": registry_settings.REGISTRY_PW.get_secret_value(),
+                "serveraddress": registry_settings.resolved_registry_url,
+            }
+            kwargs["registry"] = registry_settings.resolved_registry_url
 
         logging.debug("Creating service with\n%s", json_dumps(kwargs, indent=1))
         service_start_result = await client.services.create(**kwargs)

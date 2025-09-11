@@ -120,6 +120,35 @@ qx.Class.define("osparc.data.Roles", {
         },
       }
     },
+    FUNCTION: {
+      "read": {
+        id: "read",
+        label: qx.locale.Manager.tr("User"),
+        longLabel: qx.locale.Manager.tr("User: Read access"),
+        canDo: [
+          qx.locale.Manager.tr("- Can use it")
+        ],
+        accessRights: {
+          "execute": true,
+          "read": true,
+          "write": false
+        },
+      },
+      "write": {
+        id: "write",
+        label: qx.locale.Manager.tr("Owner"),
+        longLabel: qx.locale.Manager.tr("Owner: Read/Write access"),
+        canDo: [
+          qx.locale.Manager.tr("- Can make changes"),
+          qx.locale.Manager.tr("- Can share it")
+        ],
+        accessRights: {
+          "execute": true,
+          "read": true,
+          "write": true
+        },
+      },
+    },
     SERVICES: {
       "read": {
         id: "read",
@@ -183,7 +212,12 @@ qx.Class.define("osparc.data.Roles", {
         longLabel: qx.locale.Manager.tr("Viewer: Read access"),
         canDo: [
           qx.locale.Manager.tr("- Can inspect the content and open ") + osparc.product.Utils.getStudyAlias({plural: true}) + qx.locale.Manager.tr(" without making changes")
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": false,
+          "delete": false
+        },
       },
       "write": {
         id: "write",
@@ -192,7 +226,12 @@ qx.Class.define("osparc.data.Roles", {
         canDo: [
           qx.locale.Manager.tr("- Can add ") + osparc.product.Utils.getStudyAlias({plural: true}),
           qx.locale.Manager.tr("- Can add folders"),
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": true,
+          "delete": false
+        },
       },
       "delete": {
         id: "delete",
@@ -202,7 +241,12 @@ qx.Class.define("osparc.data.Roles", {
           qx.locale.Manager.tr("- Can rename workspace"),
           qx.locale.Manager.tr("- Can share it"),
           qx.locale.Manager.tr("- Can delete it")
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": true,
+          "delete": true
+        },
       }
     },
 
@@ -252,6 +296,10 @@ qx.Class.define("osparc.data.Roles", {
 
     createRolesStudyInfo: function() {
       return this.__createRolesLayout(osparc.data.Roles.STUDY);
+    },
+
+    createRolesFunctionInfo: function() {
+      return this.__createRolesLayout(osparc.data.Roles.FUNCTION);
     },
 
     createRolesServicesInfo: function() {

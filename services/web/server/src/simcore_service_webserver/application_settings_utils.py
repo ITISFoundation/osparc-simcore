@@ -51,6 +51,12 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> AppConfigDict:
                 "host": getattr(app_settings.WEBSERVER_DB, "POSTGRES_HOST", None),
                 "maxsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MAXSIZE", None),
                 "minsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MINSIZE", None),
+                "maxpoolsize": getattr(
+                    app_settings.WEBSERVER_DB, "POSTGRES_MAX_POOLSIZE", None
+                ),
+                "maxoverflow": getattr(
+                    app_settings.WEBSERVER_DB, "POSTGRES_MAX_OVERFLOW", None
+                ),
                 "password": getattr(
                     app_settings.WEBSERVER_DB, "POSTGRES_PASSWORD", SecretStr("")
                 ).get_secret_value(),

@@ -95,7 +95,7 @@ async def start_computation(request: web.Request) -> web.Response:
         now = datetime.now(UTC)
         if now - created_at > timedelta(minutes=5):
             raise web.HTTPBadRequest(
-                reason=(
+                text=(
                     "This client generated collection is not new, "
                     "it was created more than 5 minutes ago. "
                     "Therefore, the client is probably wrongly generating it."

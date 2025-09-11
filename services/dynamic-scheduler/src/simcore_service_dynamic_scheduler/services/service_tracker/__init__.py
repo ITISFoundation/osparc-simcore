@@ -1,8 +1,8 @@
 from ._api import (
     NORMAL_RATE_POLL_INTERVAL,
     get_all_tracked_services,
+    get_project_id_for_service,
     get_tracked_service,
-    get_user_id_for_service,
     remove_tracked_service,
     set_frontend_notified_for_service,
     set_if_status_changed_for_service,
@@ -17,11 +17,11 @@ from ._setup import service_tracker_lifespan
 
 __all__: tuple[str, ...] = (
     "get_all_tracked_services",
+    "get_project_id_for_service",
     "get_tracked_service",
-    "get_user_id_for_service",
-    "service_tracker_lifespan",
     "NORMAL_RATE_POLL_INTERVAL",
     "remove_tracked_service",
+    "service_tracker_lifespan",
     "set_frontend_notified_for_service",
     "set_if_status_changed_for_service",
     "set_request_as_running",

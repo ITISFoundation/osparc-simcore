@@ -1,4 +1,4 @@
-""" Observer events handlers
+"""Observer events handlers
 
 SEE servicelib.observer
 """
@@ -40,7 +40,7 @@ async def _on_user_logout(
     _logger.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
     sio: AsyncServer = get_socket_server(app)
-    with managed_resource(user_id, client_session_id, app) as user_session:
+    with managed_resource(int(user_id), client_session_id, app) as user_session:
         # start by disconnecting this client if possible
         if client_session_id:
             if socket_id := await user_session.get_socket_id():

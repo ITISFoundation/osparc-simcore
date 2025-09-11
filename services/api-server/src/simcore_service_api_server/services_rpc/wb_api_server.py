@@ -28,6 +28,8 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
+    RegisteredFunctionJobPatch,
+    RegisteredFunctionJobWithStatus,
 )
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
@@ -44,6 +46,7 @@ from models_library.rest_pagination import (
 from models_library.rpc.webserver.projects import (
     ListProjectsMarkedAsJobRpcFilters,
     MetadataFilterItem,
+    ProjectJobRpcGet,
 )
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
@@ -63,6 +66,10 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
+from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
+    ProjectForbiddenRpcError,
+    ProjectNotFoundRpcError,
+)
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface,
 )
@@ -83,6 +90,8 @@ from simcore_service_api_server.models.basic_types import NameValueTuple
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
     InsufficientNumberOfSeatsError,
+    JobForbiddenAccessError,
+    JobNotFoundError,
     LicensedItemCheckoutNotFoundError,
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
@@ -242,12 +251,36 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         project_uuid: ProjectID,
         job_parent_resource_name: RelativeResourceName,
+        storage_assets_deleted: bool,  # noqa: FBT001
     ):
         await projects_rpc.mark_project_as_job(
             rpc_client=self._client,
             product_name=product_name,
             user_id=user_id,
             project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
+            storage_assets_deleted=storage_assets_deleted,
+        )
+
+    @_exception_mapper(
+        rpc_exception_map={
+            ProjectForbiddenRpcError: JobForbiddenAccessError,
+            ProjectNotFoundRpcError: JobNotFoundError,
+        }
+    )
+    async def get_project_marked_as_job(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        project_id: ProjectID,
+        job_parent_resource_name: RelativeResourceName,
+    ) -> ProjectJobRpcGet:
+        return await projects_rpc.get_project_marked_as_job(
+            rpc_client=self._client,
+            product_name=product_name,
+            user_id=user_id,
+            project_uuid=project_id,
             job_parent_resource_name=job_parent_resource_name,
         )
 
@@ -340,6 +373,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         filter_by_function_id: FunctionID | None = None,
+        filter_by_function_job_ids: list[FunctionJobID] | None = None,
+        filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         return await functions_rpc_interface.list_function_jobs(
             self._client,
@@ -348,6 +383,33 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        )
+
+    async def list_function_jobs_with_status(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        filter_by_function_id: FunctionID | None = None,
+        filter_by_function_job_ids: list[FunctionJobID] | None = None,
+        filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+    ) -> tuple[
+        list[RegisteredFunctionJobWithStatus],
+        PageMetaInfoLimitOffset,
+    ]:
+        return await functions_rpc_interface.list_function_jobs_with_status(
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
         )
 
     async def list_function_job_collections(
@@ -454,6 +516,22 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             function_job=function_job,
         )
 
+    async def patch_registered_function_job(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_id: FunctionJobID,
+        registered_function_job_patch: RegisteredFunctionJobPatch,
+    ) -> RegisteredFunctionJob:
+        return await functions_rpc_interface.patch_registered_function_job(
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            function_job_uuid=function_job_id,
+            registered_function_job_patch=registered_function_job_patch,
+        )
+
     async def get_function_input_schema(
         self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
     ) -> FunctionInputSchema:
@@ -509,6 +587,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
         job_status: FunctionJobStatus,
+        check_write_permissions: bool = True,
     ) -> FunctionJobStatus:
         return await functions_rpc_interface.update_function_job_status(
             self._client,
@@ -516,6 +595,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             product_name=product_name,
             job_status=job_status,
+            check_write_permissions=check_write_permissions,
         )
 
     async def update_function_job_outputs(
@@ -525,6 +605,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
         outputs: FunctionOutputs,
+        check_write_permissions: bool = True,
     ) -> FunctionOutputs:
         return await functions_rpc_interface.update_function_job_outputs(
             self._client,
@@ -532,6 +613,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             product_name=product_name,
             outputs=outputs,
+            check_write_permissions=check_write_permissions,
         )
 
     async def find_cached_function_jobs(

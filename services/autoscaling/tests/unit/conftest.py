@@ -8,6 +8,7 @@ import datetime
 import json
 import logging
 import random
+import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
@@ -36,7 +37,6 @@ from fastapi import FastAPI
 from models_library.docker import (
     DockerGenericTag,
     DockerLabelKey,
-    StandardSimcoreDockerLabels,
 )
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -52,6 +52,7 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     TaskSpec,
 )
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from pydantic import ByteSize, NonNegativeInt, PositiveInt, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
@@ -244,11 +245,6 @@ def app_environment(
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
         return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
 
-    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
-    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
-    assert isinstance(
-        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
-    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -261,21 +257,19 @@ def app_environment(
             "SSM_ACCESS_KEY_ID": faker.pystr(),
             "SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
                 faker.pylist(allowed_types=(str,))
             ),
-            "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+            "EC2_INSTANCES_SUBNET_IDS": json_dumps(faker.pylist(allowed_types=(str,))),
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                        EC2InstanceBootSpecific.model_json_schema()["examples"]
                     )
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
-            "EC2_INSTANCES_CUSTOM_TAGS": json.dumps(ec2_instance_custom_tags),
+            "EC2_INSTANCES_CUSTOM_TAGS": json_dumps(ec2_instance_custom_tags),
             "EC2_INSTANCES_ATTACHED_IAM_PROFILE": faker.pystr(),
         },
     )
@@ -292,25 +286,18 @@ def mocked_ec2_instances_envs(
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
     aws_instance_profile: str,
 ) -> EnvVarsDict:
-    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
-    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
-    assert isinstance(
-        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
-    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
             "EC2_INSTANCES_KEY_NAME": "osparc-pytest",
-            "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps([aws_security_group_id]),
-            "EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
-            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+            "EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps([aws_security_group_id]),
+            "EC2_INSTANCES_SUBNET_IDS": json_dumps([aws_subnet_id]),
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     ec2_type_name: cast(
                         dict,
-                        random.choice(  # noqa: S311
-                            EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                                "examples"
-                            ]
+                        secrets.choice(
+                            EC2InstanceBootSpecific.model_json_schema()["examples"]
                         ),
                     )
                     | {"ami_id": aws_ami_id}
@@ -371,11 +358,11 @@ def enabled_dynamic_mode(
         monkeypatch,
         {
             "AUTOSCALING_NODES_MONITORING": "{}",
-            "NODES_MONITORING_NODE_LABELS": json.dumps(["pytest.fake-node-label"]),
-            "NODES_MONITORING_SERVICE_LABELS": json.dumps(
+            "NODES_MONITORING_NODE_LABELS": json_dumps(["pytest.fake-node-label"]),
+            "NODES_MONITORING_SERVICE_LABELS": json_dumps(
                 ["pytest.fake-service-label"]
             ),
-            "NODES_MONITORING_NEW_NODES_LABELS": json.dumps(
+            "NODES_MONITORING_NEW_NODES_LABELS": json_dumps(
                 ["pytest.fake-new-node-label"]
             ),
         },
@@ -792,7 +779,7 @@ def aws_allowed_ec2_instance_type_names_env(
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
     changed_envs: dict[str, str | bool] = {
-        "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(aws_allowed_ec2_instance_type_names),
+        "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(aws_allowed_ec2_instance_type_names),
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
@@ -812,8 +799,8 @@ def host_memory_total() -> ByteSize:
 @pytest.fixture
 def osparc_docker_label_keys(
     faker: Faker,
-) -> StandardSimcoreDockerLabels:
-    return StandardSimcoreDockerLabels.model_validate(
+) -> SimcoreContainerLabels:
+    return SimcoreContainerLabels.model_validate(
         {
             "user_id": faker.pyint(),
             "project_id": faker.uuid4(),
@@ -1207,7 +1194,9 @@ async def create_buffer_machines(
                 InstanceType=instance_type,
                 KeyName=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                 SecurityGroupIds=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
-                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
+                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_IDS[
+                    0
+                ],
                 IamInstanceProfile={
                     "Arn": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
                 },

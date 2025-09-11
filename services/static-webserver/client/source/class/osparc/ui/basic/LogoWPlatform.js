@@ -57,7 +57,7 @@ qx.Class.define("osparc.ui.basic.LogoWPlatform", {
             font: "text-9"
           });
 
-          let platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+          let platformName = osparc.store.StaticInfo.getPlatformName();
           platformName = platformName.toUpperCase();
           if (osparc.utils.Utils.isInZ43()) {
             platformName = "Z43 " + platformName;

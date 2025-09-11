@@ -5,7 +5,6 @@ from typing import Any, ClassVar
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
-from servicelib.fastapi import long_running_tasks
 from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
@@ -17,13 +16,14 @@ from servicelib.fastapi.tracing import (
 )
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
-from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
+from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY, __version__
 from ..api.rest import get_main_router
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.inputs import setup_inputs
+from ..modules.long_running_tasks import setup_long_running_tasks
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.notifications import setup_notifications
 from ..modules.outputs import setup_outputs
@@ -47,7 +47,7 @@ _NOISY_LOGGERS = (
     "httpcore",
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 #
 # https://patorjk.com/software/taag/#p=display&f=AMC%20Tubes&t=DYSIDECAR
@@ -126,7 +126,7 @@ def create_base_app() -> FastAPI:
         noisy_loggers=_NOISY_LOGGERS,
     )
 
-    logger.info(
+    _logger.info(
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
@@ -135,7 +135,7 @@ def create_base_app() -> FastAPI:
     assert app_settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
         debug=app_settings.SC_BOOT_MODE.is_devel_mode(),
-        title=PROJECT_NAME,
+        title=APP_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
@@ -145,8 +145,6 @@ def create_base_app() -> FastAPI:
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
-
-    long_running_tasks.server.setup(app)
 
     app.include_router(get_main_router(app))
 
@@ -187,6 +185,8 @@ def create_app() -> FastAPI:
     setup_inputs(app)
     setup_outputs(app)
 
+    setup_long_running_tasks(app)
+
     setup_attribute_monitor(app)
 
     setup_user_services_preferences(app)
@@ -217,11 +217,11 @@ def create_app() -> FastAPI:
     async def _on_shutdown() -> None:
         app_state = AppState(app)
         if docker_compose_yaml := app_state.compose_spec:
-            logger.info("Removing spawned containers")
+            _logger.info("Removing spawned containers")
 
             result = await docker_compose_down(docker_compose_yaml, app.state.settings)
 
-            logger.log(
+            _logger.log(
                 logging.INFO if result.success else logging.ERROR,
                 "Removed spawned containers:\n%s",
                 result.message,

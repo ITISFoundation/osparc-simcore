@@ -164,8 +164,10 @@ async def check_running_services(app: FastAPI) -> None:
     base_start_timestamp = datetime.now(tz=UTC)
 
     # Get all current running services (across all products)
-    total_count: PositiveInt = await service_runs_db.total_service_runs_with_running_status_across_all_products(
-        _db_engine
+    total_count: PositiveInt = (
+        await service_runs_db.total_service_runs_with_running_status_across_all_products(
+            _db_engine
+        )
     )
 
     for offset in range(0, total_count, _BATCH_SIZE):

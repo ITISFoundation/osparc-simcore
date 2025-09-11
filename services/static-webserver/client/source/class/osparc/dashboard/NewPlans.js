@@ -113,7 +113,7 @@ qx.Class.define("osparc.dashboard.NewPlans", {
               const reason = osparc.utils.Utils.replaceTokens(
                 resourceData.reason,
                 "replace_me_product_name",
-                osparc.store.StaticInfo.getInstance().getDisplayName()
+                osparc.store.StaticInfo.getDisplayName()
               );
               const descLabel = newCard.getChildControl("subtitle-text");
               descLabel.setValue(reason.toString());

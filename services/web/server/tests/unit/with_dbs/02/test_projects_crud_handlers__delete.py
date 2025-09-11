@@ -11,6 +11,7 @@ from unittest import mock
 from unittest.mock import MagicMock, call
 
 import pytest
+import socketio
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -142,8 +143,9 @@ async def test_delete_multiple_opened_project_forbidden(
     user_project: ProjectDict,
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-    create_socketio_connection: Callable,
-    client_session_id_factory: Callable[[], str],
+    create_socketio_connection: Callable[
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+    ],
     user_role: UserRole,
     expected_ok: HTTPStatus,
     expected_forbidden: HTTPStatus,
@@ -155,9 +157,10 @@ async def test_delete_multiple_opened_project_forbidden(
         user_id=logged_user["id"], project_id=user_project["uuid"]
     )
     # open project in tab1
-    client_session_id1 = client_session_id_factory()
+    client_session_id1 = None
     try:
-        await create_socketio_connection(client_session_id1)
+        sio, client_session_id1 = await create_socketio_connection(None, client)
+        assert sio
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
@@ -174,9 +177,11 @@ async def test_delete_multiple_opened_project_forbidden(
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
     # delete project in tab2
-    client_session_id2 = client_session_id_factory()
     try:
-        await create_socketio_connection(client_session_id2)
+        sio_2, client_session_id2 = await create_socketio_connection(None, client)
+        assert sio_2
+        if client_session_id1:
+            assert client_session_id2 != client_session_id1
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
@@ -232,6 +237,6 @@ async def test_delete_project_while_it_is_locked_raises_error(
         get_redis_lock_manager_client_sdk(client.app),
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
-        owner=Owner(user_id=user_id, first_name=faker.name(), last_name=faker.name()),
+        owner=Owner(user_id=user_id),
         notification_cb=None,
     )(_request_delete_project)(client, user_project, expected.conflict)

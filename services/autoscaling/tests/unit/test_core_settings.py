@@ -9,6 +9,7 @@ $ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
 $ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
 
 """
+
 import datetime
 import json
 import logging
@@ -16,6 +17,7 @@ import os
 from typing import Final
 
 import pytest
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -70,6 +72,16 @@ def test_settings(app_environment: EnvVarsDict):
     assert settings.AUTOSCALING_DASK is None
     assert settings.AUTOSCALING_RABBITMQ
     assert settings.AUTOSCALING_REDIS
+
+
+def test_settings_multiple_subnets(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+):
+    subnets = [faker.pystr() for _ in range(3)]
+    monkeypatch.setenv("EC2_INSTANCES_SUBNET_IDS", json_dumps(subnets))
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+    assert subnets == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_IDS
 
 
 def test_settings_dynamic_mode(enabled_dynamic_mode: EnvVarsDict):
@@ -172,7 +184,6 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_passing_invalid_image_tags(  # noqa: N802
     )
 
     with caplog.at_level(logging.WARNING):
-
         settings = ApplicationSettings.create_from_envs()
         assert settings.AUTOSCALING_EC2_INSTANCES is None
 
@@ -265,7 +276,6 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_with_main_field_env_var( 
     # NOTE: input captured via EnvSettingsWithAutoDefaultSource
     # default env factory -> None
     with caplog.at_level(logging.WARNING):
-
         settings = ApplicationSettings.create_from_envs()
         assert settings.AUTOSCALING_EC2_INSTANCES is None
 
@@ -293,7 +303,6 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_without_main_field_env_va
     # removing any value for AUTOSCALING_EC2_INSTANCES
     caplog.clear()
     with caplog.at_level(logging.WARNING):
-
         settings = ApplicationSettings.create_from_envs()
         assert settings.AUTOSCALING_EC2_INSTANCES is None
 
@@ -330,7 +339,6 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_instance_names(  # noqa: N802
     )
     caplog.clear()
     with caplog.at_level(logging.WARNING):
-
         settings = ApplicationSettings.create_from_envs()
         assert settings.AUTOSCALING_EC2_INSTANCES is None
 

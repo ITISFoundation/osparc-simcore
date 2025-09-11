@@ -149,6 +149,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
       updateMarker();
 
       const deleteBtn = this.getChildControl("delete-button");
+      // do not allow modifying the pipeline
       node.getStudy().bind("pipelineRunning", deleteBtn, "enabled", {
         converter: running => !running
       });

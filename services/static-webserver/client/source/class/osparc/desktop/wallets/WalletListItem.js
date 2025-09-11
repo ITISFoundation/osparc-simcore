@@ -153,7 +153,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             rowSpan: 2
           });
           break;
-        case "favourite-button":
+        case "preferred-button":
           control = new qx.ui.form.Button().set({
             iconPosition: "right",
             width: 110, // make Primary and Secondary buttons same width
@@ -326,8 +326,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     },
 
     __applyPreferredWallet: function(isPreferredWallet) {
-      const favouriteButton = this.getChildControl("favourite-button");
-      favouriteButton.setBackgroundColor("transparent");
+      const favouriteButton = this.getChildControl("preferred-button");
+      favouriteButton.set({
+        backgroundColor: "transparent",
+        width: 60,
+      });
       const favouriteButtonIcon = favouriteButton.getChildControl("icon");
       if (isPreferredWallet) {
         favouriteButton.set({

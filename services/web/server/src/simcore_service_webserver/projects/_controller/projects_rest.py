@@ -28,6 +28,7 @@ from servicelib.redis import get_project_locked_state
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
+from ...models import ClientSessionHeaderParams
 from ...redis import get_redis_lock_manager_client_sdk
 from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ...security import security_web
@@ -100,7 +101,8 @@ async def create_project(request: web.Request):
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
-        request=request,
+        request_url=request.url,
+        request_headers=dict(request.headers),
         new_project_was_hidden_before_data_was_copied=query_params.hidden,
         from_study=query_params.from_study,
         as_template=query_params.as_template,
@@ -157,7 +159,7 @@ async def list_projects(request: web.Request):
     )
 
     projects = await _rest_utils.aggregate_data_to_projects_from_request(
-        request, projects
+        request.app, request.url, dict(request.headers), projects
     )
 
     return _rest_utils.create_page_response(
@@ -196,7 +198,7 @@ async def list_projects_full_search(request: web.Request):
     )
 
     projects = await _rest_utils.aggregate_data_to_projects_from_request(
-        request, projects
+        request.app, request.url, dict(request.headers), projects
     )
 
     return _rest_utils.create_page_response(
@@ -246,7 +248,9 @@ async def get_active_project(request: web.Request) -> web.Response:
         )
 
         # updates project's permalink field
-        await update_or_pop_permalink_in_project(request, project)
+        await update_or_pop_permalink_in_project(
+            request.app, request.url, dict(request.headers), project
+        )
 
         data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
 
@@ -279,7 +283,9 @@ async def get_project(request: web.Request):
     )
 
     # Adds permalink
-    await update_or_pop_permalink_in_project(request, project)
+    await update_or_pop_permalink_in_project(
+        request.app, request.url, dict(request.headers), project
+    )
 
     data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
     return envelope_json_response(data)
@@ -312,6 +318,7 @@ async def patch_project(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     await _projects_service.patch_project_for_user(
         request.app,
@@ -319,6 +326,7 @@ async def patch_project(request: web.Request):
         project_uuid=path_params.project_id,
         project_patch=project_patch,
         product_name=req_ctx.product_name,
+        client_session_id=header_params.client_session_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -416,7 +424,8 @@ async def clone_project(request: web.Request):
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
-        request=request,
+        request_url=request.url,
+        request_headers=dict(request.headers),
         new_project_was_hidden_before_data_was_copied=False,
         from_study=path_params.project_id,
         as_template=False,

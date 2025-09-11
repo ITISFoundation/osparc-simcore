@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: install uv
@@ -44,7 +44,7 @@ jobs:
           version: "0.6.x"
           enable-cache: false
       - name: checkout source branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Generate openapi specs
         run: |
           make devenv
@@ -65,11 +65,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set environment variables based on event type
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
@@ -93,11 +93,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set environment variables based on event type
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then

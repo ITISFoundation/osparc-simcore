@@ -14,10 +14,11 @@ import aiodocker
 import pytest
 from aiodocker.utils import clean_filters
 from faker import Faker
-from models_library.docker import DockerNodeID, to_simcore_runtime_docker_label_key
+from models_library.docker import DockerNodeID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
+from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
@@ -452,7 +453,7 @@ async def test_create_service(
     cleanup_test_service_name: None,
     docker_swarm: None,
 ):
-    service_id = await docker_api.create_service_and_get_id(service_spec)
+    service_id = await docker_api.create_service_and_get_id(service_spec, None)
     assert service_id
 
 
@@ -464,7 +465,7 @@ async def test_services_to_observe_exist(
     docker_swarm: None,
 ):
     service_id = await docker_api.create_service_and_get_id(
-        dynamic_sidecar_service_spec
+        dynamic_sidecar_service_spec, None
     )
     assert service_id
 
@@ -483,7 +484,7 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     docker_swarm: None,
 ):
     service_id = await docker_api.create_service_and_get_id(
-        dynamic_sidecar_service_spec
+        dynamic_sidecar_service_spec, None
     )
     assert service_id
 
@@ -510,7 +511,7 @@ async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
     }
 
     service_id = await docker_api.create_service_and_get_id(
-        dynamic_sidecar_service_spec
+        dynamic_sidecar_service_spec, None
     )
     assert service_id
 
@@ -538,7 +539,9 @@ async def test_is_dynamic_sidecar_stack_missing(
 
     # start 2 fake services to emulate the dynamic-sidecar stack
     for dynamic_sidecar_stack in dynamic_sidecar_stack_specs:
-        service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
+        service_id = await docker_api.create_service_and_get_id(
+            dynamic_sidecar_stack, None
+        )
         assert service_id
 
     services_are_missing = await docker_api.is_dynamic_sidecar_stack_missing(
@@ -561,7 +564,9 @@ async def test_are_sidecar_and_proxy_services_present(
 
     # start 2 fake services to emulate the dynamic-sidecar stack
     for dynamic_sidecar_stack in dynamic_sidecar_stack_specs:
-        service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
+        service_id = await docker_api.create_service_and_get_id(
+            dynamic_sidecar_stack, None
+        )
         assert service_id
 
     services_are_missing = await docker_api.are_sidecar_and_proxy_services_present(
@@ -604,7 +609,9 @@ async def test_remove_dynamic_sidecar_stack(
 
     # start 2 fake services to emulate the dynamic-sidecar stack
     for dynamic_sidecar_stack in dynamic_sidecar_stack_specs:
-        service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
+        service_id = await docker_api.create_service_and_get_id(
+            dynamic_sidecar_stack, None
+        )
         assert service_id
 
     assert (
@@ -666,7 +673,9 @@ async def test_is_sidecar_running(
 
     # start 2 fake services to emulate the dynamic-sidecar stack
     for dynamic_sidecar_stack in dynamic_sidecar_stack_specs:
-        service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
+        service_id = await docker_api.create_service_and_get_id(
+            dynamic_sidecar_stack, None
+        )
         assert service_id
 
     async for attempt in AsyncRetrying(

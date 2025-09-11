@@ -256,6 +256,7 @@ def fake_task_factory(
 def random_product(
     *,
     group_id: int | None = None,
+    support_standard_group_id: int | None = None,
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
@@ -294,7 +295,6 @@ def random_product(
             ui=VendorUI(
                 logo_url="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg",
                 strong_color=fake.color(),
-                project_alias=fake.random_element(elements=["project", "study"]),
             ),
         ),
         "registration_email_template": registration_email_template,
@@ -303,6 +303,7 @@ def random_product(
         "priority": fake.pyint(0, 10),
         "max_open_studies_per_user": fake.pyint(1, 10),
         "group_id": group_id,
+        "support_standard_group_id": support_standard_group_id,
     }
 
     if ui := fake.random_element(
@@ -569,4 +570,33 @@ def random_itis_vip_available_download_item(
     }
 
     data.update(**overrides)
+    return data
+
+
+def random_service_consume_filetype(
+    *,
+    service_key: str,
+    service_version: str,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.services_consume_filetypes import (
+        services_consume_filetypes,
+    )
+
+    data = {
+        "service_key": service_key,
+        "service_version": service_version,
+        "service_display_name": fake.company(),
+        "service_input_port": fake.word(),
+        "filetype": fake.random_element(["CSV", "VTK", "H5", "JSON", "TXT"]),
+        "preference_order": fake.pyint(min_value=0, max_value=10),
+        "is_guest_allowed": fake.pybool(),
+    }
+
+    assert set(data.keys()).issubset(  # nosec
+        {c.name for c in services_consume_filetypes.columns}
+    )
+
+    data.update(overrides)
     return data

@@ -18,7 +18,6 @@ import pytest
 import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI, status
-from fastapi_pagination.cursor import CursorPage
 from models_library.api_schemas_storage.storage_schemas import (
     PathMetaDataGet,
     PathTotalSizeCreate,
@@ -30,6 +29,7 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
+from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_postgres_database.models.projects import projects
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -67,11 +67,12 @@ async def _assert_list_paths(
     limit: int = 25,
     expected_paths: list[tuple[Path, _IsFile]],
     check_total: bool = True,
-) -> CursorPage[PathMetaDataGet]:
+) -> CustomizedPathsCursorPage[PathMetaDataGet]:
     offset = 0
     total_expected = len(expected_paths)
     next_cursor = 0  # NOTE: this will initialize
     total_received = 0
+    page_of_files = None
     while next_cursor is not None:
         url = url_from_operation_id(
             client, initialized_app, "list_paths", location_id=f"{location_id}"
@@ -89,7 +90,7 @@ async def _assert_list_paths(
         page_of_files, _ = assert_status(
             response,
             status.HTTP_200_OK,
-            CursorPage[PathMetaDataGet],
+            CustomizedPathsCursorPage[PathMetaDataGet],  # type: ignore
             expect_envelope=False,
         )
         assert page_of_files
@@ -112,6 +113,7 @@ async def _assert_list_paths(
         total_received += len(page_of_files.items)
         offset += limit
     assert total_received == total_expected
+    assert page_of_files
     assert page_of_files.next_page is None
     return page_of_files
 

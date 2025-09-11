@@ -153,6 +153,7 @@ def test_running_service_details_make_status(
         "service_host": scheduler_data.service_name,
         "user_id": scheduler_data.user_id,
         "service_port": scheduler_data.service_port,
+        "is_collaborative": scheduler_data.is_collaborative,
     }
 
     assert running_service_details_dict == expected_running_service_details

@@ -21,6 +21,7 @@ from typing import Final
 
 import arrow
 import networkx as nx
+from common_library.user_messages import user_message
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
@@ -30,6 +31,7 @@ from models_library.users import UserID
 from networkx.classes.reportviews import InDegreeView
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
@@ -61,6 +63,7 @@ from ...utils.rabbitmq import (
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ._models import TaskStateTracker
 from ._publisher import request_pipeline_scheduling
 from ._utils import (
     COMPLETED_STATES,
@@ -74,9 +77,9 @@ from ._utils import (
 _logger = logging.getLogger(__name__)
 
 
-_Previous = CompTaskAtDB
-_Current = CompTaskAtDB
-_MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN: Final[int] = 10
+_MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
+    seconds=30
+)
 
 
 def _auto_schedule_callback(
@@ -112,52 +115,49 @@ def _auto_schedule_callback(
 @dataclass(frozen=True, slots=True)
 class SortedTasks:
     started: list[CompTaskAtDB]
-    completed: list[CompTaskAtDB]
-    waiting: list[CompTaskAtDB]
-    potentially_lost: list[CompTaskAtDB]
-
-
-_MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
-    seconds=30
-)
+    completed: list[TaskStateTracker]
+    waiting: list[TaskStateTracker]
+    potentially_lost: list[TaskStateTracker]
 
 
 async def _triage_changed_tasks(
-    changed_tasks: list[tuple[_Previous, _Current]],
+    changed_tasks: list[TaskStateTracker],
 ) -> SortedTasks:
     started_tasks = [
-        current
-        for previous, current in changed_tasks
-        if current.state in RUNNING_STATES
+        tracker.current
+        for tracker in changed_tasks
+        if tracker.current.state in RUNNING_STATES
         or (
-            previous.state in WAITING_FOR_START_STATES
-            and current.state in COMPLETED_STATES
+            tracker.previous.state in WAITING_FOR_START_STATES
+            and tracker.current.state in COMPLETED_STATES
         )
     ]
 
     completed_tasks = [
-        current for _, current in changed_tasks if current.state in COMPLETED_STATES
+        tracker
+        for tracker in changed_tasks
+        if tracker.current.state in COMPLETED_STATES
     ]
 
     waiting_for_resources_tasks = [
-        current
-        for previous, current in changed_tasks
-        if current.state in WAITING_FOR_START_STATES
+        tracker
+        for tracker in changed_tasks
+        if tracker.current.state in WAITING_FOR_START_STATES
     ]
 
     lost_tasks = [
-        current
-        for previous, current in changed_tasks
-        if (current.state is RunningState.UNKNOWN)
+        tracker
+        for tracker in changed_tasks
+        if (tracker.current.state is RunningState.UNKNOWN)
         and (
-            (arrow.utcnow().datetime - previous.modified)
+            (arrow.utcnow().datetime - tracker.previous.modified)
             > _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS
         )
     ]
     if lost_tasks:
         _logger.warning(
             "%s are currently in unknown state. TIP: If they are running in an external cluster and it is not yet ready, that might explain it. But inform @sanderegg nevertheless!",
-            [t.node_id for t in lost_tasks],
+            [t.current.node_id for t in lost_tasks],
         )
 
     return SortedTasks(
@@ -248,7 +248,10 @@ class BaseCompScheduler(ABC):
                 self.rabbitmq_client,
                 user_id=user_id,
                 project_id=project_id,
-                log=f"Pipeline run {run_result.value} for iteration {iteration} is done with {run_result.value} state",
+                log=user_message(
+                    f"Project pipeline execution for iteration {iteration} has completed with status: {run_result.value}",
+                    _version=1,
+                ),
                 log_level=logging.INFO,
             )
         await publish_pipeline_scheduling_state(
@@ -273,9 +276,12 @@ class BaseCompScheduler(ABC):
             )
 
     async def _set_states_following_failed_to_aborted(
-        self, project_id: ProjectID, dag: nx.DiGraph, run_id: PositiveInt
+        self,
+        project_id: ProjectID,
+        dag: nx.DiGraph,
+        tasks: dict[NodeIDStr, CompTaskAtDB],
+        run_id: PositiveInt,
     ) -> dict[NodeIDStr, CompTaskAtDB]:
-        tasks = await self._get_pipeline_tasks(project_id, dag)
         # Perform a reverse topological sort to ensure tasks are ordered from last to first
         sorted_node_ids = list(reversed(list(nx.topological_sort(dag))))
         tasks = {
@@ -315,6 +321,7 @@ class BaseCompScheduler(ABC):
         def _need_heartbeat(task: CompTaskAtDB) -> bool:
             if task.state not in RUNNING_STATES:
                 return False
+
             if task.last_heartbeat is None:
                 assert task.start  # nosec
                 return bool(
@@ -356,14 +363,14 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         processing_tasks: list[CompTaskAtDB],
         comp_run: CompRunsAtDB,
-    ) -> tuple[list[tuple[_Previous, _Current]], list[CompTaskAtDB]]:
+    ) -> tuple[list[TaskStateTracker], list[CompTaskAtDB]]:
         tasks_backend_status = await self._get_tasks_status(
             user_id, processing_tasks, comp_run
         )
 
         return (
             [
-                (
+                TaskStateTracker(
                     task,
                     task.model_copy(update={"state": backend_state}),
                 )
@@ -496,16 +503,16 @@ class BaseCompScheduler(ABC):
         )
 
     async def _process_waiting_tasks(
-        self, tasks: list[CompTaskAtDB], run_id: PositiveInt
+        self, tasks: list[TaskStateTracker], run_id: PositiveInt
     ) -> None:
         comp_tasks_repo = CompTasksRepository(self.db_engine)
         await asyncio.gather(
             *(
                 comp_tasks_repo.update_project_tasks_state(
-                    t.project_id,
+                    t.current.project_id,
                     run_id,
-                    [t.node_id],
-                    t.state,
+                    [t.current.node_id],
+                    t.current.state,
                 )
                 for t in tasks
             )
@@ -596,7 +603,7 @@ class BaseCompScheduler(ABC):
     async def _process_completed_tasks(
         self,
         user_id: UserID,
-        tasks: list[CompTaskAtDB],
+        tasks: list[TaskStateTracker],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
     ) -> None:
@@ -629,20 +636,28 @@ class BaseCompScheduler(ABC):
             msg=f"scheduling pipeline {user_id=}:{project_id=}:{iteration=}",
         ):
             dag: nx.DiGraph = nx.DiGraph()
+
             try:
                 comp_run = await CompRunsRepository.instance(self.db_engine).get(
                     user_id, project_id, iteration
                 )
                 dag = await self._get_pipeline_dag(project_id)
+
                 # 1. Update our list of tasks with data from backend (state, results)
                 await self._update_states_from_comp_backend(
                     user_id, project_id, iteration, dag, comp_run
                 )
-                # 2. Any task following a FAILED task shall be ABORTED
-                comp_tasks = await self._set_states_following_failed_to_aborted(
-                    project_id, dag, comp_run.run_id
+                # 1.1. get the updated tasks NOTE: we need to get them again as some states might have changed
+                comp_tasks = await self._get_pipeline_tasks(project_id, dag)
+                # 2. timeout if waiting for cluster has been there for more than X minutes
+                comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
+                    user_id, project_id, comp_run, comp_tasks
                 )
-                # 3. do we want to stop the pipeline now?
+                # 3. Any task following a FAILED task shall be ABORTED
+                comp_tasks = await self._set_states_following_failed_to_aborted(
+                    project_id, dag, comp_tasks, comp_run.run_id
+                )
+                # 4. do we want to stop the pipeline now?
                 if comp_run.cancelled:
                     comp_tasks = await self._schedule_tasks_to_stop(
                         user_id, project_id, comp_tasks, comp_run
@@ -664,10 +679,7 @@ class BaseCompScheduler(ABC):
                             iteration=iteration,
                         ),
                     )
-                # 4. timeout if waiting for cluster has been there for more than X minutes
-                comp_tasks = await self._timeout_if_waiting_for_cluster_too_long(
-                    user_id, project_id, comp_run.run_id, comp_tasks
-                )
+
                 # 5. send a heartbeat
                 await self._send_running_tasks_heartbeat(
                     user_id, project_id, comp_run.run_id, iteration, dag
@@ -687,42 +699,75 @@ class BaseCompScheduler(ABC):
                         f"{project_id=}",
                         f"{pipeline_result=}",
                     )
-            except PipelineNotFoundError:
-                _logger.warning(
-                    "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
-                    f"{project_id=}",
+            except PipelineNotFoundError as exc:
+                _logger.exception(
+                    **create_troubleshootting_log_kwargs(
+                        f"pipeline {project_id} is missing from `comp_pipelines` DB table, something is corrupted. Aborting scheduling",
+                        error=exc,
+                        error_context={
+                            "user_id": f"{user_id}",
+                            "project_id": f"{project_id}",
+                            "iteration": f"{iteration}",
+                        },
+                        tip="Check that the project still exists",
+                    )
                 )
+
+                # NOTE: no need to update task states here as pipeline is already broken
                 await self._set_run_result(
-                    user_id, project_id, iteration, RunningState.ABORTED
+                    user_id, project_id, iteration, RunningState.FAILED
                 )
             except InvalidPipelineError as exc:
-                _logger.warning(
-                    "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
-                    f"{project_id=}",
-                    exc,
-                )
-                await self._set_run_result(
-                    user_id, project_id, iteration, RunningState.ABORTED
-                )
-            except (DaskClientAcquisisitonError, ClustersKeeperNotAvailableError):
                 _logger.exception(
-                    "Unexpected error while connecting with computational backend, aborting pipeline"
+                    **create_troubleshootting_log_kwargs(
+                        f"pipeline {project_id} appears to be misconfigured. Aborting scheduling",
+                        error=exc,
+                        error_context={
+                            "user_id": f"{user_id}",
+                            "project_id": f"{project_id}",
+                            "iteration": f"{iteration}",
+                        },
+                        tip="Check that the project pipeline is valid and all tasks are present in the DB",
+                    ),
                 )
-                tasks: dict[NodeIDStr, CompTaskAtDB] = await self._get_pipeline_tasks(
-                    project_id, dag
+                # NOTE: no need to update task states here as pipeline is already broken
+                await self._set_run_result(
+                    user_id, project_id, iteration, RunningState.FAILED
                 )
+            except (
+                DaskClientAcquisisitonError,
+                ComputationalBackendNotConnectedError,
+                ClustersKeeperNotAvailableError,
+            ) as exc:
+                _logger.exception(
+                    **create_troubleshootting_log_kwargs(
+                        "Unexpectedly lost connection to the computational backend. Tasks are set back to WAITING_FOR_CLUSTER state until we eventually reconnect",
+                        error=exc,
+                        error_context={
+                            "user_id": f"{user_id}",
+                            "project_id": f"{project_id}",
+                            "iteration": f"{iteration}",
+                        },
+                        tip="Check network connection and the status of the computational backend (clusters-keeper, dask-scheduler, dask-workers)",
+                    )
+                )
+                processing_tasks = {
+                    k: v
+                    for k, v in (
+                        await self._get_pipeline_tasks(project_id, dag)
+                    ).items()
+                    if v.state in PROCESSING_STATES
+                }
                 comp_tasks_repo = CompTasksRepository(self.db_engine)
                 await comp_tasks_repo.update_project_tasks_state(
                     project_id,
                     comp_run.run_id,
-                    [t.node_id for t in tasks.values()],
-                    RunningState.FAILED,
+                    [t.node_id for t in processing_tasks.values()],
+                    RunningState.WAITING_FOR_CLUSTER,
                 )
                 await self._set_run_result(
-                    user_id, project_id, iteration, RunningState.FAILED
+                    user_id, project_id, iteration, RunningState.WAITING_FOR_CLUSTER
                 )
-            except ComputationalBackendNotConnectedError:
-                _logger.exception("Computational backend is not connected!")
             finally:
                 await self._set_processing_done(user_id, project_id, iteration)
 
@@ -755,7 +800,7 @@ class BaseCompScheduler(ABC):
 
         return comp_tasks
 
-    async def _schedule_tasks_to_start(  # noqa: C901
+    async def _schedule_tasks_to_start(
         self,
         user_id: UserID,
         project_id: ProjectID,
@@ -800,10 +845,32 @@ class BaseCompScheduler(ABC):
         except (
             ComputationalBackendNotConnectedError,
             ComputationalSchedulerChangedError,
-        ):
+            ClustersKeeperNotAvailableError,
+        ) as exc:
             _logger.exception(
-                "Issue with computational backend. Tasks are set back "
-                "to WAITING_FOR_CLUSTER state until scheduler comes back!",
+                **create_troubleshootting_log_kwargs(
+                    "Computational backend is not connected. Tasks are set back "
+                    "to WAITING_FOR_CLUSTER state until scheduler comes back!",
+                    error=exc,
+                    error_context={
+                        "user_id": f"{user_id}",
+                        "project_id": f"{project_id}",
+                        "tasks_ready_to_start": f"{list(tasks_ready_to_start.keys())}",
+                        "comp_run_use_on_demand_clusters": f"{comp_run.use_on_demand_clusters}",
+                        "comp_run.run_id": f"{comp_run.run_id}",
+                    },
+                )
+            )
+
+            await publish_project_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                log=user_message(
+                    "An unexpected error occurred during task scheduling. Please contact oSparc support if this issue persists.",
+                    _version=1,
+                ),
+                log_level=logging.ERROR,
             )
             await CompTasksRepository.instance(
                 self.db_engine
@@ -818,7 +885,17 @@ class BaseCompScheduler(ABC):
 
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
-                "The on demand computational backend is not ready yet: %s", exc
+                **create_troubleshootting_log_kwargs(
+                    "The on demand computational backend is not ready yet. Tasks are set to WAITING_FOR_CLUSTER state until the cluster is ready!",
+                    error=exc,
+                    error_context={
+                        "user_id": f"{user_id}",
+                        "project_id": f"{project_id}",
+                        "tasks_ready_to_start": f"{list(tasks_ready_to_start.keys())}",
+                        "comp_run_use_on_demand_clusters": f"{comp_run.use_on_demand_clusters}",
+                        "comp_run.run_id": f"{comp_run.run_id}",
+                    },
+                )
             )
             await publish_project_log(
                 self.rabbitmq_client,
@@ -838,34 +915,20 @@ class BaseCompScheduler(ABC):
             )
             for task in tasks_ready_to_start:
                 comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
-        except ClustersKeeperNotAvailableError:
-            _logger.exception("Unexpected error while starting tasks:")
-            await publish_project_log(
-                self.rabbitmq_client,
-                user_id,
-                project_id,
-                log="Unexpected error while scheduling computational tasks! TIP: contact osparc support.",
-                log_level=logging.ERROR,
-            )
-
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
-                project_id,
-                comp_run.run_id,
-                list(tasks_ready_to_start.keys()),
-                RunningState.FAILED,
-                optional_progress=1.0,
-                optional_stopped=arrow.utcnow().datetime,
-            )
-            for task in tasks_ready_to_start:
-                comp_tasks[f"{task}"].state = RunningState.FAILED
-            raise
         except TaskSchedulingError as exc:
             _logger.exception(
-                "Project '%s''s task '%s' could not be scheduled",
-                exc.project_id,
-                exc.node_id,
+                **create_troubleshootting_log_kwargs(
+                    "A task could not be scheduled, it is set to FAILED and the rest of the pipeline will be ABORTED",
+                    error=exc,
+                    error_context={
+                        "user_id": f"{user_id}",
+                        "project_id": f"{project_id}",
+                        "node_id": f"{exc.node_id}",
+                        "tasks_ready_to_start": f"{list(tasks_ready_to_start.keys())}",
+                        "comp_run_use_on_demand_clusters": f"{comp_run.use_on_demand_clusters}",
+                        "comp_run.run_id": f"{comp_run.run_id}",
+                    },
+                )
             )
             await CompTasksRepository.instance(
                 self.db_engine
@@ -879,13 +942,19 @@ class BaseCompScheduler(ABC):
                 optional_stopped=arrow.utcnow().datetime,
             )
             comp_tasks[f"{exc.node_id}"].state = RunningState.FAILED
-        except Exception:
+        except Exception as exc:
             _logger.exception(
-                "Unexpected error for %s with %s on %s happened when scheduling %s:",
-                f"{comp_run.user_id=}",
-                f"{comp_run.project_uuid=}",
-                f"{comp_run.use_on_demand_clusters=}",
-                f"{tasks_ready_to_start.keys()=}",
+                **create_troubleshootting_log_kwargs(
+                    "Unexpected error happened when scheduling tasks, all tasks to start are set to FAILED and the rest of the pipeline will be ABORTED",
+                    error=exc,
+                    error_context={
+                        "user_id": f"{comp_run.user_id}",
+                        "project_id": f"{comp_run.project_uuid}",
+                        "tasks_ready_to_start": f"{list(tasks_ready_to_start.keys())}",
+                        "comp_run_use_on_demand_clusters": f"{comp_run.use_on_demand_clusters}",
+                        "comp_run.run_id": f"{comp_run.run_id}",
+                    },
+                )
             )
             await CompTasksRepository.instance(
                 self.db_engine
@@ -907,39 +976,50 @@ class BaseCompScheduler(ABC):
         self,
         user_id: UserID,
         project_id: ProjectID,
-        run_id: PositiveInt,
+        comp_run: CompRunsAtDB,
         comp_tasks: dict[NodeIDStr, CompTaskAtDB],
     ) -> dict[NodeIDStr, CompTaskAtDB]:
-        if all(
-            c.state is RunningState.WAITING_FOR_CLUSTER for c in comp_tasks.values()
-        ):
-            # get latest modified task
-            latest_modified_of_all_tasks = max(
-                comp_tasks.values(), key=lambda task: task.modified
-            ).modified
+        if comp_run.result is not RunningState.WAITING_FOR_CLUSTER:
+            return comp_tasks
 
-            if (
-                arrow.utcnow().datetime - latest_modified_of_all_tasks
-            ) > datetime.timedelta(minutes=_MAX_WAITING_FOR_CLUSTER_TIMEOUT_IN_MIN):
-                await CompTasksRepository.instance(
-                    self.db_engine
-                ).update_project_tasks_state(
-                    project_id,
-                    run_id,
-                    [NodeID(idstr) for idstr in comp_tasks],
-                    RunningState.FAILED,
-                    optional_progress=1.0,
-                    optional_stopped=arrow.utcnow().datetime,
-                )
-                for task in comp_tasks.values():
-                    task.state = RunningState.FAILED
-                msg = "Timed-out waiting for computational cluster! Please try again and/or contact Osparc support."
-                _logger.error(msg)
-                await publish_project_log(
-                    self.rabbitmq_client,
-                    user_id,
-                    project_id,
-                    log=msg,
-                    log_level=logging.ERROR,
-                )
+        tasks_waiting_for_cluster = [
+            t
+            for t in comp_tasks.values()
+            if t.state is RunningState.WAITING_FOR_CLUSTER
+        ]
+        if not tasks_waiting_for_cluster:
+            return comp_tasks
+
+        # get latest modified task
+        latest_modified_of_all_tasks = max(
+            tasks_waiting_for_cluster, key=lambda task: task.modified
+        ).modified
+
+        if (
+            arrow.utcnow().datetime - latest_modified_of_all_tasks
+        ) > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT:
+            await CompTasksRepository.instance(
+                self.db_engine
+            ).update_project_tasks_state(
+                project_id,
+                comp_run.run_id,
+                [task.node_id for task in tasks_waiting_for_cluster],
+                RunningState.FAILED,
+                optional_progress=1.0,
+                optional_stopped=arrow.utcnow().datetime,
+            )
+            for task in tasks_waiting_for_cluster:
+                task.state = RunningState.FAILED
+            msg = user_message(
+                "The system has timed out while waiting for computational resources. Please try running your project again or contact oSparc support if this issue persists.",
+                _version=1,
+            )
+            _logger.error(msg)
+            await publish_project_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                log=msg,
+                log_level=logging.ERROR,
+            )
         return comp_tasks

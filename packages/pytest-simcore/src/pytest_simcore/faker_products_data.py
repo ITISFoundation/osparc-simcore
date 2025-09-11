@@ -4,9 +4,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 """
-    Fixtures to produce fake data for a product:
-        - it is self-consistent
-        - granular customization by overriding fixtures
+Fixtures to produce fake data for a product:
+    - it is self-consistent
+    - granular customization by overriding fixtures
 """
 
 from typing import Any
@@ -66,10 +66,24 @@ def bcc_email(request: pytest.FixtureRequest, product_name: ProductName) -> Emai
 
 
 @pytest.fixture
+def support_standard_group_id(faker: Faker) -> int | None:
+    # NOTE: override to change
+    return None
+
+
+@pytest.fixture
 def product(
-    faker: Faker, product_name: ProductName, support_email: EmailStr
+    faker: Faker,
+    product_name: ProductName,
+    support_email: EmailStr,
+    support_standard_group_id: int | None,
 ) -> dict[str, Any]:
-    return random_product(name=product_name, support_email=support_email, fake=faker)
+    return random_product(
+        name=product_name,
+        support_email=support_email,
+        support_standard_group_id=support_standard_group_id,
+        fake=faker,
+    )
 
 
 @pytest.fixture

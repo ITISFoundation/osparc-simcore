@@ -342,6 +342,8 @@ def setup_user_pre_registration_details_db(
                 country=faker.random_element([c.name for c in pycountry.countries]),
                 postal_code=faker.postcode(),
                 created_by=None,
+                # NOTE: here product is not specified (i.e. product_name=None) on purspose to check
+                # backwards compatibility
             )
             .returning(sa.literal_column("*"))
         )

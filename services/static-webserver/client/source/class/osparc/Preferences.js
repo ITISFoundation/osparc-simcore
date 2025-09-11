@@ -119,7 +119,7 @@ qx.Class.define("osparc.Preferences", {
     jobConcurrencyLimit: {
       check: "Number",
       nullable: false,
-      init: 4,
+      init: 1,
       event: "changeJobConcurrencyLimit",
       apply: "__patchPreference"
     },
@@ -210,7 +210,11 @@ qx.Class.define("osparc.Preferences", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __patchPreference: function(value, _, propName) {
+    __patchPreference: function(value, old, propName) {
+      // only patch if the value changed
+      if (value === old) {
+        return;
+      }
       this.self().patchPreference(propName, value);
     }
   }

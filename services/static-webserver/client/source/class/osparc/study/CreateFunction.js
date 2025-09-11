@@ -229,6 +229,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         allowGrowX: false,
         alignX: "right"
       });
+      osparc.utils.Utils.setIdToWidget(createFunctionBtn, "create_function_btn");
       createFunctionBtn.addListener("execute", () => {
         if (this.__form.validate()) {
           this.__createFunction(defaultInputs, exposedInputs, exposedOutputs);

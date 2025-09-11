@@ -21,7 +21,7 @@ qx.Class.define("osparc.desktop.credits.PaymentGatewayWindow", {
   statics: {
     popUp: function(url, title, options) {
       const iframe = new qx.ui.embed.Iframe(url).set({
-        decorator: "no-border-2"
+        decorator: "no-border-0"
       })
       return osparc.ui.window.Window.popUpInWindow(iframe, title, options.width, options.height).set({
         clickAwayClose: false

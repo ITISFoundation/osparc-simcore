@@ -54,14 +54,48 @@ class GroupAccessRights(BaseModel):
     )
 
 
-class GroupGet(OutputSchema):
-    gid: GroupID = Field(..., description="the group ID")
-    label: str = Field(..., description="the group name")
-    description: str = Field(..., description="the group description")
-    thumbnail: AnyUrl | None = Field(
-        default=None, description="url to the group thumbnail"
-    )
-    access_rights: GroupAccessRights = Field(..., alias="accessRights")
+class GroupGetBase(OutputSchema):
+    gid: Annotated[GroupID, Field(description="the group's unique ID")]
+    label: Annotated[str, Field(description="the group's display name")]
+    description: str
+    thumbnail: Annotated[
+        AnyUrl | None, Field(description="a link to the group's thumbnail")
+    ] = None
+
+    @field_validator("thumbnail", mode="before")
+    @classmethod
+    def _sanitize_thumbnail_input(cls, v):
+        if v:
+            # Enforces null if thumbnail is not valid URL or empty
+            with suppress(ValidationError):
+                return TypeAdapter(AnyHttpUrl).validate_python(v)
+        return None
+
+    @classmethod
+    def dump_basic_group_data(cls, group: Group) -> dict:
+        """Helper function to extract common group data for schema conversion"""
+        return remap_keys(
+            group.model_dump(
+                include={
+                    "gid",
+                    "name",
+                    "description",
+                    "thumbnail",
+                },
+                exclude={
+                    "inclusion_rules",  # deprecated
+                },
+                exclude_unset=True,
+                by_alias=False,
+            ),
+            rename={
+                "name": "label",
+            },
+        )
+
+
+class GroupGet(GroupGetBase):
+    access_rights: Annotated[GroupAccessRights, Field(alias="accessRights")]
 
     inclusion_rules: Annotated[
         dict[str, str],
@@ -77,24 +111,7 @@ class GroupGet(OutputSchema):
         # Adapts these domain models into this schema
         return cls.model_validate(
             {
-                **remap_keys(
-                    group.model_dump(
-                        include={
-                            "gid",
-                            "name",
-                            "description",
-                            "thumbnail",
-                        },
-                        exclude={
-                            "inclusion_rules",  # deprecated
-                        },
-                        exclude_unset=True,
-                        by_alias=False,
-                    ),
-                    rename={
-                        "name": "label",
-                    },
-                ),
+                **cls.dump_basic_group_data(group),
                 "access_rights": access_rights,
             }
         )
@@ -135,15 +152,6 @@ class GroupGet(OutputSchema):
         )
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
-
-    @field_validator("thumbnail", mode="before")
-    @classmethod
-    def _sanitize_legacy_data(cls, v):
-        if v:
-            # Enforces null if thumbnail is not valid URL or empty
-            with suppress(ValidationError):
-                return TypeAdapter(AnyHttpUrl).validate_python(v)
-        return None
 
 
 class GroupCreate(InputSchema):
@@ -187,6 +195,12 @@ class MyGroupsGet(OutputSchema):
     organizations: list[GroupGet] | None = None
     all: GroupGet
     product: GroupGet | None = None
+    support: Annotated[
+        GroupGetBase | None,
+        Field(
+            description="Group ID of the app support team or None if no support is defined for this product"
+        ),
+    ] = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -225,6 +239,12 @@ class MyGroupsGet(OutputSchema):
                     "description": "Open to all users",
                     "accessRights": {"read": True, "write": False, "delete": False},
                 },
+                "support": {
+                    "gid": "2",
+                    "label": "Support Team",
+                    "description": "The support team of the application",
+                    "thumbnail": "https://placekitten.com/15/15",
+                },
             }
         }
     )
@@ -234,6 +254,7 @@ class MyGroupsGet(OutputSchema):
         cls,
         groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
+        product_support_group: Group | None,
     ) -> Self:
         assert groups_by_type.primary  # nosec
         assert groups_by_type.everyone  # nosec
@@ -247,6 +268,13 @@ class MyGroupsGet(OutputSchema):
             product=(
                 GroupGet.from_domain_model(*my_product_group)
                 if my_product_group
+                else None
+            ),
+            support=(
+                GroupGetBase.model_validate(
+                    GroupGetBase.dump_basic_group_data(product_support_group)
+                )
+                if product_support_group
                 else None
             ),
         )

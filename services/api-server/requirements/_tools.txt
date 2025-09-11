@@ -10,7 +10,7 @@ cfgv==3.4.0
     # via pre-commit
 change-case==0.5.2
     # via -r requirements/_tools.in
-click==8.1.7
+click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt

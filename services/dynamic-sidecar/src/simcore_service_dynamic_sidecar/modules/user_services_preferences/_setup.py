@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI
 from servicelib.logging_utils import log_context
 
+from ..._meta import APP_NAME
 from ...core.settings import ApplicationSettings
 from ._manager import UserServicesPreferencesManager
 from ._utils import is_feature_enabled
@@ -33,6 +34,7 @@ def setup_user_services_preferences(app: FastAPI) -> None:
                         service_version=settings.DY_SIDECAR_SERVICE_VERSION,
                         user_id=settings.DY_SIDECAR_USER_ID,
                         product_name=settings.DY_SIDECAR_PRODUCT_NAME,
+                        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
                     )
                 )
             else:

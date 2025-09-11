@@ -118,8 +118,8 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
             " this is required to start a new EC2 instance",
         ),
     ]
-    WORKERS_EC2_INSTANCES_SUBNET_ID: Annotated[
-        str,
+    WORKERS_EC2_INSTANCES_SUBNET_IDS: Annotated[
+        list[str],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -186,8 +186,8 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
             " this is required to start a new EC2 instance",
         ),
     ]
-    PRIMARY_EC2_INSTANCES_SUBNET_ID: Annotated[
-        str,
+    PRIMARY_EC2_INSTANCES_SUBNET_IDS: Annotated[
+        list[str],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -427,10 +427,17 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
+    CLUSTERS_KEEPER_DASK_NPROCS: Annotated[
+        int,
+        Field(
+            description="overrides the default number of worker processes in the dask-sidecars, setting it to negative values will use dask defaults (see description in 'dask worker --help')",
+        ),
+    ]
+
     CLUSTERS_KEEPER_DASK_NTHREADS: Annotated[
         NonNegativeInt,
         Field(
-            description="overrides the default number of threads in the dask-sidecars, setting it to 0 will use the default (see description in dask-sidecar)",
+            description="overrides the default number of threads per process in the dask-sidecars, setting it to 0 will use the default (see description in dask-sidecar)",
         ),
     ]
 

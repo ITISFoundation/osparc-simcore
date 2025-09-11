@@ -24,11 +24,6 @@ MSG_PUBLIC_PROJECT_NOT_PUBLISHED: Final[str] = user_message(
     _version=1,
 )
 
-MSG_GUESTS_NOT_ALLOWED: Final[str] = user_message(
-    "Access is restricted to registered users.<br/><br/>"
-    "If you don't have an account, please contact support to request one.<br/><br/>",
-    _version=1,
-)
 
 MSG_TOO_MANY_GUESTS: Final[str] = user_message(
     "We have reached the maximum number of anonymous users allowed on the platform. "

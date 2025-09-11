@@ -77,7 +77,9 @@ async def get_api_key(
     if api_key is not None:
         return api_key
 
-    raise ApiKeyNotFoundError(api_key_id=api_key_id)
+    raise ApiKeyNotFoundError(
+        api_key_id=api_key_id, product_name=product_name, user_id=user_id
+    )
 
 
 async def list_api_keys(

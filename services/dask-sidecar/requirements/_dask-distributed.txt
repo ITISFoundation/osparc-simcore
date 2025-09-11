@@ -2,7 +2,7 @@ blosc==1.11.3
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-distributed.in
-click==8.1.8
+click==8.2.1
     # via
     #   -c requirements/./_base.txt
     #   dask

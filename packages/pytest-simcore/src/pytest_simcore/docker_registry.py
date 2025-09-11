@@ -15,6 +15,7 @@ import aiodocker
 import docker
 import jsonschema
 import pytest
+import pytest_asyncio
 import tenacity
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -22,35 +23,45 @@ from settings_library.docker_registry import RegistrySettings
 
 from .helpers.host import get_localhost_ip
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
 def docker_registry(keep_docker_up: bool) -> Iterator[str]:
     """sets up and runs a docker registry container locally and returns its URL"""
+    yield from _docker_registry_impl(keep_docker_up, registry_version="3")
+
+
+@pytest.fixture(scope="session")
+def docker_registry_v2() -> Iterator[str]:
+    """sets up and runs a docker registry v2 container locally and returns its URL"""
+    yield from _docker_registry_impl(keep_docker_up=False, registry_version="2")
+
+
+def _docker_registry_impl(keep_docker_up: bool, registry_version: str) -> Iterator[str]:
+    """sets up and runs a docker registry container locally and returns its URL"""
     # run the registry outside of the stack
     docker_client = docker.from_env()
     # try to login to private registry
     host = "127.0.0.1"
-    port = 5000
+    port = 5000 if registry_version == "3" else 5001
     url = f"{host}:{port}"
+    container_name = f"pytest_registry_v{registry_version}"
+    volume_name = f"pytest_registry_v{registry_version}_data"
+
     container = None
     try:
         docker_client.login(registry=url, username="simcore")
-        container = docker_client.containers.list(filters={"name": "pytest_registry"})[
-            0
-        ]
+        container = docker_client.containers.list(filters={"name": container_name})[0]
         print("Warning: docker registry is already up!")
     except Exception:  # pylint: disable=broad-except
         container = docker_client.containers.run(
-            "registry:2",
-            ports={"5000": "5000"},
-            name="pytest_registry",
+            f"registry:{registry_version}",
+            ports={"5000": port},
+            name=container_name,
             environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
             restart_policy={"Name": "always"},
-            volumes={
-                "pytest_registry_data": {"bind": "/var/lib/registry", "mode": "rw"}
-            },
+            volumes={volume_name: {"bind": "/var/lib/registry", "mode": "rw"}},
             detach=True,
         )
 
@@ -63,7 +74,7 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
     docker_client.login(registry=url, username="simcore")
     # tag the image
     repo = url + "/hello-world:dev"
-    assert hello_world_image.tag(repo) == True
+    assert hello_world_image.tag(repo)
     # push the image to the private registry
     docker_client.images.push(repo)
     # wipe the images
@@ -79,9 +90,9 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
     os.environ["REGISTRY_SSL"] = "False"
     os.environ["REGISTRY_AUTH"] = "False"
     # the registry URL is how to access from the container (e.g. for accessing the API)
-    os.environ["REGISTRY_URL"] = f"{get_localhost_ip()}:5000"
+    os.environ["REGISTRY_URL"] = f"{get_localhost_ip()}:{port}"
     # the registry PATH is how the docker engine shall access the images (usually same as REGISTRY_URL but for testing)
-    os.environ["REGISTRY_PATH"] = "127.0.0.1:5000"
+    os.environ["REGISTRY_PATH"] = f"127.0.0.1:{port}"
     os.environ["REGISTRY_USER"] = "simcore"
     os.environ["REGISTRY_PW"] = ""
 
@@ -124,7 +135,7 @@ def registry_settings(
 @tenacity.retry(
     wait=tenacity.wait_fixed(2),
     stop=tenacity.stop_after_delay(20),
-    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    before_sleep=tenacity.before_sleep_log(_logger, logging.INFO),
     reraise=True,
 )
 def wait_till_registry_is_responsive(url: str) -> bool:
@@ -136,7 +147,7 @@ def wait_till_registry_is_responsive(url: str) -> bool:
 # ********************************************************* Services ***************************************
 
 
-def _pull_push_service(
+async def _pull_push_service(
     pull_key: str,
     tag: str,
     new_registry: str,
@@ -145,40 +156,45 @@ def _pull_push_service(
 ) -> dict[str, Any]:
     client = docker.from_env()
     # pull image from original location
-    print(f"Pulling {pull_key}:{tag} ...")
-    image = client.images.pull(pull_key, tag=tag)
-    assert image, f"image {pull_key}:{tag} could NOT be pulled!"
+    with log_context(logging.INFO, msg=f"Pulling {pull_key}:{tag} ..."):
+        image = client.images.pull(pull_key, tag=tag)
+        assert image, f"image {pull_key}:{tag} could NOT be pulled!"
 
     # get io.simcore.* labels
     image_labels: dict = dict(image.labels)
 
     if owner_email:
-        print(f"Overriding labels to take ownership as {owner_email} ...")
-        # By overriding these labels, user owner_email gets ownership of the service
-        # and the catalog service automatically gives full access rights for testing it
-        # otherwise it does not even get read rights
+        with log_context(
+            logging.INFO,
+            msg=f"Overriding labels to take ownership as {owner_email} ...",
+        ):
+            # By overriding these labels, user owner_email gets ownership of the service
+            # and the catalog service automatically gives full access rights for testing it
+            # otherwise it does not even get read rights
 
-        image_labels.update({"io.simcore.contact": f'{{"contact": "{owner_email}"}}'})
-        image_labels.update(
-            {
-                "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'
-            }
-        )
-        image_labels.update({"maintainer": f"{owner_email}"})
-
-        df_path = Path("Dockerfile").resolve()
-        df_path.write_text(f"FROM {pull_key}:{tag}")
-
-        try:
-            # Rebuild to override image labels AND re-tag
-            image2, _ = client.images.build(
-                path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned"
+            image_labels.update(
+                {"io.simcore.contact": f'{{"contact": "{owner_email}"}}'}
             )
-            print(json.dumps(image2.labels, indent=2))
-            image = image2
+            image_labels.update(
+                {
+                    "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'
+                }
+            )
+            image_labels.update({"maintainer": f"{owner_email}"})
 
-        finally:
-            df_path.unlink()
+            df_path = Path("Dockerfile").resolve()
+            df_path.write_text(f"FROM {pull_key}:{tag}")
+
+            try:
+                # Rebuild to override image labels AND re-tag
+                image2, _ = client.images.build(
+                    path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned"
+                )
+                print(json.dumps(image2.labels, indent=2))
+                image = image2
+
+            finally:
+                df_path.unlink()
 
     assert image_labels
     io_simcore_labels = {
@@ -195,11 +211,16 @@ def _pull_push_service(
     new_image_tag = (
         f"{new_registry}/{io_simcore_labels['key']}:{io_simcore_labels['version']}"
     )
-    assert image.tag(new_image_tag) == True
+    assert image.tag(new_image_tag)
 
     # push the image to the new location
-    print(f"Pushing {pull_key}:{tag}  -> {new_image_tag}...")
-    client.images.push(new_image_tag)
+    async with aiodocker.Docker() as client:
+        await client.images.push(new_image_tag)
+    # with log_context(
+    #     logging.INFO,
+    #     msg=f"Pushing {pull_key}:{tag}  -> {new_image_tag} ...",
+    # ):
+    #     client.images.push(new_image_tag)
 
     # return image io.simcore.* labels
     image_labels = dict(image.labels)
@@ -212,10 +233,10 @@ def _pull_push_service(
     }
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 def docker_registry_image_injector(
     docker_registry: str, node_meta_schema: dict
-) -> Callable[..., dict[str, Any]]:
+) -> Callable[[str, str, str | None], Awaitable[dict[str, Any]]]:
     def inject_image(
         source_image_repo: str, source_image_tag: str, owner_email: str | None = None
     ):
@@ -231,29 +252,33 @@ def docker_registry_image_injector(
 
 
 @pytest.fixture
-def osparc_service(
+async def osparc_service(
     docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str
 ) -> dict[str, Any]:
     """pulls the service from service_repo:service_tag and pushes to docker_registry using the oSparc node meta schema
     NOTE: 'service_repo' and 'service_tag' defined as parametrization
     """
-    return _pull_push_service(
+    return await _pull_push_service(
         service_repo, service_tag, docker_registry, node_meta_schema
     )
 
 
-@pytest.fixture(scope="session")
-def sleeper_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def sleeper_service(
+    docker_registry: str, node_meta_schema: dict
+) -> dict[str, Any]:
     """Adds a itisfoundation/sleeper in docker registry"""
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/sleeper", "1.0.0", docker_registry, node_meta_schema
     )
 
 
-@pytest.fixture(scope="session")
-def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def jupyter_service(
+    docker_registry: str, node_meta_schema: dict
+) -> dict[str, Any]:
     """Adds a itisfoundation/jupyter-base-notebook in docker registry"""
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/jupyter-base-notebook",
         "2.13.0",
         docker_registry,
@@ -261,20 +286,20 @@ def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, A
     )
 
 
-@pytest.fixture(scope="session", params=["2.0.7"])
+@pytest_asyncio.fixture(scope="session", loop_scope="session", params=["2.0.7"])
 def dy_static_file_server_version(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture(scope="session")
-def dy_static_file_server_service(
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def dy_static_file_server_service(
     docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
     itisfoundation/dy-static-file-server
     """
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/dy-static-file-server",
         dy_static_file_server_version,
         docker_registry,
@@ -282,15 +307,15 @@ def dy_static_file_server_service(
     )
 
 
-@pytest.fixture(scope="session")
-def dy_static_file_server_dynamic_sidecar_service(
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def dy_static_file_server_dynamic_sidecar_service(
     docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
     itisfoundation/dy-static-file-server-dynamic-sidecar
     """
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/dy-static-file-server-dynamic-sidecar",
         dy_static_file_server_version,
         docker_registry,
@@ -298,15 +323,15 @@ def dy_static_file_server_dynamic_sidecar_service(
     )
 
 
-@pytest.fixture(scope="session")
-def dy_static_file_server_dynamic_sidecar_compose_spec_service(
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def dy_static_file_server_dynamic_sidecar_compose_spec_service(
     docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
     itisfoundation/dy-static-file-server-dynamic-sidecar-compose-spec
     """
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/dy-static-file-server-dynamic-sidecar-compose-spec",
         dy_static_file_server_version,
         docker_registry,

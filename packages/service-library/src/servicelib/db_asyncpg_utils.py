@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
 async def create_async_engine_and_database_ready(
-    settings: PostgresSettings,
+    settings: PostgresSettings, application_name: str
 ) -> AsyncEngine:
     """
     - creates asyncio engine
@@ -30,17 +30,17 @@ async def create_async_engine_and_database_ready(
         raise_if_migration_not_ready,
     )
 
-    server_settings = None
-    if settings.POSTGRES_CLIENT_NAME:
-        assert isinstance(settings.POSTGRES_CLIENT_NAME, str)  # nosec
-        server_settings = {
-            "application_name": settings.POSTGRES_CLIENT_NAME,
-        }
+    server_settings = {
+        "jit": "off",
+        "application_name": settings.client_name(
+            f"{application_name}", suffix="asyncpg"
+        ),
+    }
 
     engine = create_async_engine(
         settings.dsn_with_async_sqlalchemy,
-        pool_size=settings.POSTGRES_MINSIZE,
-        max_overflow=settings.POSTGRES_MAXSIZE - settings.POSTGRES_MINSIZE,
+        pool_size=settings.POSTGRES_MAX_POOLSIZE,
+        max_overflow=settings.POSTGRES_MAX_OVERFLOW,
         connect_args={"server_settings": server_settings},
         pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
         future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
@@ -71,7 +71,7 @@ async def check_postgres_liveness(engine: AsyncEngine) -> LivenessResult:
 
 @contextlib.asynccontextmanager
 async def with_async_pg_engine(
-    settings: PostgresSettings,
+    settings: PostgresSettings, *, application_name: str
 ) -> AsyncIterator[AsyncEngine]:
     """
     Creates an asyncpg engine and ensures it is properly closed after use.
@@ -82,14 +82,16 @@ async def with_async_pg_engine(
             logging.DEBUG,
             f"connection to db {settings.dsn_with_async_sqlalchemy}",
         ):
-            server_settings = None
-            if settings.POSTGRES_CLIENT_NAME:
-                assert isinstance(settings.POSTGRES_CLIENT_NAME, str)
+            server_settings = {
+                "application_name": settings.client_name(
+                    application_name, suffix="asyncpg"
+                ),
+            }
 
             engine = create_async_engine(
                 settings.dsn_with_async_sqlalchemy,
-                pool_size=settings.POSTGRES_MINSIZE,
-                max_overflow=settings.POSTGRES_MAXSIZE - settings.POSTGRES_MINSIZE,
+                pool_size=settings.POSTGRES_MAX_POOLSIZE,
+                max_overflow=settings.POSTGRES_MAX_OVERFLOW,
                 connect_args={"server_settings": server_settings},
                 pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
                 future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released

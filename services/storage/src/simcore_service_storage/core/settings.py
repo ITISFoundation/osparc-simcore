@@ -36,7 +36,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     STORAGE_REDIS: Annotated[
-        RedisSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+        RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
 
     STORAGE_S3: Annotated[
@@ -75,10 +75,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     STORAGE_RABBITMQ: Annotated[
-        RabbitSettings | None,
-        Field(
-            json_schema_extra={"auto_default_from_env": True},
-        ),
+        RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
 
     STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY: Annotated[

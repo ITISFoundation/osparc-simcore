@@ -97,7 +97,6 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
     assert inspect.ismodule(module)
 
     for model_name, model_cls in inspect.getmembers(module, _is_model_cls):
-
         yield from iter_model_examples_in_class(model_cls, model_name)
 
 
@@ -172,7 +171,7 @@ def model_cls_examples(model_cls: type[BaseModel]) -> dict[str, dict[str, Any]]:
     """
     warnings.warn(
         "The 'model_cls_examples' fixture is deprecated and will be removed in a future version. "
-        "Please use 'iter_model_example_in_class' or 'iter_model_examples_in_module' as an alternative.",
+        "Please use 'iter_model_examples_in_class' or 'iter_model_examples_in_module' as an alternative.",
         DeprecationWarning,
         stacklevel=2,
     )

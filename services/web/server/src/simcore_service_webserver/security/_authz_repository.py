@@ -3,6 +3,7 @@ from typing import TypedDict
 
 import sqlalchemy as sa
 from models_library.basic_types import IdInt
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -65,3 +66,18 @@ async def is_user_in_product_name(
             )
             is not None
         )
+
+
+async def is_user_in_group(
+    engine: AsyncEngine,
+    *,
+    user_id: UserID,
+    group_id: GroupID,
+) -> bool:
+    async with engine.connect() as conn:
+        result = await conn.scalar(
+            sa.select(user_to_groups.c.uid).where(
+                (user_to_groups.c.uid == user_id) & (user_to_groups.c.gid == group_id)
+            )
+        )
+        return result is not None

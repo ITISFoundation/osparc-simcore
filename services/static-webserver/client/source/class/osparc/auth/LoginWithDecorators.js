@@ -332,7 +332,7 @@ qx.Class.define("osparc.auth.LoginWithDecorators", {
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
       });
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      const vendor = osparc.store.VendorInfo.getVendor();
       if (vendor && "url" in vendor && "copyright" in vendor) {
         organizationLink.set({
           value: vendor.copyright,

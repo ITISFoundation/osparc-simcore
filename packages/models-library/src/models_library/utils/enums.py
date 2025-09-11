@@ -6,7 +6,9 @@ from typing import Any
 @unique
 class StrAutoEnum(StrEnum):
     @staticmethod
-    def _generate_next_value_(name, start, count, last_values):
+    def _generate_next_value_(
+        name: str, start: int, count: int, last_values: list[str]  # noqa: ARG004
+    ) -> str:
         return name.upper()
 
 

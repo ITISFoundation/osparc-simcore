@@ -67,6 +67,7 @@ class ProjectJobsRepository(BaseRepository):
         *,
         project_uuid: ProjectID,
         job_parent_resource_name: str,
+        storage_assets_deleted: bool,
     ) -> None:
         async with transaction_context(self.engine, connection) as conn:
             stmt = (
@@ -74,10 +75,14 @@ class ProjectJobsRepository(BaseRepository):
                 .values(
                     project_uuid=f"{project_uuid}",
                     job_parent_resource_name=job_parent_resource_name,
+                    storage_assets_deleted=storage_assets_deleted,
                 )
                 .on_conflict_do_update(
                     index_elements=["project_uuid", "job_parent_resource_name"],
-                    set_={"job_parent_resource_name": job_parent_resource_name},
+                    set_={
+                        "job_parent_resource_name": job_parent_resource_name,
+                        "storage_assets_deleted": storage_assets_deleted,
+                    },
                 )
             )
 
@@ -175,6 +180,7 @@ class ProjectJobsRepository(BaseRepository):
                 *_PROJECT_DB_COLS,
                 projects.c.workbench,
                 base_query.c.job_parent_resource_name,
+                base_query.c.storage_assets_deleted,
             )
             .select_from(
                 base_query.join(
@@ -201,3 +207,41 @@ class ProjectJobsRepository(BaseRepository):
             )
 
             return total_count, projects_list
+
+    async def get_project_marked_as_job(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_uuid: ProjectID,
+        job_parent_resource_name: str,
+    ) -> ProjectJobDBGet | None:
+        """
+        Returns the project associated with the given project_uuid and job_parent_resource_name
+        """
+        query = (
+            sa.select(
+                *_PROJECT_DB_COLS,
+                projects.c.workbench,
+                projects_to_jobs.c.job_parent_resource_name,
+                projects_to_jobs.c.storage_assets_deleted,
+            )
+            .select_from(
+                projects_to_jobs.join(
+                    projects,
+                    projects_to_jobs.c.project_uuid == projects.c.uuid,
+                )
+            )
+            .where(
+                projects_to_jobs.c.project_uuid == f"{project_uuid}",
+                projects_to_jobs.c.job_parent_resource_name == job_parent_resource_name,
+                projects.c.workspace_id.is_(None),
+            )
+            .limit(1)
+        )
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.execute(query)
+            row = result.first()
+            if row is None:
+                return None
+            return TypeAdapter(ProjectJobDBGet).validate_python(row)

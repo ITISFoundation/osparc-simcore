@@ -41,7 +41,7 @@ qx.Class.define("osparc.widget.Renamer", {
     this.base(arguments, winTitle || this.tr("Rename"));
 
     const maxWidth = 350;
-    const minWidth = 150;
+    const minWidth = 200;
     const labelWidth = oldLabel ? Math.min(Math.max(parseInt(oldLabel.length*4), minWidth), maxWidth) : minWidth;
     this.set({
       layout: new qx.ui.layout.VBox(5),

@@ -38,6 +38,13 @@ class GarbageCollectorSettings(BaseCustomSettings):
         Field(description="Wait time between periodic pruning of expired API keys"),
     ] = _HOUR
 
+    GARBAGE_COLLECTOR_PRUNE_DOCUMENTS_INTERVAL_S: Annotated[
+        PositiveInt,
+        Field(description="Wait time between periodic pruning of documents"),
+    ] = (
+        30 * _MINUTE
+    )
+
 
 def get_plugin_settings(app: web.Application) -> GarbageCollectorSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_GARBAGE_COLLECTOR

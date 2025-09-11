@@ -20,7 +20,6 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError, validate_call
 from pyinstrument import Profiler
-from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
@@ -106,7 +105,6 @@ async def list_services_paginated(
         ValidationError,
     )
 )
-@log_decorator(_logger, level=logging.DEBUG)
 @_profile_rpc_call
 @validate_call(config={"arbitrary_types_allowed": True})
 async def get_service(
@@ -141,7 +139,6 @@ async def get_service(
         ValidationError,
     )
 )
-@log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def update_service(
     app: FastAPI,
@@ -179,7 +176,6 @@ async def update_service(
         ValidationError,
     )
 )
-@log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def check_for_service(
     app: FastAPI,
@@ -203,7 +199,6 @@ async def check_for_service(
 
 
 @router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
-@log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def batch_get_my_services(
     app: FastAPI,
@@ -233,7 +228,6 @@ async def batch_get_my_services(
 
 
 @router.expose(reraise_if_error_type=(ValidationError,))
-@log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def list_my_service_history_latest_first(
     app: FastAPI,
@@ -281,7 +275,6 @@ async def list_my_service_history_latest_first(
         ValidationError,
     )
 )
-@log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def get_service_ports(
     app: FastAPI,

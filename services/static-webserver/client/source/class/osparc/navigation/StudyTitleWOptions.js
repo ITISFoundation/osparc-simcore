@@ -122,6 +122,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             inputFont: "text-14",
             maxWidth: 300
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyTitleRenamer");
           control.addListener("editValue", e => {
             const newLabel = e.getData();
             this.getStudy().setName(newLabel);

@@ -21,6 +21,7 @@ from pytest_simcore.pydantic_models import (
 )
 from simcore_postgres_database.models.products import products as products_table
 from simcore_service_webserver.products.models import Product
+from simcore_service_webserver.statics._events import _get_product_data
 
 
 @pytest.mark.parametrize(
@@ -40,20 +41,27 @@ def test_all_products_models_examples(
         if "registration_email_template" in example_data:
             assert model_instance.get_template_name_for("registration_email.jinja2")
 
+        if model_instance.vendor and "ui" in model_instance.vendor:
+            assert model_instance.vendor["ui"]["strong_color"]
+            assert model_instance.vendor["ui"]["logo_url"]
+
 
 def test_product_to_static():
 
     product = Product.model_validate(Product.model_json_schema()["examples"][0])
-    assert product.to_statics() == {
+    product_data = _get_product_data(product)
+    assert product_data == {
         "displayName": "o²S²PARC",
         "supportEmail": "support@osparc.io",
     }
 
     product = Product.model_validate(Product.model_json_schema()["examples"][2])
 
-    assert product.to_statics() == {
+    product_data = _get_product_data(product)
+    assert product_data == {
         "displayName": "o²S²PARC FOO",
         "supportEmail": "foo@osparcf.io",
+        "supportStandardGroupId": 67890,
         "vendor": {
             "copyright": "© ACME correcaminos",
             "name": "ACME",
@@ -63,7 +71,6 @@ def test_product_to_static():
             "ui": {
                 "logo_url": "https://acme.com/logo",
                 "strong_color": "#123456",
-                "project_alias": "study",
             },
         },
         "issues": [

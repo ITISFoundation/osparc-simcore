@@ -12,7 +12,7 @@ from aiodocker.volumes import DockerVolume
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import AppState, create_app
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_down,
@@ -40,11 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def app(
-    mock_environment: EnvVarsDict,
-    mock_registry_service: AsyncMock,
-    mock_core_rabbitmq: dict[str, AsyncMock],
-) -> FastAPI:
+def app(mock_environment: EnvVarsDict, mock_registry_service: AsyncMock) -> FastAPI:
     """creates app with registry and rabbitMQ services mocked"""
     return create_app()
 
@@ -129,24 +125,6 @@ async def cleanup_containers(app: FastAPI) -> AsyncIterator[None]:
         return
 
     await docker_compose_down(app_state.compose_spec, app_state.settings)
-
-
-@pytest.fixture
-def mock_rabbitmq_envs(
-    mock_core_rabbitmq: dict[str, AsyncMock],
-    monkeypatch: pytest.MonkeyPatch,
-    mock_environment: EnvVarsDict,
-) -> EnvVarsDict:
-    setenvs_from_dict(
-        monkeypatch,
-        {
-            "RABBIT_HOST": "mocked_host",
-            "RABBIT_SECURE": "false",
-            "RABBIT_USER": "mocked_user",
-            "RABBIT_PASSWORD": "mocked_password",
-        },
-    )
-    return mock_environment
 
 
 @pytest.fixture

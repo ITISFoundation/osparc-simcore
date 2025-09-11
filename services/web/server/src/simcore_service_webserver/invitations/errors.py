@@ -22,4 +22,4 @@ class InvalidInvitationError(InvitationsError):
 
 
 class InvitationsServiceUnavailableError(InvitationsError):
-    msg_template = "Cannot process invitations"
+    msg_template = "Cannot process invitations: {details}"

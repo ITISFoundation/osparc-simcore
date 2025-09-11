@@ -42,7 +42,7 @@ async def test_volumes_state_saved_ok(
         status=initial_expected_status
     )
 
-    await volumes.save_volume_state(
+    await volumes.update_volume_status(
         rpc_client,
         node_id=settings.DY_SIDECAR_NODE_ID,
         status=VolumeStatus.CONTENT_WAS_SAVED,
@@ -66,7 +66,7 @@ async def test_volumes_state_saved_error(
     settings: ApplicationSettings = app.state.settings
 
     with pytest.raises(RPCServerError, match="ValidationError"):
-        await volumes.save_volume_state(
+        await volumes.update_volume_status(
             rpc_client,
             node_id=settings.DY_SIDECAR_NODE_ID,
             status=VolumeStatus.CONTENT_WAS_SAVED,

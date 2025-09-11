@@ -32,7 +32,6 @@ from .jinja2_templates import jinja2_templates
 class VendorUI(TypedDict, total=True):
     logo_url: str  # vendor logo url
     strong_color: str  # vendor main color
-    project_alias: str  # project alias for the product (e.g. "project" or "study")
 
 
 class Vendor(TypedDict, total=False):
@@ -268,6 +267,33 @@ products = sa.Table(
         unique=True,
         nullable=True,
         doc="Group associated to this product",
+    ),
+    sa.Column(
+        "support_standard_group_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            groups.c.gid,
+            name="fk_products_support_standard_group_id",
+            ondelete=RefActions.SET_NULL,
+            onupdate=RefActions.CASCADE,
+        ),
+        unique=False,
+        nullable=True,
+        doc="Group associated to this product support",
+    ),
+    sa.Column(
+        "support_assigned_fogbugz_person_id",
+        sa.BigInteger,
+        unique=False,
+        nullable=True,
+        doc="Fogbugz person ID to assign support case",
+    ),
+    sa.Column(
+        "support_assigned_fogbugz_project_id",
+        sa.BigInteger,
+        unique=False,
+        nullable=True,
+        doc="Fogbugz project ID to assign support case",
     ),
     sa.PrimaryKeyConstraint("name", name="products_pk"),
 )

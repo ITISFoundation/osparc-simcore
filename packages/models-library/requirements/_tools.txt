@@ -8,7 +8,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
-click==8.1.8
+click==8.2.1
     # via
     #   black
     #   pip-tools
@@ -75,7 +75,7 @@ pyyaml==6.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   pre-commit
-rich==13.9.4
+rich==14.1.0
     # via typer
 ruff==0.9.9
     # via -r requirements/../../../requirements/devenv.txt
@@ -85,7 +85,7 @@ shellingham==1.5.4
     # via typer
 tomlkit==0.13.2
     # via pylint
-typer==0.15.2
+typer==0.16.1
     # via -r requirements/_tools.in
 typing-extensions==4.14.1
     # via

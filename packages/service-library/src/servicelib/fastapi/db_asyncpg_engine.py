@@ -14,7 +14,9 @@ from ..logging_utils import log_context
 _logger = logging.getLogger(__name__)
 
 
-async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
+async def connect_to_db(
+    app: FastAPI, settings: PostgresSettings, application_name: str
+) -> None:
     warnings.warn(
         "The 'connect_to_db' function is deprecated and will be removed in a future release. "
         "Please use 'postgres_lifespan' instead for managing the database connection lifecycle.",
@@ -27,7 +29,9 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
         logging.DEBUG,
         f"Connecting and migraging {settings.dsn_with_async_sqlalchemy}",
     ):
-        engine = await create_async_engine_and_database_ready(settings)
+        engine = await create_async_engine_and_database_ready(
+            settings, application_name
+        )
 
     app.state.engine = engine
     _logger.debug(

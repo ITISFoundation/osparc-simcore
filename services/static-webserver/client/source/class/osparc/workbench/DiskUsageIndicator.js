@@ -103,6 +103,10 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
 
       // Subscribe to disk usage data for the new node
       this._subscribe(node);
+
+      node.getStatus().bind("interactive", this, "visibility", {
+        converter: state => state === "ready" ? "visible" : "excluded"
+      });
     },
 
     _subscribe: function(node) {

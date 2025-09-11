@@ -17,10 +17,11 @@ from opentelemetry.instrumentation.aiohttp_server import (
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from servicelib.logging_utils import log_context
-from servicelib.tracing import get_trace_id_header
 from settings_library.tracing import TracingSettings
 from yarl import URL
+
+from ..logging_utils import log_context
+from ..tracing import get_trace_id_header
 
 _logger = logging.getLogger(__name__)
 try:

@@ -16,7 +16,7 @@ import uvicorn
 from faker import Faker
 from fastapi import APIRouter, Depends, FastAPI, Request, status
 from fastapi_pagination import add_pagination, create_page
-from fastapi_pagination.cursor import CursorPage, CursorParams
+from fastapi_pagination.cursor import CursorParams
 from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
     FileLocation,
@@ -35,6 +35,7 @@ from models_library.users import UserID
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from servicelib.utils import unused_port
 from yarl import URL
 
@@ -74,7 +75,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
 
     @router.get(
         "/locations/{location_id}/paths",
-        response_model=CursorPage[PathMetaDataGet],
+        response_model=CustomizedPathsCursorPage[PathMetaDataGet],
     )
     async def _list_paths(
         page_params: Annotated[CursorParams, Depends()],

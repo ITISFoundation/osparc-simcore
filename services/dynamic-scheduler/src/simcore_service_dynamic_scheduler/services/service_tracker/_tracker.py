@@ -34,7 +34,12 @@ class Tracker:
         await self.redis_client_sdk.redis.delete(_get_key(node_id))
 
     async def all(self) -> dict[NodeID, TrackedServiceModel]:
-        found_keys = await self.redis_client_sdk.redis.keys(f"{_KEY_PREFIX}*")
+        found_keys = [
+            x
+            async for x in self.redis_client_sdk.redis.scan_iter(
+                match=f"{_KEY_PREFIX}*"
+            )
+        ]
         found_values = await self.redis_client_sdk.redis.mget(found_keys)
 
         return {

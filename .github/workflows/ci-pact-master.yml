@@ -22,7 +22,7 @@ jobs:
       PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: install uv
@@ -31,7 +31,7 @@ jobs:
           version: "0.6.x"
           enable-cache: false
       - name: checkout source branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Run pact tests
         run: |
           make devenv

@@ -91,6 +91,21 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    errorsToForm: function(form, errors) {
+      const items = form.getItems();
+      // reset validity
+      Object.values(items).forEach(item => item.setValid(true));
+      errors.forEach(error => {
+        const msg = error.message;
+        const field = error.field;
+        if (field && field in items) {
+          const item = items[field];
+          item.setValid(false);
+          item.setInvalidMessage(msg);
+        }
+      });
+    },
+
     getBounds: function(widget) {
       const bounds = widget.getBounds();
       const cel = widget.getContentElement();
@@ -130,6 +145,24 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    getThumbnailProps: function(size = 32) {
+      return {
+        alignY: "middle",
+        scale: true,
+        allowGrowX: true,
+        allowGrowY: true,
+        allowShrinkX: true,
+        allowShrinkY: true,
+        decorator: "rounded",
+        maxWidth: size,
+        maxHeight: size,
+      };
+    },
+
+    createThumbnail: function(size = 32) {
+      return new qx.ui.basic.Image().set(this.getThumbnailProps(size));
+    },
+
     disableAutocomplete: function(control) {
       if (control && control.getContentElement()) {
         control.getContentElement().setAttribute("autocomplete", "off");
@@ -156,7 +189,11 @@ qx.Class.define("osparc.utils.Utils", {
             source = imgSrc;
           }
         })
-        .finally(() => image.setSource(source));
+        .finally(() => {
+          if (image.getContentElement() && imgSrc) { // check if the image is still there
+            image.setSource(source);
+          }
+        });
     },
 
     addWhiteSpaces: function(integer) {
@@ -168,8 +205,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     composeTabName: function() {
-      let newName = osparc.store.StaticInfo.getInstance().getDisplayName();
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      let newName = osparc.store.StaticInfo.getDisplayName();
+      const platformName = osparc.store.StaticInfo.getPlatformName();
       if (osparc.utils.Utils.isInZ43()) {
         newName += " Z43";
       }
@@ -317,23 +354,32 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     makeButtonBlink: function(button, nTimes = 1) {
-      const onTime = 1000;
-      const oldBgColor = button.getBackgroundColor();
+      const baseColor = button.getBackgroundColor();
+      const blinkColor = "strong-main";
+      const interval = 500;
       let count = 0;
 
-      const blinkIt = btn => {
-        count++;
-        btn.setBackgroundColor("strong-main");
-        setTimeout(() => {
-          btn && btn.setBackgroundColor(oldBgColor);
-        }, onTime);
-      };
+      // If a blink is already in progress, cancel it
+      if (button._blinkingIntervalId) {
+        clearInterval(button._blinkingIntervalId);
+        button.setBackgroundColor(baseColor); // reset to base
+      }
 
-      // make it "blink": show it as strong button during onTime" nTimes
-      blinkIt(button);
-      const intervalId = setInterval(() => {
-        (count < nTimes) ? blinkIt(button) : clearInterval(intervalId);
-      }, 2*onTime);
+      const blinkInterval = setInterval(() => {
+        if (button && button.getContentElement()) {
+          button.setBackgroundColor((count % 2 === 0) ? blinkColor : baseColor);
+          count++;
+
+          if (count >= nTimes * 2) {
+            clearInterval(blinkInterval);
+            button.setBackgroundColor(baseColor);
+            button._blinkingIntervalId = null; // cleanup
+          }
+        }
+      }, interval);
+
+      // Store interval ID on the button
+      button._blinkingIntervalId = blinkInterval;
     },
 
     hardRefresh: function() {
@@ -492,12 +538,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isDevelopmentPlatform: function() {
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      const platformName = osparc.store.StaticInfo.getPlatformName();
       return (["dev", "master"].includes(platformName));
-    },
-
-    eventDrivenPatch: function() {
-      return osparc.utils.DisabledPlugins.isRTCEnabled();
     },
 
     getEditButton: function(isVisible = true) {
@@ -531,9 +573,9 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     /**
-      * @param value {Date Object} Date Object
+      * @param date {Date Object} Date Object
       */
-    formatDate: function(value) {
+    formatDate: function(date) {
       // create a date format like "Oct. 19, 11:31 AM" if it's this year
       const dateFormat = new qx.util.format.DateFormat(
         qx.locale.Date.getDateFormat("medium")
@@ -546,20 +588,20 @@ qx.Class.define("osparc.utils.Utils", {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      if (today.toDateString() === value.toDateString()) {
+      if (today.toDateString() === date.toDateString()) {
         dateStr = qx.locale.Manager.tr("Today");
-      } else if (yesterday.toDateString() === value.toDateString()) {
+      } else if (yesterday.toDateString() === date.toDateString()) {
         dateStr = qx.locale.Manager.tr("Yesterday");
-      } else if (tomorrow.toDateString() === value.toDateString()) {
+      } else if (tomorrow.toDateString() === date.toDateString()) {
         dateStr = qx.locale.Manager.tr("Tomorrow");
       } else {
         const currentYear = today.getFullYear();
-        if (value.getFullYear() === currentYear) {
+        if (date.getFullYear() === currentYear) {
           // Remove the year if it's the current year
           const shortDateFormat = new qx.util.format.DateFormat("MMM d");
-          dateStr = shortDateFormat.format(value);
+          dateStr = shortDateFormat.format(date);
         } else {
-          dateStr = dateFormat.format(value);
+          dateStr = dateFormat.format(date);
         }
       }
       return dateStr;
@@ -572,21 +614,54 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     /**
-      * @param value {Date Object} Date Object
+      * @param date {Date Object} Date Object
       */
-    formatTime: function(value, long = false) {
+    formatTime: function(date, long = false) {
       const timeFormat = new qx.util.format.DateFormat(
         qx.locale.Date.getTimeFormat(long ? "long" : "short")
       );
-      const timeStr = timeFormat.format(value);
+      const timeStr = timeFormat.format(date);
       return timeStr;
     },
 
     /**
-      * @param value {Date Object} Date Object
+      * @param date {Date Object} Date Object
       */
-    formatDateAndTime: function(value) {
-      return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
+    formatDateAndTime: function(date) {
+      return osparc.utils.Utils.formatDate(date) + " " + osparc.utils.Utils.formatTime(date);
+    },
+
+    /**
+     * @param {Date} date - The date to format.
+     * @returns {String} - The formatted date string with city name and timezone. Sep 4, 1986, 17:00 Zurich (GMT+02:00)
+     */
+    formatDateWithCityAndTZ: function(date) {
+      // Short date/time formatter
+      const options = {
+        year: "numeric",   // 1986
+        month: "short",    // Sep
+        day: "numeric",    // 4
+        hour: "numeric",   // 9
+        minute: "2-digit",
+        hour12: false,     // 24h format
+      };
+
+      const dtf = new Intl.DateTimeFormat("en-US", options);
+      const formatted = dtf.format(date);
+
+      // Timezone city
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const city = tz.split("/").pop().replace("_", " ");
+
+      // UTC offset (minutes → +HH:MM)
+      const offsetMinutes = -date.getTimezoneOffset(); // JS returns opposite sign
+      const sign = offsetMinutes >= 0 ? "+" : "-";
+      const absMinutes = Math.abs(offsetMinutes);
+      const hours = String(Math.floor(absMinutes / 60)).padStart(2, "0");
+      const minutes = String(absMinutes % 60).padStart(2, "0");
+      const offsetStr = `GMT${sign}${hours}:${minutes}`;
+
+      return `${formatted} ${city} (${offsetStr})`;
     },
 
     formatMsToHHMMSS: function(ms) {
@@ -618,20 +693,20 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getReleaseTag: function() {
-      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      const rData = osparc.store.StaticInfo.getReleaseData();
       const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
       let text = (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
       return text;
     },
 
     getReleaseLink: function() {
-      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      const rData = osparc.store.StaticInfo.getReleaseData();
       return rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
     },
 
     createReleaseNotesLink: function() {
       let text = "osparc-simcore " + this.getReleaseTag();
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      const platformName = osparc.store.StaticInfo.getPlatformName();
       text += platformName.length ? ` (${platformName})` : "";
       const url = this.self().getReleaseLink();
       const versionLink = new osparc.ui.basic.LinkLabel();
@@ -654,14 +729,14 @@ qx.Class.define("osparc.utils.Utils", {
       msg += "</br>";
       msg += qx.locale.Manager.tr("Please contact us via email:");
       msg += "</br>";
-      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const supportEmail = osparc.store.VendorInfo.getSupportEmail();
       msg += supportEmail;
       return msg;
     },
 
     // used for showing it to Guest users
     createAccountMessage: function() {
-      const productName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const productName = osparc.store.StaticInfo.getDisplayName();
       const manuals = osparc.store.Support.getManuals();
       const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
       let msg = "";
@@ -678,7 +753,7 @@ qx.Class.define("osparc.utils.Utils", {
       }
       msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
       msg += "</br>";
-      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const supportEmail = osparc.store.VendorInfo.getSupportEmail();
       const mailto = osparc.store.Support.mailToLink(supportEmail, "Request Account " + productName);
       msg += mailto;
       return msg;
@@ -1120,6 +1195,18 @@ qx.Class.define("osparc.utils.Utils", {
         );
       }
       return str;
+    },
+
+    camelToTitle: function(str) {
+      return str
+        .replace(/([A-Z])/g, ' $1')          // insert space before capital letters
+        .replace(/^./, c => c.toUpperCase()); // capitalize first letter
+    },
+
+    convertKeysToTitles: function(obj) {
+      return Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [this.camelToTitle(key), value])
+      );
     },
 
     setIdToWidget: (qWidget, id) => {

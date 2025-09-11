@@ -15,8 +15,9 @@ click
 coverage
 docker
 Faker
-fastapi[standard]
+fakeredis[lua]
 fastapi-pagination
+fastapi[standard]
 flaky
 hypothesis
 jsonref

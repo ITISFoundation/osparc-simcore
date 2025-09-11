@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.74.0
+  version: 0.79.0
 servers:
 - url: ''
   description: webserver
@@ -510,6 +510,268 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+  /v0/conversations:
+    post:
+      tags:
+      - conversations
+      summary: Create Conversation
+      operationId: create_conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ConversationsCreateBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    get:
+      tags:
+      - conversations
+      summary: List Conversations
+      operationId: list_conversations
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationRestGet_'
+  /v0/conversations/{conversation_id}:
+    patch:
+      tags:
+      - conversations
+      summary: Update Conversation
+      operationId: update_conversation
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationPatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    delete:
+      tags:
+      - conversations
+      summary: Delete Conversation
+      operationId: delete_conversation
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - conversations
+      summary: Get Conversation
+      operationId: get_conversation
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+  /v0/conversations/{conversation_id}/messages:
+    post:
+      tags:
+      - conversations
+      summary: Create Conversation Message
+      operationId: create_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ConversationMessageCreateBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    get:
+      tags:
+      - conversations
+      summary: List Conversation Messages
+      operationId: list_conversation_messages
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationMessageRestGet_'
+  /v0/conversations/{conversation_id}/messages/{message_id}:
+    put:
+      tags:
+      - conversations
+      summary: Update Conversation Message
+      operationId: update_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationMessagePatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    delete:
+      tags:
+      - conversations
+      summary: Delete Conversation Message
+      operationId: delete_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - conversations
+      summary: Get Conversation Message
+      operationId: get_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
   /v0/groups:
     get:
       tags:
@@ -1536,12 +1798,36 @@ paths:
       parameters:
       - name: email
         in: query
-        required: true
+        required: false
         schema:
-          type: string
-          minLength: 3
-          maxLength: 200
+          anyOf:
+          - type: string
+            minLength: 3
+            maxLength: 200
+            pattern: ^[^%]*$
+          - type: 'null'
           title: Email
+      - name: primary_group_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Primary Group Id
+      - name: user_name
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            minLength: 3
+            maxLength: 200
+            pattern: ^[^%]*$
+          - type: 'null'
+          title: User Name
       responses:
         '200':
           description: Successful Response
@@ -3387,6 +3673,33 @@ paths:
           type: boolean
           default: false
           title: Include Extras
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      - name: filters
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            contentMediaType: application/json
+            contentSchema: {}
+          - type: 'null'
+          title: Filters
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
       - name: limit
         in: query
         required: false
@@ -3475,6 +3788,93 @@ paths:
           type: string
           format: uuid
           title: Function Id
+      - name: force
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Force
+      responses:
+        '204':
+          description: Successful Response
+  /v0/functions/{function_id}/groups:
+    get:
+      tags:
+      - functions
+      summary: Get Function Groups
+      operationId: get_function_groups
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__'
+  /v0/functions/{function_id}/groups/{group_id}:
+    put:
+      tags:
+      - functions
+      summary: Create or update a Function Group
+      operationId: create_or_update_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FunctionGroupAccessRightsGet_'
+    delete:
+      tags:
+      - functions
+      summary: Delete a Function Group
+      operationId: delete_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -3482,7 +3882,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: List Tasks
+      summary: Get Async Jobs
       description: Lists all long running tasks
       operationId: get_async_jobs
       responses:
@@ -3520,7 +3920,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Status
+      summary: Get Async Job Status
       description: Retrieves the status of a task
       operationId: get_async_job_status
       parameters:
@@ -3564,8 +3964,8 @@ paths:
     delete:
       tags:
       - long-running-tasks
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
+      summary: Cancel Async Job
+      description: Cancels and removes a task
       operationId: cancel_async_job
       parameters:
       - name: task_id
@@ -3605,7 +4005,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Result
+      summary: Get Async Job Result
       description: Retrieves the result of a task
       operationId: get_async_job_result
       parameters:
@@ -3684,9 +4084,9 @@ paths:
     delete:
       tags:
       - long-running-tasks-legacy
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
-      operationId: cancel_and_delete_task
+      summary: Remove Task
+      description: Cancels and removes a task
+      operationId: remove_task
       parameters:
       - name: task_id
         in: path
@@ -4159,6 +4559,13 @@ paths:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
           title: Viewer Key
+      - name: viewer_version
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Viewer Version
       - name: file_size
         in: query
         required: true
@@ -4185,12 +4592,6 @@ paths:
           - type: 'null'
           default: unknown
           title: File Name
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ServiceKeyVersion'
       responses:
         '302':
           description: Opens osparc and starts viewer for selected data
@@ -9859,6 +10260,15 @@ components:
       - serviceKey
       - serviceVersion
       title: ConnectServiceToPricingPlanBodyParams
+    ConversationMessagePatch:
+      properties:
+        content:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Content
+      type: object
+      title: ConversationMessagePatch
     ConversationMessageRestGet:
       properties:
         messageId:
@@ -9904,6 +10314,21 @@ components:
       - MESSAGE
       - NOTIFICATION
       title: ConversationMessageType
+    ConversationPatch:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        extraContext:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Extracontext
+      type: object
+      title: ConversationPatch
     ConversationRestGet:
       properties:
         conversationId:
@@ -9938,6 +10363,11 @@ components:
           type: string
           format: date-time
           title: Modified
+        extraContext:
+          additionalProperties:
+            type: string
+          type: object
+          title: Extracontext
       type: object
       required:
       - conversationId
@@ -9948,12 +10378,14 @@ components:
       - type
       - created
       - modified
+      - extraContext
       title: ConversationRestGet
     ConversationType:
       type: string
       enum:
       - PROJECT_STATIC
       - PROJECT_ANNOTATION
+      - SUPPORT
       title: ConversationType
     CountryInfoDict:
       properties:
@@ -10106,9 +10538,9 @@ components:
         total:
           anyOf:
           - type: integer
+            minimum: 0
           - type: 'null'
           title: Total
-          description: Total items
         current_page:
           anyOf:
           - type: string
@@ -10494,6 +10926,19 @@ components:
           title: Error
       type: object
       title: Envelope[FolderGet]
+    Envelope_FunctionGroupAccessRightsGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[FunctionGroupAccessRightsGet]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -11203,6 +11648,22 @@ components:
           title: Error
       type: object
       title: Envelope[_ProjectNodePreview]
+    Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__:
+      properties:
+        data:
+          anyOf:
+          - additionalProperties:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+            type: object
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[dict[Annotated[int, Gt], FunctionGroupAccessRightsGet]]
     Envelope_dict_Annotated_str__StringConstraints___ImageResources__:
       properties:
         data:
@@ -12324,23 +12785,40 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
-    FunctionAccessRights:
+    FunctionGroupAccessRightsGet:
       properties:
         read:
           type: boolean
           title: Read
-          default: false
         write:
           type: boolean
           title: Write
-          default: false
         execute:
           type: boolean
           title: Execute
-          default: false
-      additionalProperties: false
       type: object
-      title: FunctionAccessRights
+      required:
+      - read
+      - write
+      - execute
+      title: FunctionGroupAccessRightsGet
+    FunctionGroupAccessRightsUpdate:
+      properties:
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        execute:
+          type: boolean
+          title: Execute
+      type: object
+      required:
+      - read
+      - write
+      - execute
+      title: FunctionGroupAccessRightsUpdate
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -12435,16 +12913,15 @@ components:
           type: integer
           exclusiveMinimum: true
           title: Gid
-          description: the group ID
+          description: the group's unique ID
           minimum: 0
         label:
           type: string
           title: Label
-          description: the group name
+          description: the group's display name
         description:
           type: string
           title: Description
-          description: the group description
         thumbnail:
           anyOf:
           - type: string
@@ -12452,7 +12929,7 @@ components:
             format: uri
           - type: 'null'
           title: Thumbnail
-          description: url to the group thumbnail
+          description: a link to the group's thumbnail
         accessRights:
           $ref: '#/components/schemas/GroupAccessRights'
         inclusionRules:
@@ -12468,6 +12945,35 @@ components:
       - description
       - accessRights
       title: GroupGet
+    GroupGetBase:
+      properties:
+        gid:
+          type: integer
+          exclusiveMinimum: true
+          title: Gid
+          description: the group's unique ID
+          minimum: 0
+        label:
+          type: string
+          title: Label
+          description: the group's display name
+        description:
+          type: string
+          title: Description
+        thumbnail:
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Thumbnail
+          description: a link to the group's thumbnail
+      type: object
+      required:
+      - gid
+      - label
+      - description
+      title: GroupGetBase
     GroupUpdate:
       properties:
         label:
@@ -13159,6 +13665,12 @@ components:
           anyOf:
           - $ref: '#/components/schemas/GroupGet'
           - type: 'null'
+        support:
+          anyOf:
+          - $ref: '#/components/schemas/GroupGetBase'
+          - type: 'null'
+          description: Group ID of the app support team or None if no support is defined
+            for this product
       type: object
       required:
       - me
@@ -13197,6 +13709,11 @@ components:
           description: Some foundation
           gid: '16'
           label: Blue Fundation
+        support:
+          description: The support team of the application
+          gid: '2'
+          label: Support Team
+          thumbnail: https://placekitten.com/15/15
     MyPermissionGet:
       properties:
         name:
@@ -13232,6 +13749,49 @@ components:
       required:
       - phone
       title: MyPhoneRegister
+    MyProfileAddressGet:
+      properties:
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+        address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Address
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+          description: State, province, canton, ...
+        postalCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postalcode
+        country:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country
+      type: object
+      required:
+      - institution
+      - address
+      - city
+      - state
+      - postalCode
+      - country
+      title: MyProfileAddressGet
+      description: Details provided upon registration and used e.g. for invoicing
     MyProfilePrivacyGet:
       properties:
         hideUsername:
@@ -13337,6 +13897,10 @@ components:
             $ref: '#/components/schemas/Preference'
           type: object
           title: Preferences
+        contact:
+          anyOf:
+          - $ref: '#/components/schemas/MyProfileAddressGet'
+          - type: 'null'
       type: object
       required:
       - id
@@ -13474,10 +14038,12 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          items:
-            type: string
-            pattern: ^[-_a-zA-Z0-9]+$
-          type: array
+          anyOf:
+          - items:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+            type: array
+          - type: 'null'
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
@@ -13538,7 +14104,7 @@ components:
           deprecated: true
         state:
           anyOf:
-          - $ref: '#/components/schemas/NodeState'
+          - $ref: '#/components/schemas/NodeState-Input'
           - type: 'null'
           description: The node's state object
         bootOptions:
@@ -13607,10 +14173,12 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          items:
-            type: string
-            pattern: ^[-_a-zA-Z0-9]+$
-          type: array
+          anyOf:
+          - items:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+            type: array
+          - type: 'null'
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
@@ -13671,7 +14239,7 @@ components:
           deprecated: true
         state:
           anyOf:
-          - $ref: '#/components/schemas/NodeState'
+          - $ref: '#/components/schemas/NodeState-Output'
           - type: 'null'
           description: The node's state object
         bootOptions:
@@ -13818,9 +14386,6 @@ components:
       - serviceState
       - serviceUuid
       title: NodeGetIdle
-      example:
-        service_state: idle
-        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
     NodeGetUnknown:
       properties:
         serviceState:
@@ -13982,7 +14547,41 @@ components:
       - owner
       - myAccessRights
       title: NodeServiceGet
-    NodeState:
+    NodeShareState:
+      properties:
+        locked:
+          type: boolean
+          title: Locked
+          description: True if the node is locked, False otherwise
+        current_user_groupids:
+          anyOf:
+          - items:
+              type: integer
+              exclusiveMinimum: true
+              minimum: 0
+            type: array
+          - type: 'null'
+          title: Current User Groupids
+          description: Group(s) that currently have access to the node (or locked
+            it)
+        status:
+          anyOf:
+          - $ref: '#/components/schemas/NodeShareStatus'
+          - type: 'null'
+          description: Reason why the node is locked, None if not locked
+      additionalProperties: false
+      type: object
+      required:
+      - locked
+      title: NodeShareState
+    NodeShareStatus:
+      type: string
+      enum:
+      - OPENING
+      - OPENED
+      - CLOSING
+      title: NodeShareStatus
+    NodeState-Input:
       properties:
         modified:
           type: boolean
@@ -14012,6 +14611,49 @@ components:
           description: current progress of the task if available (None if not started
             or not a computational task)
           default: 0
+        lock_state:
+          anyOf:
+          - $ref: '#/components/schemas/NodeShareState'
+          - type: 'null'
+          description: the node's lock state
+      additionalProperties: false
+      type: object
+      title: NodeState
+    NodeState-Output:
+      properties:
+        modified:
+          type: boolean
+          title: Modified
+          description: true if the node's outputs need to be re-computed
+          default: true
+        dependencies:
+          items:
+            type: string
+            format: uuid
+          type: array
+          uniqueItems: true
+          title: Dependencies
+          description: contains the node inputs dependencies if they need to be computed
+            first
+        currentStatus:
+          $ref: '#/components/schemas/RunningState'
+          description: the node's current state
+          default: NOT_STARTED
+        progress:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Progress
+          description: current progress of the task if available (None if not started
+            or not a computational task)
+          default: 0
+        lock_state:
+          anyOf:
+          - $ref: '#/components/schemas/NodeShareState'
+          - type: 'null'
+          description: the node's lock state
       additionalProperties: false
       type: object
       title: NodeState
@@ -14126,28 +14768,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14155,6 +14789,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationCollectionRunRestGet]
     Page_ComputationCollectionRunTaskRestGet_:
       properties:
@@ -14164,28 +14799,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14193,6 +14820,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationCollectionRunTaskRestGet]
     Page_ComputationRunRestGet_:
       properties:
@@ -14202,28 +14830,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14231,6 +14851,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationRunRestGet]
     Page_ComputationTaskRestGet_:
       properties:
@@ -14240,28 +14861,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14269,6 +14882,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationTaskRestGet]
     Page_ConversationMessageRestGet_:
       properties:
@@ -14688,7 +15302,7 @@ components:
             tasks)
         node_states:
           additionalProperties:
-            $ref: '#/components/schemas/NodeState'
+            $ref: '#/components/schemas/NodeState-Output'
           propertyNames:
             format: uuid
           type: object
@@ -15702,6 +16316,11 @@ components:
           anyOf:
           - $ref: '#/components/schemas/ProjectTemplateType'
           - type: 'null'
+        hidden:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hidden
       type: object
       title: ProjectPatch
     ProjectPermalink:
@@ -16072,9 +16691,10 @@ components:
           format: uuid
           title: Templateid
         accessRights:
-          anyOf:
-          - $ref: '#/components/schemas/FunctionAccessRights'
-          - type: 'null'
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
+          title: Accessrights
         thumbnail:
           anyOf:
           - type: string
@@ -16092,6 +16712,7 @@ components:
       - creationDate
       - lastChangeDate
       - templateId
+      - accessRights
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
       properties:
@@ -16151,9 +16772,10 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           title: Solverversion
         accessRights:
-          anyOf:
-          - $ref: '#/components/schemas/FunctionAccessRights'
-          - type: 'null'
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
+          title: Accessrights
         thumbnail:
           anyOf:
           - type: string
@@ -16172,6 +16794,7 @@ components:
       - lastChangeDate
       - solverKey
       - solverVersion
+      - accessRights
       title: RegisteredSolverFunctionGet
     ReplaceWalletAutoRecharge:
       properties:
@@ -16382,6 +17005,11 @@ components:
           - type: 'null'
           title: Service Message
           description: additional information related to service state
+        is_collaborative:
+          type: boolean
+          title: Is Collaborative
+          description: True if service allows collaboration (multi-tenant access)
+          default: false
       type: object
       required:
       - service_key
@@ -17764,6 +18392,8 @@ components:
         invitedBy:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
           - type: 'null'
           title: Invitedby
         accountRequestStatus:
@@ -17772,9 +18402,9 @@ components:
           - type: 'null'
         accountRequestReviewedBy:
           anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+          - type: string
+            maxLength: 100
+            minLength: 1
           - type: 'null'
           title: Accountrequestreviewedby
         accountRequestReviewedAt:
@@ -17799,6 +18429,30 @@ components:
           title: Products
           description: List of products this users is included or None if fields is
             unset
+        userId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Userid
+          description: Unique identifier of the user if an account was created
+        userName:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Username
+          description: Username of the user if an account was created
+        groupId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 1
+          - type: 'null'
+          title: Groupid
+          description: Primary group ID of the user if an account was created
       type: object
       required:
       - firstName
@@ -17815,7 +18469,6 @@ components:
       - preRegistrationCreated
       - accountRequestStatus
       - registered
-      - status
       title: UserAccountGet
     UserAccountReject:
       properties:
@@ -18451,6 +19104,37 @@ components:
       - write
       - delete
       title: WorkspacesGroupsBodyParams
+    _ConversationMessageCreateBodyParams:
+      properties:
+        content:
+          type: string
+          title: Content
+        type:
+          $ref: '#/components/schemas/ConversationMessageType'
+      additionalProperties: false
+      type: object
+      required:
+      - content
+      - type
+      title: _ConversationMessageCreateBodyParams
+    _ConversationsCreateBodyParams:
+      properties:
+        name:
+          type: string
+          title: Name
+        type:
+          $ref: '#/components/schemas/ConversationType'
+        extraContext:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Extracontext
+      type: object
+      required:
+      - name
+      - type
+      title: _ConversationsCreateBodyParams
     _InvitationDetails:
       properties:
         trialAccountDays:

@@ -92,8 +92,7 @@ async def assert_not_contains_text(
 
 def get_new_style_service_status(state: str) -> DynamicServiceGet:
     return TypeAdapter(DynamicServiceGet).validate_python(
-        DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
-        | {"state": state}
+        DynamicServiceGet.model_json_schema()["examples"][0] | {"state": state}
     )
 
 

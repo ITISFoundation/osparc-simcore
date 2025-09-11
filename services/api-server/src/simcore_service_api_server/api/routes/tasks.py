@@ -1,7 +1,8 @@
 import logging
-from typing import Annotated, Any, Final
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, FastAPI, status
+from common_library.error_codes import create_error_code
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
@@ -14,28 +15,28 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.celery.models import TaskFilter, TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
-from ...services_rpc.async_jobs import AsyncJobClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.tasks import get_async_jobs_client
+from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
 
-_ASYNC_JOB_CLIENT_NAME: Final[str] = "API_SERVER"
-
 router = APIRouter()
 _logger = logging.getLogger(__name__)
 
 
-def _get_job_filter(user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
-    return AsyncJobFilter(
-        user_id=user_id, product_name=product_name, client_name=_ASYNC_JOB_CLIENT_NAME
+def _get_task_filter(user_id: UserID, product_name: ProductName) -> TaskFilter:
+    job_filter = AsyncJobFilter(
+        user_id=user_id, product_name=product_name, client_name=ASYNC_JOB_CLIENT_NAME
     )
+    return TaskFilter.model_validate(job_filter.model_dump())
 
 
 _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
@@ -62,26 +63,28 @@ async def list_tasks(
     app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    async_jobs: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ):
-    user_async_jobs = await async_jobs.list_jobs(
-        job_filter=_get_job_filter(user_id, product_name),
-        filter_="",
+
+    task_manager = get_task_manager(app)
+
+    tasks = await task_manager.list_tasks(
+        task_filter=_get_task_filter(user_id, product_name),
     )
+
     app_router = app.router
     data = [
         TaskGet(
-            task_id=f"{job.job_id}",
-            task_name=job.job_name,
+            task_id=f"{task.uuid}",
+            task_name=task.metadata.name,
             status_href=app_router.url_path_for(
-                "get_task_status", task_id=f"{job.job_id}"
+                "get_task_status", task_id=f"{task.uuid}"
             ),
-            abort_href=app_router.url_path_for("cancel_task", task_id=f"{job.job_id}"),
+            abort_href=app_router.url_path_for("cancel_task", task_id=f"{task.uuid}"),
             result_href=app_router.url_path_for(
-                "get_task_result", task_id=f"{job.job_id}"
+                "get_task_result", task_id=f"{task.uuid}"
             ),
         )
-        for job in user_async_jobs
+        for task in tasks
     ]
     return ApiServerEnvelope(data=data)
 
@@ -100,20 +103,23 @@ async def list_tasks(
 )
 async def get_task_status(
     task_id: AsyncJobId,
+    app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    async_jobs: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ):
-    async_job_rpc_status = await async_jobs.status(
-        job_id=task_id,
-        job_filter=_get_job_filter(user_id, product_name),
+    task_manager = get_task_manager(app)
+
+    task_status = await task_manager.get_task_status(
+        task_filter=_get_task_filter(user_id, product_name),
+        task_uuid=TaskUUID(f"{task_id}"),
     )
-    _task_id = f"{async_job_rpc_status.job_id}"
+
     return TaskStatus(
         task_progress=TaskProgress(
-            task_id=_task_id, percent=async_job_rpc_status.progress.percent_value
+            task_id=f"{task_status.task_uuid}",
+            percent=task_status.progress_report.percent_value,
         ),
-        done=async_job_rpc_status.done,
+        done=task_status.is_done,
         started=None,
     )
 
@@ -132,13 +138,15 @@ async def get_task_status(
 )
 async def cancel_task(
     task_id: AsyncJobId,
+    app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    async_jobs: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ):
-    await async_jobs.cancel(
-        job_id=task_id,
-        job_filter=_get_job_filter(user_id, product_name),
+    task_manager = get_task_manager(app)
+
+    await task_manager.cancel_task(
+        task_filter=_get_task_filter(user_id, product_name),
+        task_uuid=TaskUUID(f"{task_id}"),
     )
 
 
@@ -166,12 +174,49 @@ async def cancel_task(
 )
 async def get_task_result(
     task_id: AsyncJobId,
+    app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    async_jobs: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ):
-    async_job_rpc_result = await async_jobs.result(
-        job_id=task_id,
-        job_filter=_get_job_filter(user_id, product_name),
+    task_manager = get_task_manager(app)
+    task_filter = _get_task_filter(user_id, product_name)
+
+    task_status = await task_manager.get_task_status(
+        task_filter=task_filter,
+        task_uuid=TaskUUID(f"{task_id}"),
     )
-    return TaskResult(result=async_job_rpc_result.result, error=None)
+
+    if not task_status.is_done:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task result not available yet",
+        )
+    if task_status.task_state == TaskState.ABORTED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Task was cancelled",
+        )
+
+    task_result = await task_manager.get_task_result(
+        task_filter=task_filter,
+        task_uuid=TaskUUID(f"{task_id}"),
+    )
+
+    if task_status.task_state == TaskState.FAILURE:
+        assert isinstance(task_result, Exception)
+        user_error_msg = f"The execution of task {task_id} failed"
+        support_id = create_error_code(task_result)
+        _logger.exception(
+            **create_troubleshootting_log_kwargs(
+                user_error_msg,
+                error=task_result,
+                error_code=support_id,
+                tip="Unexpected error in Celery",
+            )
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=user_error_msg,
+        )
+
+    return TaskResult(result=task_result, error=None)

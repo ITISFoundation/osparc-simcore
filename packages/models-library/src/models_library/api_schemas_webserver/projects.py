@@ -278,6 +278,7 @@ class ProjectPatch(InputSchema):
     ] = None
     quality: dict[str, Any] | None = None
     template_type: ProjectTemplateType | None = None
+    hidden: bool | None = None
 
     def to_domain_model(self) -> dict[str, Any]:
         return self.model_dump(exclude_unset=True, by_alias=False)
@@ -300,6 +301,9 @@ class ProjectDocument(OutputSchema):
 
     # config
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+ProjectDocumentVersion: TypeAlias = int
 
 
 __all__: tuple[str, ...] = (

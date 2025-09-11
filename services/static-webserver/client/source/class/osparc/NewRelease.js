@@ -73,7 +73,7 @@ qx.Class.define("osparc.NewRelease", {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
       const releaseLink = osparc.utils.Utils.getReleaseLink();
       const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        value: this.tr("What's new in ") + releaseTag,
+        value: this.tr("What's New in ") + releaseTag,
         url: releaseLink,
         font: "link-label-14"
       });

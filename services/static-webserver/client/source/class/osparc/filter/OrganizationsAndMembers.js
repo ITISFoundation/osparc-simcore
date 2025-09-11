@@ -64,18 +64,15 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
 
       const visibleCollaborators = Object.values(this.__visibleCollaborators);
 
+      const collabTypeOrder = osparc.store.Groups.COLLAB_TYPE_ORDER;
       // sort them first
       visibleCollaborators.sort((a, b) => {
-        if (a["collabType"] > b["collabType"]) {
-          return 1;
-        }
-        if (a["collabType"] < b["collabType"]) {
-          return -1;
-        }
-        if (a.getLabel() > b.getLabel()) {
-          return 1;
-        }
-        return -1;
+        const typeDiff = collabTypeOrder.indexOf(a["collabType"]) - collabTypeOrder.indexOf(b["collabType"]);
+          if (typeDiff !== 0) {
+            return typeDiff;
+          }
+          // fallback: sort alphabetically by label
+          return a.getLabel().localeCompare(b.getLabel());
       });
 
       visibleCollaborators.forEach(visibleCollaborator => {
@@ -85,14 +82,14 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
         const btn = this.addOption(visibleCollaborator);
         let iconPath = null;
         switch (visibleCollaborator["collabType"]) {
-          case 0:
-            iconPath = "@FontAwesome5Solid/globe/14";
+          case osparc.store.Groups.COLLAB_TYPE.EVERYONE:
+            iconPath = osparc.dashboard.CardBase.SHARED_ALL;
             break;
-          case 1:
-            iconPath = "@FontAwesome5Solid/users/14";
+          case osparc.store.Groups.COLLAB_TYPE.ORGANIZATION:
+            iconPath = osparc.dashboard.CardBase.SHARED_ORGS;
             break;
-          case 2:
-            iconPath = "@FontAwesome5Solid/user/14";
+          case osparc.store.Groups.COLLAB_TYPE.USER:
+            iconPath = osparc.dashboard.CardBase.SHARED_USER;
             break;
         }
         btn.setIcon(iconPath);

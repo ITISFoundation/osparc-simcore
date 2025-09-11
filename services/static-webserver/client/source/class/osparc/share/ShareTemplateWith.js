@@ -53,7 +53,10 @@ qx.Class.define("osparc.share.ShareTemplateWith", {
         value: this.tr("Make the template accessible to:"),
         font: "text-14",
       });
-      addCollaborators.getChildControl("share-with").setLabel(this.tr("Share with..."));
+      addCollaborators.getChildControl("share-with").set({
+        icon: "@FontAwesome5Solid/share-alt/12",
+        label: this.tr("Share"),
+      });
       this._add(addCollaborators);
 
       this._add(this.__selectedCollabs);

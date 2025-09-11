@@ -7,8 +7,8 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.users import UserID
 from servicelib.deferred_tasks import BaseDeferredHandler, TaskUID
 from servicelib.deferred_tasks._base_deferred_handler import DeferredContext
 
@@ -69,15 +69,15 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         if await service_tracker.should_notify_frontend_for_service(
             app, node_id, status_changed=status_changed
         ):
-            user_id: UserID | None = await service_tracker.get_user_id_for_service(
-                app, node_id
+            project_id: ProjectID | None = (
+                await service_tracker.get_project_id_for_service(app, node_id)
             )
-            if user_id:
-                await notify_service_status_change(app, user_id, result)
+            if project_id:
+                await notify_service_status_change(app, project_id, result)
                 await service_tracker.set_frontend_notified_for_service(app, node_id)
             else:
                 _logger.info(
-                    "Did not find a user for '%s', skipping status delivery of: %s",
+                    "Did not find a project for '%s', skipping status delivery of: %s",
                     node_id,
                     result,
                 )

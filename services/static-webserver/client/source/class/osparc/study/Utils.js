@@ -375,37 +375,34 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     state: {
+      __getShareState: function(state) {
+        if (state && "shareState" in state) {
+          return state["shareState"];
+        }
+        return null;
+      },
+
       getProjectStatus: function(state) {
-        if (
-          state &&
-          "shareState" in state &&
-          "status" in state["shareState"]
-        ) {
-          return state["shareState"]["status"];
+        const shareState = this.__getShareState(state);
+        if (shareState && "status" in shareState) {
+          return shareState["status"];
         }
         return null;
       },
 
       isProjectLocked: function(state) {
-        if (
-          state &&
-          "shareState" in state &&
-          "locked" in state["shareState"]
-        ) {
-          return state["shareState"]["locked"];
+        const shareState = this.__getShareState(state);
+        if (shareState && "locked" in shareState) {
+          return shareState["locked"];
         }
         return false;
       },
 
       getCurrentGroupIds: function(state) {
-        if (
-          state &&
-          "shareState" in state &&
-          "currentUserGroupids" in state["shareState"]
-        ) {
-          return state["shareState"]["currentUserGroupids"];
+        const shareState = this.__getShareState(state);
+        if (shareState && "currentUserGroupids" in shareState) {
+          return shareState["currentUserGroupids"];
         }
-
         return [];
       },
 
@@ -449,7 +446,7 @@ qx.Class.define("osparc.study.Utils", {
           return "UNKNOWN_SERVICES";
         }
       }
-      if (studyData["state"] && studyData["state"]["shareState"] && studyData["state"]["shareState"]["locked"]) {
+      if (this.state.isProjectLocked(studyData["state"])) {
         return "IN_USE";
       }
       if (this.isInDebt(studyData)) {

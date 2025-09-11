@@ -1,18 +1,22 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable
 from pathlib import Path
 from typing import Final
 from uuid import uuid4
 
 import aioboto3
+import aiodocker
 import pytest
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceRunID
 from pydantic import NonNegativeInt
+from pytest_mock import MockerFixture
+from servicelib.container_utils import run_command_in_container
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.services.backup import backup_volume
 from simcore_service_agent.services.docker_utils import get_volume_details
@@ -38,13 +42,52 @@ def volume_content(tmpdir: Path) -> Path:
 
 
 @pytest.fixture
+async def mock_container_with_data(
+    volume_content: Path, monkeypatch: pytest.MonkeyPatch
+) -> AsyncIterable[str]:
+    async with aiodocker.Docker() as client:
+        container = await client.containers.run(
+            config={
+                "Image": "alpine:latest",
+                "Cmd": ["/bin/ash", "-c", "sleep 10000"],
+                "HostConfig": {"Binds": [f"{volume_content}:{volume_content}:rw"]},
+            }
+        )
+        container_inspect = await container.show()
+
+        container_name = container_inspect["Name"][1:]
+        monkeypatch.setenv("HOSTNAME", container_name)
+
+        yield container_inspect["Id"]
+
+        await container.delete(force=True)
+
+
+@pytest.fixture
 def downlaoded_from_s3(tmpdir: Path) -> Path:
     path = Path(tmpdir) / "downloaded_from_s3"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
+@pytest.fixture
+async def mock__get_self_container_ip(
+    mock_container_with_data: str,
+    mocker: MockerFixture,
+) -> None:
+    container_ip = await run_command_in_container(
+        mock_container_with_data, command="hostname -i"
+    )
+
+    mocker.patch(
+        "simcore_service_agent.services.backup._get_self_container_ip",
+        return_value=container_ip.strip(),
+    )
+
+
 async def test_backup_volume(
+    mock_container_with_data: str,
+    mock__get_self_container_ip: None,
     volume_content: Path,
     project_id: ProjectID,
     swarm_stack_name: str,

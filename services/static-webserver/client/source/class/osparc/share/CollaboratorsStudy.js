@@ -83,9 +83,10 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         return;
       }
 
-      const readAccessRole = osparc.data.Roles.STUDY["read"];
-      const writeAccessRole = osparc.data.Roles.STUDY["write"];
       if (!newAccessRights) {
+        // default access rights
+        const readAccessRole = osparc.data.Roles.STUDY["read"];
+        const writeAccessRole = osparc.data.Roles.STUDY["write"];
         newAccessRights = this._resourceType === "study" ? writeAccessRole.accessRights : readAccessRole.accessRights;
       }
       const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this._resourceType, {firstUpperCase: true});

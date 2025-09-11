@@ -63,7 +63,7 @@ qx.Class.define("osparc.About", {
         wrap: true
       });
       this.add(poweredByLabel);
-      const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const displayName = osparc.store.StaticInfo.getDisplayName();
       const poweredText = ` is powered by the <a href='https://github.com/ITISFoundation/osparc-simcore' style='color: ${color}' target='_blank'>${osparc.About.OSPARC_OFFICIAL}</a> platform.`;
       poweredByLabel.setValue(displayName + poweredText);
 

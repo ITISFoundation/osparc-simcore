@@ -106,7 +106,7 @@ async def delete_service_containers(
         async def _progress_callback(
             message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
-            progress.update(message=message, percent=percent)
+            await progress.update(message=message, percent=percent)
 
         await dynamic_sidecars_scheduler.remove_service_containers(
             node_uuid=node_uuid, progress_callback=_progress_callback
@@ -116,7 +116,8 @@ async def delete_service_containers(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.tasks_manager,
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
             _task_remove_service_containers.__name__,
             unique=True,
             node_uuid=node_uuid,
@@ -171,7 +172,7 @@ async def save_service_state(
         async def _progress_callback(
             message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
-            progress.update(message=message, percent=percent)
+            await progress.update(message=message, percent=percent)
 
         await dynamic_sidecars_scheduler.save_service_state(
             node_uuid=node_uuid, progress_callback=_progress_callback
@@ -181,7 +182,8 @@ async def save_service_state(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.tasks_manager,
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
             _task_save_service_state.__name__,
             unique=True,
             node_uuid=node_uuid,
@@ -218,7 +220,7 @@ async def push_service_outputs(
         async def _progress_callback(
             message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
         ) -> None:
-            progress.update(message=message, percent=percent)
+            await progress.update(message=message, percent=percent)
 
         await dynamic_sidecars_scheduler.push_service_outputs(
             node_uuid=node_uuid, progress_callback=_progress_callback
@@ -228,7 +230,8 @@ async def push_service_outputs(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.tasks_manager,
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
             _task_push_service_outputs.__name__,
             unique=True,
             node_uuid=node_uuid,
@@ -270,7 +273,8 @@ async def delete_service_docker_resources(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.tasks_manager,
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
             _task_cleanup_service_docker_resources.__name__,
             unique=True,
             node_uuid=node_uuid,

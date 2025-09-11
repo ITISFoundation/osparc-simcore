@@ -44,6 +44,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         return;
       }
 
+      // default access rights
       const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
       const newCollaborators = {};
       gids.forEach(gid => newCollaborators[gid] = writeAccessRole.accessRights);

@@ -83,67 +83,65 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   members: {
-    __thumbnail: null,
-    __header: null,
-    __messagesContainer: null,
-    __extraWidgets: null,
     __maxButton: null,
 
-    __buildLayout: function() {
-      const maxLayout = this.__createMaximizeToolbar();
-      this._add(maxLayout);
-
-      const topSpacer = new qx.ui.core.Spacer();
-      this._add(topSpacer, {
-        flex: 1,
-      });
-
-      const productLogoPath = osparc.product.Utils.getLogoPath();
-      const thumbnail = this.__thumbnail = new osparc.ui.basic.Thumbnail(productLogoPath, this.self().ICON_WIDTH, this.self().LOGO_HEIGHT).set({
-        alignX: "center"
-      });
-      let logoHeight = this.self().LOGO_HEIGHT;
-      if (qx.util.ResourceManager.getInstance().getImageFormat(productLogoPath) === "png") {
-        logoHeight = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().ICON_WIDTH);
-        thumbnail.getChildControl("image").set({
-          width: this.self().ICON_WIDTH,
-          height: logoHeight
-        });
-      } else {
-        thumbnail.getChildControl("image").set({
-          width: this.self().ICON_WIDTH,
-          height: logoHeight
-        });
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "max-toolbar":
+          control = this.__createMaximizeToolbar();
+          this._add(control);
+          break;
+        case "spacer-top":
+          control = new qx.ui.core.Spacer();
+          this._add(control, {
+            flex: 1,
+          });
+          break;
+        case "thumbnail":
+          control = this.__createThumbnail();
+          this._add(control);
+          break;
+        case "loading-title":
+          control = new qx.ui.basic.Atom().set({
+            icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
+            font: "title-18",
+            alignX: "center",
+            rich: true,
+            gap: 15,
+            allowGrowX: false,
+          });
+          osparc.service.StatusUI.updateCircleAnimation(control.getChildControl("icon"));
+          control.getChildControl("label").set({
+            rich: true,
+            wrap: true,
+            alignX: "center",
+          });
+          this._add(control);
+          break;
+        case "messages-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+            alignX: "center"
+          }));
+          this._add(control);
+          break;
+        case "extra-widgets-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+            alignX: "center"
+          }));
+          this._add(control);
+          break;
       }
-      this._add(thumbnail);
+      return control || this.base(arguments, id);
+    },
 
-      const waitingHeader = this.__header = new qx.ui.basic.Atom().set({
-        icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
-        font: "title-18",
-        alignX: "center",
-        rich: true,
-        gap: 15,
-        allowGrowX: false,
-      });
-      const icon = waitingHeader.getChildControl("icon");
-      osparc.service.StatusUI.updateCircleAnimation(icon);
-      const label = waitingHeader.getChildControl("label");
-      label.set({
-        rich: true,
-        wrap: true,
-        alignX: "center",
-      });
-      this._add(waitingHeader);
-
-      const messages = this.__messagesContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
-        alignX: "center"
-      }));
-      this._add(messages);
-
-      const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
-        alignX: "center"
-      }));
-      this._add(extraWidgets);
+    __buildLayout: function() {
+      this.getChildControl("max-toolbar");
+      this.getChildControl("spacer-top");
+      this.getChildControl("thumbnail");
+      this.getChildControl("loading-title");
+      this.getChildControl("messages-container");
+      this.getChildControl("extra-widgets-container");
 
       const bottomSpacer = new qx.ui.core.Spacer();
       this._add(bottomSpacer, {
@@ -188,36 +186,73 @@ qx.Class.define("osparc.ui.message.Loading", {
       return toolbarLayout;
     },
 
+    __createThumbnail: function() {
+      const productLogoPath = osparc.product.Utils.getLogoPath();
+      const thumbnail = new osparc.ui.basic.Thumbnail(productLogoPath, this.self().ICON_WIDTH, this.self().LOGO_HEIGHT).set({
+        alignX: "center"
+      });
+      let logoHeight = this.self().LOGO_HEIGHT;
+      if (qx.util.ResourceManager.getInstance().getImageFormat(productLogoPath) === "png") {
+        logoHeight = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().ICON_WIDTH);
+        thumbnail.getChildControl("image").set({
+          width: this.self().ICON_WIDTH,
+          height: logoHeight
+        });
+      } else {
+        thumbnail.getChildControl("image").set({
+          width: this.self().ICON_WIDTH,
+          height: logoHeight
+        });
+      }
+      return thumbnail;
+    },
+
     __applyLogo: function(newLogo) {
       const productLogoPath = osparc.product.Utils.getLogoPath();
+      const thumbnail = this.getChildControl("thumbnail");
       if (newLogo !== productLogoPath) {
-        this.__thumbnail.set({
+        thumbnail.set({
           maxHeight: this.self().ICON_HEIGHT,
           height: this.self().ICON_HEIGHT,
         });
-        this.__thumbnail.getChildControl("image").set({
+        thumbnail.getChildControl("image").set({
           maxHeight: this.self().ICON_HEIGHT,
           height: this.self().ICON_HEIGHT,
         });
       }
-      this.__thumbnail.setSource(newLogo);
+      thumbnail.setSource(newLogo);
     },
 
     __applyHeader: function(value) {
-      this.__header.setLabel(value);
+      this._setHeaderTitle(value);
+
+      // extract the state from the title
       const words = value.split(" ");
       if (words.length) {
         const state = words[0];
         const iconSource = osparc.service.StatusUI.getIconSource(state.toLowerCase(), this.self().STATUS_ICON_SIZE);
         if (iconSource) {
-          this.__header.setIcon(iconSource);
-          osparc.service.StatusUI.updateCircleAnimation(this.__header.getChildControl("icon"));
+          this._setHeaderIcon(iconSource);
         }
       }
     },
 
+    _setHeaderTitle: function(label) {
+      const loadingTitle = this.getChildControl("loading-title");
+      loadingTitle.setLabel(label);
+    },
+
+    _setHeaderIcon: function(iconSource) {
+      const loadingTitle = this.getChildControl("loading-title");
+      loadingTitle.setIcon(iconSource);
+      // this will stop the circle, if it's not a circle
+      osparc.service.StatusUI.updateCircleAnimation(loadingTitle.getChildControl("icon"));
+    },
+
     __applyMessages: function(msgs) {
       this.clearMessages();
+
+      const messagesContainer = this.getChildControl("messages-container");
       if (msgs) {
         msgs.forEach(msg => {
           const text = new qx.ui.basic.Label(msg.toString()).set({
@@ -225,33 +260,36 @@ qx.Class.define("osparc.ui.message.Loading", {
             rich: true,
             wrap: true
           });
-          this.__messagesContainer.add(text);
+          messagesContainer.add(text);
         });
-        this.__messagesContainer.show();
+        messagesContainer.show();
       } else {
-        this.__messagesContainer.exclude();
+        messagesContainer.exclude();
       }
     },
 
     clearMessages: function() {
-      this.__messagesContainer.removeAll();
+      const messagesContainer = this.getChildControl("messages-container");
+      messagesContainer.removeAll();
     },
 
     getMessageLabels: function() {
-      return this.__messagesContainer.getChildren();
+      return this.getChildControl("messages-container").getChildren();
     },
 
     addWidgetToMessages: function(widget) {
+      const messagesContainer = this.getChildControl("messages-container");
       if (widget) {
-        this.__messagesContainer.add(widget);
-        this.__messagesContainer.show();
+        messagesContainer.add(widget);
+        messagesContainer.show();
       } else {
-        this.__messagesContainer.exclude();
+        messagesContainer.exclude();
       }
     },
 
     addExtraWidget: function(widget) {
-      this.__extraWidgets.add(widget);
+      const extraWidgetsContainer = this.getChildControl("extra-widgets-container");
+      extraWidgetsContainer.add(widget);
     },
   }
 });

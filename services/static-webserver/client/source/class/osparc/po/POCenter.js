@@ -31,7 +31,6 @@ qx.Class.define("osparc.po.POCenter", {
     this.__addPreRegistrationPage();
     this.__addInvitationsPage();
     this.__addProductPage();
-    this.__addMsgTemplatesPage();
   },
 
   members: {
@@ -69,12 +68,5 @@ qx.Class.define("osparc.po.POCenter", {
       const productInfo = new osparc.po.ProductInfo();
       this.addTab(title, iconSrc, productInfo);
     },
-
-    __addMsgTemplatesPage: function() {
-      const title = this.tr("Message Templates");
-      const iconSrc = "@FontAwesome5Solid/envelope-open/22";
-      const productInfo = new osparc.po.MessageTemplates();
-      this.addTab(title, iconSrc, productInfo);
-    }
   }
 });

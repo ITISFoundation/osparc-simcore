@@ -8,6 +8,7 @@ class BaseBackEndError(ApiServerBaseError):
     """status_code: the default return status which will be returned to the client calling the
     api-server (in case this exception is raised)"""
 
+    msg_template = "The api-server encountered an error when contacting the backend"
     status_code = status.HTTP_502_BAD_GATEWAY
 
     @classmethod
@@ -54,6 +55,11 @@ class ProgramOrSolverOrStudyNotFoundError(BaseBackEndError):
 
 class ServiceForbiddenAccessError(BaseBackEndError):
     msg_template = "Forbidden access to program/solver/study {name}:{version}"
+    status_code = status.HTTP_403_FORBIDDEN
+
+
+class JobForbiddenAccessError(BaseBackEndError):
+    msg_template = "Forbidden access to job {project_id}"
     status_code = status.HTTP_403_FORBIDDEN
 
 
@@ -135,3 +141,8 @@ class CanNotCheckoutServiceIsNotRunningError(BaseBackEndError):
 class LicensedItemCheckoutNotFoundError(BaseBackEndError):
     msg_template = "Licensed item checkout {licensed_item_checkout_id} not found."
     status_code = status.HTTP_404_NOT_FOUND
+
+
+class JobAssetsMissingError(BaseBackEndError):
+    msg_template = "Job assets missing for job {job_id}"
+    status_code = status.HTTP_409_CONFLICT

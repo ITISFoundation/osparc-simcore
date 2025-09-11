@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
 
+TaskID: TypeAlias = str
 FunctionID: TypeAlias = UUID
 FunctionJobID: TypeAlias = UUID
 FileID: TypeAlias = UUID
@@ -113,7 +114,37 @@ class ProjectFunction(FunctionBase):
 
 
 class RegisteredProjectFunction(ProjectFunction, RegisteredFunctionBase):
-    pass
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "function_class": "PROJECT",
+                    "title": "Example Project Function",
+                    "description": "This is an example project function.",
+                    "input_schema": {
+                        "schema_content": {
+                            "type": "object",
+                            "properties": {"input1": {"type": "integer"}},
+                        },
+                        "schema_class": "application/schema+json",
+                    },
+                    "output_schema": {
+                        "schema_content": {
+                            "type": "object",
+                            "properties": {"output1": {"type": "string"}},
+                        },
+                        "schema_class": "application/schema+json",
+                    },
+                    "default_inputs": None,
+                    "project_id": "11111111-1111-1111-1111-111111111111",
+                    "uid": "22222222-2222-2222-2222-222222222222",
+                    "created_at": "2024-01-01T12:00:00",
+                    "modified_at": "2024-01-02T12:00:00",
+                },
+            ]
+        },
+    )
 
 
 SolverJobID: TypeAlias = UUID
@@ -159,41 +190,72 @@ class FunctionJobBase(BaseModel):
     function_class: FunctionClass
 
 
-class RegisteredFunctionJobBase(FunctionJobBase):
-    uid: FunctionJobID
-    created_at: datetime.datetime
-
-
 class ProjectFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
-    project_job_id: ProjectID
+    project_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
-class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase):
-    pass
+class RegisteredProjectFunctionJobPatch(BaseModel):
+    function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
+    title: str | None
+    description: str | None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
+    project_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
 class SolverFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
-    solver_job_id: ProjectID
+    solver_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
-class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
-    pass
+class RegisteredSolverFunctionJobPatch(BaseModel):
+    function_class: Literal[FunctionClass.SOLVER] = FunctionClass.SOLVER
+    title: str | None
+    description: str | None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
+    solver_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None
 
 
 class PythonCodeFunctionJob(FunctionJobBase):
     function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
 
 
-class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):
-    pass
+class RegisteredPythonCodeFunctionJobPatch(BaseModel):
+    function_class: Literal[FunctionClass.PYTHON_CODE] = FunctionClass.PYTHON_CODE
+    title: str | None
+    inputs: FunctionInputs
+    outputs: FunctionOutputs
+    description: str | None
 
 
 FunctionJob: TypeAlias = Annotated[
     ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
     Field(discriminator="function_class"),
 ]
+
+
+class RegisteredFunctionJobBase(FunctionJobBase):
+    uid: FunctionJobID
+    created_at: datetime.datetime
+
+
+class RegisteredProjectFunctionJob(ProjectFunctionJob, RegisteredFunctionJobBase):
+    pass
+
+
+class RegisteredSolverFunctionJob(SolverFunctionJob, RegisteredFunctionJobBase):
+    pass
+
+
+class RegisteredPythonCodeFunctionJob(PythonCodeFunctionJob, RegisteredFunctionJobBase):
+    pass
+
 
 RegisteredFunctionJob: TypeAlias = Annotated[
     RegisteredProjectFunctionJob
@@ -202,9 +264,46 @@ RegisteredFunctionJob: TypeAlias = Annotated[
     Field(discriminator="function_class"),
 ]
 
+RegisteredFunctionJobPatch = Annotated[
+    RegisteredProjectFunctionJobPatch
+    | RegisteredPythonCodeFunctionJobPatch
+    | RegisteredSolverFunctionJobPatch,
+    Field(discriminator="function_class"),
+]
+
 
 class FunctionJobStatus(BaseModel):
     status: str
+
+
+class RegisteredFunctionJobWithStatusBase(RegisteredFunctionJobBase, FunctionJobBase):
+    status: FunctionJobStatus
+
+
+class RegisteredProjectFunctionJobWithStatus(
+    RegisteredProjectFunctionJob, RegisteredFunctionJobWithStatusBase
+):
+    pass
+
+
+class RegisteredSolverFunctionJobWithStatus(
+    RegisteredSolverFunctionJob, RegisteredFunctionJobWithStatusBase
+):
+    pass
+
+
+class RegisteredPythonCodeFunctionJobWithStatus(
+    RegisteredPythonCodeFunctionJob, RegisteredFunctionJobWithStatusBase
+):
+    pass
+
+
+RegisteredFunctionJobWithStatus: TypeAlias = Annotated[
+    RegisteredProjectFunctionJobWithStatus
+    | RegisteredPythonCodeFunctionJobWithStatus
+    | RegisteredSolverFunctionJobWithStatus,
+    Field(discriminator="function_class"),
+]
 
 
 class FunctionJobCollection(BaseModel):
@@ -239,6 +338,12 @@ class FunctionJobDB(BaseModel):
 class RegisteredFunctionJobDB(FunctionJobDB):
     uuid: FunctionJobID
     created: datetime.datetime
+
+
+class RegisteredFunctionJobWithStatusDB(FunctionJobDB):
+    uuid: FunctionJobID
+    created: datetime.datetime
+    status: str
 
 
 class FunctionDB(BaseModel):

@@ -38,7 +38,7 @@ qx.Class.define("osparc.node.BootOptionsView", {
 
       const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const nodeMetadata = node.getMetaData();
+      const nodeMetadata = node.getMetadata();
       const workbenchData = node.getWorkbench().serialize();
       const nodeId = node.getNodeId();
       const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetadata, workbenchData, nodeId);
@@ -54,7 +54,6 @@ qx.Class.define("osparc.node.BootOptionsView", {
             "boot_mode": newBootModeId
           };
           node.setBootOptions(data);
-          node.fireEvent("updateStudyDocument");
           node.fireDataEvent("projectDocumentChanged", {
             "op": "replace",
             "path": `/workbench/${nodeId}/bootOptions`,

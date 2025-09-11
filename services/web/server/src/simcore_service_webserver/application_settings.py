@@ -36,10 +36,12 @@ from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
 from .dynamic_scheduler.settings import DynamicSchedulerSettings
 from .exporter.settings import ExporterSettings
+from .fogbugz.settings import FogbugzSettings
 from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .licenses.settings import LicensesSettings
 from .login.settings import LoginSettings
+from .long_running_tasks.settings import LongRunningTasksSettings
 from .payments.settings import PaymentsSettings
 from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
@@ -234,6 +236,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="exporter plugin",
         ),
     ]
+
+    WEBSERVER_FOGBUGZ: Annotated[
+        FogbugzSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
     WEBSERVER_GARBAGE_COLLECTOR: Annotated[
         GarbageCollectorSettings | None,
         Field(
@@ -266,6 +276,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
+    WEBSERVER_LONG_RUNNING_TASKS: Annotated[
+        LongRunningTasksSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="long running tasks plugin",
+        ),
+    ]
+
     WEBSERVER_PAYMENTS: Annotated[
         PaymentsSettings | None,
         Field(
@@ -285,7 +303,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="Enables real-time collaboration features",
             json_schema_extra={
                 "auto_default_from_env": True,
-                _X_FEATURE_UNDER_DEVELOPMENT: True,
             },
         ),
     ]
@@ -578,6 +595,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
                 "WEBSERVER_TRASH": {
                     "TRASH_RETENTION_DAYS",
+                },
+                "WEBSERVER_LONG_RUNNING_TASKS": {
+                    "LONG_RUNNING_TASKS_NAMESPACE_SUFFIX",
                 },
             },
             exclude_none=True,

@@ -14,11 +14,7 @@ def setup(app: FastAPI) -> None:
 
         app.state.redis_clients_manager = redis_clients_manager = RedisClientsManager(
             databases_configs={
-                RedisManagerDBConfig(database=db)
-                for db in (
-                    RedisDatabase.LOCKS,
-                    RedisDatabase.DISTRIBUTED_IDENTIFIERS,
-                )
+                RedisManagerDBConfig(database=db) for db in (RedisDatabase.LOCKS,)
             },
             settings=settings.REDIS,
             client_name=APP_NAME,

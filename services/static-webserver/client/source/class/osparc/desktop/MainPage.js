@@ -257,7 +257,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             // these operations need to be done after template creation
             osparc.store.Study.getInstance().addCollaborators(templateData, templateAccessRights);
             if (templateType) {
-              osparc.store.Study.getInstance().patchTemplateType(templateData["uuid"], templateType)
+              osparc.store.Study.getInstance().patchTemplateType(templateData, templateType)
                 .then(() => {
                   if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
                     tutorialBrowser.reloadResources(false);
@@ -309,7 +309,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
         await osparc.utils.Utils.sleep(1000);
-        osparc.store.Study.getInstance().getStudyState(studyId);
+        osparc.store.Study.getInstance().fetchStudyState(studyId);
       }
       this.__loadingPage.setMessages([]);
       this.__openSnapshot(studyId, snapshotId);
@@ -355,7 +355,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
         await osparc.utils.Utils.sleep(1000);
-        osparc.store.Study.getInstance().getStudyState(studyId);
+        osparc.store.Study.getInstance().fetchStudyState(studyId);
       }
       this.__loadingPage.setMessages([]);
       this.__openIteration(iterationUuid);

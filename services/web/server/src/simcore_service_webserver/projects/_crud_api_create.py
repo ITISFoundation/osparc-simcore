@@ -27,6 +27,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
 )
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from yarl import URL
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
@@ -38,7 +39,6 @@ from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
-from ..users import users_service
 from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_repository, _projects_repository, _projects_service
@@ -181,7 +181,7 @@ async def _copy_files_from_source_project(
             user_id=user_id,
             product_name=product_name,
         ):
-            task_progress.update(
+            await task_progress.update(
                 message=(
                     async_job_composed_result.status.progress.message.description
                     if async_job_composed_result.status.progress.message
@@ -203,10 +203,7 @@ async def _copy_files_from_source_project(
             get_redis_lock_manager_client_sdk(app),
             project_uuid=source_project["uuid"],
             status=ProjectStatus.CLONING,
-            owner=Owner(
-                user_id=user_id,
-                **await users_service.get_user_fullname(app, user_id=user_id),
-            ),
+            owner=Owner(user_id=user_id),
             notification_cb=_projects_service.create_user_notification_cb(
                 user_id, ProjectID(f"{source_project['uuid']}"), app
             ),
@@ -253,7 +250,9 @@ async def _compose_project_data(
 async def create_project(  # pylint: disable=too-many-arguments,too-many-branches,too-many-statements  # noqa: C901, PLR0913
     progress: TaskProgress,
     *,
-    request: web.Request,
+    app: web.Application,
+    request_url: URL,
+    request_headers: dict[str, str],
     new_project_was_hidden_before_data_was_copied: bool,
     from_study: ProjectID | None,
     as_template: bool,
@@ -285,7 +284,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         web.HTTPUnauthorized:
 
     """
-    assert request.app  # nosec
     _logger.info(
         "create_project for '%s' with %s %s %s",
         f"{user_id=}",
@@ -294,20 +292,20 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         f"{from_study=}",
     )
 
-    _projects_repository_legacy = ProjectDBAPI.get_from_app_context(request.app)
+    _projects_repository_legacy = ProjectDBAPI.get_from_app_context(app)
 
     new_project: ProjectDict = {}
     copy_file_coro = None
     project_nodes = None
     try:
-        progress.update(message="creating new study...")
+        await progress.update(message="creating new study...")
 
         workspace_id = None
         folder_id = None
         if predefined_project:
             if workspace_id := predefined_project.get("workspaceId", None):
                 await check_user_workspace_access(
-                    request.app,
+                    app,
                     user_id=user_id,
                     workspace_id=workspace_id,
                     product_name=product_name,
@@ -316,7 +314,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             if folder_id := predefined_project.get("folderId", None):
                 # Check user has access to folder
                 await folders_folders_repository.get_for_user_or_workspace(
-                    request.app,
+                    app,
                     folder_id=folder_id,
                     product_name=product_name,
                     user_id=user_id if workspace_id is None else None,
@@ -332,7 +330,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 project_node_coro,
                 copy_file_coro,
             ) = await _prepare_project_copy(
-                request.app,
+                app,
                 user_id=user_id,
                 product_name=product_name,
                 src_project_uuid=from_study,
@@ -346,7 +344,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             # 1.2 does project belong to some folder?
             workspace_id = new_project["workspaceId"]
             prj_to_folder_db = await _folders_repository.get_project_to_folder(
-                request.app,
+                app,
                 project_id=from_study,
                 private_workspace_user_id_or_none=(
                     user_id if workspace_id is None else None
@@ -365,7 +363,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         if predefined_project:
             # 2. overrides with optional body and re-validate
             new_project, project_nodes = await _compose_project_data(
-                request.app,
+                app,
                 user_id=user_id,
                 new_project=new_project,
                 predefined_project=predefined_project,
@@ -382,18 +380,18 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         )
         # add parent linking if needed
         await set_project_ancestors(
-            request.app,
+            app,
             user_id=user_id,
             project_uuid=new_project["uuid"],
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
         )
-        progress.update()
+        await progress.update()
 
         # 3.2 move project to proper folder
         if folder_id:
             await _folders_repository.insert_project_to_folder(
-                request.app,
+                app,
                 project_id=new_project["uuid"],
                 folder_id=folder_id,
                 private_workspace_user_id_or_none=(
@@ -409,20 +407,20 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         # 5. unhide the project if needed since it is now complete
         if not new_project_was_hidden_before_data_was_copied:
             await _projects_repository.patch_project(
-                request.app,
+                app,
                 project_uuid=new_project["uuid"],
                 new_partial_project_data={"hidden": False},
             )
 
         # update the network information in director-v2
         await dynamic_scheduler_service.update_projects_networks(
-            request.app, project_id=ProjectID(new_project["uuid"])
+            app, project_id=ProjectID(new_project["uuid"])
         )
-        progress.update()
+        await progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_service.create_or_update_pipeline(
-            request.app,
+            app,
             user_id,
             new_project["uuid"],
             product_name,
@@ -434,15 +432,14 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         )
         # Appends state
         new_project = await _projects_service.add_project_states_for_user(
-            user_id=user_id,
-            project=new_project,
-            is_template=as_template,
-            app=request.app,
+            user_id=user_id, project=new_project, app=app
         )
-        progress.update()
+        await progress.update()
 
         # Adds permalink
-        await update_or_pop_permalink_in_project(request, new_project)
+        await update_or_pop_permalink_in_project(
+            app, request_url, request_headers, new_project
+        )
 
         # Adds folderId
         user_specific_project_data_db = (
@@ -458,7 +455,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         # Overwrite project access rights
         if workspace_id:
             workspace: UserWorkspaceWithAccessRights = await get_user_workspace(
-                request.app,
+                app,
                 user_id=user_id,
                 workspace_id=workspace_id,
                 product_name=product_name,
@@ -501,7 +498,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
         if project_uuid := new_project.get("uuid"):
             await _projects_service.submit_delete_project_task(
-                app=request.app,
+                app=app,
                 project_uuid=project_uuid,
                 user_id=user_id,
                 simcore_user_agent=simcore_user_agent,
@@ -515,7 +512,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         )
         if project_uuid := new_project.get("uuid"):
             await _projects_service.submit_delete_project_task(
-                app=request.app,
+                app=app,
                 project_uuid=project_uuid,
                 user_id=user_id,
                 simcore_user_agent=simcore_user_agent,
@@ -523,4 +520,14 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         raise
 
 
-TaskRegistry.register(create_project)
+def register_create_project_task(app: web.Application) -> None:
+    TaskRegistry.register(
+        create_project,
+        allowed_errors=(
+            web.HTTPUnprocessableEntity,
+            web.HTTPBadRequest,
+            web.HTTPNotFound,
+            web.HTTPForbidden,
+        ),
+        app=app,
+    )

@@ -266,6 +266,24 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
             RunningState.WAITING_FOR_RESOURCES,
             id="published and waiting for resources = waiting for resources",
         ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.WAITING_FOR_RESOURCES),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="success, published and waiting for resources = waiting for resources",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.WAITING_FOR_CLUSTER),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="success, published and waiting for cluster = waiting for resources",
+        ),
     ],
 )
 def test_get_pipeline_state_from_task_states(
@@ -278,9 +296,9 @@ def test_get_pipeline_state_from_task_states(
     ]
 
     pipeline_state: RunningState = get_pipeline_state_from_task_states(tasks)
-    assert (
-        pipeline_state == exp_pipeline_state
-    ), f"task states are: {task_states}, got {pipeline_state} instead of {exp_pipeline_state}"
+    assert pipeline_state == exp_pipeline_state, (
+        f"task states are: {task_states}, got {pipeline_state} instead of {exp_pipeline_state}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -297,7 +315,7 @@ def test_get_pipeline_state_from_task_states(
     ],
 )
 def test_is_pipeline_running(state, exp: bool):
-    assert (
-        is_pipeline_running(state) is exp
-    ), f"pipeline in {state}, i.e. running state should be {exp}"
+    assert is_pipeline_running(state) is exp, (
+        f"pipeline in {state}, i.e. running state should be {exp}"
+    )
     assert is_pipeline_stopped is not exp

@@ -149,6 +149,15 @@ services:
     ports:
       - "8080"
       - "3022:3000"
+
+  api-worker:
+    environment:
+      <<: *common_environment
+      API_SERVER_REMOTE_DEBUG_PORT : 3000
+    ports:
+      - "8080"
+      - "3025:3000"
+
   webserver:
     environment: &webserver_environment_local
       <<: *common_environment

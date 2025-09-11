@@ -19,6 +19,7 @@ class UserServicesPreferencesManager:
     service_version: ServiceVersion
     user_id: UserID
     product_name: ProductName
+    application_name: str
     _preferences_already_saved: bool = False
 
     async def load_preferences(self) -> None:
@@ -28,6 +29,7 @@ class UserServicesPreferencesManager:
             service_version=self.service_version,
             user_id=self.user_id,
             product_name=self.product_name,
+            application_name=self.application_name,
         )
 
     async def save_preferences(self) -> None:
@@ -41,6 +43,7 @@ class UserServicesPreferencesManager:
             service_version=self.service_version,
             user_id=self.user_id,
             product_name=self.product_name,
+            application_name=self.application_name,
         )
 
         self._preferences_already_saved = True

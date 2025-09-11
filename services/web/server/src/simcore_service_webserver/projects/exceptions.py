@@ -4,6 +4,7 @@
 from typing import Any
 
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.redis import ProjectLockError
 
@@ -70,12 +71,12 @@ class ProjectNotFoundError(BaseProjectError):
 
 
 class ProjectDeleteError(BaseProjectError):
-    msg_template = "Failed to complete deletion of '{project_uuid}': {reason}"
+    msg_template = "Failed to complete deletion of '{project_uuid}': {details}"
 
-    def __init__(self, *, project_uuid, reason, **ctx):
+    def __init__(self, *, project_uuid, details, **ctx):
         super().__init__(**ctx)
         self.project_uuid = project_uuid
-        self.reason = reason
+        self.details = details
 
 
 class ProjectsBatchDeleteError(BaseProjectError):
@@ -107,7 +108,7 @@ class ProjectRunningConflictError(ProjectTrashError):
 
 class ProjectNotTrashedError(ProjectTrashError):
     msg_template = (
-        "Cannot delete project {project_uuid} since it was not trashed first: {reason}"
+        "Cannot delete project {project_uuid} since it was not trashed first: {details}"
     )
 
 
@@ -115,6 +116,17 @@ class NodeNotFoundError(BaseProjectError):
     msg_template = "Node '{node_uuid}' not found in project '{project_uuid}'"
 
     def __init__(self, *, project_uuid: str, node_uuid: str, **ctx):
+        super().__init__(**ctx)
+        self.node_uuid = node_uuid
+        self.project_uuid = project_uuid
+
+
+class NodeShareStateCannotBeComputedError(BaseProjectError):
+    msg_template = (
+        "Node '{node_uuid}' share state cannot be computed in project '{project_uuid}'"
+    )
+
+    def __init__(self, *, project_uuid: ProjectID | None, node_uuid: NodeID, **ctx):
         super().__init__(**ctx)
         self.node_uuid = node_uuid
         self.project_uuid = project_uuid
@@ -257,7 +269,7 @@ class InvalidInputValue(WebServerBaseError):
 
 
 class ProjectGroupNotFoundError(BaseProjectError):
-    msg_template = "Project group not found. {reason}"
+    msg_template = "Project group not found. {details}"
 
 
 class ProjectInDebtCanNotChangeWalletError(BaseProjectError):

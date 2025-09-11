@@ -34,7 +34,7 @@ qx.Class.define("osparc.utils.Avatar", {
   type: "static",
 
   statics: {
-    emailToThumbnail: function(email, username = "??", size = 32) {
+    emailToThumbnail: function(email, userName = "??", size = 32) {
       email = email || "";
       // MD5 (Message-Digest Algorithm) by WebToolkit
       const MD5 = function(s) {
@@ -255,7 +255,7 @@ qx.Class.define("osparc.utils.Avatar", {
       };
 
       const emailHash = MD5(email);
-      const defaultImageUrl = `https://ui-avatars.com/api/${username}/${size}`;
+      const defaultImageUrl = `https://ui-avatars.com/api/${userName}/${size}`;
       return `https://www.gravatar.com/avatar/${emailHash}?d=${defaultImageUrl}&s=${size}&r=g`;
     },
   }

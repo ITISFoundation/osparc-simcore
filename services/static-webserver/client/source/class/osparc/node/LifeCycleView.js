@@ -65,7 +65,7 @@ qx.Class.define("osparc.node.LifeCycleView", {
       const node = this.getNode();
 
       if (node.isDeprecated()) {
-        const deprecateDateLabel = new qx.ui.basic.Label(osparc.service.Utils.getDeprecationDateText(node.getMetaData())).set({
+        const deprecateDateLabel = new qx.ui.basic.Label(osparc.service.Utils.getDeprecationDateText(node.getMetadata())).set({
           rich: true
         });
         this._add(deprecateDateLabel);
@@ -119,7 +119,7 @@ qx.Class.define("osparc.node.LifeCycleView", {
           newData["version"] = latestCompatible["version"];
         }
         node.set(newData);
-        node.fireEvent("updateStudyDocument");
+        const nodeId = node.getNodeId();
         node.fireDataEvent("projectDocumentChanged", [{
           "op": "replace",
           "path": `/workbench/${nodeId}/key`,

@@ -1,7 +1,9 @@
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Annotated, TypeAlias
 
-from pydantic import BaseModel, Field, field_validator, validate_call
+from pydantic import BaseModel, ConfigDict, Field, field_validator, validate_call
+from pydantic.config import JsonDict
 
 _logger = logging.getLogger(__name__)
 
@@ -22,8 +24,32 @@ class TaskProgress(BaseModel):
     message: ProgressMessage = ""
     percent: ProgressPercent = 0.0
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "task_id": "3ac48b54-a48d-4c5e-a6ac-dcaddb9eaa59",
+                        "message": "Halfway done",
+                        "percent": 0.5,
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
+
+    # used to propagate progress updates internally
+    _update_callback: Callable[["TaskProgress"], Awaitable[None]] | None = None
+
+    def set_update_callback(
+        self, callback: Callable[["TaskProgress"], Awaitable[None]]
+    ) -> None:
+        self._update_callback = callback
+
     @validate_call
-    def update(
+    async def update(
         self,
         *,
         message: ProgressMessage | None = None,
@@ -39,6 +65,16 @@ class TaskProgress(BaseModel):
             self.percent = percent
 
         _logger.debug("Progress update: %s", f"{self}")
+
+        if self._update_callback is not None:
+            try:
+                await self._update_callback(self)
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    "Error while calling progress update callback: %s",
+                    exc,
+                    stack_info=True,
+                )
 
     @classmethod
     def create(cls, task_id: TaskId | None = None) -> "TaskProgress":

@@ -8,7 +8,8 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationInputs,
 )
 from models_library.emails import LowerCaseEmailStr
-from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
+from pydantic import AnyHttpUrl, HttpUrl, TypeAdapter, ValidationError
+from yarl import URL
 
 from ..groups.api import is_user_by_email_in_group
 from ..products.models import Product
@@ -51,7 +52,7 @@ async def validate_invitation_url(
     """
     if current_product.group_id is None:
         raise InvitationsServiceUnavailableError(
-            reason="Current product is not configured for invitations",
+            details="Current product is not configured for invitations",
             current_product=current_product,
             guest_email=guest_email,
         )
@@ -60,7 +61,7 @@ async def validate_invitation_url(
         valid_url = TypeAdapter(AnyHttpUrl).validate_python(invitation_url)
     except ValidationError as err:
         raise InvalidInvitationError(
-            reason=MSG_INVALID_INVITATION_URL,
+            details=MSG_INVALID_INVITATION_URL,
             current_product=current_product,
             guest_email=guest_email,
         ) from err
@@ -73,7 +74,7 @@ async def validate_invitation_url(
     # check email
     if invitation.guest.lower() != guest_email.lower():
         raise InvalidInvitationError(
-            reason="This invitation was issued for a different email",
+            details="This invitation was issued for a different email",
             current_product=current_product,
             guest_email=guest_email,
             invitation=invitation,
@@ -83,7 +84,7 @@ async def validate_invitation_url(
     assert current_product.group_id is not None  # nosec
     if invitation.product is not None and invitation.product != current_product.name:
         raise InvalidInvitationError(
-            reason="This invitation was issued for a different product. "
+            details="This invitation was issued for a different product. "
             f"Got '{invitation.product}', expected '{current_product.name}'",
             guest_email=guest_email,
             current_product=current_product,
@@ -101,7 +102,7 @@ async def validate_invitation_url(
     if is_user_registered_in_product:
         # NOTE: a user might be already registered but the invitation is for another product
         raise InvalidInvitationError(
-            reason=MSG_INVITATION_ALREADY_USED,
+            details=MSG_INVITATION_ALREADY_USED,
             guest_email=guest_email,
             current_product=current_product,
             invitation=invitation,
@@ -124,7 +125,7 @@ async def extract_invitation(
     try:
         valid_url = TypeAdapter(AnyHttpUrl).validate_python(invitation_url)
     except ValidationError as err:
-        raise InvalidInvitationError(reason=MSG_INVALID_INVITATION_URL) from err
+        raise InvalidInvitationError(details=MSG_INVALID_INVITATION_URL) from err
 
     # check with service
     invitation: ApiInvitationContent = await get_invitations_service_api(
@@ -134,7 +135,9 @@ async def extract_invitation(
 
 
 async def generate_invitation(
-    app: web.Application, params: ApiInvitationInputs
+    app: web.Application,
+    params: ApiInvitationInputs,
+    product_origin_url: URL,
 ) -> ApiInvitationContentAndLink:
     """
     Raises:
@@ -145,4 +148,10 @@ async def generate_invitation(
     invitation: ApiInvitationContentAndLink = await get_invitations_service_api(
         app=app
     ).generate_invitation(params)
+
+    _normalized_url = URL(f"{invitation.invitation_url}")
+    invitation.invitation_url = HttpUrl(
+        f"{product_origin_url.with_path(_normalized_url.path).with_fragment(_normalized_url.raw_fragment)}"
+    )
+
     return invitation

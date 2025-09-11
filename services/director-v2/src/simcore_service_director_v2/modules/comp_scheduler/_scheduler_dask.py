@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator, Callable
@@ -23,12 +22,15 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.utils import limited_as_completed, limited_gather
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
-    TaskSchedulingError,
+    ComputationalBackendTaskResultsNotReadyError,
+    PortsValidationError,
 )
 from ...models.comp_runs import CompRunsAtDB, Iteration, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
@@ -49,6 +51,10 @@ from ..db.repositories.comp_runs import (
     CompRunsRepository,
 )
 from ..db.repositories.comp_tasks import CompTasksRepository
+from ._constants import (
+    MAX_CONCURRENT_PIPELINE_SCHEDULING,
+)
+from ._models import TaskStateTracker
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
     WAITING_FOR_START_STATES,
@@ -57,6 +63,8 @@ from ._utils import (
 _logger = logging.getLogger(__name__)
 
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
+_TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
+_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
 
 
 @asynccontextmanager
@@ -123,7 +131,7 @@ class DaskScheduler(BaseCompScheduler):
                 RunningState.PENDING,
             )
             # each task is started independently
-            results: list[list[PublishedComputationTask]] = await asyncio.gather(
+            results: list[list[PublishedComputationTask]] = await limited_gather(
                 *(
                     client.send_computation_tasks(
                         user_id=user_id,
@@ -138,17 +146,21 @@ class DaskScheduler(BaseCompScheduler):
                     )
                     for node_id, task in scheduled_tasks.items()
                 ),
+                log=_logger,
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
             )
 
             # update the database so we do have the correct job_ids there
-            await asyncio.gather(
+            await limited_gather(
                 *(
                     comp_tasks_repo.update_project_task_job_id(
                         project_id, task.node_id, comp_run.run_id, task.job_id
                     )
                     for task_sents in results
                     for task in task_sents
-                )
+                ),
+                log=_logger,
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
             )
 
     async def _get_tasks_status(
@@ -188,25 +200,32 @@ class DaskScheduler(BaseCompScheduler):
                 run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
-                task_progresses = await client.get_tasks_progress(
-                    [f"{t.job_id}" for t in tasks],
-                )
-            for task_progress_event in task_progresses:
-                if task_progress_event:
-                    await CompTasksRepository(
-                        self.db_engine
-                    ).update_project_task_progress(
-                        task_progress_event.task_owner.project_id,
-                        task_progress_event.task_owner.node_id,
-                        comp_run.run_id,
-                        task_progress_event.progress,
+                task_progresses = [
+                    t
+                    for t in await client.get_tasks_progress(
+                        [f"{t.job_id}" for t in tasks],
                     )
+                    if t is not None
+                ]
+            await limited_gather(
+                *(
+                    CompTasksRepository(self.db_engine).update_project_task_progress(
+                        t.task_owner.project_id,
+                        t.task_owner.node_id,
+                        comp_run.run_id,
+                        t.progress,
+                    )
+                    for t in task_progresses
+                ),
+                log=_logger,
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
+            )
 
         except ComputationalBackendOnDemandNotReadyError:
             _logger.info("The on demand computational backend is not ready yet...")
 
         comp_tasks_repo = CompTasksRepository(self.db_engine)
-        await asyncio.gather(
+        await limited_gather(
             *(
                 comp_tasks_repo.update_project_task_progress(
                     t.task_owner.project_id,
@@ -216,9 +235,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
                 for t in task_progresses
                 if t
-            )
-        )
-        await asyncio.gather(
+            ),
             *(
                 publish_service_progress(
                     self.rabbitmq_client,
@@ -229,7 +246,9 @@ class DaskScheduler(BaseCompScheduler):
                 )
                 for t in task_progresses
                 if t
-            )
+            ),
+            log=_logger,
+            limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
         )
 
     async def _release_resources(self, comp_run: CompRunsAtDB) -> None:
@@ -263,132 +282,280 @@ class DaskScheduler(BaseCompScheduler):
                 run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
-                await asyncio.gather(
-                    *[
+                await limited_gather(
+                    *(
                         client.abort_computation_task(t.job_id)
                         for t in tasks
                         if t.job_id
-                    ]
+                    ),
+                    log=_logger,
+                    limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
                 )
                 # tasks that have no-worker must be unpublished as these are blocking forever
-                tasks_with_no_worker = [
-                    t for t in tasks if t.state is RunningState.WAITING_FOR_RESOURCES
-                ]
-                await asyncio.gather(
-                    *[
+                await limited_gather(
+                    *(
                         client.release_task_result(t.job_id)
-                        for t in tasks_with_no_worker
-                        if t.job_id
-                    ]
+                        for t in tasks
+                        if t.state is RunningState.WAITING_FOR_RESOURCES and t.job_id
+                    ),
+                    log=_logger,
+                    limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
                 )
 
     async def _process_completed_tasks(
         self,
         user_id: UserID,
-        tasks: list[CompTaskAtDB],
+        tasks: list[TaskStateTracker],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
     ) -> None:
-        try:
-            async with _cluster_dask_client(
-                user_id,
-                self,
-                use_on_demand_clusters=comp_run.use_on_demand_clusters,
-                project_id=comp_run.project_uuid,
-                run_id=comp_run.run_id,
-                run_metadata=comp_run.metadata,
-            ) as client:
-                tasks_results = await asyncio.gather(
-                    *[client.get_task_result(t.job_id or "undefined") for t in tasks],
-                    return_exceptions=True,
-                )
-            await asyncio.gather(
-                *[
+        async with _cluster_dask_client(
+            user_id,
+            self,
+            use_on_demand_clusters=comp_run.use_on_demand_clusters,
+            project_id=comp_run.project_uuid,
+            run_id=comp_run.run_id,
+            run_metadata=comp_run.metadata,
+        ) as client:
+            tasks_results = await limited_gather(
+                *(
+                    client.get_task_result(t.current.job_id or "undefined")
+                    for t in tasks
+                ),
+                reraise=False,
+                log=_logger,
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
+            )
+            async for future in limited_as_completed(
+                (
                     self._process_task_result(
-                        task, result, comp_run.metadata, iteration, comp_run.run_id
+                        task,
+                        result,
+                        comp_run.metadata,
+                        iteration,
+                        comp_run.run_id,
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
-                ]
+                ),
+                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
+            ):
+                with log_catch(_logger, reraise=False):
+                    task_can_be_cleaned, job_id = await future
+                    if task_can_be_cleaned:
+                        await client.release_task_result(job_id)
+
+    async def _handle_successful_run(
+        self,
+        task: CompTaskAtDB,
+        result: TaskOutputData,
+        log_error_context: dict[str, Any],
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
+        assert task.job_id  # nosec
+        try:
+            await parse_output_data(
+                self.db_engine,
+                task.job_id,
+                result,
             )
-        finally:
-            async with _cluster_dask_client(
-                user_id,
-                self,
-                use_on_demand_clusters=comp_run.use_on_demand_clusters,
-                project_id=comp_run.project_uuid,
-                run_id=comp_run.run_id,
-                run_metadata=comp_run.metadata,
-            ) as client:
-                await asyncio.gather(
-                    *[client.release_task_result(t.job_id) for t in tasks if t.job_id]
+            return RunningState.SUCCESS, SimcorePlatformStatus.OK, [], True
+        except PortsValidationError as err:
+            _logger.exception(
+                **create_troubleshootting_log_kwargs(
+                    "Unexpected error while parsing output data, comp_tasks/comp_pipeline is not in sync with what was started",
+                    error=err,
+                    error_context=log_error_context,
                 )
+            )
+            # NOTE: simcore platform state is still OK as the task ran fine, the issue is likely due to the service labels
+            return RunningState.FAILED, SimcorePlatformStatus.OK, err.get_errors(), True
+
+    async def _handle_computational_retrieval_error(
+        self,
+        task: CompTaskAtDB,
+        user_id: UserID,
+        result: ComputationalBackendTaskResultsNotReadyError,
+        log_error_context: dict[str, Any],
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
+        assert task.job_id  # nosec
+        _logger.warning(
+            **create_troubleshootting_log_kwargs(
+                f"Retrieval of task {task.job_id} result timed-out",
+                error=result,
+                error_context=log_error_context,
+                tip="This can happen if the computational backend is overloaded with requests. It will be automatically retried again.",
+            )
+        )
+        task_errors: list[ErrorDict] = []
+        check_time = arrow.utcnow()
+        if task.errors:
+            for error in task.errors:
+                if error["type"] == _TASK_RETRIEVAL_ERROR_TYPE:
+                    # already had a timeout error, let's keep it
+                    task_errors.append(error)
+                    assert "ctx" in error  # nosec
+                    assert (
+                        _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error["ctx"]
+                    )  # nosec
+                    check_time = arrow.get(
+                        error["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY]
+                    )
+                    break
+        if not task_errors:
+            # first time we have this error
+            task_errors.append(
+                ErrorDict(
+                    loc=(f"{task.project_id}", f"{task.node_id}"),
+                    msg=f"{result}",
+                    type=_TASK_RETRIEVAL_ERROR_TYPE,
+                    ctx={
+                        _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: f"{check_time}",
+                        "user_id": user_id,
+                        "project_id": f"{task.project_id}",
+                        "node_id": f"{task.node_id}",
+                        "job_id": task.job_id,
+                    },
+                )
+            )
+
+        # if the task has been running for too long, we consider it failed
+        elapsed_time = arrow.utcnow() - check_time
+        if (
+            elapsed_time
+            > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_RETRIEVING_RESULTS
+        ):
+            return RunningState.FAILED, SimcorePlatformStatus.BAD, task_errors, True
+        # state is kept as STARTED so it will be retried
+        return RunningState.STARTED, SimcorePlatformStatus.BAD, task_errors, False
+
+    @staticmethod
+    async def _handle_computational_backend_not_connected_error(
+        task: CompTaskAtDB,
+        result: ComputationalBackendNotConnectedError,
+        log_error_context: dict[str, Any],
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
+        assert task.job_id  # nosec
+        _logger.warning(
+            **create_troubleshootting_log_kwargs(
+                f"Computational backend disconnected when retrieving task {task.job_id} result",
+                error=result,
+                error_context=log_error_context,
+                tip="This can happen if the computational backend is temporarily disconnected. It will be automatically retried again.",
+            )
+        )
+        # NOTE: the task will be set to UNKNOWN on the next processing loop
+
+        # state is kept as STARTED so it will be retried
+        return RunningState.STARTED, SimcorePlatformStatus.BAD, [], False
+
+    @staticmethod
+    async def _handle_task_error(
+        task: CompTaskAtDB,
+        result: BaseException,
+        log_error_context: dict[str, Any],
+    ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
+        assert task.job_id  # nosec
+
+        # the task itself failed, check why
+        if isinstance(result, TaskCancelledError):
+            _logger.info(
+                **create_troubleshootting_log_kwargs(
+                    f"Task {task.job_id} was cancelled",
+                    error=result,
+                    error_context=log_error_context,
+                )
+            )
+            return RunningState.ABORTED, SimcorePlatformStatus.OK, [], True
+
+        _logger.info(
+            **create_troubleshootting_log_kwargs(
+                f"Task {task.job_id} completed with errors",
+                error=result,
+                error_context=log_error_context,
+            )
+        )
+        return (
+            RunningState.FAILED,
+            SimcorePlatformStatus.OK,
+            [
+                ErrorDict(
+                    loc=(f"{task.project_id}", f"{task.node_id}"),
+                    msg=f"{result}",
+                    type="runtime",
+                )
+            ],
+            True,
+        )
 
     async def _process_task_result(
         self,
-        task: CompTaskAtDB,
+        task: TaskStateTracker,
         result: BaseException | TaskOutputData,
         run_metadata: RunMetadataDict,
         iteration: Iteration,
         run_id: PositiveInt,
-    ) -> None:
+    ) -> tuple[bool, str]:
+        """Returns True and the job ID if the task was successfully processed and can be released from the Dask cluster."""
         _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
-        task_final_state = RunningState.FAILED
-        simcore_platform_status = SimcorePlatformStatus.OK
-        errors: list[ErrorDict] = []
+        assert task.current.job_id  # nosec
+        (
+            _service_key,
+            _service_version,
+            user_id,
+            project_id,
+            node_id,
+        ) = parse_dask_job_id(task.current.job_id)
 
-        if task.job_id is not None:
+        assert task.current.project_id == project_id  # nosec
+        assert task.current.node_id == node_id  # nosec
+        log_error_context = {
+            "user_id": user_id,
+            "project_id": project_id,
+            "node_id": node_id,
+            "job_id": task.current.job_id,
+        }
+
+        if isinstance(result, TaskOutputData):
             (
-                _service_key,
-                _service_version,
-                user_id,
-                project_id,
-                node_id,
-            ) = parse_dask_job_id(task.job_id)
+                task_final_state,
+                simcore_platform_status,
+                task_errors,
+                task_completed,
+            ) = await self._handle_successful_run(
+                task.current, result, log_error_context
+            )
 
-            assert task.project_id == project_id  # nosec
-            assert task.node_id == node_id  # nosec
+        elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
+            (
+                task_final_state,
+                simcore_platform_status,
+                task_errors,
+                task_completed,
+            ) = await self._handle_computational_retrieval_error(
+                task.current, user_id, result, log_error_context
+            )
+        elif isinstance(result, ComputationalBackendNotConnectedError):
+            (
+                task_final_state,
+                simcore_platform_status,
+                task_errors,
+                task_completed,
+            ) = await self._handle_computational_backend_not_connected_error(
+                task.current, result, log_error_context
+            )
+        else:
+            (
+                task_final_state,
+                simcore_platform_status,
+                task_errors,
+                task_completed,
+            ) = await self._handle_task_error(task.current, result, log_error_context)
 
-            try:
-                if isinstance(result, TaskOutputData):
-                    # success!
-                    await parse_output_data(
-                        self.db_engine,
-                        task.job_id,
-                        result,
-                    )
-                    task_final_state = RunningState.SUCCESS
+            # we need to remove any invalid files in the storage
+            await clean_task_output_and_log_files_if_invalid(
+                self.db_engine, user_id, project_id, node_id
+            )
 
-                else:
-                    if isinstance(result, TaskCancelledError):
-                        task_final_state = RunningState.ABORTED
-                    else:
-                        task_final_state = RunningState.FAILED
-                        errors.append(
-                            {
-                                "loc": (
-                                    f"{task.project_id}",
-                                    f"{task.node_id}",
-                                ),
-                                "msg": f"{result}",
-                                "type": "runtime",
-                            }
-                        )
-                        if isinstance(result, ComputationalBackendNotConnectedError):
-                            simcore_platform_status = SimcorePlatformStatus.BAD
-                    # we need to remove any invalid files in the storage
-                    await clean_task_output_and_log_files_if_invalid(
-                        self.db_engine, user_id, project_id, node_id
-                    )
-            except TaskSchedulingError as err:
-                task_final_state = RunningState.FAILED
-                simcore_platform_status = SimcorePlatformStatus.BAD
-                errors = err.get_errors()
-                _logger.debug(
-                    "Unexpected failure while processing results of %s: %s",
-                    f"{task=}",
-                    f"{errors=}",
-                )
-
+        if task_completed:
             # resource tracking
             await publish_service_resource_tracking_stopped(
                 self.rabbitmq_client,
@@ -404,19 +571,21 @@ class DaskScheduler(BaseCompScheduler):
                 simcore_user_agent=run_metadata.get(
                     "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
                 ),
-                task=task,
+                task=task.current,
                 task_final_state=task_final_state,
             )
 
         await CompTasksRepository(self.db_engine).update_project_tasks_state(
-            task.project_id,
+            task.current.project_id,
             run_id,
-            [task.node_id],
-            task_final_state,
-            errors=errors,
-            optional_progress=1,
-            optional_stopped=arrow.utcnow().datetime,
+            [task.current.node_id],
+            task_final_state if task_completed else task.previous.state,
+            errors=task_errors,
+            optional_progress=1 if task_completed else None,
+            optional_stopped=arrow.utcnow().datetime if task_completed else None,
         )
+
+        return task_completed, task.current.job_id
 
     async def _task_progress_change_handler(
         self, event: tuple[UnixTimestamp, Any]

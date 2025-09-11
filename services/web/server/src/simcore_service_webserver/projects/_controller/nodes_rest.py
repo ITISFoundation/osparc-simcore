@@ -2,7 +2,9 @@ import asyncio
 import logging
 
 from aiohttp import web
+from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
+from common_library.user_messages import user_message
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
@@ -23,9 +25,11 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeServiceGet,
     ProjectNodeServicesGet,
 )
+from models_library.basic_types import IDStr
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupID, GroupType
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.rest_error import ErrorGet
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -35,6 +39,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+    parse_request_headers_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
@@ -42,6 +47,7 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -56,9 +62,11 @@ from simcore_postgres_database.models.users import UserRole
 from ..._meta import API_VTAG as VTAG
 from ...catalog import catalog_service
 from ...dynamic_scheduler import api as dynamic_scheduler_service
-from ...groups.api import get_group_from_gid, list_all_user_groups_ids
+from ...exception_handling import create_error_response
+from ...groups import api as groups_service
 from ...groups.exceptions import GroupNotFoundError
 from ...login.decorators import login_required
+from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
@@ -96,6 +104,7 @@ async def create_node(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     body = await parse_request_body_as(NodeCreate, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     if await _projects_service.is_service_deprecated(
         request.app,
@@ -124,6 +133,7 @@ async def create_node(request: web.Request) -> web.Response:
             body.service_key,
             body.service_version,
             body.service_id,
+            client_session_id=header_params.client_session_id,
         )
     }
     assert NodeCreated.model_validate(data) is not None  # nosec
@@ -178,6 +188,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_patch = await parse_request_body_as(NodePatch, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     await _projects_service.patch_project_node(
         request.app,
@@ -187,6 +198,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
         project_id=path_params.project_id,
         node_id=path_params.node_id,
         partial_node=node_patch.to_domain_model(),
+        client_session_id=header_params.client_session_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -199,6 +211,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
 async def delete_node(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     # ensure the project exists
     await _projects_service.get_project_for_user(
@@ -210,9 +223,10 @@ async def delete_node(request: web.Request) -> web.Response:
         request,
         path_params.project_id,
         req_ctx.user_id,
-        NodeIDStr(path_params.node_id),
+        f"{path_params.node_id}",
         req_ctx.product_name,
         product_api_base_url=get_api_base_url(request),
+        client_session_id=header_params.client_session_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -249,6 +263,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_outputs = await parse_request_body_as(NodeOutputs, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     ui_changed_keys = set()
     ui_changed_keys.add(f"{path_params.node_id}")
@@ -261,6 +276,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         run_hash=None,
         node_errors=None,
         ui_changed_keys=ui_changed_keys,
+        client_session_id=header_params.client_session_id,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -294,25 +310,60 @@ async def _stop_dynamic_service_task(
     *,
     app: web.Application,
     dynamic_service_stop: DynamicServiceStop,
-):
+) -> web.Response:
     _ = progress
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
         await dynamic_scheduler_service.stop_dynamic_service(
             app, dynamic_service_stop=dynamic_service_stop
         )
+        project = await _projects_service.get_project_for_user(
+            app,
+            f"{dynamic_service_stop.project_id}",
+            dynamic_service_stop.user_id,
+            include_state=True,
+        )
+        await _projects_service.notify_project_node_update(
+            app, project, dynamic_service_stop.node_id, errors=None
+        )
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
-        # in case there is an error reply as not found
-        raise web.HTTPNotFound(text=f"{exc}") from exc
+        error_code = getattr(exc, "error_code", None) or create_error_code(exc)
+        user_error_msg = user_message(
+            f"Could not stop dynamic service {dynamic_service_stop.project_id}.{dynamic_service_stop.node_id}"
+        )
+        _logger.debug(
+            **create_troubleshootting_log_kwargs(
+                user_error_msg,
+                error=exc,
+                error_code=error_code,
+                error_context={
+                    "project_id": dynamic_service_stop.project_id,
+                    "node_id": dynamic_service_stop.node_id,
+                    "user_id": dynamic_service_stop.user_id,
+                    "save_state": dynamic_service_stop.save_state,
+                    "simcore_user_agent": dynamic_service_stop.simcore_user_agent,
+                },
+            )
+        )
+        # ANE: in case there is an error reply as not found
+        return create_error_response(
+            error=ErrorGet(
+                message=user_error_msg,
+                support_id=IDStr(error_code),
+                status=status.HTTP_404_NOT_FOUND,
+            ),
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
 
     except ServiceWasNotFoundError:
         # in case the service is not found reply as all OK
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-TaskRegistry.register(_stop_dynamic_service_task)
+def register_stop_dynamic_service_task(app: web.Application) -> None:
+    TaskRegistry.register(_stop_dynamic_service_task, app=app)
 
 
 @routes.post(
@@ -342,7 +393,6 @@ async def stop_node(request: web.Request) -> web.Response:
         _stop_dynamic_service_task.__name__,
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
-        app=request.app,
         dynamic_service_stop=DynamicServiceStop(
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
@@ -557,7 +607,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
     groups_to_compare = {EVERYONE_GROUP_ID}
 
     # Get the group from the provided group ID
-    _sharing_with_group: Group | None = await get_group_from_gid(
+    _sharing_with_group: Group | None = await groups_service.get_group_by_gid(
         app=request.app, group_id=query_params.for_gid
     )
 
@@ -570,7 +620,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
         _user_id = await users_service.get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
-        user_groups_ids = await list_all_user_groups_ids(
+        user_groups_ids = await groups_service.list_all_user_groups_ids(
             app=request.app, user_id=_user_id
         )
         groups_to_compare.update(set(user_groups_ids))

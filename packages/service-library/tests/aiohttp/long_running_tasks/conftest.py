@@ -26,6 +26,10 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 
+class _TestingError(Exception):
+    pass
+
+
 async def _string_list_task(
     progress: TaskProgress,
     num_strings: int,
@@ -36,10 +40,10 @@ async def _string_list_task(
     for index in range(num_strings):
         generated_strings.append(f"{index}")
         await asyncio.sleep(sleep_time)
-        progress.update(message="generated item", percent=index / num_strings)
+        await progress.update(message="generated item", percent=index / num_strings)
         if fail:
             msg = "We were asked to fail!!"
-            raise RuntimeError(msg)
+            raise _TestingError(msg)
 
     # NOTE: this code is used just for the sake of not returning the default 200
     return web.json_response(
@@ -47,7 +51,7 @@ async def _string_list_task(
     )
 
 
-TaskRegistry.register(_string_list_task)
+TaskRegistry.register(_string_list_task, allowed_errors=(_TestingError,))
 
 
 @pytest.fixture

@@ -48,6 +48,7 @@ qx.Class.define("osparc.share.CollaboratorsTag", {
         return;
       }
 
+      // default access rights
       const readAccessRole = osparc.data.Roles.STUDY["read"];
       const newCollaborators = {};
       gids.forEach(gid => newCollaborators[gid] = readAccessRole.accessRights);

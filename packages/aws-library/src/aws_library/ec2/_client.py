@@ -13,10 +13,17 @@ from servicelib.logging_utils import log_context
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
-from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
+from types_aiobotocore_ec2.type_defs import (
+    FilterTypeDef,
+    TagTypeDef,
+)
 
 from ._error_handler import ec2_exception_handler
-from ._errors import EC2InstanceNotFoundError, EC2TooManyInstancesError
+from ._errors import (
+    EC2InstanceNotFoundError,
+    EC2InsufficientCapacityError,
+    EC2SubnetsNotEnoughIPsError,
+)
 from ._models import (
     AWSTagKey,
     EC2InstanceConfig,
@@ -25,7 +32,13 @@ from ._models import (
     EC2Tags,
     Resources,
 )
-from ._utils import compose_user_data, ec2_instance_data_from_aws_instance
+from ._utils import (
+    check_max_number_of_instances_not_exceeded,
+    compose_user_data,
+    ec2_instance_data_from_aws_instance,
+    get_subnet_azs,
+    get_subnet_capacity,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -92,6 +105,11 @@ class SimcoreEC2API:
         list_instances: list[EC2InstanceType] = []
         for instance in instance_types.get("InstanceTypes", []):
             with contextlib.suppress(KeyError):
+                assert "InstanceType" in instance  # nosec
+                assert "VCpuInfo" in instance  # nosec
+                assert "DefaultVCpus" in instance["VCpuInfo"]  # nosec
+                assert "MemoryInfo" in instance  # nosec
+                assert "SizeInMiB" in instance["MemoryInfo"]  # nosec
                 list_instances.append(
                     EC2InstanceType(
                         name=instance["InstanceType"],
@@ -118,94 +136,145 @@ class SimcoreEC2API:
 
         Arguments:
             instance_config -- The EC2 instance configuration
-            min_number_of_instances -- the minimal number of instances needed (fails if this amount cannot be reached)
+            min_number_of_instances -- the minimal number of instances required (fails if this amount cannot be reached)
             number_of_instances -- the ideal number of instances needed (it it cannot be reached AWS will return a number >=min_number_of_instances)
-
-        Keyword Arguments:
-            max_total_number_of_instances -- The total maximum allowed number of instances for this given instance_config (default: {10})
+            max_total_number_of_instances -- The total maximum allowed number of instances for this given instance_config
 
         Raises:
-            EC2TooManyInstancesError:
+            EC2TooManyInstancesError: max_total_number_of_instances would be exceeded
+            EC2SubnetsNotEnoughIPsError: not enough IPs in the subnets
+            EC2InsufficientCapacityError: not enough capacity in the subnets
+
 
         Returns:
             The created instance data infos
         """
+
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"launch {number_of_instances} AWS instance(s) {instance_config.type.name} with {instance_config.tags=}",
+            msg=f"launch {number_of_instances} AWS instance(s) {instance_config.type.name}"
+            f" with {instance_config.tags=} in {instance_config.subnet_ids=}",
         ):
             # first check the max amount is not already reached
-            current_instances = await self.get_instances(
-                key_names=[instance_config.key_name], tags=instance_config.tags
+            await check_max_number_of_instances_not_exceeded(
+                self,
+                instance_config,
+                required_number_instances=number_of_instances,
+                max_total_number_of_instances=max_total_number_of_instances,
             )
-            if (
-                len(current_instances) + number_of_instances
-                > max_total_number_of_instances
-            ):
-                raise EC2TooManyInstancesError(
-                    num_instances=max_total_number_of_instances
+
+            # NOTE: checking subnets capacity is not strictly needed as AWS will do it for us
+            # but it gives us a chance to give early feedback to the user
+            # and avoid trying to launch instances in subnets that are already full
+            # and also allows to circumvent a moto bug that does not raise
+            # InsufficientInstanceCapacity when a subnet is full
+            subnet_id_to_available_ips = await get_subnet_capacity(
+                self.client, subnet_ids=instance_config.subnet_ids
+            )
+
+            total_available_ips = sum(subnet_id_to_available_ips.values())
+            if total_available_ips < min_number_of_instances:
+                raise EC2SubnetsNotEnoughIPsError(
+                    subnet_ids=instance_config.subnet_ids,
+                    instance_type=instance_config.type.name,
+                    available_ips=total_available_ips,
                 )
+
+            # now let's not try to run instances in subnets that have not enough IPs
+            subnet_ids_with_capacity = [
+                subnet_id
+                for subnet_id, capacity in subnet_id_to_available_ips.items()
+                if capacity >= min_number_of_instances
+            ]
 
             resource_tags: list[TagTypeDef] = [
                 {"Key": tag_key, "Value": tag_value}
                 for tag_key, tag_value in instance_config.tags.items()
             ]
 
-            instances = await self.client.run_instances(
-                ImageId=instance_config.ami_id,
-                MinCount=min_number_of_instances,
-                MaxCount=number_of_instances,
-                IamInstanceProfile=(
-                    {"Arn": instance_config.iam_instance_profile}
-                    if instance_config.iam_instance_profile
-                    else {}
-                ),
-                InstanceType=instance_config.type.name,
-                InstanceInitiatedShutdownBehavior="terminate",
-                KeyName=instance_config.key_name,
-                TagSpecifications=[
-                    {"ResourceType": "instance", "Tags": resource_tags},
-                    {"ResourceType": "volume", "Tags": resource_tags},
-                    {"ResourceType": "network-interface", "Tags": resource_tags},
-                ],
-                UserData=compose_user_data(instance_config.startup_script),
-                NetworkInterfaces=[
-                    {
-                        "AssociatePublicIpAddress": True,
-                        "DeviceIndex": 0,
-                        "SubnetId": instance_config.subnet_id,
-                        "Groups": instance_config.security_group_ids,
-                    }
-                ],
-            )
-            instance_ids = [i["InstanceId"] for i in instances["Instances"]]
-            _logger.info(
-                "%s New instances launched: %s, waiting for them to start now...",
-                len(instance_ids),
-                instance_ids,
-            )
+            # Try each subnet in order until one succeeds
+            for subnet_id in subnet_ids_with_capacity:
+                try:
+                    _logger.debug(
+                        "Attempting to launch instances in subnet %s", subnet_id
+                    )
 
-            # wait for the instance to be in a pending state
-            # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
-            waiter = self.client.get_waiter("instance_exists")
-            await waiter.wait(InstanceIds=instance_ids)
-            _logger.debug("instances %s exists now.", instance_ids)
+                    instances = await self.client.run_instances(
+                        ImageId=instance_config.ami_id,
+                        MinCount=min_number_of_instances,
+                        MaxCount=number_of_instances,
+                        IamInstanceProfile=(
+                            {"Arn": instance_config.iam_instance_profile}
+                            if instance_config.iam_instance_profile
+                            else {}
+                        ),
+                        InstanceType=instance_config.type.name,
+                        InstanceInitiatedShutdownBehavior="terminate",
+                        KeyName=instance_config.key_name,
+                        TagSpecifications=[
+                            {"ResourceType": "instance", "Tags": resource_tags},
+                            {"ResourceType": "volume", "Tags": resource_tags},
+                            {
+                                "ResourceType": "network-interface",
+                                "Tags": resource_tags,
+                            },
+                        ],
+                        UserData=compose_user_data(instance_config.startup_script),
+                        NetworkInterfaces=[
+                            {
+                                "AssociatePublicIpAddress": True,
+                                "DeviceIndex": 0,
+                                "SubnetId": subnet_id,
+                                "Groups": instance_config.security_group_ids,
+                            }
+                        ],
+                    )
+                    # If we get here, the launch succeeded
+                    break
+                except botocore.exceptions.ClientError as exc:
+                    error_code = exc.response.get("Error", {}).get("Code")
+                    if error_code == "InsufficientInstanceCapacity":
+                        _logger.warning(
+                            "Insufficient capacity in subnet %s for instance type %s, trying next subnet",
+                            subnet_id,
+                            instance_config.type.name,
+                        )
+                        continue
+                    # For any other ClientError, re-raise to let the decorator handle it
+                    raise
 
-            # NOTE: waiting for pending ensure we get all the IPs back
+            else:
+                subnet_zones = await get_subnet_azs(
+                    self.client, subnet_ids=subnet_ids_with_capacity
+                )
+                raise EC2InsufficientCapacityError(
+                    availability_zones=subnet_zones,
+                    instance_type=instance_config.type.name,
+                )
+            instance_ids = [
+                i["InstanceId"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+                for i in instances["Instances"]
+            ]
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"{len(instance_ids)} instances: {instance_ids=} launched. Wait to reach pending state",
+            ):
+                # wait for the instance to be in a pending state
+                # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
+                waiter = self.client.get_waiter("instance_exists")
+                await waiter.wait(InstanceIds=instance_ids)
+
+            # NOTE: waiting for pending ensures we get all the IPs back
             described_instances = await self.client.describe_instances(
                 InstanceIds=instance_ids
             )
             assert "Instances" in described_instances["Reservations"][0]  # nosec
-            instance_datas = [
+            return [
                 await ec2_instance_data_from_aws_instance(self, i)
                 for i in described_instances["Reservations"][0]["Instances"]
             ]
-            _logger.info(
-                "%s are pending now",
-                f"{instance_ids=}",
-            )
-            return instance_datas
 
     @ec2_exception_handler(_logger)
     async def get_instances(

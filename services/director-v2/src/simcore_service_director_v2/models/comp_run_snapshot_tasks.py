@@ -1,3 +1,4 @@
+from contextlib import suppress
 from datetime import datetime
 from typing import Annotated, Any
 
@@ -5,8 +6,16 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
-from pydantic import BaseModel, BeforeValidator, ConfigDict, PositiveInt
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    PositiveInt,
+    field_validator,
+)
+from simcore_postgres_database.models.comp_pipeline import StateType
 
+from ..utils.db import DB_TO_RUNNING_STATE
 from .comp_tasks import BaseCompTaskAtDB, Image
 
 
@@ -100,3 +109,15 @@ class CompRunSnapshotTaskDBGet(BaseModel):
     started_at: datetime | None
     ended_at: datetime | None
     iteration: PositiveInt
+
+    @field_validator("state", mode="before")
+    @classmethod
+    def convert_result_from_state_type_enum_if_needed(cls, v):
+        if isinstance(v, str):
+            # try to convert to a StateType, if it fails the validations will continue
+            # and pydantic will try to convert it to a RunninState later on
+            with suppress(ValueError):
+                v = StateType(v)
+        if isinstance(v, StateType):
+            return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
+        return v

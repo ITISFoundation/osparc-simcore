@@ -66,8 +66,8 @@ qx.Class.define("osparc.jobs.JobsButton", {
             textColor: osparc.navigation.NavigationBar.BG_COLOR,
           });
           this._add(control, {
-            bottom: 10,
-            right: 2
+            bottom: -4,
+            right: -4,
           });
           break;
         case "is-active-icon":
@@ -75,8 +75,8 @@ qx.Class.define("osparc.jobs.JobsButton", {
             textColor: "strong-main",
           });
           this._add(control, {
-            bottom: 12,
-            right: 4
+            bottom: -2,
+            right: -2,
           });
           break;
       }

@@ -117,7 +117,6 @@ async def _build_and_push_image(
     bad_json_format: bool = False,
     app_settings: ApplicationSettings,
 ) -> ServiceInRegistryInfoDict:
-
     # crate image
     service_description = _create_service_description(service_type, name, tag)
     docker_labels = _create_docker_labels(
@@ -214,12 +213,13 @@ async def _build_and_push_image(
     )
 
 
-def _clean_registry(registry_url: str, list_of_images: list[ServiceInRegistryInfoDict]):
+def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]):
     request_headers = {"accept": "application/vnd.docker.distribution.manifest.v2+json"}
     for image in list_of_images:
         service_description = image["service_description"]
         # get the image digest
         tag = service_description["version"]
+        registry_url = image["image_path"].split("/")[0]
         url = "http://{host}/v2/{name}/manifests/{tag}".format(
             host=registry_url, name=service_description["key"], tag=tag
         )
@@ -243,15 +243,13 @@ class PushServicesCallable(Protocol):
         inter_dependent_services: bool = False,
         bad_json_format: bool = False,
         version="1.0.",
-    ) -> list[ServiceInRegistryInfoDict]:
-        ...
+    ) -> list[ServiceInRegistryInfoDict]: ...
 
 
 @pytest.fixture
 def push_services(
     docker_registry: str, app_settings: ApplicationSettings
 ) -> Iterator[PushServicesCallable]:
-    registry_url = docker_registry
     list_of_pushed_images_tags: list[ServiceInRegistryInfoDict] = []
     dependent_images = []
 
@@ -262,8 +260,13 @@ def push_services(
         inter_dependent_services=False,
         bad_json_format=False,
         version="1.0.",
+        override_registry_url: str | None = None,
     ) -> list[ServiceInRegistryInfoDict]:
         try:
+            registry_url = docker_registry
+            if override_registry_url:
+                _logger.info("Overriding registry URL with %s", override_registry_url)
+                registry_url = override_registry_url
             dependent_image = None
             if inter_dependent_services:
                 dependent_image = await _build_and_push_image(
@@ -317,5 +320,5 @@ def push_services(
     yield _build_push_images_to_docker_registry
 
     _logger.info("clean registry")
-    _clean_registry(registry_url, list_of_pushed_images_tags)
-    _clean_registry(registry_url, dependent_images)
+    _clean_registry(list_of_pushed_images_tags)
+    _clean_registry(dependent_images)

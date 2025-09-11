@@ -26,7 +26,6 @@ from dask_task_models_library.resource_constraints import (
 )
 from faker import Faker
 from fastapi import FastAPI
-from models_library.docker import DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
 from models_library.generated_models.docker_rest_api import (
     Availability,
 )
@@ -36,6 +35,9 @@ from models_library.generated_models.docker_rest_api import (
     NodeStatus,
 )
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
+from models_library.services_metadata_runtime import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+)
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.autoscaling import (

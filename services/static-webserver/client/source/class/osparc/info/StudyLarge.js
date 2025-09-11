@@ -60,9 +60,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       if (
         this.__canIWrite() &&
         this.getStudy().getTemplateType() &&
-        osparc.data.Permissions.getInstance().isTester()
+        osparc.data.Permissions.getInstance().isProductOwner()
       ) {
-        // let testers change the template type
+        // let product owners change the template type
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
           alignY: "middle",
         }));
@@ -95,7 +95,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           if (selected) {
             saveBtn.setFetching(true);
             const templateType = selected.getModel();
-            osparc.store.Study.getInstance().patchTemplateType(this.getStudy().getUuid(), templateType)
+            osparc.store.Study.getInstance().patchTemplateType(this.getStudy().serialize(), templateType)
               .then(() => osparc.FlashMessenger.logAs(this.tr("Template type updated, please reload"), "INFO"))
               .catch(err => osparc.FlashMessenger.logError(err))
               .finally(() => saveBtn.setFetching(false));

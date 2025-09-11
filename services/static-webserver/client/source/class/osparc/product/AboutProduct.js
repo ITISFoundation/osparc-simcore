@@ -22,7 +22,7 @@ qx.Class.define("osparc.product.AboutProduct", {
   construct: function() {
     this.base(arguments, this.tr("About Product"));
 
-    const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+    const displayName = osparc.store.StaticInfo.getDisplayName();
     this.setCaption(this.tr("About ") + displayName);
 
     this.set({
@@ -138,8 +138,8 @@ qx.Class.define("osparc.product.AboutProduct", {
     },
 
     __getMailTo: function() {
-      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-      const productName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const supportEmail = osparc.store.VendorInfo.getSupportEmail();
+      const productName = osparc.store.StaticInfo.getDisplayName();
       return osparc.store.Support.mailToLink(supportEmail, "Support " + productName, false);
     },
 
@@ -147,7 +147,7 @@ qx.Class.define("osparc.product.AboutProduct", {
       const copyrightLink = new osparc.ui.basic.LinkLabel().set({
         font: "link-label-14"
       });
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      const vendor = osparc.store.VendorInfo.getVendor();
       if (vendor && "url" in vendor && "copyright" in vendor) {
         copyrightLink.set({
           value: vendor.copyright,

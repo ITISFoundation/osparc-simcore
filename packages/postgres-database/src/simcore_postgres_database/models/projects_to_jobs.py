@@ -28,6 +28,12 @@ projects_to_jobs = sa.Table(
         "the relative resource name is shelves/shelf1/jobs/job2, "
         "the parent resource name is shelves/shelf1.",
     ),
+    sa.Column(
+        "storage_assets_deleted",
+        sa.Boolean,
+        nullable=False,
+        doc="Indicates whether the job's S3 assets have been actively deleted.",
+    ),
     # Composite key (project_uuid, job_parent_resource_name) uniquely identifies very row
     sa.UniqueConstraint(
         "project_uuid",

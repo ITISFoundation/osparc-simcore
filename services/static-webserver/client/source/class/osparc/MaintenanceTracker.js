@@ -42,7 +42,24 @@ qx.Class.define("osparc.MaintenanceTracker", {
   statics: {
     CHECK_INTERVAL: 15*60*1000, // Check every 15'
     CLOSABLE_WARN_IN_ADVANCE: 4*24*60*60*1000, // Show Closable Ribbon Message 4 days in advance
-    PERMANENT_WARN_IN_ADVANCE: 60*60*1000 // Show Permanent Ribbon Message 60' in advance
+    PERMANENT_WARN_IN_ADVANCE: 60*60*1000, // Show Permanent Ribbon Message 60' in advance
+
+    dataToText: function(start, end, reason) {
+      let text = osparc.utils.Utils.formatDateAndTime(start);
+      if (end) {
+        if (start.getDate() === end.getDate()) {
+          // do not print the same day twice
+          text += " - " + osparc.utils.Utils.formatTime(end);
+        } else {
+          text += " - " + osparc.utils.Utils.formatDateAndTime(end);
+        }
+      }
+      text += " (local time)";
+      if (reason) {
+        text += ": " + reason;
+      }
+      return text;
+    },
   },
 
   members: {
@@ -78,20 +95,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
         return null;
       }
 
-      let text = osparc.utils.Utils.formatDateAndTime(this.getStart());
-      if (this.getEnd()) {
-        if (this.getStart().getDate() === this.getEnd().getDate()) {
-          // do not print the same day twice
-          text += " - " + osparc.utils.Utils.formatTime(this.getEnd());
-        } else {
-          text += " - " + osparc.utils.Utils.formatDateAndTime(this.getEnd());
-        }
-      }
-      text += " (local time)";
-      if (this.getReason()) {
-        text += ": " + this.getReason();
-      }
-      return text;
+      return this.self().dataToText(this.getStart(), this.getEnd(), this.getReason());
     },
 
     __setMaintenance: function(maintenanceData) {
@@ -129,9 +133,9 @@ qx.Class.define("osparc.MaintenanceTracker", {
       }
     },
 
-    __messageToRibbon: function(closable) {
+    messageToRibbon: function(closable, message = null) {
       this.__removeRibbonMessage();
-      const text = this.__getText();
+      const text = message || this.__getText();
       const notification = new osparc.notification.RibbonNotification(text, "maintenance", closable);
       osparc.notification.RibbonNotifications.getInstance().addNotification(notification);
       this.__lastRibbonMessage = notification;
@@ -143,14 +147,14 @@ qx.Class.define("osparc.MaintenanceTracker", {
       const diffPermanent = this.getStart().getTime() - now.getTime() - this.self().PERMANENT_WARN_IN_ADVANCE;
 
       if (diffClosable < 0) {
-        this.__messageToRibbon(true);
+        this.messageToRibbon(true);
       } else {
-        setTimeout(() => this.__messageToRibbon(true), diffClosable);
+        setTimeout(() => this.messageToRibbon(true), diffClosable);
       }
       if (diffPermanent < 0) {
-        this.__messageToRibbon(false);
+        this.messageToRibbon(false);
       } else {
-        setTimeout(() => this.__messageToRibbon(false), diffPermanent);
+        setTimeout(() => this.messageToRibbon(false), diffPermanent);
       }
     },
 

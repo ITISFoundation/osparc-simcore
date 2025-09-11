@@ -4,7 +4,7 @@ from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeSt
 from ..models.shared_store import get_shared_store
 
 
-async def save_volume_state(
+async def update_volume_status(
     app: FastAPI, *, status: VolumeStatus, category: VolumeCategory
 ) -> None:
     shared_store = get_shared_store(app)

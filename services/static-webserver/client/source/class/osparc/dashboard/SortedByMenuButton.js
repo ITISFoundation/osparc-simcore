@@ -34,38 +34,21 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
     this.setMenu(sortedByMenu);
 
     const options = this.self().getSortByOptions();
-
     options.forEach((option, idx) => {
-      const btn = new qx.ui.menu.Button();
-      btn.btnId = option.id;
-      btn.set({
-        label: option.label,
-        icon: null
-      });
+      const btn = new qx.ui.menu.Button(option.label);
+      btn.field = option.id;
       // Sort by last modified date
       if (idx === options.length -1) {
-        this.__menuButton = btn;
+        this.__selectedMenuButton = btn;
         btn.setIcon("@FontAwesome5Solid/arrow-down/14");
       }
       sortedByMenu.add(btn);
 
-      btn.addListener("execute", () => {
-        this.__buttonExecuted(btn)
-      });
+      btn.addListener("execute", () => this.__buttonExecuted(btn));
     });
-
-    this.addListener("changeSort", e => {
-      const sort = e.getData();
-      this.__handelSortEvent(sort)
-    }, this);
   },
 
   statics: {
-    DefaultSorting: {
-      field: "last_change_date",
-      direction: "desc"
-    },
-
     getSortByOptions: function() {
       return [{
         id: "name",
@@ -96,45 +79,40 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       },
       nullable: false,
       event: "changeSort",
-      apply: "__applySort"
+      apply: "__handelSortEvent",
     }
   },
 
   members: {
-    __menuButton: null,
+    __selectedMenuButton: null,
+
     __buttonExecuted: function(btn) {
-      if (this.__menuButton) {
-        this.__menuButton.setIcon(null);
+      if (this.__selectedMenuButton) {
+        this.__selectedMenuButton.setIcon(null);
       }
-      this.__menuButton = btn;
+      this.__selectedMenuButton = btn;
       this.set({
         label: btn.getLabel(),
         icon: "@FontAwesome5Solid/chevron-down/10"
       });
 
-      const data = {
-        "id": btn.btnId,
-      };
-      this.__handelSort(data.id);
-    },
-
-    __handelSort: function(field) {
+      const field = btn.field;
       if (field === this.getSort().field) {
         const { direction } = this.getSort();
         this.setSort({
           field,
           direction: !direction
-        })
-        return;
+        });
+      } else {
+        this.setSort({
+          field,
+          direction: true
+        });
       }
-      this.setSort({
-        field,
-        direction: true
-      })
     },
 
     __handelSortEvent: function({field, direction}) {
-      this.__menuButton.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
+      this.__selectedMenuButton.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
       this.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
       const sort = {
         field: field,
@@ -143,8 +121,15 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       this.fireDataEvent("sortByChanged", sort);
     },
 
-    __applySort: function(value, old) {
+    hideOptionButton: function(field) {
+      const btn = this.getMenu().getChildren().find(btn => btn.field === field);
+      if (btn) {
+        btn.exclude();
+      }
+    },
 
-    }
+    showAllOptions: function() {
+      this.getMenu().getChildren().forEach(btn => btn.show());
+    },
   }
 });

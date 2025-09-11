@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
+from pydantic.config import JsonDict
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
@@ -26,42 +27,46 @@ class BootOption(BaseModel):
             raise ValueError(msg)
         return v
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "label": "Boot mode",
-                    "description": "Start it in web page mode",
-                    "default": "0",
-                    "items": {
-                        "0": {
-                            "label": "Non Voila",
-                            "description": "Tooltip for non Voila boot mode",
-                        },
-                        "1": {
-                            "label": "Voila",
-                            "description": "Tooltip for Voila boot mode",
-                        },
-                    },
-                },
-                {
-                    "label": "Application theme",
-                    "description": "Select a theme for the application",
-                    "default": "b",
-                    "items": {
-                        "a": {
-                            "label": "Clear",
-                            "description": "Using white background",
-                        },
-                        "b": {
-                            "label": "Dark",
-                            "description": "Using black and gray tones",
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "label": "Boot mode",
+                        "description": "Start it in web page mode",
+                        "default": "0",
+                        "items": {
+                            "0": {
+                                "label": "Non Voila",
+                                "description": "Tooltip for non Voila boot mode",
+                            },
+                            "1": {
+                                "label": "Voila",
+                                "description": "Tooltip for Voila boot mode",
+                            },
                         },
                     },
-                },
-            ]
-        }
-    )
+                    {
+                        "label": "Application theme",
+                        "description": "Select a theme for the application",
+                        "default": "b",
+                        "items": {
+                            "a": {
+                                "label": "Clear",
+                                "description": "Using white background",
+                            },
+                            "b": {
+                                "label": "Dark",
+                                "description": "Using black and gray tones",
+                            },
+                        },
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 BootOptions = dict[EnvVarKey, BootOption]

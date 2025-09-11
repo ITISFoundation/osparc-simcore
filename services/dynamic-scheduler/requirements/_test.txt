@@ -3,7 +3,9 @@ anyio==4.8.0
     #   -c requirements/_base.txt
     #   httpx
 asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 certifi==2025.1.31
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -22,6 +24,8 @@ coverage==7.6.12
 docker==7.1.0
     # via -r requirements/_test.in
 faker==36.2.2
+    # via -r requirements/_test.in
+fakeredis==2.30.3
     # via -r requirements/_test.in
 greenlet==3.1.1
     # via
@@ -67,6 +71,8 @@ idna==3.10
     #   requests
 iniconfig==2.0.0
     # via pytest
+lupa==2.5
+    # via fakeredis
 mypy==1.16.1
     # via sqlalchemy
 mypy-extensions==1.1.0
@@ -118,6 +124,11 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+redis==5.2.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fakeredis
 requests==2.32.4
     # via
     #   -c requirements/_base.txt
@@ -129,6 +140,8 @@ sniffio==1.3.1
     #   -c requirements/_base.txt
     #   anyio
     #   asgi-lifespan
+sortedcontainers==2.4.0
+    # via fakeredis
 sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt

@@ -38,6 +38,10 @@ qx.Class.define("osparc.ui.table.cellrenderer.ButtonRenderer", {
     }
   },
 
+  statics: {
+    BUTTON_CLASS: "qx-material-button",
+  },
+
   members: {
     // Override
     _getContentHtml: function(cellInfo) {
@@ -46,7 +50,7 @@ qx.Class.define("osparc.ui.table.cellrenderer.ButtonRenderer", {
 
       // Return the button with the image
       return `
-        <div class="qx-material-button"
+        <div class="${this.self().BUTTON_CLASS}"
           data-action="${clickAction}" data-row="${cellInfo.row}"
           style="cursor:pointer; padding:2px 2px; width:26px; height:18px; display:flex; align-items:center; justify-content:center;"
         >

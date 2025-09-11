@@ -3,6 +3,7 @@ Helper functions to convert models used in
 services/api-server/src/simcore_service_api_server/api/routes/studies_jobs.py
 """
 
+from collections.abc import Callable
 from typing import Any, NamedTuple
 from uuid import UUID
 
@@ -16,6 +17,7 @@ from models_library.projects_nodes import InputID
 from models_library.projects_nodes_io import LinkToFileTypes, NodeID, SimcoreS3FileID
 from pydantic import TypeAdapter
 
+from ..models.api_resources import JobLinks
 from ..models.domain.files import File
 from ..models.domain.projects import InputTypes, SimCoreFileLink
 from ..models.schemas.jobs import Job, JobInputs, JobOutputs
@@ -57,10 +59,26 @@ def get_project_and_file_inputs_from_job_inputs(
     return ProjectInputs(new_inputs, file_inputs)
 
 
+def get_study_job_rest_interface_links(
+    *, url_for: Callable, study_id: StudyID
+) -> JobLinks:
+    return JobLinks(
+        url_template=url_for(
+            "get_study_job",
+            study_id=study_id,
+            job_id="{job_id}",
+        ),
+        runner_url_template=url_for("get_study", study_id=study_id),
+        outputs_url_template=url_for(
+            "get_study_job_outputs",
+            study_id=study_id,
+            job_id="{job_id}",
+        ),
+    )
+
+
 def create_job_from_study(
-    study_key: StudyID,
-    project: ProjectGet,
-    job_inputs: JobInputs,
+    study_key: StudyID, project: ProjectGet, job_inputs: JobInputs, job_links: JobLinks
 ) -> Job:
     """
     Given a study, creates a job
@@ -78,9 +96,9 @@ def create_job_from_study(
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=DateTimeStr.to_datetime(project.creation_date),
         runner_name=study_name,
-        url=None,
-        runner_url=None,
-        outputs_url=None,
+        url=job_links.url(job_id=project.uuid),
+        runner_url=job_links.runner_url(job_id=project.uuid),
+        outputs_url=job_links.outputs_url(job_id=project.uuid),
     )
 
 
