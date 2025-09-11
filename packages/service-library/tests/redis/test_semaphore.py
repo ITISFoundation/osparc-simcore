@@ -19,7 +19,7 @@ from servicelib.redis._constants import (
     SEMAPHORE_KEY_PREFIX,
 )
 from servicelib.redis._semaphore import (
-    DistributedRedSemaphore,
+    DistributedSemaphore,
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
     distributed_semaphore,
@@ -66,7 +66,7 @@ async def test_semaphore_initialization(
     semaphore_name: str,
     semaphore_capacity: int,
 ):
-    semaphore = DistributedRedSemaphore(
+    semaphore = DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity
     )
 
@@ -87,10 +87,10 @@ async def test_semaphore_invalid_capacity_raises(
     semaphore_name: str,
 ):
     with pytest.raises(ValueError, match="Semaphore capacity must be positive"):
-        DistributedRedSemaphore(redis_client_sdk, semaphore_name, 0)
+        DistributedSemaphore(redis_client_sdk, semaphore_name, 0)
 
     with pytest.raises(ValueError, match="Semaphore capacity must be positive"):
-        DistributedRedSemaphore(redis_client_sdk, semaphore_name, -1)
+        DistributedSemaphore(redis_client_sdk, semaphore_name, -1)
 
 
 async def test_semaphore_acquire_release_single(
@@ -98,7 +98,7 @@ async def test_semaphore_acquire_release_single(
     semaphore_name: str,
     semaphore_capacity: int,
 ):
-    semaphore = DistributedRedSemaphore(
+    semaphore = DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity
     )
 
@@ -130,7 +130,7 @@ async def test_semaphore_release_without_acquire_raises(
     semaphore_name: str,
     semaphore_capacity: int,
 ):
-    semaphore = DistributedRedSemaphore(
+    semaphore = DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity
     )
 
@@ -147,7 +147,7 @@ async def test_semaphore_multiple_instances_capacity_limit(
 ):
     capacity = 2
     semaphores = [
-        DistributedRedSemaphore(redis_client_sdk, semaphore_name, capacity)
+        DistributedSemaphore(redis_client_sdk, semaphore_name, capacity)
         for _ in range(4)
     ]
 
@@ -185,11 +185,11 @@ async def test_semaphore_blocking_timeout(
     timeout = datetime.timedelta(seconds=0.1)
 
     # First semaphore acquires
-    semaphore1 = DistributedRedSemaphore(redis_client_sdk, semaphore_name, capacity)
+    semaphore1 = DistributedSemaphore(redis_client_sdk, semaphore_name, capacity)
     await semaphore1.acquire()
 
     # Second semaphore should timeout
-    semaphore2 = DistributedRedSemaphore(
+    semaphore2 = DistributedSemaphore(
         redis_client_sdk, semaphore_name, capacity, timeout=timeout
     )
 
@@ -207,8 +207,8 @@ async def test_semaphore_blocking_acquire_waits(
     semaphore_name: str,
 ):
     capacity = 1
-    semaphore1 = DistributedRedSemaphore(redis_client_sdk, semaphore_name, capacity)
-    semaphore2 = DistributedRedSemaphore(redis_client_sdk, semaphore_name, capacity)
+    semaphore1 = DistributedSemaphore(redis_client_sdk, semaphore_name, capacity)
+    semaphore2 = DistributedSemaphore(redis_client_sdk, semaphore_name, capacity)
 
     # First acquires immediately
     await semaphore1.acquire()
@@ -233,7 +233,7 @@ async def test_semaphore_context_manager(
     semaphore_name: str,
     semaphore_capacity: int,
 ):
-    async with DistributedRedSemaphore(
+    async with DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity
     ) as semaphore:
         assert semaphore._acquired is True
@@ -249,10 +249,10 @@ async def test_semaphore_context_manager_with_exception(
     semaphore_name: str,
     semaphore_capacity: int,
 ):
-    captured_semaphore: DistributedRedSemaphore | None = None
+    captured_semaphore: DistributedSemaphore | None = None
 
     async def _raising_context():
-        async with DistributedRedSemaphore(
+        async with DistributedSemaphore(
             redis_client_sdk, semaphore_name, semaphore_capacity
         ) as sem:
             nonlocal captured_semaphore
@@ -277,7 +277,7 @@ async def test_semaphore_auto_renewal(
     semaphore_capacity: int,
     short_ttl: datetime.timedelta,
 ):
-    semaphore = DistributedRedSemaphore(
+    semaphore = DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity, ttl=short_ttl
     )
 
@@ -303,7 +303,7 @@ async def test_semaphore_ttl_cleanup(
     short_ttl: datetime.timedelta,
 ):
     # Create semaphore with explicit short TTL
-    semaphore = DistributedRedSemaphore(
+    semaphore = DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity, ttl=short_ttl
     )
 
@@ -335,7 +335,7 @@ async def test_semaphore_repr(
     semaphore_name: str,
     semaphore_capacity: int,
 ):
-    semaphore = DistributedRedSemaphore(
+    semaphore = DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity
     )
 
@@ -359,7 +359,7 @@ async def test_distributed_semaphore_context_manager(
     async with distributed_semaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity
     ) as sem:
-        assert isinstance(sem, DistributedRedSemaphore)
+        assert isinstance(sem, DistributedSemaphore)
         assert sem._acquired is True
         assert await sem.get_current_count() == 1
 
@@ -556,7 +556,7 @@ async def test_redis_connection_failure_during_acquire(
     semaphore_name: str,
     semaphore_capacity: int,
 ):
-    semaphore = DistributedRedSemaphore(
+    semaphore = DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity, blocking=False
     )
 
@@ -575,7 +575,7 @@ async def test_semaphore_cleanup_on_auto_renew_failure(
     short_ttl: datetime.timedelta,
     caplog: pytest.LogCaptureFixture,
 ):
-    semaphore = DistributedRedSemaphore(
+    semaphore = DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity, ttl=short_ttl
     )
 
@@ -616,8 +616,8 @@ async def test_multiple_semaphores_different_keys(
     key2 = faker.pystr()
     capacity = 1
 
-    sem1 = DistributedRedSemaphore(redis_client_sdk, key1, capacity)
-    sem2 = DistributedRedSemaphore(redis_client_sdk, key2, capacity)
+    sem1 = DistributedSemaphore(redis_client_sdk, key1, capacity)
+    sem2 = DistributedSemaphore(redis_client_sdk, key2, capacity)
 
     # Both should be able to acquire since they have different keys
     assert await sem1.acquire() is True
@@ -633,7 +633,7 @@ async def test_semaphore_acquire_after_release(
     semaphore_capacity: int,
 ):
     """Test that semaphore can be acquired again after release"""
-    semaphore = DistributedRedSemaphore(
+    semaphore = DistributedSemaphore(
         redis_client_sdk, semaphore_name, semaphore_capacity
     )
 
