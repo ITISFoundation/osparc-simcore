@@ -93,7 +93,6 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     // override
     _createContentElement : function() {
       const iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
-      iframe.setAppearance("iframe-no-border");
       const persistentIframe = this;
       iframe.addListener("load", () => {
         const currentTheme = qx.theme.manager.Meta.getInstance().getTheme();
