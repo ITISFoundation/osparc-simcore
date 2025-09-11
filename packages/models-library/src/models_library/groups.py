@@ -15,8 +15,8 @@ from .utils.common_validators import create_enums_pre_validator
 EVERYONE_GROUP_ID: Final[int] = 1
 
 GroupID: TypeAlias = PositiveInt
-PrimaryGroupID: TypeAlias = Annotated[GroupID, Field(gt=2)]
-StandardGroupID: TypeAlias = Annotated[GroupID, Field(gt=2)]
+PrimaryGroupID: TypeAlias = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
+StandardGroupID: TypeAlias = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
 
 __all__: tuple[str, ...] = ("GroupType",)
 

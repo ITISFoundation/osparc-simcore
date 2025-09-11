@@ -381,9 +381,7 @@ async def search_merged_pre_and_registered_users(
         users_pre_registration_details.c.state,
         users_pre_registration_details.c.postal_code,
         users_pre_registration_details.c.country,
-        users_pre_registration_details.c.user_id.label(
-            "pre_reg_user_id"
-        ),  # "copy" of user_id from pre-registration
+        users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
         users_pre_registration_details.c.extras,
         users_pre_registration_details.c.account_request_status,
         users_pre_registration_details.c.account_request_reviewed_by,
