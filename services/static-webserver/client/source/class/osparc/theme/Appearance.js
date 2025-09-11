@@ -28,6 +28,26 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "help-list-button": {
+      include: "button",
+      style() {
+        return {
+          font: "text-14",
+          allowGrowX: true,
+          minHeight: 29,
+          center: false
+        };
+      }
+    },
+    "help-list-button/label": {
+      style() {
+        return {
+          textAlign: "left",
+          allowGrowX: true
+        };
+      }
+    },
+
     "dragdrop-no-cursor": {
       style: () => {
         return {
