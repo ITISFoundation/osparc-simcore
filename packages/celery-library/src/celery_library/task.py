@@ -47,14 +47,14 @@ def _async_task_wrapper(
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
 
-            async def run_task(task_id: TaskID) -> R:
+            async def _run_task(task_id: TaskID) -> R:
                 try:
                     async with asyncio.TaskGroup() as tg:
                         main_task = tg.create_task(
                             coro(task, *args, **kwargs),
                         )
 
-                        async def abort_monitor():
+                        async def _abort_monitor():
                             while not main_task.done():
                                 if not await app_server.task_manager.task_exists(
                                     task_id
@@ -68,7 +68,7 @@ def _async_task_wrapper(
                                     _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()
                                 )
 
-                        tg.create_task(abort_monitor())
+                        tg.create_task(_abort_monitor())
 
                     return main_task.result()
                 except BaseExceptionGroup as eg:
@@ -84,7 +84,7 @@ def _async_task_wrapper(
                     raise other_errors.exceptions[0] from eg
 
             return asyncio.run_coroutine_threadsafe(
-                run_task(task.request.id),
+                _run_task(task.request.id),
                 app_server.event_loop,
             ).result()
 
