@@ -381,7 +381,7 @@ class UserAccountGet(OutputSchema):
 
     # user status
     registered: bool
-    status: UserStatus | None
+    status: UserStatus | None = None
     products: Annotated[
         list[ProductName] | None,
         Field(
@@ -393,11 +393,11 @@ class UserAccountGet(OutputSchema):
     user_id: Annotated[
         UserID | None,
         Field(description="Unique identifier of the user if an account was created"),
-    ]
+    ] = None
     user_name: Annotated[
         UserNameID | None,
         Field(description="Username of the user if an account was created"),
-    ]
+    ] = None
     user_primary_group_id: Annotated[
         PrimaryGroupID | None,
         Field(
@@ -406,7 +406,7 @@ class UserAccountGet(OutputSchema):
             alias="groupId",
             # SEE https://github.com/ITISFoundation/osparc-simcore/pull/8358#issuecomment-3279491740
         ),
-    ]
+    ] = None
 
     @field_validator("status")
     @classmethod

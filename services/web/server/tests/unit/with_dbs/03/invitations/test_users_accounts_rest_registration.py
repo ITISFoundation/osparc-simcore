@@ -231,6 +231,14 @@ async def test_search_and_pre_registration(
 ):
     assert client.app
 
+    # NOTE: listing of user accounts drops nullable fields to avoid lengthy responses (even if they have no defaults)
+    # therefore they are reconstructed here from http response payloads
+    nullable_fields = {
+        name: None
+        for name, field in UserAccountGet.model_fields.items()
+        if is_nullable(field)
+    }
+
     # ONLY in `users` and NOT `users_pre_registration_details`
     resp = await client.get(
         "/v0/admin/user-accounts:search", params={"email": logged_user["email"]}
@@ -239,12 +247,6 @@ async def test_search_and_pre_registration(
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-
-    nullable_fields = {
-        name: None
-        for name, field in UserAccountGet.model_fields.items()
-        if is_nullable(field)
-    }
 
     got = UserAccountGet.model_validate({**nullable_fields, **found[0]})
     expected = {
@@ -263,7 +265,7 @@ async def test_search_and_pre_registration(
         "status": UserStatus.ACTIVE,
         "user_id": logged_user["id"],
         "user_name": logged_user["name"],
-        "user_primary_group_id": logged_user.get("primary_group_id"),
+        "user_primary_group_id": logged_user.get("primary_gid"),
     }
     assert got.model_dump(include=set(expected)) == expected
 
@@ -281,8 +283,8 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserAccountGet(**found[0], state=None, status=None)
 
+    got = UserAccountGet.model_validate({**nullable_fields, **found[0]})
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": False,
         "status": None,
@@ -305,7 +307,8 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserAccountGet(**found[0], state=None)
+
+    got = UserAccountGet.model_validate({**nullable_fields, **found[0]})
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"],
