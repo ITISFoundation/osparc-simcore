@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import functools
 import logging
+import socket
 import uuid
 from collections.abc import Callable, Coroutine
 from types import TracebackType
@@ -15,6 +16,7 @@ from pydantic import (
     computed_field,
     field_validator,
 )
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..background_task import periodic
 from ..logging_utils import log_catch
@@ -415,7 +417,23 @@ def with_limited_concurrency(
             finally:
                 # Always release the semaphore
                 if semaphore.is_acquired():
-                    await semaphore.release()
+                    try:
+                        await semaphore.release()
+                    except SemaphoreNotAcquiredError as exc:
+                        _logger.exception(
+                            **create_troubleshootting_log_kwargs(
+                                "Unexpected error while releasing semaphore",
+                                error=exc,
+                                error_context={
+                                    "semaphore_key": semaphore_key,
+                                    "client_name": client.client_name,
+                                    "hostname": socket.gethostname(),
+                                    "coroutine": coro.__name__,
+                                },
+                                tip="This might happen if the semaphore was lost before releasing it. "
+                                "Look for synchronous code that prevents refreshing the semaphore or asyncio loop overload.",
+                            )
+                        )
 
         return _wrapper
 
