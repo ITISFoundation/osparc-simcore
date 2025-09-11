@@ -118,19 +118,13 @@ async def remove_task(
     *,
     task_context: TaskContext,
     task_id: TaskId,
-    cancellation_timeout: timedelta | None,
 ) -> None:
-    timeout_s = (
-        None
-        if cancellation_timeout is None
-        else int(cancellation_timeout.total_seconds())
-    )
 
     result = await rabbitmq_rpc_client.request(
         get_rabbit_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("remove_task"),
         task_context=task_context,
         task_id=task_id,
-        timeout_s=timeout_s,
+        timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
     )
     assert result is None  # nosec
