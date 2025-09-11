@@ -75,14 +75,14 @@ class CeleryTaskManager:
             msg=f"task cancellation: {task_filter=} {task_uuid=}",
         ):
             task_id = build_task_id(task_filter, task_uuid)
-            if not await self.exists_task(task_id):
+            if not await self.task_exists(task_id):
                 raise TaskNotFoundError(task_id=task_id)
 
             await self._task_info_store.remove_task(task_id)
             await self._forget_task(task_id)
 
-    async def exists_task(self, task_id: TaskID) -> bool:
-        return await self._task_info_store.exists_task(task_id)
+    async def task_exists(self, task_id: TaskID) -> bool:
+        return await self._task_info_store.task_exists(task_id)
 
     @make_async()
     def _forget_task(self, task_id: TaskID) -> None:
@@ -97,7 +97,7 @@ class CeleryTaskManager:
             msg=f"Get task result: {task_filter=} {task_uuid=}",
         ):
             task_id = build_task_id(task_filter, task_uuid)
-            if not await self.exists_task(task_id):
+            if not await self.task_exists(task_id):
                 raise TaskNotFoundError(task_id=task_id)
 
             async_result = self._celery_app.AsyncResult(task_id)
@@ -140,7 +140,7 @@ class CeleryTaskManager:
             msg=f"Getting task status: {task_filter=} {task_uuid=}",
         ):
             task_id = build_task_id(task_filter, task_uuid)
-            if not await self.exists_task(task_id):
+            if not await self.task_exists(task_id):
                 raise TaskNotFoundError(task_id=task_id)
 
             task_state = await self._get_task_celery_state(task_id)

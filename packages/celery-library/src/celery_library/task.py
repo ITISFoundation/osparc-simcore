@@ -56,7 +56,7 @@ def _async_task_wrapper(
 
                         async def abort_monitor():
                             while not main_task.done():
-                                if not await app_server.task_manager.exists_task(
+                                if not await app_server.task_manager.task_exists(
                                     task_id
                                 ):
                                     await cancel_wait_task(
