@@ -628,3 +628,149 @@ async def test_multiple_semaphores_different_keys(
         ),
     ):
         ...
+
+
+async def test_decorator_exception_reraise_with_auto_renewal(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+    short_ttl: datetime.timedelta,
+):
+    """Test that user function exceptions are properly re-raised even with auto-renewal running"""
+
+    class UserFunctionError(Exception):
+        """Custom exception to ensure we're catching the right exception"""
+
+    work_started = asyncio.Event()
+    renewal_count = 0
+
+    # Track that auto-renewal is actually happening
+    original_renew = __import__(
+        "servicelib.redis._semaphore", fromlist=["renew_semaphore_entry"]
+    ).renew_semaphore_entry
+
+    async def tracking_renew_semaphore_entry(semaphore):
+        nonlocal renewal_count
+        renewal_count += 1
+        await original_renew(semaphore)
+
+    with mock.patch(
+        "servicelib.redis._semaphore.renew_semaphore_entry",
+        side_effect=tracking_renew_semaphore_entry,
+    ):
+
+        @with_limited_concurrency(
+            redis_client_sdk,
+            key=semaphore_name,
+            capacity=semaphore_capacity,
+            ttl=short_ttl,  # Short TTL to ensure renewal happens
+        )
+        async def failing_function():
+            work_started.set()
+            # Wait long enough for at least one renewal to happen
+            await asyncio.sleep(short_ttl.total_seconds() * 0.8)
+            # Then raise our custom exception
+            raise UserFunctionError("User function failed intentionally")
+
+        # Verify the exception is properly re-raised
+        with pytest.raises(
+            UserFunctionError, match="User function failed intentionally"
+        ):
+            await failing_function()
+
+        # Ensure work actually started
+        assert work_started.is_set()
+
+        # Verify auto-renewal was working (at least one renewal should have happened)
+        assert renewal_count >= 1, "Auto-renewal should have been called at least once"
+
+    # Verify semaphore was properly released by trying to acquire it again
+    test_semaphore = DistributedSemaphore(
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=short_ttl,
+    )
+    assert (
+        await test_semaphore.get_current_count() == 0
+    ), "Semaphore should be released after exception"
+
+
+async def test_decorator_exception_types_preserved(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+):
+    """Test that different exception types are preserved through the decorator"""
+
+    # Test ValueError
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=f"{semaphore_name}_ValueError",
+        capacity=semaphore_capacity,
+    )
+    async def function_raising_value_error():
+        raise ValueError("Invalid value")
+
+    with pytest.raises(ValueError) as exc_info:
+        await function_raising_value_error()
+    assert str(exc_info.value) == "Invalid value"
+
+    # Test TypeError
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=f"{semaphore_name}_TypeError",
+        capacity=semaphore_capacity,
+    )
+    async def function_raising_type_error():
+        raise TypeError("Wrong type")
+
+    with pytest.raises(TypeError) as exc_info:
+        await function_raising_type_error()
+    assert str(exc_info.value) == "Wrong type"
+
+    # Test KeyError
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=f"{semaphore_name}_KeyError",
+        capacity=semaphore_capacity,
+    )
+    async def function_raising_key_error():
+        raise KeyError("Missing key")
+
+    with pytest.raises(KeyError) as exc_info:
+        await function_raising_key_error()
+    assert str(exc_info.value) == "'Missing key'"  # KeyError adds quotes
+
+    # Test RuntimeError
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=f"{semaphore_name}_RuntimeError",
+        capacity=semaphore_capacity,
+    )
+    async def function_raising_runtime_error():
+        raise RuntimeError("Runtime error")
+
+    with pytest.raises(RuntimeError) as exc_info:
+        await function_raising_runtime_error()
+    assert str(exc_info.value) == "Runtime error"
+
+
+async def test_decorator_cancelled_error_preserved(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+):
+    """Test that CancelledError is properly preserved through the decorator"""
+
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+    )
+    async def function_raising_cancelled_error():
+        raise asyncio.CancelledError
+
+    # Verify CancelledError is preserved
+    with pytest.raises(asyncio.CancelledError):
+        await function_raising_cancelled_error()
