@@ -14006,9 +14006,9 @@ components:
           description: The short name of the node
         progress:
           anyOf:
-          - type: number
-            maximum: 100.0
-            minimum: 0.0
+          - type: integer
+            maximum: 100
+            minimum: 0
           - type: 'null'
           title: Progress
           description: the node progress value (deprecated in DB, still used for API
@@ -14089,6 +14089,7 @@ components:
           - type: 'null'
           title: Outputnodes
           description: Used in group-nodes. Node IDs of those connected to the output
+          deprecated: true
         parent:
           anyOf:
           - type: string
@@ -14096,6 +14097,7 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
+          deprecated: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
@@ -14107,6 +14109,12 @@ components:
           - $ref: '#/components/schemas/NodeState-Input'
           - type: 'null'
           description: The node's state object
+        required_resources:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Required Resources
         bootOptions:
           anyOf:
           - type: object
@@ -14141,9 +14149,9 @@ components:
           description: The short name of the node
         progress:
           anyOf:
-          - type: number
-            maximum: 100.0
-            minimum: 0.0
+          - type: integer
+            maximum: 100
+            minimum: 0
           - type: 'null'
           title: Progress
           description: the node progress value (deprecated in DB, still used for API
@@ -14224,6 +14232,7 @@ components:
           - type: 'null'
           title: Outputnodes
           description: Used in group-nodes. Node IDs of those connected to the output
+          deprecated: true
         parent:
           anyOf:
           - type: string
@@ -14231,6 +14240,7 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
+          deprecated: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
@@ -14242,6 +14252,12 @@ components:
           - $ref: '#/components/schemas/NodeState-Output'
           - type: 'null'
           description: The node's state object
+        required_resources:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Required Resources
         bootOptions:
           anyOf:
           - type: object
@@ -15953,7 +15969,6 @@ components:
       - creationDate
       - lastChangeDate
       - trashedAt
-      - trashedBy
       - tags
       - dev
       - workspaceId
@@ -16156,7 +16171,6 @@ components:
       - creationDate
       - lastChangeDate
       - trashedAt
-      - trashedBy
       - tags
       - dev
       - workspaceId
