@@ -1,6 +1,8 @@
 import base64
 import pickle
 
+from common_library.errors_classes import OsparcErrorMixin
+
 
 class TransferrableCeleryError(Exception):
     def __repr__(self) -> str:
@@ -22,3 +24,7 @@ def decode_celery_transferrable_error(error: TransferrableCeleryError) -> Except
     assert isinstance(error, TransferrableCeleryError)  # nosec
     result: Exception = pickle.loads(base64.b64decode(error.args[0]))  # noqa: S301
     return result
+
+
+class TaskNotFoundError(OsparcErrorMixin, Exception):
+    msg_template = "Task with id '{task_id}' not found"

@@ -13,6 +13,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
+    JobMissingError,
     JobNotDoneError,
     JobSchedulerError,
 )
@@ -22,6 +23,7 @@ from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ..errors import (
+    TaskNotFoundError,
     TransferrableCeleryError,
     decode_celery_transferrable_error,
 )
@@ -30,7 +32,7 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(JobSchedulerError,))
+@router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
 async def cancel(
     task_manager: TaskManager, job_id: AsyncJobId, job_filter: AsyncJobFilter
 ):
@@ -42,11 +44,13 @@ async def cancel(
             task_filter=task_filter,
             task_uuid=job_id,
         )
+    except TaskNotFoundError as exc:
+        raise JobMissingError(exc=f"{exc}") from exc
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
 
-@router.expose(reraise_if_error_type=(JobSchedulerError,))
+@router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
 async def status(
     task_manager: TaskManager, job_id: AsyncJobId, job_filter: AsyncJobFilter
 ) -> AsyncJobStatus:
@@ -59,6 +63,8 @@ async def status(
             task_filter=task_filter,
             task_uuid=job_id,
         )
+    except TaskNotFoundError as exc:
+        raise JobMissingError(exc=f"{exc}") from exc
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
@@ -71,9 +77,10 @@ async def status(
 
 @router.expose(
     reraise_if_error_type=(
-        JobError,
-        JobNotDoneError,
         JobAbortedError,
+        JobError,
+        JobMissingError,
+        JobNotDoneError,
         JobSchedulerError,
     )
 )
@@ -97,6 +104,8 @@ async def result(
             task_filter=task_filter,
             task_uuid=job_id,
         )
+    except TaskNotFoundError as exc:
+        raise JobMissingError(exc=f"{exc}") from exc
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
