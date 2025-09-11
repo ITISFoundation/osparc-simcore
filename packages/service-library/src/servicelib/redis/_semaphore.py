@@ -52,7 +52,6 @@ class DistributedSemaphore(BaseModel):
             await do_limited_work()
     """
 
-    # Model configuration
     model_config = {
         "arbitrary_types_allowed": True,  # For RedisClientSDK
     }
