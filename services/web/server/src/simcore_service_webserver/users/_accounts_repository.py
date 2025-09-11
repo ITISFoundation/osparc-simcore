@@ -381,17 +381,21 @@ async def search_merged_pre_and_registered_users(
         users_pre_registration_details.c.state,
         users_pre_registration_details.c.postal_code,
         users_pre_registration_details.c.country,
-        users_pre_registration_details.c.user_id,  # user_id from pre-registration
+        users_pre_registration_details.c.user_id.label(
+            "pre_reg_user_id"
+        ),  # "copy" of user_id from pre-registration
         users_pre_registration_details.c.extras,
         users_pre_registration_details.c.account_request_status,
         users_pre_registration_details.c.account_request_reviewed_by,
         users_pre_registration_details.c.account_request_reviewed_at,
-        users.c.status,
         invited_by,
         account_request_reviewed_by_username,  # account_request_reviewed_by converted to username
         users_pre_registration_details.c.created,
+        # NOTE: some users have no pre-registration details (e.g. s4l-lite)
+        users.c.id.label("user_id"),  # real user_id from users table
         users.c.name.label("user_name"),
         users.c.primary_gid.label("user_primary_group_id"),
+        users.c.status,
     )
 
     left_outer_join = _build_left_outer_join_query(
