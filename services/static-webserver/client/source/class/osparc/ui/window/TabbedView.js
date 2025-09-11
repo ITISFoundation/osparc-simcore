@@ -37,14 +37,15 @@ qx.Class.define("osparc.ui.window.TabbedView", {
      * @param {page section's name} sectionName
      */
     createSectionBox: function(sectionName) {
-      const box = new qx.ui.groupbox.GroupBox(sectionName);
+      const box = new qx.ui.groupbox.GroupBox(sectionName).set({
+        layout: new qx.ui.layout.VBox(10),
+      });
       box.getChildControl("legend").set({
         font: "text-14"
       });
       box.getChildControl("frame").set({
         backgroundColor: "transparent"
       });
-      box.setLayout(new qx.ui.layout.VBox(10));
       return box;
     },
 
