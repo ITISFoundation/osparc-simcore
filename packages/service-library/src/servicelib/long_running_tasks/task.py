@@ -503,7 +503,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
 
-        await self._tasks_data.mark_task_for_removal(tracked_task.task_id)
+        await self._tasks_data.mark_for_removal(tracked_task.task_id)
 
         if not wait_for_removal:
             return

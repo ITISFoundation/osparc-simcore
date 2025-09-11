@@ -65,7 +65,7 @@ async def test_workflow(store: RedisStore, task_data: TaskData) -> None:
 
     assert await store.is_marked_for_removal(task_data.task_id) is False
 
-    await store.mark_task_for_removal(task_data.task_id)
+    await store.mark_for_removal(task_data.task_id)
 
     assert await store.is_marked_for_removal(task_data.task_id) is True
 
@@ -103,7 +103,7 @@ async def test_workflow_multiple_redis_stores_with_different_namespaces(
 
     for store in redis_stores:
         await store.add_task_data(task_data.task_id, task_data)
-        await store.mark_task_for_removal(task_data.task_id)
+        await store.mark_for_removal(task_data.task_id)
 
     marked_as_removed_task_data = deepcopy(task_data)
     marked_as_removed_task_data.marked_for_removal = True

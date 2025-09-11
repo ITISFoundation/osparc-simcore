@@ -65,7 +65,7 @@ async def test_cleanup_namespace(
 ) -> None:
     # create entries in both sides
     await store.add_task_data(task_data.task_id, task_data)
-    await store.mark_task_for_removal(task_data.task_id)
+    await store.mark_for_removal(task_data.task_id)
 
     # entries exit
     marked_for_removal = deepcopy(task_data)

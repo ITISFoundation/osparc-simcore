@@ -548,7 +548,7 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
         total_sleep=10,
         task_context=empty_context,
     )
-    await long_running_manager.tasks_manager._tasks_data.mark_task_for_removal(  # noqa: SLF001
+    await long_running_manager.tasks_manager._tasks_data.mark_for_removal(  # noqa: SLF001
         task_id
     )
 
