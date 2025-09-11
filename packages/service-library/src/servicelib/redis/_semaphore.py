@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import logging
 import uuid
@@ -191,9 +190,24 @@ class DistributedSemaphore(BaseModel):
         """Check if this semaphore instance is currently acquired."""
         return self._acquired
 
+    async def get_redis_time(self) -> float:
+        """
+        Get the current Redis server time as a float timestamp.
+
+        This provides a synchronized timestamp across all Redis clients,
+        avoiding clock drift issues between different machines.
+
+        Returns:
+            Current Redis server time as seconds since Unix epoch (float)
+        """
+        time_response = await self.redis_client.redis.time()
+        # Redis TIME returns (seconds, microseconds) tuple
+        seconds, microseconds = time_response
+        return float(seconds) + float(microseconds) / 1_000_000
+
     async def _try_acquire(self) -> bool:
         """Atomically try to acquire the semaphore using Redis operations"""
-        current_time = asyncio.get_event_loop().time()
+        current_time = await self.get_redis_time()
         ttl_seconds = self.ttl.total_seconds()
 
         with log_catch(_logger, reraise=False):
@@ -226,7 +240,7 @@ class DistributedSemaphore(BaseModel):
 
     async def get_current_count(self) -> int:
         """Get the current number of semaphore holders"""
-        current_time = asyncio.get_event_loop().time()
+        current_time = await self.get_redis_time()
         ttl_seconds = self.ttl.total_seconds()
 
         # Remove expired entries and count remaining
