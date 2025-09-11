@@ -212,6 +212,10 @@ qx.Class.define("osparc.store.Support", {
             callback = () => window.open(supportInfo["url"]);
             break;
           case "email":
+            if (osparc.store.Groups.getInstance().isSupportEnabled()) {
+              // if support is enabled, ignore the email option
+              return;
+            }
             icon = "@FontAwesome5Solid/envelope/14";
             callback = () => this.__openSendEmailFeedbackDialog(supportInfo["email"]);
             break;
