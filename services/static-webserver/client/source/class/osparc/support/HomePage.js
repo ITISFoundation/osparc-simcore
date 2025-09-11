@@ -46,6 +46,7 @@ qx.Class.define("osparc.support.HomePage", {
         icon: null,
         gap: 8,
         paddingLeft: 12,
+        paddingRight: 12,
       });
       button.getChildControl("label").set({
         rich: true
