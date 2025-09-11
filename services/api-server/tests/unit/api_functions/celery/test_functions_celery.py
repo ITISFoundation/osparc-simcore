@@ -277,12 +277,10 @@ async def test_celery_error_propagation(
     app: FastAPI,
     client: AsyncClient,
     auth: BasicAuth,
+    user_identity: Identity,
     with_api_server_celery_worker: TestWorkController,
 ):
 
-    user_identity = Identity(
-        user_id=_faker.pyint(), product_name=_faker.word(), email=_faker.email()
-    )
     job_filter = AsyncJobFilter(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
