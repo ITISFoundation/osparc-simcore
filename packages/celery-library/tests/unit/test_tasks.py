@@ -12,7 +12,7 @@ from random import randint
 
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
-from celery_library.errors import TransferrableCeleryError
+from celery_library.errors import TaskNotFoundError, TransferrableCeleryError
 from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.utils import get_app_server
@@ -163,18 +163,8 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 
     await celery_task_manager.cancel_task(task_filter, task_uuid)
 
-    for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(1),
-        stop=stop_after_delay(30),
-    ):
-        with attempt:
-            progress = await celery_task_manager.get_task_status(task_filter, task_uuid)
-            assert progress.task_state == TaskState.ABORTED
-
-    assert (
+    with pytest.raises(TaskNotFoundError):
         await celery_task_manager.get_task_status(task_filter, task_uuid)
-    ).task_state == TaskState.ABORTED
 
     assert task_uuid not in await celery_task_manager.list_tasks(task_filter)
 

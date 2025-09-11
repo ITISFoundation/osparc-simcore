@@ -155,30 +155,6 @@ async def test_get_task_result(
             None,
             status.HTTP_404_NOT_FOUND,
         ),
-        (
-            "GET",
-            f"/v0/tasks/{_faker.uuid4()}/result",
-            None,
-            CeleryTaskStatus(
-                task_uuid=TaskUUID("123e4567-e89b-12d3-a456-426614174000"),
-                task_state=TaskState.ABORTED,
-                progress_report=ProgressReport(
-                    actual_value=0.5,
-                    total=1.0,
-                    unit="Byte",
-                    message=ProgressStructuredMessage.model_validate(
-                        {
-                            "description": "some description",
-                            "current": 12.2,
-                            "total": 123,
-                        }
-                    ),
-                ),
-            ),
-            None,
-            None,
-            status.HTTP_409_CONFLICT,
-        ),
     ],
 )
 async def test_celery_error_propagation(

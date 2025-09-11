@@ -45,7 +45,7 @@ async def cancel(
             task_uuid=job_id,
         )
     except TaskNotFoundError as exc:
-        raise JobMissingError(exc=f"{exc}") from exc
+        raise JobMissingError(job_id=job_id) from exc
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
@@ -64,7 +64,7 @@ async def status(
             task_uuid=job_id,
         )
     except TaskNotFoundError as exc:
-        raise JobMissingError(exc=f"{exc}") from exc
+        raise JobMissingError(job_id=job_id) from exc
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
@@ -105,12 +105,10 @@ async def result(
             task_uuid=job_id,
         )
     except TaskNotFoundError as exc:
-        raise JobMissingError(exc=f"{exc}") from exc
+        raise JobMissingError(job_id=job_id) from exc
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    if _status.task_state == TaskState.ABORTED:
-        raise JobAbortedError(job_id=job_id)
     if _status.task_state == TaskState.FAILURE:
         # fallback exception to report
         exc_type = type(_result).__name__

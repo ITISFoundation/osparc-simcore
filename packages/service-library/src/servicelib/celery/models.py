@@ -23,10 +23,9 @@ class TaskState(StrEnum):
     RETRY = "RETRY"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
-    ABORTED = "ABORTED"
 
 
-TASK_FINAL_STATES = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
+TASK_DONE_STATES = {TaskState.SUCCESS, TaskState.FAILURE}
 
 
 class TasksQueue(StrEnum):
@@ -138,4 +137,4 @@ class TaskStatus(BaseModel):
 
     @property
     def is_done(self) -> bool:
-        return self.task_state in TASK_FINAL_STATES
+        return self.task_state in TASK_DONE_STATES

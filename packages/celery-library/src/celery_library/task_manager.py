@@ -7,7 +7,7 @@ from celery import Celery  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
-    TASK_FINAL_STATES,
+    TASK_DONE_STATES,
     Task,
     TaskFilter,
     TaskID,
@@ -117,7 +117,7 @@ class CeleryTaskManager:
             if progress is not None:
                 return progress
 
-        if task_state in TASK_FINAL_STATES:
+        if task_state in TASK_DONE_STATES:
             return ProgressReport(
                 actual_value=_MAX_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE
             )
