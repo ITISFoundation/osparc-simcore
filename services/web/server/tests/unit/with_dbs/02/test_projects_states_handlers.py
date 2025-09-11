@@ -67,6 +67,7 @@ from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
@@ -1171,6 +1172,7 @@ async def test_get_active_project(
         if expected == status.HTTP_200_OK:
             pytest.fail("socket io connection should not fail")
     assert client.app
+
     # get active projects -> empty
     get_active_projects_url = (
         client.app.router["get_active_project"]
@@ -1197,7 +1199,25 @@ async def test_get_active_project(
             client.app, ProjectID(user_project["uuid"])
         )
         assert not error
-        assert ProjectStateOutputSchema(**data.pop("state")).share_state.locked
+
+        # The realtime collaboration feature  unlocks the projects since they can be edited by multiple users simultaneously
+        realtime_collaboration_settings = get_application_settings(
+            client.app
+        ).WEBSERVER_REALTIME_COLLABORATION
+        realtime_collaboration_enabled = (
+            realtime_collaboration_settings
+            and realtime_collaboration_settings.RTC_MAX_NUMBER_OF_USERS
+            and realtime_collaboration_settings.RTC_MAX_NUMBER_OF_USERS > 1
+        )
+
+        share_state_locked = ProjectStateOutputSchema(
+            **data.pop("state")
+        ).share_state.locked
+        assert (
+            not share_state_locked
+            if realtime_collaboration_enabled
+            else share_state_locked
+        )
         data.pop("folderId")
 
         user_project_last_change_date = user_project.pop("lastChangeDate")
