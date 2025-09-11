@@ -3,8 +3,7 @@ import datetime
 import functools
 import logging
 import uuid
-from collections.abc import AsyncIterator, Callable, Coroutine
-from contextlib import asynccontextmanager
+from collections.abc import Callable, Coroutine
 from types import TracebackType
 from typing import Annotated, Any, ParamSpec, TypeVar
 
@@ -18,6 +17,7 @@ from pydantic import (
     field_validator,
 )
 
+from ..background_task import periodic
 from ._client import RedisClientSDK
 from ._constants import (
     DEFAULT_SEMAPHORE_TTL,
@@ -235,42 +235,25 @@ class DistributedSemaphore(BaseModel):
             return False
 
     async def _start_auto_renew(self) -> None:
-        """Start the auto-renewal task to prevent TTL expiration"""
-        if self._auto_renew_task:
-            return
+        started_event = asyncio.Event()
 
-        async def _renew_periodically() -> None:
-            # Renew at 1/3 of TTL interval to be safe
-            renew_interval = self.ttl.total_seconds() / 3
+        @periodic(interval=self.ttl / 3, raise_on_error=True)
+        async def _periodic_renewer() -> None:
+            current_time = asyncio.get_event_loop().time()
+            ttl_seconds = self.ttl.total_seconds()
 
-            while self._acquired:
-                try:
-                    await asyncio.sleep(renew_interval)
-                    if not self._acquired:
-                        break
+            # Update timestamp in sorted set and refresh holder key
+            async with self.redis_client.redis.pipeline(transaction=True) as pipe:
+                await pipe.zadd(self.semaphore_key, {self.instance_id: current_time})
+                await pipe.expire(self.holder_key, int(ttl_seconds))
+                await pipe.execute()
+            started_event.set()
 
-                    current_time = asyncio.get_event_loop().time()
-                    ttl_seconds = self.ttl.total_seconds()
-
-                    # Update timestamp in sorted set and refresh holder key
-                    async with self.redis_client.redis.pipeline(
-                        transaction=True
-                    ) as pipe:
-                        await pipe.zadd(
-                            self.semaphore_key, {self.instance_id: current_time}
-                        )
-                        await pipe.expire(self.holder_key, int(ttl_seconds))
-                        await pipe.execute()
-
-                except asyncio.CancelledError:
-                    break
-                except Exception:
-                    _logger.warning(
-                        "Failed to renew semaphore '%s'",
-                        self.key,
-                    )
-
-        self._auto_renew_task = asyncio.create_task(_renew_periodically())
+        # Create the task for periodic renewal
+        task_name = f"semaphore_renewal_{self.key}_{self.instance_id}"
+        self._auto_renew_task = asyncio.create_task(_periodic_renewer(), name=task_name)
+        # NOTE: this ensures the extend task ran once and ensure cancellation works
+        await started_event.wait()
 
     async def get_current_count(self) -> int:
         """Get the current number of semaphore holders"""
@@ -396,33 +379,3 @@ def with_limited_concurrency(
         return _wrapper
 
     return _decorator
-
-
-@asynccontextmanager
-async def distributed_semaphore(
-    redis_client: RedisClientSDK,
-    name: str,
-    capacity: int,
-    **kwargs: Any,
-) -> AsyncIterator[DistributedSemaphore]:
-    """
-    Async context manager for distributed semaphore.
-
-    Args:
-        redis_client: Redis client for coordination
-        name: Unique identifier for the semaphore
-        capacity: Maximum number of concurrent holders
-        **kwargs: Additional arguments for DistributedSemaphore
-
-    Example:
-        async with distributed_semaphore(
-            redis_client, "my_resource", capacity=3
-        ) as sem:
-            print(f"Available slots: {await sem.get_available_count()}")
-            await do_limited_work()
-    """
-    semaphore = DistributedSemaphore(
-        redis_client=redis_client, key=name, capacity=capacity, **kwargs
-    )
-    async with semaphore:
-        yield semaphore
