@@ -6,9 +6,10 @@ import uuid
 from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import asynccontextmanager
 from types import TracebackType
-from typing import Any, ParamSpec, TypeVar
+from typing import Annotated, Any, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
+from pydantic import BaseModel, Field, PrivateAttr, computed_field, field_validator
 
 from ._client import RedisClientSDK
 from ._constants import (
@@ -22,7 +23,7 @@ from ._errors import SemaphoreAcquisitionError, SemaphoreNotAcquiredError
 _logger = logging.getLogger(__name__)
 
 
-class DistributedSemaphore:
+class DistributedSemaphore(BaseModel):
     """
     A distributed semaphore implementation using Redis.
 
@@ -31,7 +32,7 @@ class DistributedSemaphore:
 
     Args:
         redis_client: Redis client for coordination
-        name: Unique identifier for the semaphore
+        key: Unique identifier for the semaphore
         capacity: Maximum number of concurrent holders
         ttl: Time-to-live for semaphore entries (auto-cleanup)
         blocking: Whether acquire() should block until available
@@ -45,37 +46,74 @@ class DistributedSemaphore:
             await do_limited_work()
     """
 
-    def __init__(
-        self,
-        redis_client: RedisClientSDK,
-        key: str,
-        capacity: int,
-        *,
-        ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
-        blocking: bool = True,
-        timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
-    ) -> None:
-        if capacity <= 0:
-            msg = f"Semaphore capacity must be positive, got {capacity}"
+    # Model configuration
+    model_config = {
+        "arbitrary_types_allowed": True,  # For RedisClientSDK
+        "validate_assignment": True,  # Validate on field assignment
+        "extra": "forbid",  # Prevent extra fields
+    }
+
+    # Configuration fields with validation
+    redis_client: RedisClientSDK
+    key: Annotated[
+        str, Field(min_length=1, description="Unique identifier for the semaphore")
+    ]
+    capacity: Annotated[
+        int, Field(gt=0, description="Maximum number of concurrent holders")
+    ]
+    ttl: datetime.timedelta = Field(
+        default=DEFAULT_SEMAPHORE_TTL, description="Time-to-live for semaphore entries"
+    )
+    blocking: bool = Field(
+        default=True, description="Whether acquire() should block until available"
+    )
+    timeout: datetime.timedelta | None = Field(
+        default=DEFAULT_SOCKET_TIMEOUT, description="Maximum time to wait when blocking"
+    )
+
+    # Computed fields (read-only, automatically calculated)
+    @computed_field
+    @property
+    def instance_id(self) -> str:
+        """Unique identifier for this semaphore instance."""
+        if not hasattr(self, "_instance_id"):
+            self._instance_id = str(uuid.uuid4())
+        return self._instance_id
+
+    @computed_field
+    @property
+    def semaphore_key(self) -> str:
+        """Redis key for the semaphore sorted set."""
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}"
+
+    @computed_field
+    @property
+    def holder_key(self) -> str:
+        """Redis key for this instance's holder entry."""
+        return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:{self.instance_id}"
+
+    # Private state attributes (not part of the model)
+    _acquired: bool = PrivateAttr(default=False)
+    _auto_renew_task: asyncio.Task[None] | None = PrivateAttr(default=None)
+
+    # Additional validation
+    @field_validator("ttl")
+    @classmethod
+    def validate_ttl(cls, v: datetime.timedelta) -> datetime.timedelta:
+        if v.total_seconds() <= 0:
+            msg = "TTL must be positive"
             raise ValueError(msg)
+        return v
 
-        self._redis_client = redis_client
-        self._key = key
-        self._capacity = capacity
-        self._ttl = ttl
-        self._blocking = blocking
-        self._timeout = timeout
-
-        # Unique identifier for this semaphore instance
-        self._instance_id = str(uuid.uuid4())
-
-        # Redis keys
-        self._semaphore_key = f"{SEMAPHORE_KEY_PREFIX}{key}"
-        self._holder_key = f"{SEMAPHORE_HOLDER_KEY_PREFIX}{key}:{self._instance_id}"
-
-        # State tracking
-        self._acquired = False
-        self._auto_renew_task: asyncio.Task[None] | None = None
+    @field_validator("timeout")
+    @classmethod
+    def validate_timeout(
+        cls, v: datetime.timedelta | None
+    ) -> datetime.timedelta | None:
+        if v is not None and v.total_seconds() <= 0:
+            msg = "Timeout must be positive"
+            raise ValueError(msg)
+        return v
 
     async def acquire(self) -> bool:
         """
@@ -91,7 +129,7 @@ class DistributedSemaphore:
             return True
 
         start_time = asyncio.get_event_loop().time()
-        timeout_seconds = self._timeout.total_seconds() if self._timeout else None
+        timeout_seconds = self.timeout.total_seconds() if self.timeout else None
 
         while True:
             # Try to acquire using Redis sorted set for atomic operations
@@ -103,21 +141,21 @@ class DistributedSemaphore:
                 await self._start_auto_renew()
                 _logger.debug(
                     "Acquired semaphore '%s' (instance: %s)",
-                    self._key,
-                    self._instance_id,
+                    self.key,
+                    self.instance_id,
                 )
                 return True
 
-            if not self._blocking:
+            if not self.blocking:
                 return False
 
             # Check timeout
             if timeout_seconds is not None:
                 elapsed = asyncio.get_event_loop().time() - start_time
                 if elapsed >= timeout_seconds:
-                    if self._blocking:
+                    if self.blocking:
                         raise SemaphoreAcquisitionError(
-                            name=self._key, capacity=self._capacity
+                            name=self.key, capacity=self.capacity
                         )
                     return False
 
@@ -132,7 +170,7 @@ class DistributedSemaphore:
             SemaphoreNotAcquiredError: If semaphore was not acquired by this instance
         """
         if not self._acquired:
-            raise SemaphoreNotAcquiredError(name=self._key)
+            raise SemaphoreNotAcquiredError(name=self.key)
 
         # Stop auto-renewal
         if self._auto_renew_task:
@@ -140,44 +178,42 @@ class DistributedSemaphore:
             self._auto_renew_task = None
 
         # Remove from Redis
-        async with self._redis_client.redis.pipeline(transaction=True) as pipe:
-            await pipe.zrem(self._semaphore_key, self._instance_id)
-            await pipe.delete(self._holder_key)
+        async with self.redis_client.redis.pipeline(transaction=True) as pipe:
+            await pipe.zrem(self.semaphore_key, self.instance_id)
+            await pipe.delete(self.holder_key)
             await pipe.execute()
 
         self._acquired = False
         _logger.debug(
             "Released semaphore '%s' (instance: %s)",
-            self._key,
-            self._instance_id,
+            self.key,
+            self.instance_id,
         )
 
     async def _try_acquire(self) -> bool:
         """Atomically try to acquire the semaphore using Redis operations"""
         current_time = asyncio.get_event_loop().time()
-        ttl_seconds = self._ttl.total_seconds()
+        ttl_seconds = self.ttl.total_seconds()
 
         try:
             # Clean up expired entries first
-            await self._redis_client.redis.zremrangebyscore(
-                self._semaphore_key, "-inf", current_time - ttl_seconds
+            await self.redis_client.redis.zremrangebyscore(
+                self.semaphore_key, "-inf", current_time - ttl_seconds
             )
 
             # Use Redis transactions for atomic operations
-            async with self._redis_client.redis.pipeline(transaction=True) as pipe:
+            async with self.redis_client.redis.pipeline(transaction=True) as pipe:
                 # Watch the semaphore key for changes
-                await pipe.watch(self._semaphore_key)
+                await pipe.watch(self.semaphore_key)
 
                 # Check current count
-                current_count = await self._redis_client.redis.zcard(
-                    self._semaphore_key
-                )
+                current_count = await self.redis_client.redis.zcard(self.semaphore_key)
 
-                if current_count < self._capacity:
+                if current_count < self.capacity:
                     # Try to acquire
                     pipe.multi()
-                    pipe.zadd(self._semaphore_key, {self._instance_id: current_time})
-                    pipe.setex(self._holder_key, int(ttl_seconds), "1")
+                    pipe.zadd(self.semaphore_key, {self.instance_id: current_time})
+                    pipe.setex(self.holder_key, int(ttl_seconds), "1")
                     result = await pipe.execute()
                     return bool(result)
 
@@ -188,7 +224,7 @@ class DistributedSemaphore:
         except Exception:
             _logger.exception(
                 "Failed to acquire semaphore '%s'",
-                self._key,
+                self.key,
             )
             return False
 
@@ -199,7 +235,7 @@ class DistributedSemaphore:
 
         async def _renew_periodically() -> None:
             # Renew at 1/3 of TTL interval to be safe
-            renew_interval = self._ttl.total_seconds() / 3
+            renew_interval = self.ttl.total_seconds() / 3
 
             while self._acquired:
                 try:
@@ -208,16 +244,16 @@ class DistributedSemaphore:
                         break
 
                     current_time = asyncio.get_event_loop().time()
-                    ttl_seconds = self._ttl.total_seconds()
+                    ttl_seconds = self.ttl.total_seconds()
 
                     # Update timestamp in sorted set and refresh holder key
-                    async with self._redis_client.redis.pipeline(
+                    async with self.redis_client.redis.pipeline(
                         transaction=True
                     ) as pipe:
                         await pipe.zadd(
-                            self._semaphore_key, {self._instance_id: current_time}
+                            self.semaphore_key, {self.instance_id: current_time}
                         )
-                        await pipe.expire(self._holder_key, int(ttl_seconds))
+                        await pipe.expire(self.holder_key, int(ttl_seconds))
                         await pipe.execute()
 
                 except asyncio.CancelledError:
@@ -225,7 +261,7 @@ class DistributedSemaphore:
                 except Exception:
                     _logger.warning(
                         "Failed to renew semaphore '%s'",
-                        self._key,
+                        self.key,
                     )
 
         self._auto_renew_task = asyncio.create_task(_renew_periodically())
@@ -233,14 +269,14 @@ class DistributedSemaphore:
     async def get_current_count(self) -> int:
         """Get the current number of semaphore holders"""
         current_time = asyncio.get_event_loop().time()
-        ttl_seconds = self._ttl.total_seconds()
+        ttl_seconds = self.ttl.total_seconds()
 
         # Remove expired entries and count remaining
-        async with self._redis_client.redis.pipeline(transaction=True) as pipe:
+        async with self.redis_client.redis.pipeline(transaction=True) as pipe:
             await pipe.zremrangebyscore(
-                self._semaphore_key, "-inf", current_time - ttl_seconds
+                self.semaphore_key, "-inf", current_time - ttl_seconds
             )
-            await pipe.zcard(self._semaphore_key)
+            await pipe.zcard(self.semaphore_key)
             results = await pipe.execute()
 
         return int(results[1])
@@ -248,7 +284,7 @@ class DistributedSemaphore:
     async def get_available_count(self) -> int:
         """Get the number of available semaphore slots"""
         current_count = await self.get_current_count()
-        return max(0, self._capacity - current_count)
+        return max(0, self.capacity - current_count)
 
     # Context manager support
     async def __aenter__(self) -> "DistributedSemaphore":
@@ -266,8 +302,8 @@ class DistributedSemaphore:
 
     def __repr__(self) -> str:
         return (
-            f"DistributedSemaphore(name={self._key!r}, "
-            f"capacity={self._capacity}, acquired={self._acquired})"
+            f"DistributedSemaphore(key={self.key!r}, "
+            f"capacity={self.capacity}, acquired={self._acquired})"
         )
 
 
@@ -379,6 +415,8 @@ async def distributed_semaphore(
             print(f"Available slots: {await sem.get_available_count()}")
             await do_limited_work()
     """
-    semaphore = DistributedSemaphore(redis_client, name, capacity, **kwargs)
+    semaphore = DistributedSemaphore(
+        redis_client=redis_client, key=name, capacity=capacity, **kwargs
+    )
     async with semaphore:
         yield semaphore
