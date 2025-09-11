@@ -196,7 +196,6 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Event",
     "projectDocumentChanged": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
@@ -490,6 +489,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.populateNodeUIData(nodeData);
           // new place to store the position and marker
           this.populateNodeUIData(nodeUiData);
+          this.listenToChanges();
         })
         .catch(err => {
           console.log(err);
@@ -868,21 +868,35 @@ qx.Class.define("osparc.data.model.Node", {
         return;
       }
 
-      // create automatic port connections
-      let autoConnections = 0;
-      const outPorts = node1.getOutputs();
-      const inPorts = node2.getInputs();
-      for (const outPort in outPorts) {
-        for (const inPort in inPorts) {
-          if (await node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
-            autoConnections++;
-            break;
+      const autoConnectPorts = async () => {
+        // create automatic port connections
+        let autoConnections = 0;
+        const outPorts = node1.getOutputs();
+        const inPorts = node2.getInputs();
+        for (const outPort in outPorts) {
+          for (const inPort in inPorts) {
+            if (await node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+              autoConnections++;
+              break;
+            }
           }
         }
+        if (autoConnections) {
+          const flashMessenger = osparc.FlashMessenger.getInstance();
+          flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
+        }
       }
-      if (autoConnections) {
-        const flashMessenger = osparc.FlashMessenger.getInstance();
-        flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
+      if (node1.getMetadata() && node2.getMetadata()) {
+        autoConnectPorts();
+      } else {
+        // wait for both metadata to be loaded
+        const onMetadataChanged = () => {
+          if (node1.getMetadata() && node2.getMetadata()) {
+            autoConnectPorts();
+          }
+        };
+        node1.addListenerOnce("changeMetadata", onMetadataChanged, this);
+        node2.addListenerOnce("changeMetadata", onMetadataChanged, this);
       }
     },
 

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.functions import (
@@ -351,12 +353,14 @@ async def delete_function(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
+    force: bool = False,
 ) -> None:
     await _functions_repository.delete_function(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
+        force=force,
     )
 
 
@@ -607,6 +611,35 @@ async def remove_function_group_permissions(
     )
 
 
+async def set_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    permission_group_id: GroupID,
+    product_name: ProductName,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    object_ids: list[FunctionID | FunctionJobID | FunctionJobCollectionID],
+    read: bool | None = None,
+    write: bool | None = None,
+    execute: bool | None = None,
+) -> list[
+    tuple[
+        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
+    ]
+]:
+    return await _functions_repository.set_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_type=object_type,
+        object_ids=object_ids,
+        permission_group_id=permission_group_id,
+        read=read,
+        write=write,
+        execute=execute,
+    )
+
+
 async def get_function_job_status(
     app: web.Application,
     *,
@@ -644,11 +677,22 @@ async def update_function_job_outputs(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     outputs: FunctionOutputs,
+    check_write_permissions: bool = True,
 ) -> FunctionOutputs:
-    return await _functions_repository.update_function_job_outputs(
-        app=app,
+    checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
+    if check_write_permissions:
+        checked_permissions.append("write")
+    await _functions_repository.check_user_permissions(
+        app,
         user_id=user_id,
         product_name=product_name,
+        object_type="function_job",
+        object_id=function_job_id,
+        permissions=checked_permissions,
+    )
+
+    return await _functions_repository.update_function_job_outputs(
+        app=app,
         function_job_id=function_job_id,
         outputs=outputs,
     )
@@ -661,11 +705,22 @@ async def update_function_job_status(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     job_status: FunctionJobStatus,
+    check_write_permissions: bool = True,
 ) -> FunctionJobStatus:
-    return await _functions_repository.update_function_job_status(
-        app=app,
+    checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
+
+    if check_write_permissions:
+        checked_permissions.append("write")
+    await _functions_repository.check_user_permissions(
+        app,
         user_id=user_id,
         product_name=product_name,
+        object_type="function_job",
+        object_id=function_job_id,
+        permissions=checked_permissions,
+    )
+    return await _functions_repository.update_function_job_status(
+        app=app,
         function_job_id=function_job_id,
         job_status=job_status,
     )
@@ -806,9 +861,9 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
-            job_creation_task_id=functionjob_db.class_specific_data[
+            job_creation_task_id=functionjob_db.class_specific_data.get(
                 "job_creation_task_id"
-            ],
+            ),
             created_at=functionjob_db.created,
         )
 
@@ -821,9 +876,9 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
-            job_creation_task_id=functionjob_db.class_specific_data[
+            job_creation_task_id=functionjob_db.class_specific_data.get(
                 "job_creation_task_id"
-            ],
+            ),
             created_at=functionjob_db.created,
         )
 

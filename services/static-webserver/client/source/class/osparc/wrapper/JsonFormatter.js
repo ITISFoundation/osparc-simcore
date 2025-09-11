@@ -63,8 +63,15 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
         ]);
 
         dynLoader.addListenerOnce("ready", () => {
+          if (typeof JSONFormatter === "undefined") {
+            reject(new Error("JSONFormatter loaded but did not export to window.JSONFormatter"));
+            return;
+          }
           console.log(jsonFormatterPath + " loaded");
           this.setLibReady(true);
+
+          this.__applyStyles();
+
           resolve();
         }, this);
 
@@ -76,6 +83,26 @@ qx.Class.define("osparc.wrapper.JsonFormatter", {
 
         dynLoader.start();
       });
+    },
+
+    __applyStyles: function() {
+      const styleId = "json-formatter-osparc-style";
+      if (!document.getElementById(styleId)) {
+        const color = qx.theme.manager.Color.getInstance().resolve("text");
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.innerHTML = `
+          .osparc-json-formatter-root * {
+            color: ${color} !important; /* Use osparc text color */
+            font-family: "Manrope", sans-serif !important; /* Use osparc font */
+            font-size: 13px !important; /* Force all fonts to 13px */
+          }
+          .osparc-json-formatter-root .json-formatter-constructor-name {
+          display: none !important; /* Hide "Object" and "Array(n)" labels */
+          }
+        `;
+        document.head.appendChild(style);
+      }
     },
 
     createContainer: function(divId) {

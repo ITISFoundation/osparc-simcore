@@ -34,6 +34,7 @@ from models_library.functions import (
 from models_library.functions_errors import (
     FunctionBaseError,
     FunctionExecuteAccessDeniedError,
+    FunctionHasJobsCannotDeleteError,
     FunctionIDNotFoundError,
     FunctionJobCollectionExecuteAccessDeniedError,
     FunctionJobCollectionIDNotFoundError,
@@ -663,22 +664,10 @@ async def update_function_job_status(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    user_id: UserID,
-    product_name: ProductName,
     function_job_id: FunctionJobID,
     job_status: FunctionJobStatus,
 ) -> FunctionJobStatus:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_permissions(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            object_type="function_job",
-            object_id=function_job_id,
-            permissions=["write"],
-        )
-
         result = await transaction.execute(
             function_jobs_table.update()
             .where(function_jobs_table.c.uuid == function_job_id)
@@ -697,22 +686,10 @@ async def update_function_job_outputs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    user_id: UserID,
-    product_name: ProductName,
     function_job_id: FunctionJobID,
     outputs: FunctionOutputs,
 ) -> FunctionOutputs:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_permissions(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            object_type="function_job",
-            object_id=function_job_id,
-            permissions=["write"],
-        )
-
         result = await transaction.execute(
             function_jobs_table.update()
             .where(function_jobs_table.c.uuid == function_job_id)
@@ -843,6 +820,7 @@ async def delete_function(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
+    force: bool = False,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_permissions(
@@ -863,6 +841,20 @@ async def delete_function(
 
         if row is None:
             raise FunctionIDNotFoundError(function_id=function_id)
+
+        # Check for existing function jobs if force is not True
+        if not force:
+            jobs_result = await transaction.execute(
+                function_jobs_table.select()
+                .with_only_columns(func.count())
+                .where(function_jobs_table.c.function_uuid == function_id)
+            )
+            jobs_count = jobs_result.scalar() or 0
+
+            if jobs_count > 0:
+                raise FunctionHasJobsCannotDeleteError(
+                    function_id=function_id, jobs_count=jobs_count
+                )
 
         # Proceed with deletion
         await transaction.execute(
@@ -1141,11 +1133,15 @@ async def set_group_permissions(
     permission_group_id: GroupID,
     product_name: ProductName,
     object_type: Literal["function", "function_job", "function_job_collection"],
-    object_ids: list[UUID],
+    object_ids: list[FunctionID | FunctionJobID | FunctionJobCollectionID],
     read: bool | None = None,
     write: bool | None = None,
     execute: bool | None = None,
-) -> list[tuple[UUID, FunctionGroupAccessRights]]:
+) -> list[
+    tuple[
+        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
+    ]
+]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         for object_id in object_ids:
             await check_user_permissions(
@@ -1245,8 +1241,13 @@ async def _internal_get_group_permissions(
     *,
     product_name: ProductName,
     object_type: Literal["function", "function_job", "function_job_collection"],
-    object_ids: list[UUID],
-) -> list[tuple[UUID, list[FunctionGroupAccessRights]]]:
+    object_ids: list[FunctionID | FunctionJobID | FunctionJobCollectionID],
+) -> list[
+    tuple[
+        FunctionID | FunctionJobID | FunctionJobCollectionID,
+        list[FunctionGroupAccessRights],
+    ]
+]:
     access_rights_table = None
     field_name = None
     if object_type == "function":

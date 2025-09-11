@@ -36,6 +36,13 @@ qx.Class.define("osparc.store.Groups", {
       init: null // this will stay null for guest users
     },
 
+    supportGroup: {
+      check: "osparc.data.model.Group",
+      init: null, // this will stay null for guest users
+      nullable: true,
+      event: "changeSupportGroup",
+    },
+
     organizations: {
       check: "Object",
       init: {},
@@ -46,6 +53,22 @@ qx.Class.define("osparc.store.Groups", {
       check: "osparc.data.model.Group",
       init: {}
     },
+  },
+
+  statics: {
+    COLLAB_TYPE: {
+      EVERYONE: "everyone",
+      SUPPORT: "support",
+      ORGANIZATION: "organization",
+      USER: "user",
+    },
+
+    COLLAB_TYPE_ORDER: [
+      "everyone", // osparc.store.Groups.COLLAB_TYPE.EVERYONE
+      "support",  // osparc.store.Groups.COLLAB_TYPE.SUPPORT,
+      "organization", // osparc.store.Groups.COLLAB_TYPE.ORGANIZATION
+      "user", // osparc.store.Groups.COLLAB_TYPE.USER
+    ],
   },
 
   members: {
@@ -62,6 +85,15 @@ qx.Class.define("osparc.store.Groups", {
         .then(resp => {
           const everyoneGroup = this.__addToGroupsCache(resp["all"], "everyone");
           const productEveryoneGroup = this.__addToGroupsCache(resp["product"], "productEveryone");
+          let supportGroup = null;
+          if ("support" in resp && resp["support"]) {
+            resp["support"]["accessRights"] = {
+              "read": false,
+              "write": false,
+              "delete": false,
+            };
+            supportGroup = this.__addToGroupsCache(resp["support"], "support");
+          }
           const groupMe = this.__addToGroupsCache(resp["me"], "me");
           const orgs = {};
           resp["organizations"].forEach(organization => {
@@ -70,13 +102,15 @@ qx.Class.define("osparc.store.Groups", {
           });
           this.setEveryoneGroup(everyoneGroup);
           this.setEveryoneProductGroup(productEveryoneGroup);
+          this.setSupportGroup(supportGroup);
           this.setOrganizations(orgs);
           this.setGroupMe(groupMe);
           const myAuthData = osparc.auth.Data.getInstance();
+          const description = osparc.data.model.User.userDataToDescription(myAuthData.getFirstName(), myAuthData.getLastName(), myAuthData.getEmail());
           groupMe.set({
-            label: myAuthData.getUsername(),
-            description: `${myAuthData.getFirstName()} ${myAuthData.getLastName()} - ${myAuthData.getEmail()}`,
-            thumbnail: osparc.utils.Avatar.emailToThumbnail(myAuthData.getEmail(), myAuthData.getUsername()),
+            label: myAuthData.getUserName(),
+            description,
+            thumbnail: osparc.utils.Avatar.emailToThumbnail(myAuthData.getEmail(), myAuthData.getUserName()),
           })
           return orgs;
         });
@@ -129,6 +163,11 @@ qx.Class.define("osparc.store.Groups", {
         allGroupsAndUsers[groupProductEveryone.getGroupId()] = groupProductEveryone;
       }
 
+      const supportGroup = this.getSupportGroup();
+      if (supportGroup) {
+        allGroupsAndUsers[supportGroup.getGroupId()] = supportGroup;
+      }
+
       const groupMe = this.getGroupMe();
       allGroupsAndUsers[groupMe.getGroupId()] = groupMe;
 
@@ -152,9 +191,6 @@ qx.Class.define("osparc.store.Groups", {
         this.getMyGroupId(),
         ...this.getOrganizationIds().map(gId => parseInt(gId))
       ];
-      if (this.getEveryoneProductGroup()) {
-        allMyGroupIds.push(this.getEveryoneProductGroup().getGroupId());
-      }
       if (this.getEveryoneGroup()) {
         allMyGroupIds.push(this.getEveryoneGroup().getGroupId());
       }
@@ -177,34 +213,53 @@ qx.Class.define("osparc.store.Groups", {
       return everyoneGroups;
     },
 
+    isSupportEnabled: function() {
+      return Boolean(this.getSupportGroup());
+    },
+
+    amIASupportUser: function() {
+      const supportGroup = this.getSupportGroup();
+      if (supportGroup) {
+        const myOrgIds = this.getOrganizationIds().map(gId => parseInt(gId));
+        return myOrgIds.includes(supportGroup.getGroupId());
+      }
+      return false;
+    },
+
     getGroup: function(groupId) {
       const groups = [];
 
       const groupMe = this.getGroupMe();
-      groupMe["collabType"] = 2;
+      groupMe["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER;
       groups.push(groupMe);
 
       const usersStore = osparc.store.Users.getInstance();
       const users = usersStore.getUsers();
       users.forEach(user => {
-        user["collabType"] = 2;
+        user["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER;
         groups.push(user);
       });
 
       Object.values(this.getOrganizations()).forEach(org => {
-        org["collabType"] = 1;
+        org["collabType"] = osparc.store.Groups.COLLAB_TYPE.ORGANIZATION;
         groups.push(org);
       });
 
+      const supportGroup = this.getSupportGroup();
+      if (supportGroup && groups.findIndex(g => g.getGroupId() === supportGroup.getGroupId()) === -1) {
+        supportGroup["collabType"] = osparc.store.Groups.COLLAB_TYPE.SUPPORT;
+        groups.push(supportGroup);
+      }
+
       const groupProductEveryone = this.getEveryoneProductGroup();
       if (groupProductEveryone) {
-        groupProductEveryone["collabType"] = 0;
+        groupProductEveryone["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE;
         groups.push(groupProductEveryone);
       }
 
       const groupEveryone = this.getEveryoneGroup();
       if (groupEveryone) {
-        groupEveryone["collabType"] = 0;
+        groupEveryone["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE;
         groups.push(groupEveryone);
       }
       const idx = groups.findIndex(group => group.getGroupId() === parseInt(groupId));
@@ -217,10 +272,11 @@ qx.Class.define("osparc.store.Groups", {
     getPotentialCollaborators: function(includeMe = false, includeProductEveryone = false) {
       const potentialCollaborators = {};
       const orgs = this.getOrganizations();
+      const supportGroup = this.getSupportGroup();
       const productEveryone = this.getEveryoneProductGroup();
 
       if (includeProductEveryone && productEveryone) {
-        productEveryone["collabType"] = 0;
+        productEveryone["collabType"] = osparc.store.Groups.COLLAB_TYPE.EVERYONE;
         potentialCollaborators[productEveryone.getGroupId()] = productEveryone;
       }
 
@@ -231,21 +287,26 @@ qx.Class.define("osparc.store.Groups", {
           if (org.getGroupId() === productEveryone.getGroupId() && !includeProductEveryone) {
             return;
           }
-          org["collabType"] = 1;
+          org["collabType"] = osparc.store.Groups.COLLAB_TYPE.ORGANIZATION;
           potentialCollaborators[org.getGroupId()] = org;
         }
       });
 
+      if (supportGroup && !(supportGroup.getGroupId() in potentialCollaborators)) {
+        supportGroup["collabType"] = osparc.store.Groups.COLLAB_TYPE.SUPPORT;
+        potentialCollaborators[supportGroup.getGroupId()] = supportGroup;
+      }
+
       if (includeMe) {
         const myGroup = this.getGroupMe();
-        myGroup["collabType"] = 2;
+        myGroup["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER;
         potentialCollaborators[myGroup.getGroupId()] = myGroup;
       }
 
       const usersStore = osparc.store.Users.getInstance();
       const users = usersStore.getUsers();
       users.forEach(user => {
-        user["collabType"] = 2;
+        user["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER;
         potentialCollaborators[user.getGroupId()] = user;
       });
 
@@ -286,10 +347,10 @@ qx.Class.define("osparc.store.Groups", {
       return null;
     },
 
-    getGroupMemberByUsername: function(orgId, username) {
+    getGroupMemberByUserName: function(orgId, userName) {
       const org = this.getGroup(orgId);
       if (org) {
-        return org.getGroupMemberByUsername(username);
+        return org.getGroupMemberByUserName(userName);
       }
       return null;
     },
@@ -363,7 +424,7 @@ qx.Class.define("osparc.store.Groups", {
     // CRUD GROUP
 
     // CRUD GROUP MEMBERS
-    addMember: function(orgId, username, email = null) {
+    addMember: function(orgId, userName, email = null) {
       const gid = parseInt(orgId);
       const params = {
         url: {
@@ -374,7 +435,7 @@ qx.Class.define("osparc.store.Groups", {
       if (email) {
         params.data["email"] = email;
       } else {
-        params.data["userName"] = username;
+        params.data["userName"] = userName;
       }
       return osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
@@ -383,7 +444,7 @@ qx.Class.define("osparc.store.Groups", {
           return this.__fetchGroupMembers(gid);
         })
         .then(() => {
-          const groupMember = email ? this.getGroupMemberByLogin(gid, email) : this.getGroupMemberByUsername(gid, username);
+          const groupMember = email ? this.getGroupMemberByLogin(gid, email) : this.getGroupMemberByUserName(gid, userName);
           if (groupMember) {
             return groupMember;
           }

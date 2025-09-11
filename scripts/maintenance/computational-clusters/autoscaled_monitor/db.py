@@ -18,8 +18,11 @@ async def db_engine(
     state: AppState,
 ) -> AsyncGenerator[AsyncEngine, Any]:
     async with contextlib.AsyncExitStack() as stack:
-        assert state.environment["POSTGRES_ENDPOINT"]  # nosec
-        db_endpoint = state.environment["POSTGRES_ENDPOINT"]
+        assert state.environment["POSTGRES_HOST"]  # nosec
+        assert state.environment["POSTGRES_PORT"]  # nosec
+        db_endpoint = (
+            f"{state.environment['POSTGRES_HOST']}:{state.environment['POSTGRES_PORT']}"
+        )
         if state.main_bastion_host:
             assert state.ssh_key_path  # nosec
             db_host, db_port = db_endpoint.split(":")

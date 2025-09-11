@@ -1157,6 +1157,7 @@ async def test_close_project(
     ],
 )
 async def test_get_active_project(
+    with_disabled_rtc_collaboration: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -1177,6 +1178,7 @@ async def test_get_active_project(
         if expected == status.HTTP_200_OK:
             pytest.fail("socket io connection should not fail")
     assert client.app
+
     # get active projects -> empty
     get_active_projects_url = (
         client.app.router["get_active_project"]
@@ -1801,6 +1803,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_is_defaulted(
+    with_disabled_rtc_collaboration: None,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
@@ -2041,6 +2044,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_at_same_time(
+    with_disabled_rtc_collaboration: None,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,

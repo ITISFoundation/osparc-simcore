@@ -2,7 +2,9 @@ import asyncio
 import logging
 
 from aiohttp import web
+from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
+from common_library.user_messages import user_message
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
@@ -23,9 +25,11 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeServiceGet,
     ProjectNodeServicesGet,
 )
+from models_library.basic_types import IDStr
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupID, GroupType
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.rest_error import ErrorGet
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -43,6 +47,7 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -57,6 +62,7 @@ from simcore_postgres_database.models.users import UserRole
 from ..._meta import API_VTAG as VTAG
 from ...catalog import catalog_service
 from ...dynamic_scheduler import api as dynamic_scheduler_service
+from ...exception_handling import create_error_response
 from ...groups import api as groups_service
 from ...groups.exceptions import GroupNotFoundError
 from ...login.decorators import login_required
@@ -298,7 +304,7 @@ async def _stop_dynamic_service_task(
     *,
     app: web.Application,
     dynamic_service_stop: DynamicServiceStop,
-):
+) -> web.Response:
     _ = progress
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
@@ -317,8 +323,33 @@ async def _stop_dynamic_service_task(
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
-        # in case there is an error reply as not found
-        raise web.HTTPNotFound(text=f"{exc}") from exc
+        error_code = getattr(exc, "error_code", None) or create_error_code(exc)
+        user_error_msg = user_message(
+            f"Could not stop dynamic service {dynamic_service_stop.project_id}.{dynamic_service_stop.node_id}"
+        )
+        _logger.debug(
+            **create_troubleshootting_log_kwargs(
+                user_error_msg,
+                error=exc,
+                error_code=error_code,
+                error_context={
+                    "project_id": dynamic_service_stop.project_id,
+                    "node_id": dynamic_service_stop.node_id,
+                    "user_id": dynamic_service_stop.user_id,
+                    "save_state": dynamic_service_stop.save_state,
+                    "simcore_user_agent": dynamic_service_stop.simcore_user_agent,
+                },
+            )
+        )
+        # ANE: in case there is an error reply as not found
+        return create_error_response(
+            error=ErrorGet(
+                message=user_error_msg,
+                support_id=IDStr(error_code),
+                status=status.HTTP_404_NOT_FOUND,
+            ),
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
 
     except ServiceWasNotFoundError:
         # in case the service is not found reply as all OK
@@ -326,9 +357,7 @@ async def _stop_dynamic_service_task(
 
 
 def register_stop_dynamic_service_task(app: web.Application) -> None:
-    TaskRegistry.register(
-        _stop_dynamic_service_task, allowed_errors=(web.HTTPNotFound,), app=app
-    )
+    TaskRegistry.register(_stop_dynamic_service_task, app=app)
 
 
 @routes.post(

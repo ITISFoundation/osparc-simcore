@@ -540,7 +540,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       nodeUI.addListener("dbltap", e => {
         this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
-        if (nodeUI.getNode().canNodeStart()) {
+        if (nodeUI.getNode().canNodeStart() && !nodeUI.getNode().getStudy().getDisableServiceAutoStart()) {
           nodeUI.getNode().requestStartNode();
         }
         e.stopPropagation();
@@ -689,25 +689,22 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       nodeUI.addListener("markerClicked", e => this.__openMarkerEditor(e.getData()), this);
       nodeUI.addListener("infoNode", e => this.__openNodeInfo(e.getData()), this);
       nodeUI.addListener("removeNode", e => this.fireDataEvent("removeNode", e.getData()), this);
-
-      if (nodeUI.getNode().getPropsForm()) {
-        nodeUI.getNode().getPropsForm().addListener("highlightEdge", e => {
-          const {
-            highlight,
-            fromNodeId,
-            toNodeId,
-          } = e.getData();
-          const edgeFound = this.__edgesUI.find(edgeUI => {
-            const edge = edgeUI.getEdge();
-            const inputNode = edge.getInputNode();
-            const outputNode = edge.getOutputNode();
-            return (inputNode.getNodeId() === fromNodeId && outputNode.getNodeId() === toNodeId)
-          });
-          if (edgeFound) {
-            edgeFound.setHighlighted(highlight);
-          }
+      nodeUI.addListener("highlightEdge", e => {
+        const {
+          highlight,
+          fromNodeId,
+          toNodeId,
+        } = e.getData();
+        const edgeFound = this.__edgesUI.find(edgeUI => {
+          const edge = edgeUI.getEdge();
+          const inputNode = edge.getInputNode();
+          const outputNode = edge.getOutputNode();
+          return (inputNode.getNodeId() === fromNodeId && outputNode.getNodeId() === toNodeId)
         });
-      }
+        if (edgeFound) {
+          edgeFound.setHighlighted(highlight);
+        }
+      });
 
       return nodeUI;
     },

@@ -121,14 +121,20 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
       if (walletsEnabled) {
-        osparc.store.Study.getInstance().getWallet(studyId)
-          .then(wallet => {
+        Promise.all([
+          osparc.store.Study.getInstance().getWallet(studyId),
+          osparc.store.Study.getInstance().getOne(studyId),
+        ]).then(([wallet, latestStudyData]) => {
+            const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(latestStudyData["state"]);
             if (
               isStudyCreation ||
               wallet === null ||
-              osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null
+              (osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null && currentUserGroupIds.length === 0)
             ) {
-              // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
+              // pop up StudyOptions if:
+              // - the study was just created
+              // - it has no wallet assigned
+              // - I do not have access to it and the project is not being used
               const resourceSelector = new osparc.study.StudyOptions(studyId);
               if (isStudyCreation) {
                 resourceSelector.getChildControl("open-button").setLabel(qx.locale.Manager.tr("New"));
@@ -157,7 +163,28 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                 }
               });
             } else {
-              openStudy();
+              const found = osparc.store.Store.getInstance().getWallets().find(w => w.getWalletId() === wallet["walletId"]);
+              if (found) {
+                // I have access to the wallet
+                if (osparc.store.Store.getInstance().getContextWallet() !== found) {
+                  // switch to that wallet and inform the user that the context wallet has changed
+                  const text = qx.locale.Manager.tr("Switched to Credit Account") + " '" + found.getName() + "'";
+                  osparc.FlashMessenger.logAs(text);
+                }
+                osparc.store.Store.getInstance().setActiveWallet(found);
+                openStudy();
+              } else {
+                // I do not have access to the wallet or it's being used
+                // cancel and explain the user why
+                const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
+                const msg = isRTCEnabled ?
+                  qx.locale.Manager.tr("You can't join the project because you don't have access to the Credit Account associated with it. Please contact the project owner.") :
+                  qx.locale.Manager.tr("You can't join the project because it's already open by another user.");
+                osparc.FlashMessenger.logAs(msg, "ERROR");
+                if (cancelCB) {
+                  cancelCB();
+                }
+              }
             }
           });
       } else {
@@ -196,7 +223,22 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         osparc.utils.Utils.addBorderRightRadius(rButton);
       }
       return rButton;
-    }
+    },
+
+    getOpenText: function(resourceData) {
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      let openText = qx.locale.Manager.tr("New") + " " + studyAlias;
+      if (resourceData["resourceType"] === "study") {
+        // if it's in use call it join
+        const isRTCEnabled = osparc.utils.DisabledPlugins.isRTCEnabled();
+        if (osparc.study.Utils.state.getCurrentGroupIds(resourceData["state"]).length && isRTCEnabled) {
+          openText = qx.locale.Manager.tr("Join");
+        } else {
+          openText = qx.locale.Manager.tr("Open");
+        }
+      }
+      return openText;
+    },
   },
 
   members: {
@@ -899,8 +941,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _getOpenMenuButton: function(resourceData) {
-      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-      const openText = (resourceData["resourceType"] === "study") ? this.tr("Open") : this.tr("New") + " " + studyAlias;
+      const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(resourceData);
       const openButton = new qx.ui.menu.Button(openText);
       openButton["openResourceButton"] = true;
       openButton.addListener("execute", () => {

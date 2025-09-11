@@ -19,7 +19,7 @@ qx.Class.define("osparc.support.SupportCenter", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "support-center", "Support");
+    this.base(arguments, "support-center");
 
     this.getChildControl("title").set({
       textAlign: "center",
@@ -35,24 +35,38 @@ qx.Class.define("osparc.support.SupportCenter", {
       showClose: true,
     });
 
-    this.getChildControl("conversations-intro-text");
-    this.getChildControl("conversations-list");
-    this.getChildControl("ask-a-question-button");
-    this.getChildControl("book-a-call-button");
+    this.getLayout().set({
+      separator: "separator-vertical"
+    });
+
+    this.getChildControl("home-page");
+    if (osparc.store.Groups.getInstance().isSupportEnabled()) {
+      this.getChildControl("conversations-page");
+      this.getChildControl("conversation-page");
+      this.getChildControl("home-button");
+      this.getChildControl("conversations-button");
+    }
+
+    this.__showHome();
   },
 
   statics: {
     WINDOW_WIDTH: 430,
+    WINDOW_HEIGHT: 700,
     REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
 
     getMaxHeight: function() {
-      // height: max 80% of screen, or 600px
+      // height: max 80% of screen, or WINDOW_HEIGHTpx
       const clientHeight = document.documentElement.clientHeight;
-      return Math.min(600, parseInt(clientHeight * 0.8));
+      return Math.min(osparc.support.SupportCenter.WINDOW_HEIGHT, parseInt(clientHeight * 0.8));
     },
 
-    openWindow: function() {
+    openWindow: function(stackPage) {
       const supportCenterWindow = new osparc.support.SupportCenter();
+
+      if (stackPage === "conversations") {
+        supportCenterWindow.showConversations();
+      }
 
       const positionWindow = () => {
         supportCenterWindow.set({
@@ -77,82 +91,101 @@ qx.Class.define("osparc.support.SupportCenter", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "stack-layout":
+        case "main-stack":
           control = new qx.ui.container.Stack();
           this.add(control, {
             flex: 1
           });
           break;
-        case "conversations-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-          this.getChildControl("stack-layout").add(control);
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignX: "center",
+          }));
+          this.add(control);
           break;
-        case "conversations-intro-text": {
-          control = new qx.ui.basic.Label().set({
-            rich: true,
-            font: "text-14",
+        case "home-button":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Help & Support"),
+            icon: "@FontAwesome5Solid/question-circle/18",
+            backgroundColor: "transparent",
+            iconPosition: "top",
+            allowGrowX: true,
+            center: true,
           });
-          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
-          control.set({
-            value: isSupportUser ?
-              this.tr("Thanks for being here! Let's help every user feel supported.") :
-              this.tr("Need help or want to share feedback? You're in the right place."),
-          });
-          this.getChildControl("conversations-layout").add(control);
+          control.addListener("execute", () => this.__showHome(), this);
+          this.getChildControl("buttons-layout").add(control, { flex: 1 });
           break;
-        }
-        case "conversations-list": {
-          control = new osparc.support.Conversations();
+        case "conversations-button":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Conversations"),
+            icon: "@FontAwesome5Solid/comments/18",
+            backgroundColor: "transparent",
+            iconPosition: "top",
+            allowGrowX: true,
+            center: true,
+          });
+          control.addListener("execute", () => this.showConversations(), this);
+          this.getChildControl("buttons-layout").add(control, { flex: 1 });
+          break;
+        case "home-page":
+          control = new osparc.support.HomePage();
+          control.addListener("openConversation", () => this.openConversation(), this);
+          this.getChildControl("main-stack").add(control);
+          break;
+        case "conversations-stack":
+          control = new qx.ui.container.Stack();
+          this.getChildControl("main-stack").add(control);
+          break;
+        case "conversations-page":
+          control = new osparc.support.ConversationsPage();
           control.addListener("openConversation", e => {
             const conversationId = e.getData();
             this.openConversation(conversationId);
           }, this);
-          const scroll = new qx.ui.container.Scroll();
-          scroll.add(control);
-          this.getChildControl("conversations-layout").add(scroll, {
-            flex: 1,
-          });
-          break;
-        }
-        case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-            alignX: "center",
-          }));
-          this.getChildControl("conversations-layout").add(control);
-          break;
-        case "ask-a-question-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Ask a Question")).set({
-            appearance: "strong-button",
-            allowGrowX: false,
-            center: true,
-          });
-          control.addListener("execute", () => this.openConversation(null), this);
-          this.getChildControl("buttons-layout").add(control);
-          break;
-        case "book-a-call-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Book a Call")).set({
-            appearance: "strong-button",
-            allowGrowX: false,
-            center: true,
-          });
-          control.addListener("execute", () => this.createConversationBookCall(null), this);
-          this.getChildControl("buttons-layout").add(control);
+          control.addListener("createConversationBookCall", () => this.createConversationBookCall(), this);
+          this.getChildControl("conversations-stack").add(control);
           break;
         case "conversation-page":
           control = new osparc.support.ConversationPage();
-          control.addListener("showConversations", () => this.__showConversations(), this);
-          this.getChildControl("stack-layout").add(control);
+          control.addListener("showConversations", () => this.showConversations(), this);
+          this.getChildControl("conversations-stack").add(control);
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    __showConversations: function() {
-      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversations-layout")]);
+    __showHome: function() {
+      this.setCaption(this.tr("Help & Support"));
+      this.getChildControl("main-stack").setSelection([this.getChildControl("home-page")]);
+      this.getChildControl("home-button").set({
+        textColor: "strong-main",
+      });
+      this.getChildControl("conversations-button").set({
+        textColor: "text",
+      });
+    },
+
+    showConversations: function() {
+      this.setCaption(this.tr("Conversations"));
+      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
+      this.getChildControl("home-button").set({
+        textColor: "text",
+      });
+      this.getChildControl("conversations-button").set({
+        textColor: "strong-main",
+      });
+      this.getChildControl("conversations-stack").setSelection([this.getChildControl("conversations-page")]);
     },
 
     __showConversation: function() {
-      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversation-page")]);
+      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
+      this.getChildControl("home-button").set({
+        textColor: "text",
+      });
+      this.getChildControl("conversations-button").set({
+        textColor: "strong-main",
+      });
+      this.getChildControl("conversations-stack").setSelection([this.getChildControl("conversation-page")]);
     },
 
     openConversation: function(conversationId) {

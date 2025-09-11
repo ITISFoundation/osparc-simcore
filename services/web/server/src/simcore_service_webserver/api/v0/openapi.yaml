@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.77.0
+  version: 0.78.0
 servers:
 - url: ''
   description: webserver
@@ -1798,12 +1798,36 @@ paths:
       parameters:
       - name: email
         in: query
-        required: true
+        required: false
         schema:
-          type: string
-          minLength: 3
-          maxLength: 200
+          anyOf:
+          - type: string
+            minLength: 3
+            maxLength: 200
+            pattern: ^[^%]*$
+          - type: 'null'
           title: Email
+      - name: primary_group_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Primary Group Id
+      - name: user_name
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            minLength: 3
+            maxLength: 200
+            pattern: ^[^%]*$
+          - type: 'null'
+          title: User Name
       responses:
         '200':
           description: Successful Response
@@ -3764,6 +3788,13 @@ paths:
           type: string
           format: uuid
           title: Function Id
+      - name: force
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Force
       responses:
         '204':
           description: Successful Response
@@ -4528,6 +4559,13 @@ paths:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
           title: Viewer Key
+      - name: viewer_version
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Viewer Version
       - name: file_size
         in: query
         required: true
@@ -4554,12 +4592,6 @@ paths:
           - type: 'null'
           default: unknown
           title: File Name
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ServiceKeyVersion'
       responses:
         '302':
           description: Opens osparc and starts viewer for selected data
@@ -18374,6 +18406,8 @@ components:
         invitedBy:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
           - type: 'null'
           title: Invitedby
         accountRequestStatus:
@@ -18382,9 +18416,9 @@ components:
           - type: 'null'
         accountRequestReviewedBy:
           anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+          - type: string
+            maxLength: 100
+            minLength: 1
           - type: 'null'
           title: Accountrequestreviewedby
         accountRequestReviewedAt:

@@ -52,6 +52,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
   statics: {
     SHARE_ICON: "@FontAwesome5Solid/share-alt/13",
     SHARED_USER: "@FontAwesome5Solid/user/13",
+    SHARED_SUPPORT: "@FontAwesome5Solid/question-circle/13",
     SHARED_ORGS: "@FontAwesome5Solid/users/13",
     SHARED_ALL: "@FontAwesome5Solid/globe/13",
     PERM_READ: "@FontAwesome5Solid/eye/13",
@@ -188,17 +189,25 @@ qx.Class.define("osparc.dashboard.CardBase", {
       // Icon
       const groupsStore = osparc.store.Groups.getInstance();
       const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
+      const supportGroup = groupsStore.getSupportGroup();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
       const organizationIds = Object.keys(organizations).map(key => parseInt(key));
       if (gids.some(gid => everyoneGroupIds.includes(gid))) {
+        // shared with "1" or product everyone
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
+      } else if (supportGroup && gids.includes(supportGroup.getGroupId())) {
+        // shared with support group, show as if it was a group
+        shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
       } else if (organizationIds.filter(value => gids.includes(value)).length) { // find intersection
+        // shared with at least one organization
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
       } else if (gids.length === 1 && gids[0] === myGroupId) {
+        // not shared
         shareIcon.setSource(osparc.dashboard.CardBase.SHARE_ICON);
       } else {
+        // shared with some users
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_USER);
       }
 
@@ -227,10 +236,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
     addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
       const everyoneGroups = groupsStore.getEveryoneGroups();
+      const supportGroup = groupsStore.getSupportGroup();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
       const groups = everyoneGroups.slice();
+      if (supportGroup) {
+        groups.push(supportGroup);
+      }
       groups.push(...Object.values(organizations));
       const sharedGrps = [];
       groups.forEach(group => {
@@ -267,9 +280,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
               sharedGrpLabels.push("...");
               break;
             }
-            let sharedGrpLabel = sharedGrps[i].getLabel();
-            if (everyoneGroups.includes(sharedGrps[i])) {
+            const sharedGroup = sharedGrps[i];
+            let sharedGrpLabel = sharedGroup.getLabel();
+            if (everyoneGroups.includes(sharedGroup)) {
               sharedGrpLabel = "Public";
+            }
+            if (supportGroup && supportGroup.getGroupId() === sharedGroup.getGroupId()) {
+              sharedGrpLabel = supportGroup.getLabel();
             }
             if (!sharedGrpLabels.includes(sharedGrpLabel)) {
               sharedGrpLabels.push(sharedGrpLabel);
@@ -897,13 +914,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
       const usersStore = osparc.store.Users.getInstance();
       const userPromises = currentUserGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
-      const usernames = [];
+      const userNames = [];
       let toolTip = "";
       let image = null;
       Promise.all(userPromises)
         .then(usersResult => {
           usersResult.forEach(user => {
-            usernames.push(user.getUsername());
+            userNames.push(user.getUserName());
           });
         })
         .catch(error => {
@@ -935,8 +952,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
               image = "@FontAwesome5Solid/lock/";
               break;
           }
-          usernames.forEach(username => {
-            toolTip += "<br>" + username;
+          userNames.forEach(userName => {
+            toolTip += "<br>" + userName;
           });
           this.__showBlockedCard(image, toolTip);
         });

@@ -5,6 +5,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from pydantic import (
     AliasChoices,
     Field,
+    NonNegativeInt,
     PostgresDsn,
     SecretStr,
     model_validator,
@@ -30,11 +31,28 @@ class PostgresSettings(BaseCustomSettings):
 
     # pool connection limits
     POSTGRES_MINSIZE: Annotated[
-        int, Field(description="Minimum number of connections in the pool", ge=2)
-    ] = 2  # see https://github.com/ITISFoundation/osparc-simcore/pull/8199
+        int,
+        Field(
+            description="Minimum number of connections in the pool that are always created and kept",
+            ge=1,
+        ),
+    ] = 1
     POSTGRES_MAXSIZE: Annotated[
-        int, Field(description="Maximum number of connections in the pool", ge=2)
+        int,
+        Field(
+            description="Maximum number of connections in the pool that are kept",
+            ge=1,
+        ),
     ] = 50
+    POSTGRES_MAX_POOLSIZE: Annotated[
+        int,
+        Field(
+            description="Maximal number of connection in asyncpg pool (without overflow), lazily created on demand"
+        ),
+    ] = 10
+    POSTGRES_MAX_OVERFLOW: Annotated[
+        NonNegativeInt, Field(description="Maximal overflow connections")
+    ] = 20
 
     POSTGRES_CLIENT_NAME: Annotated[
         str | None,
@@ -125,8 +143,10 @@ class PostgresSettings(BaseCustomSettings):
                         "POSTGRES_USER": "usr",
                         "POSTGRES_PASSWORD": "secret",
                         "POSTGRES_DB": "db",
-                        "POSTGRES_MINSIZE": 2,
+                        "POSTGRES_MINSIZE": 1,
                         "POSTGRES_MAXSIZE": 50,
+                        "POSTGRES_MAX_POOLSIZE": 10,
+                        "POSTGRES_MAX_OVERFLOW": 20,
                         "POSTGRES_CLIENT_NAME": "my_app",  # first-choice
                         "HOST": "should be ignored",
                         "HOST_NAME": "should be ignored",
@@ -135,5 +155,4 @@ class PostgresSettings(BaseCustomSettings):
             }
         )
 
-    model_config = SettingsConfigDict(json_schema_extra=_update_json_schema_extra)
     model_config = SettingsConfigDict(json_schema_extra=_update_json_schema_extra)

@@ -18,7 +18,16 @@ x-webserver-diagnostics: &webserver_diagnostics_environs
   DIAGNOSTICS_MAX_TASK_DELAY: ${DIAGNOSTICS_MAX_TASK_DELAY}
   DIAGNOSTICS_SLOW_DURATION_SECS: ${DIAGNOSTICS_SLOW_DURATION_SECS}
 
-
+x-postgres-settings: &postgres_settings
+  POSTGRES_DB: ${POSTGRES_DB}
+  POSTGRES_HOST: ${POSTGRES_HOST}
+  POSTGRES_MAXSIZE: ${POSTGRES_MAXSIZE}
+  POSTGRES_MINSIZE: ${POSTGRES_MINSIZE}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  POSTGRES_MAX_POOLSIZE: ${POSTGRES_MAX_POOLSIZE}
+  POSTGRES_MAX_OVERFLOW: ${POSTGRES_MAX_OVERFLOW}
+  POSTGRES_PORT: ${POSTGRES_PORT}
+  POSTGRES_USER: ${POSTGRES_USER}
 
 services:
   api-server:
@@ -26,7 +35,10 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment: &api_server_environment
-      <<: *tracing_open_telemetry_environs
+      <<:
+        - *tracing_open_telemetry_environs
+        - *postgres_settings
+
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
       API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       API_SERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
@@ -39,12 +51,6 @@ services:
 
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
       DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT}
-
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
 
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
@@ -92,9 +98,10 @@ services:
     hostname: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *api_server_environment
+      API_SERVER_TRACING: "null"
       API_SERVER_WORKER_NAME: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       API_SERVER_WORKER_MODE: "true"
-      CELERY_CONCURRENCY: 100
+      CELERY_CONCURRENCY: ${API_SERVER_CELERY_CONCURRENCY}
       CELERY_QUEUES: "api_worker_queue"
     networks: *api_server_networks
 
@@ -184,7 +191,9 @@ services:
     init: true
     hostname: "cat-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      <<: *tracing_open_telemetry_environs
+      <<:
+        - *postgres_settings
+        - *tracing_open_telemetry_environs
       CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME}
       CATALOG_DEV_FEATURES_ENABLED: ${CATALOG_DEV_FEATURES_ENABLED}
       CATALOG_LOGLEVEL: ${CATALOG_LOGLEVEL}
@@ -197,11 +206,7 @@ services:
       DIRECTOR_PORT: ${DIRECTOR_PORT:-8080}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
+
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -221,6 +226,7 @@ services:
       <<: *tracing_open_telemetry_environs
       CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: ${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}
       CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH}
+      CLUSTERS_KEEPER_DASK_NPROCS: ${CLUSTERS_KEEPER_DASK_NPROCS}
       CLUSTERS_KEEPER_DASK_NTHREADS: ${CLUSTERS_KEEPER_DASK_NTHREADS}
       CLUSTERS_KEEPER_DASK_WORKER_SATURATION: ${CLUSTERS_KEEPER_DASK_WORKER_SATURATION}
       CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: ${CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION}
@@ -284,7 +290,9 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      <<: *tracing_open_telemetry_environs
+      <<:
+        - *postgres_settings
+        - *tracing_open_telemetry_environs
       DIRECTOR_DEFAULT_MAX_MEMORY: ${DIRECTOR_DEFAULT_MAX_MEMORY}
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: ${DIRECTOR_DEFAULT_MAX_NANO_CPUS}
       DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: ${DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS}
@@ -296,12 +304,6 @@ services:
       DIRECTOR_REGISTRY_CACHING: ${DIRECTOR_REGISTRY_CACHING}
       DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: ${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
       DIRECTOR_TRACING: ${DIRECTOR_TRACING}
-
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
 
       REGISTRY_AUTH: ${REGISTRY_AUTH}
       REGISTRY_PATH: ${REGISTRY_PATH}
@@ -331,7 +333,9 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      <<: *tracing_open_telemetry_environs
+      <<:
+        - *postgres_settings
+        - *tracing_open_telemetry_environs
       AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
 
       CATALOG_HOST: ${CATALOG_HOST}
@@ -367,12 +371,6 @@ services:
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       DIRECTOR_V2_LOGLEVEL: ${DIRECTOR_V2_LOGLEVEL}
       MONITORING_ENABLED: ${MONITORING_ENABLED}
-
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
 
       R_CLONE_OPTION_BUFFER_SIZE: ${R_CLONE_OPTION_BUFFER_SIZE}
       R_CLONE_OPTION_RETRIES: ${R_CLONE_OPTION_RETRIES}
@@ -445,7 +443,9 @@ services:
     networks:
       - default
     environment:
-      <<: *tracing_open_telemetry_environs
+      <<:
+        - *postgres_settings
+        - *tracing_open_telemetry_environs
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       RABBIT_HOST: ${RABBIT_HOST}
@@ -458,11 +458,6 @@ services:
       REDIS_PORT: ${REDIS_PORT}
       REDIS_SECURE: ${REDIS_SECURE}
       REDIS_USER: ${REDIS_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
       SC_USER_ID: ${SC_USER_ID}
       SC_USER_NAME: ${SC_USER_NAME}
       EFS_USER_ID: ${EFS_USER_ID}
@@ -501,7 +496,9 @@ services:
     networks:
       - default
     environment:
-      <<: *tracing_open_telemetry_environs
+      <<:
+        - *postgres_settings
+        - *tracing_open_telemetry_environs
 
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
@@ -522,11 +519,6 @@ services:
       PAYMENTS_SWAGGER_API_DOC_ENABLED: ${PAYMENTS_SWAGGER_API_DOC_ENABLED}
       PAYMENTS_TRACING: ${PAYMENTS_TRACING}
       PAYMENTS_USERNAME: ${PAYMENTS_USERNAME}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -548,16 +540,13 @@ services:
     networks:
       - default
     environment:
-      <<: *tracing_open_telemetry_environs
+      <<:
+        - *postgres_settings
+        - *tracing_open_telemetry_environs
 
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
+
       PROMETHEUS_URL: ${RESOURCE_USAGE_TRACKER_PROMETHEUS_URL}
       PROMETHEUS_USERNAME: ${RESOURCE_USAGE_TRACKER_PROMETHEUS_USERNAME}
       PROMETHEUS_PASSWORD: ${RESOURCE_USAGE_TRACKER_PROMETHEUS_PASSWORD}
@@ -588,7 +577,9 @@ services:
       - default
       - docker-api-network
     environment:
-      <<: *tracing_open_telemetry_environs
+      <<:
+        - *postgres_settings
+        - *tracing_open_telemetry_environs
 
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
@@ -611,12 +602,6 @@ services:
 
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
-
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
 
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
@@ -706,6 +691,7 @@ services:
     hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment: &webserver_environment
       <<:
+        - *postgres_settings
         - *tracing_open_telemetry_environs
         - *webserver_diagnostics_environs
 
@@ -745,16 +731,6 @@ services:
 
       # WEBSERVER_CREDIT_COMPUTATION
       WEBSERVER_CREDIT_COMPUTATION_ENABLED: ${WEBSERVER_CREDIT_COMPUTATION_ENABLED}
-
-      # WEBSERVER_DB
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_MINSIZE: ${POSTGRES_MINSIZE}
-      POSTGRES_MAXSIZE: ${POSTGRES_MAXSIZE}
-      POSTGRES_USER: ${POSTGRES_USER}
 
       # WEBSERVER_DIAGNOSTICS
       WEBSERVER_DIAGNOSTICS: ${WEBSERVER_DIAGNOSTICS}
@@ -966,6 +942,8 @@ services:
     init: true
     hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
+      <<:
+        - *postgres_settings
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
 
       # NOTE: keep in sync with the prefix form the hostname
@@ -973,14 +951,6 @@ services:
 
       WEBSERVER_HOST: ${WEBSERVER_HOST}
       WEBSERVER_PORT: ${WEBSERVER_PORT}
-
-      # WEBSERVER_DB
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
 
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
       DIRECTOR_V2_PORT: ${DIRECTOR_V2_PORT}
@@ -1057,6 +1027,7 @@ services:
     hostname: "gc-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<:
+        - *postgres_settings
         - *tracing_open_telemetry_environs
 
       # WEBSERVER_DIRECTOR_V2
@@ -1071,13 +1042,8 @@ services:
       # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: gc
 
-      # WEBSERVER_DB
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
+
+
 
       # WEBSERVER_RABBITMQ
       RABBIT_HOST: ${RABBIT_HOST}
@@ -1157,8 +1123,9 @@ services:
     hostname: "auth-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<:
-        - *webserver_diagnostics_environs
+        - *postgres_settings
         - *tracing_open_telemetry_environs
+        - *webserver_diagnostics_environs
 
       APP_NAME: "simcore_service_wb_auth"
       WEBSERVER_APP_FACTORY_NAME: WEBSERVER_AUTHZ_APP_FACTORY
@@ -1169,13 +1136,6 @@ services:
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
 
-      # WEBSERVER_DB
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
 
       # WEBSERVER_DIAGNOSTICS
       WEBSERVER_DIAGNOSTICS: ${WB_AUTH_DIAGNOSTICS}
@@ -1271,26 +1231,20 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
 
     environment:
+      <<:
+        - *postgres_settings
+        - *tracing_open_telemetry_environs
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
 
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
-
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
-
-      <<: *tracing_open_telemetry_environs
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -1354,15 +1308,12 @@ services:
     init: true
     hostname: "sto-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment: &storage_environment
+      <<:
+        - *postgres_settings
+        - *tracing_open_telemetry_environs
       DATCORE_ADAPTER_HOST: ${DATCORE_ADAPTER_HOST:-datcore-adapter}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -1384,7 +1335,6 @@ services:
       STORAGE_PROFILING: ${STORAGE_PROFILING}
       STORAGE_PORT: ${STORAGE_PORT}
       STORAGE_TRACING: ${STORAGE_TRACING}
-      <<: *tracing_open_telemetry_environs
     networks: &storage_networks
       - default
       - interactive_services_subnet
@@ -1396,6 +1346,7 @@ services:
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
@@ -1407,6 +1358,7 @@ services:
     hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *storage_environment
+      STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 1
@@ -1440,12 +1392,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_USER: ${POSTGRES_USER}
+      <<: *postgres_settings
     networks:
       - default # actually needed for the postgres service only
 
@@ -1519,7 +1466,7 @@ services:
       retries: 50
 
   traefik:
-    image: "traefik:v3.4.0@sha256:4cf907247939b5d20bf4eff73abd21cb413c339600dde76dbc94a874b2578a27"
+    image: "traefik:v3.5.2@sha256:07ff0c6c2114233b82e1de8e9f4fee9974470cd8d42c22e4e158538d950e19ae"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     command:
