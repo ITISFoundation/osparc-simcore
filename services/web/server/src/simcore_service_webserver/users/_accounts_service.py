@@ -226,7 +226,7 @@ async def search_users_accounts(
             # user
             user_id=r.user_id,
             user_name=r.user_name,
-            user_primary_group_id=r.primary_group_id,
+            user_primary_group_id=r.user_primary_group_id,
         )
         for r in rows
     ]
