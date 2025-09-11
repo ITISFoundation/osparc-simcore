@@ -126,7 +126,7 @@ class RedisStore:
             )
         )
 
-    async def is_maked_for_removal(self, task_id: TaskId) -> bool:
+    async def is_marked_for_removal(self, task_id: TaskId) -> bool:
         result: bool = await handle_redis_returns_union_types(
             self._redis.hexists(self._get_key_to_remove(), task_id)
         )

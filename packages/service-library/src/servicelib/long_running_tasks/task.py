@@ -435,7 +435,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         raises TaskNotFoundError if the task cannot be found
         """
-        if exclude_removed and await self._tasks_data.is_maked_for_removal(task_id):
+        if exclude_removed and await self._tasks_data.is_marked_for_removal(task_id):
             raise TaskNotFoundError(task_id=task_id)
 
         task_data = await self._get_tracked_task(task_id, with_task_context)
@@ -472,7 +472,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         raises TaskNotFoundError if the task cannot be found
         raises TaskNotCompletedError if the task is not completed
         """
-        if await self._tasks_data.is_maked_for_removal(task_id):
+        if await self._tasks_data.is_marked_for_removal(task_id):
             raise TaskNotFoundError(task_id=task_id)
 
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
@@ -502,7 +502,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         cancels and removes task
         raises TaskNotFoundError if the task cannot be found
         """
-        if await self._tasks_data.is_maked_for_removal(task_id):
+        if await self._tasks_data.is_marked_for_removal(task_id):
             raise TaskNotFoundError(task_id=task_id)
 
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
