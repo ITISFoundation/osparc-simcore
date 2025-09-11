@@ -285,32 +285,105 @@ async def test_semaphore_context_manager_with_exception(
     assert await captured_semaphore.get_current_count() == 0
 
 
-async def test_semaphore_auto_renewal(
+async def test_semaphore_auto_renewal_via_decorator(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
     semaphore_capacity: int,
     short_ttl: datetime.timedelta,
 ):
-    semaphore = DistributedSemaphore(
+    """Test auto-renewal functionality through the decorator (TaskGroup approach)"""
+    work_started = asyncio.Event()
+    work_completed = asyncio.Event()
+
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=short_ttl,
+    )
+    async def long_running_work():
+        work_started.set()
+        # Wait longer than TTL to ensure renewal works
+        await asyncio.sleep(short_ttl.total_seconds() * 2)
+        work_completed.set()
+        return "success"
+
+    # Start the work
+    task = asyncio.create_task(long_running_work())
+
+    # Wait for work to start
+    await work_started.wait()
+
+    # Check that semaphore is being held
+    temp_semaphore = DistributedSemaphore(
         redis_client=redis_client_sdk,
         key=semaphore_name,
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
+    assert await temp_semaphore.get_current_count() == 1
 
-    await semaphore.acquire()
-    assert semaphore._auto_renew_task is not None
-    assert not semaphore._auto_renew_task.done()
+    # Wait for work to complete
+    result = await task
+    assert result == "success"
+    assert work_completed.is_set()
 
-    # Wait longer than TTL to ensure renewal works
-    await asyncio.sleep(short_ttl.total_seconds() * 2)
+    # After completion, semaphore should be released
+    assert await temp_semaphore.get_current_count() == 0
 
-    # Should still be acquired due to auto-renewal
-    assert semaphore._acquired is True
-    assert await semaphore.get_current_count() == 1
 
-    await semaphore.release()
-    assert semaphore._auto_renew_task is None
+async def test_decorator_auto_renewal_failure_propagation(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+    short_ttl: datetime.timedelta,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test that auto-renewal failures properly propagate as exceptions in the decorator"""
+    from servicelib.redis._semaphore import renew_semaphore_entry
+
+    class RenewalFailureError(Exception):
+        """Custom exception for testing renewal failures"""
+
+    work_started = asyncio.Event()
+
+    # Mock the renewal function to fail after first call
+    call_count = 0
+    original_renew = renew_semaphore_entry
+
+    async def failing_renew_semaphore_entry(semaphore):
+        nonlocal call_count
+        call_count += 1
+        if call_count <= 1:
+            # First call succeeds
+            await original_renew(semaphore)
+        else:
+            # Subsequent calls fail
+            raise RenewalFailureError("Simulated renewal failure")
+
+    monkeypatch.setattr(
+        "servicelib.redis._semaphore.renew_semaphore_entry",
+        failing_renew_semaphore_entry,
+    )
+
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=short_ttl,
+    )
+    async def work_that_should_fail():
+        work_started.set()
+        # Wait long enough for renewal to be attempted multiple times
+        await asyncio.sleep(short_ttl.total_seconds() * 1.5)
+        return "should not reach here"
+
+    # The decorator should propagate the renewal failure
+    task = asyncio.create_task(work_that_should_fail())
+    await work_started.wait()  # Wait for work to start
+
+    with pytest.raises(RenewalFailureError, match="Simulated renewal failure"):
+        await task  # This should raise the renewal failure exception
 
 
 async def test_semaphore_ttl_cleanup(
