@@ -1,7 +1,6 @@
 import logging
 from typing import Annotated, Any
 
-from celery_library.errors import TaskNotFoundError
 from common_library.error_codes import create_error_code
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
@@ -110,16 +109,10 @@ async def get_task_status(
 ):
     task_manager = get_task_manager(app)
 
-    try:
-        task_status = await task_manager.get_task_status(
-            task_filter=_get_task_filter(user_id, product_name),
-            task_uuid=TaskUUID(f"{task_id}"),
-        )
-    except TaskNotFoundError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found",
-        ) from err
+    task_status = await task_manager.get_task_status(
+        task_filter=_get_task_filter(user_id, product_name),
+        task_uuid=TaskUUID(f"{task_id}"),
+    )
 
     return TaskStatus(
         task_progress=TaskProgress(
@@ -184,16 +177,10 @@ async def get_task_result(
     task_manager = get_task_manager(app)
     task_filter = _get_task_filter(user_id, product_name)
 
-    try:
-        task_status = await task_manager.get_task_status(
-            task_filter=task_filter,
-            task_uuid=TaskUUID(f"{task_id}"),
-        )
-    except TaskNotFoundError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found",
-        ) from err
+    task_status = await task_manager.get_task_status(
+        task_filter=task_filter,
+        task_uuid=TaskUUID(f"{task_id}"),
+    )
 
     if not task_status.is_done:
         raise HTTPException(
