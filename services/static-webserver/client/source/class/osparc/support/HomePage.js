@@ -29,7 +29,9 @@ qx.Class.define("osparc.support.HomePage", {
     });
 
     this.getChildControl("conversations-intro-text");
-    this.getChildControl("ask-a-question");
+    if (osparc.store.Groups.getInstance().isSupportEnabled()) {
+      this.getChildControl("ask-a-question");
+    }
     this.__populateButtons();
   },
 
@@ -69,9 +71,10 @@ qx.Class.define("osparc.support.HomePage", {
           break;
         }
         case "ask-a-question":
-          control = new qx.ui.form.Button(this.tr("Ask a Question"), "@FontAwesome5Solid/comments/16").set({
+          control = new qx.ui.form.Button(this.tr("Ask a Question"), "@FontAwesome5Solid/comments/16");
+          osparc.support.HomePage.decorateButton(control);
+          control.set({
             appearance: "strong-button",
-            font: "text-14",
             center: true,
           });
           control.addListener("execute", () => this.fireEvent("openConversation"));
