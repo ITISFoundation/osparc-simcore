@@ -392,3 +392,31 @@ async def test_release_failure(
     # Verify the exception was logged (not raised)
     assert "Unexpected error while releasing semaphore" in caplog.text
     assert "SemaphoreNotAcquiredError" in caplog.text
+
+
+async def test_with_large_capacity(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+):
+    large_capacity = 100
+    concurrent_count = 0
+    max_concurrent = 0
+
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=large_capacity,
+    )
+    async def limited_function():
+        nonlocal concurrent_count, max_concurrent
+        concurrent_count += 1
+        max_concurrent = max(max_concurrent, concurrent_count)
+        await asyncio.sleep(60)
+        concurrent_count -= 1
+
+    # Start tasks equal to the large capacity
+    tasks = [asyncio.create_task(limited_function()) for _ in range(large_capacity)]
+    await asyncio.gather(*tasks)
+
+    # Should never exceed the large capacity
+    assert max_concurrent <= large_capacity
