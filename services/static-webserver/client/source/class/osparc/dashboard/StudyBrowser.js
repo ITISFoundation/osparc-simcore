@@ -364,7 +364,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.getCurrentWorkspaceId() === null &&
             this.getCurrentFolderId() === null
           ) {
+            // It is!
+            // Open Support Center
             osparc.support.SupportCenter.openWindow();
+            // and open the Introductory Quick Start if any
             const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
             if (quickStartInfo) {
               const dontShowQuickStart = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
