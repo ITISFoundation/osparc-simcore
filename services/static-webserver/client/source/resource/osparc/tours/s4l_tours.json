@@ -107,7 +107,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=helpNavigationMenu",
-      "text": "Under the question mark, you will find Help & Support. How can we help you today?",
+      "text": "Under the question mark, you can access Help & Support to assist you whenever you need it.",
       "placement": "left"
     }, {
       "beforeClick": {
