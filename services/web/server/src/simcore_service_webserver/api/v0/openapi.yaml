@@ -18429,6 +18429,30 @@ components:
           title: Products
           description: List of products this users is included or None if fields is
             unset
+        userId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Userid
+          description: Unique identifier of the user if an account was created
+        userName:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Username
+          description: Username of the user if an account was created
+        userPrimaryGroupId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 2
+          - type: 'null'
+          title: Userprimarygroupid
+          description: Primary group ID of the user if an account was created
       type: object
       required:
       - firstName
@@ -18446,6 +18470,9 @@ components:
       - accountRequestStatus
       - registered
       - status
+      - userId
+      - userName
+      - userPrimaryGroupId
       title: UserAccountGet
     UserAccountReject:
       properties:
