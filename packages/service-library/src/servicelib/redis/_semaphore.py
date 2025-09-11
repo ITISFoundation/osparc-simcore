@@ -5,7 +5,7 @@ import logging
 import uuid
 from collections.abc import Callable, Coroutine
 from types import TracebackType
-from typing import Annotated, Any, ParamSpec, TypeVar
+from typing import Annotated, Any, Final, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
 from pydantic import (
@@ -18,6 +18,7 @@ from pydantic import (
 )
 
 from ..background_task import periodic
+from ..logging_utils import log_catch
 from ._client import RedisClientSDK
 from ._constants import (
     DEFAULT_SEMAPHORE_TTL,
@@ -28,6 +29,8 @@ from ._constants import (
 from ._errors import SemaphoreAcquisitionError, SemaphoreNotAcquiredError
 
 _logger = logging.getLogger(__name__)
+
+_AUTO_RENEW_TASK_NAME: Final[str] = "semaphore/autorenewal_{key}_{instance_id}"
 
 
 class DistributedSemaphore(BaseModel):
@@ -201,7 +204,7 @@ class DistributedSemaphore(BaseModel):
         current_time = asyncio.get_event_loop().time()
         ttl_seconds = self.ttl.total_seconds()
 
-        try:
+        with log_catch(_logger, reraise=False):
             # Clean up expired entries first
             await self.redis_client.redis.zremrangebyscore(
                 self.semaphore_key, "-inf", current_time - ttl_seconds
@@ -227,12 +230,7 @@ class DistributedSemaphore(BaseModel):
                 await pipe.reset()
                 return False
 
-        except Exception:
-            _logger.exception(
-                "Failed to acquire semaphore '%s'",
-                self.key,
-            )
-            return False
+        return False
 
     async def _start_auto_renew(self) -> None:
         started_event = asyncio.Event()
@@ -250,8 +248,12 @@ class DistributedSemaphore(BaseModel):
             started_event.set()
 
         # Create the task for periodic renewal
-        task_name = f"semaphore_renewal_{self.key}_{self.instance_id}"
-        self._auto_renew_task = asyncio.create_task(_periodic_renewer(), name=task_name)
+        self._auto_renew_task = asyncio.create_task(
+            _periodic_renewer(),
+            name=_AUTO_RENEW_TASK_NAME.format(
+                key=self.key, instance_id=self.instance_id
+            ),
+        )
         # NOTE: this ensures the extend task ran once and ensure cancellation works
         await started_event.wait()
 
