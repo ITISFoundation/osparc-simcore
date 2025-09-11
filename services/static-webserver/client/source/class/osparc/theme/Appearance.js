@@ -19,6 +19,15 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
+    "iframe-no-border": {
+      style: () => {
+        return {
+          backgroundColor: "transparent",
+          decorator: "no-border-0"
+        };
+      }
+    },
+
     "strong-ui": {
       style: () => {
         return {

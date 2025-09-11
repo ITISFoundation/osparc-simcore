@@ -440,7 +440,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         if (this.getNode().getKey().includes("jupyter")) {
         // if (this.getNode().getKey().includes("s4l-ui")) {
           // remove border for s4l-ui services
-          osparc.utils.Utils.removeBorder(this.getIFrame());
+          // osparc.utils.Utils.removeBorder(this.getIFrame());
+          this.getIFrame().set({
+            appearance: "iframe-no-border"
+          });
         }
 
         // fire event to force switching to iframe's content:
