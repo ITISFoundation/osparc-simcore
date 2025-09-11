@@ -23,7 +23,6 @@ from faker import Faker
 from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth, HTTPStatusError
 from models_library.api_schemas_long_running_tasks.tasks import TaskResult, TaskStatus
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -50,12 +49,12 @@ from servicelib.common_headers import (
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.api.dependencies.celery import (
-    ASYNC_JOB_CLIENT_NAME,
     get_task_manager,
 )
 from simcore_service_api_server.celery_worker.worker_tasks.functions_tasks import (
     run_function as run_function_task,
 )
+from simcore_service_api_server.clients.celery_task_manager import get_job_filter
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.domain.functions import (
@@ -281,10 +280,9 @@ async def test_celery_error_propagation(
     with_api_server_celery_worker: TestWorkController,
 ):
 
-    job_filter = AsyncJobFilter(
+    job_filter = get_job_filter(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
-        client_name=ASYNC_JOB_CLIENT_NAME,
     )
     task_manager = get_task_manager(app=app)
     task_uuid = await task_manager.submit_task(

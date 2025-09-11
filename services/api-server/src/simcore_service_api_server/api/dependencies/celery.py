@@ -1,9 +1,5 @@
-from typing import Final
-
 from celery_library.task_manager import CeleryTaskManager
 from fastapi import FastAPI
-
-ASYNC_JOB_CLIENT_NAME: Final[str] = "api-server"
 
 
 def get_task_manager(app: FastAPI) -> CeleryTaskManager:
