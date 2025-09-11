@@ -24,7 +24,6 @@ from ...models.schemas.errors import ErrorGet
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_app
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.celery import get_task_manager
 from ..dependencies.functions import (
     get_function_from_functionjobid,
 )
@@ -269,7 +268,6 @@ async def function_job_collection_status(
         FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
 ) -> FunctionJobCollectionStatus:
-    task_manager = get_task_manager(app)
     function_job_collection = await get_function_job_collection(
         function_job_collection_id=function_job_collection_id,
         wb_api_rpc=wb_api_rpc,
