@@ -76,7 +76,6 @@ class RedisTaskInfoStore:
 
     async def list_tasks(self, task_filter: TaskFilter) -> list[Task]:
         search_key = _CELERY_TASK_INFO_PREFIX + task_filter.task_id("*")
-        search_key_len = len(search_key)
 
         keys: list[str] = []
         pipeline = self._redis_client_sdk.redis.pipeline()
