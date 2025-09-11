@@ -45,11 +45,19 @@ qx.Class.define("osparc.support.HomePage", {
         appearance: "help-list-button",
         icon: null,
         gap: 8,
-        paddingLeft: 16,
+        paddingLeft: 12,
       });
       button.getChildControl("label").set({
         rich: true
       });
+    },
+
+    addExternalLinkIcon: function(button) {
+      const icon = new qx.ui.basic.Image("@FontAwesome5Solid/external-link-alt/14").set({
+        alignY: "middle",
+        marginLeft: 5
+      });
+      button._add(icon);
     },
   },
 
@@ -123,17 +131,20 @@ qx.Class.define("osparc.support.HomePage", {
       manualButtons.forEach(manualButton => {
         referencesBox.add(manualButton);
         this.self().decorateButton(manualButton);
+        this.self().addExternalLinkIcon(manualButton);
       });
 
       const supportButtons = osparc.store.Support.getSupportButtons();
       supportButtons.forEach(supportButton => {
         referencesBox.add(supportButton);
         this.self().decorateButton(supportButton);
+        this.self().addExternalLinkIcon(supportButton);
       });
 
       const releaseNotesButton = osparc.store.Support.getReleaseNotesButton();
       this._add(releaseNotesButton);
       this.self().decorateButton(releaseNotesButton);
+      this.self().addExternalLinkIcon(releaseNotesButton);
       releaseNotesButton.set({
         icon: "@FontAwesome5Solid/bullhorn/14",
         // align it with the rest of the buttons in section boxes

@@ -34,7 +34,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         return {
           font: "text-14",
           allowGrowX: true,
-          minHeight: 28,
+          minHeight: 29,
           center: false
         };
       }
@@ -42,7 +42,8 @@ qx.Theme.define("osparc.theme.Appearance", {
     "help-list-button/label": {
       style() {
         return {
-          textAlign: "left"
+          textAlign: "left",
+          allowGrowX: true
         };
       }
     },
