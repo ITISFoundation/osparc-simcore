@@ -375,15 +375,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       // add support conversations
       osparc.store.Support.addSupportConversationsToMenu(menu);
 
-      // quick starts and manuals
-      osparc.store.Support.addQuickStartToMenu(menu);
-      osparc.store.Support.addGuidedToursToMenu(menu);
-      osparc.store.Support.addManualsToMenu(menu);
-      menu.addSeparator();
-
-      // feedback
-      osparc.store.Support.addSupportButtonsToMenu(menu);
-      osparc.store.Support.addReleaseNotesToMenu(menu);
 
       return menuButton;
     },
