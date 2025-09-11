@@ -267,7 +267,7 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
             self.value = current_value
 
     counter = RaceConditionCounter()
-    # ensures it does nto time out before acquiring the lock
+    # ensures it does not time out before acquiring the lock
     time_for_all_inc_counter_calls_to_finish = (
         with_short_default_redis_lock_ttl * INCREASE_OPERATIONS * 10
     )
