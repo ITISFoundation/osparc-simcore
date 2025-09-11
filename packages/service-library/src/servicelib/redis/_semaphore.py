@@ -17,21 +17,9 @@ from ._constants import (
     SEMAPHORE_HOLDER_KEY_PREFIX,
     SEMAPHORE_KEY_PREFIX,
 )
-from ._errors import BaseRedisError
+from ._errors import SemaphoreAcquisitionError, SemaphoreNotAcquiredError
 
 _logger = logging.getLogger(__name__)
-
-
-class SemaphoreAcquisitionError(BaseRedisError):
-    """Raised when semaphore cannot be acquired"""
-
-    msg_template: str = "Could not acquire semaphore '{name}' (capacity: {capacity})"
-
-
-class SemaphoreNotAcquiredError(BaseRedisError):
-    """Raised when trying to release a semaphore that was not acquired"""
-
-    msg_template: str = "Semaphore '{name}' was not acquired by this instance"
 
 
 class DistributedRedSemaphore:
