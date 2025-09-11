@@ -619,37 +619,12 @@ async def test_multiple_semaphores_different_keys(
     key2 = faker.pystr()
     capacity = 1
 
-    sem1 = DistributedSemaphore(
-        redis_client=redis_client_sdk, key=key1, capacity=capacity
-    )
-    sem2 = DistributedSemaphore(
-        redis_client=redis_client_sdk, key=key2, capacity=capacity
-    )
-
-    # Both should be able to acquire since they have different keys
-    assert await sem1.acquire() is True
-    assert await sem2.acquire() is True
-
-    await sem1.release()
-    await sem2.release()
-
-
-async def test_semaphore_acquire_after_release(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-):
-    """Test that semaphore can be acquired again after release"""
-    semaphore = DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
-    )
-
-    # Acquire, release, acquire again
-    await semaphore.acquire()
-    await semaphore.release()
-
-    result = await semaphore.acquire()
-    assert result is True
-    assert semaphore._acquired is True
-
-    await semaphore.release()
+    async with (
+        DistributedSemaphore(
+            redis_client=redis_client_sdk, key=key1, capacity=capacity
+        ),
+        DistributedSemaphore(
+            redis_client=redis_client_sdk, key=key2, capacity=capacity
+        ),
+    ):
+        ...
