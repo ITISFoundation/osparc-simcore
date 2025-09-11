@@ -381,7 +381,7 @@ async def search_merged_pre_and_registered_users(
         users_pre_registration_details.c.state,
         users_pre_registration_details.c.postal_code,
         users_pre_registration_details.c.country,
-        users_pre_registration_details.c.user_id,
+        users_pre_registration_details.c.user_id,  # user_id from pre-registration
         users_pre_registration_details.c.extras,
         users_pre_registration_details.c.account_request_status,
         users_pre_registration_details.c.account_request_reviewed_by,
@@ -390,7 +390,6 @@ async def search_merged_pre_and_registered_users(
         invited_by,
         account_request_reviewed_by_username,  # account_request_reviewed_by converted to username
         users_pre_registration_details.c.created,
-        users.c.id.label("user_id"),
         users.c.name.label("user_name"),
         users.c.primary_gid.label("user_primary_group_id"),
     )
