@@ -51,7 +51,7 @@ class RedisTaskInfoStore:
             expiry,
         )
 
-    async def exists_task(self, task_id: TaskID) -> bool:
+    async def task_exists(self, task_id: TaskID) -> bool:
         n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
         assert isinstance(n, int)  # nosec
         return n > 0
