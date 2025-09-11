@@ -402,7 +402,7 @@ def with_limited_concurrency(
                     # Cancel renewal task (work is done)
                     renewal_task.cancel()
 
-                    return result
+                return result
 
             except BaseExceptionGroup as eg:
                 # Handle exceptions similar to exclusive decorator

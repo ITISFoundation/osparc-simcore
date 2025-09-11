@@ -119,7 +119,7 @@ def exclusive(
 
                     res = await work_task
                     auto_extend_lock_task.cancel()
-                    return res
+                return res
 
             except BaseExceptionGroup as eg:
                 # Separate exceptions into LockLostError and others
