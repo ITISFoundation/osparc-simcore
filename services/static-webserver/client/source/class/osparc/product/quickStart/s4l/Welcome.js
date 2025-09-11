@@ -63,7 +63,7 @@ qx.Class.define("osparc.product.quickStart.s4l.Welcome", {
         Sim4Life is a revolutionary simulation platform, combining computable human phantoms with the most powerful physics solvers and the most advanced tissue models, for directly analyzing biological real-world phenomena and complex technical devices in a validated biological and anatomical environment.\
         <br>\
         <br>\
-        In order to facilitate the introduction to the platform, we have some Guided Tours that can be found under the User Menu.\
+        In order to facilitate the introduction to the platform, we have some Guided Tours that can be found in the Help & Support section.\
         <br>\
         <br>\
         For more specific technical information, please refer to the Manuals.\
