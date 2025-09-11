@@ -303,7 +303,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="Enables real-time collaboration features",
             json_schema_extra={
                 "auto_default_from_env": True,
-                _X_FEATURE_UNDER_DEVELOPMENT: True,
             },
         ),
     ]
