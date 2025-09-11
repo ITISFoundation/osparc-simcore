@@ -19,7 +19,7 @@ from tenacity import (
     retry_if_not_result,
     stop_after_delay,
     stop_never,
-    wait_fixed,
+    wait_random_exponential,
 )
 
 from ._client import RedisClientSDK
@@ -169,7 +169,7 @@ class DistributedSemaphore(BaseModel):
 
         # Blocking
         @retry(
-            wait=wait_fixed(0.5),
+            wait=wait_random_exponential(min=0.1, max=2),
             reraise=True,
             stop=(
                 stop_after_delay(self.blocking_timeout.total_seconds())
