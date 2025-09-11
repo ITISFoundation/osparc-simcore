@@ -11,14 +11,10 @@ from .._meta import APP_NAME
 from ..celery_worker.worker_tasks.tasks import pydantic_types_to_register
 
 
-def get_job_filter(user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
-    return AsyncJobFilter(
+def get_task_filter(user_id: UserID, product_name: ProductName) -> TaskFilter:
+    job_filter = AsyncJobFilter(
         user_id=user_id, product_name=product_name, client_name=APP_NAME
     )
-
-
-def get_task_filter(user_id: UserID, product_name: ProductName) -> TaskFilter:
-    job_filter = get_job_filter(user_id=user_id, product_name=product_name)
     return TaskFilter.model_validate(job_filter.model_dump())
 
 

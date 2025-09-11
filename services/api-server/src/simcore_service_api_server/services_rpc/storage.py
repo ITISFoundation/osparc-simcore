@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from functools import partial
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobFilter,
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
@@ -10,10 +11,16 @@ from models_library.users import UserID
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.storage import simcore_s3 as storage_rpc
 
-from ..clients.celery_task_manager import get_job_filter
+from .._meta import APP_NAME
 from ..exceptions.service_errors_utils import service_exception_mapper
 
 _exception_mapper = partial(service_exception_mapper, service_name="Storage")
+
+
+def get_job_filter(user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
+    return AsyncJobFilter(
+        user_id=user_id, product_name=product_name, client_name=APP_NAME
+    )
 
 
 @dataclass(frozen=True, kw_only=True)
