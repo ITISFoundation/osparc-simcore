@@ -15,7 +15,7 @@ from celery.contrib.testing.worker import (
 )
 from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
-from celery_library.backends._redis import RedisTaskInfoStore
+from celery_library.backends.redis import RedisTaskInfoStore
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
@@ -132,7 +132,7 @@ async def with_celery_worker(
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
-        return on_worker_init(app_server, sender, **_kwargs)
+        return on_worker_init(sender, app_server, **_kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)

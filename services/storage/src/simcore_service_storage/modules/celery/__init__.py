@@ -1,6 +1,6 @@
 import logging
 
-from celery_library.backends._redis import RedisTaskInfoStore
+from celery_library.backends.redis import RedisTaskInfoStore
 from celery_library.common import create_app
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types, register_pydantic_types
