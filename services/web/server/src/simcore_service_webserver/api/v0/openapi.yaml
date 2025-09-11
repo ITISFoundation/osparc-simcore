@@ -18445,13 +18445,13 @@ components:
           - type: 'null'
           title: Username
           description: Username of the user if an account was created
-        userPrimaryGroupId:
+        groupId:
           anyOf:
           - type: integer
             exclusiveMinimum: true
             minimum: 2
           - type: 'null'
-          title: Userprimarygroupid
+          title: Groupid
           description: Primary group ID of the user if an account was created
       type: object
       required:
@@ -18472,7 +18472,7 @@ components:
       - status
       - userId
       - userName
-      - userPrimaryGroupId
+      - groupId
       title: UserAccountGet
     UserAccountReject:
       properties:
