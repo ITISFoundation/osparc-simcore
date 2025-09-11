@@ -390,10 +390,15 @@ async def search_merged_pre_and_registered_users(
         invited_by,
         account_request_reviewed_by_username,  # account_request_reviewed_by converted to username
         users_pre_registration_details.c.created,
+        users.c.id.label("user_id"),
+        users.c.name.label("user_name"),
+        users.c.primary_gid.label("user_primary_group_id"),
     )
 
     left_outer_join = _build_left_outer_join_query(
-        filter_by_email_like, product_name, columns
+        filter_by_email_like,
+        product_name,
+        columns,
     )
     right_outer_join = _build_right_outer_join_query(
         filter_by_email_like,
@@ -494,6 +499,7 @@ async def list_merged_pre_and_registered_users(
             users_pre_registration_details.c.account_request_reviewed_at,
             users.c.id.label("user_id"),
             users.c.name.label("user_name"),
+            users.c.primary_gid.label("user_primary_group_id"),
             users.c.status,
             # Use created_by directly instead of a subquery
             users_pre_registration_details.c.created_by.label("created_by"),
@@ -530,6 +536,7 @@ async def list_merged_pre_and_registered_users(
             sa.literal(None).label("account_request_reviewed_at"),
             users.c.id.label("user_id"),
             users.c.name.label("user_name"),
+            users.c.primary_gid.label("user_primary_group_id"),
             users.c.status,
             # Match the created_by field from the pre_reg query
             sa.literal(None).label("created_by"),
