@@ -42,9 +42,8 @@ qx.Class.define("osparc.support.HomePage", {
   statics: {
     decorateButton: function(button) {
       button.set({
-        font: "text-14",
+        appearance: "help-list-button",
         icon: null,
-        minHeight: 28,
         gap: 8,
       });
       button.getChildControl("label").set({
