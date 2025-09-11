@@ -440,13 +440,13 @@ async def _assert_progress_finished(
             assert last_progress_message == ("finished", 1.0)
 
 
-async def _perioduc_result(
+async def _perioduc_result_and_task_removed(
     app: FastAPI,
     http_client: HttpClient,
     task_id: TaskId,
     *,
     progress_callback: ProgressCallback | None = None,
-) -> None:
+) -> Any | None:
     try:
         async with periodic_task_result(
             client=http_client,
@@ -481,7 +481,7 @@ async def test_create_containers_task(
         last_progress_message = (message, percent)
         print(message, percent)
 
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_create_service_containers(
@@ -513,7 +513,7 @@ async def test_pull_user_servcices_docker_images(
         last_progress_message = (message, percent)
         print(message, percent)
 
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_create_service_containers(
@@ -524,7 +524,7 @@ async def test_pull_user_servcices_docker_images(
     assert shared_store.container_names == result
     await _assert_progress_finished(last_progress_message)
 
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_pull_user_servcices_docker_images(
@@ -544,7 +544,7 @@ async def test_create_containers_task_invalid_yaml_spec(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
     with pytest.raises(InvalidComposeSpecError) as exec_info:
-        await _perioduc_result(
+        await _perioduc_result_and_task_removed(
             app,
             http_client,
             await _get_task_id_create_service_containers(
@@ -614,7 +614,7 @@ async def test_containers_down_after_starting(
     mocker: MockerFixture,
 ):
     # start containers
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_create_service_containers(
@@ -625,7 +625,7 @@ async def test_containers_down_after_starting(
     assert shared_store.container_names == result
 
     # put down containers
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_docker_compose_down(httpx_async_client),
@@ -640,7 +640,7 @@ async def test_containers_down_missing_spec(
     app: FastAPI,
     caplog_info_debug: pytest.LogCaptureFixture,
 ):
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_docker_compose_down(httpx_async_client),
@@ -656,7 +656,7 @@ async def test_container_restore_state(
     app: FastAPI,
     mock_data_manager: None,
 ):
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_state_restore(httpx_async_client),
@@ -671,7 +671,7 @@ async def test_container_save_state(
     app: FastAPI,
     mock_data_manager: None,
 ):
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_state_save(httpx_async_client),
@@ -692,7 +692,7 @@ async def test_container_pull_input_ports(
     if inputs_pulling_enabled:
         enable_inputs_pulling(app)
 
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_task_ports_inputs_pull(httpx_async_client, mock_port_keys),
@@ -708,7 +708,7 @@ async def test_container_pull_output_ports(
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_task_ports_outputs_pull(httpx_async_client, mock_port_keys),
@@ -724,7 +724,7 @@ async def test_container_push_output_ports(
     mock_port_keys: list[str] | None,
     mock_nodeports: None,
 ):
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_task_ports_outputs_push(httpx_async_client, mock_port_keys),
@@ -746,7 +746,7 @@ async def test_container_push_output_ports_missing_node(
         await outputs_manager.port_key_content_changed(port_key)
 
     async def _test_code() -> None:
-        await _perioduc_result(
+        await _perioduc_result_and_task_removed(
             app,
             http_client,
             await _get_task_id_task_ports_outputs_push(
@@ -772,7 +772,7 @@ async def test_containers_restart(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ):
-    container_names = await _perioduc_result(
+    container_names = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_create_service_containers(
@@ -780,13 +780,12 @@ async def test_containers_restart(
         ),
         progress_callback=_debug_progress,
     )
-    assert container_names == shared_store.container_names
-    assert isinstance(container_names, list)
+    assert shared_store.container_names == container_names
     assert container_names
 
     container_timestamps_before = await _get_container_timestamps(container_names)
 
-    result = await _perioduc_result(
+    result = await _perioduc_result_and_task_removed(
         app,
         http_client,
         await _get_task_id_task_containers_restart(
