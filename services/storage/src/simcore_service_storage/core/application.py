@@ -73,9 +73,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     if settings.STORAGE_CELERY:
         setup_task_manager(app, settings=settings.STORAGE_CELERY)
 
-        if not settings.STORAGE_WORKER_MODE:
-            setup_rabbitmq(app)
-            setup_rpc_routes(app)
+    if not settings.STORAGE_WORKER_MODE:
+        setup_rabbitmq(app)
+        setup_rpc_routes(app)
 
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)
