@@ -62,6 +62,12 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
 
         dynLoader.addListenerOnce("ready", e => {
           this.setLibReady(true);
+
+          // hack to trigger fonts loading
+          const menu = this.createMenu();
+          menu.show();
+          menu.hide();
+
           resolve(true);
         }, this);
 
