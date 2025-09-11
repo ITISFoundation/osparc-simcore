@@ -5,9 +5,8 @@ import logging
 import uuid
 from collections.abc import Callable, Coroutine
 from types import TracebackType
-from typing import Annotated, Any, Final, ParamSpec, TypeVar
+from typing import Annotated, Any, ParamSpec, TypeVar
 
-from common_library.async_tools import cancel_wait_task
 from pydantic import (
     BaseModel,
     Field,
@@ -30,7 +29,30 @@ from ._errors import SemaphoreAcquisitionError, SemaphoreNotAcquiredError
 
 _logger = logging.getLogger(__name__)
 
-_AUTO_RENEW_TASK_NAME: Final[str] = "semaphore/autorenewal_{key}_{instance_id}"
+
+async def renew_semaphore_entry(semaphore: "DistributedSemaphore") -> None:
+    """
+    Manually renew a semaphore entry by updating its timestamp and TTL.
+
+    This function is intended to be called by decorators or external renewal mechanisms.
+
+    Args:
+        semaphore: The semaphore instance to renew
+
+    Raises:
+        Exception: If the renewal operation fails
+    """
+    if not semaphore.is_acquired():
+        return  # Nothing to renew if not acquired
+
+    current_time = asyncio.get_event_loop().time()
+    ttl_seconds = semaphore.ttl.total_seconds()
+
+    # Update timestamp in sorted set and refresh holder key
+    async with semaphore.redis_client.redis.pipeline(transaction=True) as pipe:
+        await pipe.zadd(semaphore.semaphore_key, {semaphore.instance_id: current_time})
+        await pipe.expire(semaphore.holder_key, int(ttl_seconds))
+        await pipe.execute()
 
 
 class DistributedSemaphore(BaseModel):
@@ -103,7 +125,6 @@ class DistributedSemaphore(BaseModel):
 
     # Private state attributes (not part of the model)
     _acquired: bool = PrivateAttr(default=False)
-    _auto_renew_task: asyncio.Task[None] | None = PrivateAttr(default=None)
 
     # Additional validation
     @field_validator("ttl")
@@ -146,8 +167,6 @@ class DistributedSemaphore(BaseModel):
 
             if acquired:
                 self._acquired = True
-                # Start auto-renewal task
-                await self._start_auto_renew()
                 _logger.debug(
                     "Acquired semaphore '%s' (instance: %s)",
                     self.key,
@@ -181,11 +200,6 @@ class DistributedSemaphore(BaseModel):
         if not self._acquired:
             raise SemaphoreNotAcquiredError(name=self.key)
 
-        # Stop auto-renewal
-        if self._auto_renew_task:
-            await cancel_wait_task(self._auto_renew_task)
-            self._auto_renew_task = None
-
         # Remove from Redis
         async with self.redis_client.redis.pipeline(transaction=True) as pipe:
             await pipe.zrem(self.semaphore_key, self.instance_id)
@@ -198,6 +212,10 @@ class DistributedSemaphore(BaseModel):
             self.key,
             self.instance_id,
         )
+
+    def is_acquired(self) -> bool:
+        """Check if this semaphore instance is currently acquired."""
+        return self._acquired
 
     async def _try_acquire(self) -> bool:
         """Atomically try to acquire the semaphore using Redis operations"""
@@ -231,31 +249,6 @@ class DistributedSemaphore(BaseModel):
                 return False
 
         return False
-
-    async def _start_auto_renew(self) -> None:
-        started_event = asyncio.Event()
-
-        @periodic(interval=self.ttl / 3, raise_on_error=True)
-        async def _periodic_renewer() -> None:
-            current_time = asyncio.get_event_loop().time()
-            ttl_seconds = self.ttl.total_seconds()
-
-            # Update timestamp in sorted set and refresh holder key
-            async with self.redis_client.redis.pipeline(transaction=True) as pipe:
-                await pipe.zadd(self.semaphore_key, {self.instance_id: current_time})
-                await pipe.expire(self.holder_key, int(ttl_seconds))
-                await pipe.execute()
-            started_event.set()
-
-        # Create the task for periodic renewal
-        self._auto_renew_task = asyncio.create_task(
-            _periodic_renewer(),
-            name=_AUTO_RENEW_TASK_NAME.format(
-                key=self.key, instance_id=self.instance_id
-            ),
-        )
-        # NOTE: this ensures the extend task ran once and ensure cancellation works
-        await started_event.wait()
 
     async def get_current_count(self) -> int:
         """Get the current number of semaphore holders"""
@@ -359,7 +352,7 @@ def with_limited_concurrency(
             assert isinstance(semaphore_capacity, int)  # nosec
             assert isinstance(client, RedisClientSDK)  # nosec
 
-            # Create and use the semaphore
+            # Create the semaphore (without auto-renewal)
             semaphore = DistributedSemaphore(
                 redis_client=client,
                 key=semaphore_key,
@@ -369,8 +362,60 @@ def with_limited_concurrency(
                 timeout=blocking_timeout,
             )
 
-            async with semaphore:
-                return await coro(*args, **kwargs)
+            # Acquire the semaphore
+            if not await semaphore.acquire() and not blocking:
+                # Non-blocking mode, semaphore not available
+                raise SemaphoreAcquisitionError(
+                    name=semaphore_key, capacity=semaphore_capacity
+                )
+
+            try:
+                # Use TaskGroup for proper exception propagation (similar to exclusive decorator)
+                async with asyncio.TaskGroup() as tg:
+                    started_event = asyncio.Event()
+
+                    # Create auto-renewal task
+                    @periodic(interval=ttl / 3, raise_on_error=True)
+                    async def _periodic_renewer() -> None:
+                        await renew_semaphore_entry(semaphore)
+                        started_event.set()
+
+                    # Start the renewal task
+                    renewal_task = tg.create_task(
+                        _periodic_renewer(),
+                        name=f"semaphore/autorenewal_{semaphore_key}_{semaphore.instance_id}",
+                    )
+
+                    # Wait for first renewal to complete (ensures task is running)
+                    await started_event.wait()
+
+                    # Run the user work
+                    work_task = tg.create_task(
+                        coro(*args, **kwargs),
+                        name=f"semaphore/work_{coro.__module__}.{coro.__name__}",
+                    )
+
+                    result = await work_task
+
+                    # Cancel renewal task (work is done)
+                    renewal_task.cancel()
+
+                    return result
+
+            except BaseExceptionGroup as eg:
+                # Handle exceptions similar to exclusive decorator
+                # If renewal fails, the TaskGroup will propagate the exception
+                # and cancel the work task automatically
+
+                # Re-raise the first exception in the group
+                if eg.exceptions:
+                    raise eg.exceptions[0] from eg
+                raise
+
+            finally:
+                # Always release the semaphore
+                if semaphore.is_acquired():
+                    await semaphore.release()
 
         return _wrapper
 
