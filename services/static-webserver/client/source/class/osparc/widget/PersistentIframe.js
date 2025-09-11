@@ -358,6 +358,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             }
             break;
           }
+          case "openSupport": {
+            osparc.support.SupportCenter.openWindow();
+            break;
+          }
         }
       }
     },
