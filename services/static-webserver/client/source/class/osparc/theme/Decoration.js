@@ -265,9 +265,10 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
-    "no-border-2": {
+    "no-border-0": {
       style: {
-        width: 0
+        width: 0,
+        color: "transparent"
       }
     },
 

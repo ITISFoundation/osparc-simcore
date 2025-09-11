@@ -40,10 +40,12 @@ qx.Class.define("osparc.support.SupportCenter", {
     });
 
     this.getChildControl("home-page");
-    this.getChildControl("conversations-page");
-    this.getChildControl("conversation-page");
-    this.getChildControl("home-button");
-    this.getChildControl("conversations-button");
+    if (osparc.store.Groups.getInstance().isSupportEnabled()) {
+      this.getChildControl("conversations-page");
+      this.getChildControl("conversation-page");
+      this.getChildControl("home-button");
+      this.getChildControl("conversations-button");
+    }
 
     this.__showHome();
   },
