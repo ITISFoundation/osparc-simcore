@@ -140,13 +140,6 @@ qx.Class.define("osparc.service.Utils", {
       return "";
     },
 
-    canIWrite: function(serviceAccessRights) {
-      const groupsStore = osparc.store.Groups.getInstance();
-      const orgIDs = groupsStore.getOrganizationIds();
-      orgIDs.push(groupsStore.getMyGroupId());
-      return osparc.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
-    },
-
     DEPRECATED_SERVICE_TEXT: qx.locale.Manager.tr("Service deprecated"),
     DEPRECATED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please go back to the dashboard and Update the Service or download its data and upload it to an updated version"),
     DEPRECATED_COMPUTATIONAL_INSTRUCTIONS: qx.locale.Manager.tr("Please instantiate an updated version"),

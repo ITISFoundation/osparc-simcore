@@ -283,7 +283,7 @@ def mock_db(mocker: MockerFixture) -> MagicMock:
         return copy.deepcopy(users_db.get(email))
 
     mock_db_fun = mocker.patch(
-        "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
+        "simcore_service_webserver.security._authz_policy._authz_repository.get_active_user_or_none",
         autospec=True,
         side_effect=_fake_db,
     )
