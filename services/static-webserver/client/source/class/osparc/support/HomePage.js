@@ -135,7 +135,9 @@ qx.Class.define("osparc.support.HomePage", {
       this._add(releaseNotesButton);
       this.self().decorateButton(releaseNotesButton);
       releaseNotesButton.set({
-        icon: "@FontAwesome5Solid/bullhorn/14"
+        icon: "@FontAwesome5Solid/bullhorn/14",
+        marginLeft: 10,
+        marginRight: 10,
       });
     },
   }

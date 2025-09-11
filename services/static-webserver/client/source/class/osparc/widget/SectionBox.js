@@ -94,7 +94,7 @@ qx.Class.define("osparc.widget.SectionBox", {
           this.bind("legend", control, "label");
           this.bind("icon", control, "icon");
           this.bind("legendBackgroundColor", control, "backgroundColor");
-          this._add(control, { left: 12, top: 0 });
+          this._add(control, { left: 16, top: 0 });
           break;
       }
       return control || this.base(arguments, id);
