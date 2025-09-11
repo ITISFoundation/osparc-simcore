@@ -30,3 +30,18 @@ def with_short_default_redis_lock_ttl(mocker: MockerFixture) -> datetime.timedel
     short_ttl = datetime.timedelta(seconds=0.25)
     mocker.patch.object(redis_constants, "DEFAULT_LOCK_TTL", short_ttl)
     return short_ttl
+
+
+@pytest.fixture
+def semaphore_name(faker: Faker) -> str:
+    return faker.pystr()
+
+
+@pytest.fixture
+def semaphore_capacity() -> int:
+    return 3
+
+
+@pytest.fixture
+def short_ttl() -> datetime.timedelta:
+    return datetime.timedelta(seconds=1)
