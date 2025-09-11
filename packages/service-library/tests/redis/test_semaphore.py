@@ -357,7 +357,7 @@ async def test_decorator_auto_renewal_failure_propagation(
     monkeypatch: pytest.MonkeyPatch,
 ):
     """Test that auto-renewal failures properly propagate as exceptions in the decorator"""
-    from servicelib.redis._semaphore import _renew_semaphore_entry
+    from servicelib.redis._semaphore_decorator import _renew_semaphore_entry
 
     class RenewalFailureError(Exception):
         """Custom exception for testing renewal failures"""
@@ -379,7 +379,7 @@ async def test_decorator_auto_renewal_failure_propagation(
             raise RenewalFailureError("Simulated renewal failure")
 
     monkeypatch.setattr(
-        "servicelib.redis._semaphore._renew_semaphore_entry",
+        "servicelib.redis._semaphore_decorator._renew_semaphore_entry",
         failing_renew_semaphore_entry,
     )
 
@@ -663,7 +663,7 @@ async def test_decorator_exception_reraise_with_auto_renewal(
 
     # Track that auto-renewal is actually happening
     original_renew = __import__(
-        "servicelib.redis._semaphore", fromlist=["_renew_semaphore_entry"]
+        "servicelib.redis._semaphore_decorator", fromlist=["_renew_semaphore_entry"]
     )._renew_semaphore_entry
 
     async def tracking_renew_semaphore_entry(semaphore):
@@ -672,7 +672,7 @@ async def test_decorator_exception_reraise_with_auto_renewal(
         await original_renew(semaphore)
 
     with mock.patch(
-        "servicelib.redis._semaphore._renew_semaphore_entry",
+        "servicelib.redis._semaphore_decorator._renew_semaphore_entry",
         side_effect=tracking_renew_semaphore_entry,
     ):
 
