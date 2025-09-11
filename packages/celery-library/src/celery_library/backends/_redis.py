@@ -5,7 +5,7 @@ from typing import Final
 
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
-from servicelib.celery.models import Task, TaskFilter, TaskID, TaskMetadata, TaskUUID
+from servicelib.celery.models import Task, TaskFilter, TaskID, TaskMetadata
 from servicelib.redis import RedisClientSDK
 
 _CELERY_TASK_INFO_PREFIX: Final[str] = "celery-task-info-"
@@ -103,7 +103,7 @@ class RedisTaskInfoStore:
                 task_metadata = TaskMetadata.model_validate_json(raw_metadata)
                 tasks.append(
                     Task(
-                        uuid=TaskUUID(key[search_key_len:]),
+                        uuid=TaskFilter.task_uuid(key),
                         metadata=task_metadata,
                     )
                 )
