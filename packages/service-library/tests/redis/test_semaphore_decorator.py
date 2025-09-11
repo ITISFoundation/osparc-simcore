@@ -15,7 +15,7 @@ from servicelib.redis import RedisClientSDK
 from servicelib.redis._constants import (
     SEMAPHORE_HOLDER_KEY_PREFIX,
 )
-from servicelib.redis._errors import SemaphoreLostError
+from servicelib.redis._errors import SemaphoreLostError, SemaphoreNotAcquiredError
 from servicelib.redis._semaphore import (
     DistributedSemaphore,
     SemaphoreAcquisitionError,
@@ -348,3 +348,47 @@ async def test_cancelled_error_preserved(
     # Verify CancelledError is preserved
     with pytest.raises(asyncio.CancelledError):
         await function_raising_cancelled_error()
+
+
+async def test_release_failure(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+    short_ttl: datetime.timedelta,
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Test that semaphore release failures are properly logged without raising"""
+
+    # Mock the semaphore.release() method to raise SemaphoreNotAcquiredError
+    mock_release = mocker.AsyncMock(
+        side_effect=SemaphoreNotAcquiredError(name="test-key")
+    )
+
+    work_completed = asyncio.Event()
+
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=short_ttl,
+    )
+    async def work_function() -> str:
+        work_completed.set()
+        return "success"
+
+    # Patch the release method after semaphore creation
+    mocker.patch.object(DistributedSemaphore, "release", mock_release)
+    # The decorator should complete successfully despite release failure
+    result = await work_function()
+    assert result == "success"
+
+    # Wait for work to complete
+    await work_completed.wait()
+
+    # Verify the release was attempted
+    mock_release.assert_called_once()
+
+    # Verify the exception was logged (not raised)
+    assert "Unexpected error while releasing semaphore" in caplog.text
+    assert "SemaphoreNotAcquiredError" in caplog.text
