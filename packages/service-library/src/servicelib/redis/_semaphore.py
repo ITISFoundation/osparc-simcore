@@ -289,12 +289,6 @@ class DistributedSemaphore(BaseModel):
         if self._acquired:
             await self.release()
 
-    def __repr__(self) -> str:
-        return (
-            f"DistributedSemaphore(key={self.key!r}, "
-            f"capacity={self.capacity}, acquired={self._acquired})"
-        )
-
 
 P = ParamSpec("P")
 R = TypeVar("R")

@@ -22,7 +22,6 @@ from ._semaphore import (
     DistributedSemaphore,
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
-    distributed_semaphore,
     with_limited_concurrency,
 )
 from ._utils import handle_redis_returns_union_types
@@ -40,7 +39,6 @@ __all__: tuple[str, ...] = (
     "RedisManagerDBConfig",
     "SemaphoreAcquisitionError",
     "SemaphoreNotAcquiredError",
-    "distributed_semaphore",
     "exclusive",
     "get_project_locked_state",
     "handle_redis_returns_union_types",

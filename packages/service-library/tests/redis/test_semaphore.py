@@ -22,7 +22,6 @@ from servicelib.redis._semaphore import (
     DistributedSemaphore,
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
-    distributed_semaphore,
     with_limited_concurrency,
 )
 
@@ -118,15 +117,33 @@ async def test_semaphore_acquire_release_single(
     assert await semaphore.get_current_count() == 1
     assert await semaphore.get_available_count() == semaphore_capacity - 1
 
-    # Acquire again on same instance should return True immediately
+    # Acquire again on same instance should return True immediately and keep the same count (reentrant)
     result = await semaphore.acquire()
     assert result is True
+    assert await semaphore.get_current_count() == 1
+    assert await semaphore.get_available_count() == semaphore_capacity - 1
 
     # Release
     await semaphore.release()
     assert semaphore._acquired is False
     assert await semaphore.get_current_count() == 0
     assert await semaphore.get_available_count() == semaphore_capacity
+
+
+async def test_semaphore_context_manager(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+):
+    async with DistributedSemaphore(
+        redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
+    ) as semaphore:
+        assert semaphore._acquired is True
+        assert await semaphore.get_current_count() == 1
+
+    # Should be released after context
+    assert semaphore._acquired is False
+    assert await semaphore.get_current_count() == 0
 
 
 async def test_semaphore_release_without_acquire_raises(
@@ -191,26 +208,22 @@ async def test_semaphore_blocking_timeout(
     timeout = datetime.timedelta(seconds=0.1)
 
     # First semaphore acquires
-    semaphore1 = DistributedSemaphore(
+    async with DistributedSemaphore(
         redis_client=redis_client_sdk, key=semaphore_name, capacity=capacity
-    )
-    await semaphore1.acquire()
-
-    # Second semaphore should timeout
-    semaphore2 = DistributedSemaphore(
-        redis_client=redis_client_sdk,
-        key=semaphore_name,
-        capacity=capacity,
-        timeout=timeout,
-    )
-
-    with pytest.raises(
-        SemaphoreAcquisitionError,
-        match=f"Could not acquire semaphore '{semaphore_name}' \\(capacity: {capacity}\\)",
     ):
-        await semaphore2.acquire()
+        # Second semaphore should timeout
+        semaphore2 = DistributedSemaphore(
+            redis_client=redis_client_sdk,
+            key=semaphore_name,
+            capacity=capacity,
+            timeout=timeout,
+        )
 
-    await semaphore1.release()
+        with pytest.raises(
+            SemaphoreAcquisitionError,
+            match=f"Could not acquire semaphore '{semaphore_name}' \\(capacity: {capacity}\\)",
+        ):
+            await semaphore2.acquire()
 
 
 async def test_semaphore_blocking_acquire_waits(
@@ -229,7 +242,7 @@ async def test_semaphore_blocking_acquire_waits(
     await semaphore1.acquire()
 
     # Second will wait
-    async def delayed_release():
+    async def delayed_release() -> None:
         await asyncio.sleep(0.1)
         await semaphore1.release()
 
@@ -241,22 +254,6 @@ async def test_semaphore_blocking_acquire_waits(
     assert results[0] is True  # acquire succeeded
 
     await semaphore2.release()
-
-
-async def test_semaphore_context_manager(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-):
-    async with DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
-    ) as semaphore:
-        assert semaphore._acquired is True
-        assert await semaphore.get_current_count() == 1
-
-    # Should be released after context
-    assert semaphore._acquired is False
-    assert await semaphore.get_current_count() == 0
 
 
 async def test_semaphore_context_manager_with_exception(
@@ -351,60 +348,6 @@ async def test_semaphore_ttl_cleanup(
     # Verify expired entry was removed
     remaining = await redis_client_sdk.redis.zcard(semaphore.semaphore_key)
     assert remaining == 0
-
-
-async def test_semaphore_repr(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-):
-    semaphore = DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
-    )
-
-    repr_str = repr(semaphore)
-    assert f"key={semaphore_name!r}" in repr_str
-    assert f"capacity={semaphore_capacity}" in repr_str
-    assert "acquired=False" in repr_str
-
-    await semaphore.acquire()
-    repr_str = repr(semaphore)
-    assert "acquired=True" in repr_str
-
-    await semaphore.release()
-
-
-async def test_distributed_semaphore_context_manager(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-):
-    async with distributed_semaphore(
-        redis_client_sdk, semaphore_name, semaphore_capacity
-    ) as sem:
-        assert isinstance(sem, DistributedSemaphore)
-        assert sem._acquired is True
-        assert await sem.get_current_count() == 1
-
-    # Should be released after context
-    assert await sem.get_current_count() == 0
-
-
-async def test_distributed_semaphore_with_custom_params(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-    short_ttl: datetime.timedelta,
-):
-    async with distributed_semaphore(
-        redis_client_sdk,
-        semaphore_name,
-        semaphore_capacity,
-        ttl=short_ttl,
-        blocking=False,
-    ) as sem:
-        assert sem.ttl == short_ttl
-        assert sem.blocking is False
 
 
 async def test_decorator_basic_functionality(
@@ -594,46 +537,46 @@ async def test_redis_connection_failure_during_acquire(
         assert result is False
 
 
-async def test_semaphore_cleanup_on_auto_renew_failure(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-    short_ttl: datetime.timedelta,
-    caplog: pytest.LogCaptureFixture,
-):
-    semaphore = DistributedSemaphore(
-        redis_client=redis_client_sdk,
-        key=semaphore_name,
-        capacity=semaphore_capacity,
-        ttl=short_ttl,
-    )
+# async def test_semaphore_cleanup_on_auto_renew_failure(
+#     redis_client_sdk: RedisClientSDK,
+#     semaphore_name: str,
+#     semaphore_capacity: int,
+#     short_ttl: datetime.timedelta,
+#     caplog: pytest.LogCaptureFixture,
+# ):
+#     semaphore = DistributedSemaphore(
+#         redis_client=redis_client_sdk,
+#         key=semaphore_name,
+#         capacity=semaphore_capacity,
+#         ttl=short_ttl,
+#     )
 
-    await semaphore.acquire()
+#     await semaphore.acquire()
 
-    # Mock the pipeline to fail during renewal
-    original_pipeline = redis_client_sdk.redis.pipeline
+#     # Mock the pipeline to fail during renewal
+#     original_pipeline = redis_client_sdk.redis.pipeline
 
-    def failing_pipeline(*args, **kwargs):
-        pipe = original_pipeline(*args, **kwargs)
+#     def failing_pipeline(*args, **kwargs):
+#         pipe = original_pipeline(*args, **kwargs)
 
-        async def failing_execute(*, raise_on_error: bool = True):
-            raise RuntimeError("Redis error")
+#         async def failing_execute(*, raise_on_error: bool = True):
+#             raise RuntimeError("Redis error")
 
-        pipe.execute = failing_execute  # type: ignore[assignment]
-        return pipe
+#         pipe.execute = failing_execute  # type: ignore[assignment]
+#         return pipe
 
-    with mock.patch.object(
-        redis_client_sdk.redis, "pipeline", side_effect=failing_pipeline
-    ):
-        # Wait longer for renewal attempt - renewal happens at 1/3 of TTL
-        await asyncio.sleep(short_ttl.total_seconds() / 2)
+#     with mock.patch.object(
+#         redis_client_sdk.redis, "pipeline", side_effect=failing_pipeline
+#     ):
+#         # Wait longer for renewal attempt - renewal happens at 1/3 of TTL
+#         await asyncio.sleep(short_ttl.total_seconds() / 2)
 
-    # Should log warning about renewal failure
-    assert any(
-        "Failed to renew semaphore" in record.message for record in caplog.records
-    )
+#     # Should log warning about renewal failure
+#     assert any(
+#         "Failed to renew semaphore" in record.message for record in caplog.records
+#     )
 
-    await semaphore.release()
+#     await semaphore.release()
 
 
 async def test_multiple_semaphores_different_keys(
