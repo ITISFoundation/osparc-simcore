@@ -39,7 +39,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
   members: {
     __createConfirmationsSettings: function() {
       // layout
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Ask for confirmation for the following actions:"));
+      const label = new qx.ui.basic.Label(this.tr("Ask for confirmation for the following actions:")).set({
+        font: "text-13",
+      });
       this._add(label);
 
       this._add(new qx.ui.core.Spacer(null, 10));
