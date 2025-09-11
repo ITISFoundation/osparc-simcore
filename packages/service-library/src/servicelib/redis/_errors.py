@@ -32,3 +32,7 @@ class SemaphoreAcquisitionError(BaseRedisError):
 
 class SemaphoreNotAcquiredError(BaseRedisError):
     msg_template: str = "Semaphore '{name}' was not acquired by this instance"
+
+
+class SemaphoreLostError(BaseRedisError):
+    msg_template: str = "Semaphore '{name}' was lost by this instance `{instance_id}`"

@@ -7,6 +7,7 @@
 
 import asyncio
 import datetime
+from typing import Literal
 from unittest import mock
 
 import pytest
@@ -18,12 +19,13 @@ from servicelib.redis._constants import (
     SEMAPHORE_HOLDER_KEY_PREFIX,
     SEMAPHORE_KEY_PREFIX,
 )
+from servicelib.redis._errors import SemaphoreLostError
 from servicelib.redis._semaphore import (
     DistributedSemaphore,
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
-    with_limited_concurrency,
 )
+from servicelib.redis._semaphore_decorator import with_limited_concurrency
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -318,7 +320,7 @@ async def test_semaphore_auto_renewal_via_decorator(
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
-    async def long_running_work():
+    async def long_running_work() -> Literal["success"]:
         work_started.set()
         # Wait longer than TTL to ensure renewal works
         await asyncio.sleep(short_ttl.total_seconds() * 2)
@@ -354,34 +356,10 @@ async def test_decorator_auto_renewal_failure_propagation(
     semaphore_name: str,
     semaphore_capacity: int,
     short_ttl: datetime.timedelta,
-    monkeypatch: pytest.MonkeyPatch,
 ):
     """Test that auto-renewal failures properly propagate as exceptions in the decorator"""
-    from servicelib.redis._semaphore_decorator import _renew_semaphore_entry
-
-    class RenewalFailureError(Exception):
-        """Custom exception for testing renewal failures"""
 
     work_started = asyncio.Event()
-
-    # Mock the renewal function to fail after first call
-    call_count = 0
-    original_renew = _renew_semaphore_entry
-
-    async def failing_renew_semaphore_entry(semaphore):
-        nonlocal call_count
-        call_count += 1
-        if call_count <= 1:
-            # First call succeeds
-            await original_renew(semaphore)
-        else:
-            # Subsequent calls fail
-            raise RenewalFailureError("Simulated renewal failure")
-
-    monkeypatch.setattr(
-        "servicelib.redis._semaphore_decorator._renew_semaphore_entry",
-        failing_renew_semaphore_entry,
-    )
 
     @with_limited_concurrency(
         redis_client_sdk,
@@ -389,17 +367,30 @@ async def test_decorator_auto_renewal_failure_propagation(
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
-    async def work_that_should_fail():
+    async def work_that_should_fail() -> Literal["should not reach here"]:
         work_started.set()
         # Wait long enough for renewal to be attempted multiple times
-        await asyncio.sleep(short_ttl.total_seconds() * 1.5)
+        await asyncio.sleep(short_ttl.total_seconds() * 4)
         return "should not reach here"
 
     # The decorator should propagate the renewal failure
     task = asyncio.create_task(work_that_should_fail())
     await work_started.wait()  # Wait for work to start
 
-    with pytest.raises(RenewalFailureError, match="Simulated renewal failure"):
+    # Wait for the first renewal interval to pass
+    renewal_interval = short_ttl / 3
+    await asyncio.sleep(
+        renewal_interval.total_seconds() + 1
+    )  # Wait for renewal to happen
+
+    # Find and delete all holder keys for this semaphore
+    holder_keys = await redis_client_sdk.redis.keys(
+        f"{SEMAPHORE_HOLDER_KEY_PREFIX}{semaphore_name}:*"
+    )
+    assert holder_keys, "Holder keys should exist before deletion"
+    await redis_client_sdk.redis.delete(*holder_keys)
+
+    with pytest.raises(SemaphoreLostError):
         await task  # This should raise the renewal failure exception
 
 
