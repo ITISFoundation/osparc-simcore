@@ -1,12 +1,13 @@
 import datetime
-from collections.abc import Callable
 from enum import StrEnum
-from typing import Annotated, Final, Protocol, TypeAlias
+from typing import Annotated, Final, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
 from pydantic.config import JsonDict
+
+T = TypeVar("T", bound=BaseModel)
 
 TaskID: TypeAlias = str
 TaskName: TypeAlias = Annotated[
@@ -18,23 +19,58 @@ _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 
 class TaskFilter(BaseModel):
     model_config = ConfigDict(extra="allow")
-    field_sorting_key: Annotated[Callable[[str], int] | None, Field(exclude=True)] = (
-        None
-    )
+
+    @model_validator(mode="after")
+    def _check_valid_filters(self) -> Self:
+        for key in self.model_dump().keys():
+            if _TASK_ID_KEY_DELIMITATOR in key or "=" in key:
+                raise ValueError(f"Invalid filter key: '{key}'")
+            if (
+                _TASK_ID_KEY_DELIMITATOR in f"{getattr(self, key)}"
+                or "=" in f"{getattr(self, key)}"
+            ):
+                raise ValueError(
+                    f"Invalid filter value for key '{key}': '{getattr(self, key)}'"
+                )
+        return self
 
     def _build_task_id_prefix(self) -> str:
         filter_dict = self.model_dump()
         return _TASK_ID_KEY_DELIMITATOR.join(
-            [
-                f"{key}={filter_dict[key]}"
-                for key in sorted(filter_dict, key=self.field_sorting_key)
-            ]
+            [f"{key}={filter_dict[key]}" for key in sorted(filter_dict)]
         )
 
     def task_id(self, task_uuid: TaskUUID) -> TaskID:
         return _TASK_ID_KEY_DELIMITATOR.join(
             [self._build_task_id_prefix(), f"task_uuid={task_uuid}"]
         )
+
+    @classmethod
+    def recreate_model(cls, task_id: TaskID, model: type[T]) -> T:
+        filter_dict = cls.recreate_data(task_id)
+        return model.model_validate(filter_dict)
+
+    @classmethod
+    def recreate_data(cls, task_id: TaskID) -> dict:
+        """Recreates the filter data from a task_id string
+        Careful: does not validate types. For that use `recreate_model` instead
+        """
+        try:
+            parts = task_id.split(_TASK_ID_KEY_DELIMITATOR)
+            return {
+                key: value
+                for part in parts[:-1]
+                if (key := part.split("=")[0]) and (value := part.split("=")[1])
+            }
+        except (IndexError, ValueError) as err:
+            raise ValueError(f"Invalid task_id format: {task_id}") from err
+
+    @classmethod
+    def task_uuid(cls, task_id: TaskID) -> TaskUUID:
+        try:
+            return UUID(task_id.split(_TASK_ID_KEY_DELIMITATOR)[-1].split("=")[1])
+        except (IndexError, ValueError) as err:
+            raise ValueError(f"Invalid task_id format: {task_id}") from err
 
 
 class TaskState(StrEnum):
