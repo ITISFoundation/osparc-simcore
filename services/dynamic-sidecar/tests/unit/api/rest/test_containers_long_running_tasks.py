@@ -207,7 +207,8 @@ def mock_environment(
 
 @pytest.fixture
 async def app(
-    fast_long_running_tasks_cancellation: None, app: FastAPI
+    app: FastAPI,
+    fast_long_running_tasks_cancellation: None,
 ) -> AsyncIterable[FastAPI]:
     # add the client setup to the same application
     # this is only required for testing, in reality
@@ -480,11 +481,13 @@ async def test_create_containers_task(
         last_progress_message = (message, percent)
         print(message, percent)
 
-    task_id = await _get_task_id_create_service_containers(
-        httpx_async_client, compose_spec, mock_metrics_params
-    )
     result = await _perioduc_result(
-        app, http_client, task_id, progress_callback=create_progress
+        app,
+        http_client,
+        await _get_task_id_create_service_containers(
+            httpx_async_client, compose_spec, mock_metrics_params
+        ),
+        progress_callback=create_progress,
     )
     assert shared_store.container_names == result
 
