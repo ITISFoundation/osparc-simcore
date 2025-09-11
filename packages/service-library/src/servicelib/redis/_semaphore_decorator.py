@@ -36,7 +36,7 @@ async def _renew_semaphore_entry(semaphore: DistributedSemaphore) -> None:
         Exception: If the renewal operation fails
     """
 
-    current_time = asyncio.get_event_loop().time()
+    current_time = await semaphore.get_redis_time()
     ttl_seconds = semaphore.ttl.total_seconds()
 
     # Update timestamp in sorted set and refresh holder key
