@@ -4,7 +4,10 @@ import functools
 import logging
 import socket
 from collections.abc import Callable, Coroutine
+from contextlib import suppress
 from typing import Any, ParamSpec, TypeVar
+
+from common_library.async_tools import cancel_wait_task
 
 from ..background_task import periodic
 from ..logging_errors import create_troubleshootting_log_kwargs
@@ -133,6 +136,8 @@ def with_limited_concurrency(
                     result = await work_task
 
                     # Cancel renewal task (work is done)
+                    with suppress(TimeoutError):
+                        await cancel_wait_task(renewal_task, max_delay=5)
                     renewal_task.cancel()
 
                 return result

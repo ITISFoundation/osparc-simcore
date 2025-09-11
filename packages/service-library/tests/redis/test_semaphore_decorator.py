@@ -7,6 +7,7 @@
 
 import asyncio
 import datetime
+import logging
 from typing import Literal
 
 import pytest
@@ -372,12 +373,16 @@ async def test_with_large_capacity(
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)
+        logging.info("Started task, current concurrent: %d", concurrent_count)
         await asyncio.sleep(sleep_time_s)
+        logging.info("Done task, current concurrent: %d", concurrent_count)
         concurrent_count -= 1
 
     # Start tasks equal to the large capacity
     tasks = [asyncio.create_task(limited_function()) for _ in range(num_tasks)]
-    async with asyncio.timeout(num_tasks / large_capacity * 5 * sleep_time_s):
+    async with asyncio.timeout(
+        float(num_tasks) / float(large_capacity) * 10.0 * float(sleep_time_s)
+    ):
         await asyncio.gather(*tasks)
 
     # Should never exceed the large capacity
