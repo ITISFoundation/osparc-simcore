@@ -1,4 +1,9 @@
 # ruff: noqa: SLF001, EM101, TRY003, PT011, PLR0917
+# pylint: disable=no-value-for-parameter
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import datetime
@@ -590,17 +595,16 @@ class TestSemaphoreEdgeCases:
 
         await semaphore.acquire()
 
-        # Mock Redis to fail during renewal - patch the pipeline method
-        original_method = redis_client_sdk.redis.pipeline
+        # Mock the pipeline to fail during renewal
+        original_pipeline = redis_client_sdk.redis.pipeline
 
         def failing_pipeline(*args, **kwargs):
-            pipe = original_method(*args, **kwargs)
+            pipe = original_pipeline(*args, **kwargs)
 
-            async def failing_zadd(*args, **kwargs):
-                msg = "Redis error"
-                raise RuntimeError(msg)
+            async def failing_execute(*, raise_on_error: bool = True):
+                raise RuntimeError("Redis error")
 
-            pipe.zadd = failing_zadd
+            pipe.execute = failing_execute  # type: ignore[assignment]
             return pipe
 
         with mock.patch.object(
