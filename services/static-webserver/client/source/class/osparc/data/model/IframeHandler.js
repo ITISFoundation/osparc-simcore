@@ -437,6 +437,12 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           this.getIFrame().setSource(node.getServiceUrl());
         }
 
+        if (this.getNode().getKey().includes("jupyter")) {
+        // if (this.getNode().getKey().includes("s4l-ui")) {
+          // remove border for s4l-ui services
+          osparc.utils.Utils.removeBorder(this.getIFrame());
+        }
+
         // fire event to force switching to iframe's content:
         // it is required in those cases where the native 'load' event isn't triggered (voila)
         this.fireEvent("iframeStateChanged");

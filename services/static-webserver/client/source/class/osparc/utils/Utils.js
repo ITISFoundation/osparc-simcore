@@ -781,6 +781,12 @@ qx.Class.define("osparc.utils.Utils", {
       widget.getContentElement().setStyle("border", width+"px solid " + color);
     },
 
+    removeBorder: function(widget) {
+      if (widget && widget.getContentElement()) {
+        widget.getContentElement().setStyle("border", "none");
+      }
+    },
+
     updateBorderColor: function(widget, color = "inherit") {
       widget.getContentElement().setStyle("border-color", color);
     },
