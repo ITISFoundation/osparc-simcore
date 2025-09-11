@@ -21,8 +21,8 @@ from ._project_lock import (
 from ._semaphore import (
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
-    with_limited_concurrency,
 )
+from ._semaphore_decorator import with_limited_concurrency
 from ._utils import handle_redis_returns_union_types
 
 __all__: tuple[str, ...] = (
