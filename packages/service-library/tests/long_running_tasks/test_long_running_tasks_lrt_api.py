@@ -10,11 +10,9 @@ from typing import Any, Final
 import pytest
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeInt
+from pytest_simcore.helpers.long_running_tasks import assert_task_is_no_longer_present
 from servicelib.long_running_tasks import lrt_api
-from servicelib.long_running_tasks.errors import TaskNotFoundError
-from servicelib.long_running_tasks.manager import (
-    LongRunningManager,
-)
+from servicelib.long_running_tasks.manager import LongRunningManager
 from servicelib.long_running_tasks.models import LRTNamespace, TaskContext
 from servicelib.long_running_tasks.task import TaskId, TaskRegistry
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
@@ -161,22 +159,6 @@ async def _assert_list_tasks_from_all_managers(
         assert len(tasks) == task_count
 
 
-async def _assert_task_is_no_longer_present(
-    long_running_managers: list[LongRunningManager],
-    task_context: TaskContext,
-    task_id: TaskId,
-) -> None:
-    manager = _get_long_running_manager(long_running_managers)
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:  # noqa: SIM117
-            with pytest.raises(TaskNotFoundError):  # noqa: PT012
-                # use internals to detirmine when it's no longer here
-                await manager._tasks_manager._get_tracked_task(  # noqa: SLF001
-                    task_id, task_context
-                )
-                raise TryAgain
-
-
 _TASK_CONTEXT: Final[list[TaskContext | None]] = [{"a": "context"}, None]
 _IS_UNIQUE: Final[list[bool]] = [False, True]
 _TASK_COUNT: Final[list[int]] = [5]
@@ -188,6 +170,7 @@ _TASK_COUNT: Final[list[int]] = [5]
 @pytest.mark.parametrize("to_return", [{"key": "value"}])
 async def test_workflow_with_result(
     disable_stale_tasks_monitor: None,
+    fast_long_running_tasks_cancellation: None,
     long_running_managers: list[LongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     task_count: int,
@@ -235,8 +218,8 @@ async def test_workflow_with_result(
         )
         assert result == to_return
 
-        await _assert_task_is_no_longer_present(
-            long_running_managers, saved_context, task_id
+        await assert_task_is_no_longer_present(
+            _get_long_running_manager(long_running_managers), task_id, saved_context
         )
 
 
@@ -245,6 +228,7 @@ async def test_workflow_with_result(
 @pytest.mark.parametrize("is_unique", _IS_UNIQUE)
 async def test_workflow_raises_error(
     disable_stale_tasks_monitor: None,
+    fast_long_running_tasks_cancellation: None,
     long_running_managers: list[LongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     task_count: int,
@@ -290,8 +274,8 @@ async def test_workflow_raises_error(
                 task_id,
             )
 
-        await _assert_task_is_no_longer_present(
-            long_running_managers, saved_context, task_id
+        await assert_task_is_no_longer_present(
+            _get_long_running_manager(long_running_managers), task_id, saved_context
         )
 
 
@@ -299,6 +283,7 @@ async def test_workflow_raises_error(
 @pytest.mark.parametrize("is_unique", _IS_UNIQUE)
 async def test_remove_task(
     disable_stale_tasks_monitor: None,
+    fast_long_running_tasks_cancellation: None,
     long_running_managers: list[LongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     is_unique: bool,
@@ -326,6 +311,6 @@ async def test_remove_task(
         task_id,
     )
 
-    await _assert_task_is_no_longer_present(
-        long_running_managers, saved_context, task_id
+    await assert_task_is_no_longer_present(
+        _get_long_running_manager(long_running_managers), task_id, saved_context
     )

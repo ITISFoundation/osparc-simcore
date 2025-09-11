@@ -36,6 +36,10 @@ from models_library.rabbitmq_messages import (
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.long_running_tasks import (
+    assert_task_is_no_longer_present,
+    get_fastapi_long_running_manager,
+)
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     HttpClient,
@@ -60,6 +64,11 @@ pytest_simcore_core_services_selection = [
 _FAST_STATUS_POLL: Final[float] = 0.1
 _CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
 _BASE_HEART_BEAT_INTERVAL: Final[float] = 0.1
+
+_RETRY_PRAMS: Final[dict[str, Any]] = {
+    "wait": wait_fixed(0.1),
+    "stop": stop_after_delay(5),
+}
 
 
 @pytest.fixture(params=[1, 2])
@@ -92,6 +101,7 @@ def backend_url() -> AnyHttpUrl:
 
 @pytest.fixture
 async def mock_environment(
+    fast_long_running_tasks_cancellation: None,
     mock_postgres_check: None,
     mock_registry_service: AsyncMock,
     mock_environment: EnvVarsDict,
@@ -351,14 +361,18 @@ async def test_user_services_fail_to_stop_or_save_data(
     # in case of manual intervention multiple stops will be sent
     _EXPECTED_STOP_MESSAGES = 4
     for _ in range(_EXPECTED_STOP_MESSAGES):
+        task_id = await _get_task_id_docker_compose_down(httpx_async_client)
         with pytest.raises(TaskExceptionError):
             async with periodic_task_result(
                 client=http_client,
-                task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+                task_id=task_id,
                 task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
                 status_poll_interval=_FAST_STATUS_POLL,
             ):
                 ...
+        await assert_task_is_no_longer_present(
+            get_fastapi_long_running_manager(app), task_id, {}
+        )
 
     # Ensure messages arrive in the expected order
     resource_tracking_messages = _get_resource_tracking_messages(
@@ -482,13 +496,17 @@ async def test_user_services_crash_when_running(
     # will be sent due to manual intervention
     _EXPECTED_STOP_MESSAGES = 4
     for _ in range(_EXPECTED_STOP_MESSAGES):
+        task_id = await _get_task_id_docker_compose_down(httpx_async_client)
         async with periodic_task_result(
             client=http_client,
-            task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+            task_id=task_id,
             task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=_FAST_STATUS_POLL,
         ) as result:
             assert result is None
+        await assert_task_is_no_longer_present(
+            get_fastapi_long_running_manager(app), task_id, {}
+        )
 
     resource_tracking_messages = _get_resource_tracking_messages(
         mock_post_rabbit_message
