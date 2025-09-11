@@ -13,6 +13,14 @@ from pydantic import (
     computed_field,
     field_validator,
 )
+from tenacity import (
+    RetryError,
+    retry,
+    retry_if_not_result,
+    stop_after_delay,
+    stop_never,
+    wait_fixed,
+)
 
 from ..logging_utils import log_catch
 from ._client import RedisClientSDK
@@ -129,37 +137,32 @@ class DistributedSemaphore(BaseModel):
         if self._acquired:
             return True
 
-        start_time = asyncio.get_event_loop().time()
-        timeout_seconds = (
-            self.blocking_timeout.total_seconds() if self.blocking_timeout else None
+        if not self.blocking:
+            # Non-blocking: try once
+            self._acquired = await self._try_acquire()
+            return self._acquired
+
+        # Blocking
+        @retry(
+            wait=wait_fixed(0.1),
+            reraise=True,
+            stop=(
+                stop_after_delay(self.blocking_timeout.total_seconds())
+                if self.blocking_timeout
+                else stop_never
+            ),
+            retry=retry_if_not_result(lambda acquired: acquired),
         )
+        async def _blocking_acquire() -> bool:
+            return await self._try_acquire()
 
-        while True:
-            # Try to acquire using Redis sorted set for atomic operations
-            acquired = await self._try_acquire()
-
-            if acquired:
-                self._acquired = True
-                _logger.debug(
-                    "Acquired semaphore '%s' (instance: %s)",
-                    self.key,
-                    self.instance_id,
-                )
-                return True
-
-            if not self.blocking:
-                return False
-
-            # Check timeout
-            if timeout_seconds is not None:
-                elapsed = asyncio.get_event_loop().time() - start_time
-                if elapsed >= timeout_seconds:
-                    raise SemaphoreAcquisitionError(
-                        name=self.key, capacity=self.capacity
-                    )
-
-            # Wait a bit before retrying
-            await asyncio.sleep(0.1)
+        try:
+            self._acquired = await _blocking_acquire()
+            return self._acquired
+        except RetryError as exc:
+            raise SemaphoreAcquisitionError(
+                name=self.key, capacity=self.capacity
+            ) from exc
 
     async def release(self) -> None:
         """
