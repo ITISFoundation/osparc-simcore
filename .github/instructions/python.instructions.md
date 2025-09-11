@@ -19,7 +19,7 @@ Follow these rules **strictly** when generating Python code:
 ### 3. **Code Style & Formatting**
 
 * Follow [Python Coding Conventions](../docs/coding-conventions.md) **strictly**.
-* Format code with `black`.
+* Format code with `black` and `ruff`.
 * Lint code with `ruff` and `pylint`.
 
 ### 4. **Library Compatibility**
