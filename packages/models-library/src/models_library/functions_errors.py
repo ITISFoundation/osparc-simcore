@@ -17,6 +17,13 @@ class FunctionIDNotFoundError(FunctionBaseError):
     status_code: int = 404  # Not Found
 
 
+class FunctionHasJobsCannotDeleteError(FunctionBaseError):
+    msg_template: str = (
+        "Cannot delete function {function_id} because it has {jobs_count} associated job(s)."
+    )
+    status_code: int = 409  # Conflict
+
+
 class FunctionJobIDNotFoundError(FunctionBaseError):
     msg_template: str = "Function job {function_job_id} not found"
     status_code: int = 404  # Not Found

@@ -79,4 +79,13 @@ class FunctionsListQueryParams(
 ): ...
 
 
+class FunctionDeleteQueryParams(BaseModel):
+    force: Annotated[
+        bool,
+        Field(
+            description="If true, deletes the function even if it has associated jobs; otherwise, returns HTTP_409_CONFLICT if jobs exist.",
+        ),
+    ] = False
+
+
 __all__: tuple[str, ...] = ("AuthenticatedRequestContext",)
