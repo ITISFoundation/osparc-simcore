@@ -13,7 +13,11 @@ from ._constants import (
     DEFAULT_SEMAPHORE_TTL,
     DEFAULT_SOCKET_TIMEOUT,
 )
-from ._errors import SemaphoreAcquisitionError, SemaphoreNotAcquiredError
+from ._errors import (
+    SemaphoreAcquisitionError,
+    SemaphoreLostError,
+    SemaphoreNotAcquiredError,
+)
 from ._semaphore import DistributedSemaphore
 
 _logger = logging.getLogger(__name__)
@@ -39,7 +43,14 @@ async def _renew_semaphore_entry(semaphore: DistributedSemaphore) -> None:
     async with semaphore.redis_client.redis.pipeline(transaction=True) as pipe:
         await pipe.zadd(semaphore.semaphore_key, {semaphore.instance_id: current_time})
         await pipe.expire(semaphore.holder_key, int(ttl_seconds))
-        await pipe.execute()
+        results = await pipe.execute()
+
+        # Check if EXPIRE succeeded (returns 1 if key existed, 0 if not)
+        expire_result = results[1]
+        if expire_result == 0:
+            raise SemaphoreLostError(
+                name=semaphore.key, instance_id=semaphore.instance_id
+            )
 
 
 P = ParamSpec("P")
@@ -164,9 +175,7 @@ def with_limited_concurrency(
                 # and cancel the work task automatically
 
                 # Re-raise the first exception in the group
-                if eg.exceptions:
-                    raise eg.exceptions[0] from eg
-                raise
+                raise eg.exceptions[0] from eg
 
             finally:
                 # Always release the semaphore
