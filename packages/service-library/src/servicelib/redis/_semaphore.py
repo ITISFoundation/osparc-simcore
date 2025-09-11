@@ -16,9 +16,9 @@ from pydantic import (
     computed_field,
     field_validator,
 )
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..background_task import periodic
+from ..logging_errors import create_troubleshootting_log_kwargs
 from ..logging_utils import log_catch
 from ._client import RedisClientSDK
 from ._constants import (
@@ -32,7 +32,7 @@ from ._errors import SemaphoreAcquisitionError, SemaphoreNotAcquiredError
 _logger = logging.getLogger(__name__)
 
 
-async def renew_semaphore_entry(semaphore: "DistributedSemaphore") -> None:
+async def _renew_semaphore_entry(semaphore: "DistributedSemaphore") -> None:
     """
     Manually renew a semaphore entry by updating its timestamp and TTL.
 
@@ -44,8 +44,6 @@ async def renew_semaphore_entry(semaphore: "DistributedSemaphore") -> None:
     Raises:
         Exception: If the renewal operation fails
     """
-    if not semaphore.is_acquired():
-        return  # Nothing to renew if not acquired
 
     current_time = asyncio.get_event_loop().time()
     ttl_seconds = semaphore.ttl.total_seconds()
@@ -99,7 +97,7 @@ class DistributedSemaphore(BaseModel):
     blocking: Annotated[
         bool, Field(description="Whether acquire() should block until available")
     ] = True
-    timeout: Annotated[
+    blocking_timeout: Annotated[
         datetime.timedelta | None,
         Field(description="Maximum time to wait when blocking"),
     ] = DEFAULT_SOCKET_TIMEOUT
@@ -161,7 +159,9 @@ class DistributedSemaphore(BaseModel):
             return True
 
         start_time = asyncio.get_event_loop().time()
-        timeout_seconds = self.timeout.total_seconds() if self.timeout else None
+        timeout_seconds = (
+            self.blocking_timeout.total_seconds() if self.blocking_timeout else None
+        )
 
         while True:
             # Try to acquire using Redis sorted set for atomic operations
@@ -361,7 +361,7 @@ def with_limited_concurrency(
                 capacity=semaphore_capacity,
                 ttl=ttl,
                 blocking=blocking,
-                timeout=blocking_timeout,
+                blocking_timeout=blocking_timeout,
             )
 
             # Acquire the semaphore
@@ -379,7 +379,7 @@ def with_limited_concurrency(
                     # Create auto-renewal task
                     @periodic(interval=ttl / 3, raise_on_error=True)
                     async def _periodic_renewer() -> None:
-                        await renew_semaphore_entry(semaphore)
+                        await _renew_semaphore_entry(semaphore)
                         started_event.set()
 
                     # Start the renewal task
