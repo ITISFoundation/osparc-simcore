@@ -16,7 +16,8 @@ from settings_library.redis import RedisDatabase, RedisSettings
 
 
 def test_ensure_task_data_field_name_and_type():
-    # ensure this does not change since it's queied for the remal as a single entity
+    # NOTE: ensure thse do not change, if you want to change them remeber that the db is invalid
+    assert _MARKED_FOR_REMOVAL_FIELD == "marked_for_removal"
     field = TaskData.model_fields[_MARKED_FOR_REMOVAL_FIELD]
     assert field.annotation is bool
 
