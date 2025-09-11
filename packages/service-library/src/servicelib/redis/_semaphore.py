@@ -270,14 +270,14 @@ class DistributedSemaphore(BaseModel):
             SemaphoreLostError: If the semaphore was lost or expired
         """
 
-        timeout_ms = int(self.ttl.total_seconds() * 1000)
+        ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the renewal Lua script atomically
         result = await self._renew_script(
             keys=(self.semaphore_key, self.holder_key),
             args=(
                 self.instance_id,
-                str(timeout_ms),
+                str(ttl_seconds),
             ),
             client=self.redis_client.redis,
         )
