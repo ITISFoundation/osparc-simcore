@@ -68,7 +68,7 @@ class DistributedSemaphore(BaseModel):
         capacity: Maximum number of concurrent holders
         ttl: Time-to-live for semaphore entries (auto-cleanup)
         blocking: Whether acquire() should block until available
-        timeout: Maximum time to wait when blocking (None = no timeout)
+        blocking_timeout: Maximum time to wait when blocking (None = no timeout)
 
     Example:
         async with DistributedSemaphore(
@@ -135,7 +135,7 @@ class DistributedSemaphore(BaseModel):
             raise ValueError(msg)
         return v
 
-    @field_validator("timeout")
+    @field_validator("blocking_timeout")
     @classmethod
     def validate_timeout(
         cls, v: datetime.timedelta | None
