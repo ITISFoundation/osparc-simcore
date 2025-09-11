@@ -177,13 +177,21 @@ class NodeState(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        populate_by_name=True,
+        validate_by_alias=True,
+        validate_by_name=True,
         json_schema_extra={
             "examples": [
+                # example with alias name
                 {
                     "modified": True,
                     "dependencies": [],
                     "currentStatus": "NOT_STARTED",
+                },
+                # example with field name
+                {
+                    "modified": True,
+                    "dependencies": [],
+                    "current_status": "NOT_STARTED",
                 },
                 {
                     "modified": True,
@@ -230,7 +238,7 @@ class Node(BaseModel):
         Field(description="The short name of the node", examples=["JupyterLab"]),
     ]
     progress: Annotated[
-        float | None,
+        int | None,
         Field(
             ge=0,
             le=100,
@@ -302,15 +310,20 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
-    output_node: Annotated[bool | None, Field(deprecated=True, alias="outputNode")] = (
-        None  # <-- (DEPRECATED) Can be removed
-    )
+    output_node: Annotated[
+        bool | None,
+        Field(
+            deprecated=True,
+            alias="outputNode",
+        ),
+    ] = None  # <-- (DEPRECATED) Can be removed
 
     output_nodes: Annotated[  # <-- (DEPRECATED) Can be removed
         list[NodeID] | None,
         Field(
             description="Used in group-nodes. Node IDs of those connected to the output",
             alias="outputNodes",
+            deprecated=True,
         ),
     ] = None
 
@@ -318,6 +331,7 @@ class Node(BaseModel):
         NodeID | None,
         Field(
             description="Parent's (group-nodes') node ID s. Used to group",
+            deprecated=True,
         ),
     ] = None
 
@@ -332,6 +346,10 @@ class Node(BaseModel):
     state: Annotated[
         NodeState | None,
         Field(default_factory=NodeState, description="The node's state object"),
+    ] = DEFAULT_FACTORY
+
+    required_resources: Annotated[
+        dict[str, Any] | None, Field(default_factory=dict)
     ] = DEFAULT_FACTORY
 
     boot_options: Annotated[
@@ -453,12 +471,14 @@ class Node(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        populate_by_name=True,
+        validate_by_name=True,
+        validate_by_alias=True,
         json_schema_extra=_update_json_schema_extra,
     )
 
 
 class PartialNode(Node):
-    key: Annotated[ServiceKey, Field(default=None)]
-    version: Annotated[ServiceVersion, Field(default=None)]
-    label: Annotated[str, Field(default=None)]
+    # NOTE: `type: ignore[assignment]` is needed because mypy gets confused when overriding the types by adding the Union with None
+    key: ServiceKey | None = None  # type: ignore[assignment]
+    version: ServiceVersion | None = None  # type: ignore[assignment]
+    label: str | None = None  # type: ignore[assignment]
