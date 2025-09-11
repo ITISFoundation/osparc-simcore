@@ -6,21 +6,20 @@ import uuid
 from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import asynccontextmanager
 from types import TracebackType
-from typing import Any, Final, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
 
 from ._client import RedisClientSDK
-from ._constants import DEFAULT_SOCKET_TIMEOUT
+from ._constants import (
+    DEFAULT_SEMAPHORE_TTL,
+    DEFAULT_SOCKET_TIMEOUT,
+    SEMAPHORE_HOLDER_KEY_PREFIX,
+    SEMAPHORE_KEY_PREFIX,
+)
 from ._errors import BaseRedisError
 
 _logger = logging.getLogger(__name__)
-
-_DEFAULT_SEMAPHORE_TTL: Final[datetime.timedelta] = datetime.timedelta(
-    seconds=300
-)  # 5 minutes
-_SEMAPHORE_KEY_PREFIX: Final[str] = "semaphore:"
-_SEMAPHORE_HOLDER_KEY_PREFIX: Final[str] = "semaphore_holder:"
 
 
 class SemaphoreAcquisitionError(BaseRedisError):
@@ -64,7 +63,7 @@ class DistributedRedSemaphore:
         key: str,
         capacity: int,
         *,
-        ttl: datetime.timedelta = _DEFAULT_SEMAPHORE_TTL,
+        ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
         blocking: bool = True,
         timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
     ) -> None:
@@ -83,8 +82,8 @@ class DistributedRedSemaphore:
         self._instance_id = str(uuid.uuid4())
 
         # Redis keys
-        self._semaphore_key = f"{_SEMAPHORE_KEY_PREFIX}{key}"
-        self._holder_key = f"{_SEMAPHORE_HOLDER_KEY_PREFIX}{key}:{self._instance_id}"
+        self._semaphore_key = f"{SEMAPHORE_KEY_PREFIX}{key}"
+        self._holder_key = f"{SEMAPHORE_HOLDER_KEY_PREFIX}{key}:{self._instance_id}"
 
         # State tracking
         self._acquired = False
@@ -293,7 +292,7 @@ def with_limited_concurrency(
     *,
     key: str | Callable[..., str],
     capacity: int | Callable[..., int],
-    ttl: datetime.timedelta = _DEFAULT_SEMAPHORE_TTL,
+    ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
     blocking: bool = True,
     blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
 ) -> Callable[
