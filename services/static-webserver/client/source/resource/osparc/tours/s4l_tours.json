@@ -107,7 +107,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=helpNavigationMenu",
-      "text": "Under the question mark, you find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
+      "text": "Under the question mark, you will find Help & Support. How can we help you today?",
       "placement": "left"
     }, {
       "beforeClick": {
