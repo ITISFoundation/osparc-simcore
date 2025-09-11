@@ -66,7 +66,7 @@ qx.Class.define("osparc.product.quickStart.s4lacad.Welcome", {
         In order to facilitate the introduction to the platform, we have some Guided Tours that can be found under the User Menu.\
         <br>\
         <br>\
-        For more specific technical information, please refer to the Manuals on the Navigation Bar.\
+        For more specific technical information, please refer to the Manuals.\
       ");
       const intro2 = osparc.product.quickStart.Utils.createLabel(introText);
       content.add(intro2);
