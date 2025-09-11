@@ -73,10 +73,8 @@ qx.Class.define("osparc.support.HomePage", {
           break;
         }
         case "ask-a-question":
-          control = new qx.ui.form.Button(this.tr("Ask a Question"));
-          osparc.support.HomePage.decorateButton(control);
-          control.set({
-            icon: "@FontAwesome5Solid/comments/16",
+          control = new qx.ui.form.Button(this.tr("Ask a Question"), "@FontAwesome5Solid/comments/16").set({
+            gap: 8,
             appearance: "strong-button",
             center: true,
           });
