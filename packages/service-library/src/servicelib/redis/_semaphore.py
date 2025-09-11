@@ -30,6 +30,7 @@ _logger = logging.getLogger(__name__)
 class DistributedSemaphore(BaseModel):
     """
     Warning: This should only be used directly via the decorator
+
     A distributed semaphore implementation using Redis.
 
     This semaphore allows limiting the number of concurrent operations across
@@ -54,8 +55,6 @@ class DistributedSemaphore(BaseModel):
     # Model configuration
     model_config = {
         "arbitrary_types_allowed": True,  # For RedisClientSDK
-        "validate_assignment": True,  # Validate on field assignment
-        "extra": "forbid",  # Prevent extra fields
     }
 
     # Configuration fields with validation
