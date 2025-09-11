@@ -13,10 +13,12 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 from servicelib.redis import RedisClientSDK
+from servicelib.redis._constants import (
+    DEFAULT_SEMAPHORE_TTL,
+    SEMAPHORE_HOLDER_KEY_PREFIX,
+    SEMAPHORE_KEY_PREFIX,
+)
 from servicelib.redis._semaphore import (
-    _DEFAULT_SEMAPHORE_TTL,
-    _SEMAPHORE_HOLDER_KEY_PREFIX,
-    _SEMAPHORE_KEY_PREFIX,
     DistributedRedSemaphore,
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
@@ -70,13 +72,13 @@ async def test_semaphore_initialization(
 
     assert semaphore._key == semaphore_name
     assert semaphore._capacity == semaphore_capacity
-    assert semaphore._ttl == _DEFAULT_SEMAPHORE_TTL
+    assert semaphore._ttl == DEFAULT_SEMAPHORE_TTL
     assert semaphore._blocking is True
     assert semaphore._acquired is False
     assert semaphore._instance_id is not None
-    assert semaphore._semaphore_key == f"{_SEMAPHORE_KEY_PREFIX}{semaphore_name}"
+    assert semaphore._semaphore_key == f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}"
     assert semaphore._holder_key.startswith(
-        f"{_SEMAPHORE_HOLDER_KEY_PREFIX}{semaphore_name}:"
+        f"{SEMAPHORE_HOLDER_KEY_PREFIX}{semaphore_name}:"
     )
 
 
