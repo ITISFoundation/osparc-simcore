@@ -283,7 +283,7 @@ qx.Class.define("osparc.store.Support", {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
       const releaseLink = osparc.utils.Utils.getReleaseLink();
       return {
-        label: qx.locale.Manager.tr("What's new in") + " " + releaseTag,
+        label: qx.locale.Manager.tr("What's New in") + " " + releaseTag,
         icon: "@FontAwesome5Solid/bullhorn/14",
         callback: () => { window.open(releaseLink); },
       };

@@ -43,6 +43,7 @@ qx.Class.define("osparc.support.HomePage", {
     decorateButton: function(button) {
       button.set({
         font: "text-14",
+        minHeight: 28,
         gap: 10,
       });
       button.getChildControl("label").set({
