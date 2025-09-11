@@ -11,6 +11,8 @@ from servicelib.aiohttp.application_keys import (
 )
 from servicelib.request_keys import RQT_USERID_KEY
 
+from ._meta import APP_NAME
+
 # Application storage keys
 APP_PRODUCTS_KEY: Final[str] = f"{__name__ }.APP_PRODUCTS_KEY"
 
@@ -51,7 +53,7 @@ MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = user_message(
     "Please try again shortly. If the issue persists, contact support.", _version=1
 )
 
-ASYNC_JOB_CLIENT_NAME: Final[str] = "webserver"
+ASYNC_JOB_CLIENT_NAME: Final[str] = APP_NAME
 
 
 __all__: tuple[str, ...] = (
