@@ -526,6 +526,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
         return;
       }
+      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
+        return;
+      }
 
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isStudy(resourceData)) {
@@ -634,6 +637,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __addPermissionsPage: function() {
+      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
+        return;
+      }
+      if (osparc.utils.Resources.isService(this.__resourceData) && !osparc.data.model.Service.canIWrite(this.__resourceData["accessRights"])) {
+        return;
+      }
+
       const id = "Permissions";
       const title = this.tr("Sharing");
       const iconSrc = "@FontAwesome5Solid/share-alt/22";
@@ -695,7 +705,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         let classifiers = null;
         if (
           (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) && osparc.data.model.Study.canIWrite(resourceData["accessRights"]) ||
-          osparc.utils.Resources.isService(resourceData) && osparc.service.Utils.canIWrite(resourceData["accessRights"])
+          osparc.utils.Resources.isService(resourceData) && osparc.data.model.Service.canIWrite(resourceData["accessRights"])
         ) {
           classifiers = new osparc.metadata.ClassifiersEditor(resourceData);
           classifiers.addListener("updateClassifiers", e => {
@@ -779,6 +789,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       if (osparc.utils.Resources.isService(resourceData)) {
         return;
       }
+      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
+        return;
+      }
 
       const id = "ServicesUpdate";
       const title = this.tr("Services Updates");
@@ -811,6 +824,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         osparc.utils.Resources.isService(resourceData) ||
         !osparc.data.Permissions.getInstance().canDo("study.node.bootOptions.read")
       ) {
+        return;
+      }
+      if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
         return;
       }
 

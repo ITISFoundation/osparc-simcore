@@ -110,7 +110,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
               .then(values => {
                 values.forEach(user => {
                   if (user) {
-                    this.__addMember(user.getUsername());
+                    this.__addMember(user.getUserName());
                   }
                 });
               })

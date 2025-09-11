@@ -6,7 +6,6 @@ import sqlalchemy as sa
 from aiohttp import web
 from common_library.groups_enums import GroupType
 from common_library.users_enums import UserRole
-from models_library.basic_types import IDStr
 from models_library.groups import (
     AccessRightsDict,
     Group,
@@ -17,7 +16,7 @@ from models_library.groups import (
     StandardGroupCreate,
     StandardGroupUpdate,
 )
-from models_library.users import UserID
+from models_library.users import UserID, UserNameID
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_products import get_or_create_product_group
@@ -732,6 +731,22 @@ async def is_user_by_email_in_group(
         return user_id is not None
 
 
+async def is_user_in_group(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    group_id: GroupID,
+) -> bool:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.scalar(
+            sa.select(user_to_groups.c.uid).where(
+                (user_to_groups.c.uid == user_id) & (user_to_groups.c.gid == group_id)
+            )
+        )
+        return result is not None
+
+
 async def add_new_user_in_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -739,7 +754,7 @@ async def add_new_user_in_group(
     group_id: GroupID,
     # either user_id or user_name
     new_user_id: UserID | None = None,
-    new_user_name: IDStr | None = None,
+    new_user_name: UserNameID | None = None,
     access_rights: AccessRightsDict | None = None,
 ) -> None:
     """

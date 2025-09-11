@@ -33,7 +33,7 @@ from simcore_service_webserver.user_preferences._service import (
     get_frontend_user_preferences_aggregation,
 )
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 
 @pytest.fixture
@@ -49,44 +49,6 @@ def app_environment(
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",  # NOTE: still under development
         },
     )
-
-
-@pytest.fixture
-async def support_group_before_app_starts(
-    asyncpg_engine: AsyncEngine,
-    product_name: str,
-) -> AsyncIterator[dict[str, Any]]:
-    """Creates a standard support group and assigns it to the current product"""
-    from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
-    from simcore_postgres_database.models.groups import groups
-    from simcore_postgres_database.models.products import products
-
-    # Create support group using direct database insertion
-    group_values = {
-        "name": "Support Group",
-        "description": "Support group for product",
-        "type": "STANDARD",
-    }
-
-    # pylint: disable=contextmanager-generator-missing-cleanup
-    async with insert_and_get_row_lifespan(
-        asyncpg_engine,
-        table=groups,
-        values=group_values,
-        pk_col=groups.c.gid,
-    ) as group_row:
-        group_id = group_row["gid"]
-
-        # Update product to set support_standard_group_id
-        async with asyncpg_engine.begin() as conn:
-            await conn.execute(
-                sa.update(products)
-                .where(products.c.name == product_name)
-                .values(support_standard_group_id=group_id)
-            )
-
-        yield group_row
-        # group will be deleted after test
 
 
 @pytest.mark.parametrize(
@@ -593,7 +555,7 @@ async def test_get_profile_user_without_pre_registration(
     # Verify user has no pre-registration data
     pre_reg_users = await search_merged_pre_and_registered_users(
         asyncpg_engine,
-        email_like=logged_user["email"],
+        filter_by_email_like=logged_user["email"],
         product_name="osparc",
     )
 

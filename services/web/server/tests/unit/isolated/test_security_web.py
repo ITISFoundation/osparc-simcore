@@ -272,7 +272,7 @@ def get_active_user_or_none_dbmock(
     basic_db_funs_mocked: None, mocker: MockerFixture
 ) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
+        "simcore_service_webserver.security._authz_policy._authz_repository.get_active_user_or_none",
         autospec=True,
         return_value={"email": "foo@email.com", "id": 1, "role": UserRole.ADMIN},
     )
@@ -283,7 +283,7 @@ def is_user_in_product_name_dbmock(
     basic_db_funs_mocked: None, mocker: MockerFixture
 ) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.security._authz_policy.is_user_in_product_name",
+        "simcore_service_webserver.security._authz_policy._authz_repository.is_user_in_product_name",
         autospec=True,
         return_value=True,
     )

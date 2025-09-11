@@ -11,6 +11,7 @@ from fastapi import status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
+from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskState
 from servicelib.celery.models import TaskStatus as CeleryTaskStatus
@@ -143,11 +144,9 @@ async def test_get_task_result(
                     total=1.0,
                     unit="Byte",
                     message=ProgressStructuredMessage.model_validate(
-                        {
-                            "description": "some description",
-                            "current": 12.2,
-                            "total": 123,
-                        }
+                        ProgressStructuredMessage.model_json_schema(
+                            schema_generator=GenerateResolvedJsonSchema
+                        )["examples"][0]
                     ),
                 ),
             ),
@@ -167,11 +166,9 @@ async def test_get_task_result(
                     total=1.0,
                     unit="Byte",
                     message=ProgressStructuredMessage.model_validate(
-                        {
-                            "description": "some description",
-                            "current": 12.2,
-                            "total": 123,
-                        }
+                        ProgressStructuredMessage.model_json_schema(
+                            schema_generator=GenerateResolvedJsonSchema
+                        )["examples"][0]
                     ),
                 ),
             ),

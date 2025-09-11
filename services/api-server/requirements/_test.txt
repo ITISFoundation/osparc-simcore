@@ -206,7 +206,9 @@ jsonpickle==4.0.2
 jsonpointer==3.0.0
     # via jsonpatch
 jsonref==1.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt

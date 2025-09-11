@@ -23,7 +23,7 @@ qx.Class.define("osparc.ui.basic.UserThumbnail", {
 
     this.set(osparc.utils.Utils.getThumbnailProps(size));
 
-    if (osparc.data.Permissions.getInstance().isProductOwner()) {
+    if (osparc.store.Groups.getInstance().amIASupportUser()) {
       this.setCursor("pointer");
       this.addListener("tap", this.__openUserDetails, this);
     }
@@ -49,7 +49,7 @@ qx.Class.define("osparc.ui.basic.UserThumbnail", {
 
     __openUserDetails: function() {
       if (this.getUser()) {
-        const userDetails = new osparc.user.UserDetails(this.getUser());
+        const userDetails = new osparc.user.UserDetails(this.getUser().getGroupId());
         userDetails.center();
         userDetails.open();
       }
