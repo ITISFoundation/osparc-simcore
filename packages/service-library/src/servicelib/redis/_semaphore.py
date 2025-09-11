@@ -22,7 +22,7 @@ from ._errors import SemaphoreAcquisitionError, SemaphoreNotAcquiredError
 _logger = logging.getLogger(__name__)
 
 
-class DistributedRedSemaphore:
+class DistributedSemaphore:
     """
     A distributed semaphore implementation using Redis.
 
@@ -38,7 +38,7 @@ class DistributedRedSemaphore:
         timeout: Maximum time to wait when blocking (None = no timeout)
 
     Example:
-        async with DistributedRedSemaphore(
+        async with DistributedSemaphore(
             redis_client, "my_resource", capacity=3
         ):
             # Only 3 instances can execute this block concurrently
@@ -251,7 +251,7 @@ class DistributedRedSemaphore:
         return max(0, self._capacity - current_count)
 
     # Context manager support
-    async def __aenter__(self) -> "DistributedRedSemaphore":
+    async def __aenter__(self) -> "DistributedSemaphore":
         await self.acquire()
         return self
 
@@ -266,7 +266,7 @@ class DistributedRedSemaphore:
 
     def __repr__(self) -> str:
         return (
-            f"DistributedRedSemaphore(name={self._key!r}, "
+            f"DistributedSemaphore(name={self._key!r}, "
             f"capacity={self._capacity}, acquired={self._acquired})"
         )
 
@@ -339,7 +339,7 @@ def with_limited_concurrency(
             assert isinstance(client, RedisClientSDK)  # nosec
 
             # Create and use the semaphore
-            semaphore = DistributedRedSemaphore(
+            semaphore = DistributedSemaphore(
                 redis_client=client,
                 key=semaphore_key,
                 capacity=semaphore_capacity,
@@ -362,7 +362,7 @@ async def distributed_semaphore(
     name: str,
     capacity: int,
     **kwargs: Any,
-) -> AsyncIterator[DistributedRedSemaphore]:
+) -> AsyncIterator[DistributedSemaphore]:
     """
     Async context manager for distributed semaphore.
 
@@ -370,7 +370,7 @@ async def distributed_semaphore(
         redis_client: Redis client for coordination
         name: Unique identifier for the semaphore
         capacity: Maximum number of concurrent holders
-        **kwargs: Additional arguments for DistributedRedSemaphore
+        **kwargs: Additional arguments for DistributedSemaphore
 
     Example:
         async with distributed_semaphore(
@@ -379,6 +379,6 @@ async def distributed_semaphore(
             print(f"Available slots: {await sem.get_available_count()}")
             await do_limited_work()
     """
-    semaphore = DistributedRedSemaphore(redis_client, name, capacity, **kwargs)
+    semaphore = DistributedSemaphore(redis_client, name, capacity, **kwargs)
     async with semaphore:
         yield semaphore
