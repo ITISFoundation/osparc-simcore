@@ -213,14 +213,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.addSeparator();
 
       // quick starts and manuals
-      osparc.store.Support.addQuickStartToMenu(this);
-      osparc.store.Support.addGuidedToursToMenu(this);
-      osparc.store.Support.addManualsToMenu(this);
-      this.addSeparator();
-
-      // feedbacks
-      osparc.store.Support.addSupportButtonsToMenu(this);
-      osparc.store.Support.addReleaseNotesToMenu(this);
+      osparc.store.Support.addSupportConversationsToMenu(this);
       this.addSeparator();
 
       this.getChildControl("theme-switcher");
