@@ -173,7 +173,7 @@ qx.Class.define("osparc.po.UsersPending", {
         let date = null;
         switch (pendingUser.accountRequestStatus) {
           case "PENDING":
-            date = pendingUser.preRegistrationRequestedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.preRegistrationRequestedAt)) : "-";
+            date = pendingUser.preRegistrationCreated ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.preRegistrationCreated)) : "-";
             break;
           default:
             date = pendingUser.accountRequestReviewedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.accountRequestReviewedAt)) : "-";
