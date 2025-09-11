@@ -23,7 +23,7 @@ from ._semaphore import (
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
     distributed_semaphore,
-    with_semaphore,
+    with_limited_concurrency,
 )
 from ._utils import handle_redis_returns_union_types
 
@@ -46,6 +46,6 @@ __all__: tuple[str, ...] = (
     "handle_redis_returns_union_types",
     "increment_and_return_project_document_version",
     "is_project_locked",
+    "with_limited_concurrency",
     "with_project_locked",
-    "with_semaphore",
 )
