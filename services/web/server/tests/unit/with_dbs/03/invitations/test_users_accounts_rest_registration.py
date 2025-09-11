@@ -261,6 +261,9 @@ async def test_search_and_pre_registration(
         "extras": {},
         "registered": True,
         "status": UserStatus.ACTIVE,
+        "user_id": logged_user["id"],
+        "user_name": logged_user["name"],
+        "user_primary_group_id": logged_user.get("primary_group_id"),
     }
     assert got.model_dump(include=set(expected)) == expected
 
