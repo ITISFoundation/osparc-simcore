@@ -51,11 +51,6 @@ class RedisTaskInfoStore:
             expiry,
         )
 
-    async def task_exists(self, task_id: TaskID) -> bool:
-        n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
-        assert isinstance(n, int)  # nosec
-        return n > 0
-
     async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None:
         raw_result = await self._redis_client_sdk.redis.hget(_build_key(task_id), _CELERY_TASK_METADATA_KEY)  # type: ignore
         if not raw_result:
@@ -131,3 +126,8 @@ class RedisTaskInfoStore:
             key=_CELERY_TASK_PROGRESS_KEY,
             value=report.model_dump_json(),
         )  # type: ignore
+
+    async def task_exists(self, task_id: TaskID) -> bool:
+        n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
+        assert isinstance(n, int)  # nosec
+        return n > 0
