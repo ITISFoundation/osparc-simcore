@@ -18449,7 +18449,7 @@ components:
           anyOf:
           - type: integer
             exclusiveMinimum: true
-            minimum: 2
+            minimum: 1
           - type: 'null'
           title: Groupid
           description: Primary group ID of the user if an account was created
@@ -18469,10 +18469,6 @@ components:
       - preRegistrationCreated
       - accountRequestStatus
       - registered
-      - status
-      - userId
-      - userName
-      - groupId
       title: UserAccountGet
     UserAccountReject:
       properties:
