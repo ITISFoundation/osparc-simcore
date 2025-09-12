@@ -282,7 +282,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             # we just print the status from where one can infer the above
             with suppress(TaskNotFoundError):
                 task_status = await self.get_task_status(
-                    task_id, with_task_context=task_context, exclude_removed=False
+                    task_id, with_task_context=task_context, exclude_to_remove=False
                 )
                 with log_context(
                     _logger,
@@ -424,7 +424,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         task_id: TaskId,
         with_task_context: TaskContext,
         *,
-        exclude_removed: bool = True,
+        exclude_to_remove: bool = True,
     ) -> TaskStatus:
         """
         returns: the status of the task, along with updates
@@ -432,7 +432,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         raises TaskNotFoundError if the task cannot be found
         """
-        if exclude_removed and await self._tasks_data.is_marked_for_removal(task_id):
+        if exclude_to_remove and await self._tasks_data.is_marked_for_removal(task_id):
             raise TaskNotFoundError(task_id=task_id)
 
         task_data = await self._get_tracked_task(task_id, with_task_context)
