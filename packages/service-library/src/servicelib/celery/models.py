@@ -15,14 +15,15 @@ TaskName: TypeAlias = Annotated[
 ]
 TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
+_WILDCARD: Final[str] = "*"
 
 
 class Wildcard: ...
 
 
-def _replace_wildcard(value: Any, wildcard_str: str) -> str:
+def _replace_wildcard(value: Any) -> str:
     if isinstance(value, Wildcard):
-        return wildcard_str
+        return _WILDCARD
     return f"{value}"
 
 
@@ -60,20 +61,20 @@ class TaskFilter(BaseModel):
                 )
         return self
 
-    def _build_task_id_prefix(self, wildcard_str: str) -> str:
+    def _build_task_id_prefix(self) -> str:
         filter_dict = self.model_dump()
         return _TASK_ID_KEY_DELIMITATOR.join(
             [
-                f"{key}={_replace_wildcard(filter_dict[key], wildcard_str)}"
+                f"{key}={_replace_wildcard(filter_dict[key])}"
                 for key in sorted(filter_dict)
             ]
         )
 
-    def get_task_id(self, task_uuid: TaskUUID | Wildcard, wildcard_str: str) -> TaskID:
+    def get_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskID:
         return _TASK_ID_KEY_DELIMITATOR.join(
             [
-                self._build_task_id_prefix(wildcard_str),
-                f"task_uuid={_replace_wildcard(task_uuid, wildcard_str)}",
+                self._build_task_id_prefix(),
+                f"task_uuid={_replace_wildcard(task_uuid)}",
             ]
         )
 
@@ -190,9 +191,6 @@ class TaskInfoStore(Protocol):
     async def set_task_progress(
         self, task_id: TaskID, report: ProgressReport
     ) -> None: ...
-
-    @property
-    def wildcard_str(cls) -> str: ...
 
 
 class TaskStatus(BaseModel):

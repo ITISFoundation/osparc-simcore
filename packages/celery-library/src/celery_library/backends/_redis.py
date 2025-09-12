@@ -128,10 +128,6 @@ class RedisTaskInfoStore:
             value=report.model_dump_json(),
         )  # type: ignore
 
-    @property
-    def wildcard_str(self) -> str:
-        return "*"
-
 
 if TYPE_CHECKING:
     _: type[TaskInfoStore] = RedisTaskInfoStore
