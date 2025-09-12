@@ -4,6 +4,7 @@ import uuid
 from types import TracebackType
 from typing import Annotated
 
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
     BaseModel,
     Field,
@@ -89,6 +90,13 @@ class DistributedSemaphore(BaseModel):
         datetime.timedelta | None,
         Field(description="Maximum time to wait when blocking"),
     ] = DEFAULT_SOCKET_TIMEOUT
+    instance_id: Annotated[
+        str,
+        Field(
+            description="Unique instance identifier",
+            default_factory=lambda: f"{uuid.uuid4()}",
+        ),
+    ] = DEFAULT_FACTORY
 
     _acquire_script: AsyncScript
     _count_script: AsyncScript
@@ -109,15 +117,6 @@ class DistributedSemaphore(BaseModel):
         self._renew_script = self.redis_client.redis.register_script(
             RENEW_SEMAPHORE_SCRIPT
         )
-
-    # Computed fields (read-only, automatically calculated)
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def instance_id(self) -> str:
-        """Unique identifier for this semaphore instance."""
-        if not hasattr(self, "_instance_id"):
-            self._instance_id = str(uuid.uuid4())
-        return self._instance_id
 
     @computed_field  # type: ignore[prop-decorator]
     @property
