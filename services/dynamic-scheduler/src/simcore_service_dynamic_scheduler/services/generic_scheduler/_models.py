@@ -14,7 +14,7 @@ class StepStatus(str, Enum):
     UNKNOWN = "UNKNOWN"  # could not find a status for the step (used when the key is not present in Redis)
 
     # in progress status
-    SCHEDULED = "SCHEDULED"  # defrred will soon be created # TODO: unsude if this is doing much, maybe remove it and check if stil works as expected
+    SCHEDULED = "SCHEDULED"  # defrred will soon be created
     CREATED = "CREATED"  # do nothing
     RUNNING = "RUNNING"  # do nothing
 
