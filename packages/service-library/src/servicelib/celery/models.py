@@ -64,7 +64,7 @@ class TaskFilter(BaseModel):
             [f"{key}={filter_dict[key]}" for key in sorted(filter_dict)]
         )
 
-    def get_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskID:
+    def create_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskID:
         return _TASK_ID_KEY_DELIMITATOR.join(
             [
                 self._build_task_id_prefix(),
@@ -74,11 +74,11 @@ class TaskFilter(BaseModel):
 
     @classmethod
     def recreate_as_model(cls, task_id: TaskID, schema: type[ModelType]) -> ModelType:
-        filter_dict = cls.recreate_data(task_id)
+        filter_dict = cls._recreate_data(task_id)
         return schema.model_validate(filter_dict)
 
     @classmethod
-    def recreate_data(cls, task_id: TaskID) -> dict[str, Any]:
+    def _recreate_data(cls, task_id: TaskID) -> dict[str, Any]:
         """Recreates the filter data from a task_id string
         WARNING: does not validate types. For that use `recreate_model` instead
         """
