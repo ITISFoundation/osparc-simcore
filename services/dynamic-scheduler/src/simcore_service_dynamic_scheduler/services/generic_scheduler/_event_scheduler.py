@@ -23,6 +23,7 @@ _logger = logging.getLogger(__name__)
 
 _EXCHANGE_NAME: Final[str] = __name__
 _QUEUE_NAME: Final[str] = "event_scheduler"
+_NO_PARALLE_MESSAGE_CONSUMING: Final[int] = 1
 
 
 def _get_global_queue(queue_name: str) -> RabbitQueue:
@@ -66,7 +67,9 @@ class EventScheduler:
         settings: ApplicationSettings = app.state.settings
 
         self.broker: RabbitBroker = RabbitBroker(
-            settings.DYNAMIC_SCHEDULER_RABBITMQ.dsn, log_level=logging.DEBUG
+            settings.DYNAMIC_SCHEDULER_RABBITMQ.dsn,
+            log_level=logging.DEBUG,
+            max_consumers=_NO_PARALLE_MESSAGE_CONSUMING,
         )
         self.router: RabbitRouter = RabbitRouter()
         self.exchange = RabbitExchange(

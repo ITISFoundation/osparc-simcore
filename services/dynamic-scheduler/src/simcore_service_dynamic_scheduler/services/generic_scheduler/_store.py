@@ -168,9 +168,7 @@ class ScheduleDataStoreProxy:
         hash_key = self._get_hash_key()
         (result,) = await self._store.get(hash_key, key)
         if result is None:
-            raise KeyNotFoundInHashError(
-                schedule_id=self._schedule_id, hash_key=hash_key
-            )
+            raise KeyNotFoundInHashError(key=key, hash_key=hash_key)
         return result
 
     @overload
@@ -187,11 +185,11 @@ class ScheduleDataStoreProxy:
     async def set(self, key: Literal["is_creating"], *, value: bool) -> None: ...
     @overload
     async def set(
-        self, key: Literal["operation_error_type"], *, value: OperationErrorType
+        self, key: Literal["operation_error_type"], value: OperationErrorType
     ) -> None: ...
     @overload
     async def set(
-        self, key: Literal["operation_error_message"], *, value: str
+        self, key: Literal["operation_error_message"], value: str
     ) -> None: ...
     async def set(self, key: str, value: Any) -> None:
         await self._store.set(self._get_hash_key(), key, value)
@@ -204,14 +202,21 @@ class ScheduleDataStoreProxy:
 
 
 class _StepDict(TypedDict):
+    deferred_created: NotRequired[bool]
     status: NotRequired[StepStatus]
     deferred_task_uid: NotRequired[TaskUID]
     error_traceback: NotRequired[str]
     requires_manual_intervention: NotRequired[bool]
+    success_processed: NotRequired[bool]
 
 
 _DeleteStepKeys = Literal[
-    "status", "deferred_task_uid", "error_traceback", "requires_manual_intervention"
+    "deferred_created",
+    "status",
+    "deferred_task_uid",
+    "error_traceback",
+    "requires_manual_intervention",
+    "success_processed",
 ]
 
 
@@ -250,6 +255,10 @@ class StepStoreProxy:
     async def get(self, key: Literal["error_traceback"]) -> str: ...
     @overload
     async def get(self, key: Literal["requires_manual_intervention"]) -> bool: ...
+    @overload
+    async def get(self, key: Literal["deferred_created"]) -> bool: ...
+    @overload
+    async def get(self, key: Literal["success_processed"]) -> bool: ...
     async def get(self, key: str) -> Any:
         """raises KeyNotFoundInHashError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
@@ -268,8 +277,12 @@ class StepStoreProxy:
     async def set(self, key: Literal["error_traceback"], value: str) -> None: ...
     @overload
     async def set(
-        self, key: Literal["requires_manual_intervention"], value: bool
+        self, key: Literal["requires_manual_intervention"], *, value: bool
     ) -> None: ...
+    @overload
+    async def set(self, key: Literal["deferred_created"], *, value: bool) -> None: ...
+    @overload
+    async def set(self, key: Literal["success_processed"], *, value: bool) -> None: ...
     async def set(self, key: str, value: Any) -> None:
         await self._store.set(self._get_hash_key(), key, value)
 
