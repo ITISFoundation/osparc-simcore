@@ -25,7 +25,7 @@ from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis._semaphore import with_limited_concurrency
+from servicelib.redis import with_limited_concurrency
 from servicelib.utils import limited_as_completed, limited_gather
 
 from ...core.errors import (
