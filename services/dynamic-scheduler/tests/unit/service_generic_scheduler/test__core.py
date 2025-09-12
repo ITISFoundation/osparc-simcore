@@ -3,17 +3,23 @@
 
 
 import asyncio
+from collections.abc import AsyncIterable, Awaitable, Callable
+from contextlib import AsyncExitStack
 from copy import deepcopy
+from secrets import choice
 from typing import Final
 
 import pytest
+from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
+from pydantic import NonNegativeInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_service_dynamic_scheduler.core.application import create_app
 from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
-    Core,
     Operation,
     get_core,
 )
@@ -41,6 +47,8 @@ pytest_simcore_ops_services_selection = [
     "redis-commander",
 ]
 
+_PARALLEL_APP_CREATION: Final[NonNegativeInt] = 5
+
 
 @pytest.fixture
 def disable_other_generic_scheduler_modules(mocker: MockerFixture) -> None:
@@ -61,13 +69,41 @@ def app_environment(
     app_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
+    remove_redis_data: None,
 ) -> EnvVarsDict:
     return app_environment
 
 
 @pytest.fixture
-def core(app: FastAPI) -> Core:
-    return get_core(app)
+async def get_app(
+    app_environment: EnvVarsDict,
+) -> AsyncIterable[Callable[[], Awaitable[FastAPI]]]:
+    exit_stack = AsyncExitStack()
+
+    started_apps: list[FastAPI] = []
+
+    async def _() -> FastAPI:
+        app = create_app()
+        started_apps.append(app)
+
+        await exit_stack.enter_async_context(LifespanManager(app))
+        return app
+
+    yield _
+
+    await exit_stack.aclose()
+
+
+@pytest.fixture
+async def selected_app(
+    get_app: Callable[[], Awaitable[FastAPI]], app_count: NonNegativeInt
+) -> FastAPI:
+    # initialize a bunch of apps and randomly select one
+    # this will make sure that there is competition events catching possible issues
+    apps: list[FastAPI] = await limited_gather(
+        *[get_app() for _ in range(app_count)], limit=_PARALLEL_APP_CREATION
+    )
+    return choice(apps)
 
 
 _STEPS_CALL_ORDER: list[tuple[str, str]] = []
@@ -169,6 +205,15 @@ class _AddSalt(_BS): ...
 class _AddPepper(_BS): ...
 
 
+class _AddPaprika(_BS): ...
+
+
+class _AddMint(_BS): ...
+
+
+class _AddMilk(_BS): ...
+
+
 class _StirTillDone(_BS): ...
 
 
@@ -176,15 +221,26 @@ _MASHED_POTATOES: Final[Operation] = [
     SingleStepGroup(_PeelPotates),
     SingleStepGroup(_BoilPotates),
     SingleStepGroup(_MashPotates),
-    ParallelStepGroup(_AddButter, _AddSalt, _AddPepper),
+    ParallelStepGroup(
+        _AddButter, _AddSalt, _AddPepper, _AddPaprika, _AddMint, _AddMilk
+    ),
     SingleStepGroup(_StirTillDone),
 ]
 
 OperationRegistry.register("mash_potatoes", _MASHED_POTATOES)  # type: ignore[call-arg
 
 
-async def test_core_workflow(core: Core):
-    schedule_id: ScheduleId = await core.create("mash_potatoes", {})
+@pytest.mark.parametrize(
+    "app_count",
+    [
+        1,
+        # 10, # TODO: figure out why it's not working with more than one app in parall
+    ],
+)
+async def test_core_workflow(
+    preserve_caplog_for_async_logging: None, selected_app: FastAPI
+):
+    schedule_id: ScheduleId = await get_core(selected_app).create("mash_potatoes", {})
     print(f"started {schedule_id=}")
 
     async for attempt in AsyncRetrying(
@@ -194,14 +250,18 @@ async def test_core_workflow(core: Core):
     ):
         with attempt:
             await asyncio.sleep(0)  # wait for envet to trigger
-            assert len(_STEPS_CALL_ORDER) == 8
+            assert len(_STEPS_CALL_ORDER) == 10
             _asseert_order(
                 _CreateSequence(
                     _PeelPotates,
                     _BoilPotates,
                     _MashPotates,
                 ),
-                _CreateRandom(_AddButter, _AddSalt, _AddPepper),
+                _CreateRandom(
+                    _AddButter, _AddSalt, _AddPepper, _AddPaprika, _AddMint, _AddMilk
+                ),
                 _CreateSequence(_StirTillDone),
-                _CreateSequence(_StirTillDone),  # TODO: this is wrong fix
             )
+
+
+# TODO: also add a test with 2 of the cores in parallel to see it still works as expected
