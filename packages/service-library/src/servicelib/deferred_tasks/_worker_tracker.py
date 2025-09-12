@@ -57,6 +57,11 @@ class WorkerTracker:
             result_to_return = TaskResultSuccess(value=task_result)
         except asyncio.CancelledError:
             result_to_return = TaskResultCancelledError()
+            current_task = asyncio.current_task()
+            assert current_task is not None  # nosec
+            if current_task.cancelling() > 0:
+                # owner function is being cancelled -> propagate cancellation
+                raise
         except Exception as e:  # pylint:disable=broad-exception-caught
             result_to_return = TaskResultError(
                 error=_format_exception(e),
