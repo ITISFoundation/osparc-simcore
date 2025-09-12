@@ -34,7 +34,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
     "fab_text": "contrasted-text-dark",
-    "fab-background": "rgba(255, 255, 255, 0.2)",
+    "fab-background": "rgba(0, 0, 0, 0.2)",
     "input_background": "rgba(209, 214, 218, 1)",
     "input_background_disable": "rgba(113, 157, 181, 0.04)",
     "hint-background": "rgba(201, 201, 201, 1)",
@@ -59,7 +59,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
-    "window-popup-background": "rgba(225, 225, 225, 1)",
+    "window-popup-background": "background-main-1",
     "window-caption-background": "background-main",
     "window-caption-background-active": "background-main-3",
     "window-caption-text": "text",

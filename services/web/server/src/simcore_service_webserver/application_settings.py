@@ -36,6 +36,7 @@ from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
 from .dynamic_scheduler.settings import DynamicSchedulerSettings
 from .exporter.settings import ExporterSettings
+from .fogbugz.settings import FogbugzSettings
 from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .licenses.settings import LicensesSettings
@@ -235,6 +236,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="exporter plugin",
         ),
     ]
+
+    WEBSERVER_FOGBUGZ: Annotated[
+        FogbugzSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
     WEBSERVER_GARBAGE_COLLECTOR: Annotated[
         GarbageCollectorSettings | None,
         Field(
@@ -294,7 +303,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="Enables real-time collaboration features",
             json_schema_extra={
                 "auto_default_from_env": True,
-                _X_FEATURE_UNDER_DEVELOPMENT: True,
             },
         ),
     ]

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.functions import (
@@ -27,12 +29,18 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     RegisteredFunctionJobDB,
+    RegisteredFunctionJobPatch,
+    RegisteredFunctionJobWithStatus,
+    RegisteredFunctionJobWithStatusDB,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
+    RegisteredProjectFunctionJobWithStatus,
     RegisteredSolverFunction,
     RegisteredSolverFunctionJob,
+    RegisteredSolverFunctionJobWithStatus,
 )
 from models_library.functions_errors import (
+    FunctionJobPatchModelIncompatibleError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
@@ -93,6 +101,37 @@ async def register_function_job(
         class_specific_data=encoded_function_job.class_specific_data,
     )
     return _decode_functionjob(created_function_job_db)
+
+
+async def patch_registered_function_job(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_uuid: FunctionJobID,
+    registered_function_job_patch: RegisteredFunctionJobPatch,
+) -> RegisteredFunctionJob:
+    job = await _functions_repository.get_function_job(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_uuid,
+    )
+    if job.function_class != registered_function_job_patch.function_class:
+        raise FunctionJobPatchModelIncompatibleError(
+            function_id=job.function_uuid,
+            product_name=product_name,
+        )
+
+    patched_job = _patch_functionjob(job, registered_function_job_patch)
+
+    result = await _functions_repository.patch_function_job(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        registered_function_job_db=patched_job,
+    )
+    return _decode_functionjob(result)
 
 
 async def register_function_job_collection(
@@ -227,19 +266,53 @@ async def list_function_jobs(
     filter_by_function_job_ids: list[FunctionJobID] | None = None,
     filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
-    returned_function_jobs, page = await _functions_repository.list_function_jobs(
-        app=app,
-        user_id=user_id,
-        product_name=product_name,
-        pagination_limit=pagination_limit,
-        pagination_offset=pagination_offset,
-        filter_by_function_id=filter_by_function_id,
-        filter_by_function_job_ids=filter_by_function_job_ids,
-        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+    returned_function_jobs, page = (
+        await _functions_repository.list_function_jobs_with_status(
+            app=app,
+            user_id=user_id,
+            product_name=product_name,
+            pagination_limit=pagination_limit,
+            pagination_offset=pagination_offset,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        )
     )
     return [
         _decode_functionjob(returned_function_job)
         for returned_function_job in returned_function_jobs
+    ], page
+
+
+async def list_function_jobs_with_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    pagination_limit: int,
+    pagination_offset: int,
+    filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+) -> tuple[
+    list[RegisteredFunctionJobWithStatus],
+    PageMetaInfoLimitOffset,
+]:
+    returned_function_jobs_wso, page = (
+        await _functions_repository.list_function_jobs_with_status(
+            app=app,
+            user_id=user_id,
+            product_name=product_name,
+            pagination_limit=pagination_limit,
+            pagination_offset=pagination_offset,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        )
+    )
+    return [
+        _decode_functionjob_wso(returned_function_job_wso)
+        for returned_function_job_wso in returned_function_jobs_wso
     ], page
 
 
@@ -280,12 +353,14 @@ async def delete_function(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
+    force: bool = False,
 ) -> None:
     await _functions_repository.delete_function(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
+        force=force,
     )
 
 
@@ -369,6 +444,9 @@ async def find_cached_function_jobs(
                     project_job_id=returned_function_job.class_specific_data[
                         "project_job_id"
                     ],
+                    job_creation_task_id=returned_function_job.class_specific_data.get(
+                        "job_creation_task_id"
+                    ),
                     created_at=returned_function_job.created,
                 )
             )
@@ -381,9 +459,12 @@ async def find_cached_function_jobs(
                     function_uid=returned_function_job.function_uuid,
                     inputs=returned_function_job.inputs,
                     outputs=None,
-                    solver_job_id=returned_function_job.class_specific_data[
+                    solver_job_id=returned_function_job.class_specific_data.get(
                         "solver_job_id"
-                    ],
+                    ),
+                    job_creation_task_id=returned_function_job.class_specific_data.get(
+                        "job_creation_task_id"
+                    ),
                     created_at=returned_function_job.created,
                 )
             )
@@ -530,6 +611,35 @@ async def remove_function_group_permissions(
     )
 
 
+async def set_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    permission_group_id: GroupID,
+    product_name: ProductName,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    object_ids: list[FunctionID | FunctionJobID | FunctionJobCollectionID],
+    read: bool | None = None,
+    write: bool | None = None,
+    execute: bool | None = None,
+) -> list[
+    tuple[
+        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
+    ]
+]:
+    return await _functions_repository.set_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_type=object_type,
+        object_ids=object_ids,
+        permission_group_id=permission_group_id,
+        read=read,
+        write=write,
+        execute=execute,
+    )
+
+
 async def get_function_job_status(
     app: web.Application,
     *,
@@ -567,11 +677,22 @@ async def update_function_job_outputs(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     outputs: FunctionOutputs,
+    check_write_permissions: bool = True,
 ) -> FunctionOutputs:
-    return await _functions_repository.update_function_job_outputs(
-        app=app,
+    checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
+    if check_write_permissions:
+        checked_permissions.append("write")
+    await _functions_repository.check_user_permissions(
+        app,
         user_id=user_id,
         product_name=product_name,
+        object_type="function_job",
+        object_id=function_job_id,
+        permissions=checked_permissions,
+    )
+
+    return await _functions_repository.update_function_job_outputs(
+        app=app,
         function_job_id=function_job_id,
         outputs=outputs,
     )
@@ -584,11 +705,22 @@ async def update_function_job_status(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     job_status: FunctionJobStatus,
+    check_write_permissions: bool = True,
 ) -> FunctionJobStatus:
-    return await _functions_repository.update_function_job_status(
-        app=app,
+    checked_permissions: list[Literal["read", "write", "execute"]] = ["read"]
+
+    if check_write_permissions:
+        checked_permissions.append("write")
+    await _functions_repository.check_user_permissions(
+        app,
         user_id=user_id,
         product_name=product_name,
+        object_type="function_job",
+        object_id=function_job_id,
+        permissions=checked_permissions,
+    )
+    return await _functions_repository.update_function_job_status(
+        app=app,
         function_job_id=function_job_id,
         job_status=job_status,
     )
@@ -675,13 +807,31 @@ def _encode_functionjob(
     if functionjob.function_class == FunctionClass.PROJECT:
         class_specific_data = FunctionJobClassSpecificData(
             {
-                "project_job_id": str(functionjob.project_job_id),
+                "project_job_id": (
+                    str(functionjob.project_job_id)
+                    if functionjob.project_job_id
+                    else None
+                ),
+                "job_creation_task_id": (
+                    str(functionjob.job_creation_task_id)
+                    if functionjob.job_creation_task_id
+                    else None
+                ),
             }
         )
     elif functionjob.function_class == FunctionClass.SOLVER:
         class_specific_data = FunctionJobClassSpecificData(
             {
-                "solver_job_id": str(functionjob.solver_job_id),
+                "solver_job_id": (
+                    str(functionjob.solver_job_id)
+                    if functionjob.solver_job_id
+                    else None
+                ),
+                "job_creation_task_id": (
+                    str(functionjob.job_creation_task_id)
+                    if functionjob.job_creation_task_id
+                    else None
+                ),
             }
         )
     else:
@@ -700,10 +850,48 @@ def _encode_functionjob(
 
 
 def _decode_functionjob(
-    functionjob_db: RegisteredFunctionJobDB,
+    functionjob_db: RegisteredFunctionJobWithStatusDB | RegisteredFunctionJobDB,
 ) -> RegisteredFunctionJob:
     if functionjob_db.function_class == FunctionClass.PROJECT:
         return RegisteredProjectFunctionJob(
+            uid=functionjob_db.uuid,
+            title=functionjob_db.title,
+            description=functionjob_db.description,
+            function_uid=functionjob_db.function_uuid,
+            inputs=functionjob_db.inputs,
+            outputs=functionjob_db.outputs,
+            project_job_id=functionjob_db.class_specific_data["project_job_id"],
+            job_creation_task_id=functionjob_db.class_specific_data.get(
+                "job_creation_task_id"
+            ),
+            created_at=functionjob_db.created,
+        )
+
+    if functionjob_db.function_class == FunctionClass.SOLVER:
+        return RegisteredSolverFunctionJob(
+            uid=functionjob_db.uuid,
+            title=functionjob_db.title,
+            description=functionjob_db.description,
+            function_uid=functionjob_db.function_uuid,
+            inputs=functionjob_db.inputs,
+            outputs=functionjob_db.outputs,
+            solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
+            job_creation_task_id=functionjob_db.class_specific_data.get(
+                "job_creation_task_id"
+            ),
+            created_at=functionjob_db.created,
+        )
+
+    raise UnsupportedFunctionJobClassError(
+        function_job_class=functionjob_db.function_class
+    )
+
+
+def _decode_functionjob_wso(
+    functionjob_db: RegisteredFunctionJobWithStatusDB,
+) -> RegisteredFunctionJobWithStatus:
+    if functionjob_db.function_class == FunctionClass.PROJECT:
+        return RegisteredProjectFunctionJobWithStatus(
             uid=functionjob_db.uuid,
             title=functionjob_db.title,
             description="",
@@ -712,10 +900,14 @@ def _decode_functionjob(
             outputs=functionjob_db.outputs,
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
             created_at=functionjob_db.created,
+            status=FunctionJobStatus(status=functionjob_db.status),
+            job_creation_task_id=functionjob_db.class_specific_data.get(
+                "job_creation_task_id"
+            ),
         )
 
     if functionjob_db.function_class == FunctionClass.SOLVER:
-        return RegisteredSolverFunctionJob(
+        return RegisteredSolverFunctionJobWithStatus(
             uid=functionjob_db.uuid,
             title=functionjob_db.title,
             description="",
@@ -724,8 +916,82 @@ def _decode_functionjob(
             outputs=functionjob_db.outputs,
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
             created_at=functionjob_db.created,
+            status=FunctionJobStatus(status=functionjob_db.status),
+            job_creation_task_id=functionjob_db.class_specific_data.get(
+                "job_creation_task_id"
+            ),
         )
 
     raise UnsupportedFunctionJobClassError(
         function_job_class=functionjob_db.function_class
+    )
+
+
+def _patch_functionjob(
+    function_job_db: RegisteredFunctionJobDB,
+    patch: RegisteredFunctionJobPatch,
+) -> RegisteredFunctionJobDB:
+    if function_job_db.function_class == FunctionClass.PROJECT:
+        assert patch.function_class == FunctionClass.PROJECT  # nosec
+        return RegisteredFunctionJobDB(
+            function_class=FunctionClass.PROJECT,
+            function_uuid=function_job_db.function_uuid,
+            title=patch.title or function_job_db.title,
+            uuid=function_job_db.uuid,
+            description=patch.description or function_job_db.description,
+            inputs=patch.inputs or function_job_db.inputs,
+            outputs=patch.outputs or function_job_db.outputs,
+            created=function_job_db.created,
+            class_specific_data=FunctionClassSpecificData(
+                project_job_id=(
+                    f"{patch.project_job_id}"
+                    if patch.project_job_id
+                    else function_job_db.class_specific_data.get("project_job_id")
+                ),
+                job_creation_task_id=(
+                    f"{patch.job_creation_task_id}"
+                    if patch.job_creation_task_id
+                    else function_job_db.class_specific_data.get("job_creation_task_id")
+                ),
+            ),
+        )
+    if function_job_db.function_class == FunctionClass.SOLVER:
+        assert patch.function_class == FunctionClass.SOLVER  # nosec
+        return RegisteredFunctionJobDB(
+            function_class=FunctionClass.SOLVER,
+            function_uuid=function_job_db.function_uuid,
+            title=patch.title or function_job_db.title,
+            uuid=function_job_db.uuid,
+            description=patch.description or function_job_db.description,
+            inputs=patch.inputs or function_job_db.inputs,
+            outputs=patch.outputs or function_job_db.outputs,
+            created=function_job_db.created,
+            class_specific_data=FunctionClassSpecificData(
+                solver_job_id=(
+                    f"{patch.solver_job_id}"
+                    if patch.solver_job_id
+                    else function_job_db.class_specific_data.get("solver_job_id")
+                ),
+                job_creation_task_id=(
+                    f"{patch.job_creation_task_id}"
+                    if patch.job_creation_task_id
+                    else function_job_db.class_specific_data.get("job_creation_task_id")
+                ),
+            ),
+        )
+    if function_job_db.function_class == FunctionClass.PYTHON_CODE:
+        assert patch.function_class == FunctionClass.PYTHON_CODE  # nosec
+        return RegisteredFunctionJobDB(
+            function_class=FunctionClass.PYTHON_CODE,
+            function_uuid=function_job_db.function_uuid,
+            title=patch.title or function_job_db.title,
+            uuid=function_job_db.uuid,
+            description=patch.description or function_job_db.description,
+            inputs=patch.inputs or function_job_db.inputs,
+            outputs=patch.outputs or function_job_db.outputs,
+            created=function_job_db.created,
+            class_specific_data=function_job_db.class_specific_data,
+        )
+    raise UnsupportedFunctionJobClassError(
+        function_job_class=function_job_db.function_class
     )

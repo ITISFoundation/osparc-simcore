@@ -26,7 +26,10 @@ from servicelib.utils import fire_and_forget_task
 from ...._meta import API_VTAG
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
-from ....security.decorators import permission_required
+from ....security.decorators import (
+    group_or_role_permission_required,
+    permission_required,
+)
 from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
 from ... import _accounts_service
 from ._rest_exceptions import handle_rest_requests_exceptions
@@ -43,7 +46,7 @@ _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 
 @routes.get(f"/{API_VTAG}/admin/user-accounts", name="list_users_accounts")
 @login_required
-@permission_required("admin.users.read")
+@group_or_role_permission_required("admin.users.read")
 @handle_rest_requests_exceptions
 async def list_users_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
@@ -64,7 +67,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
         # ALL
         filter_any_account_request_status = None
 
-    users, total_count = await _accounts_service.list_user_accounts(
+    user_accounts, total_count = await _accounts_service.list_user_accounts(
         request.app,
         product_name=req_ctx.product_name,
         filter_any_account_request_status=filter_any_account_request_status,
@@ -72,17 +75,21 @@ async def list_users_accounts(request: web.Request) -> web.Response:
         pagination_offset=query_params.offset,
     )
 
-    def _to_domain_model(user: dict[str, Any]) -> UserAccountGet:
+    def _to_domain_model(account_details: dict[str, Any]) -> UserAccountGet:
+        account_details.pop("account_request_reviewed_by", None)
         return UserAccountGet(
-            extras=user.pop("extras") or {},
-            pre_registration_id=user.pop("id"),
-            pre_registration_created=user.pop("created"),
-            **user,
+            extras=account_details.pop("extras") or {},
+            pre_registration_id=account_details.pop("id"),
+            pre_registration_created=account_details.pop("created"),
+            account_request_reviewed_by=account_details.pop(
+                "account_request_reviewed_by_username"
+            ),
+            **account_details,
         )
 
     page = Page[UserAccountGet].model_validate(
         paginate_data(
-            chunk=[_to_domain_model(user) for user in users],
+            chunk=[_to_domain_model(user) for user in user_accounts],
             request_url=request.url,
             total=total_count,
             limit=query_params.limit,
@@ -95,7 +102,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
 
 @routes.get(f"/{API_VTAG}/admin/user-accounts:search", name="search_user_accounts")
 @login_required
-@permission_required("admin.users.read")
+@group_or_role_permission_required("admin.users.read")
 @handle_rest_requests_exceptions
 async def search_user_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
@@ -106,7 +113,11 @@ async def search_user_accounts(request: web.Request) -> web.Response:
     )
 
     found = await _accounts_service.search_users_accounts(
-        request.app, email_glob=query_params.email, include_products=True
+        request.app,
+        filter_by_email_glob=query_params.email,
+        filter_by_primary_group_id=query_params.primary_group_id,
+        filter_by_user_name_glob=query_params.user_name,
+        include_products=True,
     )
 
     return envelope_json_response(
@@ -164,10 +175,13 @@ async def approve_user_account(request: web.Request) -> web.Response:
                 guest=approval_data.email,
                 trial_account_days=approval_data.invitation.trial_account_days,
                 extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
+                product=req_ctx.product_name,
             )
 
             invitation_result = await invitations_service.generate_invitation(
-                request.app, params=invitation_params
+                request.app,
+                params=invitation_params,
+                product_origin_url=request.url.origin(),
             )
 
             assert (  # nosec
@@ -204,7 +218,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
             # get pre-registration data
             found = await _accounts_service.search_users_accounts(
                 request.app,
-                email_glob=approval_data.email,
+                filter_by_email_glob=approval_data.email,
                 product_name=req_ctx.product_name,
                 include_products=False,
             )
@@ -260,7 +274,7 @@ async def reject_user_account(request: web.Request) -> web.Response:
         # get pre-registration data
         found = await _accounts_service.search_users_accounts(
             request.app,
-            email_glob=rejection_data.email,
+            filter_by_email_glob=rejection_data.email,
             product_name=req_ctx.product_name,
             include_products=False,
         )

@@ -14,7 +14,6 @@ from simcore_postgres_database.utils_repos import (
 )
 
 from ....models.comp_run_snapshot_tasks import CompRunSnapshotTaskDBGet
-from ....utils.db import DB_TO_RUNNING_STATE
 from ..tables import comp_run_snapshot_tasks, comp_runs
 from ._base import BaseRepository
 
@@ -22,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 class CompRunsSnapshotTasksRepository(BaseRepository):
-
     async def batch_create(
         self, *, data: list[dict]
     ) -> None:  # list[CompRunSnapshotTaskAtDBGet]:
@@ -33,7 +31,6 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
             return
 
         async with transaction_context(self.db_engine) as conn:
-
             try:
                 await conn.execute(
                     comp_run_snapshot_tasks.insert().returning(
@@ -111,12 +108,7 @@ class CompRunsSnapshotTasksRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
 
             items = [
-                CompRunSnapshotTaskDBGet.model_validate(
-                    {
-                        **row,
-                        "state": DB_TO_RUNNING_STATE[row["state"]],  # Convert the state
-                    }
-                )
+                CompRunSnapshotTaskDBGet.model_validate(row, from_attributes=True)
                 async for row in await conn.stream(list_query)
             ]
             return cast(int, total_count), items

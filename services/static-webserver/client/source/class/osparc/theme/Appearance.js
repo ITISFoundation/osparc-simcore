@@ -19,11 +19,40 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
+    "iframe-no-border": {
+      style: () => {
+        return {
+          backgroundColor: "transparent",
+          decorator: "no-border-0"
+        };
+      }
+    },
+
     "strong-ui": {
       style: () => {
         return {
           textColor: "white",
           backgroundColor: "product-color",
+        };
+      }
+    },
+
+    "help-list-button": {
+      include: "button",
+      style() {
+        return {
+          font: "text-14",
+          allowGrowX: true,
+          minHeight: 29,
+          center: false
+        };
+      }
+    },
+    "help-list-button/label": {
+      style() {
+        return {
+          textAlign: "left",
+          allowGrowX: true
         };
       }
     },
@@ -447,6 +476,21 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "selectbox/list",
       style: () => ({
         padding: 0
+      })
+    },
+
+    "selectbox/arrow": {
+      style: () => ({
+        // keep the original source
+        source: osparc.theme.common.Image.URLS["arrow-down"],
+        // keep the original paddings
+        paddingRight: 0,
+        paddingLeft: 2,
+        paddingTop: -3,
+        // ensure the arrow has explicit size
+        width: 16,
+        height: 16,
+        scale: true,
       })
     },
 

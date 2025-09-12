@@ -2,7 +2,6 @@ import datetime
 from typing import Annotated, TypeAlias
 
 from common_library.users_enums import UserRole
-from models_library.basic_types import IDStr
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, StringConstraints
 from pydantic.config import JsonDict
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
@@ -12,8 +11,9 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
 from .emails import LowerCaseEmailStr
 
 UserID: TypeAlias = PositiveInt
-UserNameID: TypeAlias = IDStr
-
+UserNameID: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)
+]
 
 FirstNameStr: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, max_length=255)
@@ -71,8 +71,11 @@ class UserBillingDetails(BaseModel):
     institution: str | None
     address: str | None
     city: str | None
-    state: str | None = Field(description="State, province, canton, ...")
-    country: str  # Required for taxes
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
+    country: Annotated[
+        str,
+        Field(description="Billing country (with standardize name) required for taxes"),
+    ]
     postal_code: str | None
     phone: str | None
 

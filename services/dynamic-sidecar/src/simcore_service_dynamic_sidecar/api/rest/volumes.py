@@ -16,14 +16,13 @@ class PutVolumeItem(BaseModel):
     status: VolumeStatus
 
 
-@router.put(
-    "/volumes/{id}",
-    summary="Updates the state of the volume",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
+@router.put("/volumes/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def put_volume_state(
     item: PutVolumeItem,
     app: Annotated[FastAPI, Depends(get_application)],
     volume_category: Annotated[VolumeCategory, PathParam(..., alias="id")],
 ) -> None:
-    await volumes.save_volume_state(app, status=item.status, category=volume_category)
+    """Updates the state of the volume"""
+    await volumes.update_volume_status(
+        app, status=item.status, category=volume_category
+    )

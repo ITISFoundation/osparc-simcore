@@ -63,7 +63,7 @@ qx.Class.define("osparc.auth.ui.ResetPassView", {
       });
 
       this.beautifyFormFields();
-      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      const formRenderer = new osparc.ui.form.renderer.LoginSinglePlaceholder(this._form);
       this.add(formRenderer);
 
       // buttons

@@ -122,7 +122,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
           const orgServices = [];
           Object.keys(servicesLatest).forEach(key => {
             const serviceLatest = servicesLatest[key];
-            if (groupId in serviceLatest["accessRights"]) {
+            if (serviceLatest["accessRights"] && groupId in serviceLatest["accessRights"]) {
               orgServices.push(serviceLatest);
             }
           });

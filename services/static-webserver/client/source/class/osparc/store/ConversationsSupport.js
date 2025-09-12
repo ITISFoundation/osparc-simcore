@@ -37,7 +37,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   members: {
-    getConversations: function() {
+    fetchConversations: function() {
       const params = {
         url: {
           offset: 0,
@@ -124,7 +124,19 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           name,
         }
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "renameConversation", params);
+      return osparc.data.Resources.fetch("conversationsSupport", "patchConversation", params);
+    },
+
+    patchExtraContext: function(conversationId, extraContext) {
+      const params = {
+        url: {
+          conversationId,
+        },
+        data: {
+          extraContext,
+        }
+      };
+      return osparc.data.Resources.fetch("conversationsSupport", "patchConversation", params);
     },
 
     fetchLastMessage: function(conversationId) {

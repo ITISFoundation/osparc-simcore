@@ -28,18 +28,23 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
     let label = null;
     let toolTipText = "";
     switch (collaborator["collabType"]) {
-      case 0:
-        iconPath = "@FontAwesome5Solid/globe/14";
+      case osparc.store.Groups.COLLAB_TYPE.EVERYONE:
+        iconPath = osparc.dashboard.CardBase.SHARED_ALL;
         label = this.tr("Public");
         toolTipText = this.tr("Public to all users");
         break;
-      case 1:
-        iconPath = "@FontAwesome5Solid/users/14";
+      case osparc.store.Groups.COLLAB_TYPE.SUPPORT:
+        iconPath = osparc.dashboard.CardBase.SHARED_SUPPORT;
         label = collaborator.getLabel();
         toolTipText = collaborator.getDescription();
         break;
-      case 2: {
-        iconPath = "@FontAwesome5Solid/user/14";
+      case osparc.store.Groups.COLLAB_TYPE.ORGANIZATION:
+        iconPath = osparc.dashboard.CardBase.SHARED_ORGS;
+        label = collaborator.getLabel();
+        toolTipText = collaborator.getDescription();
+        break;
+      case osparc.store.Groups.COLLAB_TYPE.USER: {
+        iconPath = osparc.dashboard.CardBase.SHARED_USER;
         label = collaborator.getLabel();
         if (collaborator.getEmail()) {
           toolTipText += collaborator.getEmail() + "<br>";
@@ -51,6 +56,10 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
       }
     }
     this.setIcon(iconPath);
+    this.getChildControl("icon").set({
+      width: 17, // align with widest icon: "users"
+      scale: true,
+    });
     this.setLabel(label);
     if (toolTipText) {
       const infoButton = new osparc.ui.hint.InfoHint(toolTipText);

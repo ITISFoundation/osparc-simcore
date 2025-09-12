@@ -155,8 +155,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __viewsStack: null,
     __workbenchView: null,
     __slideshowView: null,
-    __autoSaveTimer: null,
-    __savingTimer: null,
     __studyEditorIdlingTracker: null,
     __lastSyncedProjectDocument: null,
     __lastSyncedProjectVersion: null,
@@ -254,7 +252,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       // Count dynamic services.
       // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
-      const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
+      const maxNumber = osparc.store.StaticInfo.getMaxNumberDyNodes();
       const dontCheck = study.getDisableServiceAutoStart();
       if (maxNumber && !dontCheck) {
         const nodes = study.getWorkbench().getNodes();
@@ -267,10 +265,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       }
 
-      if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
-        this.__startAutoSaveTimer();
-        this.__startSavingTimer();
-      } else {
+      if (!osparc.data.model.Study.canIWrite(study.getAccessRights())) {
         const msg = this.self().READ_ONLY_TEXT;
         osparc.FlashMessenger.logAs(msg, "WARNING");
       }
@@ -292,13 +287,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.nodeSelected(nodeId);
       }, this);
 
-      if (osparc.utils.Utils.eventDrivenPatch()) {
-        study.listenToChanges(); // this includes the listener on the workbench and ui
-        study.addListener("projectDocumentChanged", e => this.projectDocumentChanged(e.getData()), this);
-      } else {
-        workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
-        workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
-      }
+      study.listenToChanges(); // this includes the listener on the workbench and ui
+      study.addListener("projectDocumentChanged", e => this.projectDocumentChanged(e.getData()), this);
 
       if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         this.__listenToProjectDocument();
@@ -953,67 +943,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
     // ------------------ IDLING TRACKER ------------------
 
-    // ------------------ AUTO SAVER ------------------
-    __startAutoSaveTimer: function() {
-      if (osparc.utils.Utils.eventDrivenPatch()) {
-        // If event driven patch is enabled, auto save is not needed
-        return;
-      }
-
-      // Save every 3 seconds
-      const timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
-      timer.addListener("interval", () => {
-        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
-          return;
-        }
-        this.__checkStudyChanges();
-      }, this);
-      timer.start();
-    },
-
-    __stopAutoSaveTimer: function() {
-      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
-        this.__autoSaveTimer.stop();
-        this.__autoSaveTimer.setEnabled(false);
-      }
-    },
-
-    __restartAutoSaveTimer: function() {
-      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
-        this.__autoSaveTimer.restart();
-      }
-    },
-    // ------------------ AUTO SAVER ------------------
-
-    // ---------------- SAVING TIMER ------------------
-    __startSavingTimer: function() {
-      if (osparc.utils.Utils.eventDrivenPatch()) {
-        // If event driven patch is enabled, saving timer indicator is not needed
-        return;
-      }
-
-      const timer = this.__savingTimer = new qx.event.Timer(this.self().DIFF_CHECK_INTERVAL);
-      timer.addListener("interval", () => {
-        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
-          return;
-        }
-        this.getStudy().setSavePending(this.didStudyChange());
-      }, this);
-      timer.start();
-    },
-
-    __stopSavingTimer: function() {
-      if (this.__savingTimer && this.__savingTimer.isEnabled()) {
-        this.__savingTimer.stop();
-        this.__savingTimer.setEnabled(false);
-      }
-    },
-    // ---------------- SAVING TIMER ------------------
-
     __stopTimers: function() {
       this.__stopIdlingTracker();
-      this.__stopAutoSaveTimer();
-      this.__stopSavingTimer();
     },
 
     __getStudyDiffs: function() {
@@ -1038,17 +969,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const changed = Boolean(Object.keys(studyDiffs.delta).length);
       this.getStudy().setSavePending(changed);
       return changed;
-    },
-
-    __checkStudyChanges: function() {
-      if (this.didStudyChange()) {
-        if (this.__updatingStudy > 0) {
-          // throttle update
-          this.__updateThrottled = true;
-        } else {
-          this.updateStudyDocument();
-        }
-      }
     },
 
     /**

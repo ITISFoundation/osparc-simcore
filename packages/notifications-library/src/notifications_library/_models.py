@@ -30,7 +30,6 @@ class SharerData:
 
 @dataclass(frozen=True)
 class ProductUIData:
-    project_alias: str
     logo_url: str | None = (
         None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html
     )

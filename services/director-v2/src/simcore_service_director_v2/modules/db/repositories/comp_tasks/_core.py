@@ -23,7 +23,7 @@ from .....core.errors import ComputationalTaskNotFoundError
 from .....models.comp_tasks import CompTaskAtDB, ComputationTaskForRpcDBGet
 from .....modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from .....utils.computations import to_node_class
-from .....utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
+from .....utils.db import RUNNING_STATE_TO_DB
 from ....catalog import CatalogClient
 from ...tables import NodeClass, StateType, comp_run_snapshot_tasks, comp_tasks
 from .._base import BaseRepository
@@ -130,12 +130,7 @@ class CompTasksRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
 
             items = [
-                ComputationTaskForRpcDBGet.model_validate(
-                    {
-                        **row,
-                        "state": DB_TO_RUNNING_STATE[row["state"]],  # Convert the state
-                    }
-                )
+                ComputationTaskForRpcDBGet.model_validate(row, from_attributes=True)
                 async for row in await conn.stream(list_query)
             ]
             return cast(int, total_count), items

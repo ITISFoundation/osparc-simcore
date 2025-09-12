@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.functions import (
@@ -18,10 +19,13 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.functions import (
     FunctionClass,
+    FunctionGroupAccessRights,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
+    RegisteredFunctionJobPatch,
+    RegisteredFunctionJobWithStatus,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -192,6 +196,40 @@ async def list_function_jobs(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+async def list_function_jobs_with_status(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    pagination_offset: int,
+    pagination_limit: int,
+    filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+) -> tuple[
+    list[RegisteredFunctionJobWithStatus],
+    PageMetaInfoLimitOffset,
+]:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("list_function_jobs_with_status"),
+        user_id=user_id,
+        product_name=product_name,
+        pagination_offset=pagination_offset,
+        pagination_limit=pagination_limit,
+        filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+    )
+    return TypeAdapter(
+        tuple[
+            list[RegisteredFunctionJobWithStatus],
+            PageMetaInfoLimitOffset,
+        ]
+    ).validate_python(result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
 async def list_function_job_collections(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
@@ -298,6 +336,28 @@ async def register_function_job(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+async def patch_registered_function_job(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_uuid: FunctionJobID,
+    registered_function_job_patch: RegisteredFunctionJobPatch,
+) -> RegisteredFunctionJob:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("patch_registered_function_job"),
+        user_id=user_id,
+        product_name=product_name,
+        function_job_uuid=function_job_uuid,
+        registered_function_job_patch=registered_function_job_patch,
+    )
+    return TypeAdapter(RegisteredFunctionJob).validate_python(
+        result
+    )  # Validates the result as a RegisteredFunctionJob
+
+
+@log_decorator(_logger, level=logging.DEBUG)
 async def get_function_job(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
@@ -360,6 +420,7 @@ async def update_function_job_status(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     job_status: FunctionJobStatus,
+    check_write_permissions: bool = True,
 ) -> FunctionJobStatus:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
@@ -368,6 +429,7 @@ async def update_function_job_status(
         job_status=job_status,
         user_id=user_id,
         product_name=product_name,
+        check_write_permissions=check_write_permissions,
     )
     return TypeAdapter(FunctionJobStatus).validate_python(result)
 
@@ -380,6 +442,7 @@ async def update_function_job_outputs(
     product_name: ProductName,
     function_job_id: FunctionJobID,
     outputs: FunctionOutputs,
+    check_write_permissions: bool = True,
 ) -> FunctionOutputs:
     result = await rabbitmq_rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
@@ -388,6 +451,7 @@ async def update_function_job_outputs(
         outputs=outputs,
         user_id=user_id,
         product_name=product_name,
+        check_write_permissions=check_write_permissions,
     )
     return TypeAdapter(FunctionOutputs).validate_python(result)
 
@@ -520,3 +584,37 @@ async def get_functions_user_api_access_rights(
         product_name=product_name,
     )
     return TypeAdapter(FunctionUserApiAccessRights).validate_python(result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def set_group_permissions(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    object_ids: list[FunctionID | FunctionJobID | FunctionJobCollectionID],
+    permission_group_id: int,
+    read: bool | None = None,
+    write: bool | None = None,
+    execute: bool | None = None,
+) -> list[
+    tuple[
+        FunctionID | FunctionJobID | FunctionJobCollectionID, FunctionGroupAccessRights
+    ]
+]:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("set_group_permissions"),
+        user_id=user_id,
+        product_name=product_name,
+        object_type=object_type,
+        object_ids=object_ids,
+        permission_group_id=permission_group_id,
+        read=read,
+        write=write,
+        execute=execute,
+    )
+    return TypeAdapter(
+        list[tuple[FunctionID | FunctionJobID, FunctionGroupAccessRights]]
+    ).validate_python(result)

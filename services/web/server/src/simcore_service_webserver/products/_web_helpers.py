@@ -4,10 +4,12 @@ from pathlib import Path
 import aiofiles
 from aiohttp import web
 from models_library.products import ProductName
+from models_library.users import UserID
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from .._resources import webserver_resources
 from ..constants import RQ_PRODUCT_KEY
+from ..groups import api as groups_service
 from . import _service
 from ._web_events import APP_PRODUCTS_TEMPLATES_DIR_KEY
 from .errors import (
@@ -36,6 +38,22 @@ def get_current_product(request: web.Request) -> Product:
         request.app, product_name=product_name
     )
     return current_product
+
+
+async def is_user_in_product_support_group(
+    request: web.Request, *, user_id: UserID
+) -> bool:
+    """Checks if the user belongs to the support group of the given product.
+    If the product does not have a support group, returns False.
+    """
+    product = get_current_product(request)
+    if product.support_standard_group_id is None:
+        return False
+    return await groups_service.is_user_in_group(
+        app=request.app,
+        user_id=user_id,
+        group_id=product.support_standard_group_id,
+    )
 
 
 def _get_current_product_or_none(request: web.Request) -> Product | None:

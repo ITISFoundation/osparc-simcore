@@ -74,8 +74,10 @@ def fake_granular_env_file_content() -> str:
         POSTGRES_USER=foo
         POSTGRES_PASSWORD=secret
         POSTGRES_DB=foodb
-        POSTGRES_MINSIZE=2
+        POSTGRES_MINSIZE=1
         POSTGRES_MAXSIZE=50
+        POSTGRES_MAX_POOLSIZE=10
+        POSTGRES_MAX_OVERFLOW=20
         POSTGRES_CLIENT_NAME=None
         MODULE_VALUE=10
     """
@@ -188,8 +190,10 @@ def test_cli_default_settings_envs(
                 "POSTGRES_USER": "foo",
                 "POSTGRES_PASSWORD": "secret",
                 "POSTGRES_DB": "foodb",
-                "POSTGRES_MINSIZE": 2,
+                "POSTGRES_MINSIZE": 1,
                 "POSTGRES_MAXSIZE": 50,
+                "POSTGRES_MAX_POOLSIZE": 10,
+                "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
             },
         }
@@ -219,8 +223,10 @@ def test_cli_compact_settings_envs(
                 "POSTGRES_USER": "foo",
                 "POSTGRES_PASSWORD": "secret",
                 "POSTGRES_DB": "foodb",
-                "POSTGRES_MINSIZE": 2,
+                "POSTGRES_MINSIZE": 1,
                 "POSTGRES_MAXSIZE": 50,
+                "POSTGRES_MAX_POOLSIZE": 10,
+                "POSTGRES_MAX_OVERFLOW": 20,
                 "POSTGRES_CLIENT_NAME": None,
             },
         }
@@ -244,7 +250,7 @@ def test_cli_compact_settings_envs(
             "APP_HOST": "localhost",
             "APP_PORT": "80",
             "APP_OPTIONAL_ADDON": '{"MODULE_VALUE":10,"MODULE_VALUE_DEFAULT":42}',
-            "APP_REQUIRED_PLUGIN": '{"POSTGRES_HOST":"localhost","POSTGRES_PORT":5432,"POSTGRES_USER":"foo","POSTGRES_PASSWORD":"secret","POSTGRES_DB":"foodb","POSTGRES_MINSIZE":2,"POSTGRES_MAXSIZE":50,"POSTGRES_CLIENT_NAME":null}',
+            "APP_REQUIRED_PLUGIN": '{"POSTGRES_HOST":"localhost","POSTGRES_PORT":5432,"POSTGRES_USER":"foo","POSTGRES_PASSWORD":"secret","POSTGRES_DB":"foodb","POSTGRES_MINSIZE":1,"POSTGRES_MAXSIZE":50,"POSTGRES_MAX_POOLSIZE":10,"POSTGRES_MAX_OVERFLOW":20,"POSTGRES_CLIENT_NAME":null}',
         }
 
         settings_2 = fake_settings_class()
@@ -261,7 +267,7 @@ def test_compact_format(
         APP_HOST=localhost
         APP_PORT=80
         APP_OPTIONAL_ADDON='{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}'
-        APP_REQUIRED_PLUGIN='{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, "POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", "POSTGRES_DB": "foodb", "POSTGRES_MINSIZE": 2, "POSTGRES_MAXSIZE": 50, "POSTGRES_CLIENT_NAME": "None"}'
+        APP_REQUIRED_PLUGIN='{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, "POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", "POSTGRES_DB": "foodb", "POSTGRES_MINSIZE": 1, "POSTGRES_MAXSIZE": 50, "POSTGRES_MAX_POOLSIZE": 10, "POSTGRES_MAX_OVERFLOW": 20, "POSTGRES_CLIENT_NAME": "None"}'
         """,
     )
 
@@ -292,10 +298,10 @@ def test_granular_format(
     POSTGRES_PASSWORD=secret
     # Database name
     POSTGRES_DB=foodb
-    # Minimum number of connections in the pool
-    POSTGRES_MINSIZE=2
-    # Maximum number of connections in the pool
+    POSTGRES_MINSIZE=1
     POSTGRES_MAXSIZE=50
+    POSTGRES_MAX_POOLSIZE=10
+    POSTGRES_MAX_OVERFLOW=20
     # Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)
     POSTGRES_CLIENT_NAME=None
     """,
@@ -313,8 +319,10 @@ def test_granular_format(
             "POSTGRES_USER": "foo",
             "POSTGRES_PASSWORD": "secret",
             "POSTGRES_DB": "foodb",
-            "POSTGRES_MINSIZE": 2,
+            "POSTGRES_MINSIZE": 1,
             "POSTGRES_MAXSIZE": 50,
+            "POSTGRES_MAX_POOLSIZE": 10,
+            "POSTGRES_MAX_OVERFLOW": 20,
             "POSTGRES_CLIENT_NAME": None,
         },
     )

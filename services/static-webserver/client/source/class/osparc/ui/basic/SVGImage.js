@@ -68,7 +68,7 @@ qx.Class.define("osparc.ui.basic.SVGImage", {
           filter = "invert(66%) sepia(24%) saturate(5763%) hue-rotate(188deg) brightness(101%) contrast(101%)";
           break;
         case "text": // light or dark
-          if (qx.theme.manager.Meta.getInstance().getTheme().basename === "ThemeLight") {
+          if (osparc.ui.switch.ThemeSwitcher.isLight()) {
             // ThemeLight #282828
             filter = "invert(10%) sepia(4%) saturate(19%) hue-rotate(354deg) brightness(102%) contrast(86%)";
           } else {

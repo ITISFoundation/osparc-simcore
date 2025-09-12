@@ -16,7 +16,9 @@ anyio==4.6.2.post1
     #   -c requirements/_base.txt
     #   httpx
 asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 attrs==24.2.0
     # via
     #   -c requirements/_base.txt
@@ -79,7 +81,9 @@ idna==3.10
 iniconfig==2.0.0
     # via pytest
 jsonref==1.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 multidict==6.1.0
     # via
     #   -c requirements/_base.txt

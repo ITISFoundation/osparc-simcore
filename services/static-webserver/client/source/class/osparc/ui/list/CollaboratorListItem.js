@@ -20,7 +20,12 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
   properties: {
     collabType: {
-      check: [0, 1, 2], // 0:all, 1:org, 2:user
+      check: [
+        "everyone",     // osparc.store.Groups.COLLAB_TYPE.EVERYONE
+        "support",      // osparc.store.Groups.COLLAB_TYPE.SUPPORT
+        "organization", // osparc.store.Groups.COLLAB_TYPE.ORGANIZATION
+        "user",         // osparc.store.Groups.COLLAB_TYPE.USER
+      ],
       event: "changeCollabType",
       nullable: true
     },
@@ -75,17 +80,27 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
   members: {
     __getRoleInfo: function(id) {
+      let roleInfo = undefined;
       const resource = this.getResourceType();
-      if (["study", "template", "tutorial", "hypertool"].includes(resource)) {
-        return osparc.data.Roles.STUDY[id];
-      } else if (resource === "service") {
-        return osparc.data.Roles.SERVICES[id];
-      } else if (resource === "workspace") {
-        return osparc.data.Roles.WORKSPACE[id];
-      } else if (resource === "tag") {
-        return osparc.data.Roles.STUDY[id];
+      switch (resource) {
+        case "study":
+        case "template":
+        case "tutorial":
+        case "hypertool":
+        case "tag":
+          roleInfo = osparc.data.Roles.STUDY[id];
+          break;
+        case "function":
+          roleInfo = osparc.data.Roles.FUNCTION[id];
+          break;
+        case "service":
+          roleInfo = osparc.data.Roles.SERVICES[id];
+          break;
+        case "workspace":
+          roleInfo = osparc.data.Roles.WORKSPACE[id];
+          break;
       }
-      return undefined;
+      return roleInfo;
     },
 
     _createChildControlImpl: function(id) {
@@ -119,10 +134,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         return;
       }
       const groupsStore = osparc.store.Groups.getInstance();
-      const everyoneGroupIds = [
-        groupsStore.getEveryoneProductGroup().getGroupId(),
-        groupsStore.getEveryoneGroup().getGroupId(),
-      ];
+      const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
       const label = this.getChildControl("title");
       if (everyoneGroupIds.includes(this.getModel())) {
         label.setValue(this.tr("Public"));
@@ -136,13 +148,13 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       if (value === null) {
         const collabType = this.getCollabType();
         switch (collabType) {
-          case 0:
+          case osparc.store.Groups.COLLAB_TYPE.EVERYONE:
             value = "@FontAwesome5Solid/globe/28";
             break;
-          case 1:
+          case osparc.store.Groups.COLLAB_TYPE.ORGANIZATION:
             value = "@FontAwesome5Solid/users/28";
             break;
-          case 2:
+          case osparc.store.Groups.COLLAB_TYPE.USER:
             value = "@FontAwesome5Solid/user/28";
             break;
         }
@@ -212,9 +224,9 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "write": {
-          const resource = this.getResourceType();
-          if (resource !== "service") {
-            // there is no owner role for services
+          // there might not be delete role
+          const deleteRole = this.__getRoleInfo("delete");
+          if (deleteRole) {
             const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo("delete").label}`));
             promoteButton.addListener("execute", () => {
               this.fireDataEvent("promoteToOwner", {

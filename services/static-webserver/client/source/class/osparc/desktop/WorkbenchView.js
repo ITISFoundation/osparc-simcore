@@ -61,7 +61,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __handleIframeStateChange: function(node, iframeLayout) {
-      iframeLayout.removeAll();
+      if (iframeLayout.classname === "osparc.viewer.NodeViewer") {
+        iframeLayout._removeAll();
+      } else  {
+        iframeLayout.removeAll();
+      }
       if (node && node.getIFrame()) {
         const iFrame = node.getIFrame();
         const src = iFrame.getSource();
@@ -71,9 +75,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         } else if (src === null || src === "about:blank") {
           showPage = node.getLoadingPage();
         }
-        iframeLayout.add(showPage, {
-          flex: 1
-        });
+        if (iframeLayout.classname === "osparc.viewer.NodeViewer") {
+          iframeLayout._add(showPage, {
+            flex: 1
+          });
+        } else {
+          iframeLayout.add(showPage, {
+            flex: 1
+          });
+        }
       }
     },
 
@@ -647,7 +657,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
 
       workbench.addListener("fileRequested", () => {
-        if (this.getStudy().getUi().getMode() === "workbench") {
+        if (["workbench", "pipeline"].includes(this.getStudy().getUi().getMode())) {
           const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
           tabViewLeftPanel.setSelection([this.__storagePage]);
         }

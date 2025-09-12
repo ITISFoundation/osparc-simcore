@@ -279,6 +279,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         allowGrowX: false,
         alignX: "center"
       });
+      osparc.utils.Utils.setIdToWidget(fieldOptsBtn, "connect_input_btn_" + field.key);
       this.__fieldOptsBtnMap[field.key] = fieldOptsBtn;
       // populate the button/menu when the it appears
       fieldOptsBtn.addListenerOnce("appear", () => {
@@ -312,7 +313,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (["FileButton"].includes(field.widgetType)) {
         const menuButton = this.__getSelectFileButton(field.key);
         studyUI.bind("mode", menuButton, "visibility", {
-          converter: mode => mode === "workbench" ? "visible" : "excluded"
+          converter: mode => ["workbench", "pipeline"].includes(mode) ? "visible" : "excluded"
         });
         optionsMenu.add(menuButton);
       }
@@ -323,13 +324,12 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const paramsMenuBtn = this.__getParamsMenuButton(field.key);
         paramsMenuBtn.exclude();
         optionsMenu.add(paramsMenuBtn);
-        const areParamsEnabled = osparc.utils.Utils.isDevelopmentPlatform();
         [
           newParamBtn,
           paramsMenuBtn
         ].forEach(btn => {
           studyUI.bind("mode", btn, "visibility", {
-            converter: mode => mode === "workbench" && areParamsEnabled ? "visible" : "excluded"
+          converter: mode => ["workbench", "pipeline"].includes(mode) ? "visible" : "excluded"
           });
         });
       }
@@ -358,7 +358,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const inputNodeIDs = thisNode.getInputNodes();
         inputNodeIDs.forEach(inputNodeId => {
           const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
-          if (inputNode) {
+          if (inputNode && inputNode.getMetadata()) {
             for (const outputKey in inputNode.getOutputs()) {
               const paramButton = new qx.ui.menu.Button();
               inputNode.bind("label", paramButton, "label", {
@@ -400,7 +400,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       menu.removeAll();
 
       const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
-      if (inputNode) {
+      if (inputNode && inputNode.getMetadata()) {
         for (const outputKey in inputNode.getOutputs()) {
           osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
             .then(compatible => {
@@ -426,6 +426,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
     __getNewParamButton: function(portId) {
       const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
+      osparc.utils.Utils.setIdToWidget(newParamBtn, "connect_new_parameter_btn_" + portId);
       newParamBtn.addListener("execute", () => this.fireDataEvent("parameterRequested", portId), this);
       return newParamBtn;
     },

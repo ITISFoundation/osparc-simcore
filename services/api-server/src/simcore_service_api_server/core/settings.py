@@ -13,6 +13,7 @@ from pydantic import (
 )
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
+from settings_library.celery import CelerySettings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
@@ -102,6 +103,10 @@ class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None = None
 
+    API_SERVER_CELERY: Annotated[
+        CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ] = None
+
     API_SERVER_POSTGRES: Annotated[
         PostgresSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
@@ -141,6 +146,10 @@ class ApplicationSettings(BasicSettings):
             json_schema_extra={"auto_default_from_env": True},
         ),
     ]
+
+    API_SERVER_WORKER_MODE: Annotated[
+        bool, Field(description="If True, the API server runs in worker mode")
+    ] = False
 
     @cached_property
     def debug(self) -> bool:

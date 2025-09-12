@@ -57,7 +57,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
             msg += "</br>";
             msg += this.tr("Please contact us:");
             msg += "</br>";
-            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+            const supportEmail = osparc.store.VendorInfo.getSupportEmail();
             msg += supportEmail;
             osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
           }
@@ -188,7 +188,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
     },
 
     __addNewServiceButtons: function() {
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      const platformName = osparc.store.StaticInfo.getPlatformName();
       const hasRights = osparc.data.Permissions.getInstance().canDo("studies.template.create.productAll");
       if (platformName === "dev") {
         const testDataButton = new qx.ui.form.Button(this.tr("Test with data"), "@FontAwesome5Solid/plus-circle/14");
