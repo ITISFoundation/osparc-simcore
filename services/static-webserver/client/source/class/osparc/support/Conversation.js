@@ -127,18 +127,35 @@ qx.Class.define("osparc.support.Conversation", {
       this.getChildControl("spacer-top");
       this.getChildControl("messages-container");
       const addMessages = this.getChildControl("add-message");
-      addMessages.addListener("messageAdded", e => {
-        const data = e.getData();
-        if (data["conversationId"] && this.getConversation() === null) {
-          osparc.store.ConversationsSupport.getInstance().getConversation(data["conversationId"])
-            .then(conversation => {
-              this.setConversation(conversation);
-            });
+      addMessages.addListener("addMessage", e => {
+        const content = e.getData();
+        const conversation = this.getConversation();
+        if (conversation) {
+          this.__postMessage(content);
         } else {
-          this.getConversation().addMessage(data);
-          this.addMessage(data);
+          // create new conversation first
+          const extraContext = {};
+          const currentStudy = osparc.store.Store.getInstance().getCurrentStudy()
+          if (currentStudy) {
+            extraContext["projectId"] = currentStudy.getUuid();
+          }
+          osparc.store.ConversationsSupport.getInstance().postConversation(extraContext)
+            .then(data => {
+              const newConversation = new osparc.data.model.Conversation(data);
+              this.setConversation(newConversation);
+              this.__postMessage(content);
+            });
         }
       });
+    },
+
+    __postMessage: function(content) {
+      const conversationId = this.getConversation().getConversationId();
+      osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
+        .then(data => {
+          this.fireDataEvent("messageAdded", data);
+          return data;
+        });
     },
 
     __applyConversation: function(conversation) {
