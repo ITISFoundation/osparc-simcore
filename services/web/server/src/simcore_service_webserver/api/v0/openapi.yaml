@@ -14006,13 +14006,12 @@ components:
           description: The short name of the node
         progress:
           anyOf:
-          - type: integer
-            maximum: 100
-            minimum: 0
+          - type: number
+            maximum: 100.0
+            minimum: 0.0
           - type: 'null'
           title: Progress
-          description: the node progress value (deprecated in DB, still used for API
-            only)
+          description: the node progress value
           deprecated: true
         thumbnail:
           anyOf:
@@ -14024,6 +14023,7 @@ components:
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
+          deprecated: true
         runHash:
           anyOf:
           - type: string
@@ -14149,13 +14149,12 @@ components:
           description: The short name of the node
         progress:
           anyOf:
-          - type: integer
-            maximum: 100
-            minimum: 0
+          - type: number
+            maximum: 100.0
+            minimum: 0.0
           - type: 'null'
           title: Progress
-          description: the node progress value (deprecated in DB, still used for API
-            only)
+          description: the node progress value
           deprecated: true
         thumbnail:
           anyOf:
@@ -14167,6 +14166,7 @@ components:
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
+          deprecated: true
         runHash:
           anyOf:
           - type: string
