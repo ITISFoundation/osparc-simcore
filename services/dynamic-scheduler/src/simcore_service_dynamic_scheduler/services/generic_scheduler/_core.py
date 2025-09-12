@@ -408,6 +408,7 @@ class Core:
                     await enqueue_schedule_event(self.app, schedule_id)
                 else:
                     # TODO: the end has bean reached, do nothing from now on
+                    # here an event can be sent when the opration finishes succesfully
                     _logger.debug(
                         "Operation '%s' for schedule_id='%s' COMPLETED successfully",
                         operation_name,

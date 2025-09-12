@@ -3,7 +3,7 @@
 
 
 import asyncio
-from collections.abc import AsyncIterable, Awaitable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack
 from copy import deepcopy
 from secrets import choice
@@ -11,6 +11,7 @@ from typing import Final
 
 import pytest
 from asgi_lifespan import LifespanManager
+from faker import Faker
 from fastapi import FastAPI
 from pydantic import NonNegativeInt
 from pytest_mock import MockerFixture
@@ -20,14 +21,16 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.core.application import create_app
 from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
-    Operation,
     get_core,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
+    OperationContext,
+    OperationName,
     ScheduleId,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._operation import (
     BaseStep,
+    Operation,
     OperationRegistry,
     ParallelStepGroup,
     SingleStepGroup,
@@ -106,7 +109,30 @@ async def selected_app(
     return choice(apps)
 
 
+@pytest.fixture
+def register_operation() -> Iterable[Callable[[OperationName, Operation], None]]:
+    to_unregister: list[OperationName] = []
+
+    def _(opration_name: OperationName, operation: Operation) -> None:
+        OperationRegistry.register(opration_name, operation)
+        to_unregister.append(opration_name)
+
+    yield _
+
+    for opration_name in to_unregister:
+        OperationRegistry.unregister(opration_name)
+
+
 _STEPS_CALL_ORDER: list[tuple[str, str]] = []
+
+
+@pytest.fixture
+def steps_call_order() -> Iterable[list[tuple[str, str]]]:
+    yield _STEPS_CALL_ORDER
+    _STEPS_CALL_ORDER.clear()
+
+
+# UTILS ---------------------------------------------------------------
 
 _CREATED: Final[str] = "create"
 _REVERTED: Final[str] = "revert"
@@ -128,6 +154,12 @@ class _BaseExpectedStepOrder:
     def __init__(self, *steps: type[BaseStep]) -> None:
         self.steps = steps
 
+    def __len__(self) -> int:
+        return len(self.steps)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({', '.join(step.get_step_name() for step in self.steps)})"
+
 
 class _CreateSequence(_BaseExpectedStepOrder):
     """steps appear in a sequence as CREATE"""
@@ -145,110 +177,168 @@ class _RevertRandom(_BaseExpectedStepOrder):
     """steps appear in any given order as REVERT"""
 
 
-def _asseert_order(*expected: _BaseExpectedStepOrder) -> None:
-    call_order = deepcopy(_STEPS_CALL_ORDER)
+def _assert_sequence(
+    remaning_call_order: list[tuple[str, str]],
+    steps: tuple[type[BaseStep], ...],
+    *,
+    expected: str,
+) -> None:
+    for step in steps:
+        step_name, actual = remaning_call_order.pop(0)
+        assert step_name == step.get_step_name()
+        assert actual == expected
 
-    def _check_sequence(
-        tracked: list[tuple[str, str]],
-        steps: tuple[type[BaseStep], ...],
-        *,
-        expected_status: str,
-    ) -> None:
-        for step in steps:
-            step_name, actual = tracked.pop(0)
-            assert step_name == step.__name__
-            assert actual == expected_status
 
-    def _check_random(
-        tracked: list[tuple[str, str]],
-        steps: tuple[type[BaseStep], ...],
-        *,
-        expected_status: str,
-    ) -> None:
-        names = [step.__name__ for step in steps]
-        for _ in steps:
-            step_name, actual = tracked.pop(0)
-            assert step_name in names
-            assert actual == expected_status
-            names.remove(step_name)
+def _assert_random(
+    remaning_call_order: list[tuple[str, str]],
+    steps: tuple[type[BaseStep], ...],
+    *,
+    expected: str,
+) -> None:
+    steps_names = {step.get_step_name() for step in steps}
+    for _ in steps:
+        step_name, actual = remaning_call_order.pop(0)
+        assert step_name in steps_names
+        assert actual == expected
+        steps_names.remove(step_name)
 
-    for group in expected:
+
+def _asseert_order_as_expected(
+    steps_call_order: list[tuple[str, str]],
+    expected_order: list[_BaseExpectedStepOrder],
+) -> None:
+    # below operations are destructive make a copy
+    call_order = deepcopy(steps_call_order)
+
+    assert len(call_order) == sum(len(x) for x in expected_order)
+
+    for group in expected_order:
         if isinstance(group, _CreateSequence):
-            _check_sequence(call_order, group.steps, expected_status=_CREATED)
+            _assert_sequence(call_order, group.steps, expected=_CREATED)
         elif isinstance(group, _CreateRandom):
-            _check_random(call_order, group.steps, expected_status=_CREATED)
+            _assert_random(call_order, group.steps, expected=_CREATED)
         elif isinstance(group, _RevertSequence):
-            _check_sequence(call_order, group.steps, expected_status=_REVERTED)
+            _assert_sequence(call_order, group.steps, expected=_REVERTED)
         elif isinstance(group, _RevertRandom):
-            _check_random(call_order, group.steps, expected_status=_REVERTED)
+            _assert_random(call_order, group.steps, expected=_REVERTED)
         else:
             msg = f"Unknown {group=}"
             raise NotImplementedError(msg)
     assert not call_order, f"Left overs {call_order=}"
 
 
-class _PeelPotates(_BS): ...
+# TESTS ---------------------------------------------------------------
 
 
-class _BoilPotates(_BS): ...
+class _S1(_BS): ...
 
 
-class _MashPotates(_BS): ...
+class _S2(_BS): ...
 
 
-class _AddButter(_BS): ...
+class _S3(_BS): ...
 
 
-class _AddSalt(_BS): ...
+class _S4(_BS): ...
 
 
-class _AddPepper(_BS): ...
+class _S5(_BS): ...
 
 
-class _AddPaprika(_BS): ...
+class _S6(_BS): ...
 
 
-class _AddMint(_BS): ...
+class _S7(_BS): ...
 
 
-class _AddMilk(_BS): ...
+class _S8(_BS): ...
 
 
-class _StirTillDone(_BS): ...
+class _S9(_BS): ...
 
 
-_MASHED_POTATOES: Final[Operation] = [
-    SingleStepGroup(_PeelPotates),
-    SingleStepGroup(_BoilPotates),
-    SingleStepGroup(_MashPotates),
-    ParallelStepGroup(
-        _AddButter, _AddSalt, _AddPepper, _AddPaprika, _AddMint, _AddMilk
-    ),
-    SingleStepGroup(_StirTillDone),
-]
-
-OperationRegistry.register("mash_potatoes", _MASHED_POTATOES)  # type: ignore[call-arg
+class _S10(_BS): ...
 
 
 @pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, operation_context, expected_order",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+            ],
+            {},
+            [
+                _CreateSequence(_S1),
+            ],
+            id="s1",
+        ),
+        pytest.param(
+            [
+                ParallelStepGroup(_S1, _S2),
+            ],
+            {},
+            [
+                _CreateRandom(_S1, _S2),
+            ],
+            id="p2",
+        ),
+        pytest.param(
+            [
+                ParallelStepGroup(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
+            ],
+            {},
+            [
+                _CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
+            ],
+            id="p10",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                SingleStepGroup(_S2),
+                SingleStepGroup(_S3),
+                ParallelStepGroup(_S4, _S5, _S6, _S7, _S8, _S9),
+                SingleStepGroup(_S10),
+            ],
+            {},
+            [
+                _CreateSequence(_S1, _S2, _S3),
+                _CreateRandom(_S4, _S5, _S6, _S7, _S8, _S9),
+                _CreateSequence(_S10),
+            ],
+            id="s1-s1-s1-p6-s1",
+        ),
+    ],
+)
 async def test_core_workflow(
-    preserve_caplog_for_async_logging: None, selected_app: FastAPI
+    preserve_caplog_for_async_logging: None,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_context: OperationContext,
+    expected_order: list[_BaseExpectedStepOrder],
+    faker: Faker,
 ):
-    schedule_id: ScheduleId = await get_core(selected_app).create("mash_potatoes", {})
-    print(f"started {schedule_id=}")
+    operation_name: OperationName = faker.uuid4()
+
+    register_operation(operation_name, operation)
+
+    schedule_id = await get_core(selected_app).create(operation_name, operation_context)
+    assert isinstance(schedule_id, ScheduleId)
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
-        stop=stop_after_delay(5),
+        stop=stop_after_delay(10),
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
             await asyncio.sleep(0)  # wait for envet to trigger
-            assert len(_STEPS_CALL_ORDER) == 10
-            _asseert_order(
-                _CreateSequence(_PeelPotates, _BoilPotates, _MashPotates),
-                _CreateRandom(
-                    _AddButter, _AddSalt, _AddPepper, _AddPaprika, _AddMint, _AddMilk
-                ),
-                _CreateSequence(_StirTillDone),
-            )
+            _asseert_order_as_expected(steps_call_order, expected_order)
+
+
+# TODO: test reversal
+# TODO: test manual intervention
+# TODO: test repeating
