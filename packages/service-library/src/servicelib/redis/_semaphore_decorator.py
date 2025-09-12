@@ -6,6 +6,8 @@ import socket
 from collections.abc import Callable, Coroutine
 from typing import Any, ParamSpec, TypeVar
 
+from common_library.async_tools import cancel_wait_task
+
 from ..background_task import periodic
 from ..logging_errors import create_troubleshootting_log_kwargs
 from ._client import RedisClientSDK
@@ -113,7 +115,8 @@ def with_limited_concurrency(
                     @periodic(interval=ttl / 3, raise_on_error=True)
                     async def _periodic_renewer() -> None:
                         await semaphore.reacquire()
-                        started_event.set()
+                        if not started_event.is_set():
+                            started_event.set()
 
                     # Start the renewal task
                     renewal_task = tg.create_task(
@@ -129,11 +132,10 @@ def with_limited_concurrency(
                         coro(*args, **kwargs),
                         name=f"semaphore/work_{coro.__module__}.{coro.__name__}",
                     )
-
                     result = await work_task
 
                     # Cancel renewal task (work is done)
-                    renewal_task.cancel()
+                    await cancel_wait_task(renewal_task, max_delay=None)
 
                 return result
 

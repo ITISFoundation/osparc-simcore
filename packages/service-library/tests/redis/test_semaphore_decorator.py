@@ -351,7 +351,6 @@ async def test_cancelled_error_preserved(
         await function_raising_cancelled_error()
 
 
-# @pytest.mark.skip
 async def test_with_large_capacity(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
@@ -359,8 +358,8 @@ async def test_with_large_capacity(
     large_capacity = 100
     concurrent_count = 0
     max_concurrent = 0
-    sleep_time_s = 10
-    num_tasks = 400
+    sleep_time_s = 5
+    num_tasks = 1000
 
     @with_limited_concurrency(
         redis_client_sdk,
@@ -380,10 +379,12 @@ async def test_with_large_capacity(
 
     # Start tasks equal to the large capacity
     tasks = [asyncio.create_task(limited_function()) for _ in range(num_tasks)]
-    async with asyncio.timeout(
-        float(num_tasks) / float(large_capacity) * 10.0 * float(sleep_time_s)
-    ):
-        await asyncio.gather(*tasks)
+    done, pending = await asyncio.wait(
+        tasks,
+        timeout=float(num_tasks) / float(large_capacity) * 10.0 * float(sleep_time_s),
+    )
+    assert not pending, f"Some tasks did not complete: {len(pending)} pending"
+    assert len(done) == num_tasks
 
     # Should never exceed the large capacity
     assert max_concurrent <= large_capacity

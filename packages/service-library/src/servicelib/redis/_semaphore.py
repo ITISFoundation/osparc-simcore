@@ -177,7 +177,7 @@ class DistributedSemaphore(BaseModel):
                 else stop_never
             ),
             retry=retry_if_not_result(lambda acquired: acquired),
-            before_sleep=before_sleep_log(_logger, logging.INFO),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
         async def _blocking_acquire() -> bool:
             return await self._try_acquire()
@@ -287,23 +287,31 @@ class DistributedSemaphore(BaseModel):
 
         # Lua script returns: 'renewed' or status message
         if status == "renewed":
+            assert success == 1  # nosec
             _logger.debug(
-                "Renewed semaphore '%s' (instance: %s)",
+                "Renewed semaphore '%s' (instance: %s, count: %s, expired: %s)",
                 self.key,
                 self.instance_id,
+                current_count,
+                expired_count,
             )
         else:
+            assert success == 0  # nosec
             if status == "expired":
                 _logger.warning(
-                    "Semaphore '%s' holder key expired for instance %s",
+                    "Semaphore '%s' holder key expired (instance: %s, count: %s, expired: %s)",
                     self.key,
                     self.instance_id,
+                    current_count,
+                    expired_count,
                 )
             elif status == "not_held":
                 _logger.warning(
-                    "Semaphore '%s' not held by instance %s",
+                    "Semaphore '%s' not held (instance: %s, count: %s, expired: %s)",
                     self.key,
                     self.instance_id,
+                    current_count,
+                    expired_count,
                 )
 
             raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)

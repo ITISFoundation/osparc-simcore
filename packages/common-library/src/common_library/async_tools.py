@@ -111,8 +111,6 @@ async def cancel_wait_task(
             # owner function is being cancelled -> propagate cancellation
             raise
 
-        # else: task cancellation is complete, we can safely ignore it
-
 
 def delayed_start(
     delay: datetime.timedelta,
