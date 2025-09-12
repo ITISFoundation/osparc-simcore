@@ -342,3 +342,5 @@ async def test_core_workflow(
 # TODO: test reversal
 # TODO: test manual intervention
 # TODO: test repeating
+# TODO: test an action fails and triggers reveral
+# TODO: test fail on repating (what should happen?) -> should continue like for the status, just logs error and repeats
