@@ -213,7 +213,7 @@ async def test_filtering_listing_tasks(
     with_celery_worker: WorkController,
 ):
     class MyFilter(TaskFilter):
-        user_id: int | Wildcard
+        user_id: int
         product_name: str | Wildcard
         client_app: str | Wildcard
 
