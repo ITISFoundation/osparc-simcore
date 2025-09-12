@@ -24,7 +24,7 @@ from pydantic.config import JsonDict
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
-from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple
+from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
 from ..users import (
@@ -381,11 +381,29 @@ class UserAccountGet(OutputSchema):
 
     # user status
     registered: bool
-    status: UserStatus | None
+    status: UserStatus | None = None
     products: Annotated[
         list[ProductName] | None,
         Field(
             description="List of products this users is included or None if fields is unset",
+        ),
+    ] = None
+
+    # user (if an account was created)
+    user_id: Annotated[
+        UserID | None,
+        Field(description="Unique identifier of the user if an account was created"),
+    ] = None
+    user_name: Annotated[
+        UserNameID | None,
+        Field(description="Username of the user if an account was created"),
+    ] = None
+    user_primary_group_id: Annotated[
+        PrimaryGroupID | None,
+        Field(
+            description="Primary group ID of the user if an account was created",
+            alias="groupId",
+            # SEE https://github.com/ITISFoundation/osparc-simcore/pull/8358#issuecomment-3279491740
         ),
     ] = None
 
