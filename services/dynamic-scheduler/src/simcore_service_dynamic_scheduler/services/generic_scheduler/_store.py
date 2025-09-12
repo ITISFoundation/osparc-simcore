@@ -25,6 +25,7 @@ from ._models import (
 
 _SCHEDULE_NAMESPACE: Final[str] = "SCH"
 _STEPS_KEY: Final[str] = "STEPS"
+_GROUPS_KEY: Final[str] = "GROUPS"
 # Figure out hwo to store data in Redis as flat as possible
 
 
@@ -35,11 +36,15 @@ def _get_scheduler_data_hash_key(*, schedule_id: ScheduleId) -> str:
     return f"{_SCHEDULE_NAMESPACE}:{schedule_id}"
 
 
+def _get_is_creating_str(is_creating: bool) -> str:
+    return "C" if is_creating else "D"
+
+
 def _get_step_hash_key(
     *,
     schedule_id: ScheduleId,
     operation_name: OperationName,
-    group: StepGroupName,
+    group_name: StepGroupName,
     step_name: StepName,
     is_creating: bool,
 ) -> str:
@@ -48,14 +53,35 @@ def _get_step_hash_key(
     # - SCHEDULE_ID: the unique scheudle_id assigned
     # - STEPS: the constant "STEPS"
     # - OPERATION_NAME form the vairble's name during registration
-    # - GROUP_INDEX
+    # - GROUP_NAME
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
     # - IS_CREATING: "C" or "D" for creation or destruction
     # - STEP_NAME form it's class
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:STEPS:START_SERVICE:0S:C:BS1
-    is_creating_str = "C" if is_creating else "D"
-    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group}:{is_creating_str}:{step_name}"
+    is_creating_str = _get_is_creating_str(is_creating)
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group_name}:{is_creating_str}:{step_name}"
+
+
+def _get_group_hash_key(
+    *,
+    schedule_id: ScheduleId,
+    operation_name: OperationName,
+    group_name: StepGroupName,
+    is_creating: bool,
+) -> str:
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:GROUPS:OPERATION_NAME:GROUP_INDEX:IS_CREATING:KEY
+    # - SCHEDULE_NAMESPACE: something short to identify tgis
+    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - GROUPS: the constant "GROUPS"
+    # - OPERATION_NAME form the vairble's name during registration
+    # - GROUP_NAME
+    #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
+    # - IS_CREATING: "C" or "D" for creation or destruction
+    # Example:
+    # - SCH:00000000-0000-0000-0000-000000000000:GROUPS:START_SERVICE:0S:C
+    is_creating_str = _get_is_creating_str(is_creating)
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_GROUPS_KEY}:{operation_name}:{group_name}:{is_creating_str}"
 
 
 def _dumps(obj: Any) -> str:
@@ -200,6 +226,39 @@ class ScheduleDataStoreProxy:
     async def delete(self, *keys: _DeleteScheduleDataKeys) -> None:
         await self._store.delete(self._get_hash_key(), *keys)
 
+    # TODO: remove is it required?
+
+
+class StepGroupProxy:
+    def __init__(
+        self,
+        *,
+        store: Store,
+        schedule_id: ScheduleId,
+        operation_name: OperationName,
+        step_group_name: StepGroupName,
+        is_creating: bool,
+    ) -> None:
+        self._store = store
+        self.schedule_id = schedule_id
+        self.operation_name = operation_name
+        self.step_group_name = step_group_name
+        self.is_creating = is_creating
+
+    def _get_hash_key(self) -> str:
+        return _get_group_hash_key(
+            schedule_id=self.schedule_id,
+            operation_name=self.operation_name,
+            group_name=self.step_group_name,
+            is_creating=self.is_creating,
+        )
+
+    async def increment_and_get_done_steps_count(self) -> NonNegativeInt:
+        return await self._store.increase_and_get(self._get_hash_key(), "done_steps")
+
+    async def remove(self) -> None:
+        await self._store.remove(self._get_hash_key())
+
 
 class _StepDict(TypedDict):
     deferred_created: NotRequired[bool]
@@ -242,7 +301,7 @@ class StepStoreProxy:
         return _get_step_hash_key(
             schedule_id=self.schedule_id,
             operation_name=self.operation_name,
-            group=self.step_group_name,
+            group_name=self.step_group_name,
             step_name=self.step_name,
             is_creating=self.is_creating,
         )

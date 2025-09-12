@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Iterable
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Final
 from uuid import uuid4
@@ -14,7 +15,7 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
 from ._deferred_runner import DeferredRunner
-from ._dependencies import enqueue_event
+from ._dependencies import enqueue_schedule_event
 from ._errors import UnexpectedStepHandlingError
 from ._models import (
     OperationContext,
@@ -28,6 +29,7 @@ from ._operation import BaseStepGroup, Operation, OperationRegistry
 from ._store import (
     KeyNotFoundInHashError,
     ScheduleDataStoreProxy,
+    StepGroupProxy,
     StepStoreProxy,
     Store,
     get_store,
@@ -92,7 +94,10 @@ async def _is_operation_in_progress_status(
 
 
 async def _start_and_mark_as_started(
-    step_proxy: StepStoreProxy, *, is_creating: bool
+    step_proxy: StepStoreProxy,
+    *,
+    is_creating: bool,
+    expected_steps_count: NonNegativeInt,
 ) -> None:
     await DeferredRunner.start(
         schedule_id=step_proxy.schedule_id,
@@ -100,6 +105,7 @@ async def _start_and_mark_as_started(
         step_group_name=step_proxy.step_group_name,
         step_name=step_proxy.step_name,
         is_creating=is_creating,
+        expected_steps_count=expected_steps_count,
     )
     await step_proxy.set_multiple(
         {
@@ -150,16 +156,13 @@ class Core:
                 "is_creating": True,
             }
         )
-        await enqueue_event(self.app, schedule_id)
+        await enqueue_schedule_event(self.app, schedule_id)
         return schedule_id
 
-    async def safe_on_schedule_event(self, schedule_id: ScheduleId) -> None:
-        """
-        NOTE: do not call this directly, you are doing something wrong
-        runs scheduling actions for a given schedule_id
-        """
+    @asynccontextmanager
+    async def _safe_event(self, schedule_id: ScheduleId) -> AsyncIterator[None]:
         try:
-            await self._on_schedule_event(schedule_id)
+            yield
         except KeyNotFoundInHashError as err:
             _logger.debug(
                 "Cannot process schedule_id='%s' since it's data was not found: %s",
@@ -181,6 +184,11 @@ class Core:
                 OperationErrorType.FRAMEWORK_ISSUE,
                 message=log_kwargs["msg"],
             )
+
+    async def safe_on_schedule_event(self, schedule_id: ScheduleId) -> None:
+        # NOTE: do not call this directly, you are doing something wrong
+        async with self._safe_event(schedule_id):
+            await self._on_schedule_event(schedule_id)
 
     async def cancel_schedule(self, schedule_id: ScheduleId) -> None:
         """
@@ -282,6 +290,7 @@ class Core:
             step_group=step_group,
             is_creating=is_creating,
         )
+        group_step_count = len(step_group)
 
         # get steps to start
         if to_start_step_proxies := await _get_steps_to_start(
@@ -297,7 +306,11 @@ class Core:
             ):
                 await limited_gather(
                     *(
-                        _start_and_mark_as_started(step_proxy, is_creating=is_creating)
+                        _start_and_mark_as_started(
+                            step_proxy,
+                            is_creating=is_creating,
+                            expected_steps_count=group_step_count,
+                        )
                         for step_proxy in to_start_step_proxies
                     ),
                     limit=_PARALLEL_STATUS_REQUESTS,
@@ -356,7 +369,7 @@ class Core:
                 # does a next group exist?
                 _ = operation[next_group_index]
                 await schedule_data_proxy.set("group_index", value=next_group_index)
-                await enqueue_event(self.app, schedule_id)
+                await enqueue_schedule_event(self.app, schedule_id)
             except IndexError:
                 # does the step need repeating?
                 if current_step_group.repeat_steps is True:
@@ -381,7 +394,18 @@ class Core:
                         )
                         await step_rproxy.remove()
 
-                    await enqueue_event(self.app, schedule_id)
+                    group_proxy = StepGroupProxy(
+                        store=self._store,
+                        schedule_id=schedule_id,
+                        operation_name=operation_name,
+                        step_group_name=current_step_group.get_step_group_name(
+                            index=group_index
+                        ),
+                        is_creating=True,
+                    )
+                    await group_proxy.remove()
+
+                    await enqueue_schedule_event(self.app, schedule_id)
                 else:
                     # TODO: the end has bean reached, do nothing from now on
                     _logger.debug(
@@ -439,7 +463,7 @@ class Core:
                 f"{operation_name=} was not successfull: {steps_statuses=}, moving to revert",
             ):
                 await schedule_data_proxy.set("is_creating", value=False)
-                await enqueue_event(self.app, schedule_id)
+                await enqueue_schedule_event(self.app, schedule_id)
             return
 
         raise UnexpectedStepHandlingError(
@@ -461,7 +485,7 @@ class Core:
                 return
 
             await schedule_data_proxy.set("group_index", value=previous_group_index)
-            await enqueue_event(self.app, schedule_id)
+            await enqueue_schedule_event(self.app, schedule_id)
             return
 
         # if any in FAILED this is unexpected falg to be investigated

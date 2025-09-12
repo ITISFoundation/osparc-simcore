@@ -230,13 +230,7 @@ _MASHED_POTATOES: Final[Operation] = [
 OperationRegistry.register("mash_potatoes", _MASHED_POTATOES)  # type: ignore[call-arg
 
 
-@pytest.mark.parametrize(
-    "app_count",
-    [
-        1,
-        # 10, # TODO: figure out why it's not working with more than one app in parall
-    ],
-)
+@pytest.mark.parametrize("app_count", [10])
 async def test_core_workflow(
     preserve_caplog_for_async_logging: None, selected_app: FastAPI
 ):
@@ -252,16 +246,9 @@ async def test_core_workflow(
             await asyncio.sleep(0)  # wait for envet to trigger
             assert len(_STEPS_CALL_ORDER) == 10
             _asseert_order(
-                _CreateSequence(
-                    _PeelPotates,
-                    _BoilPotates,
-                    _MashPotates,
-                ),
+                _CreateSequence(_PeelPotates, _BoilPotates, _MashPotates),
                 _CreateRandom(
                     _AddButter, _AddSalt, _AddPepper, _AddPaprika, _AddMint, _AddMilk
                 ),
                 _CreateSequence(_StirTillDone),
             )
-
-
-# TODO: also add a test with 2 of the cores in parallel to see it still works as expected

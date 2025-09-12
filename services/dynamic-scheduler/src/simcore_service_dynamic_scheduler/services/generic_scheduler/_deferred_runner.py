@@ -1,13 +1,14 @@
 from datetime import timedelta
 
 from fastapi import FastAPI
+from pydantic import NonNegativeInt
 from servicelib.deferred_tasks import BaseDeferredHandler, DeferredContext, TaskUID
 from servicelib.deferred_tasks._models import TaskResultError
 
-from ._dependencies import enqueue_event
+from ._dependencies import enqueue_schedule_event
 from ._models import OperationName, ScheduleId, StepGroupName, StepName, StepStatus
 from ._operation import BaseStep, OperationRegistry
-from ._store import StepStoreProxy, Store, get_store
+from ._store import StepGroupProxy, StepStoreProxy, Store, get_store
 
 
 def _get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
@@ -29,16 +30,39 @@ def _get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
     )
 
 
+def _get_step_group_proxy(context: DeferredContext) -> StepGroupProxy:
+    app: FastAPI = context["app"]
+    schedule_id: ScheduleId = context["schedule_id"]
+    operation_name: OperationName = context["operation_name"]
+    step_group_name: StepGroupName = context["step_group_name"]
+    is_creating = context["is_creating"]
+
+    store: Store = get_store(app)
+    return StepGroupProxy(
+        store=store,
+        schedule_id=schedule_id,
+        operation_name=operation_name,
+        step_group_name=step_group_name,
+        is_creating=is_creating,
+    )
+
+
 def _get_step(context: DeferredContext) -> type[BaseStep]:
     operation_name: OperationName = context["operation_name"]
     step_name: StepName = context["step_name"]
     return OperationRegistry.get_step(operation_name, step_name)
 
 
-async def _send_schedule_event(context: DeferredContext) -> None:
+async def _send_group_done_check_event(context: DeferredContext) -> None:
     app: FastAPI = context["app"]
     schedule_id: ScheduleId = context["schedule_id"]
-    await enqueue_event(app, schedule_id)
+    expected_steps_count: NonNegativeInt = context["expected_steps_count"]
+
+    if (
+        await _get_step_group_proxy(context).increment_and_get_done_steps_count()
+        == expected_steps_count
+    ):
+        await enqueue_schedule_event(app, schedule_id)
 
 
 class DeferredRunner(BaseDeferredHandler[None]):
@@ -51,6 +75,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
         step_group_name: StepGroupName,
         step_name: StepName,
         is_creating: bool,
+        expected_steps_count: NonNegativeInt,
     ) -> DeferredContext:
         return {
             "schedule_id": schedule_id,
@@ -58,6 +83,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
             "step_group_name": step_group_name,
             "step_name": step_name,
             "is_creating": is_creating,
+            "expected_steps_count": expected_steps_count,
         }
 
     @classmethod
@@ -104,7 +130,8 @@ class DeferredRunner(BaseDeferredHandler[None]):
     async def on_result(cls, result: None, context: DeferredContext) -> None:
         _ = result
         await _get_step_store_proxy(context).set("status", StepStatus.SUCCESS)
-        await _send_schedule_event(context)
+
+        await _send_group_done_check_event(context)
 
     @classmethod
     async def on_finished_with_error(
@@ -113,9 +140,11 @@ class DeferredRunner(BaseDeferredHandler[None]):
         await _get_step_store_proxy(context).set_multiple(
             {"status": StepStatus.FAILED, "error_traceback": error.format_error()}
         )
-        await _send_schedule_event(context)
+
+        await _send_group_done_check_event(context)
 
     @classmethod
     async def on_cancelled(cls, context: DeferredContext) -> None:
         await _get_step_store_proxy(context).set("status", StepStatus.CANCELLED)
-        await _send_schedule_event(context)
+
+        await _send_group_done_check_event(context)

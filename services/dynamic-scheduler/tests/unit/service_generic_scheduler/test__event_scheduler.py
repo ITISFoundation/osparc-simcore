@@ -99,7 +99,7 @@ async def test_event_scheduling(
     mock = get_mock_safe_on_schedule_event(_side_effect_nothing)
 
     schedule_id = ScheduleId("some-id")
-    await event_scheduler.enqueue_event(schedule_id)
+    await event_scheduler.enqueue_schedule_event(schedule_id)
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -122,7 +122,7 @@ async def test_event_scheduling_raises_error(
     get_mock_safe_on_schedule_event(_side_effect_raise_error)
 
     schedule_id = ScheduleId("some-id")
-    await event_scheduler.enqueue_event(schedule_id)
+    await event_scheduler.enqueue_schedule_event(schedule_id)
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),

@@ -17,6 +17,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._models import
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
     ScheduleDataStoreProxy,
+    StepGroupProxy,
     StepStoreProxy,
     Store,
 )
@@ -203,6 +204,8 @@ async def test_step_store_proxy_workflow(
             "deferred_task_uid": TaskUID("mytask"),
             "error_traceback": "mock_traceback",
             "requires_manual_intervention": True,
+            "deferred_created": True,
+            "success_processed": False,
         }
     )
     await _assert_keys(store, {hash_key})
@@ -214,6 +217,8 @@ async def test_step_store_proxy_workflow(
             "deferred_task_uid",
             "error_traceback",
             "requires_manual_intervention",
+            "deferred_created",
+            "success_processed",
         },
     )
 
@@ -226,6 +231,38 @@ async def test_step_store_proxy_workflow(
             "deferred_task_uid",
             "error_traceback",
             "requires_manual_intervention",
+            "deferred_created",
+            "success_processed",
         )
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
+
+
+@pytest.mark.parametrize("is_creating", [True, False])
+async def test_step_group_proxy(
+    store: Store,
+    schedule_id: ScheduleId,
+    is_creating: bool,
+):
+    step_group_proxy = StepGroupProxy(
+        store=store,
+        schedule_id=schedule_id,
+        operation_name="op1",
+        step_group_name="sg1",
+        is_creating=is_creating,
+    )
+
+    async def _get_steps_count() -> int | None:
+        (response,) = await store.get(
+            step_group_proxy._get_hash_key(), "done_steps"  # noqa: SLF001
+        )
+        return response
+
+    assert await _get_steps_count() is None
+
+    for i in range(10):
+        await step_group_proxy.increment_and_get_done_steps_count()
+        assert await _get_steps_count() == i + 1
+
+    await step_group_proxy.remove()
+    assert await _get_steps_count() is None

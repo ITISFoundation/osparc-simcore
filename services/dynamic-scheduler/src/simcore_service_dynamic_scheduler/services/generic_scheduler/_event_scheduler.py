@@ -1,7 +1,7 @@
 import functools
 import logging
 from collections.abc import AsyncIterator
-from typing import Final
+from typing import Final, NotRequired, TypedDict
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
@@ -13,6 +13,7 @@ from faststream.rabbit import (
     RabbitQueue,
     RabbitRouter,
 )
+from faststream.rabbit.schemas.queue import ClassicQueueArgs
 
 from ...core.settings import ApplicationSettings
 from ._core import get_core
@@ -21,13 +22,20 @@ from ._models import ScheduleId
 _logger = logging.getLogger(__name__)
 
 
+class QueuConfiguration(TypedDict):
+    queue_name: str
+    arguments: NotRequired[ClassicQueueArgs | None]
+
+
 _EXCHANGE_NAME: Final[str] = __name__
-_QUEUE_NAME: Final[str] = "event_scheduler"
-_NO_PARALLE_MESSAGE_CONSUMING: Final[int] = 1
 
 
-def _get_global_queue(queue_name: str) -> RabbitQueue:
-    return RabbitQueue(f"{_EXCHANGE_NAME}_{queue_name}", durable=True)
+def _get_global_queue(
+    queue_name: str, arguments: ClassicQueueArgs | None = None
+) -> RabbitQueue:
+    return RabbitQueue(
+        f"{_EXCHANGE_NAME}_{queue_name}", durable=True, arguments=arguments
+    )
 
 
 def _stop_retry_for_unintended_errors(func):
@@ -66,47 +74,45 @@ class EventScheduler:
 
         settings: ApplicationSettings = app.state.settings
 
-        self.broker: RabbitBroker = RabbitBroker(
-            settings.DYNAMIC_SCHEDULER_RABBITMQ.dsn,
-            log_level=logging.DEBUG,
-            max_consumers=_NO_PARALLE_MESSAGE_CONSUMING,
+        self._broker: RabbitBroker = RabbitBroker(
+            settings.DYNAMIC_SCHEDULER_RABBITMQ.dsn, log_level=logging.DEBUG
         )
-        self.router: RabbitRouter = RabbitRouter()
-        self.exchange = RabbitExchange(
+        self._router: RabbitRouter = RabbitRouter()
+        self._exchange = RabbitExchange(
             _EXCHANGE_NAME, durable=True, type=ExchangeType.DIRECT
         )
+        self._queue_schedule_event = _get_global_queue(queue_name="schedule_queue")
 
     @_stop_retry_for_unintended_errors
-    async def _on_secure_schedule_event(  # pylint:disable=method-hidden
+    async def _on_schedule_secure_event(  # pylint:disable=method-hidden
         self, schedule_id: ScheduleId
     ) -> None:
-        # advance operation
-        # NOTE: should no longer forward operation if nothing needs doing
-        # an unexpected error might be raised
         await get_core(self.app).safe_on_schedule_event(schedule_id)
 
-    async def enqueue_event(self, schedule_id: ScheduleId) -> None:
-        await self.broker.publish(
-            schedule_id, queue=_get_global_queue(_QUEUE_NAME), exchange=self.exchange
+    async def enqueue_schedule_event(self, schedule_id: ScheduleId) -> None:
+        await self._broker.publish(
+            schedule_id,
+            queue=self._queue_schedule_event,
+            exchange=self._exchange,
         )
 
     def _register_subscribers(self) -> None:
         # pylint:disable=unexpected-keyword-arg
         # pylint:disable=no-value-for-parameter
-        self._on_secure_schedule_event = self.router.subscriber(
-            queue=_get_global_queue(_QUEUE_NAME),
-            exchange=self.exchange,
+        self._on_schedule_secure_event = self._router.subscriber(
+            queue=self._queue_schedule_event,
+            exchange=self._exchange,
             retry=True,
-        )(self._on_secure_schedule_event)
+        )(self._on_schedule_secure_event)
 
     async def setup(self) -> None:
         self._register_subscribers()
-        self.broker.include_router(self.router)
+        self._broker.include_router(self._router)
 
-        await self.broker.start()
+        await self._broker.start()
 
     async def shutdown(self) -> None:
-        await self.broker.close()
+        await self._broker.close()
 
 
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:

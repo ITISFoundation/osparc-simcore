@@ -92,6 +92,10 @@ class BaseStepGroup(ABC):
         self.wait_before_repeat = wait_before_repeat
 
     @abstractmethod
+    def __len__(self) -> int:
+        """number of steps in this group"""
+
+    @abstractmethod
     def get_step_group_name(self, *, index: NonNegativeInt) -> StepGroupName:
         """returns the name of this step group"""
 
@@ -121,6 +125,9 @@ class SingleStepGroup(BaseStepGroup):
             repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat
         )
 
+    def __len__(self) -> int:
+        return 1
+
     def get_step_group_name(self, *, index: NonNegativeInt) -> StepGroupName:
         return f"{index}S{'R' if self.repeat_steps else ''}"
 
@@ -147,6 +154,9 @@ class ParallelStepGroup(BaseStepGroup):
         super().__init__(
             repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat
         )
+
+    def __len__(self) -> int:
+        return len(self._steps)
 
     @property
     def steps(self) -> list[type[BaseStep]]:

@@ -8,6 +8,6 @@ if TYPE_CHECKING:
     from ._event_scheduler import EventScheduler
 
 
-async def enqueue_event(app: FastAPI, schedule_id: ScheduleId) -> None:
+async def enqueue_schedule_event(app: FastAPI, schedule_id: ScheduleId) -> None:
     event_scheduler: EventScheduler = app.state.generic_scheduler_event_scheduler
-    await event_scheduler.enqueue_event(schedule_id)
+    await event_scheduler.enqueue_schedule_event(schedule_id)
