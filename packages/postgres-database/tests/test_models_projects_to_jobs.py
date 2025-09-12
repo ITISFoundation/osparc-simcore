@@ -122,8 +122,8 @@ def test_populate_projects_to_jobs_during_migration(
             ),
         ]
 
-        default_column_values = {
-            # NOTE: not server_default values are not applied here!
+        client_default_column_values = {
+            # NOTE: columns with `server_default values` must not be added here
             "type": ProjectType.STANDARD.value,
             "workbench": {},
             "access_rights": {},
@@ -135,7 +135,7 @@ def test_populate_projects_to_jobs_during_migration(
         # NOTE: cannot use `projects` table directly here because it changes
         # throughout time
         for prj in projects_data:
-            for key, value in default_column_values.items():
+            for key, value in client_default_column_values.items():
                 prj.setdefault(key, value)
 
             for key, value in prj.items():
