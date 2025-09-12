@@ -8474,16 +8474,6 @@
               }
             }
           },
-          "409": {
-            "description": "Task is cancelled",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorGet"
-                }
-              }
-            }
-          },
           "500": {
             "description": "Internal server error",
             "content": {
