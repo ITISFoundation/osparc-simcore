@@ -203,7 +203,7 @@ async def _sync_services_task(app: FastAPI) -> None:
 
             await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME)
 
-        except asyncio.CancelledError:  # noqa: PERF203
+        except asyncio.CancelledError:
             # task is stopped
             _logger.info("registry syncing task cancelled")
             raise
