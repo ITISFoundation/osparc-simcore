@@ -149,10 +149,10 @@ qx.Class.define("osparc.support.ConversationPage", {
     proposeConversation: function(type) {
       type = type || "askAQuestion";
       this.setConversation(null);
-      this.clearAllMessages();
 
       const title = this.getChildControl("conversation-title");
       const conversationContent = this.getChildControl("conversation-content");
+      conversationContent.clearAllMessages();
       let msg = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",";
       switch(type) {
         case "askAQuestion":
