@@ -356,20 +356,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             }
           }
 
-          // Show Quick Start if there are no studies in the root folder of the personal workspace
-          const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
-          if (quickStartInfo) {
-            const dontShowQuickStart = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
-            if (dontShowQuickStart === "true" || this.__dontQuickStart) {
-              return;
-            }
-            const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
-            if (
-              nStudies === 0 &&
-              this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS &&
-              this.getCurrentWorkspaceId() === null &&
-              this.getCurrentFolderId() === null
-            ) {
+          // Check if this is the first time the user logged in
+          const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
+          if (
+            nStudies === 0 &&
+            this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS &&
+            this.getCurrentWorkspaceId() === null &&
+            this.getCurrentFolderId() === null
+          ) {
+            // It is!
+            // Open Support Center
+            osparc.support.SupportCenter.openWindow();
+            // and open the Introductory Quick Start if any
+            const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
+            if (quickStartInfo) {
+              const dontShowQuickStart = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
+              if (dontShowQuickStart === "true" || this.__dontQuickStart) {
+                return;
+              }
               const quickStartWindow = quickStartInfo.tutorial();
               quickStartWindow.center();
               quickStartWindow.open();

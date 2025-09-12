@@ -116,6 +116,9 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
     __initIFrame: function() {
       const iframe = new osparc.widget.PersistentIframe();
+      if (this.getNode().getKey().includes("s4l-ui")) {
+        iframe.getIframe().setAppearance("iframe-no-border");
+      }
       osparc.utils.Utils.setIdToWidget(iframe.getIframe(), "iframe_"+this.getNode().getNodeId());
       this.self().evalShowToolbar(iframe, this.getStudy());
       iframe.addListener("restart", () => this.restartIFrame(), this);
