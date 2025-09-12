@@ -31,7 +31,7 @@ qx.Class.define("osparc.support.ConversationsPage", {
 
   events: {
     "openConversation": "qx.event.type.Data",
-    "createConversationBookCall": "qx.event.type.Event",
+    "createConversation": "qx.event.type.Data",
   },
 
   members: {
@@ -63,7 +63,7 @@ qx.Class.define("osparc.support.ConversationsPage", {
             allowGrowX: false,
             center: true,
           });
-          control.addListener("execute", () => this.fireDataEvent("openConversation", null), this);
+          control.addListener("execute", () => this.fireDataEvent("createConversation", "askAQuestion"), this);
           this.getChildControl("buttons-layout").add(control);
           break;
         case "book-a-call-button":
@@ -72,7 +72,7 @@ qx.Class.define("osparc.support.ConversationsPage", {
             allowGrowX: false,
             center: true,
           });
-          control.addListener("execute", () => this.fireEvent("createConversationBookCall"), this);
+          control.addListener("execute", () => this.fireDataEvent("createConversation", "bookACall"), this);
           this.getChildControl("buttons-layout").add(control);
           break;
       }

@@ -36,8 +36,7 @@ qx.Class.define("osparc.support.HomePage", {
   },
 
   events: {
-    "openConversation": "qx.event.type.Event",
-    "createConversationBookCall": "qx.event.type.Event",
+    "createConversation": "qx.event.type.Data",
   },
 
   statics: {
@@ -83,7 +82,7 @@ qx.Class.define("osparc.support.HomePage", {
             center: true,
             width: 183,
           });
-          control.addListener("execute", () => this.fireEvent("openConversation"));
+          control.addListener("execute", () => this.fireDataEvent("createConversation", "askAQuestion"));
           this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
         case "book-a-call-button":
@@ -93,7 +92,7 @@ qx.Class.define("osparc.support.HomePage", {
             center: true,
             width: 183,
           });
-          control.addListener("execute", () => this.fireEvent("createConversationBookCall"));
+          control.addListener("execute", () => this.fireDataEvent("createConversation", "bookACall"));
           this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
         case "learning-box":

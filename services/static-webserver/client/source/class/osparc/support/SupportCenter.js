@@ -129,8 +129,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "home-page":
           control = new osparc.support.HomePage();
-          control.addListener("openConversation", () => this.openConversation(), this);
-          control.addListener("openBookACall", () => this.createConversationBookCall(), this);
+          control.addListener("createConversation", e => this.createConversation(e.getData()), this);
           this.getChildControl("main-stack").add(control);
           break;
         case "conversations-stack":
@@ -139,11 +138,8 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "conversations-page":
           control = new osparc.support.ConversationsPage();
-          control.addListener("openConversation", e => {
-            const conversationId = e.getData();
-            this.openConversation(conversationId);
-          }, this);
-          control.addListener("createConversationBookCall", () => this.createConversationBookCall(), this);
+          control.addListener("openConversation", e => this.openConversation(e.getData()), this);
+          control.addListener("createConversation", e => this.createConversation(e.getData()), this);
           this.getChildControl("conversations-stack").add(control);
           break;
         case "conversation-page":
@@ -201,6 +197,13 @@ qx.Class.define("osparc.support.SupportCenter", {
         conversationPage.setConversation(null);
         this.__showConversation();
       }
+    },
+
+    createConversation: function(type) {
+      type = type || "askAQuestion";
+      const conversationPage = this.getChildControl("conversation-page");
+      conversationPage.setConversation(null);
+      this.__showConversation();
     },
 
     createConversationBookCall: function() {
