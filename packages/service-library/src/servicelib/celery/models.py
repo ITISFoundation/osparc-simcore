@@ -50,10 +50,11 @@ class TaskFilter(BaseModel):
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:
         for key in self.model_dump().keys():
-            if _TASK_ID_KEY_DELIMITATOR in key or "=" in key:
+            if _WILDCARD in key or _TASK_ID_KEY_DELIMITATOR in key or "=" in key:
                 raise ValueError(f"Invalid filter key: '{key}'")
             if (
-                _TASK_ID_KEY_DELIMITATOR in f"{getattr(self, key)}"
+                _WILDCARD in f"{getattr(self, key)}"
+                or _TASK_ID_KEY_DELIMITATOR in f"{getattr(self, key)}"
                 or "=" in f"{getattr(self, key)}"
             ):
                 raise ValueError(
