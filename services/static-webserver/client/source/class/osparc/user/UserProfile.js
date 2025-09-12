@@ -15,31 +15,16 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.user.UserDetails", {
-  extend: osparc.ui.window.Window,
+qx.Class.define("osparc.user.UserProfile", {
+  extend: qx.ui.core.Widget,
 
-  construct: function(userGroupId) {
+  construct: function() {
     this.base(arguments);
 
-    this.set({
-      layout: new qx.ui.layout.VBox(10),
-      autoDestroy: true,
-      showMaximize: false,
-      showMinimize: false,
-      clickAwayClose: true,
-      contentPadding: 10,
-      width: this.self().WIDTH,
-      height: this.self().HEIGHT,
-    });
-
-    this.setUserGroupId(userGroupId);
+    this._setLayout(new qx.ui.layout.VBox(10));
   },
 
   statics: {
-    WIDTH: 400,
-    HEIGHT: 600,
-    THUMBNAIL_SIZE: 110,
-
     TOP_GRID: {
       USERNAME: 0,
       FULLNAME: 1,
@@ -60,52 +45,26 @@ qx.Class.define("osparc.user.UserDetails", {
   },
 
   properties: {
-    userGroupId: {
-      check: "Number",
-      init: null,
-      nullable: false,
-      apply: "__applyUserGroupId",
-    },
-
     user: {
       check: "osparc.data.model.User",
       init: null,
-      nullable: false,
+      nullable: true,
       event: "changeUser",
       apply: "__applyUser",
     }
   },
 
   members: {
-    __remainingUserData: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "top-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(30));
-          this.add(control);
-          break;
-        case "thumbnail":
-          control = new osparc.ui.basic.Thumbnail(null, this.self().THUMBNAIL_SIZE, this.self().THUMBNAIL_SIZE).set({
-            width: this.self().THUMBNAIL_SIZE,
-            height: this.self().THUMBNAIL_SIZE,
-          });
-          control.getChildControl("image").set({
-            anonymous: true,
-            decorator: "rounded",
-          });
-          this.getChildControl("top-layout").add(control);
-          break;
         case "top-info": {
           const grid = new qx.ui.layout.Grid(10, 6);
           grid.setColumnWidth(0, 80);
           grid.setColumnFlex(1, 1);
           grid.setColumnAlign(0, "right", "middle");
           control = new qx.ui.container.Composite(grid);
-          this.getChildControl("top-layout").add(control, {
-            flex: 1
-          });
+          this._add(control);
           break;
         }
         case "middle-info": {
@@ -114,7 +73,7 @@ qx.Class.define("osparc.user.UserDetails", {
           grid.setColumnFlex(1, 1);
           grid.setColumnAlign(0, "right", "middle");
           control = new qx.ui.container.Composite(grid);
-          this.add(control);
+          this._add(control);
           break;
         }
         case "userName": {
@@ -259,36 +218,10 @@ qx.Class.define("osparc.user.UserDetails", {
       return control || this.base(arguments, id);
     },
 
-    __applyUserGroupId: function(userGroupId) {
-      const params = {
-        url: {
-          gId: userGroupId
-        }
-      };
-      osparc.data.Resources.fetch("poUsers", "searchByGroupId", params)
-        .then(usersData => {
-          if (usersData.length === 1) {
-            const userData = usersData[0];
-            // curate data
-            userData["groupId"] = userGroupId;
-            userData["userId"] = -1; // fix this
-            userData["userName"] = "userName"; // fix this
-            const user = new osparc.data.model.User(userData);
-            user.setContactData(userData);
-            // remove the displayed properties from the contact info
-            Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.User)).forEach(prop => delete userData[prop]);
-            this.__remainingUserData = osparc.utils.Utils.convertKeysToTitles(userData);
-            this.setUser(user);
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          this.close();
-        });
-    },
-
     __applyUser: function(user) {
-      this.setCaption(user.getUserName());
+      if (!user) {
+        return;
+      }
 
       // top grid
       this.getChildControl("userName").setValue(user.getUserName());
@@ -298,7 +231,7 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("user-id").setValue(String(user.getUserId()));
       this.getChildControl("group-id").setValue(String(user.getGroupId()));
 
-      this.getChildControl("thumbnail").setSource(user.createThumbnail(this.self().THUMBNAIL_SIZE));
+      // this.getChildControl("thumbnail").setSource(user.createThumbnail(this.self().THUMBNAIL_SIZE));
 
       // middle grid
       this.getChildControl("institution").setValue(user.getInstitution() || "-");
@@ -307,14 +240,6 @@ qx.Class.define("osparc.user.UserDetails", {
       this.getChildControl("state").setValue(user.getState() || "-");
       this.getChildControl("country").setValue(user.getCountry() || "-");
       this.getChildControl("postal-code").setValue(user.getPostalCode() || "-");
-
-      // remaining data
-      const jsonViewer = new osparc.widget.JsonFormatterWidget(this.__remainingUserData);
-      const scroll = new qx.ui.container.Scroll();
-      scroll.add(jsonViewer);
-      this.add(scroll, {
-        flex: 1
-      });
     },
   }
 });

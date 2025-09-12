@@ -3,7 +3,6 @@ from typing import Annotated, Final, cast
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, Request
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileMetaDataGetv010,
@@ -18,6 +17,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
+from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.celery.models import TaskFilter, TaskMetadata, TaskUUID
@@ -25,6 +25,7 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from yarl import URL
 
+from ..._meta import APP_NAME
 from ...dsm import get_dsm_provider
 from ...exceptions.errors import FileMetaDataNotFoundError
 from ...models import (
@@ -41,7 +42,13 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_task_manager
 
-_ASYNC_JOB_CLIENT_NAME: Final[str] = "STORAGE"
+
+def _get_task_filter(*, user_id: UserID) -> TaskFilter:
+    _data = {
+        "user_id": user_id,
+        "client_name": APP_NAME,
+    }
+    return TaskFilter().model_validate(_data)
 
 
 _logger = logging.getLogger(__name__)
@@ -287,18 +294,13 @@ async def complete_upload_file(
     # NOTE: completing a multipart upload on AWS can take up to several minutes
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    job_filter = AsyncJobFilter(
-        user_id=query_params.user_id,
-        product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
-        client_name=_ASYNC_JOB_CLIENT_NAME,
-    )
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_filter = _get_task_filter(user_id=query_params.user_id)
     task_uuid = await task_manager.submit_task(
         TaskMetadata(
             name=remote_complete_upload_file.__name__,
         ),
         task_filter=task_filter,
-        user_id=job_filter.user_id,
+        user_id=query_params.user_id,
         location_id=location_id,
         file_id=file_id,
         body=body,
@@ -345,12 +347,7 @@ async def is_completed_upload_file(
     # therefore we wait a bit to see if it completes fast and return a 204
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    job_filter = AsyncJobFilter(
-        user_id=query_params.user_id,
-        product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
-        client_name=_ASYNC_JOB_CLIENT_NAME,
-    )
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_filter = _get_task_filter(user_id=query_params.user_id)
     task_status = await task_manager.get_task_status(
         task_filter=task_filter, task_uuid=TaskUUID(future_id)
     )

@@ -29,7 +29,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
-_ASYNC_JOB_CLIENT_NAME: Final[str] = "PYTEST_CLIENT_NAME"
+_ASYNC_JOB_CLIENT_NAME: Final[str] = "pytest_client_name"
 
 
 @pytest.fixture
@@ -102,11 +102,8 @@ async def async_job_rpc_server(  # noqa: C901
                 }
             )
 
-        async def list_jobs(
-            self, filter_: str, job_filter: AsyncJobFilter
-        ) -> list[AsyncJobGet]:
+        async def list_jobs(self, job_filter: AsyncJobFilter) -> list[AsyncJobGet]:
             assert job_filter
-            assert filter_ is not None
 
             return [
                 AsyncJobGet(
@@ -173,7 +170,6 @@ async def test_list_jobs(
     await list_jobs(
         rpc_client,
         rpc_namespace=namespace,
-        filter_="",
         job_filter=job_filter,
     )
 

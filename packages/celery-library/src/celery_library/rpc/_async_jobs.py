@@ -134,9 +134,8 @@ async def result(
 
 @router.expose(reraise_if_error_type=(JobSchedulerError,))
 async def list_jobs(
-    task_manager: TaskManager, filter_: str, job_filter: AsyncJobFilter
+    task_manager: TaskManager, job_filter: AsyncJobFilter
 ) -> list[AsyncJobGet]:
-    _ = filter_
     assert task_manager  # nosec
     task_filter = TaskFilter.model_validate(job_filter.model_dump())
     try:
