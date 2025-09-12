@@ -154,7 +154,7 @@ qx.Class.define("osparc.support.ConversationPage", {
       const conversationContent = this.getChildControl("conversation-content");
       conversationContent.clearAllMessages();
       let msg = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",";
-      switch(type) {
+      switch (type) {
         case "askAQuestion":
           title.setValue(this.tr("Ask a Question"));
           msg += "\nHave a question or feedback?\nWe are happy to assist!";
