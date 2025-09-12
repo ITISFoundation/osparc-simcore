@@ -18,13 +18,12 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
 )
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.functions import FunctionJobCollection, FunctionJobID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata, TasksQueue
+from servicelib.celery.models import TaskID, TaskMetadata, TasksQueue
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from servicelib.utils import limited_gather
 
@@ -33,6 +32,7 @@ from ..._service_functions import FunctionService
 from ...celery_worker.worker_tasks.functions_tasks import (
     run_function as run_function_task,
 )
+from ...clients.celery_task_manager import get_task_filter
 from ...exceptions.function_errors import FunctionJobCacheNotFoundError
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -44,7 +44,7 @@ from ..dependencies.authentication import (
     get_current_user_id,
     get_product_name,
 )
-from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager
+from ..dependencies.celery import get_task_manager
 from ..dependencies.services import get_function_job_service, get_function_service
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
@@ -368,12 +368,9 @@ async def run_function(
     )
 
     # run function in celery task
-    job_filter = AsyncJobFilter(
-        user_id=user_identity.user_id,
-        product_name=user_identity.product_name,
-        client_name=ASYNC_JOB_CLIENT_NAME,
+    task_filter = get_task_filter(
+        user_id=user_identity.user_id, product_name=user_identity.product_name
     )
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_name = run_function_task.__name__
 
     task_uuid = await task_manager.submit_task(
