@@ -16,6 +16,7 @@ TaskName: TypeAlias = Annotated[
 TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 _WILDCARD: Final[str] = "*"
+_FORBIDDEN_CHARS = (_WILDCARD, _TASK_ID_KEY_DELIMITATOR, "=")
 
 
 class Wildcard: ...
@@ -50,17 +51,13 @@ class TaskFilter(BaseModel):
 
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:
-        for key in self.model_dump().keys():
-            if _WILDCARD in key or _TASK_ID_KEY_DELIMITATOR in key or "=" in key:
+        for key, value in self.model_dump().items():
+            # forbidden keys
+            if any(x in key for x in _FORBIDDEN_CHARS):
                 raise ValueError(f"Invalid filter key: '{key}'")
-            if (
-                _WILDCARD in f"{getattr(self, key)}"
-                or _TASK_ID_KEY_DELIMITATOR in f"{getattr(self, key)}"
-                or "=" in f"{getattr(self, key)}"
-            ):
-                raise ValueError(
-                    f"Invalid filter value for key '{key}': '{getattr(self, key)}'"
-                )
+            # forbidden values
+            if any(x in f"{value}" for x in _FORBIDDEN_CHARS):
+                raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
         return self
 
     def _build_task_id_prefix(self) -> str:
