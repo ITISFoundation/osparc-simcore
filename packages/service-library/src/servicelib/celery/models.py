@@ -19,6 +19,23 @@ WILDCARD: Final[str] = "*"
 
 
 class TaskFilter(BaseModel):
+    """
+    Class for associating metadata with a celery task. The implementation is very flexible and allows "clients" to define their own metadata.
+    The class exposes a filtering mechanism to list tasks using wildcards.
+
+    Example usage:
+        class MyTaskFilter(TaskFilter):
+            user_id: int | Wildcard
+            product_name: int | Wildcard
+            client_name: str
+
+        Listing tasks using the filter `MyTaskFilter(user_id=123, product_name=Wildcard, client_name="my-app")` will return all tasks with
+        user_id 123, any product_name submitted from my-app.
+
+    If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model)
+
+    """
+
     model_config = ConfigDict(extra="allow")
 
     @model_validator(mode="after")
@@ -47,7 +64,7 @@ class TaskFilter(BaseModel):
         )
 
     @classmethod
-    def recreate_model(cls, task_id: TaskID, model: type[ModelType]) -> ModelType:
+    def recreate_as_model(cls, task_id: TaskID, model: type[ModelType]) -> ModelType:
         filter_dict = cls.recreate_data(task_id)
         return model.model_validate(filter_dict)
 

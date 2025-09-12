@@ -63,7 +63,7 @@ async def test_create_task_filter_from_task_id():
     task_filter = TaskFilter.model_validate(mymodel.model_dump())
     task_uuid = TaskUUID(_faker.uuid4())
     task_id = task_filter.get_task_id(task_uuid)
-    assert TaskFilter.recreate_model(task_id=task_id, model=MyModel) == mymodel
+    assert TaskFilter.recreate_as_model(task_id=task_id, model=MyModel) == mymodel
 
 
 @pytest.mark.parametrize(
