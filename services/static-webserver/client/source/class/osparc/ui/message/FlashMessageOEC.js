@@ -114,7 +114,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
 
     __openSupportChat: function() {
       const supportCenter = osparc.support.SupportCenter.openWindow();
-      supportCenter.openConversation(null);
+      supportCenter.createConversation("reportOEC");
 
       const textToAddMessageField = msg => {
         if (supportCenter.getChildControl("conversation-page")) {

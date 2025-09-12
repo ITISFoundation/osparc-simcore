@@ -193,12 +193,10 @@ qx.Class.define("osparc.support.SupportCenter", {
             conversationPage.setConversation(conversation);
             this.__showConversation();
           });
-      } else {
-        conversationPage.setConversation(null);
-        this.__showConversation();
       }
     },
 
+    // type can be "askAQuestion", "bookACall" or "reportOEC"
     createConversation: function(type) {
       type = type || "askAQuestion";
       const conversationPage = this.getChildControl("conversation-page");
