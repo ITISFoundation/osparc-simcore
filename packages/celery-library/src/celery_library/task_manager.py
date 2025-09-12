@@ -22,7 +22,6 @@ from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
 from .errors import TaskNotFoundError
-from .utils import build_task_id
 
 _logger = logging.getLogger(__name__)
 
@@ -50,7 +49,7 @@ class CeleryTaskManager:
             msg=f"Submit {task_metadata.name=}: {task_filter=} {task_params=}",
         ):
             task_uuid = uuid4()
-            task_id = build_task_id(task_filter, task_uuid)
+            task_id = task_filter.create_task_id(task_uuid=task_uuid)
             self._celery_app.send_task(
                 task_metadata.name,
                 task_id=task_id,
@@ -74,7 +73,7 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"task cancellation: {task_filter=} {task_uuid=}",
         ):
-            task_id = build_task_id(task_filter, task_uuid)
+            task_id = task_filter.create_task_id(task_uuid=task_uuid)
             if not await self.task_exists(task_id):
                 raise TaskNotFoundError(task_id=task_id)
 
@@ -96,7 +95,7 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Get task result: {task_filter=} {task_uuid=}",
         ):
-            task_id = build_task_id(task_filter, task_uuid)
+            task_id = task_filter.create_task_id(task_uuid=task_uuid)
             if not await self.task_exists(task_id):
                 raise TaskNotFoundError(task_id=task_id)
 
@@ -139,7 +138,7 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Getting task status: {task_filter=} {task_uuid=}",
         ):
-            task_id = build_task_id(task_filter, task_uuid)
+            task_id = task_filter.create_task_id(task_uuid=task_uuid)
             if not await self.task_exists(task_id):
                 raise TaskNotFoundError(task_id=task_id)
 

@@ -7,7 +7,6 @@ from collections.abc import AsyncGenerator
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
@@ -30,10 +29,10 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from yarl import URL
 
-from ..constants import ASYNC_JOB_CLIENT_NAME
 from ..projects.models import ProjectDict
 from ..projects.utils import NodesMap
 from ..rabbitmq import get_rabbitmq_rpc_client
+from ..utils import get_job_filter
 from .settings import StorageSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -119,10 +118,9 @@ async def copy_data_folders_from_project(
             rabbitmq_client,
             method_name="copy_folders_from_project",
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_filter=AsyncJobFilter(
+            job_filter=get_job_filter(
                 user_id=user_id,
                 product_name=product_name,
-                client_name=ASYNC_JOB_CLIENT_NAME,
             ),
             body=TypeAdapter(FoldersBody).validate_python(
                 {
