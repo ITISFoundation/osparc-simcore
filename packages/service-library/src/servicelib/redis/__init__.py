@@ -6,6 +6,8 @@ from ._errors import (
     CouldNotConnectToRedisError,
     LockLostError,
     ProjectLockError,
+    SemaphoreAcquisitionError,
+    SemaphoreNotAcquiredError,
 )
 from ._models import RedisManagerDBConfig
 from ._project_document_version import (
@@ -18,24 +20,26 @@ from ._project_lock import (
     is_project_locked,
     with_project_locked,
 )
+from ._semaphore_decorator import with_limited_concurrency
 from ._utils import handle_redis_returns_union_types
 
 __all__: tuple[str, ...] = (
-    "CouldNotAcquireLockError",
-    "CouldNotConnectToRedisError",
-    "exclusive",
-    "increment_and_return_project_document_version",
-    "get_project_locked_state",
-    "handle_redis_returns_union_types",
-    "is_project_locked",
-    "LockLostError",
     "PROJECT_DB_UPDATE_REDIS_LOCK_KEY",
     "PROJECT_DOCUMENT_VERSION_KEY",
+    "CouldNotAcquireLockError",
+    "CouldNotConnectToRedisError",
+    "LockLostError",
     "ProjectLockError",
     "RedisClientSDK",
     "RedisClientsManager",
     "RedisManagerDBConfig",
+    "SemaphoreAcquisitionError",
+    "SemaphoreNotAcquiredError",
+    "exclusive",
+    "get_project_locked_state",
+    "handle_redis_returns_union_types",
+    "increment_and_return_project_document_version",
+    "is_project_locked",
+    "with_limited_concurrency",
     "with_project_locked",
 )
-
-# nopycln: file
