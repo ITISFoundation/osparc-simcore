@@ -214,9 +214,19 @@ qx.Class.define("osparc.conversation.MessageUI", {
         resizable: true,
         showClose: true,
       });
-      addMessage.addListener("messageUpdated", e => {
-        win.close();
-        this.fireDataEvent("messageUpdated", e.getData());
+      addMessage.addListener("updateMessage", e => {
+        const content = e.getData();
+        const conversationId = message["conversationId"];
+        const messageId = message["messageId"];
+        if (this.__studyData) {
+          promise = osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], conversationId, messageId, content);
+        } else {
+          promise = osparc.store.ConversationsSupport.getInstance().editMessage(conversationId, messageId, content);
+        }
+        promise.then(data => {
+          win.close();
+          this.fireDataEvent("messageUpdated", data);
+        });
       });
     },
 

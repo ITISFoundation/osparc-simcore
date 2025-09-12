@@ -54,7 +54,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
 
   events: {
     "messageAdded": "qx.event.type.Data",
-    "messageUpdated": "qx.event.type.Data",
+    "updateMessage": "qx.event.type.Data",
   },
 
   members: {
@@ -224,18 +224,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
       if (content) {
-        const studyData = this.getStudyData();
-        const conversationId = this.getConversationId();
-        const message = this.getMessage();
-        if (studyData) {
-          promise = osparc.store.ConversationsProject.getInstance().editMessage(studyData["uuid"], conversationId, message["messageId"], content);
-        } else {
-          promise = osparc.store.ConversationsSupport.getInstance().editMessage(conversationId, message["messageId"], content);
-        }
-        promise.then(data => {
-          this.fireDataEvent("messageUpdated", data);
-          commentField.getChildControl("text-area").setValue("");
-        });
+        this.fireDataEvent("updateMessage", content);
       }
     },
 
