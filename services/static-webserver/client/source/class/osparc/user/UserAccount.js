@@ -73,7 +73,7 @@ qx.Class.define("osparc.user.UserAccount", {
           control = new osparc.ui.basic.Thumbnail(null, this.self().THUMBNAIL_SIZE, this.self().THUMBNAIL_SIZE).set({
             width: this.self().THUMBNAIL_SIZE,
             height: this.self().THUMBNAIL_SIZE,
-            marginBottom: 20,
+            marginBottom: 10,
           });
           control.getChildControl("image").set({
             anonymous: true,

@@ -40,6 +40,13 @@ qx.Class.define("osparc.user.UserExtras", {
         return;
       }
 
+      for (const key in extras) {
+        const value = extras[key];
+        if (osparc.utils.Utils.isDateLike(value)) {
+          extras[key] = osparc.utils.Utils.formatDateAndTime(new Date(value));
+        }
+      }
+
       const jsonViewer = new osparc.widget.JsonFormatterWidget(extras);
       const scroll = new qx.ui.container.Scroll();
       scroll.add(jsonViewer);

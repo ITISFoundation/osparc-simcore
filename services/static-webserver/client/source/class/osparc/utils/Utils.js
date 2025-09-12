@@ -572,6 +572,10 @@ qx.Class.define("osparc.utils.Utils", {
       return button;
     },
 
+    isDateLike: function(v) {
+      if (typeof v === "string") return !isNaN(new Date(v));
+    },
+
     /**
       * @param date {Date Object} Date Object
       */
