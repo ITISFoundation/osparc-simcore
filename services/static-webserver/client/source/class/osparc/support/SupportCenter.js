@@ -130,6 +130,7 @@ qx.Class.define("osparc.support.SupportCenter", {
         case "home-page":
           control = new osparc.support.HomePage();
           control.addListener("openConversation", () => this.openConversation(), this);
+          control.addListener("openBookACall", () => this.createConversationBookCall(), this);
           this.getChildControl("main-stack").add(control);
           break;
         case "conversations-stack":

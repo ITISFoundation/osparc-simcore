@@ -28,15 +28,16 @@ qx.Class.define("osparc.support.HomePage", {
       padding: 5,
     });
 
-    this.getChildControl("conversations-intro-text");
     if (osparc.store.Groups.getInstance().isSupportEnabled()) {
       this.getChildControl("ask-a-question");
+      this.getChildControl("book-a-call");
     }
     this.__populateButtons();
   },
 
   events: {
     "openConversation": "qx.event.type.Event",
+    "openBookACall": "qx.event.type.Event",
   },
 
   statics: {
@@ -66,17 +67,11 @@ qx.Class.define("osparc.support.HomePage", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "conversations-intro-text": {
-          control = new qx.ui.basic.Label().set({
-            rich: true,
-            font: "text-16",
-          });
-          const isSupportUser = osparc.store.Groups.getInstance().amIASupportUser();
-          const userName = osparc.auth.Data.getInstance().getUserName();
-          control.set({
-            value: isSupportUser ?
-              userName + ", " + this.tr("thanks for being here!<br>Let's help every user feel supported.") :
-              this.tr("Hi there 👋<br>How can we help?"),
+        case "conversation-buttons-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+            // align it with the rest of the buttons in section boxes
+            marginLeft: 11,
+            marginRight: 11,
           });
           this._add(control);
           break;
@@ -86,12 +81,20 @@ qx.Class.define("osparc.support.HomePage", {
             gap: 8,
             appearance: "strong-button",
             center: true,
-            // align it with the rest of the buttons in section boxes
-            marginLeft: 11,
-            marginRight: 11,
+            width: 183,
           });
           control.addListener("execute", () => this.fireEvent("openConversation"));
-          this._add(control);
+          this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
+          break;
+        case "book-a-call":
+          control = new qx.ui.form.Button(this.tr("Book a Call"), "@FontAwesome5Solid/phone/16").set({
+            gap: 8,
+            appearance: "strong-button",
+            center: true,
+            width: 183,
+          });
+          control.addListener("execute", () => this.fireEvent("openBookACall"));
+          this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
         case "learning-box":
           control = new osparc.widget.SectionBox(this.tr("Learning"), "@FontAwesome5Solid/graduation-cap/14");
