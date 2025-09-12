@@ -223,8 +223,10 @@ async def test_create_api_keys_same_display_name_different_products(
     user_role: UserRole,
     expected: HTTPStatus,
 ):
+    display_name = "foo"
+
     created_keys = [
-        await fake_api_key_factory(product_name=product_name)
+        await fake_api_key_factory(display_name=display_name, product_name=product_name)
         for product_name in app_products_names
     ]
 
