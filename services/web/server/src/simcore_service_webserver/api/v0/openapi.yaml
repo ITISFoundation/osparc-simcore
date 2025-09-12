@@ -14006,9 +14006,9 @@ components:
           description: The short name of the node
         progress:
           anyOf:
-          - type: number
-            maximum: 100.0
-            minimum: 0.0
+          - type: integer
+            maximum: 100
+            minimum: 0
           - type: 'null'
           title: Progress
           description: the node progress value
@@ -14149,9 +14149,9 @@ components:
           description: The short name of the node
         progress:
           anyOf:
-          - type: number
-            maximum: 100.0
-            minimum: 0.0
+          - type: integer
+            maximum: 100
+            minimum: 0
           - type: 'null'
           title: Progress
           description: the node progress value
