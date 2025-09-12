@@ -257,7 +257,7 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, PortLink):
                 # this is a link to another node
-                other_port_concretevalue: None | (ItemConcreteValue) = (
+                other_port_concretevalue: None | ItemConcreteValue = (
                     await port_utils.get_value_from_link(
                         # pylint: disable=protected-access
                         key=self.key,
