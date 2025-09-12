@@ -216,14 +216,18 @@ class DistributedSemaphore(BaseModel):
         result = status
 
         if result == "released":
+            assert success == 1  # nosec
             _logger.debug(
-                "Released semaphore '%s' (instance: %s)",
+                "Released semaphore '%s' (instance: %s, count: %s, expired: %s)",
                 self.key,
                 self.instance_id,
+                current_count,
+                expired_count,
             )
         else:
             # Instance wasn't in the semaphore set - this shouldn't happen
             # but let's handle it gracefully
+            assert success == 0  # nosec
             raise SemaphoreNotAcquiredError(name=self.key)
 
     async def _try_acquire(self) -> bool:
