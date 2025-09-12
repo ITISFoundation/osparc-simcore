@@ -223,21 +223,18 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     __reloadMessages: function(removeMessages = true) {
-      const messagesContainer = this.getChildControl("messages-container");
       const loadMoreMessages = this.getChildControl("load-more-button");
       if (this.getConversation() === null) {
-        messagesContainer.hide();
         loadMoreMessages.hide();
         return;
       }
 
-      messagesContainer.show();
       loadMoreMessages.show();
       loadMoreMessages.setFetching(true);
 
       if (removeMessages) {
         this.__messages = [];
-        messagesContainer.removeAll();
+        this.getChildControl("messages-container").removeAll();
       }
 
       this.getConversation().getNextMessages()
