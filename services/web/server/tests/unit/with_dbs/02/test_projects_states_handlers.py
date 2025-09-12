@@ -22,6 +22,7 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient, TestServer
+from deepdiff import DeepDiff  # type: ignore[attr-defined]
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -68,7 +69,6 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.licenses._licensed_resources_service import DeepDiff
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime

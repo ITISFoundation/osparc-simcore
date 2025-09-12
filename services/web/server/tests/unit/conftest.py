@@ -16,7 +16,7 @@ import yaml
 from aiohttp.test_utils import TestClient
 from models_library.products import ProductName
 from pytest_mock import MockFixture, MockType
-from pytest_simcore.helpers.webserver_projects import empty_project_data, NewProject
+from pytest_simcore.helpers.webserver_projects import NewProject, empty_project_data
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.constants import FRONTEND_APP_DEFAULT
