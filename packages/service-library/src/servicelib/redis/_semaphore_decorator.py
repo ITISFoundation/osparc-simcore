@@ -135,6 +135,8 @@ def with_limited_concurrency(
                     result = await work_task
 
                     # Cancel renewal task (work is done)
+                    # NOTE: if we do not explicitely await the task inside the context manager
+                    # it sometimes hangs forever (Python issue?)
                     await cancel_wait_task(renewal_task, max_delay=None)
 
                 return result
