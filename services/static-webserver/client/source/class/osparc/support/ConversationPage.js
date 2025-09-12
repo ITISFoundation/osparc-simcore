@@ -149,6 +149,7 @@ qx.Class.define("osparc.support.ConversationPage", {
     proposeConversation: function(type) {
       type = type || "askAQuestion";
       this.setConversation(null);
+      this.clearAllMessages();
 
       const title = this.getChildControl("conversation-title");
       const conversationContent = this.getChildControl("conversation-content");
@@ -179,8 +180,10 @@ qx.Class.define("osparc.support.ConversationPage", {
       }
 
       const extraContextLayout = this.getChildControl("conversation-extra-layout");
-      const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
+      extraContextLayout.removeAll();
       if (conversation) {
+        const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
+
         const createExtraContextLabel = text => {
           return new qx.ui.basic.Label(text).set({
             font: "text-12",
@@ -201,6 +204,7 @@ qx.Class.define("osparc.support.ConversationPage", {
               const projectIdLabel = createExtraContextLabel(`Project ID: ${contextProjectId}`);
               extraContextLayout.add(projectIdLabel);
             }
+            /*
             const appointment = conversation.getAppointment();
             if (appointment) {
               const appointmentLabel = createExtraContextLabel();
@@ -219,6 +223,7 @@ qx.Class.define("osparc.support.ConversationPage", {
               appointmentLabel.setValue(appointmentText);
               extraContextLayout.add(appointmentLabel);
             }
+            */
           }
         };
         updateExtraContext();
@@ -232,15 +237,8 @@ qx.Class.define("osparc.support.ConversationPage", {
         openProjectButton.exclude();
       }
 
-      const setAppointmentButton = this.getChildControl("set-appointment-button");
-      if (conversation && conversation.getAppointment() && amISupporter) {
-        setAppointmentButton.show();
-      } else {
-        setAppointmentButton.exclude();
-      }
-
       const options = this.getChildControl("conversation-options");
-      if (conversation && conversation.amIOwner()) {
+      if (conversation) {
         options.show();
       } else {
         options.exclude();

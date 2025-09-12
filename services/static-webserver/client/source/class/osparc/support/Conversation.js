@@ -162,8 +162,7 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     __applyConversation: function(conversation) {
-      this.__messages = [];
-      this.getChildControl("messages-container").removeAll();
+      this.clearAllMessages();
       this.__reloadMessages();
 
       if (conversation) {
@@ -319,6 +318,11 @@ qx.Class.define("osparc.support.Conversation", {
         const messagesScroll = this.getChildControl("messages-container-scroll");
         messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
       }, 50);
+    },
+
+    clearAllMessages: function() {
+      this.__messages = [];
+      this.getChildControl("messages-container").removeAll();
     },
 
     deleteMessage: function(message) {
