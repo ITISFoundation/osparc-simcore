@@ -196,7 +196,6 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Event",
     "projectDocumentChanged": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
@@ -490,6 +489,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.populateNodeUIData(nodeData);
           // new place to store the position and marker
           this.populateNodeUIData(nodeUiData);
+          this.listenToChanges();
         })
         .catch(err => {
           console.log(err);

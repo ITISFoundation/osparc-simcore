@@ -542,10 +542,6 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
-    eventDrivenPatch: function() {
-      return osparc.utils.DisabledPlugins.isRTCEnabled();
-    },
-
     getEditButton: function(isVisible = true) {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         appearance: "form-button-outlined",
@@ -1199,6 +1195,18 @@ qx.Class.define("osparc.utils.Utils", {
         );
       }
       return str;
+    },
+
+    camelToTitle: function(str) {
+      return str
+        .replace(/([A-Z])/g, ' $1')          // insert space before capital letters
+        .replace(/^./, c => c.toUpperCase()); // capitalize first letter
+    },
+
+    convertKeysToTitles: function(obj) {
+      return Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [this.camelToTitle(key), value])
+      );
     },
 
     setIdToWidget: (qWidget, id) => {

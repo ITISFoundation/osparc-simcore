@@ -56,11 +56,11 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       if (!userData) {
         userData = osparc.auth.Data.getInstance();
       }
-      const username = userData.getUsername();
+      const userName = userData.getUserName();
       const email = userData.getEmail();
       const avatarSize = 80;
       const img = new qx.ui.basic.Image().set({
-        source: osparc.utils.Avatar.emailToThumbnail(email, username, avatarSize),
+        source: osparc.utils.Avatar.emailToThumbnail(email, userName, avatarSize),
         maxWidth: avatarSize,
         maxHeight: avatarSize,
         scale: true,
@@ -71,12 +71,12 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       });
       layout.add(img);
 
-      const usernameLabel = new qx.ui.basic.Label().set({
+      const userNameLabel = new qx.ui.basic.Label().set({
         font: "text-14",
         alignX: "center"
       });
-      userData.bind("username", usernameLabel, "value");
-      layout.add(usernameLabel);
+      userData.bind("userName", userNameLabel, "value");
+      layout.add(userNameLabel);
 
       const fullNameLabel = new qx.ui.basic.Label().set({
         font: "text-13",

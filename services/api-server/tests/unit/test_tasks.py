@@ -11,6 +11,7 @@ from fastapi import status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
+from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskState
 from servicelib.celery.models import TaskStatus as CeleryTaskStatus
@@ -143,41 +144,15 @@ async def test_get_task_result(
                     total=1.0,
                     unit="Byte",
                     message=ProgressStructuredMessage.model_validate(
-                        {
-                            "description": "some description",
-                            "current": 12.2,
-                            "total": 123,
-                        }
+                        ProgressStructuredMessage.model_json_schema(
+                            schema_generator=GenerateResolvedJsonSchema
+                        )["examples"][0]
                     ),
                 ),
             ),
             None,
             None,
             status.HTTP_404_NOT_FOUND,
-        ),
-        (
-            "GET",
-            f"/v0/tasks/{_faker.uuid4()}/result",
-            None,
-            CeleryTaskStatus(
-                task_uuid=TaskUUID("123e4567-e89b-12d3-a456-426614174000"),
-                task_state=TaskState.ABORTED,
-                progress_report=ProgressReport(
-                    actual_value=0.5,
-                    total=1.0,
-                    unit="Byte",
-                    message=ProgressStructuredMessage.model_validate(
-                        {
-                            "description": "some description",
-                            "current": 12.2,
-                            "total": 123,
-                        }
-                    ),
-                ),
-            ),
-            None,
-            None,
-            status.HTTP_409_CONFLICT,
         ),
     ],
 )

@@ -52,7 +52,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
   statics: {
     SHARE_ICON: "@FontAwesome5Solid/share-alt/13",
     SHARED_USER: "@FontAwesome5Solid/user/13",
-    SHARED_SUPPORT: "@FontAwesome5Solid/question/13",
+    SHARED_SUPPORT: "@FontAwesome5Solid/question-circle/13",
     SHARED_ORGS: "@FontAwesome5Solid/users/13",
     SHARED_ALL: "@FontAwesome5Solid/globe/13",
     PERM_READ: "@FontAwesome5Solid/eye/13",
@@ -914,13 +914,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
       const usersStore = osparc.store.Users.getInstance();
       const userPromises = currentUserGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
-      const usernames = [];
+      const userNames = [];
       let toolTip = "";
       let image = null;
       Promise.all(userPromises)
         .then(usersResult => {
           usersResult.forEach(user => {
-            usernames.push(user.getUsername());
+            userNames.push(user.getUserName());
           });
         })
         .catch(error => {
@@ -952,8 +952,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
               image = "@FontAwesome5Solid/lock/";
               break;
           }
-          usernames.forEach(username => {
-            toolTip += "<br>" + username;
+          userNames.forEach(userName => {
+            toolTip += "<br>" + userName;
           });
           this.__showBlockedCard(image, toolTip);
         });
