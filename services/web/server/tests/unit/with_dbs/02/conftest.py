@@ -494,9 +494,19 @@ def max_number_of_user_sessions(faker: Faker) -> int:
 
 
 @pytest.fixture
+def with_disabled_rtc_collaboration(
+    app_environment: EnvVarsDict,  # ensure pre-app startup envs
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {"WEBSERVER_REALTIME_COLLABORATION": "null"},
+    )
+
+
+@pytest.fixture
 def with_enabled_rtc_collaboration(
-    app_environment: EnvVarsDict,
-    with_dev_features_enabled: None,
+    app_environment: EnvVarsDict,  # ensure pre-app startup envs
     monkeypatch: pytest.MonkeyPatch,
     max_number_of_user_sessions: int,
 ) -> None:
@@ -512,8 +522,7 @@ def with_enabled_rtc_collaboration(
 
 @pytest.fixture
 def with_enabled_rtc_collaboration_limited_to_1_user(
-    app_environment: EnvVarsDict,
-    with_dev_features_enabled: None,
+    app_environment: EnvVarsDict,  # ensure pre-app startup envs
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     setenvs_from_dict(
