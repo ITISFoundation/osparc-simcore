@@ -102,11 +102,8 @@ async def async_job_rpc_server(  # noqa: C901
                 }
             )
 
-        async def list_jobs(
-            self, filter_: str, job_filter: AsyncJobFilter
-        ) -> list[AsyncJobGet]:
+        async def list_jobs(self, job_filter: AsyncJobFilter) -> list[AsyncJobGet]:
             assert job_filter
-            assert filter_ is not None
 
             return [
                 AsyncJobGet(
