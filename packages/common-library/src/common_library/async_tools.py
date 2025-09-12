@@ -8,8 +8,6 @@ from functools import wraps
 from inspect import isawaitable
 from typing import Any, ParamSpec, TypeVar, overload
 
-from servicelib.logging_utils import log_context
-
 _logger = logging.getLogger(__name__)
 
 R = TypeVar("R")
