@@ -27,6 +27,7 @@ from models_library.api_schemas_webserver.storage import (
     ListPathsQueryParams,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
+    SearchBodyParams
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
@@ -236,3 +237,16 @@ _export_data_responses: dict[int | str, dict[str, Any]] = {
 )
 async def export_data(export_data: DataExportPost, location_id: LocationID):
     """Trigger data export. Returns async job id for getting status and results"""
+
+
+@router.post(
+    "/storage/locations/{location_id}/search",
+    response_model=Envelope[TaskGet],
+    name="search",
+    description="Starts a files/folders search",
+)
+async def search(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+    _body: SearchBodyParams,
+):
+    """Trigger search. Returns async job id for getting status and results"""
