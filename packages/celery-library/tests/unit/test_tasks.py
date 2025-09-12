@@ -22,12 +22,12 @@ from faker import Faker
 from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel
 from servicelib.celery.models import (
-    WILDCARD,
     TaskFilter,
     TaskID,
     TaskMetadata,
     TaskState,
     TaskUUID,
+    Wildcard,
 )
 from servicelib.logging_utils import log_context
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
@@ -216,8 +216,8 @@ async def test_filtering_listing_tasks(
 ):
     class MyFilter(BaseModel):
         user_id: int
-        product_name: str
-        client_app: str
+        product_name: str | Wildcard
+        client_app: str | Wildcard
 
     user_id = 42
     expected_task_uuids: set[TaskUUID] = set()
@@ -253,8 +253,8 @@ async def test_filtering_listing_tasks(
 
     search_filter = MyFilter(
         user_id=user_id,
-        product_name=WILDCARD,
-        client_app=WILDCARD,
+        product_name=Wildcard(),
+        client_app=Wildcard(),
     )
     tasks = await celery_task_manager.list_tasks(
         TaskFilter.model_validate(search_filter.model_dump())

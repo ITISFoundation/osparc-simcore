@@ -1,6 +1,6 @@
 import datetime
 from enum import StrEnum
-from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeAlias, TypeVar
+from typing import Annotated, Any, Final, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
@@ -15,7 +15,15 @@ TaskName: TypeAlias = Annotated[
 ]
 TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
-WILDCARD: Final[str] = "*"
+
+
+class Wildcard: ...
+
+
+def _replace_wildcard(value: Any, wildcard_str: str) -> str:
+    if isinstance(value, Wildcard):
+        return wildcard_str
+    return f"{value}"
 
 
 class TaskFilter(BaseModel):
@@ -29,7 +37,7 @@ class TaskFilter(BaseModel):
             product_name: int | Wildcard
             client_name: str
 
-        Listing tasks using the filter `MyTaskFilter(user_id=123, product_name=Wildcard, client_name="my-app")` will return all tasks with
+        Listing tasks using the filter `MyTaskFilter(user_id=123, product_name=Wildcard(), client_name="my-app")` will return all tasks with
         user_id 123, any product_name submitted from my-app.
 
     If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model)
@@ -41,7 +49,7 @@ class TaskFilter(BaseModel):
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:
         for key in self.model_dump().keys():
-            if WILDCARD in key or _TASK_ID_KEY_DELIMITATOR in key or "=" in key:
+            if _TASK_ID_KEY_DELIMITATOR in key or "=" in key:
                 raise ValueError(f"Invalid filter key: '{key}'")
             if (
                 _TASK_ID_KEY_DELIMITATOR in f"{getattr(self, key)}"
@@ -52,15 +60,21 @@ class TaskFilter(BaseModel):
                 )
         return self
 
-    def _build_task_id_prefix(self) -> str:
+    def _build_task_id_prefix(self, wildcard_str: str) -> str:
         filter_dict = self.model_dump()
         return _TASK_ID_KEY_DELIMITATOR.join(
-            [f"{key}={filter_dict[key]}" for key in sorted(filter_dict)]
+            [
+                f"{key}={_replace_wildcard(filter_dict[key], wildcard_str)}"
+                for key in sorted(filter_dict)
+            ]
         )
 
-    def get_task_id(self, task_uuid: TaskUUID | Literal["*"]) -> TaskID:
+    def get_task_id(self, task_uuid: TaskUUID | Wildcard, wildcard_str: str) -> TaskID:
         return _TASK_ID_KEY_DELIMITATOR.join(
-            [self._build_task_id_prefix(), f"task_uuid={task_uuid}"]
+            [
+                self._build_task_id_prefix(wildcard_str),
+                f"task_uuid={_replace_wildcard(task_uuid, wildcard_str)}",
+            ]
         )
 
     @classmethod
@@ -169,13 +183,16 @@ class TaskInfoStore(Protocol):
 
     async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
 
-    async def list_tasks(self, task_context: TaskFilter) -> list[Task]: ...
+    async def list_tasks(self, task_filter: TaskFilter) -> list[Task]: ...
 
     async def remove_task(self, task_id: TaskID) -> None: ...
 
     async def set_task_progress(
         self, task_id: TaskID, report: ProgressReport
     ) -> None: ...
+
+    @property
+    def wildcard_str(cls) -> str: ...
 
 
 class TaskStatus(BaseModel):

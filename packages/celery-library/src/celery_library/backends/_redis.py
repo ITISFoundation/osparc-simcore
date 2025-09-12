@@ -1,11 +1,18 @@
 import contextlib
 import logging
 from datetime import timedelta
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
-from servicelib.celery.models import Task, TaskFilter, TaskID, TaskMetadata
+from servicelib.celery.models import (
+    Task,
+    TaskFilter,
+    TaskID,
+    TaskInfoStore,
+    TaskMetadata,
+    Wildcard,
+)
 from servicelib.redis import RedisClientSDK
 
 _CELERY_TASK_INFO_PREFIX: Final[str] = "celery-task-info-"
@@ -75,7 +82,9 @@ class RedisTaskInfoStore:
             return None
 
     async def list_tasks(self, task_filter: TaskFilter) -> list[Task]:
-        search_key = _CELERY_TASK_INFO_PREFIX + task_filter.get_task_id("*")
+        search_key = _CELERY_TASK_INFO_PREFIX + task_filter.get_task_id(
+            task_uuid=Wildcard(), wildcard_str=self.wildcard_str
+        )
 
         keys: list[str] = []
         pipeline = self._redis_client_sdk.redis.pipeline()
@@ -118,3 +127,11 @@ class RedisTaskInfoStore:
             key=_CELERY_TASK_PROGRESS_KEY,
             value=report.model_dump_json(),
         )  # type: ignore
+
+    @property
+    def wildcard_str(self) -> str:
+        return "*"
+
+
+if TYPE_CHECKING:
+    _: type[TaskInfoStore] = RedisTaskInfoStore

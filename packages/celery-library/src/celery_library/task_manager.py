@@ -49,7 +49,9 @@ class CeleryTaskManager:
             msg=f"Submit {task_metadata.name=}: {task_filter=} {task_params=}",
         ):
             task_uuid = uuid4()
-            task_id = task_filter.get_task_id(task_uuid=task_uuid)
+            task_id = task_filter.get_task_id(
+                task_uuid=task_uuid, wildcard_str=self._task_info_store.wildcard_str
+            )
             self._celery_app.send_task(
                 task_metadata.name,
                 task_id=task_id,
@@ -77,7 +79,9 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"task cancellation: {task_filter=} {task_uuid=}",
         ):
-            task_id = task_filter.get_task_id(task_uuid=task_uuid)
+            task_id = task_filter.get_task_id(
+                task_uuid=task_uuid, wildcard_str=self._task_info_store.wildcard_str
+            )
             if not (await self.get_task_status(task_filter, task_uuid)).is_done:
                 await self._abort_task(task_id)
             await self._task_info_store.remove_task(task_id)
@@ -94,7 +98,9 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Get task result: {task_filter=} {task_uuid=}",
         ):
-            task_id = task_filter.get_task_id(task_uuid=task_uuid)
+            task_id = task_filter.get_task_id(
+                task_uuid=task_uuid, wildcard_str=self._task_info_store.wildcard_str
+            )
             async_result = self._celery_app.AsyncResult(task_id)
             result = async_result.result
             if async_result.ready():
@@ -108,7 +114,9 @@ class CeleryTaskManager:
         self, task_filter: TaskFilter, task_uuid: TaskUUID, task_state: TaskState
     ) -> ProgressReport:
         if task_state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
-            task_id = task_filter.get_task_id(task_uuid=task_uuid)
+            task_id = task_filter.get_task_id(
+                task_uuid=task_uuid, wildcard_str=self._task_info_store.wildcard_str
+            )
             progress = await self._task_info_store.get_task_progress(task_id)
             if progress is not None:
                 return progress
@@ -137,7 +145,9 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Getting task status: {task_filter=} {task_uuid=}",
         ):
-            task_id = task_filter.get_task_id(task_uuid=task_uuid)
+            task_id = task_filter.get_task_id(
+                task_uuid=task_uuid, wildcard_str=self._task_info_store.wildcard_str
+            )
             task_state = await self._get_task_celery_state(task_id)
             return TaskStatus(
                 task_uuid=task_uuid,
