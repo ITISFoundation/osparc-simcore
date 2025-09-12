@@ -92,10 +92,11 @@ async def cancel_wait_task(
 
     cancelling = task.cancel()
     if not cancelling:
-        return  # task was alredy cancelled
+        return  # task could not be cancelled (either already done or something else)
 
     assert task.cancelling()  # nosec
     assert not task.cancelled()  # nosec
+    assert not task.done()  # nosec
 
     try:
 
@@ -106,8 +107,9 @@ async def cancel_wait_task(
         )
 
     except asyncio.CancelledError:
-        if not task.cancelled():
-            # task owner function is being cancelled -> propagate cancellation
+        assert task.done()  # nosec
+        if asyncio.current_task().cancelling() > 0:
+            # owner function is being cancelled -> propagate cancellation
             raise
 
         # else: task cancellation is complete, we can safely ignore it
