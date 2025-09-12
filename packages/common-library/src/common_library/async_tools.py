@@ -89,32 +89,37 @@ async def cancel_wait_task(
         TimeoutError: raised if cannot cancel the task.
         CancelledError: raised ONLY if owner is being cancelled.
     """
+    if task.done():
+        # nothing to do here
+        return
 
-    cancelling = task.cancel()
-    if not cancelling:
-        return  # task was alredy cancelled
-
-    assert task.cancelling()  # nosec
-    assert not task.cancelled()  # nosec
-
+    # mark for cancellation
+    task.cancel("cancel_wait_task was called to cancel this task")
     try:
-
+        _logger.debug("Cancelling task %s", task.get_name())
         await asyncio.shield(
             # NOTE shield ensures that cancellation of the caller function won't stop you
             # from observing the cancellation/finalization of task.
             asyncio.wait_for(task, timeout=max_delay)
         )
-
-    except asyncio.CancelledError:
-        if not task.cancelled():
-            # task owner function is being cancelled -> propagate cancellation
-            raise
-
-        # else: task cancellation is complete, we can safely ignore it
-        _logger.debug(
-            "Task %s cancellation is complete",
+    except TimeoutError:
+        _logger.exception(
+            "Timeout while cancelling task %s after %s seconds",
             task.get_name(),
+            max_delay,
         )
+        raise
+    except asyncio.CancelledError:
+        current_task = asyncio.current_task()
+        assert current_task is not None  # nosec
+        if current_task.cancelling() > 0:
+            # owner function is being cancelled -> propagate cancellation
+            raise
+    finally:
+        if not task.done():
+            _logger.error("Failed to cancel %s", task.get_name())
+        else:
+            _logger.debug("Task %s cancelled", task.get_name())
 
 
 def delayed_start(

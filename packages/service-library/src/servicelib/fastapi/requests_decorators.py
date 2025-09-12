@@ -4,6 +4,7 @@ import logging
 from functools import wraps
 from typing import Any, Protocol
 
+from common_library.async_tools import cancel_wait_task
 from fastapi import Request, status
 from fastapi.exceptions import HTTPException
 
@@ -13,8 +14,7 @@ logger = logging.getLogger(__name__)
 class _HandlerWithRequestArg(Protocol):
     __name__: str
 
-    async def __call__(self, request: Request, *args: Any, **kwargs: Any) -> Any:
-        ...
+    async def __call__(self, request: Request, *args: Any, **kwargs: Any) -> Any: ...
 
 
 def _validate_signature(handler: _HandlerWithRequestArg):
@@ -75,13 +75,8 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
 
         # One has completed, cancel the other
         for t in pending:
-            t.cancel()
-
             try:
-                await asyncio.wait_for(t, timeout=3)
-
-            except asyncio.CancelledError:
-                pass
+                await cancel_wait_task(t, max_delay=3)
             except Exception:  # pylint: disable=broad-except
                 if t is handler_task:
                     raise
