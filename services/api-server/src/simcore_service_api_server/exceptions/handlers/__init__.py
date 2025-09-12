@@ -1,5 +1,3 @@
-from os import error
-
 from celery.exceptions import (  # type: ignore[import-untyped] #pylint: disable=no-name-in-module
     CeleryError,
 )
@@ -50,6 +48,7 @@ def setup(app: FastAPI, *, is_debug: bool = False):
             TaskNotFoundError,
             status.HTTP_404_NOT_FOUND,
             error_message="The requested task was not found",
+            add_exception_to_message=True,
         ),
     )
 
