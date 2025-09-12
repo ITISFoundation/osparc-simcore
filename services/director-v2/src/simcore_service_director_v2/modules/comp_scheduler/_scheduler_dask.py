@@ -70,12 +70,13 @@ _logger = logging.getLogger(__name__)
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
+_DASK_SCHEDULER_MAX_CONCURRENT_ACCESS: Final[int] = 50
 
 
 def create_cluster_client_lock_key(
     _app, user_id: UserID, wallet_id: WalletID | None
 ) -> str:
-    return f"cluster-client-{user_id}-{wallet_id or 'None'}"
+    return f"cluster-client-user_id{user_id}-wallet_id{wallet_id or 'None'}"
 
 
 @asynccontextmanager
@@ -96,12 +97,13 @@ async def _cluster_dask_client(
             wallet_id=run_metadata.get("wallet_id"),
         )
 
+    @asynccontextmanager
     @with_limited_concurrency(
         get_redis_client_from_app,
         key=get_redis_lock_key(
             MODULE_NAME_WORKER, unique_lock_key_builder=create_cluster_client_lock_key
         ),
-        capacity=20,
+        capacity=_DASK_SCHEDULER_MAX_CONCURRENT_ACCESS,
         blocking=True,
         blocking_timeout=None,
     )
@@ -114,7 +116,8 @@ async def _cluster_dask_client(
         ) as client:
             yield client
 
-    return await _limited_client_pool()
+    async with _limited_client_pool() as client:
+        yield client
 
 
 @dataclass
