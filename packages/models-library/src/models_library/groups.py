@@ -15,12 +15,14 @@ from .utils.common_validators import create_enums_pre_validator
 EVERYONE_GROUP_ID: Final[int] = 1
 
 GroupID: TypeAlias = PositiveInt
+PrimaryGroupID: TypeAlias = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
+StandardGroupID: TypeAlias = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
 
 __all__: tuple[str, ...] = ("GroupType",)
 
 
 class Group(BaseModel):
-    gid: PositiveInt
+    gid: GroupID
     name: str
     description: str
     group_type: Annotated[GroupType, Field(alias="type")]
