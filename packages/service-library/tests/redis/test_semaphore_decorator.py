@@ -351,6 +351,7 @@ async def test_cancelled_error_preserved(
         await function_raising_cancelled_error()
 
 
+@pytest.mark.heavy_load
 async def test_with_large_capacity(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
