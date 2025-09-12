@@ -19,13 +19,9 @@ _WILDCARD: Final[str] = "*"
 _FORBIDDEN_CHARS = (_WILDCARD, _TASK_ID_KEY_DELIMITATOR, "=")
 
 
-class Wildcard: ...
-
-
-def _replace_wildcard(value: Any) -> str:
-    if isinstance(value, Wildcard):
+class Wildcard:
+    def __str__(self) -> str:
         return _WILDCARD
-    return f"{value}"
 
 
 class TaskFilter(BaseModel):
@@ -47,7 +43,7 @@ class TaskFilter(BaseModel):
 
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
 
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:
@@ -63,17 +59,14 @@ class TaskFilter(BaseModel):
     def _build_task_id_prefix(self) -> str:
         filter_dict = self.model_dump()
         return _TASK_ID_KEY_DELIMITATOR.join(
-            [
-                f"{key}={_replace_wildcard(filter_dict[key])}"
-                for key in sorted(filter_dict)
-            ]
+            [f"{key}={filter_dict[key]}" for key in sorted(filter_dict)]
         )
 
     def get_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskID:
         return _TASK_ID_KEY_DELIMITATOR.join(
             [
                 self._build_task_id_prefix(),
-                f"task_uuid={_replace_wildcard(task_uuid)}",
+                f"task_uuid={task_uuid}",
             ]
         )
 
