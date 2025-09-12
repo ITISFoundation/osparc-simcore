@@ -12,7 +12,6 @@ import logging
 import random
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
-from functools import partial
 from pathlib import Path
 from typing import Any, Final, cast
 
@@ -1018,10 +1017,7 @@ async def with_storage_celery_worker(
     app_server = FastAPIAppServer(app=create_app(app_settings))
 
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
-        assert app_settings.STORAGE_CELERY  # nosec
-        return partial(on_worker_init, app_server, app_settings.STORAGE_CELERY)(
-            sender, **_kwargs
-        )
+        return on_worker_init(sender, app_server, **_kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)

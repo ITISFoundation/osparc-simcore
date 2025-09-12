@@ -12,6 +12,7 @@ from random import randint
 
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
+from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library.errors import TaskNotFoundError, TransferrableCeleryError
 from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager
@@ -36,6 +37,10 @@ _logger = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = ["redis"]
 pytest_simcore_ops_services_selection = []
+
+
+class MyTaskFilter(TaskFilter):
+    user_id: int
 
 
 async def _fake_file_processor(
@@ -96,8 +101,9 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 async def test_submitting_task_calling_async_function_results_with_success_state(
     celery_task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
-    task_filter = TaskFilter(user_id=42)
+    task_filter = MyTaskFilter(user_id=42)
 
     task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
@@ -126,8 +132,9 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 
 async def test_submitting_task_with_failure_results_with_error(
     celery_task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
-    task_filter = TaskFilter(user_id=42)
+    task_filter = MyTaskFilter(user_id=42)
 
     task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
@@ -154,8 +161,9 @@ async def test_submitting_task_with_failure_results_with_error(
 
 async def test_cancelling_a_running_task_aborts_and_deletes(
     celery_task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
-    task_filter = TaskFilter(user_id=42)
+    task_filter = MyTaskFilter(user_id=42)
 
     task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
@@ -176,8 +184,9 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 
 async def test_listing_task_uuids_contains_submitted_task(
     celery_task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
-    task_filter = TaskFilter(user_id=42)
+    task_filter = MyTaskFilter(user_id=42)
 
     task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(

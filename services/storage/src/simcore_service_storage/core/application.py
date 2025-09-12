@@ -70,11 +70,11 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     setup_s3(app)
     setup_client_session(app, tracing_settings=settings.STORAGE_TRACING)
 
-    if settings.STORAGE_CELERY and not settings.STORAGE_WORKER_MODE:
+    if settings.STORAGE_CELERY:
+        setup_task_manager(app, settings=settings.STORAGE_CELERY)
+
+    if not settings.STORAGE_WORKER_MODE:
         setup_rabbitmq(app)
-
-        setup_task_manager(app, celery_settings=settings.STORAGE_CELERY)
-
         setup_rpc_routes(app)
 
     setup_rest_api_routes(app, API_VTAG)
