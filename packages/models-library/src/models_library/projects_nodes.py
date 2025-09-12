@@ -238,20 +238,21 @@ class Node(BaseModel):
         Field(description="The short name of the node", examples=["JupyterLab"]),
     ]
     progress: Annotated[
-        int | None,
+        float | None,
         Field(
             ge=0,
             le=100,
-            description="the node progress value (deprecated in DB, still used for API only)",
-            deprecated=True,  # <-- Think this is not true, it is still used by the File Picker (frontend nodes)
+            description="the node progress value",
+            deprecated=True,  # NOTE: still used in the File Picker (frontend nodes) and must be removed first from there before retiring it here
         ),
     ] = None
 
-    thumbnail: Annotated[  # <-- (DEPRECATED) Can be removed
+    thumbnail: Annotated[
         str | HttpUrl | None,
         Field(
             description="url of the latest screenshot of the node",
             examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+            deprecated=True,
         ),
     ] = None
 
@@ -316,7 +317,7 @@ class Node(BaseModel):
             deprecated=True,
             alias="outputNode",
         ),
-    ] = None  # <-- (DEPRECATED) Can be removed
+    ] = None
 
     output_nodes: Annotated[  # <-- (DEPRECATED) Can be removed
         list[NodeID] | None,
@@ -327,7 +328,7 @@ class Node(BaseModel):
         ),
     ] = None
 
-    parent: Annotated[  # <-- (DEPRECATED) Can be removed
+    parent: Annotated[
         NodeID | None,
         Field(
             description="Parent's (group-nodes') node ID s. Used to group",
