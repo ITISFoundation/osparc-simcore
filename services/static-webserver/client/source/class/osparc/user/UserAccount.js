@@ -21,13 +21,11 @@ qx.Class.define("osparc.user.UserAccount", {
   construct: function(userGroupId) {
     this.base(arguments);
 
-    /*
-    const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
-      paddingRight: 10
+    this.set({
+      padding: 10,
     });
-    this.addWidgetToTabs(miniProfile);
-    */
 
+    this.getChildControl("thumbnail");
     const profilePage = this.getChildControl("profile-page");
     const extras = this.getChildControl("extras-page");
     this.bind("user", profilePage, "user");
@@ -64,13 +62,25 @@ qx.Class.define("osparc.user.UserAccount", {
   },
 
   statics: {
-    THUMBNAIL_SIZE: 110,
+    THUMBNAIL_SIZE: 90,
   },
 
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "thumbnail":
+          control = new osparc.ui.basic.Thumbnail(null, this.self().THUMBNAIL_SIZE, this.self().THUMBNAIL_SIZE).set({
+            width: this.self().THUMBNAIL_SIZE,
+            height: this.self().THUMBNAIL_SIZE,
+            marginBottom: 20,
+          });
+          control.getChildControl("image").set({
+            anonymous: true,
+            decorator: "rounded",
+          });
+          this.addWidgetToTabs(control);
+          break;
         case "profile-page":
           control = new osparc.user.UserProfile();
           this.addTab("Profile", "", control);
@@ -101,6 +111,7 @@ qx.Class.define("osparc.user.UserAccount", {
             const extras = osparc.utils.Utils.convertKeysToTitles(userData);
 
             this.fireDataEvent("updateCaption", user.getUserName());
+            this.getChildControl("thumbnail").setSource(user.createThumbnail(this.self().THUMBNAIL_SIZE));
             this.setUser(user);
             this.setExtras(extras);
           }
