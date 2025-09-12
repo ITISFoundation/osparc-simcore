@@ -32,7 +32,7 @@ qx.Class.define("osparc.user.UserAccountWindow", {
   },
 
   statics: {
-    WIDTH: 600,
+    WIDTH: 500,
     HEIGHT: 500,
 
     openWindow: function(userGroupId) {
