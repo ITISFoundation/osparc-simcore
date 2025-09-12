@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Annotated, Any
 
 import asyncpg.exceptions  # type: ignore[import-untyped]
+import sqlalchemy as sa
 import sqlalchemy.exc
 from common_library.async_tools import maybe_await
 from common_library.basic_types import DEFAULT_FACTORY
@@ -73,22 +74,6 @@ class ProjectNodeCreate(BaseModel):
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
         return cls.model_fields.keys() - exclude
 
-    def model_dump_as_node(self) -> dict[str, Any]:
-        """Converts a ProjectNode from the database to a Node model for the API.
-
-        Handles field mapping and excludes database-specific fields that are not
-        part of the Node model.
-        """
-        # Get all ProjectNode fields except those that don't belong in Node
-        exclude_fields = {"node_id", "required_resources"}
-        return self.model_dump(
-            # NOTE: this setup ensures using the defaults provided in Node model when the db does not
-            # provide them, e.g. `state`
-            exclude=exclude_fields,
-            exclude_none=True,
-            exclude_unset=True,
-        )
-
     model_config = ConfigDict(frozen=True)
 
 
@@ -97,22 +82,6 @@ class ProjectNode(ProjectNodeCreate):
     modified: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-    def model_dump_as_node(self) -> dict[str, Any]:
-        """Converts a ProjectNode from the database to a Node model for the API.
-
-        Handles field mapping and excludes database-specific fields that are not
-        part of the Node model.
-        """
-        # Get all ProjectNode fields except those that don't belong in Node
-        exclude_fields = {"node_id", "required_resources", "created", "modified"}
-        return self.model_dump(
-            # NOTE: this setup ensures using the defaults provided in Node model when the db does not
-            # provide them, e.g. `state`
-            exclude=exclude_fields,
-            exclude_none=True,
-            exclude_unset=True,
-        )
 
 
 def create_workbench_subquery(project_id: str) -> Subquery:

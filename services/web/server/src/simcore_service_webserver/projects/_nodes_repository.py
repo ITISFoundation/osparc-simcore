@@ -1,5 +1,3 @@
-from typing import Any
-
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
@@ -13,6 +11,7 @@ from simcore_postgres_database.utils_repos import (
 )
 
 from ..db.plugin import get_asyncpg_engine
+from . import _nodes_models_adapters
 
 
 async def get_project_nodes_services(
@@ -37,7 +36,9 @@ async def get_project_nodes_map(
         project_nodes = await repo.list(conn)
 
     workbench = {
-        project_node.node_id: project_node.model_dump_as_node()
+        project_node.node_id: _nodes_models_adapters.node_from_project_node(
+            project_node
+        )
         for project_node in project_nodes
     }
     return TypeAdapter(dict[NodeID, Node]).validate_python(workbench)
@@ -51,7 +52,7 @@ async def update_project_nodes_map(
 ) -> dict[NodeID, Node]:
     repo = ProjectNodesRepo(project_uuid=project_id)
 
-    workbench: dict[NodeID, dict[str, Any]] = {}
+    workbench: dict[NodeID, Node] = {}
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         for node_id, node in partial_nodes_map.items():
             project_node = await repo.update(
@@ -59,7 +60,9 @@ async def update_project_nodes_map(
                 node_id=node_id,
                 **node.model_dump(exclude_none=True, exclude_unset=True),
             )
-            workbench[node_id] = project_node.model_dump_as_node()
+            workbench[node_id] = _nodes_models_adapters.node_from_project_node(
+                project_node
+            )
 
     return TypeAdapter(dict[NodeID, Node]).validate_python(workbench)
 
