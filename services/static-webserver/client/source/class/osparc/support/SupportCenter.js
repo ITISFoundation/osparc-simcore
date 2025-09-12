@@ -201,31 +201,5 @@ qx.Class.define("osparc.support.SupportCenter", {
       conversationPage.proposeConversation(type);
       this.__showConversation();
     },
-
-    // OM remove this
-    createConversationBookCall: function() {
-      const conversationPage = this.getChildControl("conversation-page");
-      conversationPage.setConversation(null);
-      this.__showConversation();
-      conversationPage.postMessage(osparc.support.SupportCenter.REQUEST_CALL_MESSAGE)
-        .then(data => {
-          const conversationId = data["conversationId"];
-          osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
-            .then(conversation => {
-              // update conversation name and patch extra_context
-              conversation.renameConversation("Book a call");
-              conversation.patchExtraContext({
-                ...conversation.getExtraContext(),
-                "appointment": "requested"
-              });
-              // This should be an automatic response in the chat
-              const msg = this.tr("Your request has been sent.<br>Our support team will get back to you.");
-              osparc.FlashMessenger.logAs(msg, "INFO");
-            });
-        })
-        .catch(err => {
-          console.error("Error sending request call message", err);
-        });
-    },
   }
 });
