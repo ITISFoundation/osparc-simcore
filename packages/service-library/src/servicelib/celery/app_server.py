@@ -40,4 +40,5 @@ class BaseAppServer(ABC, Generic[T]):
         self,
         startup_completed_event: threading.Event,
     ) -> None:
+        """Used to initialize the app server until shutdown event is set."""
         raise NotImplementedError
