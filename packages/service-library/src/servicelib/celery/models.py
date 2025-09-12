@@ -7,7 +7,7 @@ from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
 from pydantic.config import JsonDict
 
-T = TypeVar("T", bound=BaseModel)
+ModelType = TypeVar("ModelType", bound=BaseModel)
 
 TaskID: TypeAlias = str
 TaskName: TypeAlias = Annotated[
@@ -41,20 +41,20 @@ class TaskFilter(BaseModel):
             [f"{key}={filter_dict[key]}" for key in sorted(filter_dict)]
         )
 
-    def task_id(self, task_uuid: TaskUUID | Literal["*"]) -> TaskID:
+    def get_task_id(self, task_uuid: TaskUUID | Literal["*"]) -> TaskID:
         return _TASK_ID_KEY_DELIMITATOR.join(
             [self._build_task_id_prefix(), f"task_uuid={task_uuid}"]
         )
 
     @classmethod
-    def recreate_model(cls, task_id: TaskID, model: type[T]) -> T:
+    def recreate_model(cls, task_id: TaskID, model: type[ModelType]) -> ModelType:
         filter_dict = cls.recreate_data(task_id)
         return model.model_validate(filter_dict)
 
     @classmethod
     def recreate_data(cls, task_id: TaskID) -> dict[str, Any]:
         """Recreates the filter data from a task_id string
-        Careful: does not validate types. For that use `recreate_model` instead
+        WARNING: does not validate types. For that use `recreate_model` instead
         """
         try:
             parts = task_id.split(_TASK_ID_KEY_DELIMITATOR)
@@ -67,7 +67,7 @@ class TaskFilter(BaseModel):
             raise ValueError(f"Invalid task_id format: {task_id}") from err
 
     @classmethod
-    def task_uuid(cls, task_id: TaskID) -> TaskUUID:
+    def get_task_uuid(cls, task_id: TaskID) -> TaskUUID:
         try:
             return UUID(task_id.split(_TASK_ID_KEY_DELIMITATOR)[-1].split("=")[1])
         except (IndexError, ValueError) as err:

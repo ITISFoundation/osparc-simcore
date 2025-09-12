@@ -75,7 +75,7 @@ class RedisTaskInfoStore:
             return None
 
     async def list_tasks(self, task_filter: TaskFilter) -> list[Task]:
-        search_key = _CELERY_TASK_INFO_PREFIX + task_filter.task_id("*")
+        search_key = _CELERY_TASK_INFO_PREFIX + task_filter.get_task_id("*")
 
         keys: list[str] = []
         pipeline = self._redis_client_sdk.redis.pipeline()
@@ -102,7 +102,7 @@ class RedisTaskInfoStore:
                 task_metadata = TaskMetadata.model_validate_json(raw_metadata)
                 tasks.append(
                     Task(
-                        uuid=TaskFilter.task_uuid(key),
+                        uuid=TaskFilter.get_task_uuid(key),
                         metadata=task_metadata,
                     )
                 )

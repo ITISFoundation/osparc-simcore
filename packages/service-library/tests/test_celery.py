@@ -47,8 +47,8 @@ async def test_task_filter_task_uuid(
 ):
     task_filter = TaskFilter.model_validate(task_filter_data)
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = task_filter.task_id(task_uuid)
-    assert TaskFilter.task_uuid(task_id=task_id) == task_uuid
+    task_id = task_filter.get_task_id(task_uuid)
+    assert TaskFilter.get_task_uuid(task_id=task_id) == task_uuid
 
 
 async def test_create_task_filter_from_task_id():
@@ -62,7 +62,7 @@ async def test_create_task_filter_from_task_id():
     mymodel = MyModel(_int=1, _bool=True, _str="test", _list=["a", "b"])
     task_filter = TaskFilter.model_validate(mymodel.model_dump())
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = task_filter.task_id(task_uuid)
+    task_id = task_filter.get_task_id(task_uuid)
     assert TaskFilter.recreate_model(task_id=task_id, model=MyModel) == mymodel
 
 
