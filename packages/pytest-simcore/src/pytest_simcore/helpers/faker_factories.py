@@ -199,14 +199,14 @@ def random_project_node(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, A
     """Generates random fake data project nodes DATABASE table"""
     from simcore_postgres_database.models.projects_nodes import projects_nodes
 
-    _name = fake.name()
+    fake_name = fake.name()
 
     data = {
         "node_id": fake.uuid4(),
         "project_uuid": fake.uuid4(),
-        "key": random_service_key(fake, name=_name),
+        "key": random_service_key(fake, name=fake_name),
         "version": random_service_version(fake),
-        "label": _name,
+        "label": fake_name,
     }
 
     assert set(data.keys()).issubset({c.name for c in projects_nodes.columns})

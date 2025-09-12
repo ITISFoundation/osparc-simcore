@@ -1,9 +1,9 @@
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 import pytest
 from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt
 
 
 class MyModel(BaseModel):
@@ -12,6 +12,11 @@ class MyModel(BaseModel):
     c: str = "bla"
     d: bool | None = None
     e: Literal["bla"]
+    f: Annotated[
+        PositiveInt | None,
+        "nullable inside Annotated (PositiveInt = Annotated[int, ...])",
+    ]
+    g: Annotated[Literal["foo", "bar"], "literal inside Annotated"]
 
 
 @pytest.mark.parametrize(
@@ -50,6 +55,8 @@ class MyModel(BaseModel):
         ),
         (is_literal, False, "d"),
         (is_literal, True, "e"),
+        (is_literal, False, "f"),
+        (is_literal, True, "g"),
         (
             is_nullable,
             False,
@@ -67,6 +74,11 @@ class MyModel(BaseModel):
         ),
         (is_nullable, True, "d"),
         (is_nullable, False, "e"),
+        (
+            is_nullable,
+            True,
+            "f",
+        ),
     ],
 )
 def test_field_fn(fn: Callable[[Any], Any], expected: Any, name: str):

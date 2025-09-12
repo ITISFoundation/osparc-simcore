@@ -242,16 +242,19 @@ class Node(BaseModel):
         Field(
             ge=0,
             le=100,
-            description="the node progress value (deprecated in DB, still used for API only)",
-            deprecated=True,  # <-- Think this is not true, it is still used by the File Picker (frontend nodes)
+            description="the node progress value",
+            deprecated=True,  # NOTE: still used in the File Picker (frontend nodes) and must be removed first from there before retiring it here
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
-    thumbnail: Annotated[  # <-- (DEPRECATED) Can be removed
+    thumbnail: Annotated[
         str | HttpUrl | None,
         Field(
             description="url of the latest screenshot of the node",
             examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+            deprecated=True,
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
@@ -315,8 +318,9 @@ class Node(BaseModel):
         Field(
             deprecated=True,
             alias="outputNode",
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
-    ] = None  # <-- (DEPRECATED) Can be removed
+    ] = None
 
     output_nodes: Annotated[  # <-- (DEPRECATED) Can be removed
         list[NodeID] | None,
@@ -324,14 +328,16 @@ class Node(BaseModel):
             description="Used in group-nodes. Node IDs of those connected to the output",
             alias="outputNodes",
             deprecated=True,
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
-    parent: Annotated[  # <-- (DEPRECATED) Can be removed
+    parent: Annotated[
         NodeID | None,
         Field(
             description="Parent's (group-nodes') node ID s. Used to group",
             deprecated=True,
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
@@ -349,7 +355,10 @@ class Node(BaseModel):
     ] = DEFAULT_FACTORY
 
     required_resources: Annotated[
-        dict[str, Any] | None, Field(default_factory=dict)
+        dict[str, Any] | None,
+        Field(default_factory=dict),
+        # NOTE: requested_resources should be here! WARNING: this model is used both in database and rest api!
+        # Model for project_nodes table should NOT be Node but a different one !
     ] = DEFAULT_FACTORY
 
     boot_options: Annotated[

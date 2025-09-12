@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Annotated, Any
 
 import asyncpg.exceptions  # type: ignore[import-untyped]
-import sqlalchemy as sa
 import sqlalchemy.exc
 from common_library.async_tools import maybe_await
 from common_library.basic_types import DEFAULT_FACTORY

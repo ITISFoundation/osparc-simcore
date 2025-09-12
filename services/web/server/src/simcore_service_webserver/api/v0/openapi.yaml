@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.78.0
+  version: 0.79.0
 servers:
 - url: ''
   description: webserver
@@ -14011,8 +14011,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Progress
-          description: the node progress value (deprecated in DB, still used for API
-            only)
+          description: the node progress value
           deprecated: true
         thumbnail:
           anyOf:
@@ -14024,6 +14023,7 @@ components:
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
+          deprecated: true
         runHash:
           anyOf:
           - type: string
@@ -14154,8 +14154,7 @@ components:
             minimum: 0
           - type: 'null'
           title: Progress
-          description: the node progress value (deprecated in DB, still used for API
-            only)
+          description: the node progress value
           deprecated: true
         thumbnail:
           anyOf:
@@ -14167,6 +14166,7 @@ components:
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
+          deprecated: true
         runHash:
           anyOf:
           - type: string
@@ -18443,6 +18443,30 @@ components:
           title: Products
           description: List of products this users is included or None if fields is
             unset
+        userId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Userid
+          description: Unique identifier of the user if an account was created
+        userName:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Username
+          description: Username of the user if an account was created
+        groupId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 1
+          - type: 'null'
+          title: Groupid
+          description: Primary group ID of the user if an account was created
       type: object
       required:
       - firstName
@@ -18459,7 +18483,6 @@ components:
       - preRegistrationCreated
       - accountRequestStatus
       - registered
-      - status
       title: UserAccountGet
     UserAccountReject:
       properties:

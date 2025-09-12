@@ -70,10 +70,11 @@ async def _assert_compute_path_size(
 ) -> ByteSize:
     async_job, _ = await compute_path_size(
         storage_rpc_client,
-        product_name=product_name,
-        user_id=user_id,
         location_id=location_id,
         path=path,
+        job_filter=AsyncJobFilter(
+            user_id=user_id, product_name=product_name, client_name="PYTEST_CLIENT_NAME"
+        ),
     )
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
@@ -106,10 +107,11 @@ async def _assert_delete_paths(
 ) -> None:
     async_job, _ = await delete_paths(
         storage_rpc_client,
-        product_name=product_name,
-        user_id=user_id,
         location_id=location_id,
         paths=paths,
+        job_filter=AsyncJobFilter(
+            user_id=user_id, product_name=product_name, client_name="PYTEST_CLIENT_NAME"
+        ),
     )
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,

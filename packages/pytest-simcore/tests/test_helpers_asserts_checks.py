@@ -15,12 +15,17 @@ from pytest_simcore.helpers.assert_checks import assert_equal_ignoring_none
 def test_assert_equal_ignoring_none_passes(expected, actual):
     assert_equal_ignoring_none(expected, actual)
 
+
 @pytest.mark.parametrize(
     "expected, actual, error_msg",
     [
         ({"a": 1, "b": 2}, {"a": 1}, "Missing key b"),
         ({"a": 1, "b": 2}, {"a": 1, "b": 3}, "Mismatch in b: 3 != 2"),
-        ({"a": {"x": 10, "y": 20}}, {"a": {"x": 10, "y": 99}}, "Mismatch in y: 99 != 20"),
+        (
+            {"a": {"x": 10, "y": 20}},
+            {"a": {"x": 10, "y": 99}},
+            "Mismatch in y: 99 != 20",
+        ),
         ({"a": {"x": 10}}, {"a": {}}, "Missing key x"),
     ],
 )
