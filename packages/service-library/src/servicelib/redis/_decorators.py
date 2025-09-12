@@ -8,6 +8,7 @@ from typing import Any, Final, ParamSpec, TypeVar
 
 import arrow
 import redis.exceptions
+from common_library.async_tools import cancel_wait_task
 from redis.asyncio.lock import Lock
 
 from ..background_task import periodic
@@ -116,9 +117,9 @@ def exclusive(
                             module_name=coro.__module__, func_name=coro.__name__
                         ),
                     )
-
                     res = await work_task
-                    auto_extend_lock_task.cancel()
+                    # cancel the auto-extend task (work is done)
+                    await cancel_wait_task(auto_extend_lock_task, max_delay=None)
                 return res
 
             except BaseExceptionGroup as eg:
