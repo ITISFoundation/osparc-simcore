@@ -10,6 +10,12 @@ from fastapi import FastAPI
 from models_library.clusters import BaseCluster, ClusterTypeInModel
 from pydantic import AnyUrl
 from servicelib.logging_utils import log_context
+from servicelib.redis._semaphore_decorator import with_limited_concurrency
+from settings_library.redis import RedisDatabase
+from simcore_service_director_v2.modules.comp_scheduler._utils import (
+    get_redis_lock_key,
+)
+from simcore_service_director_v2.modules.redis import get_redis_client_manager
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -114,6 +120,16 @@ class DaskClientsPool:
         `release_client_ref` to release the client reference when done.
         """
 
+        @with_limited_concurrency(
+            get_redis_client_manager(self.app).client(RedisDatabase.LOCKS),
+            key=get_redis_lock_key(
+                "dask-clients-pool",
+                unique_lock_key_builder=lambda: f"{cluster.name}-{cluster.endpoint}",
+            ),
+            capacity=20,
+            blocking=True,
+            blocking_timeout=None,
+        )
         async def _concurently_safe_acquire_client() -> DaskClient:
             async with self._client_acquisition_lock:
                 with log_context(
