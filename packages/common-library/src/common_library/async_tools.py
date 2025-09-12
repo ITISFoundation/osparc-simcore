@@ -89,8 +89,7 @@ async def cancel_wait_task(
         TimeoutError: raised if cannot cancel the task.
         CancelledError: raised ONLY if owner is being cancelled.
     """
-
-    task.cancel()
+    task.cancel("cancel_wait_task was called to cancel this task")
     try:
         _logger.debug("%s", f"Cancelling task {task.get_name()!r}")
         await asyncio.shield(
