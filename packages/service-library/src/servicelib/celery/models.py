@@ -41,7 +41,8 @@ class TaskFilter(BaseModel):
         Listing tasks using the filter `MyTaskFilter(user_id=123, product_name=Wildcard(), client_name="my-app")` will return all tasks with
         user_id 123, any product_name submitted from my-app.
 
-    If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model)
+    If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model). I.e. one can recover the metadata from the task:
+        metadata -> task_uuid -> metadata
 
     """
 
