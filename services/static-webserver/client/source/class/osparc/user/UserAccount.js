@@ -93,10 +93,16 @@ qx.Class.define("osparc.user.UserAccount", {
         .then(usersData => {
           if (usersData.length === 1) {
             const userData = usersData[0];
+
             const user = new osparc.data.model.User(userData);
+            user.setContactData(userData);
+            // remove the displayed properties from the contact info
+            Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.User)).forEach(prop => delete userData[prop]);
+            const extras = osparc.utils.Utils.convertKeysToTitles(userData);
+
             this.fireDataEvent("updateCaption", user.getUserName());
             this.setUser(user);
-            this.setExtras(userData.extras || {});
+            this.setExtras(extras);
           }
         })
         .catch(err => {
