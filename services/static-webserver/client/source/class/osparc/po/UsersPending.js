@@ -105,6 +105,7 @@ qx.Class.define("osparc.po.UsersPending", {
           break;
         case "pending-users-layout": {
           const grid = new qx.ui.layout.Grid(15, 5);
+          grid.setColumnMaxWidth(2, 100); // date
           control = new qx.ui.container.Composite(grid);
           this.getChildControl("pending-users-container").add(control);
           break;
@@ -160,12 +161,18 @@ qx.Class.define("osparc.po.UsersPending", {
       pendingUsers.forEach(pendingUser => {
         grid.setRowAlign(row, "left", "middle");
 
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.firstName + " " + pendingUser.lastName), {
+        const fullNameLabel = new qx.ui.basic.Label(pendingUser.firstName + " " + pendingUser.lastName).set({
+          selectable: true,
+        });
+        pendingUsersLayout.add(fullNameLabel, {
           row,
           column: 0,
         });
 
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.email), {
+        const emailLabel = new qx.ui.basic.Label(pendingUser.email).set({
+          selectable: true,
+        });
+        pendingUsersLayout.add(emailLabel, {
           row,
           column: 1,
         });
@@ -173,7 +180,7 @@ qx.Class.define("osparc.po.UsersPending", {
         let date = null;
         switch (pendingUser.accountRequestStatus) {
           case "PENDING":
-            date = pendingUser.preRegistrationRequestedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.preRegistrationRequestedAt)) : "-";
+            date = pendingUser.preRegistrationCreated ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.preRegistrationCreated)) : "-";
             break;
           default:
             date = pendingUser.accountRequestReviewedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.accountRequestReviewedAt)) : "-";
