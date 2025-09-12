@@ -8,6 +8,8 @@ from functools import wraps
 from inspect import isawaitable
 from typing import Any, ParamSpec, TypeVar, overload
 
+from servicelib.logging_utils import log_context
+
 _logger = logging.getLogger(__name__)
 
 R = TypeVar("R")
@@ -90,33 +92,26 @@ async def cancel_wait_task(
         CancelledError: raised ONLY if owner is being cancelled.
     """
 
-    cancelling = task.cancel()
-    if not cancelling:
-        return  # task could not be cancelled (either already done or something else)
-
-    assert task.cancelling()  # nosec
-    assert not task.cancelled()  # nosec
-    assert not task.done()  # nosec
-
+    task.cancel()
     try:
-
-        await asyncio.shield(
-            # NOTE shield ensures that cancellation of the caller function won't stop you
-            # from observing the cancellation/finalization of task.
-            asyncio.wait_for(task, timeout=max_delay)
-        )
+        with log_context(
+            _logger, logging.DEBUG, f"Cancelling task {task.get_name()!r}"
+        ):
+            await asyncio.shield(
+                # NOTE shield ensures that cancellation of the caller function won't stop you
+                # from observing the cancellation/finalization of task.
+                asyncio.wait_for(task, timeout=max_delay)
+            )
 
     except asyncio.CancelledError:
         assert task.done()  # nosec
-        if asyncio.current_task().cancelling() > 0:
+        current_task = asyncio.current_task()
+        assert current_task is not None  # nosec
+        if current_task.cancelling() > 0:
             # owner function is being cancelled -> propagate cancellation
             raise
 
         # else: task cancellation is complete, we can safely ignore it
-        _logger.debug(
-            "Task %s cancellation is complete",
-            task.get_name(),
-        )
 
 
 def delayed_start(
