@@ -80,7 +80,7 @@ qx.Class.define("osparc.support.Conversation", {
           break;
         case "load-more-button":
           control = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
-          control.addListener("execute", () => this.__reloadMessages(false));
+          control.addListener("execute", () => this.__reloadMessages());
           this._addAt(control, 2);
           break;
         case "support-suggestion":
@@ -162,7 +162,9 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     __applyConversation: function(conversation) {
-      this.__reloadMessages(true);
+      this.__messages = [];
+      this.getChildControl("messages-container").removeAll();
+      this.__reloadMessages();
 
       if (conversation) {
         conversation.addListener("messageAdded", e => {
@@ -242,7 +244,7 @@ qx.Class.define("osparc.support.Conversation", {
         });
     },
 
-    __reloadMessages: function(removeMessages = true) {
+    __reloadMessages: function() {
       const loadMoreMessages = this.getChildControl("load-more-button");
       if (this.getConversation() === null) {
         loadMoreMessages.hide();
@@ -251,12 +253,6 @@ qx.Class.define("osparc.support.Conversation", {
 
       loadMoreMessages.show();
       loadMoreMessages.setFetching(true);
-
-      if (removeMessages) {
-        this.__messages = [];
-        this.getChildControl("messages-container").removeAll();
-      }
-
       this.getConversation().getNextMessages()
         .then(resp => {
           const messages = resp["data"];
