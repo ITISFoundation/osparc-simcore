@@ -145,12 +145,32 @@ qx.Class.define("osparc.support.ConversationPage", {
       return control || this.base(arguments, id);
     },
 
+    // type can be "askAQuestion", "bookACall" or "reportOEC"
+    proposeConversation: function(type) {
+      type = type || "askAQuestion";
+      this.setConversation(null);
+
+      const title = this.getChildControl("conversation-title");
+      switch(type) {
+        case "askAQuestion":
+          title.setValue(this.tr("Ask a Question"));
+          break;
+        case "bookACall":
+          title.setValue(this.tr("Book a Call"));
+          break;
+        case "reportOEC":
+          title.setValue(this.tr("Report an Error"));
+          break;
+      }
+
+      const conversationContent = this.getChildControl("conversation-content");
+      conversationContent.addSystemMessage("Hello world");
+    },
+
     __applyConversation: function(conversation) {
       const title = this.getChildControl("conversation-title");
       if (conversation) {
         conversation.bind("nameAlias", title, "value");
-      } else {
-        title.setValue(this.tr("Ask a Question"));
       }
 
       const extraContextLayout = this.getChildControl("conversation-extra-layout");

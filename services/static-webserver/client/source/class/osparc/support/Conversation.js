@@ -251,6 +251,20 @@ qx.Class.define("osparc.support.Conversation", {
         .finally(() => loadMoreMessages.setFetching(false));
     },
 
+    addSystemMessage: function(message) {
+      const now = new Date();
+      const systemMessage = {
+        "content": message,
+        "conversationId": null,
+        "created": now.toISOString(),
+        "messageId": `system-${now.getTime()}`,
+        "modified": now.toISOString(),
+        "type": "MESSAGE",
+        "userGroupId": "system",
+      };
+      this.addMessage(systemMessage);
+    },
+
     addMessage: function(message) {
       // ignore it if it was already there
       const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);

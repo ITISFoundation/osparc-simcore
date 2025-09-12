@@ -196,14 +196,13 @@ qx.Class.define("osparc.support.SupportCenter", {
       }
     },
 
-    // type can be "askAQuestion", "bookACall" or "reportOEC"
     createConversation: function(type) {
-      type = type || "askAQuestion";
       const conversationPage = this.getChildControl("conversation-page");
-      conversationPage.setConversation(null);
+      conversationPage.proposeConversation(type);
       this.__showConversation();
     },
 
+    // OM remove this
     createConversationBookCall: function() {
       const conversationPage = this.getChildControl("conversation-page");
       conversationPage.setConversation(null);
