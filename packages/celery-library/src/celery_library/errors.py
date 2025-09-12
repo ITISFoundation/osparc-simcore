@@ -27,4 +27,4 @@ def decode_celery_transferrable_error(error: TransferrableCeleryError) -> Except
 
 
 class TaskNotFoundError(OsparcErrorMixin, Exception):
-    msg_template = "Task with id '{task_id}' not found"
+    msg_template = "Task with id '{task_id}' was not found"
