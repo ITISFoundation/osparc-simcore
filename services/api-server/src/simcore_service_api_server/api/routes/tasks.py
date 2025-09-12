@@ -151,10 +151,6 @@ async def cancel_task(
             "description": "Task result not found",
             "model": ErrorGet,
         },
-        status.HTTP_409_CONFLICT: {
-            "description": "Task is cancelled",
-            "model": ErrorGet,
-        },
         **_DEFAULT_TASK_STATUS_CODES,
     },
     description=create_route_description(
@@ -183,11 +179,6 @@ async def get_task_result(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task result not available yet",
-        )
-    if task_status.task_state == TaskState.ABORTED:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Task was cancelled",
         )
 
     task_result = await task_manager.get_task_result(

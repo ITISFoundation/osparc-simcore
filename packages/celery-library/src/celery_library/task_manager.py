@@ -4,12 +4,10 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from celery import Celery  # type: ignore[import-untyped]
-from celery.contrib.abortable import (  # type: ignore[import-untyped]
-    AbortableAsyncResult,
-)
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
+    TASK_DONE_STATES,
     Task,
     TaskFilter,
     TaskID,
@@ -22,6 +20,8 @@ from servicelib.celery.models import (
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
+
+from .errors import TaskNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -67,10 +67,6 @@ class CeleryTaskManager:
             )
             return task_uuid
 
-    @make_async()
-    def _abort_task(self, task_id: TaskID) -> None:
-        AbortableAsyncResult(task_id, app=self._celery_app).abort()
-
     async def cancel_task(self, task_filter: TaskFilter, task_uuid: TaskUUID) -> None:
         with log_context(
             _logger,
@@ -78,13 +74,18 @@ class CeleryTaskManager:
             msg=f"task cancellation: {task_filter=} {task_uuid=}",
         ):
             task_id = task_filter.get_task_id(task_uuid=task_uuid)
-            if not (await self.get_task_status(task_filter, task_uuid)).is_done:
-                await self._abort_task(task_id)
+            if not await self.task_exists(task_id):
+                raise TaskNotFoundError(task_id=task_id)
+
             await self._task_info_store.remove_task(task_id)
+            await self._forget_task(task_id)
+
+    async def task_exists(self, task_id: TaskID) -> bool:
+        return await self._task_info_store.task_exists(task_id)
 
     @make_async()
     def _forget_task(self, task_id: TaskID) -> None:
-        AbortableAsyncResult(task_id, app=self._celery_app).forget()
+        self._celery_app.AsyncResult(task_id).forget()
 
     async def get_task_result(
         self, task_filter: TaskFilter, task_uuid: TaskUUID
@@ -95,27 +96,27 @@ class CeleryTaskManager:
             msg=f"Get task result: {task_filter=} {task_uuid=}",
         ):
             task_id = task_filter.get_task_id(task_uuid=task_uuid)
+            if not await self.task_exists(task_id):
+                raise TaskNotFoundError(task_id=task_id)
+
             async_result = self._celery_app.AsyncResult(task_id)
             result = async_result.result
             if async_result.ready():
                 task_metadata = await self._task_info_store.get_task_metadata(task_id)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    await self._forget_task(task_id)
                     await self._task_info_store.remove_task(task_id)
+                    await self._forget_task(task_id)
             return result
 
     async def _get_task_progress_report(
-        self, task_filter: TaskFilter, task_uuid: TaskUUID, task_state: TaskState
+        self, task_id: TaskID, task_state: TaskState
     ) -> ProgressReport:
-        if task_state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
-            task_id = task_filter.get_task_id(task_uuid=task_uuid)
+        if task_state in (TaskState.STARTED, TaskState.RETRY):
             progress = await self._task_info_store.get_task_progress(task_id)
             if progress is not None:
                 return progress
-        if task_state in (
-            TaskState.SUCCESS,
-            TaskState.FAILURE,
-        ):
+
+        if task_state in TASK_DONE_STATES:
             return ProgressReport(
                 actual_value=_MAX_PROGRESS_VALUE, total=_MAX_PROGRESS_VALUE
             )
@@ -138,12 +139,15 @@ class CeleryTaskManager:
             msg=f"Getting task status: {task_filter=} {task_uuid=}",
         ):
             task_id = task_filter.get_task_id(task_uuid=task_uuid)
+            if not await self.task_exists(task_id):
+                raise TaskNotFoundError(task_id=task_id)
+
             task_state = await self._get_task_celery_state(task_id)
             return TaskStatus(
                 task_uuid=task_uuid,
                 task_state=task_state,
                 progress_report=await self._get_task_progress_report(
-                    task_filter, task_uuid, task_state
+                    task_id, task_state
                 ),
             )
 

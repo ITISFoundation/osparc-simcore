@@ -106,7 +106,12 @@ class TaskState(StrEnum):
     RETRY = "RETRY"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
-    ABORTED = "ABORTED"
+
+
+TASK_DONE_STATES: Final[tuple[TaskState, ...]] = (
+    TaskState.SUCCESS,
+    TaskState.FAILURE,
+)
 
 
 class TasksQueue(StrEnum):
@@ -161,9 +166,6 @@ class Task(BaseModel):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-_TASK_DONE = {TaskState.SUCCESS, TaskState.FAILURE, TaskState.ABORTED}
-
-
 class TaskInfoStore(Protocol):
     async def create_task(
         self,
@@ -172,7 +174,7 @@ class TaskInfoStore(Protocol):
         expiry: datetime.timedelta,
     ) -> None: ...
 
-    async def exists_task(self, task_id: TaskID) -> bool: ...
+    async def task_exists(self, task_id: TaskID) -> bool: ...
 
     async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None: ...
 
@@ -221,4 +223,4 @@ class TaskStatus(BaseModel):
 
     @property
     def is_done(self) -> bool:
-        return self.task_state in _TASK_DONE
+        return self.task_state in TASK_DONE_STATES

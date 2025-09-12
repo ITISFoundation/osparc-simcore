@@ -17,7 +17,7 @@ from servicelib.redis import RedisClientSDK
 
 _CELERY_TASK_INFO_PREFIX: Final[str] = "celery-task-info-"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
-_CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 10000
+_CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
 _CELERY_TASK_METADATA_KEY: Final[str] = "metadata"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 
@@ -48,11 +48,6 @@ class RedisTaskInfoStore:
             task_key,
             expiry,
         )
-
-    async def exists_task(self, task_id: TaskID) -> bool:
-        n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
-        assert isinstance(n, int)  # nosec
-        return n > 0
 
     async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None:
         raw_result = await self._redis_client_sdk.redis.hget(_build_key(task_id), _CELERY_TASK_METADATA_KEY)  # type: ignore
@@ -126,6 +121,11 @@ class RedisTaskInfoStore:
             key=_CELERY_TASK_PROGRESS_KEY,
             value=report.model_dump_json(),
         )  # type: ignore
+
+    async def task_exists(self, task_id: TaskID) -> bool:
+        n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
+        assert isinstance(n, int)  # nosec
+        return n > 0
 
 
 if TYPE_CHECKING:

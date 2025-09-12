@@ -20,8 +20,8 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
-    JobAbortedError,
     JobError,
+    JobMissingError,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
@@ -307,12 +307,6 @@ async def test_async_jobs_cancel(
         job_filter=job_filter,
     )
 
-    await _wait_for_job(
-        async_jobs_rabbitmq_rpc_client,
-        async_job_get=async_job_get,
-        job_filter=job_filter,
-    )
-
     jobs = await async_jobs.list_jobs(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
@@ -320,7 +314,15 @@ async def test_async_jobs_cancel(
     )
     assert async_job_get.job_id not in [job.job_id for job in jobs]
 
-    with pytest.raises(JobAbortedError):
+    with pytest.raises(JobMissingError):
+        await async_jobs.status(
+            async_jobs_rabbitmq_rpc_client,
+            rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
+            job_id=async_job_get.job_id,
+            job_filter=job_filter,
+        )
+
+    with pytest.raises(JobMissingError):
         await async_jobs.result(
             async_jobs_rabbitmq_rpc_client,
             rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,

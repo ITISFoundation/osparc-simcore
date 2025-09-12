@@ -1,6 +1,7 @@
 from celery.exceptions import (  # type: ignore[import-untyped] #pylint: disable=no-name-in-module
     CeleryError,
 )
+from celery_library.errors import TaskNotFoundError
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPError as HttpxException
@@ -8,7 +9,10 @@ from models_library.functions_errors import FunctionBaseError
 from starlette import status
 from starlette.exceptions import HTTPException
 
-from ..._constants import MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE
+from ..._constants import (
+    MSG_CLIENT_ERROR_USER_FRIENDLY_TEMPLATE,
+    MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE,
+)
 from ...exceptions.backend_errors import BaseBackEndError
 from ..custom_errors import CustomBaseError
 from ..log_streaming_errors import LogStreamingBaseError
@@ -38,6 +42,16 @@ def setup(app: FastAPI, *, is_debug: bool = False):
             NotImplementedError,
             status.HTTP_501_NOT_IMPLEMENTED,
             error_message="This endpoint is still not implemented (under development)",
+        ),
+    )
+
+    app.add_exception_handler(
+        TaskNotFoundError,
+        make_handler_for_exception(
+            TaskNotFoundError,
+            status.HTTP_404_NOT_FOUND,
+            error_message=MSG_CLIENT_ERROR_USER_FRIENDLY_TEMPLATE,
+            add_exception_to_message=True,
         ),
     )
 
