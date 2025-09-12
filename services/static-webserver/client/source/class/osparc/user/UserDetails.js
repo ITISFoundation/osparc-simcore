@@ -269,10 +269,6 @@ qx.Class.define("osparc.user.UserDetails", {
         .then(usersData => {
           if (usersData.length === 1) {
             const userData = usersData[0];
-            // curate data
-            userData["groupId"] = userGroupId;
-            userData["userId"] = -1; // fix this
-            userData["userName"] = "userName"; // fix this
             const user = new osparc.data.model.User(userData);
             user.setContactData(userData);
             // remove the displayed properties from the contact info
