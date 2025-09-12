@@ -28,7 +28,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
   construct: function(message, duration, supportId) {
     this.base(arguments, message, "ERROR", duration ? duration*2 : null);
 
-    if (osparc.store.Groups.getInstance().isSupportEnabled()) {
+    if (osparc.store.Groups.getInstance().isSupportEnabled() && false) {
       this.getChildControl("contact-support");
     } else {
       const oecAtom = this.getChildControl("oec-atom");
@@ -114,7 +114,7 @@ qx.Class.define("osparc.ui.message.FlashMessageOEC", {
 
     __openSupportChat: function() {
       const supportCenter = osparc.support.SupportCenter.openWindow();
-      supportCenter.openConversation(null);
+      supportCenter.createConversation("reportOEC");
 
       const textToAddMessageField = msg => {
         if (supportCenter.getChildControl("conversation-page")) {

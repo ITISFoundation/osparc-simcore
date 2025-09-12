@@ -145,17 +145,45 @@ qx.Class.define("osparc.support.ConversationPage", {
       return control || this.base(arguments, id);
     },
 
+    // type can be "askAQuestion", "bookACall" or "reportOEC"
+    proposeConversation: function(type) {
+      type = type || "askAQuestion";
+      this.setConversation(null);
+
+      const title = this.getChildControl("conversation-title");
+      const conversationContent = this.getChildControl("conversation-content");
+      conversationContent.clearAllMessages();
+      let msg = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",";
+      switch (type) {
+        case "askAQuestion":
+          title.setValue(this.tr("Ask a Question"));
+          msg += "\nHave a question or feedback?\nWe are happy to assist!";
+          break;
+        case "bookACall":
+          title.setValue(this.tr("Book a Call"));
+          msg += "\nLet us know what your availability is and we will get back to you shortly to schedule a meeting.";
+          break;
+        case "reportOEC":
+          title.setValue(this.tr("Report an Error"));
+          msg = null;
+          break;
+      }
+      if (msg) {
+        conversationContent.addSystemMessage(msg);
+      }
+    },
+
     __applyConversation: function(conversation) {
       const title = this.getChildControl("conversation-title");
       if (conversation) {
         conversation.bind("nameAlias", title, "value");
-      } else {
-        title.setValue(this.tr("Ask a Question"));
       }
 
       const extraContextLayout = this.getChildControl("conversation-extra-layout");
-      const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
+      extraContextLayout.removeAll();
       if (conversation) {
+        const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
+
         const createExtraContextLabel = text => {
           return new qx.ui.basic.Label(text).set({
             font: "text-12",
@@ -176,6 +204,7 @@ qx.Class.define("osparc.support.ConversationPage", {
               const projectIdLabel = createExtraContextLabel(`Project ID: ${contextProjectId}`);
               extraContextLayout.add(projectIdLabel);
             }
+            /*
             const appointment = conversation.getAppointment();
             if (appointment) {
               const appointmentLabel = createExtraContextLabel();
@@ -194,6 +223,7 @@ qx.Class.define("osparc.support.ConversationPage", {
               appointmentLabel.setValue(appointmentText);
               extraContextLayout.add(appointmentLabel);
             }
+            */
           }
         };
         updateExtraContext();
@@ -207,15 +237,8 @@ qx.Class.define("osparc.support.ConversationPage", {
         openProjectButton.exclude();
       }
 
-      const setAppointmentButton = this.getChildControl("set-appointment-button");
-      if (conversation && conversation.getAppointment() && amISupporter) {
-        setAppointmentButton.show();
-      } else {
-        setAppointmentButton.exclude();
-      }
-
       const options = this.getChildControl("conversation-options");
-      if (conversation && conversation.amIOwner()) {
+      if (conversation) {
         options.show();
       } else {
         options.exclude();

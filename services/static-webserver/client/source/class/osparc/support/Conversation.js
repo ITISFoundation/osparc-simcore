@@ -80,7 +80,7 @@ qx.Class.define("osparc.support.Conversation", {
           break;
         case "load-more-button":
           control = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
-          control.addListener("execute", () => this.__reloadMessages(false));
+          control.addListener("execute", () => this.__reloadMessages());
           this._addAt(control, 2);
           break;
         case "support-suggestion":
@@ -127,22 +127,43 @@ qx.Class.define("osparc.support.Conversation", {
       this.getChildControl("spacer-top");
       this.getChildControl("messages-container");
       const addMessages = this.getChildControl("add-message");
-      addMessages.addListener("messageAdded", e => {
-        const data = e.getData();
-        if (data["conversationId"] && this.getConversation() === null) {
-          osparc.store.ConversationsSupport.getInstance().getConversation(data["conversationId"])
-            .then(conversation => {
-              this.setConversation(conversation);
-            });
+      addMessages.addListener("addMessage", e => {
+        const content = e.getData();
+        const conversation = this.getConversation();
+        if (conversation) {
+          this.__postMessage(content);
         } else {
-          this.getConversation().addMessage(data);
-          this.addMessage(data);
+          // create new conversation first
+          const extraContext = {};
+          const currentStudy = osparc.store.Store.getInstance().getCurrentStudy()
+          if (currentStudy) {
+            extraContext["projectId"] = currentStudy.getUuid();
+          }
+          osparc.store.ConversationsSupport.getInstance().postConversation(extraContext)
+            .then(data => {
+              const newConversation = new osparc.data.model.Conversation(data);
+              this.setConversation(newConversation);
+              this.__postMessage(content)
+                .then(() => {
+                  this.addSystemMessage("A support ticket has been created.\nOur team will review your request and contact you soon.");
+                });
+            });
         }
       });
     },
 
+    __postMessage: function(content) {
+      const conversationId = this.getConversation().getConversationId();
+      return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
+        .then(data => {
+          this.fireDataEvent("messageAdded", data);
+          return data;
+        });
+    },
+
     __applyConversation: function(conversation) {
-      this.__reloadMessages(true);
+      this.clearAllMessages();
+      this.__reloadMessages();
 
       if (conversation) {
         conversation.addListener("messageAdded", e => {
@@ -222,24 +243,15 @@ qx.Class.define("osparc.support.Conversation", {
         });
     },
 
-    __reloadMessages: function(removeMessages = true) {
-      const messagesContainer = this.getChildControl("messages-container");
+    __reloadMessages: function() {
       const loadMoreMessages = this.getChildControl("load-more-button");
       if (this.getConversation() === null) {
-        messagesContainer.hide();
         loadMoreMessages.hide();
         return;
       }
 
-      messagesContainer.show();
       loadMoreMessages.show();
       loadMoreMessages.setFetching(true);
-
-      if (removeMessages) {
-        this.__messages = [];
-        messagesContainer.removeAll();
-      }
-
       this.getConversation().getNextMessages()
         .then(resp => {
           const messages = resp["data"];
@@ -249,6 +261,20 @@ qx.Class.define("osparc.support.Conversation", {
           }
         })
         .finally(() => loadMoreMessages.setFetching(false));
+    },
+
+    addSystemMessage: function(message) {
+      const now = new Date();
+      const systemMessage = {
+        "content": message,
+        "conversationId": null,
+        "created": now.toISOString(),
+        "messageId": `system-${now.getTime()}`,
+        "modified": now.toISOString(),
+        "type": "MESSAGE",
+        "userGroupId": "system",
+      };
+      this.addMessage(systemMessage);
     },
 
     addMessage: function(message) {
@@ -292,6 +318,11 @@ qx.Class.define("osparc.support.Conversation", {
         const messagesScroll = this.getChildControl("messages-container-scroll");
         messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
       }, 50);
+    },
+
+    clearAllMessages: function() {
+      this.__messages = [];
+      this.getChildControl("messages-container").removeAll();
     },
 
     deleteMessage: function(message) {

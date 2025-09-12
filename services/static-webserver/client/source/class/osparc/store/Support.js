@@ -19,33 +19,6 @@ qx.Class.define("osparc.store.Support", {
       return osparc.store.VendorInfo.getManuals();
     },
 
-    addSupportConversationsToMenu: function(menu) {
-      const supportCenterButton = new qx.ui.menu.Button().set({
-        label: qx.locale.Manager.tr("Help & Support"),
-        icon: "@FontAwesome5Solid/question-circle/16",
-      });
-      supportCenterButton.addListener("execute", () => osparc.support.SupportCenter.openWindow());
-      menu.add(supportCenterButton);
-
-      const askAQuestionButton = new qx.ui.menu.Button().set({
-        label: qx.locale.Manager.tr("Ask a Question"),
-        icon: "@FontAwesome5Solid/comments/16",
-        visibility: "excluded",
-      });
-      askAQuestionButton.addListener("execute", () => osparc.support.SupportCenter.openWindow("conversations"));
-      menu.add(askAQuestionButton);
-
-      const updateAskAQuestionButton = () => {
-        const isSupportEnabled = osparc.store.Groups.getInstance().isSupportEnabled();
-        askAQuestionButton.set({
-          visibility: isSupportEnabled ? "visible" : "excluded",
-        });
-      }
-
-      updateAskAQuestionButton();
-      osparc.store.Groups.getInstance().addListener("changeSupportGroup", () => updateAskAQuestionButton());
-    },
-
     __getQuickStartInfo: function() {
       const quickStart = osparc.product.quickStart.Utils.getQuickStart();
       if (quickStart) {

@@ -42,6 +42,12 @@ qx.Class.define("osparc.user.UserProfile", {
       COUNTRY: 4,
       POSTAL_CODE: 5,
     },
+
+    createLabel: function() {
+      return new qx.ui.basic.Label().set({
+        selectable: true,
+      });
+    },
   },
 
   properties: {
@@ -81,7 +87,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().TOP_GRID.USERNAME,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("top-info").add(control, {
             row: this.self().TOP_GRID.USERNAME,
             column: 1
@@ -93,7 +99,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().TOP_GRID.FULLNAME,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("top-info").add(control, {
             row: this.self().TOP_GRID.FULLNAME,
             column: 1
@@ -105,7 +111,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().TOP_GRID.EMAIL,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("top-info").add(control, {
             row: this.self().TOP_GRID.EMAIL,
             column: 1
@@ -117,7 +123,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().TOP_GRID.PHONE,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("top-info").add(control, {
             row: this.self().TOP_GRID.PHONE,
             column: 1
@@ -129,7 +135,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().TOP_GRID.USER_ID,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("top-info").add(control, {
             row: this.self().TOP_GRID.USER_ID,
             column: 1
@@ -141,7 +147,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().TOP_GRID.GROUP_ID,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("top-info").add(control, {
             row: this.self().TOP_GRID.GROUP_ID,
             column: 1
@@ -153,7 +159,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().MIDDLE_GRID.INSTITUTION,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("middle-info").add(control, {
             row: this.self().MIDDLE_GRID.INSTITUTION,
             column: 1
@@ -164,7 +170,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().MIDDLE_GRID.ADDRESS,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("middle-info").add(control, {
             row: this.self().MIDDLE_GRID.ADDRESS,
             column: 1
@@ -175,7 +181,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().MIDDLE_GRID.CITY,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("middle-info").add(control, {
             row: this.self().MIDDLE_GRID.CITY,
             column: 1
@@ -186,7 +192,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().MIDDLE_GRID.STATE,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("middle-info").add(control, {
             row: this.self().MIDDLE_GRID.STATE,
             column: 1
@@ -197,7 +203,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().MIDDLE_GRID.COUNTRY,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("middle-info").add(control, {
             row: this.self().MIDDLE_GRID.COUNTRY,
             column: 1
@@ -208,7 +214,7 @@ qx.Class.define("osparc.user.UserProfile", {
             row: this.self().MIDDLE_GRID.POSTAL_CODE,
             column: 0
           });
-          control = new qx.ui.basic.Label();
+          control = this.self().createLabel();
           this.getChildControl("middle-info").add(control, {
             row: this.self().MIDDLE_GRID.POSTAL_CODE,
             column: 1

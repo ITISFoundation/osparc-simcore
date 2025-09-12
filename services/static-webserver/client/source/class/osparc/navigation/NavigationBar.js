@@ -307,7 +307,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "help":
-          control = this.__createHelpMenuBtn().set({
+          control = this.__createHelpBtn().set({
             ...this.self().RIGHT_BUTTON_OPTS
           });
           osparc.utils.Utils.setIdToWidget(control, "helpNavigationBtn");
@@ -361,22 +361,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       }, this);
     },
 
-    __createHelpMenuBtn: function() {
-      const menu = new qx.ui.menu.Menu().set({
-        position: "top-right",
-        appearance: "menu-wider",
-      });
-      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/24", menu).set({
+    __createHelpBtn: function() {
+      const helpButton = new qx.ui.form.Button(null, "@FontAwesome5Regular/question-circle/24").set({
         backgroundColor: "transparent"
       });
-
-      osparc.utils.Utils.setIdToWidget(menu, "helpNavigationMenu");
-
-      // add support conversations
-      osparc.store.Support.addSupportConversationsToMenu(menu);
-
-
-      return menuButton;
+      helpButton.addListener("execute", () => osparc.support.SupportCenter.openWindow());
+      return helpButton;
     },
 
     __createLoginBtn: function() {
