@@ -25,7 +25,6 @@ from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import with_limited_concurrency
 from servicelib.utils import limited_as_completed, limited_gather
 
 from ...core.errors import (
@@ -55,14 +54,11 @@ from ..db.repositories.comp_runs import (
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._constants import (
     MAX_CONCURRENT_PIPELINE_SCHEDULING,
-    MODULE_NAME_WORKER,
 )
 from ._models import TaskStateTracker
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
     WAITING_FOR_START_STATES,
-    get_redis_client_from_app,
-    get_redis_lock_key,
 )
 
 _logger = logging.getLogger(__name__)
@@ -97,26 +93,12 @@ async def _cluster_dask_client(
             wallet_id=run_metadata.get("wallet_id"),
         )
 
-    @asynccontextmanager
-    @with_limited_concurrency(
-        get_redis_client_from_app,
-        key=get_redis_lock_key(
-            MODULE_NAME_WORKER, unique_lock_key_builder=create_cluster_client_lock_key
+    async with scheduler.dask_clients_pool.acquire(
+        cluster,
+        ref=_DASK_CLIENT_RUN_REF.format(
+            user_id=user_id, project_id=project_id, run_id=run_id
         ),
-        capacity=_DASK_SCHEDULER_MAX_CONCURRENT_ACCESS,
-        blocking=True,
-        blocking_timeout=None,
-    )
-    async def _limited_client_pool() -> AsyncIterator[DaskClient]:
-        async with scheduler.dask_clients_pool.acquire(
-            cluster,
-            ref=_DASK_CLIENT_RUN_REF.format(
-                user_id=user_id, project_id=project_id, run_id=run_id
-            ),
-        ) as client:
-            yield client
-
-    async with _limited_client_pool() as client:
+    ) as client:
         yield client
 
 
