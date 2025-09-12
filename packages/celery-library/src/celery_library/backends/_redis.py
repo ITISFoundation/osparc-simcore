@@ -17,7 +17,6 @@ from servicelib.redis import RedisClientSDK
 
 _CELERY_TASK_INFO_PREFIX: Final[str] = "celery-task-info-"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
-_CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 10000
 _CELERY_TASK_METADATA_KEY: Final[str] = "metadata"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
@@ -83,7 +82,7 @@ class RedisTaskInfoStore:
 
     async def list_tasks(self, task_filter: TaskFilter) -> list[Task]:
         search_key = _CELERY_TASK_INFO_PREFIX + task_filter.get_task_id(
-            task_uuid=Wildcard(), wildcard_str=self.wildcard_str
+            task_uuid=Wildcard()
         )
 
         keys: list[str] = []
