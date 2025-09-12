@@ -8,11 +8,11 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from ..redis._client import RedisClientSDK
 from ..redis._utils import handle_redis_returns_union_types
 from ..utils import limited_gather
-from .models import LRTNamespace, TaskContext, TaskData, TaskId
+from .models import LRTNamespace, TaskData, TaskId
 
 _STORE_TYPE_TASK_DATA: Final[str] = "TD"
-_STORE_TYPE_CANCELLED_TASKS: Final[str] = "CT"
-_LIST_CONCURRENCY: Final[int] = 2
+_LIST_CONCURRENCY: Final[int] = 3
+_MARKED_FOR_REMOVAL_FIELD: Final[str] = "marked_for_removal"
 
 
 def _to_redis_hash_mapping(data: dict[str, Any]) -> dict[str, str]:
@@ -51,11 +51,6 @@ class RedisStore:
 
     def _get_redis_task_data_key(self, task_id: TaskId) -> str:
         return f"{self.namespace}:{_STORE_TYPE_TASK_DATA}:{task_id}"
-
-    def _get_key_to_remove(self) -> str:
-        return f"{self.namespace}:{_STORE_TYPE_CANCELLED_TASKS}"
-
-    # TaskData
 
     async def get_task_data(self, task_id: TaskId) -> TaskData | None:
         result: dict[str, Any] = await handle_redis_returns_union_types(
@@ -115,24 +110,18 @@ class RedisStore:
             self._redis.delete(self._get_redis_task_data_key(task_id))
         )
 
-    # to cancel
-
-    async def mark_task_for_removal(
-        self, task_id: TaskId, with_task_context: TaskContext
-    ) -> None:
+    async def mark_for_removal(self, task_id: TaskId) -> None:
         await handle_redis_returns_union_types(
             self._redis.hset(
-                self._get_key_to_remove(), task_id, json_dumps(with_task_context)
+                self._get_redis_task_data_key(task_id),
+                mapping=_to_redis_hash_mapping({_MARKED_FOR_REMOVAL_FIELD: True}),
             )
         )
 
-    async def completed_task_removal(self, task_id: TaskId) -> None:
-        await handle_redis_returns_union_types(
-            self._redis.hdel(self._get_key_to_remove(), task_id)
+    async def is_marked_for_removal(self, task_id: TaskId) -> bool:
+        result = await handle_redis_returns_union_types(
+            self._redis.hget(
+                self._get_redis_task_data_key(task_id), _MARKED_FOR_REMOVAL_FIELD
+            )
         )
-
-    async def list_tasks_to_remove(self) -> dict[TaskId, TaskContext]:
-        result: dict[str, str | None] = await handle_redis_returns_union_types(
-            self._redis.hgetall(self._get_key_to_remove())
-        )
-        return {task_id: json_loads(context) for task_id, context in result.items()}
+        return False if result is None else json_loads(result)

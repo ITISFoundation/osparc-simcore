@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, Request, status
 
 from ...long_running_tasks import lrt_api
 from ...long_running_tasks.models import TaskGet, TaskId, TaskResult, TaskStatus
@@ -101,16 +101,6 @@ async def remove_task(
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
     task_id: TaskId,
-    *,
-    wait_for_removal: Annotated[
-        bool,
-        Query(
-            description=(
-                "when True waits for the task to be removed "
-                "completly instead of returning immediately"
-            ),
-        ),
-    ] = True,
 ) -> None:
     assert request  # nosec
     await lrt_api.remove_task(
@@ -118,5 +108,4 @@ async def remove_task(
         long_running_manager.lrt_namespace,
         long_running_manager.get_task_context(request),
         task_id=task_id,
-        wait_for_removal=wait_for_removal,
     )
