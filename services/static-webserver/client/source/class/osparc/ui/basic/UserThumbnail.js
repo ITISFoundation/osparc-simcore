@@ -49,9 +49,7 @@ qx.Class.define("osparc.ui.basic.UserThumbnail", {
 
     __openUserDetails: function() {
       if (this.getUser()) {
-        const userDetails = new osparc.user.UserDetails(this.getUser().getGroupId());
-        userDetails.center();
-        userDetails.open();
+        osparc.user.UserAccountWindow.openWindow(this.getUser().getGroupId());
       }
     },
   }
