@@ -59,6 +59,7 @@ qx.Class.define("osparc.user.UserAccount", {
 
   events: {
     "updateCaption": "qx.event.type.Data",
+    "closeWindow": "qx.event.type.Event",
   },
 
   statics: {
@@ -117,8 +118,9 @@ qx.Class.define("osparc.user.UserAccount", {
           }
         })
         .catch(err => {
+          osparc.FlashMessenger.logError(err);
           console.error(err);
-          this.close();
+          this.fireEvent("closeWindow");
         });
     },
   }

@@ -28,6 +28,7 @@ qx.Class.define("osparc.user.UserAccountWindow", {
 
     const userAccount = new osparc.user.UserAccount(userGroupId);
     userAccount.addListener("updateCaption", e => this.setCaption(e.getData()));
+    userAccount.addListener("closeWindow", () => this.close(), this);
     this._setTabbedView(userAccount);
   },
 
