@@ -143,7 +143,10 @@ qx.Class.define("osparc.support.Conversation", {
             .then(data => {
               const newConversation = new osparc.data.model.Conversation(data);
               this.setConversation(newConversation);
-              this.__postMessage(content);
+              this.__postMessage(content)
+                .then(() => {
+                  this.addSystemMessage("A support ticket has been created.\nOur team will review your request and contact you soon.");
+                });
             });
         }
       });
@@ -151,7 +154,7 @@ qx.Class.define("osparc.support.Conversation", {
 
     __postMessage: function(content) {
       const conversationId = this.getConversation().getConversationId();
-      osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
+      return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
         .then(data => {
           this.fireDataEvent("messageAdded", data);
           return data;
