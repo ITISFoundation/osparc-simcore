@@ -29,15 +29,15 @@ qx.Class.define("osparc.support.HomePage", {
     });
 
     if (osparc.store.Groups.getInstance().isSupportEnabled()) {
-      this.getChildControl("ask-a-question");
-      this.getChildControl("book-a-call");
+      this.getChildControl("ask-a-question-button");
+      this.getChildControl("book-a-call-button");
     }
     this.__populateButtons();
   },
 
   events: {
     "openConversation": "qx.event.type.Event",
-    "openBookACall": "qx.event.type.Event",
+    "createConversationBookCall": "qx.event.type.Event",
   },
 
   statics: {
@@ -76,7 +76,7 @@ qx.Class.define("osparc.support.HomePage", {
           this._add(control);
           break;
         }
-        case "ask-a-question":
+        case "ask-a-question-button":
           control = new qx.ui.form.Button(this.tr("Ask a Question"), "@FontAwesome5Solid/comments/16").set({
             gap: 8,
             appearance: "strong-button",
@@ -86,14 +86,14 @@ qx.Class.define("osparc.support.HomePage", {
           control.addListener("execute", () => this.fireEvent("openConversation"));
           this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
-        case "book-a-call":
+        case "book-a-call-button":
           control = new qx.ui.form.Button(this.tr("Book a Call"), "@FontAwesome5Solid/phone/16").set({
             gap: 8,
             appearance: "strong-button",
             center: true,
             width: 183,
           });
-          control.addListener("execute", () => this.fireEvent("openBookACall"));
+          control.addListener("execute", () => this.fireEvent("createConversationBookCall"));
           this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
         case "learning-box":
