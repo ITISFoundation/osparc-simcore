@@ -175,10 +175,11 @@ qx.Class.define("osparc.conversation.AddMessage", {
       if (conversationId) {
         return this.__postMessage();
       } else {
+        // create new conversation first
         const studyData = this.getStudyData();
         let promise = null;
         if (studyData) {
-          // create new project conversation first
+          // project conversation
           promise = osparc.store.ConversationsProject.getInstance().postConversation(studyData["uuid"])
         } else {
           // support conversation
