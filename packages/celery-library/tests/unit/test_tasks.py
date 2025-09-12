@@ -244,3 +244,4 @@ async def test_filtering_listing_tasks(
     )
     tasks = await celery_task_manager.list_tasks(search_filter)
     assert expected_task_uuids == {task.uuid for task in tasks}
+    await asyncio.sleep(5 * 60)

@@ -73,9 +73,9 @@ class TaskFilter(BaseModel):
         )
 
     @classmethod
-    def recreate_as_model(cls, task_id: TaskID, model: type[ModelType]) -> ModelType:
+    def recreate_as_model(cls, task_id: TaskID, schema: type[ModelType]) -> ModelType:
         filter_dict = cls.recreate_data(task_id)
-        return model.model_validate(filter_dict)
+        return schema.model_validate(filter_dict)
 
     @classmethod
     def recreate_data(cls, task_id: TaskID) -> dict[str, Any]:
