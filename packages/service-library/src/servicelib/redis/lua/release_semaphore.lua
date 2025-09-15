@@ -5,7 +5,7 @@
 -- ARGV[2]: ttl_seconds
 --
 -- Returns: {success, status, current_count, expired_count}
---   success: 1 if released, 0 if failed
+--   exit_code: 0 if released, 255 if failed
 --   status: 'released', 'not_held', or 'already_expired'
 --   current_count: number of holders after operation
 --   expired_count: number of expired entries cleaned up
@@ -39,8 +39,8 @@ local removed_holder = redis.call('DEL', holder_key)
 local current_count = redis.call('ZCARD', semaphore_key)
 
 if removed_from_zset == 1 then
-    return {1, 'released', current_count, expired_count}
+    return {0, 'released', current_count, expired_count}
 else
     -- This shouldn't happen since we checked ZSCORE above, but handle it
-    return {0, 'already_expired', current_count, expired_count}
+    return {255, 'already_expired', current_count, expired_count}
 end

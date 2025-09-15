@@ -26,3 +26,6 @@ ACQUIRE_SEMAPHORE_SCRIPT: Final[str] = _load_script("acquire_semaphore")
 RELEASE_SEMAPHORE_SCRIPT: Final[str] = _load_script("release_semaphore")
 RENEW_SEMAPHORE_SCRIPT: Final[str] = _load_script("renew_semaphore")
 COUNT_SEMAPHORE_SCRIPT: Final[str] = _load_script("count_semaphore")
+
+SCRIPT_BAD_EXIT_CODE: Final[int] = 255
+SCRIPT_OK_EXIT_CODE: Final[int] = 0

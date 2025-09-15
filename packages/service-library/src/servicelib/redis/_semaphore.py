@@ -40,6 +40,8 @@ from ._semaphore_lua import (
     COUNT_SEMAPHORE_SCRIPT,
     RELEASE_SEMAPHORE_SCRIPT,
     RENEW_SEMAPHORE_SCRIPT,
+    SCRIPT_BAD_EXIT_CODE,
+    SCRIPT_OK_EXIT_CODE,
 )
 
 _logger = logging.getLogger(__name__)
@@ -210,11 +212,11 @@ class DistributedSemaphore(BaseModel):
         )
 
         assert isinstance(result, list)  # nosec
-        success, status, current_count, expired_count = result
+        exit_code, status, current_count, expired_count = result
         result = status
 
         if result == "released":
-            assert success == 1  # nosec
+            assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
             _logger.debug(
                 "Released semaphore '%s' (instance: %s, count: %s, expired: %s)",
                 self.key,
@@ -225,7 +227,7 @@ class DistributedSemaphore(BaseModel):
         else:
             # Instance wasn't in the semaphore set - this shouldn't happen
             # but let's handle it gracefully
-            assert success == 0  # nosec
+            assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
             raise SemaphoreNotAcquiredError(name=self.key)
 
     async def _try_acquire(self) -> bool:
@@ -238,11 +240,11 @@ class DistributedSemaphore(BaseModel):
             client=self.redis_client.redis,
         )
 
-        # Lua script returns: [success, status, current_count, expired_count]
+        # Lua script returns: [exit_code, status, current_count, expired_count]
         assert isinstance(result, list)  # nosec
-        success, status, current_count, expired_count = result
+        exit_code, status, current_count, expired_count = result
 
-        if success == 1:
+        if exit_code == SCRIPT_OK_EXIT_CODE:
             _logger.debug(
                 "Acquired semaphore '%s' (instance: %s, count: %s, expired: %s)",
                 self.key,
@@ -285,11 +287,11 @@ class DistributedSemaphore(BaseModel):
         )
 
         assert isinstance(result, list)  # nosec
-        success, status, current_count, expired_count = result
+        exit_code, status, current_count, expired_count = result
 
         # Lua script returns: 'renewed' or status message
         if status == "renewed":
-            assert success == 1  # nosec
+            assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
             _logger.debug(
                 "Renewed semaphore '%s' (instance: %s, count: %s, expired: %s)",
                 self.key,
@@ -298,7 +300,7 @@ class DistributedSemaphore(BaseModel):
                 expired_count,
             )
         else:
-            assert success == 0  # nosec
+            assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
             if status == "expired":
                 _logger.warning(
                     "Semaphore '%s' holder key expired (instance: %s, count: %s, expired: %s)",
