@@ -151,17 +151,23 @@ qx.Class.define("osparc.support.Conversation", {
           osparc.store.ConversationsSupport.getInstance().postConversation(extraContext)
             .then(data => {
               const postMessagePromises = [];
+              let isBookACall = false;
+              // make these checks first, setConversation will reload messages
               if (
                 this.__messages.length === 1 &&
                 this.__messages[0]["systemMessageType"] &&
                 osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL
               ) {
-                // add a first message
-                postMessagePromises.push(this.__postMessage("Book a Call"));
-                // rename the conversation
+                isBookACall = true;
               }
               const newConversation = new osparc.data.model.Conversation(data);
               this.setConversation(newConversation);
+              if (isBookACall) {
+                // add a first message
+                postMessagePromises.push(this.__postMessage("Book a Call"));
+                // rename the conversation
+                newConversation.renameConversation("Book a Call");
+              }
               postMessagePromises.push(this.__postMessage(content));
               Promise.all(postMessagePromises)
                 .then(() => {
