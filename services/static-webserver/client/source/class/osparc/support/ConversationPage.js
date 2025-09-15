@@ -119,11 +119,11 @@ qx.Class.define("osparc.support.ConversationPage", {
         case "copy-ticket-id-button": {
           control = new qx.ui.form.Button().set({
             icon: "@FontAwesome5Solid/copy/12",
-            toolTipText: this.tr("Copy ID"),
+            toolTipText: this.tr("Copy Ticket ID"),
             alignX: "center",
             alignY: "middle",
           });
-          control.addListener("execute", () => this.__openAppointmentDetails());
+          control.addListener("execute", () => this.__copyTicketId());
           this.getChildControl("buttons-layout").addAt(control, 2);
           break;
         }
@@ -134,7 +134,6 @@ qx.Class.define("osparc.support.ConversationPage", {
             alignX: "center",
             alignY: "middle",
           });
-          control.addListener("execute", () => this.__openAppointmentDetails());
           this.getChildControl("buttons-layout").addAt(control, 3);
           break;
         }
@@ -239,19 +238,12 @@ qx.Class.define("osparc.support.ConversationPage", {
         conversation.addListener("changeExtraContext", () => updateExtraContext(), this);
       }
 
-      const openProjectButton = this.getChildControl("open-project-button");
-      if (conversation && conversation.getContextProjectId()) {
-        openProjectButton.show();
-      } else {
-        openProjectButton.exclude();
-      }
+      this.getChildControl("buttons-layout").setVisibility(conversation ? "visible" : "excluded");
 
-      const options = this.getChildControl("rename-conversation-button");
-      if (conversation) {
-        options.show();
-      } else {
-        options.exclude();
-      }
+      this.getChildControl("rename-conversation-button");
+      const openProjectButton = this.getChildControl("open-project-button");
+      openProjectButton.setVisibility(conversation && conversation.getContextProjectId() ? "visible" : "excluded");
+      this.getChildControl("copy-ticket-id-button");
     },
 
     __openProjectDetails: function() {
@@ -266,6 +258,13 @@ qx.Class.define("osparc.support.ConversationPage", {
             }
           })
           .catch(err => console.warn(err));
+      }
+    },
+
+    __copyTicketId: function() {
+      if (this.getConversation()) {
+        const conversationId = this.getConversation().getConversationId();
+        osparc.utils.Utils.copyTextToClipboard(conversationId);
       }
     },
 
