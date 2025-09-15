@@ -232,11 +232,7 @@ qx.Class.define("osparc.study.Conversation", {
 
     __postMessage: function(content) {
       const conversationId = this.getConversation().getConversationId();
-      osparc.store.ConversationsProject.getInstance().postMessage(this.__studyData["uuid"], conversationId, content)
-        .then(data => {
-          this.fireDataEvent("messageAdded", data);
-          return data;
-        });
+      osparc.store.ConversationsProject.getInstance().postMessage(this.__studyData["uuid"], conversationId, content);
     },
 
     __postNotify: function(userGid) {

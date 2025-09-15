@@ -174,11 +174,7 @@ qx.Class.define("osparc.support.Conversation", {
 
     __postMessage: function(content) {
       const conversationId = this.getConversation().getConversationId();
-      return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
-        .then(data => {
-          this.fireDataEvent("messageAdded", data);
-          return data;
-        });
+      return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
     },
 
     __applyConversation: function(conversation) {
