@@ -1,9 +1,24 @@
+"""used to load a lua script from the package resources in memory
+
+Example:
+    >>> from servicelib.redis._semaphore_lua import ACQUIRE_SEMAPHORE_SCRIPT
+    # This will register the script in redis and return a Script object
+    # which can be used to execute the script. Even from multiple processes
+    # the script will be loaded only once in redis as the redis server computes
+    # the SHA1 of the script and uses it to identify it.
+    >>> from aioredis import Redis
+    >>> redis = Redis(...)
+    >>> my_acquire_script = redis.register_script(
+        ACQUIRE_SEMAPHORE_SCRIPT
+    >>> my_acquire_script(keys=[...], args=[...])
+"""
+
 from importlib import resources
 from typing import Final
 
 
 def _load_script(script_name: str) -> str:
-    with resources.path("servicelib", f"redis.lua.{script_name}ga") as script_file:
+    with resources.path("servicelib.redis.lua", f"{script_name}.lua") as script_file:
         return script_file.read_text(encoding="utf-8").strip()
 
 
