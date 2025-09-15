@@ -150,9 +150,20 @@ qx.Class.define("osparc.support.Conversation", {
           }
           osparc.store.ConversationsSupport.getInstance().postConversation(extraContext)
             .then(data => {
+              const postMessagePromises = [];
+              if (
+                this.__messages.length === 1 &&
+                this.__messages[0]["systemMessageType"] &&
+                osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL
+              ) {
+                // add a first message
+                postMessagePromises.push(this.__postMessage("Book a Call"));
+                // rename the conversation
+              }
               const newConversation = new osparc.data.model.Conversation(data);
               this.setConversation(newConversation);
-              this.__postMessage(content)
+              postMessagePromises.push(this.__postMessage(content));
+              Promise.all(postMessagePromises)
                 .then(() => {
                   this.addSystemMessage("followUp");
                 });
