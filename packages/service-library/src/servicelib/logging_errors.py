@@ -5,7 +5,7 @@ from common_library.error_codes import ErrorCodeStr
 from common_library.errors_classes import OsparcErrorMixin
 from common_library.json_serialization import json_dumps, representation_encoder
 
-from .logging_utils import LogExtra, get_log_record_extra
+from .logging_base import LogExtra, get_log_record_extra
 
 _logger = logging.getLogger(__name__)
 

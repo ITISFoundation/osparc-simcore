@@ -17,11 +17,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, Final, NotRequired, TypeAlias, TypedDict, TypeVar
+from typing import Any, Final, TypeAlias, TypedDict, TypeVar
 
 from common_library.json_serialization import json_dumps
 from settings_library.tracing import TracingSettings
 
+from .logging_base import LogExtra
 from .logging_errors import create_troubleshootting_log_kwargs
 from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
 from .tracing import setup_log_tracing
@@ -59,27 +60,6 @@ COLORS = {
     "CRITICAL": ORANGE,
     "ERROR": RED,
 }
-
-
-class LogExtra(TypedDict):
-    log_uid: NotRequired[str]
-    log_oec: NotRequired[str]
-
-
-def get_log_record_extra(
-    *,
-    user_id: int | str | None = None,
-    error_code: str | None = None,
-) -> LogExtra | None:
-    extra: LogExtra = {}
-
-    if user_id:
-        assert int(user_id) > 0  # nosec
-        extra["log_uid"] = f"{user_id}"
-    if error_code:
-        extra["log_oec"] = error_code
-
-    return extra or None
 
 
 class CustomFormatter(logging.Formatter):
