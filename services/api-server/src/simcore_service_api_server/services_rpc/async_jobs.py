@@ -86,12 +86,9 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def list_jobs(
-        self, *, filter_: str, job_filter: AsyncJobFilter
-    ) -> list[AsyncJobGet]:
+    async def list_jobs(self, *, job_filter: AsyncJobFilter) -> list[AsyncJobGet]:
         return await async_jobs.list_jobs(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            filter_=filter_,
             job_filter=job_filter,
         )

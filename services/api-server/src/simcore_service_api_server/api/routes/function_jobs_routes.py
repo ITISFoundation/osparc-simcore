@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
+from ...clients.celery_task_manager import get_task_filter
 from ...exceptions.function_errors import FunctionJobProjectMissingError
 from ...models.domain.functions import PageRegisteredFunctionJobWithorWithoutStatus
 from ...models.pagination import PaginationParams
@@ -55,7 +56,6 @@ from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
-from .tasks import _get_task_filter
 
 _logger = getLogger(__name__)
 
@@ -294,7 +294,7 @@ async def function_job_status(
         ):
             if task_id := function_job.job_creation_task_id:
                 task_manager = get_task_manager(app)
-                task_filter = _get_task_filter(user_id, product_name)
+                task_filter = get_task_filter(user_id, product_name)
                 task_status = await task_manager.get_task_status(
                     task_uuid=TaskUUID(task_id), task_filter=task_filter
                 )

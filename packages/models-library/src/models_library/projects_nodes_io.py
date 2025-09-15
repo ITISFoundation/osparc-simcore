@@ -30,10 +30,9 @@ from .basic_regex import (
     UUID_RE,
 )
 
-NodeID = UUID
-
 UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
+NodeID: TypeAlias = UUID
 NodeIDStr: TypeAlias = UUIDStr
 
 LocationID: TypeAlias = int
