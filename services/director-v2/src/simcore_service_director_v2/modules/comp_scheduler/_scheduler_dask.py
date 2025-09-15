@@ -30,6 +30,7 @@ from servicelib.redis._semaphore_decorator import (
 )
 from servicelib.utils import limited_as_completed, limited_gather
 
+from ..._meta import APP_NAME
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
@@ -57,13 +58,11 @@ from ..db.repositories.comp_runs import (
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._constants import (
     MAX_CONCURRENT_PIPELINE_SCHEDULING,
-    MODULE_NAME_WORKER,
 )
 from ._models import TaskStateTracker
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
     WAITING_FOR_START_STATES,
-    get_redis_lock_key,
 )
 
 _logger = logging.getLogger(__name__)
@@ -71,24 +70,31 @@ _logger = logging.getLogger(__name__)
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
+_DASK_CLUSTER_CLIENT_SEMAPHORE_CAPACITY: Final[int] = 20
 
 
-def _get_redis_client_from_scheduler(scheduler: "DaskScheduler") -> RedisClientSDK:
+def _get_redis_client_from_scheduler(
+    user_id: UserID,  # noqa: ARG001
+    scheduler: "DaskScheduler",
+    **kwargs,  # noqa: ARG001
+) -> RedisClientSDK:
     return scheduler.redis_client
 
 
-def _unique_key_builder(_app, user_id: UserID, run_metadata: RunMetadataDict) -> str:
-    return f"user_id_{user_id}-wallet_id_{run_metadata.get('wallet_id')}"
+def _get_semaphore_cluster_redis_key(
+    user_id: UserID,
+    *args,  # noqa: ARG001
+    run_metadata: RunMetadataDict,
+    **kwargs,  # noqa: ARG001
+) -> str:
+    return f"{APP_NAME}-cluster-user_id_{user_id}-wallet_id_{run_metadata.get('wallet_id')}"
 
 
 @asynccontextmanager
 @with_limited_concurrency_cm(
     _get_redis_client_from_scheduler,
-    key=get_redis_lock_key(
-        MODULE_NAME_WORKER,
-        unique_lock_key_builder=_unique_key_builder,
-    ),
-    capacity=1,
+    key=_get_semaphore_cluster_redis_key,
+    capacity=_DASK_CLUSTER_CLIENT_SEMAPHORE_CAPACITY,
     blocking=True,
     blocking_timeout=None,
 )
