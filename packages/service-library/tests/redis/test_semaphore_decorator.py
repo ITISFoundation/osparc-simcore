@@ -8,6 +8,7 @@
 import asyncio
 import datetime
 import logging
+from contextlib import asynccontextmanager
 from typing import Literal
 
 import pytest
@@ -21,7 +22,10 @@ from servicelib.redis._semaphore import (
     DistributedSemaphore,
     SemaphoreAcquisitionError,
 )
-from servicelib.redis._semaphore_decorator import with_limited_concurrency
+from servicelib.redis._semaphore_decorator import (
+    with_limited_concurrency,
+    with_limited_concurrency_cm,
+)
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -389,3 +393,290 @@ async def test_with_large_capacity(
 
     # Should never exceed the large capacity
     assert max_concurrent <= large_capacity
+
+
+async def test_context_manager_basic_functionality(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+):
+    call_count = 0
+
+    @asynccontextmanager
+    @with_limited_concurrency_cm(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+    )
+    async def limited_context_manager():
+        nonlocal call_count
+        call_count += 1
+        yield call_count
+
+    # Multiple concurrent context managers
+    async def use_context_manager():
+        async with limited_context_manager() as value:
+            await asyncio.sleep(0.1)
+            return value
+
+    tasks = [asyncio.create_task(use_context_manager()) for _ in range(3)]
+    results = await asyncio.gather(*tasks)
+
+    # All should complete successfully
+    assert len(results) == 3
+    assert all(isinstance(r, int) for r in results)
+
+
+async def test_context_manager_capacity_enforcement(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+):
+    concurrent_count = 0
+    max_concurrent = 0
+
+    @asynccontextmanager
+    @with_limited_concurrency_cm(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=2,
+    )
+    async def limited_context_manager():
+        nonlocal concurrent_count, max_concurrent
+        concurrent_count += 1
+        max_concurrent = max(max_concurrent, concurrent_count)
+        try:
+            yield
+            await asyncio.sleep(0.1)
+        finally:
+            concurrent_count -= 1
+
+    async def use_context_manager():
+        async with limited_context_manager():
+            await asyncio.sleep(0.1)
+
+    # Start 5 concurrent context managers
+    tasks = [asyncio.create_task(use_context_manager()) for _ in range(5)]
+    await asyncio.gather(*tasks)
+
+    # Should never exceed capacity of 2
+    assert max_concurrent <= 2
+
+
+async def test_context_manager_exception_handling(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+):
+    @asynccontextmanager
+    @with_limited_concurrency_cm(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+    )
+    async def failing_context_manager():
+        yield
+        raise RuntimeError("Test exception")
+
+    with pytest.raises(RuntimeError, match="Test exception"):
+        async with failing_context_manager():
+            pass
+
+    # Semaphore should be released even after exception
+    @asynccontextmanager
+    @with_limited_concurrency_cm(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+    )
+    async def success_context_manager():
+        yield "success"
+
+    async with success_context_manager() as result:
+        assert result == "success"
+
+
+async def test_context_manager_auto_renewal(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+    short_ttl: datetime.timedelta,
+):
+    work_started = asyncio.Event()
+    work_completed = asyncio.Event()
+
+    @asynccontextmanager
+    @with_limited_concurrency_cm(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=short_ttl,
+    )
+    async def long_running_context_manager():
+        work_started.set()
+        yield "data"
+        # Wait longer than TTL to ensure renewal works
+        await asyncio.sleep(short_ttl.total_seconds() * 2)
+        work_completed.set()
+
+    async def use_long_running_cm():
+        async with long_running_context_manager() as data:
+            assert data == "data"
+            # Keep context manager active for longer than TTL
+            await asyncio.sleep(short_ttl.total_seconds() * 1.5)
+
+    task = asyncio.create_task(use_long_running_cm())
+    await work_started.wait()
+
+    # Check that semaphore is being held
+    temp_semaphore = DistributedSemaphore(
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=short_ttl,
+    )
+    assert await temp_semaphore.get_current_count() == 1
+    assert await temp_semaphore.get_available_count() == semaphore_capacity - 1
+
+    # Wait for work to complete
+    await task
+    assert work_completed.is_set()
+
+    # After completion, semaphore should be released
+    assert await temp_semaphore.get_current_count() == 0
+    assert await temp_semaphore.get_available_count() == semaphore_capacity
+
+
+async def test_context_manager_with_callable_parameters(
+    redis_client_sdk: RedisClientSDK,
+):
+    executed_keys = []
+
+    def get_redis_client(*args, **kwargs):
+        return redis_client_sdk
+
+    def get_key(user_id: str, resource: str) -> str:
+        return f"{user_id}-{resource}"
+
+    def get_capacity(user_id: str, resource: str) -> int:
+        return 2
+
+    @asynccontextmanager
+    @with_limited_concurrency_cm(
+        get_redis_client,
+        key=get_key,
+        capacity=get_capacity,
+    )
+    async def process_user_resource_cm(user_id: str, resource: str):
+        executed_keys.append(f"{user_id}-{resource}")
+        yield f"processed-{user_id}-{resource}"
+        await asyncio.sleep(0.05)
+
+    async def use_cm(user_id: str, resource: str):
+        async with process_user_resource_cm(user_id, resource) as result:
+            return result
+
+    # Test with different parameters
+    results = await asyncio.gather(
+        use_cm("user1", "wallet1"),
+        use_cm("user1", "wallet2"),
+        use_cm("user2", "wallet1"),
+    )
+
+    assert len(executed_keys) == 3
+    assert "user1-wallet1" in executed_keys
+    assert "user1-wallet2" in executed_keys
+    assert "user2-wallet1" in executed_keys
+
+    assert len(results) == 3
+    assert "processed-user1-wallet1" in results
+    assert "processed-user1-wallet2" in results
+    assert "processed-user2-wallet1" in results
+
+
+async def test_context_manager_non_blocking_behavior(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+):
+    started_event = asyncio.Event()
+
+    @asynccontextmanager
+    @with_limited_concurrency_cm(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+        blocking=True,
+        blocking_timeout=datetime.timedelta(seconds=0.1),
+    )
+    async def limited_context_manager():
+        started_event.set()
+        yield
+        await asyncio.sleep(2)
+
+    # Start first context manager that will hold the semaphore
+    async def long_running_cm():
+        async with limited_context_manager():
+            await asyncio.sleep(2)
+
+    task1 = asyncio.create_task(long_running_cm())
+    await started_event.wait()  # Wait until semaphore is actually acquired
+
+    # Second context manager should timeout and raise an exception
+    @asynccontextmanager
+    @with_limited_concurrency_cm(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+        blocking=True,
+        blocking_timeout=datetime.timedelta(seconds=0.1),
+    )
+    async def timeout_context_manager():
+        yield
+
+    with pytest.raises(SemaphoreAcquisitionError):
+        async with timeout_context_manager():
+            pass
+
+    await task1
+
+
+async def test_context_manager_lose_semaphore_raises(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+    short_ttl: datetime.timedelta,
+):
+    work_started = asyncio.Event()
+
+    @asynccontextmanager
+    @with_limited_concurrency_cm(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=short_ttl,
+    )
+    async def context_manager_that_should_fail():
+        work_started.set()
+        yield "data"
+        # Wait long enough for renewal to be attempted multiple times
+        await asyncio.sleep(short_ttl.total_seconds() * 4)
+
+    async def use_failing_cm():
+        async with context_manager_that_should_fail() as data:
+            assert data == "data"
+            # Keep context active while semaphore will be lost
+            await asyncio.sleep(short_ttl.total_seconds() * 3)
+
+    task = asyncio.create_task(use_failing_cm())
+    await work_started.wait()
+
+    # Wait for the first renewal interval to pass
+    renewal_interval = short_ttl / 3
+    await asyncio.sleep(renewal_interval.total_seconds() + 1)
+
+    # Find and delete all holder keys for this semaphore
+    holder_keys = await redis_client_sdk.redis.keys(
+        f"{SEMAPHORE_HOLDER_KEY_PREFIX}{semaphore_name}:*"
+    )
+    assert holder_keys, "Holder keys should exist before deletion"
+    await redis_client_sdk.redis.delete(*holder_keys)
+
+    with pytest.raises(SemaphoreLostError):  # Expected from the ExceptionGroup handling
+        await task
