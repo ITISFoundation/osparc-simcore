@@ -14038,8 +14038,7 @@ components:
             minimum: 0.0
           - type: 'null'
           title: Progress
-          description: the node progress value (deprecated in DB, still used for API
-            only)
+          description: the node progress value
           deprecated: true
         thumbnail:
           anyOf:
@@ -14051,6 +14050,7 @@ components:
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
+          deprecated: true
         runHash:
           anyOf:
           - type: string
@@ -14116,6 +14116,7 @@ components:
           - type: 'null'
           title: Outputnodes
           description: Used in group-nodes. Node IDs of those connected to the output
+          deprecated: true
         parent:
           anyOf:
           - type: string
@@ -14123,6 +14124,7 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
+          deprecated: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
@@ -14134,6 +14136,12 @@ components:
           - $ref: '#/components/schemas/NodeState-Input'
           - type: 'null'
           description: The node's state object
+        required_resources:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Required Resources
         bootOptions:
           anyOf:
           - type: object
@@ -14173,8 +14181,7 @@ components:
             minimum: 0.0
           - type: 'null'
           title: Progress
-          description: the node progress value (deprecated in DB, still used for API
-            only)
+          description: the node progress value
           deprecated: true
         thumbnail:
           anyOf:
@@ -14186,6 +14193,7 @@ components:
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
+          deprecated: true
         runHash:
           anyOf:
           - type: string
@@ -14251,6 +14259,7 @@ components:
           - type: 'null'
           title: Outputnodes
           description: Used in group-nodes. Node IDs of those connected to the output
+          deprecated: true
         parent:
           anyOf:
           - type: string
@@ -14258,6 +14267,7 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
+          deprecated: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
@@ -14269,6 +14279,12 @@ components:
           - $ref: '#/components/schemas/NodeState-Output'
           - type: 'null'
           description: The node's state object
+        required_resources:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Required Resources
         bootOptions:
           anyOf:
           - type: object
@@ -15980,7 +15996,6 @@ components:
       - creationDate
       - lastChangeDate
       - trashedAt
-      - trashedBy
       - tags
       - dev
       - workspaceId
@@ -16183,7 +16198,6 @@ components:
       - creationDate
       - lastChangeDate
       - trashedAt
-      - trashedBy
       - tags
       - dev
       - workspaceId

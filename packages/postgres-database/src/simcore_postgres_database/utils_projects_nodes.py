@@ -4,19 +4,18 @@ from dataclasses import dataclass
 from typing import Annotated, Any
 
 import asyncpg.exceptions  # type: ignore[import-untyped]
-import sqlalchemy
 import sqlalchemy.exc
 from common_library.async_tools import maybe_await
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
-from simcore_postgres_database.utils_aiosqlalchemy import map_db_exception
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
+from .utils_aiosqlalchemy import map_db_exception
 
 
 #
@@ -59,6 +58,7 @@ class ProjectNodeCreate(BaseModel):
     input_access: dict[str, Any] | None = None
     input_nodes: list[str] | None = None
     inputs: dict[str, Any] | None = None
+    inputs_required: list[str] | None = None
     inputs_units: dict[str, Any] | None = None
     output_nodes: list[str] | None = None
     outputs: dict[str, Any] | None = None
@@ -103,17 +103,18 @@ class ProjectNodesRepo:
         """
         if not nodes:
             return []
+
+        values = [
+            {
+                "project_uuid": f"{self.project_uuid}",
+                **node.model_dump(mode="json"),
+            }
+            for node in nodes
+        ]
+
         insert_stmt = (
             projects_nodes.insert()
-            .values(
-                [
-                    {
-                        "project_uuid": f"{self.project_uuid}",
-                        **node.model_dump(exclude_unset=True, mode="json"),
-                    }
-                    for node in nodes
-                ]
-            )
+            .values(values)
             .returning(
                 *[
                     c
@@ -129,14 +130,17 @@ class ProjectNodesRepo:
             rows = await maybe_await(result.fetchall())
             assert isinstance(rows, list)  # nosec
             return [ProjectNode.model_validate(r) for r in rows]
+
         except ForeignKeyViolation as exc:
             # this happens when the project does not exist, as we first check the node exists
             raise ProjectNodesProjectNotFoundError(
                 project_uuid=self.project_uuid
             ) from exc
+
         except UniqueViolation as exc:
             # this happens if the node already exists on creation
             raise ProjectNodesDuplicateNodeError from exc
+
         except sqlalchemy.exc.IntegrityError as exc:
             raise map_db_exception(
                 exc,
