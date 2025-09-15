@@ -25,6 +25,15 @@ from faker import Faker
 DEFAULT_FAKER: Final = Faker()
 
 
+def random_service_key(fake: Faker = DEFAULT_FAKER, *, name: str | None = None) -> str:
+    suffix = fake.unique.word() if name is None else name
+    return f"simcore/services/{fake.random_element(['dynamic', 'comp', 'frontend'])}/{suffix.lower()}"
+
+
+def random_service_version(fake: Faker = DEFAULT_FAKER) -> str:
+    return ".".join([str(fake.pyint(0, 100)) for _ in range(3)])
+
+
 def random_icon_url(fake: Faker):
     return fake.image_url(width=16, height=16)
 
@@ -182,6 +191,26 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         data["ui"] = {"icon": icon}
 
     assert set(data.keys()).issubset({c.name for c in projects.columns})
+
+    data.update(overrides)
+    return data
+
+
+def random_project_node(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
+    """Generates random fake data project nodes DATABASE table"""
+    from simcore_postgres_database.models.projects_nodes import projects_nodes
+
+    fake_name = fake.name()
+
+    data = {
+        "node_id": fake.uuid4(),
+        "project_uuid": fake.uuid4(),
+        "key": random_service_key(fake, name=fake_name),
+        "version": random_service_version(fake),
+        "label": fake_name,
+    }
+
+    assert set(data.keys()).issubset({c.name for c in projects_nodes.columns})
 
     data.update(overrides)
     return data
@@ -483,7 +512,7 @@ def random_service_meta_data(
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.services import services_meta_data
 
-    _version = ".".join([str(fake.pyint()) for _ in range(3)])
+    _version = random_service_version(fake)
     _name = fake.name()
 
     data: dict[str, Any] = {

@@ -24,7 +24,10 @@ from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobResult
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobFilter,
+    AsyncJobResult,
+)
 from models_library.api_schemas_rpc_async_jobs.exceptions import JobError
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
@@ -84,10 +87,13 @@ async def _request_copy_folders(
     ) as ctx:
         async_job_get, async_job_name = await copy_folders_from_project(
             rpc_client,
-            user_id=user_id,
-            product_name=product_name,
             body=FoldersBody(
                 source=source_project, destination=dst_project, nodes_map=nodes_map
+            ),
+            job_filter=AsyncJobFilter(
+                user_id=user_id,
+                product_name=product_name,
+                client_name="PYTEST_CLIENT_NAME",
             ),
         )
 
@@ -526,10 +532,13 @@ async def _request_start_export_data(
     ) as ctx:
         async_job_get, async_job_name = await start_export_data(
             rpc_client,
-            user_id=user_id,
-            product_name=product_name,
             paths_to_export=paths_to_export,
             export_as=export_as,
+            job_filter=AsyncJobFilter(
+                user_id=user_id,
+                product_name=product_name,
+                client_name="PYTEST_CLIENT_NAME",
+            ),
         )
 
         async for async_job_result in wait_and_get_result(
