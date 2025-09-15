@@ -101,6 +101,13 @@ qx.Class.define("osparc.Application", {
 
       this.__initRouting();
       this.__startupChecks();
+
+      /*
+      qx.bom.Stylesheet.createElement(`
+        .osparc-markdown p { margin: 0; }
+        .osparc-markdown p + p { margin-top: .35em; }
+      `);
+      */
     },
 
     __preloadCalls: async function() {

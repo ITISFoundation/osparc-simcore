@@ -100,19 +100,24 @@ qx.Class.define("osparc.conversation.MessageUI", {
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;
-        case "message-content":
-          control = new osparc.ui.markdown.Markdown().set({
-            noMargin: true,
-            allowGrowX: true,
+        case "message-content": {
+          // outer bubble
+          const maxWidth = 300;
+          const bubble = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+            decorator: "chat-bubble",
+            padding: 8,
+            maxWidth,
           });
-          control.getContentElement().setStyles({
-            "text-align": isMyMessage ? "right" : "left",
+          control = new osparc.ui.markdown.Markdown2().set({
+            maxWidth,
           });
-          this._add(control, {
+          bubble.add(control);
+          this._add(bubble, {
             row: 1,
             column: 1,
           });
           break;
+        }
         case "spacer":
           control = new qx.ui.core.Spacer();
           this._add(control, {
