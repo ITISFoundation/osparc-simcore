@@ -22,6 +22,7 @@ from typing import Any, Final, NotRequired, TypeAlias, TypedDict, TypeVar
 from common_library.json_serialization import json_dumps
 from settings_library.tracing import TracingSettings
 
+from .logging_errors import create_troubleshootting_log_kwargs
 from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
 from .tracing import setup_log_tracing
 from .utils_secrets import mask_sensitive_data
@@ -97,9 +98,9 @@ class CustomFormatter(logging.Formatter):
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
 
-        optional_keys = LogExtra.__optional_keys__ | frozenset(  # pylint: disable=no-member
+        optional_keys = LogExtra.__optional_keys__ | frozenset(
             ["otelTraceID", "otelSpanID"]
-        )
+        )  # pylint: disable=no-member
         for name in optional_keys:
             if not hasattr(record, name):
                 setattr(record, name, None)
@@ -572,7 +573,13 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
         logger.debug("call was cancelled")
         raise
     except Exception as exc:  # pylint: disable=broad-except
-        logger.exception("Unhandled exception:")
+        if not reraise:
+            logger.exception(
+                **create_troubleshootting_log_kwargs(
+                    "Caught unhandled exception",
+                    error=exc,
+                )
+            )
         if reraise:
             raise exc from exc
 
