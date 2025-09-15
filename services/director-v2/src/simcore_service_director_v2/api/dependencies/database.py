@@ -32,10 +32,11 @@ def get_base_repository(engine: AsyncEngine, repo_type: type[RepoType]) -> RepoT
 
     if (checkedin < 2) and (total_size > 1):  # noqa: PLR2004
         logger.warning(
-            "Database connection pool near limits: total=%d, in_use=%d, available=%d",
+            "Database connection pool near limits: total=%d, in_use=%d, available=%d, overflow=%d",
             total_size,
             checkedout,
             checkedin,
+            max(checkedout - total_size, 0),
         )
 
     return repo_type(db_engine=engine)
