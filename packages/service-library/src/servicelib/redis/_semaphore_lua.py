@@ -13,10 +13,12 @@ Example:
     >>> my_acquire_script(keys=[...], args=[...])
 """
 
+from functools import lru_cache
 from importlib import resources
 from typing import Final
 
 
+@lru_cache
 def _load_script(script_name: str) -> str:
     with resources.path("servicelib.redis.lua", f"{script_name}.lua") as script_file:
         return script_file.read_text(encoding="utf-8").strip()
