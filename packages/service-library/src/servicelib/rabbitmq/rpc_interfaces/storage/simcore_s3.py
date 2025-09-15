@@ -50,11 +50,9 @@ async def start_export_data(
 async def start_search(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    user_id: UserID,
-    product_name: ProductName,
+    job_filter: AsyncJobFilter,
     name_pattern: str,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
-    job_filter = get_async_job_filter(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,

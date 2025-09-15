@@ -546,9 +546,11 @@ async def search(request: web.Request) -> web.Response:
         model_schema_cls=SearchBodyParams, request=request
     )
     async_job_rpc_get, _ = await start_search(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        user_id=_req_ctx.user_id,
-        product_name=_req_ctx.product_name,
+        rabbitmq_rpc_client,
+        job_filter=get_job_filter(
+            user_id=_req_ctx.user_id,
+            product_name=_req_ctx.product_name,
+        ),
         name_pattern=search_body.name_pattern,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
