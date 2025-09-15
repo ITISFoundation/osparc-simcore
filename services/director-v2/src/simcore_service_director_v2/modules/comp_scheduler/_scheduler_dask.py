@@ -74,18 +74,18 @@ _DASK_CLUSTER_CLIENT_SEMAPHORE_CAPACITY: Final[int] = 20
 
 
 def _get_redis_client_from_scheduler(
-    user_id: UserID,  # noqa: ARG001
+    _user_id: UserID,
     scheduler: "DaskScheduler",
-    **kwargs,  # noqa: ARG001
+    **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
 ) -> RedisClientSDK:
     return scheduler.redis_client
 
 
 def _get_semaphore_cluster_redis_key(
     user_id: UserID,
-    *args,  # noqa: ARG001
+    *args,  # pylint: disable=unused-argument # noqa: ARG001
     run_metadata: RunMetadataDict,
-    **kwargs,  # noqa: ARG001
+    **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
 ) -> str:
     return f"{APP_NAME}-cluster-user_id_{user_id}-wallet_id_{run_metadata.get('wallet_id')}"
 
