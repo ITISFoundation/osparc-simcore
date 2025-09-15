@@ -216,7 +216,7 @@ class DistributedSemaphore(BaseModel):
         result = status
 
         if result == "released":
-            assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
+            assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
             _logger.debug(
                 "Released semaphore '%s' (instance: %s, count: %s, expired: %s)",
                 self.key,
@@ -227,7 +227,7 @@ class DistributedSemaphore(BaseModel):
         else:
             # Instance wasn't in the semaphore set - this shouldn't happen
             # but let's handle it gracefully
-            assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
+            assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
             raise SemaphoreNotAcquiredError(name=self.key)
 
     async def _try_acquire(self) -> bool:

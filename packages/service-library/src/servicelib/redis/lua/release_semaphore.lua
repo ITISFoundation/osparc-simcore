@@ -29,7 +29,7 @@ local score = redis.call('ZSCORE', semaphore_key, instance_id)
 if score == false then
     -- Instance doesn't hold the semaphore
     local current_count = redis.call('ZCARD', semaphore_key)
-    return {0, 'not_held', current_count, expired_count}
+    return {255, 'not_held', current_count, expired_count}
 end
 
 -- Step 3: Remove the semaphore entry and holder key
