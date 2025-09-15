@@ -263,10 +263,12 @@ qx.Class.define("osparc.support.Conversation", {
         .finally(() => loadMoreMessages.setFetching(false));
     },
 
-    addSystemMessage: function(message) {
+    // type can be "askAQuestion", "bookACall" or "reportOEC"
+    addSystemMessage: function(type) {
+      type = type || "askAQuestion";
+
       const now = new Date();
       const systemMessage = {
-        "content": message,
         "conversationId": null,
         "created": now.toISOString(),
         "messageId": `system-${now.getTime()}`,
@@ -274,6 +276,21 @@ qx.Class.define("osparc.support.Conversation", {
         "type": "MESSAGE",
         "userGroupId": "system",
       };
+      let msg = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",";
+      switch (type) {
+        case "askAQuestion":
+          msg += "\nHave a question or feedback?\nWe are happy to assist!";
+          break;
+        case "bookACall":
+          msg += "\nLet us know what your availability is and we will get back to you shortly to schedule a meeting.";
+          break;
+        case "reportOEC":
+          msg = "";
+          break;
+      }
+      if (msg) {
+        systemMessage["content"] = msg;
+      }
       this.addMessage(systemMessage);
     },
 

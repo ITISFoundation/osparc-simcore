@@ -153,24 +153,18 @@ qx.Class.define("osparc.support.ConversationPage", {
       const title = this.getChildControl("conversation-title");
       const conversationContent = this.getChildControl("conversation-content");
       conversationContent.clearAllMessages();
-      let msg = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",";
       switch (type) {
         case "askAQuestion":
           title.setValue(this.tr("Ask a Question"));
-          msg += "\nHave a question or feedback?\nWe are happy to assist!";
           break;
         case "bookACall":
           title.setValue(this.tr("Book a Call"));
-          msg += "\nLet us know what your availability is and we will get back to you shortly to schedule a meeting.";
           break;
         case "reportOEC":
           title.setValue(this.tr("Report an Error"));
-          msg = null;
           break;
       }
-      if (msg) {
-        conversationContent.addSystemMessage(msg);
-      }
+      conversationContent.addSystemMessage(type);
     },
 
     __applyConversation: function(conversation) {
