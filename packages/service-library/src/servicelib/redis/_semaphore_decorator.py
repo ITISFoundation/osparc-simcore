@@ -87,7 +87,7 @@ async def _managed_semaphore_execution(
         except SemaphoreNotAcquiredError as exc:
             _logger.exception(
                 **create_troubleshootting_log_kwargs(
-                    "Unexpected error while releasing semaphore",
+                    f"Unexpected error while releasing semaphore '{semaphore_key}'",
                     error=exc,
                     error_context={
                         "semaphore_key": semaphore_key,
