@@ -88,49 +88,65 @@ qx.Class.define("osparc.support.ConversationPage", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
           this.getChildControl("conversation-header-center-layout").addAt(control, 1);
           break;
-        case "open-project-button":
-          control = new qx.ui.form.Button().set({
-            maxWidth: 26,
-            maxHeight: 24,
-            alignX: "center",
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle",
-            icon: "@FontAwesome5Solid/external-link-alt/12",
+          })).set({
+            maxHeight: 24,
           });
-          control.addListener("execute", () => this.__openProjectDetails());
           this.getChildControl("conversation-header-layout").addAt(control, 2);
           break;
-        case "set-appointment-button": {
+        case "rename-conversation-button": {
           control = new qx.ui.form.Button().set({
-            maxWidth: 26,
-            maxHeight: 24,
-            padding: [0, 6],
+            icon: "@FontAwesome5Solid/i-cursor/12",
+            toolTipText: this.tr("Rename"),
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/clock/12",
           });
-          control.addListener("execute", () => this.__openAppointmentDetails());
-          this.getChildControl("conversation-header-layout").addAt(control, 3);
+          control.addListener("execute", () => this.__renameConversation());
+          this.getChildControl("buttons-layout").addAt(control, 0);
           break;
         }
-        case "conversation-options": {
-          control = new qx.ui.form.MenuButton().set({
-            maxWidth: 24,
-            maxHeight: 24,
+        case "open-project-button":
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/external-link-alt/12",
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/12",
           });
-          const menu = new qx.ui.menu.Menu().set({
-            position: "bottom-right",
+          control.addListener("execute", () => this.__openProjectDetails());
+          this.getChildControl("buttons-layout").addAt(control, 1);
+          break;
+        case "copy-ticket-id-button": {
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/copy/12",
+            toolTipText: this.tr("Copy ID"),
+            alignX: "center",
+            alignY: "middle",
           });
-          control.setMenu(menu);
-          const renameButton = new qx.ui.menu.Button().set({
-            label: this.tr("Rename"),
-            icon: "@FontAwesome5Solid/i-cursor/10"
+          control.addListener("execute", () => this.__openAppointmentDetails());
+          this.getChildControl("buttons-layout").addAt(control, 2);
+          break;
+        }
+        case "open-ticket-link-button": {
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/link/12",
+            toolTipText: this.tr("Open Ticket"),
+            alignX: "center",
+            alignY: "middle",
           });
-          renameButton.addListener("execute", () => this.__renameConversation());
-          menu.add(renameButton);
-          this.getChildControl("conversation-header-layout").addAt(control, 4);
+          control.addListener("execute", () => this.__openAppointmentDetails());
+          this.getChildControl("buttons-layout").addAt(control, 3);
+          break;
+        }
+        case "set-appointment-button": {
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/clock/12",
+            toolTipText: this.tr("Set Appointment"),
+            alignX: "center",
+            alignY: "middle",
+          });
+          control.addListener("execute", () => this.__openAppointmentDetails());
+          this.getChildControl("buttons-layout").addAt(control, 4);
           break;
         }
         case "conversation-content":
@@ -190,11 +206,11 @@ qx.Class.define("osparc.support.ConversationPage", {
           extraContextLayout.removeAll();
           const extraContext = conversation.getExtraContext();
           if (extraContext && Object.keys(extraContext).length) {
-            const ticketIdLabel = createExtraContextLabel(`Ticket ID: ${conversation.getConversationId()}`);
+            const ticketIdLabel = createExtraContextLabel(`Ticket ID: ${osparc.utils.Utils.uuidToShort(conversation.getConversationId())}`);
             extraContextLayout.add(ticketIdLabel);
             const contextProjectId = conversation.getContextProjectId();
             if (contextProjectId && amISupporter) {
-              const projectIdLabel = createExtraContextLabel(`Project ID: ${contextProjectId}`);
+              const projectIdLabel = createExtraContextLabel(`Project ID: ${osparc.utils.Utils.uuidToShort(contextProjectId)}`);
               extraContextLayout.add(projectIdLabel);
             }
             /*
@@ -230,7 +246,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         openProjectButton.exclude();
       }
 
-      const options = this.getChildControl("conversation-options");
+      const options = this.getChildControl("rename-conversation-button");
       if (conversation) {
         options.show();
       } else {
