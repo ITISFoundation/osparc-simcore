@@ -18,6 +18,8 @@ from ._constants import (
 )
 from ._errors import (
     SemaphoreAcquisitionError,
+    SemaphoreLostError,
+    SemaphoreNotAcquiredError,
 )
 from ._semaphore import DistributedSemaphore
 
@@ -68,14 +70,21 @@ async def _managed_semaphore_execution(
             await cancel_wait_task(renewal_task, max_delay=None)
 
     except BaseExceptionGroup as eg:
-        # Re-raise the first exception in the group
-        raise eg.exceptions[0] from eg
+        semaphore_lost_errors, other_errors = eg.split(SemaphoreLostError)
+        # If there are any other errors, re-raise them
+        if other_errors:
+            assert len(other_errors.exceptions) == 1  # nosec
+            raise other_errors.exceptions[0] from eg
+
+        assert semaphore_lost_errors is not None  # nosec
+        assert len(semaphore_lost_errors.exceptions) == 1  # nosec
+        raise semaphore_lost_errors.exceptions[0] from eg
 
     finally:
         # Always attempt to release the semaphore
         try:
             await semaphore.release()
-        except Exception as exc:
+        except SemaphoreNotAcquiredError as exc:
             _logger.exception(
                 **create_troubleshootting_log_kwargs(
                     "Unexpected error while releasing semaphore",
