@@ -3,7 +3,8 @@ import datetime
 import functools
 import logging
 import socket
-from collections.abc import Callable, Coroutine
+from collections.abc import AsyncIterator, Callable, Coroutine
+from contextlib import asynccontextmanager
 from typing import Any, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
@@ -25,6 +26,102 @@ _logger = logging.getLogger(__name__)
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+@asynccontextmanager
+async def _managed_semaphore_execution(
+    semaphore: DistributedSemaphore,
+    semaphore_key: str,
+    ttl: datetime.timedelta,
+    execution_context: str,
+) -> AsyncIterator:
+    """Common semaphore management logic with auto-renewal."""
+    # Acquire the semaphore first
+    if not await semaphore.acquire():
+        raise SemaphoreAcquisitionError(name=semaphore_key, capacity=semaphore.capacity)
+
+    try:
+        # Use TaskGroup for proper exception propagation
+        async with asyncio.TaskGroup() as tg:
+            started_event = asyncio.Event()
+
+            # Create auto-renewal task
+            @periodic(interval=ttl / 3, raise_on_error=True)
+            async def _periodic_renewer() -> None:
+                await semaphore.reacquire()
+                if not started_event.is_set():
+                    started_event.set()
+
+            # Start the renewal task
+            renewal_task = tg.create_task(
+                _periodic_renewer(),
+                name=f"semaphore/autorenewal_{semaphore_key}_{semaphore.instance_id}",
+            )
+
+            # Wait for first renewal to complete (ensures task is running)
+            await started_event.wait()
+
+            # Yield control back to caller
+            yield
+
+            # Cancel renewal task when execution is done
+            await cancel_wait_task(renewal_task, max_delay=None)
+
+    except BaseExceptionGroup as eg:
+        # Re-raise the first exception in the group
+        raise eg.exceptions[0] from eg
+
+    finally:
+        # Always attempt to release the semaphore
+        try:
+            await semaphore.release()
+        except Exception as exc:
+            _logger.exception(
+                **create_troubleshootting_log_kwargs(
+                    "Unexpected error while releasing semaphore",
+                    error=exc,
+                    error_context={
+                        "semaphore_key": semaphore_key,
+                        "client_name": semaphore.redis_client.client_name,
+                        "hostname": socket.gethostname(),
+                        "execution_context": execution_context,
+                    },
+                    tip="This might happen if the semaphore was lost before releasing it. "
+                    "Look for synchronous code that prevents refreshing the semaphore or asyncio loop overload.",
+                )
+            )
+
+
+def _create_semaphore(
+    redis_client: RedisClientSDK | Callable[..., RedisClientSDK],
+    args: tuple[Any, ...],
+    *,
+    key: str | Callable[..., str],
+    capacity: int | Callable[..., int],
+    ttl: datetime.timedelta,
+    blocking: bool,
+    blocking_timeout: datetime.timedelta | None,
+    kwargs: dict[str, Any],
+) -> tuple[DistributedSemaphore, str]:
+    """Create and configure a distributed semaphore from callable or static parameters."""
+    semaphore_key = key(*args, **kwargs) if callable(key) else key
+    semaphore_capacity = capacity(*args, **kwargs) if callable(capacity) else capacity
+    client = redis_client(*args, **kwargs) if callable(redis_client) else redis_client
+
+    assert isinstance(semaphore_key, str)  # nosec
+    assert isinstance(semaphore_capacity, int)  # nosec
+    assert isinstance(client, RedisClientSDK)  # nosec
+
+    semaphore = DistributedSemaphore(
+        redis_client=client,
+        key=semaphore_key,
+        capacity=semaphore_capacity,
+        ttl=ttl,
+        blocking=blocking,
+        blocking_timeout=blocking_timeout,
+    )
+
+    return semaphore, semaphore_key
 
 
 def with_limited_concurrency(
@@ -75,101 +172,89 @@ def with_limited_concurrency(
     ) -> Callable[P, Coroutine[Any, Any, R]]:
         @functools.wraps(coro)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            # Resolve callable parameters
-            semaphore_key = key(*args, **kwargs) if callable(key) else key
-            semaphore_capacity = (
-                capacity(*args, **kwargs) if callable(capacity) else capacity
-            )
-            client = (
-                redis_client(*args, **kwargs)
-                if callable(redis_client)
-                else redis_client
-            )
-
-            assert isinstance(semaphore_key, str)  # nosec
-            assert isinstance(semaphore_capacity, int)  # nosec
-            assert isinstance(client, RedisClientSDK)  # nosec
-
-            # Create the semaphore (without auto-renewal)
-            semaphore = DistributedSemaphore(
-                redis_client=client,
-                key=semaphore_key,
-                capacity=semaphore_capacity,
+            semaphore, semaphore_key = _create_semaphore(
+                redis_client,
+                args,
+                key=key,
+                capacity=capacity,
                 ttl=ttl,
                 blocking=blocking,
                 blocking_timeout=blocking_timeout,
+                kwargs=kwargs,
             )
 
-            # Acquire the semaphore first
-            if not await semaphore.acquire():
-                raise SemaphoreAcquisitionError(
-                    name=semaphore_key, capacity=semaphore_capacity
-                )
+            async with _managed_semaphore_execution(
+                semaphore, semaphore_key, ttl, f"coroutine_{coro.__name__}"
+            ):
+                return await coro(*args, **kwargs)
 
-            try:
-                # Use TaskGroup for proper exception propagation (similar to exclusive decorator)
-                async with asyncio.TaskGroup() as tg:
-                    started_event = asyncio.Event()
+        return _wrapper
 
-                    # Create auto-renewal task
-                    @periodic(interval=ttl / 3, raise_on_error=True)
-                    async def _periodic_renewer() -> None:
-                        await semaphore.reacquire()
-                        if not started_event.is_set():
-                            started_event.set()
+    return _decorator
 
-                    # Start the renewal task
-                    renewal_task = tg.create_task(
-                        _periodic_renewer(),
-                        name=f"semaphore/autorenewal_{semaphore_key}_{semaphore.instance_id}",
-                    )
 
-                    # Wait for first renewal to complete (ensures task is running)
-                    await started_event.wait()
+def with_limited_concurrency_cm(
+    redis_client: RedisClientSDK | Callable[..., RedisClientSDK],
+    *,
+    key: str | Callable[..., str],
+    capacity: int | Callable[..., int],
+    ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
+    blocking: bool = True,
+    blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
+) -> Callable[[Callable[P, AsyncIterator[R]]], Callable[P, AsyncIterator[R]]]:
+    """
+    Decorator to limit concurrent execution of async context managers using a distributed semaphore.
 
-                    # Run the user work
-                    work_task = tg.create_task(
-                        coro(*args, **kwargs),
-                        name=f"semaphore/work_{coro.__module__}.{coro.__name__}",
-                    )
-                    result = await work_task
+    This decorator ensures that only a specified number of instances of the decorated
+    async context manager can be active concurrently across multiple processes/instances
+    using Redis as the coordination backend.
 
-                    # Cancel renewal task (work is done)
-                    # NOTE: if we do not explicitely await the task inside the context manager
-                    # it sometimes hangs forever (Python issue?)
-                    await cancel_wait_task(renewal_task, max_delay=None)
+    Args:
+        redis_client: Redis client for coordination (can be callable)
+        key: Unique identifier for the semaphore (can be callable)
+        capacity: Maximum number of concurrent executions (can be callable)
+        ttl: Time-to-live for semaphore entries (default: 5 minutes)
+        blocking: Whether to block when semaphore is full (default: True)
+        blocking_timeout: Maximum time to wait when blocking (default: socket timeout)
 
-                return result
+    Example:
+        @asynccontextmanager
+        @with_limited_concurrency_cm(
+            redis_client,
+            key="cluster:my-cluster",
+            capacity=5,
+            blocking=True,
+            blocking_timeout=None
+        )
+        async def get_cluster_client():
+            async with pool.acquire() as client:
+                yield client
 
-            except BaseExceptionGroup as eg:
-                # Handle exceptions similar to exclusive decorator
-                # If renewal fails, the TaskGroup will propagate the exception
-                # and cancel the work task automatically
+    Raises:
+        SemaphoreAcquisitionError: If semaphore cannot be acquired and blocking=True
+    """
 
-                # Re-raise the first exception in the group
-                raise eg.exceptions[0] from eg
+    def _decorator(
+        cm_func: Callable[P, AsyncIterator[R]],
+    ) -> Callable[P, AsyncIterator[R]]:
+        @functools.wraps(cm_func)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> AsyncIterator[R]:
+            semaphore, semaphore_key = _create_semaphore(
+                redis_client,
+                args,
+                key=key,
+                capacity=capacity,
+                ttl=ttl,
+                blocking=blocking,
+                blocking_timeout=blocking_timeout,
+                kwargs=kwargs,
+            )
 
-            finally:
-                # Always attempt to release the semaphore, regardless of Python state
-                # The Redis-side state is the source of truth, not the Python _acquired flag
-                try:
-                    await semaphore.release()
-                except Exception as exc:
-                    # Log any other release errors but don't re-raise
-                    _logger.exception(
-                        **create_troubleshootting_log_kwargs(
-                            "Unexpected error while releasing semaphore",
-                            error=exc,
-                            error_context={
-                                "semaphore_key": semaphore_key,
-                                "client_name": client.client_name,
-                                "hostname": socket.gethostname(),
-                                "coroutine": coro.__name__,
-                            },
-                            tip="This might happen if the semaphore was lost before releasing it. "
-                            "Look for synchronous code that prevents refreshing the semaphore or asyncio loop overload.",
-                        )
-                    )
+            async with _managed_semaphore_execution(
+                semaphore, semaphore_key, ttl, f"context_manager_{cm_func.__name__}"
+            ):
+                async for value in cm_func(*args, **kwargs):
+                    yield value
 
         return _wrapper
 

@@ -24,6 +24,10 @@ from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.redis._client import RedisClientSDK
+from servicelib.redis._semaphore_decorator import (
+    with_limited_concurrency_cm,
+)
 from servicelib.utils import limited_as_completed, limited_gather
 
 from ...core.errors import (
@@ -53,11 +57,13 @@ from ..db.repositories.comp_runs import (
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._constants import (
     MAX_CONCURRENT_PIPELINE_SCHEDULING,
+    MODULE_NAME_WORKER,
 )
 from ._models import TaskStateTracker
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
     WAITING_FOR_START_STATES,
+    get_redis_lock_key,
 )
 
 _logger = logging.getLogger(__name__)
@@ -67,7 +73,25 @@ _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
 
 
+def _get_redis_client_from_scheduler(scheduler: "DaskScheduler") -> RedisClientSDK:
+    return scheduler.redis_client
+
+
+def _unique_key_builder(_app, user_id: UserID, run_metadata: RunMetadataDict) -> str:
+    return f"user_id_{user_id}-wallet_id_{run_metadata.get('wallet_id')}"
+
+
 @asynccontextmanager
+@with_limited_concurrency_cm(
+    _get_redis_client_from_scheduler,
+    key=get_redis_lock_key(
+        MODULE_NAME_WORKER,
+        unique_lock_key_builder=_unique_key_builder,
+    ),
+    capacity=1,
+    blocking=True,
+    blocking_timeout=None,
+)
 async def _cluster_dask_client(
     user_id: UserID,
     scheduler: "DaskScheduler",
