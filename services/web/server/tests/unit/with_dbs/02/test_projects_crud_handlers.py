@@ -217,9 +217,9 @@ async def test_list_projects(
 
         # template project
         got = data[0]
-        project_state = got.pop("state")
-        project_permalink = got.pop("permalink")
-        folder_id = got.pop("folderId")
+        project_state = got.get("state")
+        project_permalink = got.get("permalink")
+        folder_id = got.get("folderId")
 
         assert not DeepDiff(
             got,
