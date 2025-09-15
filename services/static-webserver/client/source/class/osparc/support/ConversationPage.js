@@ -145,22 +145,21 @@ qx.Class.define("osparc.support.ConversationPage", {
       return control || this.base(arguments, id);
     },
 
-    // type can be "askAQuestion", "bookACall" or "reportOEC"
     proposeConversation: function(type) {
-      type = type || "askAQuestion";
+      type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
       this.setConversation(null);
 
       const title = this.getChildControl("conversation-title");
       const conversationContent = this.getChildControl("conversation-content");
       conversationContent.clearAllMessages();
       switch (type) {
-        case "askAQuestion":
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
           title.setValue(this.tr("Ask a Question"));
           break;
-        case "bookACall":
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           title.setValue(this.tr("Book a Call"));
           break;
-        case "reportOEC":
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.REPORT_OEC:
           title.setValue(this.tr("Report an Error"));
           break;
       }

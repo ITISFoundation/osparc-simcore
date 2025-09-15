@@ -54,6 +54,15 @@ qx.Class.define("osparc.support.Conversation", {
     },
   },
 
+  statics: {
+    SYSTEM_MESSAGE_TYPE: {
+      ASK_A_QUESTION: "askAQuestion",
+      BOOK_A_CALL: "bookACall",
+      REPORT_OEC: "reportOEC",
+      FOLLOW_UP: "followUp",
+    },
+  },
+
   members: {
     __messages: null,
 
@@ -145,7 +154,7 @@ qx.Class.define("osparc.support.Conversation", {
               this.setConversation(newConversation);
               this.__postMessage(content)
                 .then(() => {
-                  this.addSystemMessage("A support ticket has been created.\nOur team will review your request and contact you soon.");
+                  this.addSystemMessage("followUp");
                 });
             });
         }
@@ -263,7 +272,6 @@ qx.Class.define("osparc.support.Conversation", {
         .finally(() => loadMoreMessages.setFetching(false));
     },
 
-    // type can be "askAQuestion", "bookACall" or "reportOEC"
     addSystemMessage: function(type) {
       type = type || "askAQuestion";
 
@@ -276,20 +284,24 @@ qx.Class.define("osparc.support.Conversation", {
         "type": "MESSAGE",
         "userGroupId": "system",
       };
-      let msg = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",";
+      let msg = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",\n";
       switch (type) {
-        case "askAQuestion":
-          msg += "\nHave a question or feedback?\nWe are happy to assist!";
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
+          msg += "Have a question or feedback?\nWe are happy to assist!";
           break;
-        case "bookACall":
-          msg += "\nLet us know what your availability is and we will get back to you shortly to schedule a meeting.";
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
+          msg += "Let us know what your availability is and we will get back to you shortly to schedule a meeting.";
           break;
-        case "reportOEC":
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.REPORT_OEC:
           msg = "";
+          break;
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.FOLLOW_UP:
+          msg += "A support ticket has been created.\nOur team will review your request and contact you soon.";
           break;
       }
       if (msg) {
         systemMessage["content"] = msg;
+        systemMessage["systemMessageType"] = type;
       }
       this.addMessage(systemMessage);
     },
