@@ -98,6 +98,7 @@ class DistributedSemaphore(BaseModel):
         ),
     ] = DEFAULT_FACTORY
 
+    # Private state attributes (not part of the model)
     _acquire_script: AsyncScript
     _count_script: AsyncScript
     _release_script: AsyncScript
@@ -129,8 +130,6 @@ class DistributedSemaphore(BaseModel):
     def holder_key(self) -> str:
         """Redis key for this instance's holder entry."""
         return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:{self.instance_id}"
-
-    # Private state attributes (not part of the model)
 
     # Additional validation
     @field_validator("ttl")
