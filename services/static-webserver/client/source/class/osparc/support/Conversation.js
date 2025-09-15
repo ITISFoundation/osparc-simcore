@@ -150,7 +150,7 @@ qx.Class.define("osparc.support.Conversation", {
           }
           osparc.store.ConversationsSupport.getInstance().postConversation(extraContext)
             .then(data => {
-              const postMessagePromises = [];
+              let prePostMessagePromise = new Promise((resolve) => resolve());
               let isBookACall = false;
               // make these checks first, setConversation will reload messages
               if (
@@ -164,14 +164,17 @@ qx.Class.define("osparc.support.Conversation", {
               this.setConversation(newConversation);
               if (isBookACall) {
                 // add a first message
-                postMessagePromises.push(this.__postMessage("Book a Call"));
+                prePostMessagePromise = this.__postMessage("Book a Call");
                 // rename the conversation
                 newConversation.renameConversation("Book a Call");
               }
-              postMessagePromises.push(this.__postMessage(content));
-              Promise.all(postMessagePromises)
+              prePostMessagePromise
                 .then(() => {
-                  this.addSystemMessage("followUp");
+                  // add the actual message
+                  return this.__postMessage(content);
+                })
+                .then(() => {
+                  setTimeout(() => this.addSystemMessage("followUp"), 1000);
                 });
             });
         }
@@ -297,19 +300,17 @@ qx.Class.define("osparc.support.Conversation", {
         "type": "MESSAGE",
         "userGroupId": "system",
       };
-      let msg = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",\n";
+      let msg = null;
+      const greet = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",\n";
       switch (type) {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
-          msg += "Have a question or feedback?\nWe are happy to assist!";
+          msg = greet + "Have a question or feedback?\nWe are happy to assist!";
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
-          msg += "Let us know what your availability is and we will get back to you shortly to schedule a meeting.";
-          break;
-        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.REPORT_OEC:
-          msg = "";
+          msg = greet + "Let us know what your availability is and we will get back to you shortly to schedule a meeting.";
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.FOLLOW_UP:
-          msg += "A support ticket has been created.\nOur team will review your request and contact you soon.";
+          msg = "A support ticket has been created.\nOur team will review your request and contact you soon.";
           break;
       }
       if (msg) {
