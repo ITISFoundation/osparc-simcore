@@ -335,6 +335,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     result_field = ResultField(
                         str_error=dumps(TaskCancelledError(task_id=task_id))
                     )
+                    # NOTE: if the task is itself cancelled it shall re-raise: see https://superfastpython.com/asyncio-cancellederror-consumed/
                     current_task = asyncio.current_task()
                     assert current_task is not None  # nosec
                     if current_task.cancelling() > 0:
