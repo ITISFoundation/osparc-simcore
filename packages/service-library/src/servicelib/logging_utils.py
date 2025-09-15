@@ -78,9 +78,10 @@ class CustomFormatter(logging.Formatter):
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
 
+        # pylint: disable=no-member
         optional_keys = LogExtra.__optional_keys__ | frozenset(
             ["otelTraceID", "otelSpanID"]
-        )  # pylint: disable=no-member
+        )
         for name in optional_keys:
             if not hasattr(record, name):
                 setattr(record, name, None)
