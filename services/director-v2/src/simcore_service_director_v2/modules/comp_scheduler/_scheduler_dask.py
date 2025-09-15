@@ -20,7 +20,6 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
-from models_library.wallets import WalletID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
@@ -66,13 +65,6 @@ _logger = logging.getLogger(__name__)
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
-_DASK_SCHEDULER_MAX_CONCURRENT_ACCESS: Final[int] = 50
-
-
-def create_cluster_client_lock_key(
-    _app, user_id: UserID, wallet_id: WalletID | None
-) -> str:
-    return f"cluster-client-user_id{user_id}-wallet_id{wallet_id or 'None'}"
 
 
 @asynccontextmanager
@@ -92,7 +84,6 @@ async def _cluster_dask_client(
             user_id=user_id,
             wallet_id=run_metadata.get("wallet_id"),
         )
-
     async with scheduler.dask_clients_pool.acquire(
         cluster,
         ref=_DASK_CLIENT_RUN_REF.format(
