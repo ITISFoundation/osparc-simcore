@@ -83,13 +83,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
         }
         case "comment-field":
           control = new osparc.editor.MarkdownEditor();
-          control.addListener("keydown", e => {
-            if (e.isCtrlPressed() && e.getKeyIdentifier() === "Enter") {
-              this.addComment();
-              e.stopPropagation();
-              e.preventDefault();
-            }
-          }, this);
+          control.addListener("textChanged", () => this.__addCommentPressed(), this);
           control.setCompact(true);
           control.getChildControl("text-area").getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
