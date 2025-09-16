@@ -70,7 +70,6 @@ _logger = logging.getLogger(__name__)
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
-_DASK_CLUSTER_CLIENT_SEMAPHORE_CAPACITY: Final[int] = 20
 
 
 def _get_redis_client_from_scheduler(
@@ -90,10 +89,20 @@ def _get_semaphore_cluster_redis_key(
     return f"{APP_NAME}-cluster-user_id_{user_id}-wallet_id_{run_metadata.get('wallet_id')}"
 
 
+def _get_semaphore_capacity_from_scheduler(
+    _user_id: UserID,
+    scheduler: "DaskScheduler",
+    **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
+) -> int:
+    return (
+        scheduler.settings.COMPUTATIONAL_BACKEND_DASK_CLIENT_MAX_DISTRIBUTED_CONCURRENCY
+    )
+
+
 @with_limited_concurrency_cm(
     _get_redis_client_from_scheduler,
     key=_get_semaphore_cluster_redis_key,
-    capacity=_DASK_CLUSTER_CLIENT_SEMAPHORE_CAPACITY,
+    capacity=_get_semaphore_capacity_from_scheduler,
     blocking=True,
     blocking_timeout=None,
 )
