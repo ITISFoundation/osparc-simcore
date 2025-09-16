@@ -18,7 +18,6 @@ from ._constants import (
 )
 from ._errors import (
     SemaphoreAcquisitionError,
-    SemaphoreLostError,
     SemaphoreNotAcquiredError,
 )
 from ._semaphore import DistributedSemaphore
@@ -43,42 +42,26 @@ async def _managed_semaphore_execution(
         raise SemaphoreAcquisitionError(name=semaphore_key, capacity=semaphore.capacity)
 
     try:
-        # Use TaskGroup for proper exception propagation
-        async with asyncio.TaskGroup() as tg:
-            started_event = asyncio.Event()
+        started_event = asyncio.Event()
 
-            # Create auto-renewal task
-            @periodic(interval=ttl / 3, raise_on_error=True)
-            async def _periodic_renewer() -> None:
-                await semaphore.reacquire()
-                if not started_event.is_set():
-                    started_event.set()
+        # Create auto-renewal task
+        @periodic(interval=ttl / 3, raise_on_error=True)
+        async def _periodic_renewer() -> None:
+            await semaphore.reacquire()
+            if not started_event.is_set():
+                started_event.set()
 
-            # Start the renewal task
-            renewal_task = tg.create_task(
-                _periodic_renewer(),
-                name=f"semaphore/autorenewal_{semaphore_key}_{semaphore.instance_id}",
-            )
+        renewal_task = asyncio.create_task(
+            _periodic_renewer(),
+            name=f"semaphore/autorenewal_{semaphore_key}_{semaphore.instance_id}",
+        )
+        # Wait for first renewal to complete (ensures task is running)
+        await started_event.wait()
 
-            # Wait for first renewal to complete (ensures task is running)
-            await started_event.wait()
+        yield
 
-            # Yield control back to caller
-            yield
-
-            # Cancel renewal task when execution is done
-            await cancel_wait_task(renewal_task, max_delay=None)
-
-    except BaseExceptionGroup as eg:
-        semaphore_lost_errors, other_errors = eg.split(SemaphoreLostError)
-        # If there are any other errors, re-raise them
-        if other_errors:
-            assert len(other_errors.exceptions) == 1  # nosec
-            raise other_errors.exceptions[0] from eg
-
-        assert semaphore_lost_errors is not None  # nosec
-        assert len(semaphore_lost_errors.exceptions) == 1  # nosec
-        raise semaphore_lost_errors.exceptions[0] from eg
+        # Cancel renewal task when execution is done
+        await cancel_wait_task(renewal_task, max_delay=None)
 
     finally:
         # Always attempt to release the semaphore
