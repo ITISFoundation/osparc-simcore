@@ -65,6 +65,12 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
       check: "String",
       apply: "__applyMarkdown"
     },
+
+    measurerMaxWidth: {
+      check: "Integer",
+      init: 220,
+      nullable: true,
+    },
   },
 
   events: {
@@ -111,7 +117,7 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
 
         // flow-root prevents margin collapsing; inline style avoids extra stylesheet juggling
-        const max = 220;
+        const max = this.getMeasurerMaxWidth() || 220;
         const mdRoot = `
           <div class="${this.self().MD_ROOT}" style="display:flow-root;">
             <div class="${this.self().MD_MEASURE}"
