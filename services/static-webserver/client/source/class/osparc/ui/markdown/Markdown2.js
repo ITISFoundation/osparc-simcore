@@ -58,6 +58,7 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
 
     this.addListenerOnce("appear", () => {
       this.getContentElement().addClass("osparc-markdown");
+      this.__scheduleResize(); // first paint sizing
     });
   },
 
@@ -115,12 +116,32 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
 
         this.setHtml(safeHtml);
 
-        // for some reason the content is not immediately there
+        /*
+        // Wait for DOM update
         qx.event.Timer.once(() => {
           this.__resizeMe();
-        }, this, 100);
+        }, this, 50);
+        */
 
-        this.__resizeMe();
+        /*
+        // this.__resizeMe();
+        this.getContentElement().addListenerOnce("appear", () => {
+          this.__resizeMe();
+        });
+        */
+
+        // resize once DOM is updated/painted
+        this.__scheduleResize();
+
+        // also resize once images load (they change height later)
+        const el = this.__getDomElement();
+        if (el) {
+          el.querySelectorAll("img").forEach(img => {
+            if (!img.complete) {
+              img.addEventListener("load", () => this.__scheduleResize(), { once: true });
+            }
+          });
+        }
       }).catch(error => console.error(error));
     },
 
@@ -135,14 +156,28 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
       return null;
     },
 
-    // qx.ui.embed.html scale to content
-    __resizeMe: function() {
+    __scheduleResize: function() {
       const domElement = this.__getDomElement();
-      if (domElement === null) {
+      if (!domElement) {
         return;
       }
-      this.setHeight(null);            // let it auto-size
-      this.setMinHeight(domElement.scrollHeight); // so layout respects full content
+
+      // collapse first so we don't re-measure an old minHeight
+      this.setHeight(null);
+      this.setMinHeight(0);
+
+      window.requestAnimationFrame(() => {
+        // look inside the Html content element
+        const inner = domElement.firstElementChild || domElement;
+        const rect = inner.getBoundingClientRect();
+        const contentH = Math.ceil(rect ? rect.height : 0);
+
+        const insets = this.getInsets ? this.getInsets() : {top: 0, bottom: 0};
+        const totalH = Math.max(0, contentH + (insets.top || 0) + (insets.bottom || 0));
+
+        this.setMinHeight(totalH);
+        this.setHeight(totalH);
+      });
     },
   }
 });
