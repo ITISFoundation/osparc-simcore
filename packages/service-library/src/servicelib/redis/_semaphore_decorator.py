@@ -4,8 +4,8 @@ import functools
 import logging
 import socket
 from collections.abc import AsyncIterator, Callable, Coroutine
-from contextlib import asynccontextmanager
-from typing import Any, AsyncContextManager, ParamSpec, TypeVar
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from typing import Any, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
 
@@ -211,8 +211,8 @@ def with_limited_concurrency_cm(
     blocking: bool = True,
     blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
 ) -> Callable[
-    [Callable[P, AsyncContextManager[R]]],
-    Callable[P, AsyncContextManager[R]],
+    [Callable[P, AbstractAsyncContextManager[R]]],
+    Callable[P, AbstractAsyncContextManager[R]],
 ]:
     """
     Decorator to limit concurrent execution of async context managers using a distributed semaphore.
@@ -247,8 +247,8 @@ def with_limited_concurrency_cm(
     """
 
     def _decorator(
-        cm_func: Callable[P, AsyncContextManager[R]],
-    ) -> Callable[P, AsyncContextManager[R]]:
+        cm_func: Callable[P, AbstractAsyncContextManager[R]],
+    ) -> Callable[P, AbstractAsyncContextManager[R]]:
         @functools.wraps(cm_func)
         @asynccontextmanager
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> AsyncIterator[R]:
