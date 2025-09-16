@@ -20,7 +20,9 @@ from typing import Final
 
 @lru_cache
 def _load_script(script_name: str) -> str:
-    with resources.path("servicelib.redis.lua", f"{script_name}.lua") as script_file:
+    with resources.as_file(
+        resources.files("servicelib.redis.lua") / f"{script_name}.lua"
+    ) as script_file:
         return script_file.read_text(encoding="utf-8").strip()
 
 
