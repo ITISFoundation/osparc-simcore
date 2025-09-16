@@ -24,7 +24,6 @@ qx.Class.define("osparc.support.ConversationsPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.getChildControl("conversations-intro-text");
     this.getChildControl("conversations-list");
     this.getChildControl("ask-a-question-button");
     this.getChildControl("book-a-call-button");
@@ -32,27 +31,13 @@ qx.Class.define("osparc.support.ConversationsPage", {
 
   events: {
     "openConversation": "qx.event.type.Data",
-    "createConversationBookCall": "qx.event.type.Event",
+    "createConversation": "qx.event.type.Data",
   },
 
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "conversations-intro-text": {
-          control = new qx.ui.basic.Label().set({
-            rich: true,
-            font: "text-14",
-          });
-          const isSupportUser = osparc.store.Groups.getInstance().amIASupportUser();
-          control.set({
-            value: isSupportUser ?
-              this.tr("Thanks for being here! Let's help every user feel supported.") :
-              this.tr("Need help or want to share feedback? You're in the right place."),
-          });
-          this._add(control);
-          break;
-        }
         case "conversations-list": {
           control = new osparc.support.Conversations();
           control.addListener("openConversation", e => {
@@ -78,7 +63,7 @@ qx.Class.define("osparc.support.ConversationsPage", {
             allowGrowX: false,
             center: true,
           });
-          control.addListener("execute", () => this.fireDataEvent("openConversation", null), this);
+          control.addListener("execute", () => this.fireDataEvent("createConversation", "askAQuestion"), this);
           this.getChildControl("buttons-layout").add(control);
           break;
         case "book-a-call-button":
@@ -87,7 +72,7 @@ qx.Class.define("osparc.support.ConversationsPage", {
             allowGrowX: false,
             center: true,
           });
-          control.addListener("execute", () => this.fireEvent("createConversationBookCall"), this);
+          control.addListener("execute", () => this.fireDataEvent("createConversation", "bookACall"), this);
           this.getChildControl("buttons-layout").add(control);
           break;
       }
