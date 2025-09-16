@@ -88,7 +88,7 @@ async def get_task_result(
             await long_running_manager.tasks_manager.remove_task(
                 task_id,
                 with_task_context=task_context,
-                wait_for_removal=True,
+                wait_for_removal=False,
             )
 
 
@@ -98,10 +98,7 @@ async def remove_task(
     *,
     task_context: TaskContext,
     task_id: TaskId,
-    wait_for_removal: bool,
 ) -> None:
     await long_running_manager.tasks_manager.remove_task(
-        task_id,
-        with_task_context=task_context,
-        wait_for_removal=wait_for_removal,
+        task_id, with_task_context=task_context, wait_for_removal=False
     )
