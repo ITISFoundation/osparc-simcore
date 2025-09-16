@@ -778,8 +778,8 @@ qx.Class.define("osparc.utils.Utils", {
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
 
-    uuidToShort: function() {
-      return this.uuidV4().split("-")[0];
+    uuidToShort: function(uuid) {
+      return uuid.split("-")[0];
     },
 
     isInZ43: function() {
