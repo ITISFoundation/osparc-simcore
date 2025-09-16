@@ -145,6 +145,7 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
           el.querySelectorAll("img").forEach(img => {
             if (!img.complete) {
               img.addEventListener("load", () => this.__scheduleResize(), { once: true });
+              img.addEventListener("error", () => this.__scheduleResize(), { once: true });
             }
           });
         }
