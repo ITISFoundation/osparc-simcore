@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from celery import Celery  # type: ignore[import-untyped]
+from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
@@ -18,6 +19,7 @@ from servicelib.celery.models import (
     TaskUUID,
 )
 from servicelib.celery.task_manager import TaskManager
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
@@ -56,20 +58,35 @@ class CeleryTaskManager:
                 if task_metadata.ephemeral
                 else self._celery_settings.CELERY_RESULT_EXPIRES
             )
-            await self._task_info_store.create_task(
-                task_id, task_metadata, expiry=expiry
-            )
 
             try:
+                await self._task_info_store.create_task(
+                    task_id, task_metadata, expiry=expiry
+                )
                 self._celery_app.send_task(
                     task_metadata.name,
                     task_id=task_id,
                     kwargs={"task_id": task_id} | task_params,
                     queue=task_metadata.queue.value,
                 )
-            except Exception:
-                _logger.exception("Task '%s' submission failed", task_metadata.name)
-                await self._task_info_store.remove_task(task_id)
+            except CeleryError as exc:
+                _logger.exception(
+                    **create_troubleshootting_log_kwargs(
+                        user_error_msg="Unable to submit task",
+                        error=exc,
+                        error_context={
+                            "task_id": task_id,
+                            "task_name": task_metadata.name,
+                        },
+                    )
+                )
+                try:
+                    await self._task_info_store.remove_task(task_id)
+                except CeleryError:
+                    _logger.warning(
+                        "Unable to cleanup task '%s' during error handling",
+                        task_id,
+                    )
                 raise
 
             return task_uuid
