@@ -71,9 +71,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
         }
         case "thumbnail": {
           control = osparc.utils.Utils.createThumbnail(32);
-          const meGroup = osparc.store.Groups.getInstance().getGroupMe();
+          const authStore = osparc.auth.Data.getInstance();
           control.set({
-            source: meGroup.getThumbnail(),
+            source: authStore.getAvatar(32),
             alignX: "center",
             alignY: "middle",
             marginRight: 8,

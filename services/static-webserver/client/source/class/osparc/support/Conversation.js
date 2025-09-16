@@ -156,7 +156,7 @@ qx.Class.define("osparc.support.Conversation", {
               if (
                 this.__messages.length === 1 &&
                 this.__messages[0]["systemMessageType"] &&
-                osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL
+                this.__messages[0]["systemMessageType"] === osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL
               ) {
                 isBookACall = true;
               }
