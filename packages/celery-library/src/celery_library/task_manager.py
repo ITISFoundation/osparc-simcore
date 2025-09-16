@@ -86,6 +86,7 @@ class CeleryTaskManager:
                     _logger.warning(
                         "Unable to cleanup task '%s' during error handling",
                         task_id,
+                        exc_info=True,
                     )
                 raise TaskSubmissionError(
                     task_name=task_metadata.name,
