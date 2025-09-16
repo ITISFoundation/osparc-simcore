@@ -163,6 +163,12 @@ qx.Class.define("osparc.auth.Data", {
       let friendlyRole = role.replace(/_/g, " ");
       friendlyRole = osparc.utils.Utils.firstsUp(friendlyRole);
       return friendlyRole;
-    }
+    },
+
+    getAvatar: function(size) {
+      const email = this.getEmail();
+      const userName = this.getUserName();
+      return osparc.utils.Avatar.emailToThumbnail(email, userName, size);
+    },
   }
 });
