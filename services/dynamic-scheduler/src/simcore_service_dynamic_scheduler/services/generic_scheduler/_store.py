@@ -168,22 +168,6 @@ class Store:
         )
 
 
-class OperationRemovalProxy:
-    def __init__(self, *, store: Store, schedule_id: ScheduleId) -> None:
-        self._store = store
-        self._schedule_id = schedule_id
-
-    async def remove(self) -> None:
-        found_keys = [
-            x
-            async for x in self._store.redis.scan_iter(
-                match=f"{_get_scheduler_data_hash_key(schedule_id=self._schedule_id)}*"
-            )
-        ]
-        if found_keys:
-            await self._store.remove(*found_keys)
-
-
 class _UpdateScheduleDataDict(TypedDict):
     operation_name: NotRequired[OperationName]
     group_index: NotRequired[NonNegativeInt]
@@ -414,6 +398,22 @@ class OperationContextProxy:
 
     async def remove(self) -> None:
         await self._store.remove(self._get_hash_key())
+
+
+class OperationRemovalProxy:
+    def __init__(self, *, store: Store, schedule_id: ScheduleId) -> None:
+        self._store = store
+        self._schedule_id = schedule_id
+
+    async def remove(self) -> None:
+        found_keys = [
+            x
+            async for x in self._store.redis.scan_iter(
+                match=f"{_get_scheduler_data_hash_key(schedule_id=self._schedule_id)}*"
+            )
+        ]
+        if found_keys:
+            await self._store.remove(*found_keys)
 
 
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
