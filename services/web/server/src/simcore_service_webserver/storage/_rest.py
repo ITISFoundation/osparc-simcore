@@ -47,7 +47,10 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     delete_paths as remote_delete_paths,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data, start_search
+from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
+    start_export_data,
+    start_search,
+)
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
@@ -57,7 +60,7 @@ from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
-from ..tasks._exception_handlers import handle_export_data_exceptions
+from ..tasks._exception_handlers import handle_exceptions
 from ..utils import get_job_filter
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
@@ -481,7 +484,7 @@ async def delete_file(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("storage.files.*")
-@handle_export_data_exceptions
+@handle_exceptions
 async def export_data(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID
@@ -521,12 +524,10 @@ async def export_data(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(
-    _storage_locations_prefix + "/{location_id}/search", name="search"
-)
+@routes.post(_storage_locations_prefix + "/{location_id}/search", name="search")
 @login_required
 @permission_required("storage.files.*")
-@handle_export_data_exceptions
+@handle_exceptions
 async def search(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID

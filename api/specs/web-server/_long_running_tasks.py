@@ -13,7 +13,7 @@ from servicelib.aiohttp.long_running_tasks._routes import _PathParam
 from servicelib.long_running_tasks.models import TaskGet, TaskStatus
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.tasks._exception_handlers import (
-    _TO_HTTP_ERROR_MAP as export_data_http_error_map,
+    _TO_HTTP_ERROR_MAP,
 )
 
 router = APIRouter(
@@ -23,16 +23,15 @@ router = APIRouter(
     ],
 )
 
-_export_data_responses: dict[int | str, dict[str, Any]] = {
-    i.status_code: {"model": EnvelopedError}
-    for i in export_data_http_error_map.values()
+_responses: dict[int | str, dict[str, Any]] = {
+    i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
 }
 
 
 @router.get(
     "/tasks",
     response_model=Envelope[list[TaskGet]],
-    responses=_export_data_responses,
+    responses=_responses,
 )
 def get_async_jobs():
     """Lists all long running tasks"""
@@ -41,7 +40,7 @@ def get_async_jobs():
 @router.get(
     "/tasks/{task_id}",
     response_model=Envelope[TaskStatus],
-    responses=_export_data_responses,
+    responses=_responses,
 )
 def get_async_job_status(
     _path_params: Annotated[_PathParam, Depends()],
@@ -51,7 +50,7 @@ def get_async_job_status(
 
 @router.delete(
     "/tasks/{task_id}",
-    responses=_export_data_responses,
+    responses=_responses,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def cancel_async_job(
@@ -63,7 +62,7 @@ def cancel_async_job(
 @router.get(
     "/tasks/{task_id}/result",
     response_model=Any,
-    responses=_export_data_responses,
+    responses=_responses,
 )
 def get_async_job_result(
     _path_params: Annotated[_PathParam, Depends()],

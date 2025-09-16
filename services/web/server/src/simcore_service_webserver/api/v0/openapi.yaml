@@ -7939,7 +7939,7 @@ paths:
             schema:
               $ref: '#/components/schemas/DataExportPost'
       responses:
-        '200':
+        '202':
           description: Successful Response
           content:
             application/json:
@@ -7974,7 +7974,7 @@ paths:
       tags:
       - storage
       summary: Search
-      description: Search
+      description: Starts a files/folders search
       operationId: search
       parameters:
       - name: location_id
@@ -7990,12 +7990,36 @@ paths:
             schema:
               $ref: '#/components/schemas/SearchBodyParams'
       responses:
-        '200':
+        '202':
           description: Successful Response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/trash:empty:
     post:
       tags:
