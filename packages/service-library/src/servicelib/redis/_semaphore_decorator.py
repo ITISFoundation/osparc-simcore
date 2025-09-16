@@ -5,7 +5,7 @@ import logging
 import socket
 from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import asynccontextmanager
-from typing import Any, ParamSpec, TypeVar
+from typing import Any, AsyncContextManager, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
 
@@ -210,7 +210,10 @@ def with_limited_concurrency_cm(
     ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
     blocking: bool = True,
     blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
-) -> Callable[[Callable[P, AsyncIterator[R]]], Callable[P, AsyncIterator[R]]]:
+) -> Callable[
+    [Callable[P, AsyncContextManager[R]]],
+    Callable[P, AsyncContextManager[R]],
+]:
     """
     Decorator to limit concurrent execution of async context managers using a distributed semaphore.
 
@@ -244,9 +247,10 @@ def with_limited_concurrency_cm(
     """
 
     def _decorator(
-        cm_func: Callable[P, AsyncIterator[R]],
-    ) -> Callable[P, AsyncIterator[R]]:
+        cm_func: Callable[P, AsyncContextManager[R]],
+    ) -> Callable[P, AsyncContextManager[R]]:
         @functools.wraps(cm_func)
+        @asynccontextmanager
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> AsyncIterator[R]:
             semaphore, semaphore_key = _create_semaphore(
                 redis_client,
@@ -259,11 +263,13 @@ def with_limited_concurrency_cm(
                 kwargs=kwargs,
             )
 
-            async with _managed_semaphore_execution(
-                semaphore, semaphore_key, ttl, f"context_manager_{cm_func.__name__}"
+            async with (
+                _managed_semaphore_execution(
+                    semaphore, semaphore_key, ttl, f"context_manager_{cm_func.__name__}"
+                ),
+                cm_func(*args, **kwargs) as value,
             ):
-                async for value in cm_func(*args, **kwargs):
-                    yield value
+                yield value
 
         return _wrapper
 

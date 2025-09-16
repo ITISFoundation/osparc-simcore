@@ -401,19 +401,19 @@ async def test_context_manager_basic_functionality(
 ):
     call_count = 0
 
-    @asynccontextmanager
     @with_limited_concurrency_cm(
         redis_client_sdk,
         key=semaphore_name,
         capacity=1,
     )
+    @asynccontextmanager
     async def limited_context_manager():
         nonlocal call_count
         call_count += 1
         yield call_count
 
     # Multiple concurrent context managers
-    async def use_context_manager():
+    async def use_context_manager() -> int:
         async with limited_context_manager() as value:
             await asyncio.sleep(0.1)
             return value
@@ -433,12 +433,12 @@ async def test_context_manager_capacity_enforcement(
     concurrent_count = 0
     max_concurrent = 0
 
-    @asynccontextmanager
     @with_limited_concurrency_cm(
         redis_client_sdk,
         key=semaphore_name,
         capacity=2,
     )
+    @asynccontextmanager
     async def limited_context_manager():
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
@@ -449,12 +449,12 @@ async def test_context_manager_capacity_enforcement(
         finally:
             concurrent_count -= 1
 
-    async def use_context_manager():
+    async def use_context_manager() -> None:
         async with limited_context_manager():
             await asyncio.sleep(0.1)
 
-    # Start 5 concurrent context managers
-    tasks = [asyncio.create_task(use_context_manager()) for _ in range(5)]
+    # Start concurrent context managers
+    tasks = [asyncio.create_task(use_context_manager()) for _ in range(20)]
     await asyncio.gather(*tasks)
 
     # Should never exceed capacity of 2
@@ -465,12 +465,12 @@ async def test_context_manager_exception_handling(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
-    @asynccontextmanager
     @with_limited_concurrency_cm(
         redis_client_sdk,
         key=semaphore_name,
         capacity=1,
     )
+    @asynccontextmanager
     async def failing_context_manager():
         yield
         raise RuntimeError("Test exception")
@@ -480,12 +480,13 @@ async def test_context_manager_exception_handling(
             pass
 
     # Semaphore should be released even after exception
-    @asynccontextmanager
+
     @with_limited_concurrency_cm(
         redis_client_sdk,
         key=semaphore_name,
         capacity=1,
     )
+    @asynccontextmanager
     async def success_context_manager():
         yield "success"
 
@@ -502,13 +503,13 @@ async def test_context_manager_auto_renewal(
     work_started = asyncio.Event()
     work_completed = asyncio.Event()
 
-    @asynccontextmanager
     @with_limited_concurrency_cm(
         redis_client_sdk,
         key=semaphore_name,
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
+    @asynccontextmanager
     async def long_running_context_manager():
         work_started.set()
         yield "data"
@@ -558,12 +559,12 @@ async def test_context_manager_with_callable_parameters(
     def get_capacity(user_id: str, resource: str) -> int:
         return 2
 
-    @asynccontextmanager
     @with_limited_concurrency_cm(
         get_redis_client,
         key=get_key,
         capacity=get_capacity,
     )
+    @asynccontextmanager
     async def process_user_resource_cm(user_id: str, resource: str):
         executed_keys.append(f"{user_id}-{resource}")
         yield f"processed-{user_id}-{resource}"
@@ -597,7 +598,6 @@ async def test_context_manager_non_blocking_behavior(
 ):
     started_event = asyncio.Event()
 
-    @asynccontextmanager
     @with_limited_concurrency_cm(
         redis_client_sdk,
         key=semaphore_name,
@@ -605,6 +605,7 @@ async def test_context_manager_non_blocking_behavior(
         blocking=True,
         blocking_timeout=datetime.timedelta(seconds=0.1),
     )
+    @asynccontextmanager
     async def limited_context_manager():
         started_event.set()
         yield
@@ -619,7 +620,7 @@ async def test_context_manager_non_blocking_behavior(
     await started_event.wait()  # Wait until semaphore is actually acquired
 
     # Second context manager should timeout and raise an exception
-    @asynccontextmanager
+
     @with_limited_concurrency_cm(
         redis_client_sdk,
         key=semaphore_name,
@@ -627,6 +628,7 @@ async def test_context_manager_non_blocking_behavior(
         blocking=True,
         blocking_timeout=datetime.timedelta(seconds=0.1),
     )
+    @asynccontextmanager
     async def timeout_context_manager():
         yield
 
@@ -645,13 +647,13 @@ async def test_context_manager_lose_semaphore_raises(
 ):
     work_started = asyncio.Event()
 
-    @asynccontextmanager
     @with_limited_concurrency_cm(
         redis_client_sdk,
         key=semaphore_name,
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
+    @asynccontextmanager
     async def context_manager_that_should_fail():
         work_started.set()
         yield "data"

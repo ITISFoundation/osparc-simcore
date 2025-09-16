@@ -101,22 +101,30 @@ class DistributedSemaphore(BaseModel):
     ] = DEFAULT_FACTORY
 
     # Private state attributes (not part of the model)
-    _acquire_script: ClassVar[AsyncScript]
-    _count_script: ClassVar[AsyncScript]
-    _release_script: ClassVar[AsyncScript]
-    _renew_script: ClassVar[AsyncScript]
+    acquire_script: ClassVar[AsyncScript | None] = None
+    count_script: ClassVar[AsyncScript | None] = None
+    release_script: ClassVar[AsyncScript | None] = None
+    renew_script: ClassVar[AsyncScript | None] = None
 
     @classmethod
-    def _register_scripts(cls, redis_client) -> None:
-        if cls._acquire_script is None:
-            cls._acquire_script = redis_client.register_script(ACQUIRE_SEMAPHORE_SCRIPT)
-            cls._count_script = redis_client.register_script(COUNT_SEMAPHORE_SCRIPT)
-            cls._release_script = redis_client.register_script(RELEASE_SEMAPHORE_SCRIPT)
-            cls._renew_script = redis_client.register_script(RENEW_SEMAPHORE_SCRIPT)
+    def _register_scripts(cls, redis_client: RedisClientSDK) -> None:
+        if cls.acquire_script is None:
+            cls.acquire_script = redis_client.redis.register_script(
+                ACQUIRE_SEMAPHORE_SCRIPT
+            )
+            cls.count_script = redis_client.redis.register_script(
+                COUNT_SEMAPHORE_SCRIPT
+            )
+            cls.release_script = redis_client.redis.register_script(
+                RELEASE_SEMAPHORE_SCRIPT
+            )
+            cls.renew_script = redis_client.redis.register_script(
+                RENEW_SEMAPHORE_SCRIPT
+            )
 
     def __init__(self, **data) -> None:
         super().__init__(**data)
-        type(self)._register_scripts(self.redis_client)  # noqa: SLF001
+        self.__class__._register_scripts(self.redis_client)  # noqa: SLF001
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -196,7 +204,7 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the release Lua script atomically
-        result = await type(self)._release_script(  # noqa: SLF001
+        result = await type(self).release_script(  # noqa: SLF001
             keys=(
                 self.semaphore_key,
                 self.holder_key,
@@ -231,7 +239,7 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the Lua script atomically
-        result = await type(self)._acquire_script(  # noqa: SLF001
+        result = await type(self).acquire_script(  # noqa: SLF001
             keys=(self.semaphore_key, self.holder_key),
             args=(self.instance_id, str(self.capacity), str(ttl_seconds)),
             client=self.redis_client.redis,
@@ -274,7 +282,7 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the renewal Lua script atomically
-        result = await type(self)._renew_script(  # noqa: SLF001
+        result = await type(self).renew_script(  # noqa: SLF001
             keys=(self.semaphore_key, self.holder_key),
             args=(
                 self.instance_id,
@@ -322,7 +330,7 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the count Lua script atomically
-        result = await type(self)._count_script(  # noqa: SLF001
+        result = await type(self).count_script(  # noqa: SLF001
             keys=(self.semaphore_key,),
             args=(str(ttl_seconds),),
             client=self.redis_client.redis,
