@@ -59,7 +59,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
         ),
     ] = 50
     COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED: bool = True
-    COMPUTATIONAL_BACKEND_DASK_CLIENT_MAX_DISTRIBUTED_CONCURRENCY: Annotated[
+    COMPUTATIONAL_BACKEND_PER_CLUSTER_MAX_DISTRIBUTED_CONCURRENT_CONNECTIONS: Annotated[
         PositiveInt,
         Field(
             description="defines how many concurrent connections to each dask scheduler are allowed accross all director-v2 replicas"

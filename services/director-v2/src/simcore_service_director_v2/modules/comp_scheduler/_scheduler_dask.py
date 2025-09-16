@@ -95,7 +95,7 @@ def _get_semaphore_capacity_from_scheduler(
     **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
 ) -> int:
     return (
-        scheduler.settings.COMPUTATIONAL_BACKEND_DASK_CLIENT_MAX_DISTRIBUTED_CONCURRENCY
+        scheduler.settings.COMPUTATIONAL_BACKEND_PER_CLUSTER_MAX_DISTRIBUTED_CONCURRENT_CONNECTIONS
     )
 
 
