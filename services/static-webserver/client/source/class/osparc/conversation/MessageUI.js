@@ -98,21 +98,26 @@ qx.Class.define("osparc.conversation.MessageUI", {
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;
-        case "message-content": {
-          // outer bubble
-          const bubble = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
-            // maybe not needed
+        case "message-bubble":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
             alignX: isMyMessage ? "right" : "left"
           })).set({
             decorator: "chat-bubble",
             padding: 8,
             allowGrowX: false,
           });
-          control = new osparc.ui.markdown.Markdown2();
-          bubble.add(control);
-          this.getChildControl("main-layout").addAt(bubble, 1);
+          if (isMyMessage) {
+            bubbleStyle = { "border-top-right-radius": "0px" };
+          } else {
+            bubbleStyle = { "border-top-left-radius": "0px" };
+          }
+          control.getContentElement().setStyles(bubbleStyle);
+          this.getChildControl("main-layout").addAt(control, 1);
           break;
-        }
+        case "message-content":
+          control = new osparc.ui.markdown.Markdown2();
+          this.getChildControl("message-bubble").add(control);
+          break;
         case "menu-button": {
           const buttonSize = 22;
           control = new qx.ui.form.MenuButton().set({
