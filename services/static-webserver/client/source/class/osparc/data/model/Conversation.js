@@ -242,7 +242,7 @@ qx.Class.define("osparc.data.model.Conversation", {
     renameConversation: function(newName) {
       osparc.store.ConversationsSupport.getInstance().renameConversation(this.getConversationId(), newName)
         .then(() => {
-          this.setNameAlias(newName);
+          this.setName(newName);
         });
     },
 

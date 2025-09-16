@@ -40,6 +40,9 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
   statics: {
     isMyMessage: function(message) {
+      if (message["userGroupId"] === "system") {
+        return false;
+      }
       return message && osparc.auth.Data.getInstance().getGroupId() === message["userGroupId"];
     }
   },
@@ -163,15 +166,19 @@ qx.Class.define("osparc.conversation.MessageUI", {
       const messageContent = this.getChildControl("message-content");
       messageContent.setValue(message["content"]);
 
-      osparc.store.Users.getInstance().getUser(message["userGroupId"])
-        .then(user => {
-          thumbnail.setUser(user);
-          userName.setValue(user ? user.getLabel() : "Unknown user");
-        })
-        .catch(() => {
+      if (message["userGroupId"] === "system") {
+        userName.setValue("Support");
+      } else {
+        osparc.store.Users.getInstance().getUser(message["userGroupId"])
+          .then(user => {
+            thumbnail.setUser(user);
+            userName.setValue(user ? user.getLabel() : "Unknown user");
+          })
+          .catch(() => {
             thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());
             userName.setValue("Unknown user");
-        });
+          });
+      }
 
       this.getChildControl("spacer");
 
@@ -207,9 +214,19 @@ qx.Class.define("osparc.conversation.MessageUI", {
         resizable: true,
         showClose: true,
       });
-      addMessage.addListener("messageUpdated", e => {
-        win.close();
-        this.fireDataEvent("messageUpdated", e.getData());
+      addMessage.addListener("updateMessage", e => {
+        const content = e.getData();
+        const conversationId = message["conversationId"];
+        const messageId = message["messageId"];
+        if (this.__studyData) {
+          promise = osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], conversationId, messageId, content);
+        } else {
+          promise = osparc.store.ConversationsSupport.getInstance().editMessage(conversationId, messageId, content);
+        }
+        promise.then(data => {
+          win.close();
+          this.fireDataEvent("messageUpdated", data);
+        });
       });
     },
 
