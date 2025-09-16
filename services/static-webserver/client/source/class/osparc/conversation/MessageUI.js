@@ -106,11 +106,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
             allowGrowX: false,
             padding: 8,
           });
-          if (isMyMessage) {
-            bubbleStyle = { "border-top-right-radius": "0px" };
-          } else {
-            bubbleStyle = { "border-top-left-radius": "0px" };
-          }
+          const bubbleStyle = isMyMessage ? { "border-top-right-radius": "0px" } : { "border-top-left-radius": "0px" };
           control.getContentElement().setStyles(bubbleStyle);
           this.getChildControl("main-layout").addAt(control, 1);
           break;
