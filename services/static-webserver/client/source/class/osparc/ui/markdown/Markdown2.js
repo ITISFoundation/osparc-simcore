@@ -58,7 +58,7 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
 
     this.addListenerOnce("appear", () => {
       this.getContentElement().addClass("osparc-markdown");
-      // this.__scheduleResize(); // first paint sizing
+      this.__scheduleResize(); // first paint sizing
     });
   },
 
@@ -70,15 +70,14 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
       check: "String",
       apply: "__applyMarkdown"
     },
-
-    noMargin: {
-      check: "Boolean",
-      init: false
-    }
   },
 
   events: {
     "resized": "qx.event.type.Event",
+  },
+
+  statics: {
+    WRAP_CLASS: "osparc-md-root"
   },
 
   members: {
@@ -115,7 +114,8 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
 
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
 
-        this.setHtml(safeHtml);
+        // flow-root prevents margin collapsing; inline style avoids extra stylesheet juggling
+        this.setHtml(`<div class="${this.self().WRAP_CLASS}" style="display:flow-root;">${safeHtml}</div>`);
 
         // resize once DOM is updated/painted
         this.__scheduleResize();
@@ -154,17 +154,23 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
       this.setMinHeight(0);
 
       window.requestAnimationFrame(() => {
-        // look inside the Html content element
-        const inner = domElement.firstElementChild || domElement;
+        // force reflow
+        void domElement.offsetHeight;
+
+        // measure the wrapper we injected (covers ALL children)
+        const inner = domElement.querySelector("."+this.self().WRAP_CLASS) || domElement;
         const rect = inner.getBoundingClientRect();
         const contentH = Math.ceil(rect ? rect.height : 0);
 
-        const insets = this.getInsets ? this.getInsets() : {top: 0, bottom: 0};
+        // include widget insets (decorator/padding/border)
+        const insets = this.getInsets ? this.getInsets() : { top: 0, bottom: 0 };
         const totalH = Math.max(0, contentH + (insets.top || 0) + (insets.bottom || 0));
 
         this.setMinHeight(totalH);
         this.setHeight(totalH);
-        console.log("Markdown2 resized to height", totalH);
+        console.log("totalH", totalH);
+
+        this.fireEvent("resized");
       });
     },
   }
