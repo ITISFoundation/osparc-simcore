@@ -47,7 +47,7 @@ async def create_api_key(
                 expires_at=(sa.func.now() + expiration) if expiration else None,
             )
             .on_conflict_do_update(
-                index_elements=["user_id", "display_name"],
+                index_elements=["user_id", "display_name", "product_name"],
                 set_={
                     "api_key": api_key,
                     "api_secret": _hash_secret(api_secret),
