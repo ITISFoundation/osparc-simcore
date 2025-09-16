@@ -90,10 +90,11 @@ qx.Class.define("osparc.conversation.AddMessage", {
               e.preventDefault();
             }
           }, this);
-          control.getChildControl("buttons").exclude();
+          control.setCompact(true);
           control.getChildControl("text-area").getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
           });
+          // make it more compact
           this.getChildControl("add-comment-layout").add(control, {
             flex: 1
           });
@@ -102,7 +103,8 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/16").set({
             backgroundColor: "input_background",
             allowGrowX: false,
-            alignX: "right"
+            alignX: "right",
+            alignY: "middle",
           });
           control.getContentElement().setStyles({
             "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("default-button-active"),
@@ -161,9 +163,6 @@ qx.Class.define("osparc.conversation.AddMessage", {
         // edit mode
         const commentField = this.getChildControl("comment-field");
         commentField.setText(message["content"]);
-
-        const addMessageButton = this.getChildControl("add-comment-button");
-        addMessageButton.setLabel(this.tr("Edit message"));
       }
     },
 

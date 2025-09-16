@@ -105,9 +105,6 @@ qx.Class.define("osparc.support.Conversation", {
           this.bind("conversation", control, "conversationId", {
             converter: conversation => conversation ? conversation.getConversationId() : null
           });
-          // make it more compact
-          control.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();
-          control.getChildControl("comment-field").getChildControl("subtitle").exclude();
           this._addAt(control, 4);
           break;
         case "share-project-layout":
