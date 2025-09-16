@@ -19,7 +19,6 @@ from servicelib.celery.models import (
     TaskUUID,
 )
 from servicelib.celery.task_manager import TaskManager
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
@@ -70,16 +69,6 @@ class CeleryTaskManager:
                     queue=task_metadata.queue.value,
                 )
             except CeleryError as exc:
-                _logger.exception(
-                    **create_troubleshootting_log_kwargs(
-                        user_error_msg="Unable to submit task",
-                        error=exc,
-                        error_context={
-                            "task_id": task_id,
-                            "task_name": task_metadata.name,
-                        },
-                    )
-                )
                 try:
                     await self._task_info_store.remove_task(task_id)
                 except CeleryError:
