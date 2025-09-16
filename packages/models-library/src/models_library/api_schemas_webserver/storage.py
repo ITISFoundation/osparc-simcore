@@ -61,4 +61,4 @@ class SearchBodyParams(InputSchema):
          Field(
               description="Name pattern with wildcard support (* and ?). Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
          )
-]
+    ]
