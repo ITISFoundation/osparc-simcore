@@ -293,6 +293,13 @@ qx.Class.define("osparc.data.model.Conversation", {
       return null;
     },
 
+    getFogbugzLink: function() {
+      if (this.getExtraContext() && "fogbugz_case_url" in this.getExtraContext()) {
+        return this.getExtraContext()["fogbugz_case_url"];
+      }
+      return null;
+    },
+
     getAppointment: function() {
       if (this.getExtraContext() && "appointment" in this.getExtraContext()) {
         return this.getExtraContext()["appointment"];

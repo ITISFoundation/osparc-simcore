@@ -342,6 +342,9 @@ qx.Class.define("osparc.study.Conversation", {
       switch (message["type"]) {
         case "MESSAGE":
           control = new osparc.conversation.MessageUI(message, this.__studyData);
+          control.getChildControl("message-content").set({
+            measurerMaxWidth: 400,
+          });
           control.addListener("messageUpdated", e => this.updateMessage(e.getData()));
           control.addListener("messageDeleted", e => this.deleteMessage(e.getData()));
           break;
