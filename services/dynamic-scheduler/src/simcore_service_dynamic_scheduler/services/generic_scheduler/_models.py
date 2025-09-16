@@ -7,6 +7,8 @@ StepGroupName: TypeAlias = str
 StepName: TypeAlias = str
 
 OperationContext: TypeAlias = dict[str, Any]
+ProvidedOperationContext: TypeAlias = dict[str, Any]
+RequiredOperationContext: TypeAlias = dict[str, Any]
 
 
 class StepStatus(str, Enum):

@@ -25,15 +25,24 @@ class StepNotFoundInoperationError(BaseGenericSchedulerError):
     )
 
 
-class GroupNotFoundInOperationError(BaseGenericSchedulerError):
-    msg_template: str = (
-        "Group with index '{group_index}' not found for operation '{operation_name}' "
-        "which has '{operations_count}' groups"
-    )
-
-
 class UnexpectedStepHandlingError(BaseGenericSchedulerError):
     msg_template: str = (
         "During '{direction}' of steps_statuses='{steps_statuses}' for schedule_id='{schedule_id}' "
         "reached the end of the handler. This should not happen."
+    )
+
+
+class OperationContextValueIsNoneError(BaseGenericSchedulerError):
+    msg_template: str = "Values of context cannot be None: {operation_context}"
+
+
+class ProvidedOperationContextKeysAreMissingError(BaseGenericSchedulerError):
+    msg_template: str = (
+        "Provided context {provided_context} is missing keys {missing_keys}, was expecting {expected_keys}"
+    )
+
+
+class InitialOperationContextKeyNotAllowedError(BaseGenericSchedulerError):
+    msg_template: str = (
+        "Initial operation context cannot contain key '{key}' since it is provided by the operation: {operation}"
     )
