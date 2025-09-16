@@ -103,7 +103,6 @@ qx.Class.define("osparc.conversation.MessageUI", {
             alignX: isMyMessage ? "right" : "left"
           })).set({
             decorator: "chat-bubble",
-            padding: 8,
             allowGrowX: false,
           });
           if (isMyMessage) {
