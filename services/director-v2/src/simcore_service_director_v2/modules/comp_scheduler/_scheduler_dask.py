@@ -90,7 +90,6 @@ def _get_semaphore_cluster_redis_key(
     return f"{APP_NAME}-cluster-user_id_{user_id}-wallet_id_{run_metadata.get('wallet_id')}"
 
 
-@asynccontextmanager
 @with_limited_concurrency_cm(
     _get_redis_client_from_scheduler,
     key=_get_semaphore_cluster_redis_key,
@@ -98,6 +97,7 @@ def _get_semaphore_cluster_redis_key(
     blocking=True,
     blocking_timeout=None,
 )
+@asynccontextmanager
 async def _cluster_dask_client(
     user_id: UserID,
     scheduler: "DaskScheduler",
