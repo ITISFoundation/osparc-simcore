@@ -13,16 +13,11 @@
 
 /* global marked */
 
-/**
- * This class is just a special kind of rich label that takes markdown raw text, compiles it to HTML,
- * sanitizes it and applies it to its value property.
- */
 qx.Class.define("osparc.ui.markdown.Markdown2", {
   extend: qx.ui.embed.Html,
 
   /**
-   * Markdown constructor. It directly accepts markdown as its first argument.
-   * @param {String} markdown Plain text accepting markdown syntax. Its compiled version will be set in the value property of the label.
+   * @param {String} markdown Plain text accepting markdown syntax
    */
   construct: function(markdown) {
     this.base(arguments);
