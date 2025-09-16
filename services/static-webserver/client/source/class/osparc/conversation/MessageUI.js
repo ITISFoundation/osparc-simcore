@@ -69,6 +69,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
         case "thumbnail":
           control = new osparc.ui.basic.UserThumbnail(32).set({
             marginTop: 4,
+            alignY: "top",
           });
           this._add(control, {
             row: 0,
@@ -102,15 +103,11 @@ qx.Class.define("osparc.conversation.MessageUI", {
           break;
         case "message-content": {
           // outer bubble
-          const maxWidth = 300;
           const bubble = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
             decorator: "chat-bubble",
             padding: 8,
-            maxWidth,
           });
-          control = new osparc.ui.markdown.Markdown2().set({
-            maxWidth,
-          });
+          control = new osparc.ui.markdown.Markdown2();
           bubble.add(control);
           this._add(bubble, {
             row: 1,
