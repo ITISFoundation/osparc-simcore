@@ -5,36 +5,12 @@ from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-i
 )
 from celery_library.task import register_task
 from celery_library.types import register_celery_types, register_pydantic_types
-from models_library.functions import (
-    RegisteredProjectFunction,
-    RegisteredProjectFunctionJob,
-    RegisteredPythonCodeFunction,
-    RegisteredSolverFunction,
-    RegisteredSolverFunctionJob,
-)
 from servicelib.logging_utils import log_context
 
-from ...api.dependencies.authentication import Identity
-from ...models.api_resources import JobLinks
-from ...models.domain.functions import PreRegisteredFunctionJobData
-from ...models.schemas.jobs import JobInputs, JobPricingSpecification
+from ...models.domain.celery_models import pydantic_types_to_register
 from .functions_tasks import run_function
 
 _logger = logging.getLogger(__name__)
-
-pydantic_types_to_register = (
-    Identity,
-    JobInputs,
-    JobLinks,
-    JobPricingSpecification,
-    PreRegisteredFunctionJobData,
-    RegisteredProjectFunction,
-    RegisteredProjectFunctionJob,
-    RegisteredPythonCodeFunction,
-    RegisteredProjectFunctionJob,
-    RegisteredSolverFunction,
-    RegisteredSolverFunctionJob,
-)
 
 
 def setup_worker_tasks(app: Celery) -> None:

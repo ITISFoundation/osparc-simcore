@@ -17,8 +17,8 @@ from models_library.users import UserID
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from simcore_service_api_server.models.domain.celery_models import ApiWorkerTaskFilter
 
-from ...clients.celery_task_manager import get_task_filter
 from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
 from ..dependencies.authentication import get_current_user_id, get_product_name
@@ -59,9 +59,12 @@ async def list_tasks(
 ):
 
     task_manager = get_task_manager(app)
-
+    task_filter = ApiWorkerTaskFilter(
+        user_id=user_id,
+        product_name=product_name,
+    )
     tasks = await task_manager.list_tasks(
-        task_filter=get_task_filter(user_id, product_name),
+        task_filter=task_filter,
     )
 
     app_router = app.router
@@ -101,9 +104,12 @@ async def get_task_status(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-
+    task_filter = ApiWorkerTaskFilter(
+        user_id=user_id,
+        product_name=product_name,
+    )
     task_status = await task_manager.get_task_status(
-        task_filter=get_task_filter(user_id, product_name),
+        task_filter=task_filter,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -136,9 +142,12 @@ async def cancel_task(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-
+    task_filter = ApiWorkerTaskFilter(
+        user_id=user_id,
+        product_name=product_name,
+    )
     await task_manager.cancel_task(
-        task_filter=get_task_filter(user_id, product_name),
+        task_filter=task_filter,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -168,7 +177,10 @@ async def get_task_result(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = get_task_filter(user_id, product_name)
+    task_filter = ApiWorkerTaskFilter(
+        user_id=user_id,
+        product_name=product_name,
+    )
 
     task_status = await task_manager.get_task_status(
         task_filter=task_filter,
