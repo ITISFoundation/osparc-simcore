@@ -100,7 +100,7 @@ class DistributedSemaphore(BaseModel):
         ),
     ] = DEFAULT_FACTORY
 
-    # Private state attributes (not part of the model)
+    # Class and/or Private state attributes (not part of the model)
     acquire_script: ClassVar[AsyncScript | None] = None
     count_script: ClassVar[AsyncScript | None] = None
     release_script: ClassVar[AsyncScript | None] = None
@@ -108,6 +108,10 @@ class DistributedSemaphore(BaseModel):
 
     @classmethod
     def _register_scripts(cls, redis_client: RedisClientSDK) -> None:
+        """Register Lua scripts with Redis if not already done.
+        This is done once per class, not per instance. Internally the Redis client
+        caches the script SHA, so this is efficient. Even if called multiple times,
+        the script is only registered once."""
         if cls.acquire_script is None:
             cls.acquire_script = redis_client.redis.register_script(
                 ACQUIRE_SEMAPHORE_SCRIPT
@@ -206,7 +210,7 @@ class DistributedSemaphore(BaseModel):
         # Execute the release Lua script atomically
         cls = type(self)
         assert cls.release_script is not None  # nosec
-        result = await cls.release_script(
+        result = await cls.release_script(  # pylint: disable=not-callable
             keys=(
                 self.semaphore_key,
                 self.holder_key,
@@ -243,7 +247,7 @@ class DistributedSemaphore(BaseModel):
         # Execute the Lua script atomically
         cls = type(self)
         assert cls.acquire_script is not None  # nosec
-        result = await cls.acquire_script(
+        result = await cls.acquire_script(  # pylint: disable=not-callable
             keys=(self.semaphore_key, self.holder_key),
             args=(self.instance_id, str(self.capacity), str(ttl_seconds)),
             client=self.redis_client.redis,
@@ -288,7 +292,7 @@ class DistributedSemaphore(BaseModel):
         # Execute the renewal Lua script atomically
         cls = type(self)
         assert cls.renew_script is not None  # nosec
-        result = await cls.renew_script(
+        result = await cls.renew_script(  # pylint: disable=not-callable
             keys=(self.semaphore_key, self.holder_key),
             args=(
                 self.instance_id,
@@ -338,7 +342,7 @@ class DistributedSemaphore(BaseModel):
         # Execute the count Lua script atomically
         cls = type(self)
         assert cls.count_script is not None  # nosec
-        result = await cls.count_script(
+        result = await cls.count_script(  # pylint: disable=not-callable
             keys=(self.semaphore_key,),
             args=(str(ttl_seconds),),
             client=self.redis_client.redis,
