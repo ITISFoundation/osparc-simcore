@@ -46,7 +46,7 @@ qx.Class.define("osparc.editor.MarkdownEditor", {
     compact: {
       check: "Boolean",
       init: null,
-      apply: "__applyCompact"
+      apply: "__applyCompact",
     }
   },
 
