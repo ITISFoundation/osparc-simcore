@@ -23,7 +23,7 @@ from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
-from .errors import TaskNotFoundError
+from .errors import TaskNotFoundError, TaskSubmissionError
 
 _logger = logging.getLogger(__name__)
 
@@ -87,7 +87,11 @@ class CeleryTaskManager:
                         "Unable to cleanup task '%s' during error handling",
                         task_id,
                     )
-                raise
+                raise TaskSubmissionError(
+                    task_name=task_metadata.name,
+                    task_id=task_id,
+                    task_params=task_params,
+                ) from exc
 
             return task_uuid
 
