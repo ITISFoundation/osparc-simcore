@@ -151,24 +151,18 @@ async def search(
 
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
-        pages: list[SearchResult] = []
-        async for page in dsm.search(
-            user_id=user_id,
-            project_id=project_id,
-            name_pattern=name_pattern,
-        ):
-            # TODO: publish temporary result
-            pages.extend(
-                [
-                    SearchResult(
-                        name=item.file_name,
-                        project_id=item.project_id,
-                        created_at=item.created_at,
-                        modified_at=item.last_modified,
-                        is_directory=item.is_directory,
-                    )
-                    for item in page
-                ]
+        return [
+            SearchResult(
+                name=item.file_name,
+                project_id=item.project_id,
+                created_at=item.created_at,
+                modified_at=item.last_modified,
+                is_directory=item.is_directory,
             )
-
-        return pages
+            async for page in dsm.search(
+                user_id=user_id,
+                project_id=project_id,
+                name_pattern=name_pattern,
+            )
+            for item in page
+        ]

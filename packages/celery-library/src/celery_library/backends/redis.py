@@ -1,7 +1,5 @@
 import contextlib
-import json
 import logging
-from collections.abc import AsyncIterable
 from datetime import timedelta
 from typing import TYPE_CHECKING, Final
 
@@ -126,36 +124,6 @@ class RedisTaskInfoStore:
 
     async def remove_task(self, task_id: TaskID) -> None:
         await self._redis_client_sdk.redis.delete(_build_key(task_id))
-
-    async def append_task_result(self, task_id: TaskID, data: dict) -> None:
-        stream_key = f"task:{task_id}"
-        await self._redis_client_sdk.redis.xadd(
-            stream_key,
-            data,
-        )
-
-    async def stream_task_result(
-        self, task_id: str, last_id: str = "0-0"
-    ) -> AsyncIterable[dict]:
-        stream_key = f"task:{task_id}"
-        while True:
-            result = await self._redis_client_sdk.redis.xread(
-                {stream_key: last_id}, block=5000
-            )
-            if not result:
-                continue
-
-            for _, entries in result:
-                for entry_id, fields in entries:
-                    last_id = entry_id
-                    data = {
-                        k: json.loads(v) if k == "data" else v
-                        for k, v in fields.items()
-                    }
-                    yield data
-
-                    if data.get("type") == "done":
-                        return
 
     async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
         await handle_redis_returns_union_types(

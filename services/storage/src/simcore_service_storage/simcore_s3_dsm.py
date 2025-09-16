@@ -1061,7 +1061,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         Args:
             user_id: The user requesting the search
-            filename_pattern: Wildcard pattern for filename matching (e.g., "*.txt", "test_*.json")
+            name_pattern: Wildcard pattern for filename matching (e.g., "*.txt", "test_*.json")
             project_id: Optional project ID to limit search to specific project
             items_per_page: Number of items to return per page
 
