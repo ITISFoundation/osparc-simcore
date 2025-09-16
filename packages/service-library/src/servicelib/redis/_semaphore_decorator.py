@@ -43,7 +43,10 @@ async def _managed_semaphore_execution(
         raise SemaphoreAcquisitionError(name=semaphore_key, capacity=semaphore.capacity)
 
     try:
-        # Use TaskGroup for proper exception propagation
+        # NOTE: Use TaskGroup for proper exception propagation, this ensures that in case of error the context manager will be properly exited
+        # and the semaphore released.
+        # If we use create_task() directly, exceptions in the task are not propagated to the parent task
+        # and the context manager may never exit, leading to semaphore leaks.
         async with asyncio.TaskGroup() as tg:
             started_event = asyncio.Event()
 
