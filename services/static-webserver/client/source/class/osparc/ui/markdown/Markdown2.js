@@ -168,8 +168,8 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
     },
 
     __scheduleResize: function() {
-      const domElement = this.__getDomElement();
-      if (!domElement) {
+      const dom = this.__getDomElement();
+      if (!dom) {
         return;
       }
 
@@ -181,14 +181,15 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
 
       window.requestAnimationFrame(() => {
         // force reflow
-        void domElement.offsetHeight;
+        void dom.offsetHeight;
 
         // measure the wrapper we injected (covers ALL children)
-        const root = domElement.querySelector("."+this.self().MD_ROOT) || domElement;
+        const root = dom.querySelector("."+this.self().MD_ROOT) || dom;
         const meas = root.querySelector("."+this.self().MD_MEASURE) || root;
 
-        const rH = meas.getBoundingClientRect().height;
-        const rW = meas.getBoundingClientRect().width;
+        const rect = meas.getBoundingClientRect();
+        const rH = Math.ceil(rect.height || 0);
+        const rW = Math.ceil(rect.width || 0);
 
         // include widget insets (decorator/padding/border)
         const insets = this.getInsets ? this.getInsets() : { top:0, right:0, bottom:0, left:0 };
