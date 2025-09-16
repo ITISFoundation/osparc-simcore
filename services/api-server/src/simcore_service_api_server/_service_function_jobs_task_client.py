@@ -32,7 +32,6 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from servicelib.celery.models import TaskMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
-from simcore_service_api_server.clients.celery_task_manager import get_task_filter
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_function_jobs import FunctionJobService
@@ -43,6 +42,7 @@ from .exceptions.function_errors import (
     FunctionJobCacheNotFoundError,
 )
 from .models.api_resources import JobLinks
+from .models.domain.celery_models import ApiWorkerTaskFilter
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.storage import StorageService
@@ -76,7 +76,10 @@ async def _celery_task_status(
 ) -> str:
     if job_creation_task_id is None:
         return _JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS
-    task_filter = _get_task_filter(user_id, product_name)
+    task_filter = ApiWorkerTaskFilter(
+        user_id=user_id,
+        product_name=product_name,
+    )
     task_status = await task_manager.get_task_status(
         task_uuid=TaskUUID(job_creation_task_id), task_filter=task_filter
     )
@@ -357,7 +360,7 @@ class FunctionJobTaskClientService:
         )
 
         # run function in celery task
-        task_filter = get_task_filter(
+        task_filter = ApiWorkerTaskFilter(
             user_id=user_identity.user_id, product_name=user_identity.product_name
         )
 
