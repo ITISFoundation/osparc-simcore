@@ -28,10 +28,10 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
     this.base(arguments);
 
     this.set({
-      allowGrowX: true,
+      allowGrowX: false,
       allowGrowY: true,
-      overflowX: "hidden",
-      overflowY: "hidden",
+      overflowX: "hidden", // hide scrollbars
+      overflowY: "hidden", // hide scrollbars
     });
 
     const markdownCssUri = qx.util.ResourceManager.getInstance().toUri("marked/markdown.css");
@@ -77,7 +77,8 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
   },
 
   statics: {
-    WRAP_CLASS: "osparc-md-root"
+    MD_ROOT: "osparc-md-root",
+    MD_MEASURE: "osparc-md-measure",
   },
 
   members: {
@@ -119,8 +120,8 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
         const max = 220;
         if (max) {
           mdRoot = `
-            <div class="${this.self().WRAP_CLASS}" style="display:flow-root;">
-              <div class="osparc-md-measure"
+            <div class="${this.self().MD_ROOT}" style="display:flow-root;">
+              <div class="${this.self().MD_MEASURE}"
                   style="
                     display:inline-block;
                     width:max-content;
@@ -134,7 +135,7 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
           `;
         } else {
           mdRoot = `
-            <div class="${this.self().WRAP_CLASS}" style="display:flow-root;">
+            <div class="${this.self().MD_ROOT}" style="display:flow-root;">
               ${safeHtml}
             </div>`;
         }
@@ -183,8 +184,8 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
         void domElement.offsetHeight;
 
         // measure the wrapper we injected (covers ALL children)
-        const root = domElement.querySelector("."+this.self().WRAP_CLASS) || domElement;
-        const meas = root.querySelector(".osparc-md-measure") || root;
+        const root = domElement.querySelector("."+this.self().MD_ROOT) || domElement;
+        const meas = root.querySelector("."+this.self().MD_MEASURE) || root;
 
         const rH = meas.getBoundingClientRect().height;
         const rW = meas.getBoundingClientRect().width;
@@ -198,7 +199,6 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
         this.setHeight(totalH);
 
         // width: shrink-to-fit, but cap at a max
-        this.setAllowGrowX(false);     // prevent parent layout from stretching it
         this.setMaxWidth(null);        // measurer already capped; we set exact width
         this.setMinWidth(1);           // avoid 0 when empty
         this.setWidth(totalW);         // exact bubble width
