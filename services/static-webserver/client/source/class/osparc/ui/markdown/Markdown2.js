@@ -115,7 +115,30 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
 
         // flow-root prevents margin collapsing; inline style avoids extra stylesheet juggling
-        this.setHtml(`<div class="${this.self().WRAP_CLASS}" style="display:flow-root;">${safeHtml}</div>`);
+        let mdRoot;
+        const max = 220;
+        if (max) {
+          mdRoot = `
+            <div class="${this.self().WRAP_CLASS}" style="display:flow-root;">
+              <div class="osparc-md-measure"
+                  style="
+                    display:inline-block;
+                    width:max-content;
+                    max-width:${max}px;
+                    white-space:normal;
+                    overflow-wrap:anywhere; /* break long tokens */
+                  ">
+                ${safeHtml}
+              </div>
+            </div>
+          `;
+        } else {
+          mdRoot = `
+            <div class="${this.self().WRAP_CLASS}" style="display:flow-root;">
+              ${safeHtml}
+            </div>`;
+        }
+        this.setHtml(mdRoot);
 
         // resize once DOM is updated/painted
         this.__scheduleResize();
@@ -160,20 +183,25 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
         void domElement.offsetHeight;
 
         // measure the wrapper we injected (covers ALL children)
-        const inner = domElement.querySelector("."+this.self().WRAP_CLASS) || domElement;
-        const rect = inner.getBoundingClientRect();
-        const contentH = Math.ceil(rect ? rect.height : 0);
-        const contentW = Math.ceil(rect ? rect.width : 0);
+        const root = domElement.querySelector("."+this.self().WRAP_CLASS) || domElement;
+        const meas = root.querySelector(".osparc-md-measure") || root;
+
+        const rH = meas.getBoundingClientRect().height;
+        const rW = meas.getBoundingClientRect().width;
 
         // include widget insets (decorator/padding/border)
-        const insets = this.getInsets ? this.getInsets() : { top: 0, bottom: 0, left: 0, right: 0 };
-        const totalH = Math.max(0, contentH + (insets.top || 0) + (insets.bottom || 0));
-        const totalW = Math.max(0, contentW + (insets.left || 0) + (insets.right || 0));
+        const insets = this.getInsets ? this.getInsets() : { top:0, right:0, bottom:0, left:0 };
+        const totalH = Math.ceil((rH || 0) + (insets.top || 0) + (insets.bottom || 0));
+        const totalW = Math.ceil((rW || 0) + (insets.left || 0) + (insets.right || 0));
 
         this.setMinHeight(totalH);
         this.setHeight(totalH);
-        this.setMinWidth(totalW);
-        this.setWidth(totalW);
+
+        // width: shrink-to-fit, but cap at a max
+        this.setAllowGrowX(false);     // prevent parent layout from stretching it
+        this.setMaxWidth(null);        // measurer already capped; we set exact width
+        this.setMinWidth(1);           // avoid 0 when empty
+        this.setWidth(totalW);         // exact bubble width
 
         console.log("totalH", totalH, "totalW", totalW);
       });
