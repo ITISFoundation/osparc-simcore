@@ -15,7 +15,7 @@ from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 
 from .._meta import APP_NAME
-from ..celery_worker.worker_tasks.tasks import pydantic_types_to_register
+from ..models.domain.celery_models import pydantic_types_to_register
 
 _logger = logging.getLogger(__name__)
 
