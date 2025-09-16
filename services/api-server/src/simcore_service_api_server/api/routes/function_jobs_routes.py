@@ -19,11 +19,11 @@ from models_library.functions_errors import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
-from simcore_service_api_server._service_function_jobs_task_client import (
-    FunctionJobTaskClientService,
-)
 
 from ..._service_function_jobs import FunctionJobService
+from ..._service_function_jobs_task_client import (
+    FunctionJobTaskClientService,
+)
 from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
 from ...models.domain.functions import PageRegisteredFunctionJobWithorWithoutStatus
