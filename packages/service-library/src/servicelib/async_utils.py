@@ -2,10 +2,11 @@ import asyncio
 import logging
 from collections import deque
 from collections.abc import Awaitable, Callable
-from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+
+from common_library.async_tools import cancel_wait_task
 
 from . import tracing
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
@@ -54,9 +55,7 @@ async def _safe_cancel(context: Context) -> None:
     try:
         await context.in_queue.put(None)
         if context.task is not None:
-            context.task.cancel()
-            with suppress(asyncio.CancelledError):
-                await context.task
+            await cancel_wait_task(context.task, max_delay=None)
     except RuntimeError as e:
         if "Event loop is closed" in f"{e}":
             _logger.warning("event loop is closed and could not cancel %s", context)

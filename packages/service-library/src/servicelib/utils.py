@@ -1,4 +1,4 @@
-""" General utils
+"""General utils
 
 IMPORTANT: lowest level module
    I order to avoid cyclic dependences, please
@@ -245,7 +245,7 @@ async def limited_as_completed(
                         future.set_name(f"{tasks_group_prefix}-{future.get_name()}")
                     pending_futures.add(future)
 
-                except (StopIteration, StopAsyncIteration):  # noqa: PERF203
+                except (StopIteration, StopAsyncIteration):
                     completed_all_awaitables = True
             if not pending_futures:
                 return
@@ -294,8 +294,7 @@ async def limited_gather(
     log: logging.Logger = _DEFAULT_LOGGER,
     limit: int = _DEFAULT_LIMITED_CONCURRENCY,
     tasks_group_prefix: str | None = None,
-) -> list[T]:
-    ...
+) -> list[T]: ...
 
 
 @overload
@@ -305,8 +304,7 @@ async def limited_gather(
     log: logging.Logger = _DEFAULT_LOGGER,
     limit: int = _DEFAULT_LIMITED_CONCURRENCY,
     tasks_group_prefix: str | None = None,
-) -> list[T | BaseException]:
-    ...
+) -> list[T | BaseException]: ...
 
 
 async def limited_gather(
