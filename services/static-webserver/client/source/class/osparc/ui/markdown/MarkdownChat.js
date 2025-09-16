@@ -147,6 +147,9 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
             }
           });
         }
+
+        // safety net; sometimes we miss an image load or so
+        setTimeout(() => this.__scheduleResize(), 500);
       }).catch(error => console.error(error));
     },
 
@@ -197,6 +200,8 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
         this.setMaxWidth(null); // measurer already capped; we set exact width
         this.setMinWidth(1); // avoid 0 when empty
         this.setWidth(totalW);
+
+        this.fireEvent("resized");
       });
     },
   }
