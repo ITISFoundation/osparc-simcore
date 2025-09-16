@@ -290,11 +290,6 @@ async def test_get_function_job_status(
 ) -> None:
 
     _expected_return_status = status.HTTP_200_OK
-    #     status.HTTP_500_INTERNAL_SERVER_ERROR
-    #     if job_status not in ("SUCCESS", "FAILED")
-    #     and (project_job_id is None and job_creation_task_id is None)
-    #     else status.HTTP_200_OK
-    # )
 
     def _mock_task_manager(*args, **kwargs) -> CeleryTaskManager:
         async def _get_task_status(
