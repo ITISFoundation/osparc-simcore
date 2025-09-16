@@ -7,7 +7,7 @@
 
 /**
  * @asset(marked/marked.min.js)
- * @assert(marked/markdown.css)
+ * @asset(marked/markdown.css)
  * @ignore(marked)
  */
 
