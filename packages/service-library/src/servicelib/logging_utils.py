@@ -554,13 +554,12 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
         logger.debug("call was cancelled")
         raise
     except Exception as exc:  # pylint: disable=broad-except
-        if not reraise:
-            logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    "Caught unhandled exception",
-                    error=exc,
-                )
+        logger.exception(
+            **create_troubleshootting_log_kwargs(
+                "Caught unhandled exception",
+                error=exc,
             )
+        )
         if reraise:
             raise exc from exc
 
