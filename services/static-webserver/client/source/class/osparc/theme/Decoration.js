@@ -32,7 +32,6 @@ qx.Theme.define("osparc.theme.Decoration", {
         // width: 1,
         // color: "text-disabled",
         backgroundColor: "background-main-2",
-        padding: 8,
       }
     },
 

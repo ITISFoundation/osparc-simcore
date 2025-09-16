@@ -104,6 +104,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           })).set({
             decorator: "chat-bubble",
             allowGrowX: false,
+            padding: 8,
           });
           if (isMyMessage) {
             bubbleStyle = { "border-top-right-radius": "0px" };
@@ -126,7 +127,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
             allowGrowY: false,
             marginTop: 4,
             alignY: "top",
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesome5Solid/ellipsis-v/12",
             focusable: false
           });
           this._addAt(control, 2);
