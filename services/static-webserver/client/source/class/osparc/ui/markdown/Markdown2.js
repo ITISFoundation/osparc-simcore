@@ -1,14 +1,13 @@
 /*
  * oSPARC - The SIMCORE frontend - https://osparc.io
- * Copyright: 2019 IT'IS Foundation - https://itis.swiss
+ * Copyright: 2025 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
- * Authors: Ignacio Pascual (ignapas)
- *          Odei Maiz (odeimaiz)
+ * Authors: Odei Maiz (odeimaiz)
  */
 
 /**
  * @asset(marked/marked.min.js)
- * @assert(markdown.css)
+ * @assert(marked/markdown.css)
  * @ignore(marked)
  */
 
@@ -35,7 +34,7 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
       overflowY: "hidden",
     });
 
-    const markdownCssUri = qx.util.ResourceManager.getInstance().toUri("markdown/markdown.css");
+    const markdownCssUri = qx.util.ResourceManager.getInstance().toUri("marked/markdown.css");
     qx.module.Css.includeStylesheet(markdownCssUri);
 
     this.__loadMarked = new Promise((resolve, reject) => {
