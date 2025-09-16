@@ -206,20 +206,23 @@ qx.Class.define("osparc.support.ConversationPage", {
           if (extraContext && Object.keys(extraContext).length) {
             const ticketIdLabel = createExtraContextLabel(`Ticket ID: ${osparc.utils.Utils.uuidToShort(conversation.getConversationId())}`);
             extraContextLayout.add(ticketIdLabel);
-            const fogbugzLink = conversation.getFogbugzLink();
-            if (fogbugzLink && amISupporter) {
-              const text = "Fogbugz Case: " + fogbugzLink.split("/").pop();
-              const fogbugzLabel = new osparc.ui.basic.LinkLabel(text, fogbugzLink).set({
-                font: "link-label-12",
-                textColor: "text-disabled",
-                allowGrowX: true,
-              });
-              extraContextLayout.add(fogbugzLabel);
-            }
-            const contextProjectId = conversation.getContextProjectId();
-            if (contextProjectId && amISupporter) {
-              const projectIdLabel = createExtraContextLabel(`Project ID: ${osparc.utils.Utils.uuidToShort(contextProjectId)}`);
-              extraContextLayout.add(projectIdLabel);
+            if (amISupporter) {
+              const fogbugzLink = conversation.getFogbugzLink();
+              if (fogbugzLink) {
+                const text = "Fogbugz Case: " + fogbugzLink.split("/").pop();
+                const fogbugzLabel = new osparc.ui.basic.LinkLabel(text, fogbugzLink).set({
+                  font: "link-label-12",
+                  textColor: "text-disabled",
+                  allowGrowX: true,
+                });
+                extraContextLayout.add(fogbugzLabel);
+              }
+              const contextProjectId = conversation.getContextProjectId();
+              if (contextProjectId) {
+                const projectIdLabel = createExtraContextLabel(`Project ID: ${osparc.utils.Utils.uuidToShort(contextProjectId)}`);
+                extraContextLayout.add(projectIdLabel);
+              }
+
             }
           }
         };
