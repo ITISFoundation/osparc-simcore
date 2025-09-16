@@ -58,7 +58,7 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
 
     this.addListenerOnce("appear", () => {
       this.getContentElement().addClass("osparc-markdown");
-      this.__scheduleResize(); // first paint sizing
+      // this.__scheduleResize(); // first paint sizing
     });
   },
 
@@ -83,6 +83,7 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
 
   members: {
     __loadMarked: null,
+
     /**
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
      * @param {String} value Plain text accepting markdown syntax.
@@ -115,20 +116,6 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
 
         this.setHtml(safeHtml);
-
-        /*
-        // Wait for DOM update
-        qx.event.Timer.once(() => {
-          this.__resizeMe();
-        }, this, 50);
-        */
-
-        /*
-        // this.__resizeMe();
-        this.getContentElement().addListenerOnce("appear", () => {
-          this.__resizeMe();
-        });
-        */
 
         // resize once DOM is updated/painted
         this.__scheduleResize();
@@ -177,6 +164,7 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
 
         this.setMinHeight(totalH);
         this.setHeight(totalH);
+        console.log("Markdown2 resized to height", totalH);
       });
     },
   }
