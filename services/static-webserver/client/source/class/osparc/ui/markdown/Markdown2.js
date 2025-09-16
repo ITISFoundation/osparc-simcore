@@ -200,11 +200,9 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
         this.setHeight(totalH);
 
         // width: shrink-to-fit, but cap at a max
-        this.setMaxWidth(null);        // measurer already capped; we set exact width
-        this.setMinWidth(1);           // avoid 0 when empty
-        this.setWidth(totalW);         // exact bubble width
-
-        console.log("totalH", totalH, "totalW", totalW);
+        this.setMaxWidth(null); // measurer already capped; we set exact width
+        this.setMinWidth(1); // avoid 0 when empty
+        this.setWidth(totalW);
       });
     },
   }
