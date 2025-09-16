@@ -14,9 +14,10 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from ...core.settings import ApplicationSettings
 from ._errors import KeyNotFoundInHashError
 from ._models import (
-    OperationContext,
     OperationErrorType,
     OperationName,
+    ProvidedOperationContext,
+    RequiredOperationContext,
     ScheduleId,
     StepGroupName,
     StepName,
@@ -26,18 +27,20 @@ from ._models import (
 _SCHEDULE_NAMESPACE: Final[str] = "SCH"
 _STEPS_KEY: Final[str] = "STEPS"
 _GROUPS_KEY: Final[str] = "GROUPS"
-# Figure out hwo to store data in Redis as flat as possible
+_OPERATION_CONTEXT_KEY: Final[str] = "OP_CTX"
+
+
+def _get_is_creating_str(*, is_creating: bool) -> str:
+    return "C" if is_creating else "R"
 
 
 def _get_scheduler_data_hash_key(*, schedule_id: ScheduleId) -> str:
-    # SCHEDULE_NAMESPACE:SCHEDULE_ID:KEY
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID
+    # - SCHEDULE_NAMESPACE: namespace prefix
+    # - SCHEDULE_ID: the unique scheudle_id assigned
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000
     return f"{_SCHEDULE_NAMESPACE}:{schedule_id}"
-
-
-def _get_is_creating_str(is_creating: bool) -> str:
-    return "C" if is_creating else "D"
 
 
 def _get_step_hash_key(
@@ -48,18 +51,18 @@ def _get_step_hash_key(
     step_name: StepName,
     is_creating: bool,
 ) -> str:
-    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_INDEX:STEP_NAME:IS_CREATING:KEY
-    # - SCHEDULE_NAMESPACE: something short to identify tgis
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_SHORT_NAME:STEP_NAME:IS_CREATING
+    # - SCHEDULE_NAMESPACE: namespace prefix
     # - SCHEDULE_ID: the unique scheudle_id assigned
-    # - STEPS: the constant "STEPS"
+    # - CONSTANT: the constant "STEPS"
     # - OPERATION_NAME form the vairble's name during registration
-    # - GROUP_NAME
+    # - GROUP_SHORT_NAME
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
-    # - IS_CREATING: "C" or "D" for creation or destruction
+    # - IS_CREATING: "C" (create) or "R" (revert)
     # - STEP_NAME form it's class
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:STEPS:START_SERVICE:0S:C:BS1
-    is_creating_str = _get_is_creating_str(is_creating)
+    is_creating_str = _get_is_creating_str(is_creating=is_creating)
     return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group_name}:{is_creating_str}:{step_name}"
 
 
@@ -70,25 +73,42 @@ def _get_group_hash_key(
     group_name: StepGroupName,
     is_creating: bool,
 ) -> str:
-    # SCHEDULE_NAMESPACE:SCHEDULE_ID:GROUPS:OPERATION_NAME:GROUP_INDEX:IS_CREATING:KEY
-    # - SCHEDULE_NAMESPACE: something short to identify tgis
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:GROUPS:OPERATION_NAME:GROUP_SHORT_NAME:IS_CREATING
+    # - SCHEDULE_NAMESPACE: namespace prefix
     # - SCHEDULE_ID: the unique scheudle_id assigned
-    # - GROUPS: the constant "GROUPS"
+    # - CONSTANT: the constant "GROUPS"
     # - OPERATION_NAME form the vairble's name during registration
-    # - GROUP_NAME
+    # - GROUP_SHORT_NAME
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
-    # - IS_CREATING: "C" or "D" for creation or destruction
+    # - IS_CREATING: "C" (create) or "R" (revert)
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:GROUPS:START_SERVICE:0S:C
-    is_creating_str = _get_is_creating_str(is_creating)
+    is_creating_str = _get_is_creating_str(is_creating=is_creating)
     return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_GROUPS_KEY}:{operation_name}:{group_name}:{is_creating_str}"
 
 
+def _get_operation_context_hash_key(
+    *, schedule_id: ScheduleId, operation_name: OperationName
+) -> str:
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME
+    # - SCHEDULE_NAMESPACE: namespace prefix
+    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - CONSTANT: the constant "OP_CTX"
+    # - OPERATION_NAME form the vairble's name during registration
+    # Example:
+    # - SCH:00000000-0000-0000-0000-000000000000:OP_CTX:START_SERVICE
+    return (
+        f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_OPERATION_CONTEXT_KEY}:{operation_name}"
+    )
+
+
 def _dumps(obj: Any) -> str:
+    # NOTE: does not support `sets` and `tuples` they get serialised to lists
     return json_dumps(obj)
 
 
 def _loads(obj_str: str) -> Any:
+    # NOTE: does not support `sets` and `tuples` they get deserialized as lists
     return json_loads(obj_str)
 
 
@@ -150,7 +170,6 @@ class Store:
 
 class _UpdateScheduleDataDict(TypedDict):
     operation_name: NotRequired[OperationName]
-    operation_context: NotRequired[OperationContext]
     group_index: NotRequired[NonNegativeInt]
     is_creating: NotRequired[bool]
     operation_error_type: NotRequired[OperationErrorType]
@@ -159,14 +178,11 @@ class _UpdateScheduleDataDict(TypedDict):
 
 _DeleteScheduleDataKeys = Literal[
     "operation_name",
-    "operation_context",
     "group_index",
     "is_creating",
     "operation_error_type",
     "operation_error_message",
 ]
-
-# TODO: need a model for reading the entire thing as a dict with optinal keys (for the UI)
 
 
 class ScheduleDataStoreProxy:
@@ -179,8 +195,6 @@ class ScheduleDataStoreProxy:
 
     @overload
     async def get(self, key: Literal["operation_name"]) -> OperationName: ...
-    @overload
-    async def get(self, key: Literal["operation_context"]) -> OperationContext: ...
     @overload
     async def get(self, key: Literal["group_index"]) -> NonNegativeInt: ...
     @overload
@@ -200,10 +214,6 @@ class ScheduleDataStoreProxy:
     @overload
     async def set(
         self, key: Literal["operation_name"], value: OperationName
-    ) -> None: ...
-    @overload
-    async def set(
-        self, key: Literal["operation_context"], value: OperationContext
     ) -> None: ...
     @overload
     async def set(self, key: Literal["group_index"], value: NonNegativeInt) -> None: ...
@@ -355,6 +365,41 @@ class StepStoreProxy:
         await self._store.remove(self._get_hash_key())
 
 
+class OperationContextProxy:
+    def __init__(
+        self,
+        *,
+        store: Store,
+        schedule_id: ScheduleId,
+        operation_name: OperationName,
+    ) -> None:
+        self._store = store
+        self.schedule_id = schedule_id
+        self.operation_name = operation_name
+
+    def _get_hash_key(self) -> str:
+        return _get_operation_context_hash_key(
+            schedule_id=self.schedule_id, operation_name=self.operation_name
+        )
+
+    async def set_provided_context(self, updates: ProvidedOperationContext) -> None:
+        if len(updates) == 0:
+            return
+
+        await self._store.set_multiple(self._get_hash_key(), updates)
+
+    async def get_required_context(self, *keys: str) -> RequiredOperationContext:
+        if len(keys) == 0:
+            return {}
+
+        hash_key = self._get_hash_key()
+        result = await self._store.get(hash_key, *keys)
+        return dict(zip(keys, result, strict=True))
+
+    async def remove(self) -> None:
+        await self._store.remove(self._get_hash_key())
+
+
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
     app.state.generic_scheduler_store = store = Store(settings.DYNAMIC_SCHEDULER_REDIS)
@@ -366,3 +411,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 def get_store(app: FastAPI) -> Store:
     assert isinstance(app.state.generic_scheduler_store, Store)  # nosec
     return app.state.generic_scheduler_store
+
+
+# TODO: might need a model for reading the entire thing as a dict with optinal keys (for the UI)

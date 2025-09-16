@@ -12,10 +12,12 @@ from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     OperationErrorType,
+    ProvidedOperationContext,
     ScheduleId,
     StepStatus,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
+    OperationContextProxy,
     ScheduleDataStoreProxy,
     StepGroupProxy,
     StepStoreProxy,
@@ -97,6 +99,7 @@ async def test_store_workflow(store: Store):
         True,
         None,
         {"dict": "with_data"},
+        [1, 2, 3],
     ],
 )
 async def test_store_supporse_multiple_python_base_types(store: Store, value: Any):
@@ -266,3 +269,39 @@ async def test_step_group_proxy(
 
     await step_group_proxy.remove()
     assert await _get_steps_count() is None
+
+
+@pytest.mark.parametrize(
+    "provided_context",
+    [
+        {},
+        {
+            "k1": "v1",
+            "k2": 2,
+            "k3": True,
+            "k4": None,
+            "k5": 3.14,
+            "k6": {"a": "b"},
+            "k7": [1, 2, 3],
+        },
+    ],
+)
+async def test_operation_context_proxy(
+    store: Store, schedule_id: ScheduleId, provided_context: ProvidedOperationContext
+):
+    proxy = OperationContextProxy(
+        store=store, schedule_id=schedule_id, operation_name="op1"
+    )
+    hash_key = f"SCH:{schedule_id}:OP_CTX:op1"
+
+    await _assert_keys(store, set())
+    await _assert_keys_in_hash(store, hash_key, set())
+
+    await proxy.set_provided_context(provided_context)
+
+    await _assert_keys(store, set() if len(provided_context) == 0 else {hash_key})
+    await _assert_keys_in_hash(store, hash_key, set(provided_context.keys()))
+
+    assert (
+        await proxy.get_required_context(*provided_context.keys()) == provided_context
+    )
