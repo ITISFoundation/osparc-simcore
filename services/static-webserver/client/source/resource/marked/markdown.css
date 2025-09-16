@@ -55,3 +55,12 @@
   font-weight: 600;
   font-size: 1em; /* normalize size inside chat */
 }
+
+/* images */
+.osparc-markdown img {
+  max-width: 100%;
+  height: auto;
+  display: block;       /* avoids weird inline metrics */
+  margin: .25em 0;      /* matches your spacing scale */
+  border-radius: 4px;   /* optional: match bubble style */
+}
