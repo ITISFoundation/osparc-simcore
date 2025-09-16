@@ -6,9 +6,27 @@ from servicelib.deferred_tasks import BaseDeferredHandler, DeferredContext, Task
 from servicelib.deferred_tasks._models import TaskResultError
 
 from ._dependencies import enqueue_schedule_event
-from ._models import OperationName, ScheduleId, StepGroupName, StepName, StepStatus
+from ._errors import (
+    OperationContextValueIsNoneError,
+    ProvidedOperationContextKeysAreMissingError,
+)
+from ._models import (
+    OperationContext,
+    OperationName,
+    ProvidedOperationContext,
+    ScheduleId,
+    StepGroupName,
+    StepName,
+    StepStatus,
+)
 from ._operation import BaseStep, OperationRegistry
-from ._store import StepGroupProxy, StepStoreProxy, Store, get_store
+from ._store import (
+    OperationContextProxy,
+    StepGroupProxy,
+    StepStoreProxy,
+    Store,
+    get_store,
+)
 
 
 def _get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
@@ -47,6 +65,19 @@ def _get_step_group_proxy(context: DeferredContext) -> StepGroupProxy:
     )
 
 
+def _get_opration_context_proxy(context: DeferredContext) -> OperationContextProxy:
+    app: FastAPI = context["app"]
+    schedule_id: ScheduleId = context["schedule_id"]
+    operation_name: OperationName = context["operation_name"]
+
+    store: Store = get_store(app)
+    return OperationContextProxy(
+        store=store,
+        schedule_id=schedule_id,
+        operation_name=operation_name,
+    )
+
+
 def _get_step(context: DeferredContext) -> type[BaseStep]:
     operation_name: OperationName = context["operation_name"]
     step_name: StepName = context["step_name"]
@@ -63,6 +94,31 @@ async def _send_group_done_check_event(context: DeferredContext) -> None:
         == expected_steps_count
     ):
         await enqueue_schedule_event(app, schedule_id)
+
+
+def _raise_if_any_context_value_is_none(
+    operation_context: OperationContext,
+) -> None:
+    if any(value is None for value in operation_context.values()):
+        raise OperationContextValueIsNoneError(operation_context=operation_context)
+
+
+def _raise_if_provided_context_keys_are_missing_or_none(
+    provided_context: ProvidedOperationContext | None,
+    expected_keys: set[str],
+) -> None:
+    if not provided_context:
+        return
+
+    missing_keys = expected_keys - provided_context.keys()
+    if missing_keys:
+        raise ProvidedOperationContextKeysAreMissingError(
+            provided_context=provided_context,
+            missing_keys=missing_keys,
+            expected_keys=expected_keys,
+        )
+
+    _raise_if_any_context_value_is_none(provided_context)
 
 
 class DeferredRunner(BaseDeferredHandler[None]):
@@ -121,10 +177,34 @@ class DeferredRunner(BaseDeferredHandler[None]):
 
         step = _get_step(context)
 
+        opration_context_proxy = _get_opration_context_proxy(context)
+
         if is_creating:
-            await step.create(app)
+            required_context = await opration_context_proxy.get_required_context(
+                *step.create_requires_operation_context_keys()
+            )
+            _raise_if_any_context_value_is_none(required_context)
+
+            provided_operation_context = await step.create(app, required_context)
+            create_provides_keys = step.create_provides_operation_context_keys()
+
+            _raise_if_provided_context_keys_are_missing_or_none(
+                provided_operation_context, create_provides_keys
+            )
         else:
-            await step.revert(app)
+            required_context = await opration_context_proxy.get_required_context(
+                *step.revert_requires_operation_context_keys()
+            )
+            _raise_if_any_context_value_is_none(required_context)
+
+            provided_operation_context = await step.revert(app, required_context)
+            revert_provides_keys = step.revert_provides_operation_context_keys()
+
+            _raise_if_provided_context_keys_are_missing_or_none(
+                provided_operation_context, revert_provides_keys
+            )
+
+        await opration_context_proxy.set_provided_context(provided_operation_context)
 
     @classmethod
     async def on_result(cls, result: None, context: DeferredContext) -> None:

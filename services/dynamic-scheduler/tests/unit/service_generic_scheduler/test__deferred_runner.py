@@ -1,3 +1,4 @@
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
@@ -10,6 +11,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import FastAPI
+from pydantic import NonNegativeInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -22,11 +24,14 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     OperationName,
+    ProvidedOperationContext,
+    RequiredOperationContext,
     ScheduleId,
     StepStatus,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._operation import (
     BaseStep,
+    BaseStepGroup,
     Operation,
     OperationRegistry,
     SingleStepGroup,
@@ -95,7 +100,7 @@ async def registed_operation(
 def mock_enqueue_event(mocker: MockerFixture) -> AsyncMock:
     mock = AsyncMock()
     mocker.patch(
-        "simcore_service_dynamic_scheduler.services.generic_scheduler._deferred_runner.enqueue_event",
+        "simcore_service_dynamic_scheduler.services.generic_scheduler._deferred_runner.enqueue_schedule_event",
         mock,
     )
     return mock
@@ -132,27 +137,41 @@ class _StepResultStore:
 
 class _StepFinisheWithSuccess(BaseStep):
     @classmethod
-    async def create(cls, app: FastAPI) -> None:
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
         _ = app
+        _ = required_context
         _StepResultStore.set_result(cls.__name__, "created")
+        return {}
 
     @classmethod
-    async def revert(cls, app: FastAPI) -> None:
+    async def revert(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
         _ = app
+        _ = required_context
         _StepResultStore.set_result(cls.__name__, "destroyed")
+        return {}
 
 
 class _StepFinisheError(BaseStep):
     @classmethod
-    async def create(cls, app: FastAPI) -> None:
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
         _ = app
+        _ = required_context
         _StepResultStore.set_result(cls.__name__, "created")
         msg = "I failed creating"
         raise RuntimeError(msg)
 
     @classmethod
-    async def revert(cls, app: FastAPI) -> None:
+    async def revert(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
         _ = app
+        _ = required_context
         _StepResultStore.set_result(cls.__name__, "destroyed")
         msg = "I failed destorying"
         raise RuntimeError(msg)
@@ -160,16 +179,24 @@ class _StepFinisheError(BaseStep):
 
 class _StepLongRunningToCancel(BaseStep):
     @classmethod
-    async def create(cls, app: FastAPI) -> None:
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
         _ = app
+        _ = required_context
         _StepResultStore.set_result(cls.__name__, "created")
         await asyncio.sleep(10000)
+        return {}
 
     @classmethod
-    async def revert(cls, app: FastAPI) -> None:
+    async def revert(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
         _ = app
+        _ = required_context
         _StepResultStore.set_result(cls.__name__, "destroyed")
         await asyncio.sleep(10000)
+        return {}
 
 
 class _Action(str, Enum):
@@ -177,8 +204,22 @@ class _Action(str, Enum):
     CANCEL = "CANCEL"
 
 
+def _get_step_group(
+    operation_name: OperationName, group_index: NonNegativeInt
+) -> BaseStepGroup:
+    assert operation_name in OperationRegistry._OPERATIONS  # noqa: SLF001
+
+    operation = OperationRegistry._OPERATIONS[operation_name][  # noqa: SLF001
+        "operation"
+    ]
+    operations_count = len(operation)
+    assert group_index < operations_count
+
+    return operation[group_index]
+
+
 @pytest.mark.parametrize(
-    "operation, expected_step_status, action",
+    "operation, expected_step_status, action, expected_steps_count",
     [
         (
             [
@@ -186,6 +227,7 @@ class _Action(str, Enum):
             ],
             StepStatus.SUCCESS,
             _Action.DO_NOTHING,
+            1,
         ),
         (
             [
@@ -193,6 +235,7 @@ class _Action(str, Enum):
             ],
             StepStatus.FAILED,
             _Action.DO_NOTHING,
+            1,
         ),
         (
             [
@@ -200,6 +243,7 @@ class _Action(str, Enum):
             ],
             StepStatus.CANCELLED,
             _Action.CANCEL,
+            1,
         ),
     ],
 )
@@ -214,20 +258,16 @@ async def test_something(
     expected_step_status: StepStatus,
     is_creating: bool,
     action: _Action,
+    expected_steps_count: NonNegativeInt,
 ) -> None:
 
     # setup
     schedule_data_proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
     await schedule_data_proxy.set_multiple(
-        {
-            "operation_name": operation_name,
-            "operation_context": {},
-            "group_index": 0,
-            "is_creating": is_creating,
-        }
+        {"operation_name": operation_name, "group_index": 0, "is_creating": is_creating}
     )
 
-    step_group = OperationRegistry.get_step_group(operation_name, 0)
+    step_group = _get_step_group(operation_name, 0)
 
     step_group_name = step_group.get_step_group_name(index=0)
 
@@ -254,6 +294,7 @@ async def test_something(
         step_group_name=step_group_name,
         step_name=step_name,
         is_creating=is_creating,
+        expected_steps_count=expected_steps_count,
     )
 
     if action == _Action.CANCEL:
