@@ -208,7 +208,7 @@ qx.Class.define("osparc.support.ConversationPage", {
             extraContextLayout.add(ticketIdLabel);
             const fogbugzLink = conversation.getFogbugzLink();
             if (fogbugzLink && amISupporter) {
-              const text = "Fogbugz Case:" + fogbugzLink.split("/").pop();
+              const text = "Fogbugz Case: " + fogbugzLink.split("/").pop();
               const fogbugzLabel = new osparc.ui.basic.LinkLabel(text, fogbugzLink).set({
                 font: "link-label-12",
                 textColor: "text-disabled",
