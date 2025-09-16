@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Final
 
 from common_library.exclude import as_dict_exclude_none
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -31,16 +30,15 @@ from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from servicelib.celery.models import TaskFilter, TaskMetadata, TasksQueue, TaskUUID
+from servicelib.celery.models import TaskMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
+from simcore_service_api_server.clients.celery_task_manager import get_task_filter
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_function_jobs import FunctionJobService
 from ._service_functions import FunctionService
 from ._service_jobs import JobService
 from .api.dependencies.authentication import Identity
-from .api.dependencies.celery import ASYNC_JOB_CLIENT_NAME
-from .api.routes.tasks import _get_task_filter
 from .exceptions.function_errors import (
     FunctionJobCacheNotFoundError,
 )
@@ -359,12 +357,9 @@ class FunctionJobTaskClientService:
         )
 
         # run function in celery task
-        job_filter = AsyncJobFilter(
-            user_id=user_identity.user_id,
-            product_name=user_identity.product_name,
-            client_name=ASYNC_JOB_CLIENT_NAME,
+        task_filter = get_task_filter(
+            user_id=user_identity.user_id, product_name=user_identity.product_name
         )
-        task_filter = TaskFilter.model_validate(job_filter.model_dump())
 
         task_uuid = await self._celery_task_manager.submit_task(
             TaskMetadata(
