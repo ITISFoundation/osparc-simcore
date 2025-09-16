@@ -330,6 +330,7 @@ async def test_delete_function(
 async def test_run_map_function_not_allowed(
     client: AsyncClient,
     mocker: MockerFixture,
+    mock_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
@@ -343,7 +344,7 @@ async def test_run_map_function_not_allowed(
     """Test that running a function is not allowed."""
 
     mocker.patch(
-        "simcore_service_api_server.api.routes.functions_routes.get_task_manager",
+        "simcore_service_api_server.api.dependencies.services.get_task_manager",
         return_value=mocker.MagicMock(spec=CeleryTaskManager),
     )
 

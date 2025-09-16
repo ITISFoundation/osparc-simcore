@@ -1,7 +1,6 @@
 from logging import getLogger
 from typing import Annotated, Final
 
-from common_library.error_codes import create_error_code
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, status
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
@@ -16,29 +15,23 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import RegisteredFunction
 from models_library.functions_errors import (
     UnsupportedFunctionClassError,
-    UnsupportedFunctionFunctionJobClassCombinationError,
 )
 from models_library.products import ProductName
-from models_library.projects_state import RunningState
 from models_library.users import UserID
-from servicelib.celery.models import TaskUUID
 from servicelib.fastapi.dependencies import get_app
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_function_jobs import FunctionJobService
+from ..._service_function_jobs_task_client import (
+    FunctionJobTaskClientService,
+)
 from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
-from ...clients.celery_task_manager import get_task_filter
-from ...exceptions.function_errors import FunctionJobProjectMissingError
 from ...models.domain.functions import PageRegisteredFunctionJobWithorWithoutStatus
 from ...models.pagination import PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.functions_filters import FunctionJobsListFilters
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.celery import get_task_manager
-from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.functions import (
     get_function_from_functionjob,
     get_function_job_dependency,
@@ -47,6 +40,7 @@ from ..dependencies.functions import (
 from ..dependencies.models_schemas_function_filters import get_function_jobs_filters
 from ..dependencies.services import (
     get_function_job_service,
+    get_function_job_task_client_service,
     get_function_service,
     get_job_service,
 )
@@ -66,7 +60,6 @@ _logger = getLogger(__name__)
 JOB_LIST_FILTER_PAGE_RELEASE_VERSION = "0.11.0"
 JOB_LOG_RELEASE_VERSION = "0.11.0"
 WITH_STATUS_RELEASE_VERSION = "0.13.0"
-_JOB_CREATION_TASK_STATUS_PREFIX: Final[str] = "JOB_CREATION_TASK_STATUS_"
 
 function_job_router = APIRouter()
 
@@ -122,23 +115,21 @@ for endpoint in ENDPOINTS:
     ),
 )
 async def list_function_jobs(
-    app: Annotated[FastAPI, Depends(get_app)],
     page_params: Annotated[PaginationParams, Depends()],
+    function_job_task_client_service: Annotated[
+        FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
+    ],
     function_job_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
-    function_service: Annotated[FunctionService, Depends(get_function_service)],
     filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
-    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
     include_status: Annotated[  # noqa: FBT002
         bool, Query(description="Include job status in response")
     ] = False,
 ):
     if include_status:
         function_jobs_list_ws, meta = (
-            await function_job_service.list_function_jobs_with_status(
+            await function_job_task_client_service.list_function_jobs_with_status(
                 pagination_offset=page_params.offset,
                 pagination_limit=page_params.limit,
                 filter_by_function_job_ids=filters.function_job_ids,
@@ -146,39 +137,6 @@ async def list_function_jobs(
                 filter_by_function_id=filters.function_id,
             )
         )
-        # the code below should ideally be in the service layer, but this can only be done if the
-        # celery status resolution is done in the service layer too
-        for function_job_wso in function_jobs_list_ws:
-            if (
-                function_job_wso.status.status
-                not in (
-                    RunningState.SUCCESS,
-                    RunningState.FAILED,
-                )
-            ) or function_job_wso.outputs is None:
-                function = await function_service.get_function(
-                    function_id=function_job_wso.function_uid
-                )
-                function_job_wso.status = await function_job_status(
-                    app=app,
-                    function=function,
-                    function_job=function_job_wso,
-                    function_job_service=function_job_service,
-                    user_id=user_id,
-                    product_name=product_name,
-                )
-                if function_job_wso.status.status == RunningState.SUCCESS:
-                    function_job_wso.outputs = (
-                        await function_job_service.function_job_outputs(
-                            function_job=function_job_wso,
-                            function=function,
-                            user_id=user_id,
-                            product_name=product_name,
-                            stored_job_outputs=None,
-                            async_pg_engine=async_pg_engine,
-                        )
-                    )
-
         return create_page(
             function_jobs_list_ws,
             total=meta.total,
@@ -269,54 +227,17 @@ async def delete_function_job(
     ),
 )
 async def function_job_status(
-    app: Annotated[FastAPI, Depends(get_app)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
     function_job: Annotated[
         RegisteredFunctionJob, Depends(get_function_job_dependency)
     ],
     function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
+    function_job_task_client_service: Annotated[
+        FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
 ) -> FunctionJobStatus:
-    try:
-        return await function_job_service.inspect_function_job(
-            function=function, function_job=function_job
-        )
-    except FunctionJobProjectMissingError as exc:
-        if (
-            function.function_class == FunctionClass.PROJECT
-            and function_job.function_class == FunctionClass.PROJECT
-        ) or (
-            function.function_class == FunctionClass.SOLVER
-            and function_job.function_class == FunctionClass.SOLVER
-        ):
-            if task_id := function_job.job_creation_task_id:
-                task_manager = get_task_manager(app)
-                task_filter = get_task_filter(user_id, product_name)
-                task_status = await task_manager.get_task_status(
-                    task_uuid=TaskUUID(task_id), task_filter=task_filter
-                )
-                return FunctionJobStatus(
-                    status=f"{_JOB_CREATION_TASK_STATUS_PREFIX}{task_status.task_state}"
-                )
-            user_error_msg = f"The creation of job {function_job.uid} failed"
-            support_id = create_error_code(Exception())
-            _logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    user_error_msg,
-                    error=Exception(),
-                    error_code=support_id,
-                    tip="Initial call to run metamodeling function must have failed",
-                )
-            )
-            raise
-
-        raise UnsupportedFunctionFunctionJobClassCombinationError(
-            function_class=function.function_class,
-            function_job_class=function_job.function_class,
-        ) from exc
+    return await function_job_task_client_service.inspect_function_job(
+        function=function, function_job=function_job
+    )
 
 
 async def get_function_from_functionjobid(
@@ -354,22 +275,16 @@ async def function_job_outputs(
     function_job: Annotated[
         RegisteredFunctionJob, Depends(get_function_job_dependency)
     ],
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
+    function_job_task_client_service: Annotated[
+        FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
     function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
     stored_job_outputs: Annotated[FunctionOutputs, Depends(get_stored_job_outputs)],
-    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ) -> FunctionOutputs:
-    return await function_job_service.function_job_outputs(
+    return await function_job_task_client_service.function_job_outputs(
         function_job=function_job,
-        user_id=user_id,
-        product_name=product_name,
         function=function,
         stored_job_outputs=stored_job_outputs,
-        async_pg_engine=async_pg_engine,
     )
 
 
