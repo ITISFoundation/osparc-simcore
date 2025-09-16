@@ -204,7 +204,9 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the release Lua script atomically
-        result = await type(self).release_script(  # noqa: SLF001
+        cls = type(self)
+        assert cls.release_script is not None  # nosec
+        result = await cls.release_script(
             keys=(
                 self.semaphore_key,
                 self.holder_key,
@@ -239,7 +241,9 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the Lua script atomically
-        result = await type(self).acquire_script(  # noqa: SLF001
+        cls = type(self)
+        assert cls.acquire_script is not None  # nosec
+        result = await cls.acquire_script(
             keys=(self.semaphore_key, self.holder_key),
             args=(self.instance_id, str(self.capacity), str(ttl_seconds)),
             client=self.redis_client.redis,
@@ -282,7 +286,9 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the renewal Lua script atomically
-        result = await type(self).renew_script(  # noqa: SLF001
+        cls = type(self)
+        assert cls.renew_script is not None  # nosec
+        result = await cls.renew_script(
             keys=(self.semaphore_key, self.holder_key),
             args=(
                 self.instance_id,
@@ -330,7 +336,9 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the count Lua script atomically
-        result = await type(self).count_script(  # noqa: SLF001
+        cls = type(self)
+        assert cls.count_script is not None  # nosec
+        result = await cls.count_script(
             keys=(self.semaphore_key,),
             args=(str(ttl_seconds),),
             client=self.redis_client.redis,
