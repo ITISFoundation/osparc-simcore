@@ -128,13 +128,13 @@ class FunctionJobTaskClientService:
         )
 
         for function_job_wso in function_jobs_list_ws:
-            if (
+            if function_job_wso.outputs is None or (
                 function_job_wso.status.status
                 not in (
                     RunningState.SUCCESS,
                     RunningState.FAILED,
                 )
-            ) or function_job_wso.outputs is None:
+            ):
                 function_job_wso.status = await self.inspect_function_job(
                     function=await self._function_service.get_function(
                         function_id=function_job_wso.function_uid,
