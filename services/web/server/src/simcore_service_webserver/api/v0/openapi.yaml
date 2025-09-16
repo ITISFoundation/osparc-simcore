@@ -14136,12 +14136,6 @@ components:
           - $ref: '#/components/schemas/NodeState-Input'
           - type: 'null'
           description: The node's state object
-        required_resources:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
-          title: Required Resources
         bootOptions:
           anyOf:
           - type: object
@@ -14279,12 +14273,6 @@ components:
           - $ref: '#/components/schemas/NodeState-Output'
           - type: 'null'
           description: The node's state object
-        required_resources:
-          anyOf:
-          - additionalProperties: true
-            type: object
-          - type: 'null'
-          title: Required Resources
         bootOptions:
           anyOf:
           - type: object
