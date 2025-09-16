@@ -152,6 +152,8 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
       // collapse first so we don't re-measure an old minHeight
       this.setHeight(null);
       this.setMinHeight(0);
+      this.setWidth(null);
+      this.setMinWidth(0);
 
       window.requestAnimationFrame(() => {
         // force reflow
@@ -161,14 +163,19 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
         const inner = domElement.querySelector("."+this.self().WRAP_CLASS) || domElement;
         const rect = inner.getBoundingClientRect();
         const contentH = Math.ceil(rect ? rect.height : 0);
+        const contentW = Math.ceil(rect ? rect.width : 0);
 
         // include widget insets (decorator/padding/border)
         const insets = this.getInsets ? this.getInsets() : { top: 0, bottom: 0 };
         const totalH = Math.max(0, contentH + (insets.top || 0) + (insets.bottom || 0));
+        const totalW = Math.max(0, contentW + (insets.left || 0) + (insets.right || 0));
 
         this.setMinHeight(totalH);
         this.setHeight(totalH);
-        console.log("totalH", totalH);
+        this.setMinWidth(totalW);
+        this.setWidth(totalW);
+
+        console.log("height", totalH, "width", totalW);
 
         this.fireEvent("resized");
       });
