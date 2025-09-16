@@ -178,14 +178,11 @@ async def update_conversation(request: web.Request):
     if conversation.type != ConversationType.SUPPORT:
         raise_unsupported_type(conversation.type)
 
-    # Only support conversation creator can update conversation
-    _user_group_id = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
-    )
-    await _conversation_service.get_conversation_for_user(
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=_user_group_id,
     )
 
     conversation = await conversations_service.update_conversation(
