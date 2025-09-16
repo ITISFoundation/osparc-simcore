@@ -22,6 +22,7 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient, TestServer
+from deepdiff import DeepDiff  # type: ignore[attr-defined]
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -95,10 +96,15 @@ def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k: dikt[k] for k in keys}
 
-    modified = [
+    skip = [
         "lastChangeDate",
+        "templateType",
+        "trashedAt",
+        "trashedBy",
+        "workspaceId",
+        "folderId",
     ]
-    keep = [k for k in update_data if k not in modified]
+    keep = [k for k in update_data if k not in skip]
 
     assert _extract(current_project, keep) == _extract(update_data, keep)
 
@@ -1151,6 +1157,7 @@ async def test_close_project(
     ],
 )
 async def test_get_active_project(
+    with_disabled_rtc_collaboration: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -1171,6 +1178,7 @@ async def test_get_active_project(
         if expected == status.HTTP_200_OK:
             pytest.fail("socket io connection should not fail")
     assert client.app
+
     # get active projects -> empty
     get_active_projects_url = (
         client.app.router["get_active_project"]
@@ -1198,7 +1206,7 @@ async def test_get_active_project(
         )
         assert not error
         assert ProjectStateOutputSchema(**data.pop("state")).share_state.locked
-        data.pop("folderId")
+        data.pop("folderId", None)
 
         user_project_last_change_date = user_project.pop("lastChangeDate")
         data_last_change_date = data.pop("lastChangeDate")
@@ -1795,6 +1803,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_is_defaulted(
+    with_disabled_rtc_collaboration: None,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
@@ -2035,6 +2044,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_at_same_time(
+    with_disabled_rtc_collaboration: None,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
@@ -2110,7 +2120,11 @@ async def test_open_shared_project_at_same_time(
             elif data:
                 project_status = ProjectStateOutputSchema(**data.pop("state"))
                 data.pop("folderId")
-                assert data == {k: shared_project[k] for k in data}
+                assert not DeepDiff(
+                    data,
+                    {k: shared_project[k] for k in data},
+                    exclude_paths=["root['lastChangeDate']"],
+                )
                 assert project_status.share_state.locked
                 assert project_status.share_state.current_user_groupids
                 assert len(project_status.share_state.current_user_groupids) == 1

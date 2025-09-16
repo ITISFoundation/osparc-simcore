@@ -26,6 +26,14 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "chat-bubble": {
+      style: {
+        radius: 4,
+        width: 1,
+        color: "text-disabled"
+      }
+    },
+
     "separator-strong": {
       style: {
         widthTop: 1,
@@ -265,9 +273,10 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
-    "no-border-2": {
+    "no-border-0": {
       style: {
-        width: 0
+        width: 0,
+        color: "transparent"
       }
     },
 

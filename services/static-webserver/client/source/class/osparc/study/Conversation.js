@@ -191,26 +191,65 @@ qx.Class.define("osparc.study.Conversation", {
       this.__loadMoreMessages.addListener("execute", () => this.__reloadMessages(false));
       this._add(this.__loadMoreMessages);
 
-      const addMessages = new osparc.conversation.AddMessage().set({
+      const addMessage = new osparc.conversation.AddMessage().set({
         studyData: this.__studyData,
         conversationId: this.getConversationId(),
         enabled: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]),
         paddingLeft: 10,
       });
-      addMessages.addListener("messageAdded", e => {
-        const data = e.getData();
-        if (data["conversationId"] && this.getConversation() === null) {
-          osparc.store.ConversationsProject.getInstance().getConversation(this.__studyData["uuid"], data["conversationId"])
-            .then(conversationData => {
-              const conversation = new osparc.data.model.Conversation(conversationData);
-              this.setConversation(conversation);
-            });
+      addMessage.addListener("addMessage", e => {
+        const content = e.getData();
+        const conversation = this.getConversation();
+        if (conversation) {
+          this.__postMessage(content);
         } else {
-          this.getConversation().addMessage(data);
-          this.addMessage(data);
+          // create new conversation first
+          osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"])
+            .then(data => {
+              const newConversation = new osparc.data.model.Conversation(data);
+              this.setConversation(newConversation);
+              this.__postMessage(content);
+            });
         }
       });
-      this._add(addMessages);
+      addMessage.addListener("notifyUser", e => {
+        const userGid = e.getData();
+        const conversation = this.getConversation();
+        if (conversation) {
+          this.__postNotify(userGid);
+        } else {
+          // create new conversation first
+          osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"])
+            .then(data => {
+              const newConversation = new osparc.data.model.Conversation(data);
+              this.setConversation(newConversation);
+              this.__postNotify(userGid);
+            });
+        }
+      });
+      this._add(addMessage);
+    },
+
+    __postMessage: function(content) {
+      const conversationId = this.getConversation().getConversationId();
+      osparc.store.ConversationsProject.getInstance().postMessage(this.__studyData["uuid"], conversationId, content);
+    },
+
+    __postNotify: function(userGid) {
+      const conversationId = this.getConversation().getConversationId();
+      osparc.store.ConversationsProject.getInstance().notifyUser(this.__studyData["uuid"], conversationId, userGid)
+        .then(data => {
+          this.fireDataEvent("messageAdded", data);
+          const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
+          if (userGid in potentialCollaborators) {
+            if ("getUserId" in potentialCollaborators[userGid]) {
+              const uid = potentialCollaborators[userGid].getUserId();
+              osparc.notification.Notifications.pushConversationNotification(uid, this.__studyData["uuid"]);
+            }
+            const msg = "getLabel" in potentialCollaborators[userGid] ? potentialCollaborators[userGid].getLabel() + this.tr(" was notified") : this.tr("Notification sent");
+            osparc.FlashMessenger.logAs(msg, "INFO");
+          }
+        });
     },
 
     __getNextRequest: function() {
@@ -265,6 +304,9 @@ qx.Class.define("osparc.study.Conversation", {
     },
 
     __updateMessagesNumber: function() {
+      if (!this.__messagesTitle) {
+        return;
+      }
       const nMessages = this.__messages.filter(msg => msg["type"] === "MESSAGE").length;
       if (nMessages === 0) {
         this.__messagesTitle.setValue(this.tr("No Messages yet"));

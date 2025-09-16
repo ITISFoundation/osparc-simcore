@@ -6,18 +6,15 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery.worker.worker import WorkController  # type: ignore[import-untyped]
 from servicelib.celery.app_server import BaseAppServer
 from servicelib.logging_utils import log_context
-from settings_library.celery import CelerySettings
 
-from .common import create_task_manager
 from .utils import get_app_server, set_app_server
 
 _logger = logging.getLogger(__name__)
 
 
 def on_worker_init(
-    app_server: BaseAppServer,
-    celery_settings: CelerySettings,
     sender: WorkController,
+    app_server: BaseAppServer,
     **_kwargs,
 ) -> None:
     startup_complete_event = threading.Event()
@@ -26,21 +23,14 @@ def on_worker_init(
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        async def _setup_task_manager():
-            assert sender.app  # nosec
-            assert isinstance(sender.app, Celery)  # nosec
+        assert sender.app  # nosec
+        assert isinstance(sender.app, Celery)  # nosec
 
-            app_server.task_manager = await create_task_manager(
-                sender.app,
-                celery_settings,
-            )
-
-            set_app_server(sender.app, app_server)
+        set_app_server(sender.app, app_server)
 
         app_server.event_loop = loop
 
-        loop.run_until_complete(_setup_task_manager())
-        loop.run_until_complete(app_server.lifespan(startup_complete_event))
+        loop.run_until_complete(app_server.run_until_shutdown(startup_complete_event))
 
     thread = threading.Thread(
         group=None,

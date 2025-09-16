@@ -1,18 +1,60 @@
-from celery_library.common import create_app, create_task_manager
+import logging
+
+from celery_library.backends.redis import RedisTaskInfoStore
+from celery_library.common import create_app
+from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
+from models_library.products import ProductName
+from models_library.users import UserID
+from servicelib.celery.models import TaskFilter
+from servicelib.logging_utils import log_context
+from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
+from settings_library.redis import RedisDatabase
 
+from .._meta import APP_NAME
 from ..celery_worker.worker_tasks.tasks import pydantic_types_to_register
 
+_logger = logging.getLogger(__name__)
 
-def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
+
+def get_task_filter(user_id: UserID, product_name: ProductName) -> TaskFilter:
+    job_filter = AsyncJobFilter(
+        user_id=user_id, product_name=product_name, client_name=APP_NAME
+    )
+    return TaskFilter.model_validate(job_filter.model_dump())
+
+
+def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
     async def on_startup() -> None:
-        app.state.task_manager = await create_task_manager(
-            create_app(celery_settings), celery_settings
-        )
+        with log_context(_logger, logging.INFO, "Setting up Celery"):
+            redis_client_sdk = RedisClientSDK(
+                settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
+                    RedisDatabase.CELERY_TASKS
+                ),
+                client_name="api_server_celery_tasks",
+            )
+            app.state.celery_tasks_redis_client_sdk = redis_client_sdk
+            await redis_client_sdk.setup()
 
-        register_celery_types()
-        register_pydantic_types(*pydantic_types_to_register)
+            app.state.task_manager = CeleryTaskManager(
+                create_app(settings),
+                settings,
+                RedisTaskInfoStore(redis_client_sdk),
+            )
+
+            register_celery_types()
+            register_pydantic_types(*pydantic_types_to_register)
+
+    async def on_shutdown() -> None:
+        with log_context(_logger, logging.INFO, "Shutting down Celery"):
+            redis_client_sdk: RedisClientSDK | None = (
+                app.state.celery_tasks_redis_client_sdk
+            )
+            if redis_client_sdk:
+                await redis_client_sdk.shutdown()
 
     app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)

@@ -5,26 +5,21 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
-from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID
 from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.users import UserID
 from pydantic import TypeAdapter
 
 from ..._client_rpc import RabbitMQRPCClient
 from ..async_jobs.async_jobs import submit
-from ._utils import get_async_job_filter
 
 
 async def compute_path_size(
     client: RabbitMQRPCClient,
     *,
-    user_id: UserID,
-    product_name: ProductName,
     location_id: LocationID,
     path: Path,
+    job_filter: AsyncJobFilter,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
-    job_filter = get_async_job_filter(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -39,12 +34,10 @@ async def compute_path_size(
 async def delete_paths(
     client: RabbitMQRPCClient,
     *,
-    user_id: UserID,
-    product_name: ProductName,
     location_id: LocationID,
     paths: set[Path],
+    job_filter: AsyncJobFilter,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
-    job_filter = get_async_job_filter(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,

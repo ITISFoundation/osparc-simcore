@@ -40,10 +40,12 @@ qx.Class.define("osparc.support.SupportCenter", {
     });
 
     this.getChildControl("home-page");
-    this.getChildControl("conversations-page");
-    this.getChildControl("conversation-page");
-    this.getChildControl("home-button");
-    this.getChildControl("conversations-button");
+    if (osparc.store.Groups.getInstance().isSupportEnabled()) {
+      this.getChildControl("conversations-page");
+      this.getChildControl("conversation-page");
+      this.getChildControl("home-button");
+      this.getChildControl("conversations-button");
+    }
 
     this.__showHome();
   },
@@ -127,7 +129,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "home-page":
           control = new osparc.support.HomePage();
-          control.addListener("openConversation", () => this.openConversation(), this);
+          control.addListener("createConversation", e => this.createConversation(e.getData()), this);
           this.getChildControl("main-stack").add(control);
           break;
         case "conversations-stack":
@@ -136,11 +138,8 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "conversations-page":
           control = new osparc.support.ConversationsPage();
-          control.addListener("openConversation", e => {
-            const conversationId = e.getData();
-            this.openConversation(conversationId);
-          }, this);
-          control.addListener("createConversationBookCall", () => this.createConversationBookCall(), this);
+          control.addListener("openConversation", e => this.openConversation(e.getData()), this);
+          control.addListener("createConversation", e => this.createConversation(e.getData()), this);
           this.getChildControl("conversations-stack").add(control);
           break;
         case "conversation-page":
@@ -194,35 +193,13 @@ qx.Class.define("osparc.support.SupportCenter", {
             conversationPage.setConversation(conversation);
             this.__showConversation();
           });
-      } else {
-        conversationPage.setConversation(null);
-        this.__showConversation();
       }
     },
 
-    createConversationBookCall: function() {
+    createConversation: function(type) {
       const conversationPage = this.getChildControl("conversation-page");
-      conversationPage.setConversation(null);
+      conversationPage.proposeConversation(type);
       this.__showConversation();
-      conversationPage.postMessage(osparc.support.SupportCenter.REQUEST_CALL_MESSAGE)
-        .then(data => {
-          const conversationId = data["conversationId"];
-          osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
-            .then(conversation => {
-              // update conversation name and patch extra_context
-              conversation.renameConversation("Book a call");
-              conversation.patchExtraContext({
-                ...conversation.getExtraContext(),
-                "appointment": "requested"
-              });
-              // This should be an automatic response in the chat
-              const msg = this.tr("Your request has been sent.<br>Our support team will get back to you.");
-              osparc.FlashMessenger.logAs(msg, "INFO");
-            });
-        })
-        .catch(err => {
-          console.error("Error sending request call message", err);
-        });
     },
   }
 });

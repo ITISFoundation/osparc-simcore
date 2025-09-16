@@ -572,6 +572,11 @@ qx.Class.define("osparc.utils.Utils", {
       return button;
     },
 
+    isDateLike: function(v) {
+      if (typeof v === "string") return !isNaN(new Date(v));
+      return false;
+    },
+
     /**
       * @param date {Date Object} Date Object
       */
@@ -771,6 +776,10 @@ qx.Class.define("osparc.utils.Utils", {
     uuidV4: function() {
       return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    },
+
+    uuidToShort: function() {
+      return this.uuidV4().split("-")[0];
     },
 
     isInZ43: function() {
