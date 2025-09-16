@@ -28,9 +28,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
     this.__studyData = studyData;
 
-    const layout = new qx.ui.layout.Grid(12, 2);
-    layout.setColumnFlex(1, 1); // content
-    this._setLayout(layout);
+    this._setLayout(new qx.ui.layout.HBox(10));
     this.setPadding(5);
 
     this.set({
@@ -71,21 +69,20 @@ qx.Class.define("osparc.conversation.MessageUI", {
             marginTop: 4,
             alignY: "top",
           });
-          this._add(control, {
-            row: 0,
-            column: isMyMessage ? 2 : 0,
-            rowSpan: 2,
-          });
+          this._addAt(control, isMyMessage ? 1 : 0);
+          break;
+        case "main-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2).set({
+            alignX: isMyMessage ? "right" : "left"
+          }));
+          this._addAt(control, isMyMessage ? 0 : 1, { flex: 1});
           break;
         case "header-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: isMyMessage ? "right" : "left"
           }));
           control.addAt(new qx.ui.basic.Label("-"), 1);
-          this._add(control, {
-            row: 0,
-            column: 1
-          });
+          this.getChildControl("main-layout").addAt(control, 0);
           break;
         case "user-name":
           control = new qx.ui.basic.Label().set({
@@ -103,25 +100,19 @@ qx.Class.define("osparc.conversation.MessageUI", {
           break;
         case "message-content": {
           // outer bubble
-          const bubble = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
+          const bubble = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+            // maybe not needed
+            alignX: isMyMessage ? "right" : "left"
+          })).set({
             decorator: "chat-bubble",
             padding: 8,
+            allowGrowX: false,
           });
           control = new osparc.ui.markdown.Markdown2();
           bubble.add(control);
-          this._add(bubble, {
-            row: 1,
-            column: 1,
-          });
+          this.getChildControl("main-layout").addAt(bubble, 1);
           break;
         }
-        case "spacer":
-          control = new qx.ui.core.Spacer();
-          this._add(control, {
-            row: 1,
-            column: isMyMessage ? 0 : 2,
-          });
-          break;
         case "menu-button": {
           const buttonSize = 22;
           control = new qx.ui.form.MenuButton().set({
@@ -134,11 +125,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
-          this._add(control, {
-            row: 0,
-            column: 3,
-            rowSpan: 2,
-          });
+          this._addAt(control, 2);
           break;
         }
       }
@@ -147,13 +134,6 @@ qx.Class.define("osparc.conversation.MessageUI", {
     },
 
     __applyMessage: function(message) {
-      const isMyMessage = this.self().isMyMessage(message);
-      this._getLayout().setColumnFlex(isMyMessage ? 0 : 2, 3); // spacer
-
-      const thumbnail = this.getChildControl("thumbnail");
-
-      const userName = this.getChildControl("user-name");
-
       const createdDateData = new Date(message["created"]);
       const createdDate = osparc.utils.Utils.formatDateAndTime(createdDateData);
       const lastUpdate = this.getChildControl("last-updated");
@@ -168,6 +148,8 @@ qx.Class.define("osparc.conversation.MessageUI", {
       const messageContent = this.getChildControl("message-content");
       messageContent.setValue(message["content"]);
 
+      const thumbnail = this.getChildControl("thumbnail");
+      const userName = this.getChildControl("user-name");
       if (message["userGroupId"] === "system") {
         userName.setValue("Support");
       } else {
@@ -181,8 +163,6 @@ qx.Class.define("osparc.conversation.MessageUI", {
             userName.setValue("Unknown user");
           });
       }
-
-      this.getChildControl("spacer");
 
       if (this.self().isMyMessage(message)) {
         const menuButton = this.getChildControl("menu-button");
