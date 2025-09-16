@@ -120,18 +120,18 @@ async def test_auto_renewal_lose_semaphore_raises(
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
-    async def work_that_should_fail() -> Literal["should not reach here"]:
+    async def coro_that_should_fail() -> Literal["should not reach here"]:
         work_started.set()
         # Wait long enough for renewal to be attempted multiple times
-        await asyncio.sleep(short_ttl.total_seconds() * 4)
+        await asyncio.sleep(short_ttl.total_seconds() * 100)
         return "should not reach here"
 
-    task = asyncio.create_task(work_that_should_fail())
+    task = asyncio.create_task(coro_that_should_fail())
     await work_started.wait()
 
     # Wait for the first renewal interval to pass
     renewal_interval = short_ttl / 3
-    await asyncio.sleep(renewal_interval.total_seconds() + 1)
+    await asyncio.sleep(renewal_interval.total_seconds() * 1.5)
 
     # Find and delete all holder keys for this semaphore
     holder_keys = await redis_client_sdk.redis.keys(
@@ -140,8 +140,13 @@ async def test_auto_renewal_lose_semaphore_raises(
     assert holder_keys, "Holder keys should exist before deletion"
     await redis_client_sdk.redis.delete(*holder_keys)
 
-    with pytest.raises(SemaphoreLostError):
-        await task  # This should raise the renewal failure exception
+    # wait another renewal interval to ensure the renewal fails
+    await asyncio.sleep(renewal_interval.total_seconds() * 1.5)
+
+    # it shall have raised already, do not wait too much
+    async with asyncio.timeout(renewal_interval.total_seconds()):
+        with pytest.raises(SemaphoreLostError):
+            await task
 
 
 async def test_decorator_with_callable_parameters(
@@ -655,23 +660,21 @@ async def test_context_manager_lose_semaphore_raises(
     )
     @asynccontextmanager
     async def context_manager_that_should_fail():
-        work_started.set()
         yield "data"
-        # Wait long enough for renewal to be attempted multiple times
-        await asyncio.sleep(short_ttl.total_seconds() * 4)
 
-    async def use_failing_cm():
+    async def use_failing_cm() -> None:
         async with context_manager_that_should_fail() as data:
             assert data == "data"
-            # Keep context active while semaphore will be lost
-            await asyncio.sleep(short_ttl.total_seconds() * 3)
+            work_started.set()
+            # Wait long enough for renewal to be attempted multiple times
+            await asyncio.sleep(short_ttl.total_seconds() * 100)
 
     task = asyncio.create_task(use_failing_cm())
     await work_started.wait()
 
     # Wait for the first renewal interval to pass
     renewal_interval = short_ttl / 3
-    await asyncio.sleep(renewal_interval.total_seconds() + 1)
+    await asyncio.sleep(renewal_interval.total_seconds() + 1.5)
 
     # Find and delete all holder keys for this semaphore
     holder_keys = await redis_client_sdk.redis.keys(
@@ -680,5 +683,9 @@ async def test_context_manager_lose_semaphore_raises(
     assert holder_keys, "Holder keys should exist before deletion"
     await redis_client_sdk.redis.delete(*holder_keys)
 
-    with pytest.raises(SemaphoreLostError):  # Expected from the ExceptionGroup handling
-        await task
+    # wait another renewal interval to ensure the renewal fails
+    await asyncio.sleep(renewal_interval.total_seconds() * 1.5)
+
+    async with asyncio.timeout(renewal_interval.total_seconds()):
+        with pytest.raises(SemaphoreLostError):
+            await task

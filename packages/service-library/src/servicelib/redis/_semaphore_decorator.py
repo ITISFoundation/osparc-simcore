@@ -59,14 +59,12 @@ async def _managed_semaphore_execution(
                 _periodic_renewer(),
                 name=f"semaphore/autorenewal_{semaphore_key}_{semaphore.instance_id}",
             )
-
-            # Wait for first renewal to complete (ensures task is running)
             await started_event.wait()
 
-            # Yield control back to caller
             yield
 
-            # Cancel renewal task when execution is done
+            # NOTE: if we do not explicitely await the task inside the context manager
+            # it sometimes hangs forever (Python issue?)
             await cancel_wait_task(renewal_task, max_delay=None)
 
     except BaseExceptionGroup as eg:
