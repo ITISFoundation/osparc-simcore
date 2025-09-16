@@ -1,6 +1,6 @@
 """Application's metadata"""
 
-from typing import Final
+from typing import Final, Literal, TypeAlias
 
 from models_library.basic_types import VersionStr
 from packaging.version import Version
@@ -17,6 +17,8 @@ API_VTAG: Final[str] = info.api_prefix_path_tag
 APP_NAME: Final[str] = info.app_name
 SUMMARY: Final[str] = info.get_summary()
 
+APP_TYPE: TypeAlias = Literal["simcore-service-api-server"]
+assert APP_NAME in APP_TYPE.__args__  # nosec
 
 #
 # https://patorjk.com/software/taag/#p=display&f=JS%20Stick%20Letters&t=API-server%0A
