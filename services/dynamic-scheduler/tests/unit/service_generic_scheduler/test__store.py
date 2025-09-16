@@ -18,6 +18,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._models import
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
     OperationContextProxy,
+    OperationRemovalProxy,
     ScheduleDataStoreProxy,
     StepGroupProxy,
     StepStoreProxy,
@@ -30,23 +31,19 @@ async def store(use_in_memory_redis: RedisSettings) -> AsyncIterable[Store]:
     store = Store(use_in_memory_redis)
     await store.setup()
     yield store
-    await store._redis.client().flushall()  # noqa: SLF001
+    await store.redis.client().flushall()
     await store.shutdown()
 
 
 async def _assert_keys(store: Store, expected_keys: set[str]) -> None:
-    keys = set(await store._redis.keys())  # noqa: SLF001
+    keys = set(await store.redis.keys())
     assert keys == expected_keys
 
 
 async def _assert_keys_in_hash(
     store: Store, hash_key: str, expected_keys: set[str]
 ) -> None:
-    keys = set(
-        await handle_redis_returns_union_types(
-            store._redis.hkeys(hash_key)  # noqa: SLF001
-        )
-    )
+    keys = set(await handle_redis_returns_union_types(store.redis.hkeys(hash_key)))
     assert keys == expected_keys
 
 
@@ -305,3 +302,68 @@ async def test_operation_context_proxy(
     assert (
         await proxy.get_required_context(*provided_context.keys()) == provided_context
     )
+
+
+async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
+    await _assert_keys(store, set())
+
+    proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
+    await proxy.set_multiple(
+        {
+            "group_index": 1,
+            "is_creating": True,
+            "operation_error_type": OperationErrorType.STEP_ISSUE,
+            "operation_error_message": "mock_error_message",
+            "operation_name": "op1",
+        }
+    )
+
+    proxy = StepStoreProxy(
+        store=store,
+        schedule_id=schedule_id,
+        operation_name="op1",
+        step_group_name="sg1",
+        step_name="step",
+        is_creating=True,
+    )
+    await proxy.set_multiple(
+        {
+            "deferred_created": True,
+            "status": StepStatus.SUCCESS,
+            "deferred_task_uid": TaskUID("mytask"),
+            "requires_manual_intervention": True,
+            "error_traceback": "mock_traceback",
+            "success_processed": False,
+        }
+    )
+
+    proxy = StepGroupProxy(
+        store=store,
+        schedule_id=schedule_id,
+        operation_name="op1",
+        step_group_name="sg1",
+        is_creating=True,
+    )
+    await proxy.increment_and_get_done_steps_count()
+
+    proxy = OperationContextProxy(
+        store=store, schedule_id=schedule_id, operation_name="op1"
+    )
+    await proxy.set_provided_context({"k1": "v1", "k2": 2})
+
+    await _assert_keys(
+        store,
+        {
+            f"SCH:{schedule_id}",
+            f"SCH:{schedule_id}:GROUPS:op1:sg1:C",
+            f"SCH:{schedule_id}:OP_CTX:op1",
+            f"SCH:{schedule_id}:STEPS:op1:sg1:C:step",
+        },
+    )
+
+    proxy = OperationRemovalProxy(store=store, schedule_id=schedule_id)
+    await proxy.remove()
+    await _assert_keys(store, set())
+
+    # try to call when empty as well
+    await proxy.remove()
