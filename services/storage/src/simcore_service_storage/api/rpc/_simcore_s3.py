@@ -79,7 +79,6 @@ async def start_search(
     task_uuid = await task_manager.submit_task(
         task_metadata=TaskMetadata(
             name=task_name,
-            ephemeral=False,
         ),
         task_filter=task_filter,
         user_id=job_filter.user_id,
