@@ -115,7 +115,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           this.getChildControl("main-layout").addAt(control, 1);
           break;
         case "message-content":
-          control = new osparc.ui.markdown.Markdown2();
+          control = new osparc.ui.markdown.MarkdownChat();
           this.getChildControl("message-bubble").add(control);
           break;
         case "menu-button": {

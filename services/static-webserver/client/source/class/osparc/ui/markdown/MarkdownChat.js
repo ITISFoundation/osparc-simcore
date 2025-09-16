@@ -13,7 +13,7 @@
 
 /* global marked */
 
-qx.Class.define("osparc.ui.markdown.Markdown2", {
+qx.Class.define("osparc.ui.markdown.MarkdownChat", {
   extend: qx.ui.embed.Html,
 
   /**
@@ -111,29 +111,21 @@ qx.Class.define("osparc.ui.markdown.Markdown2", {
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
 
         // flow-root prevents margin collapsing; inline style avoids extra stylesheet juggling
-        let mdRoot;
         const max = 220;
-        if (max) {
-          mdRoot = `
-            <div class="${this.self().MD_ROOT}" style="display:flow-root;">
-              <div class="${this.self().MD_MEASURE}"
-                  style="
-                    display:inline-block;
-                    width:max-content;
-                    max-width:${max}px;
-                    white-space:normal;
-                    overflow-wrap:anywhere; /* break long tokens */
-                  ">
-                ${safeHtml}
-              </div>
-            </div>
-          `;
-        } else {
-          mdRoot = `
-            <div class="${this.self().MD_ROOT}" style="display:flow-root;">
+        const mdRoot = `
+          <div class="${this.self().MD_ROOT}" style="display:flow-root;">
+            <div class="${this.self().MD_MEASURE}"
+                style="
+                  display:inline-block;
+                  width:max-content;
+                  max-width:${max}px;
+                  white-space:normal;
+                  overflow-wrap:anywhere; /* break long tokens */
+                ">
               ${safeHtml}
-            </div>`;
-        }
+            </div>
+          </div>
+        `;
         this.setHtml(mdRoot);
 
         // resize once DOM is updated/painted
