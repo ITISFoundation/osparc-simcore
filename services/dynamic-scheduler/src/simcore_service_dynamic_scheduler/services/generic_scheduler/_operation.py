@@ -12,7 +12,13 @@ from ._errors import (
     OperationNotFoundError,
     StepNotFoundInoperationError,
 )
-from ._models import OperationName, StepGroupName, StepName
+from ._models import (
+    OperationName,
+    ProvidedOperationContext,
+    RequiredOperationContext,
+    StepGroupName,
+    StepName,
+)
 
 _DEFAULT_STEP_RETRIES: Final[NonNegativeInt] = 0
 _DEFAULT_STEP_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
@@ -28,12 +34,28 @@ class BaseStep(ABC):
 
     @classmethod
     @abstractmethod
-    async def create(cls, app: FastAPI) -> None:
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext:
         """
         [mandatory] handler to be implemented with the code resposible for achieving a goal
         NOTE: Ensure this is successful if:
             - `create` is called multiple times and does not cause duplicate resources
         """
+
+    @classmethod
+    def create_requires_operation_context_keys(cls) -> set[str]:
+        """
+        [optional] keys that must be present in the OperationContext when create is called
+        """
+        return set()
+
+    @classmethod
+    def create_provides_operation_context_keys(cls) -> set[str]:
+        """
+        [optional] keys that will be added to the OperationContext when create is successful
+        """
+        return set()
 
     @classmethod
     async def get_create_error_for_manual_intervention(cls) -> bool:
@@ -57,7 +79,9 @@ class BaseStep(ABC):
     ### REVERT
 
     @classmethod
-    async def revert(cls, app: FastAPI) -> None:
+    async def revert(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext:
         """
         [optional] handler resposible for celanup of resources created above.
         NOTE: Ensure this is successful if:
@@ -65,7 +89,23 @@ class BaseStep(ABC):
             - `create` is executed partially
             - `revert` is called multiple times
         """
+        _ = required_context
         _ = app
+        return {}
+
+    @classmethod
+    def revert_requires_operation_context_keys(cls) -> set[str]:
+        """
+        [optional] keys that must be present in the OperationContext when create is called
+        """
+        return set()
+
+    @classmethod
+    def revert_provides_operation_context_keys(cls) -> set[str]:
+        """
+        [optional] keys that will be added to the OperationContext when create is successful
+        """
+        return set()
 
     @classmethod
     async def get_revert_retries(cls, context: DeferredContext) -> int:
@@ -190,6 +230,8 @@ def _has_abstract_methods(cls: type[object]) -> bool:
 @validate_call(config={"arbitrary_types_allowed": True})
 def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
     detected_steps_names: dict[StepName, type[BaseStep]] = {}
+    create_provided_keys: set[str] = set()
+    revert_provided_keys: set[str] = set()
 
     for k, step_group in enumerate(operation):
         if (
@@ -219,7 +261,34 @@ def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
 
             detected_steps_names[step_name] = step
 
+            for key in step.create_provides_operation_context_keys():
+                if key in create_provided_keys:
+                    msg = (
+                        f"Step {step_name=} provides already provided key {key=} in "
+                        f"{step.create_provides_operation_context_keys.__name__}()"
+                    )
+                    raise ValueError(msg)
+                create_provided_keys.add(key)
+            for key in step.revert_provides_operation_context_keys():
+                if key in revert_provided_keys:
+                    msg = (
+                        f"Step {step_name=} provides already provided key {key=} in "
+                        f"{step.revert_provides_operation_context_keys.__name__}()"
+                    )
+                    raise ValueError(msg)
+                revert_provided_keys.add(key)
+
     return detected_steps_names
+
+
+def get_operation_provided_context_keys(operation: Operation) -> set[str]:
+    provided_keys: set[str] = set()
+
+    for step_group in operation:
+        for step in step_group.get_step_subgroup_to_run():
+            provided_keys.update(step.create_provides_operation_context_keys())
+
+    return provided_keys
 
 
 class _UpdateScheduleDataDict(TypedDict):
@@ -270,7 +339,7 @@ class OperationRegistry:
         return cls._OPERATIONS[operation_name]["steps"][step_name]
 
     @classmethod
-    def get_step_group(
+    def get_step_group(  # TODO: move this to tests since it's not used
         cls, operation_name: OperationName, group_index: NonNegativeInt
     ) -> BaseStepGroup:
         # TODO: figure out if this is required or is only used in tests, in case move it there

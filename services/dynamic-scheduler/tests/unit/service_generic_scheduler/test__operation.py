@@ -7,6 +7,10 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import
     OperationNotFoundError,
     StepNotFoundInoperationError,
 )
+from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
+    ProvidedOperationContext,
+    RequiredOperationContext,
+)
 from simcore_service_dynamic_scheduler.services.generic_scheduler._operation import (
     BaseStep,
     Operation,
@@ -19,20 +23,45 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._operation imp
 
 class BaseBS(BaseStep):
     @classmethod
-    async def create(cls, app: FastAPI) -> None:
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext:
         _ = app
+        _ = required_context
+        return {}
 
 
-class BS1(BaseBS):
-    pass
+class BS1(BaseBS): ...
 
 
-class BS2(BaseBS):
-    pass
+class BS2(BaseBS): ...
 
 
-class BS3(BaseBS):
-    pass
+class BS3(BaseBS): ...
+
+
+class WrongBS1C(BaseBS):
+    @classmethod
+    def create_provides_operation_context_keys(cls) -> set[str]:
+        return {"c"}
+
+
+class WrongBS2C(BaseBS):
+    @classmethod
+    def create_provides_operation_context_keys(cls) -> set[str]:
+        return {"c"}
+
+
+class WrongBS1R(BaseBS):
+    @classmethod
+    def revert_provides_operation_context_keys(cls) -> set[str]:
+        return {"r"}
+
+
+class WrongBS2R(BaseBS):
+    @classmethod
+    def revert_provides_operation_context_keys(cls) -> set[str]:
+        return {"r"}
 
 
 @pytest.mark.parametrize(
@@ -48,6 +77,13 @@ class BS3(BaseBS):
         [
             SingleStepGroup(BS1),
             SingleStepGroup(BS2),
+        ],
+        [
+            SingleStepGroup(WrongBS1C),
+            SingleStepGroup(WrongBS1R),
+        ],
+        [
+            ParallelStepGroup(WrongBS2C, WrongBS2R),
         ],
         [
             SingleStepGroup(BS2),
@@ -99,6 +135,22 @@ def test_validate_operation_passes(operation: Operation):
             ],
             f"{ParallelStepGroup.__name__} needs at least 2 steps",
         ),
+        (
+            [SingleStepGroup(WrongBS1C), SingleStepGroup(WrongBS2C)],
+            f"in {BaseStep.create_provides_operation_context_keys.__name__}",
+        ),
+        (
+            [ParallelStepGroup(WrongBS1C, WrongBS2C)],
+            f"in {BaseStep.create_provides_operation_context_keys.__name__}",
+        ),
+        (
+            [SingleStepGroup(WrongBS1R), SingleStepGroup(WrongBS2R)],
+            f"in {BaseStep.revert_provides_operation_context_keys.__name__}",
+        ),
+        (
+            [ParallelStepGroup(WrongBS1R, WrongBS2R)],
+            f"in {BaseStep.revert_provides_operation_context_keys.__name__}",
+        ),
     ],
 )
 def test_validate_operations_fails(operation: Operation, match: str):
@@ -109,14 +161,14 @@ def test_validate_operations_fails(operation: Operation, match: str):
 def test_operation_registry_workflow():
     operation: Operation = [SingleStepGroup(BS1)]
     OperationRegistry.register("op1", operation)
-    assert len(OperationRegistry._OPERATIONS) == 1
+    assert len(OperationRegistry._OPERATIONS) == 1  # noqa: SLF001
 
     assert OperationRegistry.get_operation("op1") == operation
 
     assert OperationRegistry.get_step("op1", "BS1") == BS1
 
     OperationRegistry.unregister("op1")
-    assert len(OperationRegistry._OPERATIONS) == 0
+    assert len(OperationRegistry._OPERATIONS) == 0  # noqa: SLF001
 
 
 def test_operation_registry_raises_errors():
