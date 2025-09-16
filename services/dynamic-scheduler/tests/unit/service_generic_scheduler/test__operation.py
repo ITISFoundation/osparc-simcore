@@ -25,10 +25,9 @@ class BaseBS(BaseStep):
     @classmethod
     async def create(
         cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext:
+    ) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
-        return {}
 
 
 class BS1(BaseBS): ...

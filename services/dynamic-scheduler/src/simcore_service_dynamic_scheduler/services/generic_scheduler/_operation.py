@@ -7,7 +7,6 @@ from pydantic import Field, NonNegativeInt, TypeAdapter, validate_call
 from servicelib.deferred_tasks import DeferredContext
 
 from ._errors import (
-    GroupNotFoundInOperationError,
     OperationAlreadyRegisteredError,
     OperationNotFoundError,
     StepNotFoundInoperationError,
@@ -36,7 +35,7 @@ class BaseStep(ABC):
     @abstractmethod
     async def create(
         cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext:
+    ) -> ProvidedOperationContext | None:
         """
         [mandatory] handler to be implemented with the code resposible for achieving a goal
         NOTE: Ensure this is successful if:
@@ -81,7 +80,7 @@ class BaseStep(ABC):
     @classmethod
     async def revert(
         cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext:
+    ) -> ProvidedOperationContext | None:
         """
         [optional] handler resposible for celanup of resources created above.
         NOTE: Ensure this is successful if:
@@ -337,28 +336,6 @@ class OperationRegistry:
             )
 
         return cls._OPERATIONS[operation_name]["steps"][step_name]
-
-    @classmethod
-    def get_step_group(  # TODO: move this to tests since it's not used
-        cls, operation_name: OperationName, group_index: NonNegativeInt
-    ) -> BaseStepGroup:
-        # TODO: figure out if this is required or is only used in tests, in case move it there
-        if operation_name not in cls._OPERATIONS:
-            raise OperationNotFoundError(
-                operation_name=operation_name,
-                registerd_operations=list(cls._OPERATIONS.keys()),
-            )
-
-        operation = cls._OPERATIONS[operation_name]["operation"]
-        operations_count = len(operation)
-        if group_index >= operations_count:
-            raise GroupNotFoundInOperationError(
-                group_index=group_index,
-                operation_name=operation_name,
-                operations_count=operations_count,
-            )
-
-        return operation[group_index]
 
     @classmethod
     def unregister(cls, operation_name: OperationName) -> None:

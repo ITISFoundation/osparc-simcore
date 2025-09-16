@@ -184,7 +184,7 @@ async def test_step_store_proxy_workflow(
         step_name="step",
         is_creating=is_creating,
     )
-    is_creating_str = "C" if is_creating else "D"
+    is_creating_str = "C" if is_creating else "R"
     hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{is_creating_str}:step"
 
     # set

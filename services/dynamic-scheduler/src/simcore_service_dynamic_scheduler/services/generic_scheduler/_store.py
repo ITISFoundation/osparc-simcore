@@ -382,8 +382,10 @@ class OperationContextProxy:
             schedule_id=self.schedule_id, operation_name=self.operation_name
         )
 
-    async def set_provided_context(self, updates: ProvidedOperationContext) -> None:
-        if len(updates) == 0:
+    async def set_provided_context(
+        self, updates: ProvidedOperationContext | None
+    ) -> None:
+        if not updates:
             return
 
         await self._store.set_multiple(self._get_hash_key(), updates)
