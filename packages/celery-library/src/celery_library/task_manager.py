@@ -50,12 +50,6 @@ class CeleryTaskManager:
         ):
             task_uuid = uuid4()
             task_id = task_filter.create_task_id(task_uuid=task_uuid)
-            self._celery_app.send_task(
-                task_metadata.name,
-                task_id=task_id,
-                kwargs={"task_id": task_id} | task_params,
-                queue=task_metadata.queue.value,
-            )
 
             expiry = (
                 self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
@@ -65,6 +59,19 @@ class CeleryTaskManager:
             await self._task_info_store.create_task(
                 task_id, task_metadata, expiry=expiry
             )
+
+            try:
+                self._celery_app.send_task(
+                    task_metadata.name,
+                    task_id=task_id,
+                    kwargs={"task_id": task_id} | task_params,
+                    queue=task_metadata.queue.value,
+                )
+            except Exception:
+                _logger.exception("Task '%s' submission failed", task_metadata.name)
+                await self._task_info_store.remove_task(task_id)
+                raise
+
             return task_uuid
 
     async def cancel_task(self, task_filter: TaskFilter, task_uuid: TaskUUID) -> None:
