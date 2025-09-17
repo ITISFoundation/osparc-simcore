@@ -89,7 +89,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     setup_rabbitmq(app)
 
-    if settings.API_SERVER_CELERY and not settings.API_SERVER_WORKER_MODE:
+    if settings.API_SERVER_CELERY:
         setup_task_manager(app, settings.API_SERVER_CELERY)
 
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
