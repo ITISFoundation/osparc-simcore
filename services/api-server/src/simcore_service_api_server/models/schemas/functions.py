@@ -5,7 +5,7 @@ from models_library.functions import FunctionID, FunctionJobCollectionID, Functi
 from pydantic import BaseModel, ConfigDict, Field
 from servicelib.celery.models import TaskState
 
-RUN_JOB_TASK_STATUS_PREFIX: Final[str] = "JOB_TASK_RUN_STATUS_"
+_JOB_TASK_RUN_STATUS_PREFIX: Final[str] = "JOB_TASK_RUN_STATUS_"
 
 
 class FunctionJobsListFilters(BaseModel):
@@ -38,11 +38,11 @@ class FunctionJobsListFilters(BaseModel):
 
 
 class FunctionJobCreationTaskStatus(StrEnum):
-    PENDING = f"{RUN_JOB_TASK_STATUS_PREFIX}PENDING"
-    STARTED = f"{RUN_JOB_TASK_STATUS_PREFIX}STARTED"
-    RETRY = f"{RUN_JOB_TASK_STATUS_PREFIX}RETRY"
-    SUCCESS = f"{RUN_JOB_TASK_STATUS_PREFIX}SUCCESS"
-    FAILURE = f"{RUN_JOB_TASK_STATUS_PREFIX}FAILURE"
+    PENDING = f"{_JOB_TASK_RUN_STATUS_PREFIX}PENDING"
+    STARTED = f"{_JOB_TASK_RUN_STATUS_PREFIX}STARTED"
+    RETRY = f"{_JOB_TASK_RUN_STATUS_PREFIX}RETRY"
+    SUCCESS = f"{_JOB_TASK_RUN_STATUS_PREFIX}SUCCESS"
+    FAILURE = f"{_JOB_TASK_RUN_STATUS_PREFIX}FAILURE"
     NOT_YET_SCHEDULED = "JOB_TASK_NOT_YET_SCHEDULED"  # api-server custom status
     ERROR = "JOB_TASK_CREATION_FAILED"  # api-server custom status
 
