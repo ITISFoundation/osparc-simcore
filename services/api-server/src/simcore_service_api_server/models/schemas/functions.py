@@ -44,7 +44,7 @@ class FunctionJobCreationTaskStatus(StrEnum):
     SUCCESS = f"{_JOB_TASK_RUN_STATUS_PREFIX}SUCCESS"
     FAILURE = f"{_JOB_TASK_RUN_STATUS_PREFIX}FAILURE"
     NOT_YET_SCHEDULED = "JOB_TASK_NOT_YET_SCHEDULED"  # api-server custom status
-    ERROR = "JOB_TASK_CREATION_FAILED"  # api-server custom status
+    ERROR = "JOB_TASK_CREATION_FAILURE"  # api-server custom status
 
 
 assert {elm._name_ for elm in TaskState}.union({"NOT_YET_SCHEDULED", "ERROR"}) == {
