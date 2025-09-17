@@ -378,6 +378,49 @@ class Core:
         operation: Operation,
         group_step_proxies: dict[StepName, StepStoreProxy],
     ) -> None:
+        # does step require repeating?
+        if current_step_group.repeat_steps is True:
+            # TODO: all this could even be a separate function since the repeat looks like a thing on its own
+            _logger.debug(
+                "REPEATING step_group='%s' in operation_name='%s' for schedule_id='%s'",
+                current_step_group.get_step_group_name(index=group_index),
+                operation_name,
+                schedule_id,
+            )
+            # wait before repeating
+            await asyncio.sleep(current_step_group.wait_before_repeat.total_seconds())
+
+            step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
+
+            requeired_steps_statuses = await _get_steps_statuses(step_proxies)
+            if any(
+                status == StepStatus.CANCELLED
+                for status in requeired_steps_statuses.values()
+            ):
+                # was cancelled
+                await schedule_data_proxy.set("is_creating", value=False)
+                await enqueue_schedule_event(self.app, schedule_id)
+                return
+
+            await limited_gather(
+                *(x.remove() for x in step_proxies),
+                limit=_PARALLEL_STATUS_REQUESTS,
+            )
+
+            group_proxy = StepGroupProxy(
+                store=self._store,
+                schedule_id=schedule_id,
+                operation_name=operation_name,
+                step_group_name=current_step_group.get_step_group_name(
+                    index=group_index
+                ),
+                is_creating=True,
+            )
+            await group_proxy.remove()
+
+            await enqueue_schedule_event(self.app, schedule_id)
+            return
+
         # if all in SUUCESS -> move to next
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
             try:
@@ -387,58 +430,15 @@ class Core:
                 await schedule_data_proxy.set("group_index", value=next_group_index)
                 await enqueue_schedule_event(self.app, schedule_id)
             except IndexError:
-                # does the step need repeating?
-                if current_step_group.repeat_steps is True:
-                    _logger.debug(
-                        "REPEATING step_group='%s' in operation_name='%s' for schedule_id='%s'",
-                        current_step_group.get_step_group_name(index=group_index),
-                        operation_name,
-                        schedule_id,
-                    )
-                    # wait before repeating
-                    await asyncio.sleep(
-                        current_step_group.wait_before_repeat.total_seconds()
-                    )
-
-                    step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
-
-                    requeired_steps_statuses = await _get_steps_statuses(step_proxies)
-                    if any(
-                        status == StepStatus.CANCELLED
-                        for status in requeired_steps_statuses.values()
-                    ):
-                        # was cancelled
-                        await schedule_data_proxy.set("is_creating", value=False)
-                        await enqueue_schedule_event(self.app, schedule_id)
-                        return
-
-                    await limited_gather(
-                        *(x.remove() for x in step_proxies),
-                        limit=_PARALLEL_STATUS_REQUESTS,
-                    )
-
-                    group_proxy = StepGroupProxy(
-                        store=self._store,
-                        schedule_id=schedule_id,
-                        operation_name=operation_name,
-                        step_group_name=current_step_group.get_step_group_name(
-                            index=group_index
-                        ),
-                        is_creating=True,
-                    )
-                    await group_proxy.remove()
-
-                    await enqueue_schedule_event(self.app, schedule_id)
-                else:
-                    removal_proxy = OperationRemovalProxy(
-                        store=self._store, schedule_id=schedule_id
-                    )
-                    await removal_proxy.remove()
-                    _logger.debug(
-                        "Operation '%s' for schedule_id='%s' COMPLETED successfully",
-                        operation_name,
-                        schedule_id,
-                    )
+                removal_proxy = OperationRemovalProxy(
+                    store=self._store, schedule_id=schedule_id
+                )
+                await removal_proxy.remove()
+                _logger.debug(
+                    "Operation '%s' for schedule_id='%s' COMPLETED successfully",
+                    operation_name,
+                    schedule_id,
+                )
 
             return
 
@@ -529,7 +529,7 @@ class Core:
 
         if failed_step_names:
 
-            async def _get_step_error_traceback(
+            async def _get_step_error_traceback(  # TODO: extract function form here
                 step_name: StepName,
             ) -> tuple[StepName, str]:
                 step_proxy = StepStoreProxy(

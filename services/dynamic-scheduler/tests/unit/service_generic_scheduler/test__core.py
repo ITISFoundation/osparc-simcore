@@ -5,6 +5,7 @@ import asyncio
 from collections.abc import AsyncIterable, Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack
 from copy import deepcopy
+from datetime import timedelta
 from secrets import choice
 from typing import Any, Final
 
@@ -262,11 +263,23 @@ def _assert_order_random(
 def _asseert_expected_order(
     steps_call_order: list[tuple[str, str]],
     expected_order: list[_BaseExpectedStepOrder],
+    *,
+    use_only_first_entries: bool,
+    use_only_last_entries: bool,
 ) -> None:
+    assert not (use_only_first_entries and use_only_last_entries)
+
+    expected_order_length = sum(len(x) for x in expected_order)
+
     # below operations are destructive make a copy
     call_order = deepcopy(steps_call_order)
 
-    assert len(call_order) == sum(len(x) for x in expected_order)
+    if use_only_first_entries:
+        call_order = call_order[:expected_order_length]
+    if use_only_last_entries:
+        call_order = call_order[-expected_order_length:]
+
+    assert len(call_order) == expected_order_length
 
     for group in expected_order:
         if isinstance(group, _CreateSequence):
@@ -286,11 +299,19 @@ def _asseert_expected_order(
 async def _ensure_expected_order(
     steps_call_order: list[tuple[str, str]],
     expected_order: list[_BaseExpectedStepOrder],
+    *,
+    use_only_first_entries: bool = False,
+    use_only_last_entries: bool = False,
 ) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)  # wait for envet to trigger
-            _asseert_expected_order(steps_call_order, expected_order)
+            _asseert_expected_order(
+                steps_call_order,
+                expected_order,
+                use_only_first_entries=use_only_first_entries,
+                use_only_last_entries=use_only_last_entries,
+            )
 
 
 async def _assert_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
@@ -774,13 +795,108 @@ async def test_cancelled_finishes_nicely(
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
 
+_FAST_REPEAT_INTERVAL: Final[timedelta] = timedelta(seconds=0.1)
+_REPAT_COUNT: Final[NonNegativeInt] = 10
+
+
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, expected_before_cancel_order, expected_order",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(
+                    _S1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
+                ),
+            ],
+            [_CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
+            [
+                *[_CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
+                _RevertSequence(_S1),
+            ],
+            id="s1(r)",
+        ),
+        pytest.param(
+            [
+                ParallelStepGroup(
+                    _S1,
+                    _S2,
+                    repeat_steps=True,
+                    wait_before_repeat=_FAST_REPEAT_INTERVAL,
+                ),
+            ],
+            [_CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
+            [
+                *[_CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
+                _RevertRandom(_S1, _S2),
+            ],
+            id="p2(r)",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(
+                    _RS1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
+                ),
+            ],
+            [_CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
+            [
+                *[_CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
+                _RevertSequence(_RS1),
+            ],
+            id="s1(rf)",
+        ),
+        pytest.param(
+            [
+                ParallelStepGroup(
+                    _RS1,
+                    _RS2,
+                    repeat_steps=True,
+                    wait_before_repeat=_FAST_REPEAT_INTERVAL,
+                ),
+            ],
+            [_CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
+            [
+                *[_CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
+                _RevertRandom(_RS1, _RS2),
+            ],
+            id="p2(rf)",
+        ),
+    ],
+)
+async def test_repeating_step(
+    preserve_caplog_for_async_logging: None,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_name: OperationName,
+    expected_before_cancel_order: list[_BaseExpectedStepOrder],
+    expected_order: list[_BaseExpectedStepOrder],
+):
+    register_operation(operation_name, operation)
+
+    core = get_core(selected_app)
+    schedule_id = await core.create(operation_name, {})
+    assert isinstance(schedule_id, ScheduleId)
+
+    await _ensure_expected_order(
+        steps_call_order, expected_before_cancel_order, use_only_first_entries=True
+    )
+
+    # cancelling stops the loop and causes revert to run
+    await core.cancel_schedule(schedule_id)
+
+    await _ensure_expected_order(
+        steps_call_order, expected_order, use_only_last_entries=True
+    )
+
+    await _ensure_keys_in_store(selected_app, expected_keys=set())
+
+
 # TODO: test manual intervention
-#   -> manuale intervention an anction that raises an error and has the flag for manual intervention
+#   -> manual intervention an anction that raises an error and has the flag for manual intervention
 #   -> manual intervention  & fail on REVERT (what should happen?)-> this should be an unexpected thing
 
-# TODO: test repeating: how do we stop this one? -> cancel it after a bit as it's supposed to run forever
-# TODO: test fail on repating (what should happen?)
-#   -> should continue like for the status, just logs error and repeats
 
 # TODO: test something with initial_operation_context that requires data from a previous step,
 #   we need a way to express that -> maybe limit a step to emit something in
