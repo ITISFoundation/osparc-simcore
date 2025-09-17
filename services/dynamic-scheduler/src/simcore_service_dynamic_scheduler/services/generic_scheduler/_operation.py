@@ -21,7 +21,7 @@ from ._models import (
 
 _DEFAULT_STEP_RETRIES: Final[NonNegativeInt] = 0
 _DEFAULT_STEP_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
-_DEFAULT_MANUAL_INTERVENTION: Final[bool] = False
+_DEFAULT_WAIT_FOR_MANUAL_INTERVENTION: Final[bool] = False
 
 
 class BaseStep(ABC):
@@ -73,7 +73,7 @@ class BaseStep(ABC):
         """
         [optional] if True scheduler will block waiting for manual intervention form a user
         """
-        return _DEFAULT_MANUAL_INTERVENTION
+        return _DEFAULT_WAIT_FOR_MANUAL_INTERVENTION
 
     ### REVERT
 
