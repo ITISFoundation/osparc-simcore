@@ -47,7 +47,7 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -334,7 +334,7 @@ async def _stop_dynamic_service_task(
             f"Could not stop dynamic service {dynamic_service_stop.project_id}.{dynamic_service_stop.node_id}"
         )
         _logger.debug(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=exc,
                 error_code=error_code,

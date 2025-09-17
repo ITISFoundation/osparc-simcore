@@ -12,7 +12,7 @@ from common_library.async_tools import cancel_wait_task
 from redis.asyncio.lock import Lock
 
 from ..background_task import periodic
-from ..logging_errors import create_troubleshootting_log_kwargs
+from ..logging_errors import create_troubleshooting_log_kwargs
 from ._client import RedisClientSDK
 from ._constants import DEFAULT_LOCK_TTL
 from ._errors import CouldNotAcquireLockError, LockLostError
@@ -143,7 +143,7 @@ def exclusive(
                     await lock.release()
                 except redis.exceptions.LockNotOwnedError as exc:
                     _logger.exception(
-                        **create_troubleshootting_log_kwargs(
+                        **create_troubleshooting_log_kwargs(
                             f"Unexpected error while releasing lock '{redis_lock_key}'",
                             error=exc,
                             error_context={
