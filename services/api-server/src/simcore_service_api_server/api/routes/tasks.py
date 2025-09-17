@@ -16,7 +16,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from simcore_service_api_server.models.domain.celery_models import ApiWorkerTaskFilter
 
 from ...models.schemas.base import ApiServerEnvelope
@@ -203,7 +203,7 @@ async def get_task_result(
         user_error_msg = f"The execution of task {task_id} failed"
         support_id = create_error_code(task_result)
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=task_result,
                 error_code=support_id,

@@ -10,7 +10,7 @@ from typing import Any, ParamSpec, TypeVar
 from common_library.async_tools import cancel_wait_task
 
 from ..background_task import periodic
-from ..logging_errors import create_troubleshootting_log_kwargs
+from ..logging_errors import create_troubleshooting_log_kwargs
 from ._client import RedisClientSDK
 from ._constants import (
     DEFAULT_SEMAPHORE_TTL,
@@ -87,7 +87,7 @@ async def _managed_semaphore_execution(
             await semaphore.release()
         except SemaphoreNotAcquiredError as exc:
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     f"Unexpected error while releasing semaphore '{semaphore_key}'",
                     error=exc,
                     error_context={

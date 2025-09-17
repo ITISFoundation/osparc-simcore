@@ -20,7 +20,7 @@ from tenacity import (
 )
 
 from ..background_task import create_periodic_task
-from ..logging_errors import create_troubleshootting_log_kwargs
+from ..logging_errors import create_troubleshooting_log_kwargs
 from ..logging_utils import log_catch, log_context
 from ..redis import RedisClientSDK, exclusive
 from ..utils import limited_gather
@@ -353,7 +353,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     )
                     if type(e) not in allowed_errors:
                         _logger.exception(
-                            **create_troubleshootting_log_kwargs(
+                            **create_troubleshooting_log_kwargs(
                                 (
                                     f"Execution of {task_id=} finished with unexpected error, "
                                     f"only the following {allowed_errors=} are permitted"
@@ -372,7 +372,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                         Exception  # pylint:disable=broad-except
                     ) as serialization_error:
                         _logger.exception(
-                            **create_troubleshootting_log_kwargs(
+                            **create_troubleshooting_log_kwargs(
                                 (
                                     f"Execution of {task_id=} finished with an error "
                                     f"which could not be serialized"

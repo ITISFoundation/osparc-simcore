@@ -22,7 +22,7 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis._client import RedisClientSDK
 from servicelib.redis._semaphore_decorator import (
@@ -399,7 +399,7 @@ class DaskScheduler(BaseCompScheduler):
             return RunningState.SUCCESS, SimcorePlatformStatus.OK, [], True
         except PortsValidationError as err:
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     "Unexpected error while parsing output data, comp_tasks/comp_pipeline is not in sync with what was started",
                     error=err,
                     error_context=log_error_context,
@@ -417,7 +417,7 @@ class DaskScheduler(BaseCompScheduler):
     ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
         assert task.job_id  # nosec
         _logger.warning(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 f"Retrieval of task {task.job_id} result timed-out",
                 error=result,
                 error_context=log_error_context,
@@ -474,7 +474,7 @@ class DaskScheduler(BaseCompScheduler):
     ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
         assert task.job_id  # nosec
         _logger.warning(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 f"Computational backend disconnected when retrieving task {task.job_id} result",
                 error=result,
                 error_context=log_error_context,
@@ -497,7 +497,7 @@ class DaskScheduler(BaseCompScheduler):
         # the task itself failed, check why
         if isinstance(result, TaskCancelledError):
             _logger.info(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     f"Task {task.job_id} was cancelled",
                     error=result,
                     error_context=log_error_context,
@@ -506,7 +506,7 @@ class DaskScheduler(BaseCompScheduler):
             return RunningState.ABORTED, SimcorePlatformStatus.OK, [], True
 
         _logger.info(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 f"Task {task.job_id} completed with errors",
                 error=result,
                 error_context=log_error_context,

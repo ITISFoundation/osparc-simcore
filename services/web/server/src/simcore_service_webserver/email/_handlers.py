@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -93,7 +93,7 @@ async def test_email(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
 
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg="Email test failed",
                 error=err,
                 error_context={
