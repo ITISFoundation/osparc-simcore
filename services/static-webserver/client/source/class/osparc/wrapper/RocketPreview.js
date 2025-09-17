@@ -64,6 +64,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
         minHeight: 300,
         showMinimize: false,
         showMaximize: false,
+        resizable: true,
         modal: true,
         allowClose: true,
         contentPadding: 0,
@@ -114,7 +115,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
             this.__iframeEl = el;
           });
 
-          this._add(control, { edge: 0 });
+          this._add(control);
           break;
       }
       return control || this.base(arguments, id);
