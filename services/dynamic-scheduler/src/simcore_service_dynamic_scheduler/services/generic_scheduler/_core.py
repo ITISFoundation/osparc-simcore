@@ -18,6 +18,7 @@ from ._deferred_runner import DeferredRunner
 from ._dependencies import enqueue_schedule_event
 from ._errors import (
     InitialOperationContextKeyNotAllowedError,
+    KeyNotFoundInHashError,
     UnexpectedStepHandlingError,
 )
 from ._models import (
@@ -35,7 +36,6 @@ from ._operation import (
     get_operation_provided_context_keys,
 )
 from ._store import (
-    KeyNotFoundInHashError,
     OperationContextProxy,
     OperationRemovalProxy,
     ScheduleDataStoreProxy,

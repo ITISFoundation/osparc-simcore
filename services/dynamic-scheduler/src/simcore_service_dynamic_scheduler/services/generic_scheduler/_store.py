@@ -231,7 +231,7 @@ class ScheduleDataStoreProxy:
         await self._store.set(self._get_hash_key(), key, value)
 
     async def set_multiple(self, values: _UpdateScheduleDataDict) -> None:
-        await self._store.set_multiple(self._get_hash_key(), updates=values)
+        await self._store.set_multiple(self._get_hash_key(), updates=values)  # type: ignore[arg-type]
 
     async def delete(self, *keys: _DeleteScheduleDataKeys) -> None:
         await self._store.delete(self._get_hash_key(), *keys)
@@ -354,7 +354,7 @@ class StepStoreProxy:
         await self._store.set(self._get_hash_key(), key, value)
 
     async def set_multiple(self, values: _StepDict) -> None:
-        await self._store.set_multiple(self._get_hash_key(), updates=values)
+        await self._store.set_multiple(self._get_hash_key(), updates=values)  # type: ignore[arg-type]
 
     async def delete(self, *keys: _DeleteStepKeys) -> None:
         await self._store.delete(self._get_hash_key(), *keys)
