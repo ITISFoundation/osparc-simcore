@@ -257,11 +257,12 @@ class Core:
             with log_context(
                 _logger,
                 logging.DEBUG,
-                f"Cancelling step {step_name=} of operation {operation_name=} for schedule {schedule_id=}",
+                f"Cancelling step {step_name=} of {operation_name=} for {schedule_id=}",
             ):
                 with suppress(KeyNotFoundInHashError):
                     deferred_task_uid = await step_proxy.get("deferred_task_uid")
                     await DeferredRunner.cancel(deferred_task_uid)
+                    await step_proxy.set("status", StepStatus.CANCELLED)
 
     async def _get_group_step_proxies(
         self,
@@ -342,11 +343,6 @@ class Core:
             )
             return
 
-        # The parallel steps generate multiple events which causes the last step to be processde more than once
-        # How do we exlcude this?
-
-        # 6 times for -> Operation completed: steps_statuses={'_AddButter': 'SUCCESS', '_AddSalt': 'SUCCESS', '_AddPepper': 'SUCCESS', '_AddPaprika': 'SUCCESS', '_AddMint': 'SUCCESS', '_AddMilk': 'SUCCESS'}
-        # 6 times for -> Operation completed: steps_statuses={'_StirTillDone': 'SUCCESS'}
         _logger.debug("Operation completed: steps_statuses=%s", steps_statuses)
 
         # NOTE: at this point all steps are in a final status
@@ -359,6 +355,7 @@ class Core:
                 group_index,
                 step_group,
                 operation,
+                group_step_proxies,
             )
         else:
             await self._continue_handling_as_reverting(
@@ -379,6 +376,7 @@ class Core:
         group_index: NonNegativeInt,
         current_step_group: BaseStepGroup,
         operation: Operation,
+        group_step_proxies: dict[StepName, StepStoreProxy],
     ) -> None:
         # if all in SUUCESS -> move to next
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
@@ -392,25 +390,32 @@ class Core:
                 # does the step need repeating?
                 if current_step_group.repeat_steps is True:
                     _logger.debug(
-                        "Operation '%s' for schedule_id='%s' REPEATING step group index %s",
+                        "REPEATING step_group='%s' in operation_name='%s' for schedule_id='%s'",
+                        current_step_group.get_step_group_name(index=group_index),
+                        operation_name,
+                        schedule_id,
                     )
                     # wait before repeating
                     await asyncio.sleep(
                         current_step_group.wait_before_repeat.total_seconds()
                     )
-                    # clear previous run data for each step
-                    for step in current_step_group.get_step_subgroup_to_run():
-                        step_rproxy = StepStoreProxy(
-                            store=self._store,
-                            schedule_id=schedule_id,
-                            operation_name=operation_name,
-                            step_group_name=current_step_group.get_step_group_name(
-                                index=group_index
-                            ),
-                            step_name=step.get_step_name(),
-                            is_creating=True,
-                        )
-                        await step_rproxy.remove()
+
+                    step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
+
+                    requeired_steps_statuses = await _get_steps_statuses(step_proxies)
+                    if any(
+                        status == StepStatus.CANCELLED
+                        for status in requeired_steps_statuses.values()
+                    ):
+                        # was cancelled
+                        await schedule_data_proxy.set("is_creating", value=False)
+                        await enqueue_schedule_event(self.app, schedule_id)
+                        return
+
+                    await limited_gather(
+                        *(x.remove() for x in step_proxies),
+                        limit=_PARALLEL_STATUS_REQUESTS,
+                    )
 
                     group_proxy = StepGroupProxy(
                         store=self._store,
