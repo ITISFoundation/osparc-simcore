@@ -29,7 +29,7 @@ from ..._service_jobs import JobService
 from ...models.domain.functions import PageRegisteredFunctionJobWithorWithoutStatus
 from ...models.pagination import PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.functions_filters import FunctionJobsListFilters
+from ...models.schemas.functions import FunctionJobsListFilters
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.functions import (

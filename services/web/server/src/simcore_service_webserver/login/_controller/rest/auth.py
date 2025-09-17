@@ -7,7 +7,8 @@ from models_library.authentification import TwoFactorAuthentificationMethod
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_base import get_log_record_extra
+from servicelib.logging_utils import log_context
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 

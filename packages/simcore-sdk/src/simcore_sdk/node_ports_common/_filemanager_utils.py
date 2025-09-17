@@ -82,7 +82,9 @@ async def complete_upload(
     state_url = _get_https_link_if_storage_secure(
         f"{file_upload_complete_response.data.links.state}"
     )
-    _logger.info("completed upload of %s", f"{len(parts)} parts, received {state_url}")
+    _logger.info(
+        "required upload completion of %s", f"{len(parts)} parts, received {state_url}"
+    )
 
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -101,14 +103,14 @@ async def complete_upload(
                 ).validate_python(await resp.json())
                 assert future_enveloped.data  # nosec
                 if future_enveloped.data.state == FileUploadCompleteState.NOK:
-                    msg = "upload not ready yet"
+                    msg = "upload not ready yet (FileUploadCompleteState.NOK)"
                     raise ValueError(msg)
             if is_directory:
                 assert future_enveloped.data.e_tag is None  # nosec
                 return None
 
             assert future_enveloped.data.e_tag  # nosec
-            _logger.debug(
+            _logger.info(
                 "multipart upload completed in %s, received %s",
                 attempt.retry_state.retry_object.statistics,
                 f"{future_enveloped.data.e_tag=}",

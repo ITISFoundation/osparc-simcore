@@ -7,7 +7,8 @@ from typing import Final
 
 from aiohttp import web
 from models_library.users import UserID
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_base import get_log_record_extra
+from servicelib.logging_utils import log_context
 
 from .models import ResourcesDict, UserSession
 from .registry import (

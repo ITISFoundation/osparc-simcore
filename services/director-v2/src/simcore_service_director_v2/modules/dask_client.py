@@ -56,7 +56,7 @@ from models_library.services import ServiceRunID
 from models_library.users import UserID
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
@@ -468,7 +468,7 @@ class DaskClient:
 
                     if isinstance(exception, TaskCancelledError):
                         _logger.info(
-                            **create_troubleshootting_log_kwargs(
+                            **create_troubleshooting_log_kwargs(
                                 f"Task {job_id} was aborted by user",
                                 error=exception,
                                 error_context=log_error_context,
@@ -477,7 +477,7 @@ class DaskClient:
                         return RunningState.ABORTED
                     assert exception  # nosec
                     _logger.info(
-                        **create_troubleshootting_log_kwargs(
+                        **create_troubleshooting_log_kwargs(
                             f"Task {job_id} completed with an error",
                             error=exception,
                             error_context=log_error_context,
@@ -486,7 +486,7 @@ class DaskClient:
                     return RunningState.FAILED
                 except TimeoutError as exc:
                     _logger.exception(
-                        **create_troubleshootting_log_kwargs(
+                        **create_troubleshooting_log_kwargs(
                             f"Task {job_id} exception could not be retrieved due to timeout",
                             error=exc,
                             error_context=log_error_context,
@@ -497,7 +497,7 @@ class DaskClient:
                 except KeyError as exc:
                     # the task does not exist
                     _logger.warning(
-                        **create_troubleshootting_log_kwargs(
+                        **create_troubleshooting_log_kwargs(
                             f"Task {job_id} not found. State is UNKNOWN.",
                             error=exc,
                             error_context=log_error_context,
