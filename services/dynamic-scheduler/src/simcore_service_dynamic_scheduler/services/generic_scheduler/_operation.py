@@ -263,7 +263,7 @@ def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
             for key in step.create_provides_operation_context_keys():
                 if key in create_provided_keys:
                     msg = (
-                        f"Step {step_name=} provides already provided key {key=} in "
+                        f"Step {step_name=} provides already provided {key=} in "
                         f"{step.create_provides_operation_context_keys.__name__}()"
                     )
                     raise ValueError(msg)
@@ -271,7 +271,7 @@ def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
             for key in step.revert_provides_operation_context_keys():
                 if key in revert_provided_keys:
                     msg = (
-                        f"Step {step_name=} provides already provided key {key=} in "
+                        f"Step {step_name=} provides already provided {key=} in "
                         f"{step.revert_provides_operation_context_keys.__name__}()"
                     )
                     raise ValueError(msg)
