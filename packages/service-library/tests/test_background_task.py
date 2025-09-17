@@ -26,8 +26,8 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-_FAST_POLL_INTERVAL: Final[int] = 1
-_VERY_SLOW_POLL_INTERVAL: Final[int] = 100
+_FAST_POLL_INTERVAL: Final[float] = 0.01
+_VERY_SLOW_POLL_INTERVAL: Final[float] = 1
 
 
 @pytest.fixture
