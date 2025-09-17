@@ -41,7 +41,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
-from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata, TasksQueue
+from servicelib.celery.models import TaskID, TaskMetadata, TasksQueue
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
@@ -56,6 +56,7 @@ from simcore_service_api_server.celery_worker.worker_tasks.functions_tasks impor
 )
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
+from simcore_service_api_server.models.domain.celery_models import ApiWorkerTaskFilter
 from simcore_service_api_server.models.domain.functions import (
     PreRegisteredFunctionJobData,
 )
@@ -63,7 +64,6 @@ from simcore_service_api_server.models.schemas.jobs import (
     JobPricingSpecification,
     NodeID,
 )
-from simcore_service_api_server.services_rpc.storage import get_job_filter
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -280,7 +280,7 @@ async def test_celery_error_propagation(
     with_api_server_celery_worker: TestWorkController,
 ):
 
-    job_filter = get_job_filter(
+    task_filter = ApiWorkerTaskFilter(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
     )
@@ -289,7 +289,7 @@ async def test_celery_error_propagation(
         task_metadata=TaskMetadata(
             name="exception_task", queue=TasksQueue.API_WORKER_QUEUE
         ),
-        task_filter=TaskFilter.model_validate(job_filter.model_dump()),
+        task_filter=task_filter,
     )
 
     with pytest.raises(HTTPStatusError) as exc_info:

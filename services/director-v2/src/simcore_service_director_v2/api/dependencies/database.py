@@ -26,17 +26,11 @@ def get_base_repository(engine: AsyncEngine, repo_type: type[RepoType]) -> RepoT
     # now the current solution is to acquire connection when needed.
 
     # Get pool metrics
-    checkedin = engine.pool.checkedin()  # type: ignore # connections available in pool
-    checkedout = engine.pool.checkedout()  # type: ignore # connections in use
+    in_use = engine.pool.checkedout()  # type: ignore # connections in use
     total_size = engine.pool.size()  # type: ignore # current total connections
 
-    if (checkedin < 2) and (total_size > 1):  # noqa: PLR2004
-        logger.warning(
-            "Database connection pool near limits: total=%d, in_use=%d, available=%d",
-            total_size,
-            checkedout,
-            checkedin,
-        )
+    if (total_size > 1) and (in_use > (total_size - 2)):
+        logger.warning("Database connection pool near limits: %s", engine.pool.status())
 
     return repo_type(db_engine=engine)
 

@@ -1215,7 +1215,10 @@ async def _scale_down_unused_cluster_instances(
     cluster: Cluster,
     auto_scaling_mode: AutoscalingProvider,
 ) -> Cluster:
-    await auto_scaling_mode.try_retire_nodes(app)
+    if any(not instance.has_assigned_tasks() for instance in cluster.active_nodes):
+        # ask the provider to try to retire nodes actively
+        with log_catch(_logger, reraise=False):
+            await auto_scaling_mode.try_retire_nodes(app)
     cluster = await _deactivate_empty_nodes(app, cluster)
     return await _try_scale_down_cluster(app, cluster)
 

@@ -105,9 +105,6 @@ qx.Class.define("osparc.support.Conversation", {
           this.bind("conversation", control, "conversationId", {
             converter: conversation => conversation ? conversation.getConversationId() : null
           });
-          // make it more compact
-          control.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();
-          control.getChildControl("comment-field").getChildControl("subtitle").exclude();
           this._addAt(control, 4);
           break;
         case "share-project-layout":
@@ -155,6 +152,7 @@ qx.Class.define("osparc.support.Conversation", {
               // make these checks first, setConversation will reload messages
               if (
                 this.__messages.length === 1 &&
+                this.__messages[0]["systemMessageType"] &&
                 this.__messages[0]["systemMessageType"] === osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL
               ) {
                 isBookACall = true;
