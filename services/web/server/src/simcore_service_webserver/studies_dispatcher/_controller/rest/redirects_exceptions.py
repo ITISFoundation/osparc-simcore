@@ -7,7 +7,7 @@ from common_library.user_messages import user_message
 from models_library.function_services_catalog._utils import ServiceNotFound
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 
 from ....exception_handling import create_error_context_from_request
 from ....utils import compose_support_error_msg
@@ -54,7 +54,7 @@ def _create_error_redirect_with_logging(
     user_error_msg = compose_support_error_msg(msg=message, error_code=error_code)
 
     _logger.exception(
-        **create_troubleshootting_log_kwargs(
+        **create_troubleshooting_log_kwargs(
             user_error_msg,
             error=err,
             error_code=error_code,

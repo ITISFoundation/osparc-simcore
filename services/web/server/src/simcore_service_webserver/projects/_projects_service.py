@@ -84,7 +84,8 @@ from servicelib.common_headers import (
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_base import get_log_record_extra
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (

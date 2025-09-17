@@ -23,7 +23,7 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from simcore_postgres_database.models.users import UserStatus
@@ -226,7 +226,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
         user_error_msg = f"Invalid invitation. {MSG_INVITATIONS_CONTACT_SUFFIX}"
 
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_code=error_code,
@@ -243,7 +243,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
         user_error_msg = "Unable to process your invitation since the invitations service is currently unavailable"
 
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_code=error_code,

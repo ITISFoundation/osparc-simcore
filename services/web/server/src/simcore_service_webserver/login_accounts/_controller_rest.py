@@ -13,7 +13,8 @@ from servicelib.aiohttp.requests_validation import (
     handle_validation_as_http_error,
     parse_request_body_as,
 )
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_base import get_log_record_extra
+from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG
