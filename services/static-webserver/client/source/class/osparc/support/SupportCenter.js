@@ -196,9 +196,9 @@ qx.Class.define("osparc.support.SupportCenter", {
       }
     },
 
-    createConversation: function(type) {
+    createConversation: function(type, prefillText) {
       const conversationPage = this.getChildControl("conversation-page");
-      conversationPage.proposeConversation(type);
+      conversationPage.proposeConversation(type, prefillText);
       this.__showConversation();
     },
   }

@@ -160,7 +160,7 @@ qx.Class.define("osparc.support.ConversationPage", {
       return control || this.base(arguments, id);
     },
 
-    proposeConversation: function(type) {
+    proposeConversation: function(type, prefillText) {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
       this.setConversation(null);
 
@@ -179,6 +179,10 @@ qx.Class.define("osparc.support.ConversationPage", {
           break;
       }
       conversationContent.addSystemMessage(type);
+
+      if (prefillText) {
+        this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(prefillText);
+      }
     },
 
     __applyConversation: function(conversation) {
