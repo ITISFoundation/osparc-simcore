@@ -46,3 +46,9 @@ class InitialOperationContextKeyNotAllowedError(BaseGenericSchedulerError):
     msg_template: str = (
         "Initial operation context cannot contain key '{key}' since it is provided by the operation: {operation}"
     )
+
+
+class CannotCancelWhileWaitingForManualInterventionError(BaseGenericSchedulerError):
+    msg_template: str = (
+        "Cannot cancel schedule_id='{schedule_id}' while one or more steps are waiting for manual intervention."
+    )

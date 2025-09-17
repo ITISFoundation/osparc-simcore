@@ -17,6 +17,7 @@ from servicelib.utils import limited_gather
 from ._deferred_runner import DeferredRunner
 from ._dependencies import enqueue_schedule_event
 from ._errors import (
+    CannotCancelWhileWaitingForManualInterventionError,
     InitialOperationContextKeyNotAllowedError,
     KeyNotFoundInHashError,
     UnexpectedStepHandlingError,
@@ -243,6 +244,14 @@ class Core:
 
         operation = OperationRegistry.get_operation(operation_name)
         group = operation[group_index]
+
+        if any(
+            step.wait_for_manual_intervention()
+            for step in group.get_step_subgroup_to_run()
+        ):
+            raise CannotCancelWhileWaitingForManualInterventionError(
+                schedule_id=schedule_id
+            )
 
         for step in group.get_step_subgroup_to_run():
             step_name = step.get_step_name()

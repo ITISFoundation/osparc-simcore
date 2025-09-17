@@ -22,6 +22,9 @@ from simcore_service_dynamic_scheduler.core.application import create_app
 from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
     get_core,
 )
+from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
+    CannotCancelWhileWaitingForManualInterventionError,
+)
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     OperationName,
     ProvidedOperationContext,
@@ -205,6 +208,12 @@ class _SleepsForeverBS(_BS):
     ) -> ProvidedOperationContext | None:
         await super().create(app, required_context)
         await asyncio.sleep(1e10)
+
+
+class _WaitManualInerventionBS(_RevertBS):
+    @classmethod
+    def wait_for_manual_intervention(cls) -> bool:
+        return True
 
 
 class _BaseExpectedStepOrder:
@@ -410,6 +419,15 @@ class _SF1(_SleepsForeverBS): ...
 
 
 class _SF2(_SleepsForeverBS): ...
+
+
+# Below will wait for manual intervention after it fails on create
+
+
+class _WMI1(_WaitManualInerventionBS): ...
+
+
+class _WMI2(_WaitManualInerventionBS): ...
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -893,9 +911,94 @@ async def test_repeating_step(
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-# TODO: test manual intervention
-#   -> manual intervention an anction that raises an error and has the flag for manual intervention
-#   -> manual intervention  & fail on REVERT (what should happen?)-> this should be an unexpected thing
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, expected_order, expected_keys",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_S2, _S3, _S4),
+                SingleStepGroup(_WMI1),
+            ],
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_S2, _S3, _S4),
+                _CreateSequence(_WMI1),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1P:C",
+                "SCH:{schedule_id}:GROUPS:test_op:2S:C",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_S1",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S3",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S4",
+                "SCH:{schedule_id}:STEPS:test_op:2S:C:_WMI1",
+            },
+            id="s1-p3-s1(1mi)",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_S2, _S3, _S4),
+                ParallelStepGroup(_WMI1, _WMI2, _S5, _S6, _S7),
+                SingleStepGroup(_S8),  # will be ignored
+                ParallelStepGroup(_S9, _S10),  # will be ignored
+            ],
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_S2, _S3, _S4),
+                _CreateRandom(_WMI1, _WMI2, _S5, _S6, _S7),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1P:C",
+                "SCH:{schedule_id}:GROUPS:test_op:2P:C",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_S1",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S3",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S4",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_S5",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_S6",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_S7",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_WMI1",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_WMI2",
+            },
+            id="s1-p3-p5(2mi)",
+        ),
+    ],
+)
+async def test_wait_for_manual_intervention(
+    preserve_caplog_for_async_logging: None,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_name: OperationName,
+    expected_order: list[_BaseExpectedStepOrder],
+    expected_keys: set[str],
+):
+    register_operation(operation_name, operation)
+
+    core = get_core(selected_app)
+    schedule_id = await core.create(operation_name, {})
+    assert isinstance(schedule_id, ScheduleId)
+
+    formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
+
+    await _ensure_expected_order(steps_call_order, expected_order)
+
+    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+
+    # even if cancelled, state of waiting for manual intervention remains the same
+    with pytest.raises(CannotCancelWhileWaitingForManualInterventionError):
+        await core.cancel_schedule(schedule_id)
+    # give some time for a "possible cancellation" to be processed
+    await asyncio.sleep(0.1)
+    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
 
 # TODO: test something with initial_operation_context that requires data from a previous step,
