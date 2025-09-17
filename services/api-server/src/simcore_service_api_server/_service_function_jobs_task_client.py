@@ -381,7 +381,7 @@ class FunctionJobTaskClientService:
         task_uuid = await self._celery_task_manager.submit_task(
             TaskMetadata(
                 name="run_function",
-                ephemeral=True,
+                ephemeral=False,
                 queue=TasksQueue.API_WORKER_QUEUE,
             ),
             task_filter=task_filter,
