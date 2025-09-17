@@ -13,6 +13,7 @@ from ._base import InputSchema
 
 MIN_NON_WILDCARD_CHARS: Final[int] = 3
 
+
 class StorageLocationPathParams(BaseModel):
     location_id: LocationID
 
@@ -49,16 +50,16 @@ def validate_pattern_has_enough_characters(v: str) -> str:
     non_wildcard_chars = len([c for c in v if c not in ("*", "?")])
 
     if non_wildcard_chars < MIN_NON_WILDCARD_CHARS:
-        msg = f"Name pattern must contain at least {MIN_NON_WILDCARD_CHARS} non-wildcard characters (not * or ?), got {non_wildcard_chars}"
+        msg = f"Name pattern {v} must contain at least {MIN_NON_WILDCARD_CHARS} non-wildcard characters (not * or ?), got {non_wildcard_chars}"
         raise ValueError(msg)
     return v
 
 
 class SearchBodyParams(InputSchema):
     name_pattern: Annotated[
-         str,
-         BeforeValidator(validate_pattern_has_enough_characters),
-         Field(
-              description="Name pattern with wildcard support (* and ?). Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
-         )
+        str,
+        BeforeValidator(validate_pattern_has_enough_characters),
+        Field(
+            description="Name pattern with wildcard support (* and ?). Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
+        ),
     ]
