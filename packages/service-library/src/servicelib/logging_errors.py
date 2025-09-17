@@ -36,6 +36,9 @@ def create_troubleshootting_log_message(
             seen.add(id(current))
             causes.append(f"[{type(current).__name__}]'{current}'")
             current = getattr(current, "__cause__", None)
+            if len(causes) > 10:  # Prevent excessive chains
+                causes.append("[... truncated]")
+                break
         return " <- ".join(causes)
 
     debug_data = json_dumps(
