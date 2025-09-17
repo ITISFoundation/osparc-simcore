@@ -86,7 +86,7 @@ async def _celery_task_status(
         task_status = await task_manager.get_task_status(
             task_uuid=TaskUUID(job_creation_task_id), task_filter=task_filter
         )
-        return FunctionJobCreationTaskStatus[task_status.task_state].value
+        return FunctionJobCreationTaskStatus[task_status.task_state]
     except TaskNotFoundError as e:
         return FunctionJobCreationTaskStatus.ERROR
 
