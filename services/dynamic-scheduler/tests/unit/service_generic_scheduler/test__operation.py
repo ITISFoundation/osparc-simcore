@@ -39,6 +39,12 @@ class BS2(BaseBS): ...
 class BS3(BaseBS): ...
 
 
+class MI1(BaseBS):
+    @classmethod
+    def wait_for_manual_intervention(cls) -> bool:
+        return True
+
+
 class WrongBS1C(BaseBS):
     @classmethod
     def get_create_provides_operation_context_keys(cls) -> set[str]:
@@ -149,6 +155,16 @@ def test_validate_operation_passes(operation: Operation):
         (
             [ParallelStepGroup(WrongBS1R, WrongBS2R)],
             f"already provided key='revert_key' in {BaseStep.get_revert_provides_operation_context_keys.__name__}",
+        ),
+        (
+            [SingleStepGroup(MI1, repeat_steps=True)],
+            "cannot have steps that require manual intervention",
+        ),
+        (
+            [
+                ParallelStepGroup(MI1, BS1, BS2, repeat_steps=True),
+            ],
+            "cannot have steps that require manual intervention",
         ),
     ],
 )
