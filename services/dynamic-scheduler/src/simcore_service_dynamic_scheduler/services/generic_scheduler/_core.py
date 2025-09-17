@@ -440,10 +440,7 @@ class Core:
         current_step_group.get_step_subgroup_to_run()
         for step in current_step_group.get_step_subgroup_to_run():
             step_status = steps_statuses.get(step.get_step_name(), None)
-            if (
-                step_status == StepStatus.FAILED
-                and await step.get_create_error_for_manual_intervention()
-            ):
+            if step_status == StepStatus.FAILED and step.wait_for_manual_intervention():
                 step_proxy = StepStoreProxy(
                     store=self._store,
                     schedule_id=schedule_id,

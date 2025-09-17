@@ -41,25 +41,25 @@ class BS3(BaseBS): ...
 
 class WrongBS1C(BaseBS):
     @classmethod
-    def create_provides_operation_context_keys(cls) -> set[str]:
+    def get_create_provides_operation_context_keys(cls) -> set[str]:
         return {"create_key"}
 
 
 class WrongBS2C(BaseBS):
     @classmethod
-    def create_provides_operation_context_keys(cls) -> set[str]:
+    def get_create_provides_operation_context_keys(cls) -> set[str]:
         return {"create_key"}
 
 
 class WrongBS1R(BaseBS):
     @classmethod
-    def revert_provides_operation_context_keys(cls) -> set[str]:
+    def get_revert_provides_operation_context_keys(cls) -> set[str]:
         return {"revert_key"}
 
 
 class WrongBS2R(BaseBS):
     @classmethod
-    def revert_provides_operation_context_keys(cls) -> set[str]:
+    def get_revert_provides_operation_context_keys(cls) -> set[str]:
         return {"revert_key"}
 
 
@@ -136,19 +136,19 @@ def test_validate_operation_passes(operation: Operation):
         ),
         (
             [SingleStepGroup(WrongBS1C), SingleStepGroup(WrongBS2C)],
-            f"already provided key='create_key' in {BaseStep.create_provides_operation_context_keys.__name__}",
+            f"already provided key='create_key' in {BaseStep.get_create_provides_operation_context_keys.__name__}",
         ),
         (
             [ParallelStepGroup(WrongBS1C, WrongBS2C)],
-            f"already provided key='create_key' in {BaseStep.create_provides_operation_context_keys.__name__}",
+            f"already provided key='create_key' in {BaseStep.get_create_provides_operation_context_keys.__name__}",
         ),
         (
             [SingleStepGroup(WrongBS1R), SingleStepGroup(WrongBS2R)],
-            f"already provided key='revert_key' in {BaseStep.revert_provides_operation_context_keys.__name__}",
+            f"already provided key='revert_key' in {BaseStep.get_revert_provides_operation_context_keys.__name__}",
         ),
         (
             [ParallelStepGroup(WrongBS1R, WrongBS2R)],
-            f"already provided key='revert_key' in {BaseStep.revert_provides_operation_context_keys.__name__}",
+            f"already provided key='revert_key' in {BaseStep.get_revert_provides_operation_context_keys.__name__}",
         ),
     ],
 )

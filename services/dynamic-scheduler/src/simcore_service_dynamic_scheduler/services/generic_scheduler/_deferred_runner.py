@@ -181,24 +181,24 @@ class DeferredRunner(BaseDeferredHandler[None]):
 
         if is_creating:
             required_context = await opration_context_proxy.get_required_context(
-                *step.create_requires_operation_context_keys()
+                *step.get_create_requires_operation_context_keys()
             )
             _raise_if_any_context_value_is_none(required_context)
 
             provided_operation_context = await step.create(app, required_context)
-            create_provides_keys = step.create_provides_operation_context_keys()
+            create_provides_keys = step.get_create_provides_operation_context_keys()
 
             _raise_if_provided_context_keys_are_missing_or_none(
                 provided_operation_context, create_provides_keys
             )
         else:
             required_context = await opration_context_proxy.get_required_context(
-                *step.revert_requires_operation_context_keys()
+                *step.get_revert_requires_operation_context_keys()
             )
             _raise_if_any_context_value_is_none(required_context)
 
             provided_operation_context = await step.revert(app, required_context)
-            revert_provides_keys = step.revert_provides_operation_context_keys()
+            revert_provides_keys = step.get_revert_provides_operation_context_keys()
 
             _raise_if_provided_context_keys_are_missing_or_none(
                 provided_operation_context, revert_provides_keys
