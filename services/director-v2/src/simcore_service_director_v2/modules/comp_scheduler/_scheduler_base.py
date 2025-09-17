@@ -31,7 +31,7 @@ from models_library.users import UserID
 from networkx.classes.reportviews import InDegreeView
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
@@ -701,7 +701,7 @@ class BaseCompScheduler(ABC):
                     )
             except PipelineNotFoundError as exc:
                 _logger.exception(
-                    **create_troubleshootting_log_kwargs(
+                    **create_troubleshooting_log_kwargs(
                         f"pipeline {project_id} is missing from `comp_pipelines` DB table, something is corrupted. Aborting scheduling",
                         error=exc,
                         error_context={
@@ -719,7 +719,7 @@ class BaseCompScheduler(ABC):
                 )
             except InvalidPipelineError as exc:
                 _logger.exception(
-                    **create_troubleshootting_log_kwargs(
+                    **create_troubleshooting_log_kwargs(
                         f"pipeline {project_id} appears to be misconfigured. Aborting scheduling",
                         error=exc,
                         error_context={
@@ -740,7 +740,7 @@ class BaseCompScheduler(ABC):
                 ClustersKeeperNotAvailableError,
             ) as exc:
                 _logger.exception(
-                    **create_troubleshootting_log_kwargs(
+                    **create_troubleshooting_log_kwargs(
                         "Unexpectedly lost connection to the computational backend. Tasks are set back to WAITING_FOR_CLUSTER state until we eventually reconnect",
                         error=exc,
                         error_context={
@@ -848,7 +848,7 @@ class BaseCompScheduler(ABC):
             ClustersKeeperNotAvailableError,
         ) as exc:
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     "Computational backend is not connected. Tasks are set back "
                     "to WAITING_FOR_CLUSTER state until scheduler comes back!",
                     error=exc,
@@ -885,7 +885,7 @@ class BaseCompScheduler(ABC):
 
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     "The on demand computational backend is not ready yet. Tasks are set to WAITING_FOR_CLUSTER state until the cluster is ready!",
                     error=exc,
                     error_context={
@@ -917,7 +917,7 @@ class BaseCompScheduler(ABC):
                 comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
         except TaskSchedulingError as exc:
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     "A task could not be scheduled, it is set to FAILED and the rest of the pipeline will be ABORTED",
                     error=exc,
                     error_context={
@@ -944,7 +944,7 @@ class BaseCompScheduler(ABC):
             comp_tasks[f"{exc.node_id}"].state = RunningState.FAILED
         except Exception as exc:
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     "Unexpected error happened when scheduling tasks, all tasks to start are set to FAILED and the rest of the pipeline will be ABORTED",
                     error=exc,
                     error_context={

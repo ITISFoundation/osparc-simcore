@@ -16,7 +16,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.aiohttp.observer import emit
 from servicelib.logging_base import get_log_record_extra
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_context
 from servicelib.request_keys import RQT_USERID_KEY
 
@@ -175,7 +175,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
 
             except KeyError as err:
                 _logger.exception(
-                    **create_troubleshootting_log_kwargs(
+                    **create_troubleshooting_log_kwargs(
                         f"Socket session {socket_id} does not have user_id or client_session_id during disconnect",
                         error=err,
                         error_context={
@@ -189,7 +189,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
 
     except KeyError as err:
         _logger.warning(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 f"Socket session {socket_id} not found during disconnect, already cleaned up",
                 error=err,
                 error_context={"socket_id": socket_id},

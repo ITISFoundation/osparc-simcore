@@ -23,7 +23,7 @@ from common_library.json_serialization import json_dumps
 from settings_library.tracing import TracingSettings
 
 from .logging_base import LogExtra
-from .logging_errors import create_troubleshootting_log_kwargs
+from .logging_errors import create_troubleshooting_log_kwargs
 from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
 from .tracing import setup_log_tracing
 from .utils_secrets import mask_sensitive_data
@@ -555,7 +555,7 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
         raise
     except Exception as exc:  # pylint: disable=broad-except
         logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 "Caught unhandled exception",
                 error=exc,
             )
