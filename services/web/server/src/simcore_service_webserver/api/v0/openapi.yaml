@@ -14006,9 +14006,9 @@ components:
           description: The short name of the node
         progress:
           anyOf:
-          - type: integer
-            maximum: 100
-            minimum: 0
+          - type: number
+            maximum: 100.0
+            minimum: 0.0
           - type: 'null'
           title: Progress
           description: the node progress value
@@ -14109,6 +14109,12 @@ components:
           - $ref: '#/components/schemas/NodeState-Input'
           - type: 'null'
           description: The node's state object
+        required_resources:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Required Resources
         bootOptions:
           anyOf:
           - type: object
@@ -14143,9 +14149,9 @@ components:
           description: The short name of the node
         progress:
           anyOf:
-          - type: integer
-            maximum: 100
-            minimum: 0
+          - type: number
+            maximum: 100.0
+            minimum: 0.0
           - type: 'null'
           title: Progress
           description: the node progress value
@@ -14246,6 +14252,12 @@ components:
           - $ref: '#/components/schemas/NodeState-Output'
           - type: 'null'
           description: The node's state object
+        required_resources:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Required Resources
         bootOptions:
           anyOf:
           - type: object
