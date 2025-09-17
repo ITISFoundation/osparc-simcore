@@ -182,7 +182,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
         this.getChildControl("market");
       }
 
-      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+      if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.wrapper.RocketPreview.existsBuild()) {
         this.getChildControl("rocket-preview");
       }
 
