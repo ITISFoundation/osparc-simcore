@@ -8,7 +8,7 @@ from typing import Any, TypeVar
 
 from common_library.error_codes import create_error_code
 from models_library.rabbitmq_basic_types import RPCMethodName
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 
 from ..logging_utils import log_context
 from ._errors import RPCServerError
@@ -74,7 +74,7 @@ class RPCRouter:
                         error_code = create_error_code(exc)
                         _logger.exception(
                             # NOTE: equivalent to a 500 http status code error
-                            **create_troubleshootting_log_kwargs(
+                            **create_troubleshooting_log_kwargs(
                                 f"Unhandled exception on the rpc-server side for '{func.__name__}'",
                                 error=exc,
                                 error_code=error_code,

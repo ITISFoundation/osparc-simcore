@@ -6,7 +6,7 @@ from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
@@ -255,7 +255,7 @@ async def register(request: web.Request):
             user_error_msg = MSG_CANT_SEND_MAIL
 
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     user_error_msg,
                     error=err,
                     error_code=error_code,
@@ -382,7 +382,7 @@ async def register_phone(request: web.Request):
         user_error_msg = "Currently we cannot register phone numbers"
 
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_code=error_code,

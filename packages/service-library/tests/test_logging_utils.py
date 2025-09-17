@@ -11,6 +11,7 @@ from typing import Any
 
 import pytest
 from faker import Faker
+from servicelib.logging_base import get_log_record_extra
 from servicelib.logging_utils import (
     _DEFAULT_FORMATTING,
     CustomFormatter,
@@ -618,7 +619,6 @@ def _create_test_log_record(
     span_id: str | None = None,
 ) -> logging.LogRecord:
     """Create a test LogRecord with optional extra fields."""
-    from servicelib.logging_utils import get_log_record_extra
 
     record = logging.LogRecord(
         name=name,
