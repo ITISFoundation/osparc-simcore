@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any, Final, TypeAlias
 
 from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
@@ -219,7 +219,7 @@ async def is_completed_upload_file(
     """Returns state of upload completion"""
 
 
-_responses: dict[int | str, dict[str, Any]] = {
+_RESPONSES: Final[dict[int | str, dict[str, Any]]] = {
     i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
 }
 
@@ -230,7 +230,7 @@ _responses: dict[int | str, dict[str, Any]] = {
     response_model=Envelope[TaskGet],
     name="export_data",
     description="Export data",
-    responses=_responses,
+    responses=_RESPONSES,
 )
 async def export_data(export_data: DataExportPost, location_id: LocationID):
     """Trigger data export. Returns async job id for getting status and results"""
@@ -242,7 +242,7 @@ async def export_data(export_data: DataExportPost, location_id: LocationID):
     response_model=Envelope[TaskGet],
     name="search",
     description="Starts a files/folders search",
-    responses=_responses,
+    responses=_RESPONSES,
 )
 async def search(
     _path: Annotated[StorageLocationPathParams, Depends()],
