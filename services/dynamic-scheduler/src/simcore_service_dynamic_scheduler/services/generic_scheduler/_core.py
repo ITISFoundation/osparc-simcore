@@ -16,7 +16,10 @@ from servicelib.utils import limited_gather
 
 from ._deferred_runner import DeferredRunner
 from ._dependencies import enqueue_schedule_event
-from ._errors import UnexpectedStepHandlingError
+from ._errors import (
+    InitialOperationContextKeyNotAllowedError,
+    UnexpectedStepHandlingError,
+)
 from ._models import (
     OperationContext,
     OperationErrorType,
@@ -25,9 +28,16 @@ from ._models import (
     StepName,
     StepStatus,
 )
-from ._operation import BaseStepGroup, Operation, OperationRegistry
+from ._operation import (
+    BaseStepGroup,
+    Operation,
+    OperationRegistry,
+    get_operation_provided_context_keys,
+)
 from ._store import (
     KeyNotFoundInHashError,
+    OperationContextProxy,
+    OperationRemovalProxy,
     ScheduleDataStoreProxy,
     StepGroupProxy,
     StepStoreProxy,
@@ -116,6 +126,17 @@ async def _start_and_mark_as_started(
     )
 
 
+def _raise_if_overwrites_any_operation_provided_key(
+    operation: Operation, initial_operation_context: OperationContext
+) -> None:
+    operation_provided_context_keys = get_operation_provided_context_keys(operation)
+    for key in initial_operation_context:
+        if key in operation_provided_context_keys:
+            raise InitialOperationContextKeyNotAllowedError(
+                key=key, operation=operation
+            )
+
+
 class Core:
     def __init__(
         self,
@@ -138,24 +159,36 @@ class Core:
         pass
 
     async def create(
-        self, operation_name: OperationName, operation_context: OperationContext
+        self, operation_name: OperationName, initial_operation_context: OperationContext
     ) -> ScheduleId:
         """entrypoint for sceduling returns a unique schedule_id"""
         schedule_id: ScheduleId = f"{uuid4()}"
 
         # check if operation is registerd
-        OperationRegistry.get_operation(operation_name)
+        operation = OperationRegistry.get_operation(operation_name)
+
+        _raise_if_overwrites_any_operation_provided_key(
+            operation, initial_operation_context
+        )
+
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
         )
         await schedule_data_proxy.set_multiple(
             {
                 "operation_name": operation_name,
-                "operation_context": operation_context,
                 "group_index": 0,
                 "is_creating": True,
             }
         )
+
+        operation_content_proxy = OperationContextProxy(
+            store=self._store,
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+        )
+        await operation_content_proxy.set_provided_context(initial_operation_context)
+
         await enqueue_schedule_event(self.app, schedule_id)
         return schedule_id
 
@@ -349,7 +382,11 @@ class Core:
             )
         else:
             await self._continue_handling_as_reverting(
-                steps_statuses, schedule_data_proxy, schedule_id, group_index
+                steps_statuses,
+                schedule_data_proxy,
+                schedule_id,
+                operation_name,
+                group_index,
             )
 
     async def _continue_handling_as_creation(
@@ -407,8 +444,10 @@ class Core:
 
                     await enqueue_schedule_event(self.app, schedule_id)
                 else:
-                    # TODO: the end has bean reached, do nothing from now on
-                    # here an event can be sent when the opration finishes succesfully
+                    removal_proxy = OperationRemovalProxy(
+                        store=self._store, schedule_id=schedule_id
+                    )
+                    await removal_proxy.remove()
                     _logger.debug(
                         "Operation '%s' for schedule_id='%s' COMPLETED successfully",
                         operation_name,
@@ -476,13 +515,23 @@ class Core:
         steps_statuses: dict[StepName, StepStatus],
         schedule_data_proxy: ScheduleDataStoreProxy,
         schedule_id: ScheduleId,
+        operation_name: OperationName,
         group_index: NonNegativeInt,
     ) -> None:
         # if all in SUUCESS -> go back to previous untill done
         if all(s == StepStatus.SUCCESS for s in steps_statuses.values()):
             previous_group_index = group_index - 1
             if previous_group_index < 0:
-                # no more to revert
+                removal_proxy = OperationRemovalProxy(
+                    store=self._store, schedule_id=schedule_id
+                )
+                await removal_proxy.remove()
+
+                _logger.debug(
+                    "Operation %s for schedule_id='%s' REVERTED successfully",
+                    operation_name,
+                    schedule_id,
+                )
                 return
 
             await schedule_data_proxy.set("group_index", value=previous_group_index)

@@ -7,7 +7,7 @@ from collections.abc import AsyncIterable, Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack
 from copy import deepcopy
 from secrets import choice
-from typing import Final
+from typing import Any, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -26,6 +26,8 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     OperationContext,
     OperationName,
+    ProvidedOperationContext,
+    RequiredOperationContext,
     ScheduleId,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._operation import (
@@ -34,6 +36,9 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._operation imp
     OperationRegistry,
     ParallelStepGroup,
     SingleStepGroup,
+)
+from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
+    get_store,
 )
 from tenacity import (
     AsyncRetrying,
@@ -49,6 +54,14 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "redis-commander",
 ]
+
+
+_RETRY_PARAMS: Final[dict[str, Any]] = {
+    "wait": wait_fixed(0.1),
+    "stop": stop_after_delay(10),
+    "retry": retry_if_exception_type(AssertionError),
+}
+
 
 _PARALLEL_APP_CREATION: Final[NonNegativeInt] = 5
 
@@ -132,21 +145,25 @@ def steps_call_order() -> Iterable[list[tuple[str, str]]]:
     _STEPS_CALL_ORDER.clear()
 
 
-# UTILS ---------------------------------------------------------------
-
 _CREATED: Final[str] = "create"
 _REVERTED: Final[str] = "revert"
 
 
 class _BS(BaseStep):
     @classmethod
-    async def create(cls, app: FastAPI) -> None:
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
         _ = app
+        _ = required_context
         _STEPS_CALL_ORDER.append((cls.__name__, _CREATED))
 
     @classmethod
-    async def revert(cls, app: FastAPI) -> None:
+    async def revert(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
         _ = app
+        _ = required_context
         _STEPS_CALL_ORDER.append((cls.__name__, _REVERTED))
 
 
@@ -177,7 +194,7 @@ class _RevertRandom(_BaseExpectedStepOrder):
     """steps appear in any given order as REVERT"""
 
 
-def _assert_sequence(
+def _assert_order_sequence(
     remaning_call_order: list[tuple[str, str]],
     steps: tuple[type[BaseStep], ...],
     *,
@@ -189,7 +206,7 @@ def _assert_sequence(
         assert actual == expected
 
 
-def _assert_random(
+def _assert_order_random(
     remaning_call_order: list[tuple[str, str]],
     steps: tuple[type[BaseStep], ...],
     *,
@@ -214,20 +231,22 @@ def _asseert_order_as_expected(
 
     for group in expected_order:
         if isinstance(group, _CreateSequence):
-            _assert_sequence(call_order, group.steps, expected=_CREATED)
+            _assert_order_sequence(call_order, group.steps, expected=_CREATED)
         elif isinstance(group, _CreateRandom):
-            _assert_random(call_order, group.steps, expected=_CREATED)
+            _assert_order_random(call_order, group.steps, expected=_CREATED)
         elif isinstance(group, _RevertSequence):
-            _assert_sequence(call_order, group.steps, expected=_REVERTED)
+            _assert_order_sequence(call_order, group.steps, expected=_REVERTED)
         elif isinstance(group, _RevertRandom):
-            _assert_random(call_order, group.steps, expected=_REVERTED)
+            _assert_order_random(call_order, group.steps, expected=_REVERTED)
         else:
             msg = f"Unknown {group=}"
             raise NotImplementedError(msg)
     assert not call_order, f"Left overs {call_order=}"
 
 
-# TESTS ---------------------------------------------------------------
+async def _assert_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
+    keys = set(await get_store(app).redis.keys())
+    assert keys == expected_keys
 
 
 class _S1(_BS): ...
@@ -262,7 +281,7 @@ class _S10(_BS): ...
 
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
-    "operation, operation_context, expected_order",
+    "operation, initial_operation_context, expected_order",
     [
         pytest.param(
             [
@@ -318,7 +337,7 @@ async def test_core_workflow(
     selected_app: FastAPI,
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
-    operation_context: OperationContext,
+    initial_operation_context: OperationContext,
     expected_order: list[_BaseExpectedStepOrder],
     faker: Faker,
 ):
@@ -326,21 +345,31 @@ async def test_core_workflow(
 
     register_operation(operation_name, operation)
 
-    schedule_id = await get_core(selected_app).create(operation_name, operation_context)
+    schedule_id = await get_core(selected_app).create(
+        operation_name, initial_operation_context
+    )
     assert isinstance(schedule_id, ScheduleId)
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(10),
-        retry=retry_if_exception_type(AssertionError),
-    ):
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)  # wait for envet to trigger
             _asseert_order_as_expected(steps_call_order, expected_order)
+
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            await _assert_keys_in_store(selected_app, expected_keys=set())
 
 
 # TODO: test reversal
 # TODO: test manual intervention
 # TODO: test repeating
-# TODO: test an action fails and triggers reveral
-# TODO: test fail on repating (what should happen?) -> should continue like for the status, just logs error and repeats
+# TODO: test an action fails and triggers revesal
+# TODO: test fail on repating (what should happen?)
+#   -> should continue like for the status, just logs error and repeats
+# TODO: test something with initial_operation_context that requires data from a previous step,
+#   we need a way to express that -> maybe limit a step to emit something in
+#   the context if it already exists
+
+# TODO: inital key already present in operation InitialOperationContextKeyNotAllowedError
+# TODO: test for OperationContextValueIsNoneError (we can only test the ones retruned)
+# TODO: add a test check for proper context usage from step to step and also for the initial_step context usage
