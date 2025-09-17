@@ -89,7 +89,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
     /**
      * True once the iframe signals it's ready (osparc:ready).
      */
-    ready: {
+    rocketReady: {
       check: "Boolean",
       init: false,
       event: "changeReady"
@@ -142,7 +142,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
     // --------------------
 
     __send: function(msg) {
-      if (!this.isReady()) {
+      if (!this.isRocketReady()) {
         this.__messageQueue.push(msg);
         return;
       }
@@ -152,7 +152,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
     __onMessage: function(ev) {
       const data = ev.data;
       if (data && data.type === "osparc:ready") {
-        this.setReady(true);
+        this.setRocketReady(true);
         while (this.__messageQueue.length) {
           this.__postMessage(this.__messageQueue.shift());
         }
