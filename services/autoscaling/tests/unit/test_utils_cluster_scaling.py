@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import datetime
 import json
 import re
 from collections.abc import Callable
@@ -145,9 +144,6 @@ async def test_ec2_startup_script_just_ami(
         )
     )
     assert not instance_boot_specific.pre_pull_images
-    assert instance_boot_specific.pre_pull_images_cron_interval == datetime.timedelta(
-        minutes=30
-    )
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 1
     assert re.fullmatch(
@@ -216,7 +212,6 @@ async def test_ec2_startup_script_with_pre_pulling(
         )
     )
     assert instance_boot_specific.pre_pull_images
-    assert instance_boot_specific.pre_pull_images_cron_interval
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 7
     assert re.fullmatch(
@@ -238,7 +233,6 @@ async def test_ec2_startup_script_with_custom_scripts(
             )
         )
         assert not instance_boot_specific.pre_pull_images
-        assert instance_boot_specific.pre_pull_images_cron_interval
         startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
         assert len(startup_script.split("&&")) == 1 + len(
             ec2_instances_boot_ami_scripts
@@ -262,7 +256,6 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
         )
     )
     assert instance_boot_specific.pre_pull_images
-    assert instance_boot_specific.pre_pull_images_cron_interval
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 1
     assert re.fullmatch(
