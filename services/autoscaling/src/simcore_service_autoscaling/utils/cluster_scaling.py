@@ -63,9 +63,10 @@ async def ec2_startup_script(
             join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
         )
     )
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     if app_settings.AUTOSCALING_REGISTRY:  # noqa: SIM102
         if pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
-            ec2_boot_specific.pre_pull_images
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
         ):
             startup_commands.append(
                 " && ".join(
@@ -76,11 +77,6 @@ async def ec2_startup_script(
                         pull_image_cmd,
                     ]
                 )
-            )
-            startup_commands.append(
-                utils_docker.get_docker_pull_images_crontab(
-                    ec2_boot_specific.pre_pull_images_cron_interval
-                ),
             )
 
     return " && ".join(startup_commands)
