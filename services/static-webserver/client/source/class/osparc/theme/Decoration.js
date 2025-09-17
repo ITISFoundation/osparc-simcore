@@ -29,8 +29,9 @@ qx.Theme.define("osparc.theme.Decoration", {
     "chat-bubble": {
       style: {
         radius: 4,
-        width: 1,
-        color: "text-disabled"
+        // width: 1,
+        // color: "text-disabled",
+        backgroundColor: "background-main-2",
       }
     },
 

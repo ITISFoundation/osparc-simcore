@@ -196,7 +196,6 @@ qx.Class.define("osparc.support.ConversationPage", {
           return new qx.ui.basic.Label(text).set({
             font: "text-12",
             textColor: "text-disabled",
-            rich: true,
             allowGrowX: true,
             selectable: true,
           });
@@ -207,31 +206,24 @@ qx.Class.define("osparc.support.ConversationPage", {
           if (extraContext && Object.keys(extraContext).length) {
             const ticketIdLabel = createExtraContextLabel(`Ticket ID: ${osparc.utils.Utils.uuidToShort(conversation.getConversationId())}`);
             extraContextLayout.add(ticketIdLabel);
-            const contextProjectId = conversation.getContextProjectId();
-            if (contextProjectId && amISupporter) {
-              const projectIdLabel = createExtraContextLabel(`Project ID: ${osparc.utils.Utils.uuidToShort(contextProjectId)}`);
-              extraContextLayout.add(projectIdLabel);
-            }
-            /*
-            const appointment = conversation.getAppointment();
-            if (appointment) {
-              const appointmentLabel = createExtraContextLabel();
-              let appointmentText = "Appointment: ";
-              if (appointment === "requested") {
-                // still pending
-                appointmentText += appointment;
-              } else {
-                // already set
-                appointmentText += osparc.utils.Utils.formatDateAndTime(new Date(appointment));
-                appointmentLabel.set({
-                  cursor: "pointer",
-                  toolTipText: osparc.utils.Utils.formatDateWithCityAndTZ(new Date(appointment)),
+            if (amISupporter) {
+              const fogbugzLink = conversation.getFogbugzLink();
+              if (fogbugzLink) {
+                const text = "Fogbugz Case: " + fogbugzLink.split("/").pop();
+                const fogbugzLabel = new osparc.ui.basic.LinkLabel(text, fogbugzLink).set({
+                  font: "link-label-12",
+                  textColor: "text-disabled",
+                  allowGrowX: true,
                 });
+                extraContextLayout.add(fogbugzLabel);
               }
-              appointmentLabel.setValue(appointmentText);
-              extraContextLayout.add(appointmentLabel);
+              const contextProjectId = conversation.getContextProjectId();
+              if (contextProjectId) {
+                const projectIdLabel = createExtraContextLabel(`Project ID: ${osparc.utils.Utils.uuidToShort(contextProjectId)}`);
+                extraContextLayout.add(projectIdLabel);
+              }
+
             }
-            */
           }
         };
         updateExtraContext();

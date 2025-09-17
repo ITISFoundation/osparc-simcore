@@ -42,6 +42,14 @@ qx.Class.define("osparc.editor.MarkdownEditor", {
     });
   },
 
+  properties: {
+    compact: {
+      check: "Boolean",
+      init: null,
+      apply: "__applyCompact",
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -69,6 +77,12 @@ qx.Class.define("osparc.editor.MarkdownEditor", {
         }
       }
       return control || this.base(arguments, id);
-    }
+    },
+
+    __applyCompact: function(value) {
+      this.getChildControl("buttons").setVisibility(value ? "excluded" : "visible");
+      this.getChildControl("tabs").getChildControl("bar").setVisibility(value ? "excluded" : "visible");
+      this.getChildControl("subtitle").setVisibility(value ? "excluded" : "visible");
+    },
   }
 });

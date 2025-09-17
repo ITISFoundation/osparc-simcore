@@ -92,7 +92,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
               if (linkRepresentation.type === "text") {
                 linkHtml += linkRepresentation.text;
               } else if (linkRepresentation.type === "image") {
-                linkHtml += `<img src="${linkRepresentation.href}" tile alt="${linkRepresentation.text}"></img>`;
+                linkHtml += `<img src="${linkRepresentation.href}" title alt="${linkRepresentation.text}"></img>`;
               }
             }
             linkHtml += `</a>`;

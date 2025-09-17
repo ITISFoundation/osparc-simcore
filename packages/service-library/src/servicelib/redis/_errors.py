@@ -4,8 +4,7 @@ import redis.exceptions
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class BaseRedisError(OsparcErrorMixin, RuntimeError):
-    ...
+class BaseRedisError(OsparcErrorMixin, RuntimeError): ...
 
 
 class CouldNotAcquireLockError(BaseRedisError):
@@ -25,3 +24,15 @@ class LockLostError(BaseRedisError):
 
 
 ProjectLockError: TypeAlias = redis.exceptions.LockError  # NOTE: backwards compatible
+
+
+class SemaphoreAcquisitionError(BaseRedisError):
+    msg_template: str = "Could not acquire semaphore '{name}' (capacity: {capacity})"
+
+
+class SemaphoreNotAcquiredError(BaseRedisError):
+    msg_template: str = "Semaphore '{name}' was not acquired by this instance"
+
+
+class SemaphoreLostError(BaseRedisError):
+    msg_template: str = "Semaphore '{name}' was lost by this instance `{instance_id}`"

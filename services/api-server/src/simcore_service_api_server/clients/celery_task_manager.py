@@ -5,26 +5,14 @@ from celery_library.common import create_app
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
-from models_library.products import ProductName
-from models_library.users import UserID
-from servicelib.celery.models import TaskFilter
 from servicelib.logging_utils import log_context
 from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 
-from .._meta import APP_NAME
-from ..celery_worker.worker_tasks.tasks import pydantic_types_to_register
+from ..models.domain.celery_models import pydantic_types_to_register
 
 _logger = logging.getLogger(__name__)
-
-
-def get_task_filter(user_id: UserID, product_name: ProductName) -> TaskFilter:
-    job_filter = AsyncJobFilter(
-        user_id=user_id, product_name=product_name, client_name=APP_NAME
-    )
-    return TaskFilter.model_validate(job_filter.model_dump())
 
 
 def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
