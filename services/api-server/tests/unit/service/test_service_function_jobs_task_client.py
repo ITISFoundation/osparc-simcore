@@ -15,7 +15,6 @@ from simcore_service_api_server._service_function_jobs_task_client import (
 from simcore_service_api_server.models.schemas.functions import (
     FunctionJobCreationTaskStatus,
 )
-from test_tasks import mock_task_manager
 
 _faker = Faker()
 
