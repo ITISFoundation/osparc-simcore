@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator, Iterable
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Final
 from uuid import uuid4
 
@@ -149,9 +149,6 @@ class Core:
         self.unknown_status_wait_before_retry = unknown_status_wait_before_retry
         self._store: Store = get_store(app)
 
-        self._debug_counter: int = 0  # TODO: remove this
-        self._debug_first_call: datetime | None = None
-
     async def setup(self) -> None:
         pass
 
@@ -286,25 +283,7 @@ class Core:
             for step in step_group.get_step_subgroup_to_run()
         }
 
-    def _to_remove_debug_code(self, schedule_id: ScheduleId) -> None:
-        # TODO: remove the entide debug code here
-        if self._debug_counter == 0:
-            self._debug_first_call = datetime.utcnow()
-
-        self._debug_counter += 1
-        assert self._debug_first_call is not None  # nosec
-        _elapsed = (datetime.utcnow() - self._debug_first_call).total_seconds()
-        _logger.debug(
-            "Handling event for schedule_id=%s count=%s elapsed=%s, events_per_second=%s",
-            schedule_id,
-            self._debug_counter,
-            _elapsed,
-            self._debug_counter / _elapsed,
-        )
-
     async def _on_schedule_event(self, schedule_id: ScheduleId) -> None:
-        self._to_remove_debug_code(schedule_id)
-
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
         )
