@@ -94,6 +94,12 @@ async def _celery_task_status(
             **create_troubleshooting_log_kwargs(
                 user_msg,
                 error=err,
+                error_context={
+                    "task_uuid": TaskUUID(job_creation_task_id),
+                    "task_filter": task_filter,
+                    "user_id": user_id,
+                    "product_name": product_name,
+                },
                 tip="This probably means the celery task failed, because the task should have created the project_id.",
             )
         )
