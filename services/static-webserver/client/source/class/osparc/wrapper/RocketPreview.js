@@ -41,6 +41,31 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
     window.addEventListener("message", this.__onMessage.bind(this));
   },
 
+  statics: {
+    openWindow: function() {
+      const win = new osparc.ui.window.Window();
+      win.set({
+        caption: "Rocket Preview",
+        width: 800,
+        height: 600,
+        minWidth: 400,
+        minHeight: 300,
+        showMinimize: false,
+        showMaximize: false,
+        modal: true,
+        allowClose: true,
+        contentPadding: 0,
+        layout: new qx.ui.layout.Grow()
+      });
+
+      const rocketPreview = new osparc.wrapper.RocketPreview();
+      win.add(rocketPreview);
+      win.center();
+      win.open();
+      return win;
+    }
+  },
+
   properties: {
     /**
      * True once the iframe signals it's ready (osparc:ready).

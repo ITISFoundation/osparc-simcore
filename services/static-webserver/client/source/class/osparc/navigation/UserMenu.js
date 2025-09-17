@@ -98,6 +98,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
           this.add(control);
           break;
+        case "rocket-preview":
+          control = new qx.ui.menu.Button(this.tr("Rocket Preview"));
+          control.addListener("execute", () => osparc.wrapper.RocketPreview.openWindow());
+          this.add(control);
+          break;
         case "about":
           control = new qx.ui.menu.Button(this.tr("About oSPARC"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuAboutBtn");
@@ -175,6 +180,10 @@ qx.Class.define("osparc.navigation.UserMenu", {
 
       if (osparc.product.Utils.showS4LStore()) {
         this.getChildControl("market");
+      }
+
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        this.getChildControl("rocket-preview");
       }
 
       this.getChildControl("about");
