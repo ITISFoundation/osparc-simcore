@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 from enum import StrEnum
 from typing import Annotated, Final
 
