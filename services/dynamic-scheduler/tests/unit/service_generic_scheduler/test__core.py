@@ -179,7 +179,7 @@ class _RevertBS(_BS):
         raise RuntimeError(msg)
 
 
-class _FailOnCreateAndRevert(_BS):
+class _FailOnCreateAndRevertBS(_BS):
     @classmethod
     async def create(
         cls, app: FastAPI, required_context: RequiredOperationContext
@@ -295,6 +295,12 @@ async def _ensure_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> Non
             await _assert_keys_in_store(app, expected_keys=expected_keys)
 
 
+############## TESTS ##############
+
+
+# Below always succeed (expected)
+
+
 class _S1(_BS): ...
 
 
@@ -325,6 +331,9 @@ class _S9(_BS): ...
 class _S10(_BS): ...
 
 
+# Below fail on create (expected)
+
+
 class _RS1(_RevertBS): ...
 
 
@@ -353,6 +362,15 @@ class _RS9(_RevertBS): ...
 
 
 class _RS10(_RevertBS): ...
+
+
+# Below fail both on create and revert (unexpected)
+
+
+class _FCR1(_FailOnCreateAndRevertBS): ...
+
+
+class _FCR2(_FailOnCreateAndRevertBS): ...
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -554,29 +572,29 @@ async def test_create_revert_order(
     [
         pytest.param(
             [
-                SingleStepGroup(_FailOnCreateAndRevert),
+                SingleStepGroup(_FCR1),
             ],
             [
-                _CreateSequence(_FailOnCreateAndRevert),
-                _RevertSequence(_FailOnCreateAndRevert),
+                _CreateSequence(_FCR1),
+                _RevertSequence(_FCR1),
             ],
             {
                 "SCH:{schedule_id}",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:C",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:R",
-                "SCH:{schedule_id}:STEPS:test_op:0S:C:_FailOnCreateAndRevert",
-                "SCH:{schedule_id}:STEPS:test_op:0S:R:_FailOnCreateAndRevert",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_FCR1",
+                "SCH:{schedule_id}:STEPS:test_op:0S:R:_FCR1",
             },
             id="s1(1rf)",
         ),
         pytest.param(
             [
                 SingleStepGroup(_S1),
-                SingleStepGroup(_FailOnCreateAndRevert),
+                SingleStepGroup(_FCR1),
             ],
             [
-                _CreateSequence(_S1, _FailOnCreateAndRevert),
-                _RevertSequence(_FailOnCreateAndRevert),
+                _CreateSequence(_S1, _FCR1),
+                _RevertSequence(_FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -584,20 +602,20 @@ async def test_create_revert_order(
                 "SCH:{schedule_id}:GROUPS:test_op:1S:C",
                 "SCH:{schedule_id}:GROUPS:test_op:1S:R",
                 "SCH:{schedule_id}:STEPS:test_op:0S:C:_S1",
-                "SCH:{schedule_id}:STEPS:test_op:1S:C:_FailOnCreateAndRevert",
-                "SCH:{schedule_id}:STEPS:test_op:1S:R:_FailOnCreateAndRevert",
+                "SCH:{schedule_id}:STEPS:test_op:1S:C:_FCR1",
+                "SCH:{schedule_id}:STEPS:test_op:1S:R:_FCR1",
             },
             id="s2(1rf)",
         ),
         pytest.param(
             [
                 SingleStepGroup(_S1),
-                ParallelStepGroup(_FailOnCreateAndRevert, _S2, _S3),
+                ParallelStepGroup(_FCR1, _S2, _S3),
             ],
             [
                 _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _FailOnCreateAndRevert),
-                _RevertRandom(_S2, _S3, _FailOnCreateAndRevert),
+                _CreateRandom(_S2, _S3, _FCR1),
+                _RevertRandom(_S2, _S3, _FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -605,14 +623,41 @@ async def test_create_revert_order(
                 "SCH:{schedule_id}:GROUPS:test_op:1P:C",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:R",
                 "SCH:{schedule_id}:STEPS:test_op:0S:C:_S1",
-                "SCH:{schedule_id}:STEPS:test_op:1P:C:_FailOnCreateAndRevert",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_FCR1",
                 "SCH:{schedule_id}:STEPS:test_op:1P:C:_S2",
                 "SCH:{schedule_id}:STEPS:test_op:1P:C:_S3",
-                "SCH:{schedule_id}:STEPS:test_op:1P:R:_FailOnCreateAndRevert",
+                "SCH:{schedule_id}:STEPS:test_op:1P:R:_FCR1",
                 "SCH:{schedule_id}:STEPS:test_op:1P:R:_S2",
                 "SCH:{schedule_id}:STEPS:test_op:1P:R:_S3",
             },
-            id="s1p2(1rf)",
+            id="s1p3(1rf)",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_FCR1, _FCR2, _S2, _S3),
+            ],
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_S2, _S3, _FCR1, _FCR2),
+                _RevertRandom(_S2, _S3, _FCR2, _FCR1),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1P:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1P:R",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_S1",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_FCR1",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_FCR2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S3",
+                "SCH:{schedule_id}:STEPS:test_op:1P:R:_FCR1",
+                "SCH:{schedule_id}:STEPS:test_op:1P:R:_FCR2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:R:_S2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:R:_S3",
+            },
+            id="s1p4(2rf)",
         ),
     ],
 )
