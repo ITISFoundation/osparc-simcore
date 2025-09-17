@@ -33,6 +33,7 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from servicelib.celery.models import TaskMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from simcore_service_api_server.models.schemas.functions import (
     FunctionJobCreationTaskStatus,
 )
@@ -87,7 +88,15 @@ async def _celery_task_status(
             task_uuid=TaskUUID(job_creation_task_id), task_filter=task_filter
         )
         return FunctionJobCreationTaskStatus[task_status.task_state]
-    except TaskNotFoundError as e:
+    except TaskNotFoundError as err:
+        user_msg = f"Job creation task not found for task_uuid={TaskUUID(job_creation_task_id)}"
+        _logger.exception(
+            **create_troubleshootting_log_kwargs(
+                user_msg,
+                error=err,
+                tip="This probably means the celery task failed, because the task should have created the project_id.",
+            )
+        )
         return FunctionJobCreationTaskStatus.ERROR
 
 

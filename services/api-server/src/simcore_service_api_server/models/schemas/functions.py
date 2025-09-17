@@ -5,7 +5,7 @@ from models_library.functions import FunctionID, FunctionJobCollectionID, Functi
 from pydantic import BaseModel, ConfigDict, Field
 from servicelib.celery.models import TaskState
 
-RUN_JOB_TASK_STATUS_PREFIX: Final[str] = "RUN_JOB_TASK_STATUS_"
+RUN_JOB_TASK_STATUS_PREFIX: Final[str] = "JOB_TASK_RUN_STATUS_"
 
 
 class FunctionJobsListFilters(BaseModel):
@@ -43,10 +43,8 @@ class FunctionJobCreationTaskStatus(StrEnum):
     RETRY = f"{RUN_JOB_TASK_STATUS_PREFIX}RETRY"
     SUCCESS = f"{RUN_JOB_TASK_STATUS_PREFIX}SUCCESS"
     FAILURE = f"{RUN_JOB_TASK_STATUS_PREFIX}FAILURE"
-    NOT_YET_SCHEDULED = (
-        "Function job creation task not yet scheduled"  # api-server custom status
-    )
-    ERROR = "Function job creation failed"  # api-server custom status
+    NOT_YET_SCHEDULED = "JOB_TASK_NOT_YET_SCHEDULED"  # api-server custom status
+    ERROR = "JOB_TASK_CREATION_FAILED"  # api-server custom status
 
 
 assert {elm._name_ for elm in TaskState}.union({"NOT_YET_SCHEDULED", "ERROR"}) == {
