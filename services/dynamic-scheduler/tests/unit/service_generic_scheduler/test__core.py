@@ -58,7 +58,7 @@ pytest_simcore_ops_services_selection = [
 
 _RETRY_PARAMS: Final[dict[str, Any]] = {
     "wait": wait_fixed(0.1),
-    "stop": stop_after_delay(10),
+    "stop": stop_after_delay(5),
     "retry": retry_if_exception_type(AssertionError),
 }
 
@@ -165,6 +165,16 @@ class _BS(BaseStep):
         _ = app
         _ = required_context
         _STEPS_CALL_ORDER.append((cls.__name__, _REVERTED))
+
+
+class _RevertBS(_BS):
+    @classmethod
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        await super().create(app, required_context)
+        msg = "always triggers a revert action"
+        raise RuntimeError(msg)
 
 
 class _BaseExpectedStepOrder:
@@ -279,6 +289,36 @@ class _S9(_BS): ...
 class _S10(_BS): ...
 
 
+class _RS1(_RevertBS): ...
+
+
+class _RS2(_RevertBS): ...
+
+
+class _RS3(_RevertBS): ...
+
+
+class _RS4(_RevertBS): ...
+
+
+class _RS5(_RevertBS): ...
+
+
+class _RS6(_RevertBS): ...
+
+
+class _RS7(_RevertBS): ...
+
+
+class _RS8(_RevertBS): ...
+
+
+class _RS9(_RevertBS): ...
+
+
+class _RS10(_RevertBS): ...
+
+
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, initial_operation_context, expected_order",
@@ -329,6 +369,137 @@ class _S10(_BS): ...
             ],
             id="s1-s1-s1-p6-s1",
         ),
+        pytest.param(
+            [
+                SingleStepGroup(_RS1),
+            ],
+            {},
+            [
+                _CreateSequence(_RS1),
+                _RevertSequence(_RS1),
+            ],
+            id="s1(1r)",
+        ),
+        pytest.param(
+            [
+                ParallelStepGroup(_RS1, _S1, _S2, _S3, _S4, _S5, _S6),
+            ],
+            {},
+            [
+                _CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
+                _RevertRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
+            ],
+            id="p7(1r)",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_S2, _S3, _S4, _S5, _S6),
+                SingleStepGroup(_RS1),
+                SingleStepGroup(_S7),  # will not execute
+                ParallelStepGroup(_S8, _S9),  # will not execute
+            ],
+            {},
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_S2, _S3, _S4, _S5, _S6),
+                _CreateSequence(_RS1),
+                _RevertSequence(_RS1),
+                _RevertRandom(_S2, _S3, _S4, _S5, _S6),
+                _RevertSequence(_S1),
+            ],
+            id="s1-p5-s1(1r)-s1-p2",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_RS1, _S2, _S3, _S4, _S5, _S6),
+                SingleStepGroup(_S7),  # will not execute
+                ParallelStepGroup(_S8, _S9),  # will not execute
+            ],
+            {},
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
+                _RevertRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
+                _RevertSequence(_S1),
+            ],
+            id="s1-p6(1r)-s1-p2",
+        ),
+        pytest.param(
+            [
+                ParallelStepGroup(
+                    _S1,
+                    _S2,
+                    _S3,
+                    _S4,
+                    _S5,
+                    _S6,
+                    _S7,
+                    _S8,
+                    _S9,
+                    _S10,
+                    _RS1,
+                    _RS2,
+                    _RS3,
+                    _RS4,
+                    _RS5,
+                    _RS6,
+                    _RS7,
+                    _RS8,
+                    _RS9,
+                    _RS10,
+                ),
+            ],
+            {},
+            [
+                _CreateRandom(
+                    _S1,
+                    _S2,
+                    _S3,
+                    _S4,
+                    _S5,
+                    _S6,
+                    _S7,
+                    _S8,
+                    _S9,
+                    _S10,
+                    _RS1,
+                    _RS2,
+                    _RS3,
+                    _RS4,
+                    _RS5,
+                    _RS6,
+                    _RS7,
+                    _RS8,
+                    _RS9,
+                    _RS10,
+                ),
+                _RevertRandom(
+                    _S1,
+                    _S2,
+                    _S3,
+                    _S4,
+                    _S5,
+                    _S6,
+                    _S7,
+                    _S8,
+                    _S9,
+                    _S10,
+                    _RS1,
+                    _RS2,
+                    _RS3,
+                    _RS4,
+                    _RS5,
+                    _RS6,
+                    _RS7,
+                    _RS8,
+                    _RS9,
+                    _RS10,
+                ),
+            ],
+            id="p20(10r)",
+        ),
     ],
 )
 async def test_core_workflow(
@@ -360,10 +531,8 @@ async def test_core_workflow(
             await _assert_keys_in_store(selected_app, expected_keys=set())
 
 
-# TODO: test reversal
 # TODO: test manual intervention
-# TODO: test repeating
-# TODO: test an action fails and triggers revesal
+# TODO: test repeating: how do we stop this one? -> cancel it after a bit as it's supposed to run forever
 # TODO: test fail on repating (what should happen?)
 #   -> should continue like for the status, just logs error and repeats
 # TODO: test something with initial_operation_context that requires data from a previous step,
