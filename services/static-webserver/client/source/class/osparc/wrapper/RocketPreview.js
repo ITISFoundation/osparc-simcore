@@ -42,6 +42,18 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
   },
 
   statics: {
+    INDEX_HTML: "rocketPreview/build/index.html",
+
+    /**
+     * Returns true if the RocketPreview build folder is available as a resource.
+     */
+    existsBuild: function() {
+      const rm = qx.util.ResourceManager.getInstance();
+      // index.html is a good proxy for the whole build
+      const resourceId = this.INDEX_HTML;
+      return rm.has(resourceId);
+    },
+
     openWindow: function() {
       const win = new osparc.ui.window.Window();
       win.set({
@@ -85,7 +97,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
       let control;
       switch (id) {
         case "iframe":
-          const src = qx.util.ResourceManager.getInstance().toUri("rocketPreview/build/index.html");
+          const src = qx.util.ResourceManager.getInstance().toUri(this.self().INDEX_HTML);
           control = new qx.ui.embed.Html("<iframe></iframe>");
           control.set({
             allowGrowX: true,
