@@ -490,23 +490,6 @@ def get_docker_pull_images_on_start_bash_command(
     )
 
 
-def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
-    # check the interval is within 1 < 60 minutes
-    checked_interval = round(interval.total_seconds() / 60)
-
-    crontab_entry = " ".join(
-        [
-            "echo",
-            f'"*/{checked_interval or 1} * * * * root',
-            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
-            f'>> {_CRONJOB_LOGS_PATH} 2>&1"',
-            ">>",
-            "/etc/crontab",
-        ]
-    )
-    return " && ".join([crontab_entry])
-
-
 async def find_node_with_name(
     docker_client: AutoscalingDocker, name: str
 ) -> Node | None:
