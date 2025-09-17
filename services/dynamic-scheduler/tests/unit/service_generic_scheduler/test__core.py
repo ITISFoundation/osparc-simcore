@@ -10,7 +10,6 @@ from typing import Any, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
-from faker import Faker
 from fastapi import FastAPI
 from pydantic import NonNegativeInt
 from pytest_mock import MockerFixture
@@ -498,9 +497,8 @@ async def test_create_revert_workflow(
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
     expected_order: list[_BaseExpectedStepOrder],
-    faker: Faker,
 ):
-    operation_name: OperationName = faker.uuid4()
+    operation_name: OperationName = "test_op"
 
     register_operation(operation_name, operation)
 
