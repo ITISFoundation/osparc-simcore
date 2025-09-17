@@ -76,7 +76,7 @@ async def _celery_task_status(
     task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
-) -> str:
+) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
         return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
     task_filter = ApiWorkerTaskFilter(
