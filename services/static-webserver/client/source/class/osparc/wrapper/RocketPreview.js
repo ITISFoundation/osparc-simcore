@@ -24,6 +24,11 @@
 /**
  * A qooxdoo wrapper for The Rocket Preview
  * It loads the app in an iframe and communicates via postMessage.
+ * NOTES
+ * In order to make this work, the Rocket Preview build needs to include the osparc-bridge.js script.
+ * Add the following to the index.html
+ * <script src="../osparc-bridge.js"></script>
+ * Also, the include paths in the index.html need to be adjusted, so that are relative to the index.html.
  */
 
 qx.Class.define("osparc.wrapper.RocketPreview", {
