@@ -53,8 +53,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
   },
 
   events: {
-    "messageAdded": "qx.event.type.Data",
-    "messageUpdated": "qx.event.type.Data",
+    "addMessage": "qx.event.type.Data",
+    "updateMessage": "qx.event.type.Data",
+    "notifyUser": "qx.event.type.Data",
   },
 
   members: {
@@ -70,9 +71,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
         }
         case "thumbnail": {
           control = osparc.utils.Utils.createThumbnail(32);
-          const meGroup = osparc.store.Groups.getInstance().getGroupMe();
+          const authStore = osparc.auth.Data.getInstance();
           control.set({
-            source: meGroup.getThumbnail(),
+            source: authStore.getAvatar(32),
             alignX: "center",
             alignY: "middle",
             marginRight: 8,
@@ -82,17 +83,12 @@ qx.Class.define("osparc.conversation.AddMessage", {
         }
         case "comment-field":
           control = new osparc.editor.MarkdownEditor();
-          control.addListener("keydown", e => {
-            if (e.isCtrlPressed() && e.getKeyIdentifier() === "Enter") {
-              this.addComment();
-              e.stopPropagation();
-              e.preventDefault();
-            }
-          }, this);
-          control.getChildControl("buttons").exclude();
+          control.addListener("textChanged", () => this.__addCommentPressed(), this);
+          control.setCompact(true);
           control.getChildControl("text-area").getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
           });
+          // make it more compact
           this.getChildControl("add-comment-layout").add(control, {
             flex: 1
           });
@@ -101,7 +97,8 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/16").set({
             backgroundColor: "input_background",
             allowGrowX: false,
-            alignX: "right"
+            alignX: "right",
+            alignY: "middle",
           });
           control.getContentElement().setStyles({
             "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("default-button-active"),
@@ -160,9 +157,6 @@ qx.Class.define("osparc.conversation.AddMessage", {
         // edit mode
         const commentField = this.getChildControl("comment-field");
         commentField.setText(message["content"]);
-
-        const addMessageButton = this.getChildControl("add-comment-button");
-        addMessageButton.setLabel(this.tr("Edit message"));
       }
     },
 
@@ -171,70 +165,19 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     addComment: function() {
-      const conversationId = this.getConversationId();
-      if (conversationId) {
-        return this.__postMessage();
-      } else {
-        const studyData = this.getStudyData();
-        let promise = null;
-        if (studyData) {
-          // create new project conversation first
-          promise = osparc.store.ConversationsProject.getInstance().postConversation(studyData["uuid"])
-        } else {
-          // support conversation
-          const extraContext = {};
-          const currentStudy = osparc.store.Store.getInstance().getCurrentStudy()
-          if (currentStudy) {
-            extraContext["projectId"] = currentStudy.getUuid();
-          }
-          promise = osparc.store.ConversationsSupport.getInstance().postConversation(extraContext);
-        }
-        return promise
-          .then(data => {
-            this.setConversationId(data["conversationId"]);
-            return this.__postMessage();
-          });
-      }
-    },
-
-    __postMessage: function() {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
-      let promise = null;
       if (content) {
-        const studyData = this.getStudyData();
-        const conversationId = this.getConversationId();
-        if (studyData) {
-          promise = osparc.store.ConversationsProject.getInstance().postMessage(studyData["uuid"], conversationId, content);
-        } else {
-          promise = osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
-        }
-        return promise
-          .then(data => {
-            this.fireDataEvent("messageAdded", data);
-            commentField.getChildControl("text-area").setValue("");
-            return data;
-          });
+        this.fireDataEvent("addMessage", content);
+        commentField.getChildControl("text-area").setValue("");
       }
-      return Promise.reject();
     },
 
     __editComment: function() {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
       if (content) {
-        const studyData = this.getStudyData();
-        const conversationId = this.getConversationId();
-        const message = this.getMessage();
-        if (studyData) {
-          promise = osparc.store.ConversationsProject.getInstance().editMessage(studyData["uuid"], conversationId, message["messageId"], content);
-        } else {
-          promise = osparc.store.ConversationsSupport.getInstance().editMessage(conversationId, message["messageId"], content);
-        }
-        promise.then(data => {
-          this.fireDataEvent("messageUpdated", data);
-          commentField.getChildControl("text-area").setValue("");
-        });
+        this.fireDataEvent("updateMessage", content);
       }
     },
 
@@ -273,7 +216,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       // This check only works if the project is directly shared with the user.
       // If it's shared through a group, it might be a bit confusing
       if (userGid in studyData["accessRights"]) {
-        this.__addNotify(userGid);
+        this.__doNotifyUser(userGid);
       } else {
         const msg = this.tr("This user has no access to the project. Do you want to share it?");
         const win = new osparc.ui.window.Confirmation(msg).set({
@@ -290,7 +233,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
             };
             osparc.store.Study.getInstance().addCollaborators(studyData, newCollaborators)
               .then(() => {
-                this.__addNotify(userGid);
+                this.__doNotifyUser(userGid);
                 const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
                 if (userGid in potentialCollaborators && "getUserId" in potentialCollaborators[userGid]) {
                   const uid = potentialCollaborators[userGid].getUserId();
@@ -303,47 +246,13 @@ qx.Class.define("osparc.conversation.AddMessage", {
       }
     },
 
-    __addNotify: function(userGid) {
+    __doNotifyUser: function(userGid) {
       const studyData = this.getStudyData();
       if (!studyData) {
         return;
       }
 
-      const conversationId = this.getConversationId();
-      if (conversationId) {
-        this.__postNotify(userGid);
-      } else {
-        // create new conversation first
-        osparc.store.ConversationsProject.getInstance().postConversation(studyData["uuid"])
-          .then(data => {
-            this.setConversationId(data["conversationId"]);
-            this.__postNotify(userGid);
-          });
-      }
-    },
-
-    __postNotify: function(userGid) {
-      const studyData = this.getStudyData();
-      if (!studyData) {
-        return;
-      }
-
-      if (userGid) {
-        const conversationId = this.getConversationId();
-        osparc.store.ConversationsProject.getInstance().notifyUser(studyData["uuid"], conversationId, userGid)
-          .then(data => {
-            this.fireDataEvent("messageAdded", data);
-            const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
-            if (userGid in potentialCollaborators) {
-              if ("getUserId" in potentialCollaborators[userGid]) {
-                const uid = potentialCollaborators[userGid].getUserId();
-                osparc.notification.Notifications.pushConversationNotification(uid, studyData["uuid"]);
-              }
-              const msg = "getLabel" in potentialCollaborators[userGid] ? potentialCollaborators[userGid].getLabel() + this.tr(" was notified") : this.tr("Notification sent");
-              osparc.FlashMessenger.logAs(msg, "INFO");
-            }
-          });
-      }
+      this.fireDataEvent("notifyUser", userGid);
     },
     /* NOTIFY USERS */
   }

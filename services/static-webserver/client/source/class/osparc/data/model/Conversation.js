@@ -242,7 +242,7 @@ qx.Class.define("osparc.data.model.Conversation", {
     renameConversation: function(newName) {
       osparc.store.ConversationsSupport.getInstance().renameConversation(this.getConversationId(), newName)
         .then(() => {
-          this.setNameAlias(newName);
+          this.setName(newName);
         });
     },
 
@@ -289,6 +289,13 @@ qx.Class.define("osparc.data.model.Conversation", {
     getContextProjectId: function() {
       if (this.getExtraContext() && "projectId" in this.getExtraContext()) {
         return this.getExtraContext()["projectId"];
+      }
+      return null;
+    },
+
+    getFogbugzLink: function() {
+      if (this.getExtraContext() && "fogbugz_case_url" in this.getExtraContext()) {
+        return this.getExtraContext()["fogbugz_case_url"];
       }
       return null;
     },
