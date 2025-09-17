@@ -4,7 +4,6 @@ SEE https://pypi.python.org/pypi/python-socketio
 SEE http://python-socketio.readthedocs.io/en/latest/
 """
 
-import contextlib
 import logging
 from typing import Any
 
@@ -16,8 +15,9 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.aiohttp.observer import emit
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_base import get_log_record_extra
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
+from servicelib.logging_utils import log_context
 from servicelib.request_keys import RQT_USERID_KEY
 
 from ..groups.api import list_user_groups_ids_with_read_access
@@ -165,63 +165,58 @@ async def connect(
 @register_socketio_handler
 async def disconnect(socket_id: SocketID, app: web.Application) -> None:
     """socketio reserved handler for when the socket.io connection is disconnected."""
-    async with contextlib.AsyncExitStack() as stack:
-        # retrieve the socket session
-        try:
-            socketio_session = await stack.enter_async_context(
-                get_socket_server(app).session(socket_id)
-            )
+    try:
+        async with get_socket_server(app).session(socket_id) as socketio_session:
+            # if session is well formed, we can access its data
+            try:
+                user_id = socketio_session["user_id"]
+                client_session_id = socketio_session["client_session_id"]
+                product_name = socketio_session["product_name"]
 
-        except KeyError as err:
-            _logger.warning(
-                **create_troubleshootting_log_kwargs(
-                    f"Socket session {socket_id} not found during disconnect, already cleaned up",
-                    error=err,
-                    error_context={"socket_id": socket_id},
+            except KeyError as err:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        f"Socket session {socket_id} does not have user_id or client_session_id during disconnect",
+                        error=err,
+                        error_context={
+                            "socket_id": socket_id,
+                            "socketio_session": socketio_session,
+                        },
+                        tip="Check if session is corrupted",
+                    )
                 )
+                return
+
+    except KeyError as err:
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                f"Socket session {socket_id} not found during disconnect, already cleaned up",
+                error=err,
+                error_context={"socket_id": socket_id},
             )
-            return
+        )
+        return
 
-        # session is wel formed, we can access its data
-        try:
-            user_id = socketio_session["user_id"]
-            client_session_id = socketio_session["client_session_id"]
-            product_name = socketio_session["product_name"]
+    # Notify disconnection to all replicas/plugins
+    with log_context(
+        _logger,
+        logging.INFO,
+        "disconnection of %s with %s",
+        f"{user_id=}",
+        f"{client_session_id=}",
+    ):
+        with managed_resource(user_id, client_session_id, app) as user_session:
+            await user_session.remove_socket_id()
 
-        except KeyError as err:
-            _logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    f"Socket session {socket_id} does not have user_id or client_session_id during disconnect",
-                    error=err,
-                    error_context={
-                        "socket_id": socket_id,
-                        "socketio_session": socketio_session,
-                    },
-                    tip="Check if session is corrupted",
-                )
-            )
-            return
-
-        # Disconnecting
-        with log_context(
-            _logger,
-            logging.INFO,
-            "disconnection of %s with %s",
-            f"{user_id=}",
-            f"{client_session_id=}",
-        ):
-            with managed_resource(user_id, client_session_id, app) as user_session:
-                await user_session.remove_socket_id()
-
-            # signal same user other clients if available
-            await emit(
-                app,
-                "SIGNAL_USER_DISCONNECTED",
-                user_id,
-                client_session_id,
-                app,
-                product_name,
-            )
+        # signal same user other clients if available
+        await emit(
+            app,
+            "SIGNAL_USER_DISCONNECTED",
+            user_id,
+            client_session_id,
+            app,
+            product_name,
+        )
 
 
 @register_socketio_handler

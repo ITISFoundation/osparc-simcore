@@ -41,7 +41,8 @@ from models_library.workspaces import WorkspaceQuery, WorkspaceScope
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_base import get_log_record_extra
+from servicelib.logging_utils import log_context
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
