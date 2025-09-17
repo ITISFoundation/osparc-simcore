@@ -703,7 +703,7 @@ async def test_fails_during_revert_is_in_error_state(
 @pytest.mark.parametrize("cancel_count", [1, 10])
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
-    "operation, expected_after_start_order, expected_order",
+    "operation, expected_before_cancel_order, expected_order",
     [
         pytest.param(
             [
@@ -752,7 +752,7 @@ async def test_cancelled_finishes_nicely(
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
     operation_name: OperationName,
-    expected_after_start_order: list[_BaseExpectedStepOrder],
+    expected_before_cancel_order: list[_BaseExpectedStepOrder],
     expected_order: list[_BaseExpectedStepOrder],
     cancel_count: NonNegativeInt,
 ):
@@ -762,7 +762,7 @@ async def test_cancelled_finishes_nicely(
     schedule_id = await core.create(operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
-    await _ensure_expected_order(steps_call_order, expected_after_start_order)
+    await _ensure_expected_order(steps_call_order, expected_before_cancel_order)
 
     # cancel in parallel multiple times (worst case)
     await asyncio.gather(
