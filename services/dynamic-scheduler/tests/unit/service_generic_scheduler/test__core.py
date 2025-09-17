@@ -133,6 +133,11 @@ def register_operation() -> Iterable[Callable[[OperationName, Operation], None]]
         OperationRegistry.unregister(opration_name)
 
 
+@pytest.fixture
+def operation_name() -> OperationName:
+    return "test_op"
+
+
 _STEPS_CALL_ORDER: list[tuple[str, str]] = []
 
 
@@ -170,7 +175,25 @@ class _RevertBS(_BS):
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         await super().create(app, required_context)
-        msg = "always triggers a revert action"
+        msg = "always fails only on CREATE"
+        raise RuntimeError(msg)
+
+
+class _FailOnCreateAndRevert(_BS):
+    @classmethod
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        await super().create(app, required_context)
+        msg = "always fails on CREATE"
+        raise RuntimeError(msg)
+
+    @classmethod
+    async def revert(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        await super().revert(app, required_context)
+        msg = "always fails on REVERT"
         raise RuntimeError(msg)
 
 
@@ -227,7 +250,7 @@ def _assert_order_random(
         steps_names.remove(step_name)
 
 
-def _asseert_order_as_expected(
+def _asseert_expected_order(
     steps_call_order: list[tuple[str, str]],
     expected_order: list[_BaseExpectedStepOrder],
 ) -> None:
@@ -251,9 +274,25 @@ def _asseert_order_as_expected(
     assert not call_order, f"Left overs {call_order=}"
 
 
+async def _ensure_expected_order(
+    steps_call_order: list[tuple[str, str]],
+    expected_order: list[_BaseExpectedStepOrder],
+) -> None:
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0)  # wait for envet to trigger
+            _asseert_expected_order(steps_call_order, expected_order)
+
+
 async def _assert_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
     keys = set(await get_store(app).redis.keys())
     assert keys == expected_keys
+
+
+async def _ensure_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            await _assert_keys_in_store(app, expected_keys=expected_keys)
 
 
 class _S1(_BS): ...
@@ -490,32 +529,121 @@ class _RS10(_RevertBS): ...
         ),
     ],
 )
-async def test_create_revert_workflow(
+async def test_create_revert_order(
     preserve_caplog_for_async_logging: None,
     steps_call_order: list[tuple[str, str]],
     selected_app: FastAPI,
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
+    operation_name: OperationName,
     expected_order: list[_BaseExpectedStepOrder],
 ):
-    operation_name: OperationName = "test_op"
-
     register_operation(operation_name, operation)
 
     schedule_id = await get_core(selected_app).create(operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
-            await asyncio.sleep(0)  # wait for envet to trigger
-            _asseert_order_as_expected(steps_call_order, expected_order)
+    await _ensure_expected_order(steps_call_order, expected_order)
 
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
-            await _assert_keys_in_store(selected_app, expected_keys=set())
+    await _ensure_keys_in_store(selected_app, expected_keys=set())
+
+
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, expected_order, expected_keys",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(_FailOnCreateAndRevert),
+            ],
+            [
+                _CreateSequence(_FailOnCreateAndRevert),
+                _RevertSequence(_FailOnCreateAndRevert),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:R",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_FailOnCreateAndRevert",
+                "SCH:{schedule_id}:STEPS:test_op:0S:R:_FailOnCreateAndRevert",
+            },
+            id="s1(1rf)",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                SingleStepGroup(_FailOnCreateAndRevert),
+            ],
+            [
+                _CreateSequence(_S1, _FailOnCreateAndRevert),
+                _RevertSequence(_FailOnCreateAndRevert),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1S:R",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_S1",
+                "SCH:{schedule_id}:STEPS:test_op:1S:C:_FailOnCreateAndRevert",
+                "SCH:{schedule_id}:STEPS:test_op:1S:R:_FailOnCreateAndRevert",
+            },
+            id="s2(1rf)",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_FailOnCreateAndRevert, _S2, _S3),
+            ],
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_S2, _S3, _FailOnCreateAndRevert),
+                _RevertRandom(_S2, _S3, _FailOnCreateAndRevert),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1P:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1P:R",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_S1",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_FailOnCreateAndRevert",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S3",
+                "SCH:{schedule_id}:STEPS:test_op:1P:R:_FailOnCreateAndRevert",
+                "SCH:{schedule_id}:STEPS:test_op:1P:R:_S2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:R:_S3",
+            },
+            id="s1p2(1rf)",
+        ),
+    ],
+)
+async def test_fails_during_revert_is_in_error_state(
+    preserve_caplog_for_async_logging: None,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_name: OperationName,
+    expected_order: list[_BaseExpectedStepOrder],
+    expected_keys: set[str],
+):
+    register_operation(operation_name, operation)
+
+    schedule_id = await get_core(selected_app).create(operation_name, {})
+    assert isinstance(schedule_id, ScheduleId)
+
+    await _ensure_expected_order(steps_call_order, expected_order)
+
+    formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
+    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+
+
+# TODO: test what happens when fails on cancellation -> require a long running thing
+# -> all should go away at this point since it was intended
 
 
 # TODO: test manual intervention
+#   -> manuale intervention an anction that raises an error and has the flag for manual intervention
+#   -> manual intervention  & fail on REVERT (what should happen?)-> this should be an unexpected thing
 
 # TODO: test repeating: how do we stop this one? -> cancel it after a bit as it's supposed to run forever
 # TODO: test fail on repating (what should happen?)

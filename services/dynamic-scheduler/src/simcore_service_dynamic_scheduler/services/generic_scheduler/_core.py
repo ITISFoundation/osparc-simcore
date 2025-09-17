@@ -366,6 +366,7 @@ class Core:
                 schedule_id,
                 operation_name,
                 group_index,
+                step_group,
             )
 
     async def _continue_handling_as_creation(
@@ -493,6 +494,7 @@ class Core:
         schedule_id: ScheduleId,
         operation_name: OperationName,
         group_index: NonNegativeInt,
+        current_step_group: BaseStepGroup,
     ) -> None:
         # if all in SUUCESS -> go back to previous untill done
         if all(s == StepStatus.SUCCESS for s in steps_statuses.values()):
@@ -518,11 +520,40 @@ class Core:
         failed_step_names: list[StepName] = [
             n for n, s in steps_statuses.items() if s == StepStatus.FAILED
         ]
+
         if failed_step_names:
+
+            async def _get_step_error_traceback(
+                step_name: StepName,
+            ) -> tuple[StepName, str]:
+                step_proxy = StepStoreProxy(
+                    store=self._store,
+                    schedule_id=schedule_id,
+                    operation_name=operation_name,
+                    step_group_name=current_step_group.get_step_group_name(
+                        index=group_index
+                    ),
+                    step_name=step_name,
+                    is_creating=False,
+                )
+                return step_name, await step_proxy.get("error_traceback")
+
+            error_tracebacks: list[tuple[StepName, str]] = await limited_gather(
+                *(
+                    _get_step_error_traceback(step_name)
+                    for step_name in failed_step_names
+                ),
+                limit=_PARALLEL_STATUS_REQUESTS,
+            )
+
+            formatted_tracebacks = "\n".join(
+                f"Step '{step_name}':\n{traceback}"
+                for step_name, traceback in error_tracebacks
+            )
             message = (
                 f"Operation 'revert' for schedule_id='{schedule_id}' failed for steps: "
                 f"{failed_step_names}. Step code should never fail during destruction, "
-                "please report to developers."
+                f"please report to developers:\n{formatted_tracebacks}"
             )
             _logger.error(message)
             await self._set_unexpected_opration_state(
