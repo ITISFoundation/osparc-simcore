@@ -2,6 +2,8 @@
 # pylint:disable=unused-argument
 
 import asyncio
+import logging
+import re
 from collections.abc import AsyncIterable, Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack
 from copy import deepcopy
@@ -24,8 +26,11 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
+    InitialOperationContextKeyNotAllowedError,
+    ProvidedOperationContextKeysAreMissingError,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
+    OperationContext,
     OperationName,
     ProvidedOperationContext,
     RequiredOperationContext,
@@ -164,6 +169,11 @@ class _BS(BaseStep):
         _ = required_context
         _STEPS_CALL_ORDER.append((cls.__name__, _CREATED))
 
+        return {
+            **required_context,
+            **{k: _CTX_VALUE for k in cls.get_create_provides_context_keys()},
+        }
+
     @classmethod
     async def revert(
         cls, app: FastAPI, required_context: RequiredOperationContext
@@ -171,6 +181,11 @@ class _BS(BaseStep):
         _ = app
         _ = required_context
         _STEPS_CALL_ORDER.append((cls.__name__, _REVERTED))
+
+        return {
+            **required_context,
+            **{k: _CTX_VALUE for k in cls.get_revert_provides_context_keys()},
+        }
 
 
 class _RevertBS(_BS):
@@ -214,6 +229,103 @@ class _WaitManualInerventionBS(_RevertBS):
     @classmethod
     def wait_for_manual_intervention(cls) -> bool:
         return True
+
+
+def _compose_key(
+    key_nuber: int | None, *, with_revert: bool, is_creating: bool, is_providing: bool
+) -> str:
+    key_parts = [
+        "bs",
+        "revert" if with_revert else "",
+        "c" if is_creating else "r",
+        "prov" if is_providing else "req",
+        f"{key_nuber}",
+    ]
+    return "_".join(key_parts)
+
+
+_CTX_VALUE: Final[str] = "a_value"
+
+
+class _MixingGetKeNumber:
+    @classmethod
+    def get_key_number(cls) -> int:
+        # key number if fetched form the calss name as the last digits or 0
+        key_number: int = 0
+        match = re.search(r"(\d+)\D*$", cls.__name__)
+        if match:
+            key_number = int(match.group(1))
+        return key_number
+
+
+class _BaseRequiresProvidesContext(_BS, _MixingGetKeNumber):
+    @classmethod
+    def get_create_requires_context_keys(cls) -> set[str]:
+        return {
+            _compose_key(
+                cls.get_key_number(),
+                with_revert=False,
+                is_creating=True,
+                is_providing=False,
+            )
+        }
+
+    @classmethod
+    def get_create_provides_context_keys(cls) -> set[str]:
+        return {
+            _compose_key(
+                cls.get_key_number(),
+                with_revert=False,
+                is_creating=True,
+                is_providing=True,
+            )
+        }
+
+
+class _BaseRequiresProvidesRevertContext(_RevertBS, _MixingGetKeNumber):
+    @classmethod
+    def get_create_requires_context_keys(cls) -> set[str]:
+        return {
+            _compose_key(
+                cls.get_key_number(),
+                with_revert=True,
+                is_creating=True,
+                is_providing=False,
+            )
+        }
+
+    @classmethod
+    def get_create_provides_context_keys(cls) -> set[str]:
+        return {
+            _compose_key(
+                cls.get_key_number(),
+                with_revert=True,
+                is_creating=True,
+                is_providing=True,
+            )
+        }
+
+    @classmethod
+    def get_revert_requires_context_keys(cls) -> set[str]:
+        return {
+            _compose_key(
+                cls.get_key_number(),
+                with_revert=True,
+                is_creating=False,
+                is_providing=False,
+            )
+        }
+
+    @classmethod
+    def get_revert_provides_context_keys(cls) -> set[str]:
+        return {
+            _compose_key(
+                cls.get_key_number(),
+                with_revert=True,
+                is_creating=False,
+                is_providing=True,
+            )
+        }
 
 
 class _BaseExpectedStepOrder:
@@ -428,6 +540,21 @@ class _WMI1(_WaitManualInerventionBS): ...
 
 
 class _WMI2(_WaitManualInerventionBS): ...
+
+
+# Below steps which require and provide context keys
+
+
+class RPCtxS1(_BaseRequiresProvidesContext): ...
+
+
+class RPCtxS2(_BaseRequiresProvidesContext): ...
+
+
+class RPCtxR1(_BaseRequiresProvidesRevertContext): ...
+
+
+class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -1001,11 +1128,148 @@ async def test_wait_for_manual_intervention(
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
 
-# TODO: test something with initial_operation_context that requires data from a previous step,
-#   we need a way to express that -> maybe limit a step to emit something in
-#   the context if it already exists
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, initial_context, expected_order",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(RPCtxS1),
+            ],
+            {
+                "bs__c_req_1": _CTX_VALUE,  # required by create
+            },
+            [
+                _CreateSequence(RPCtxS1),
+            ],
+            id="s1",
+        ),
+        pytest.param(
+            [
+                ParallelStepGroup(RPCtxS1, RPCtxS2),
+            ],
+            {
+                "bs__c_req_1": _CTX_VALUE,  # required by create
+                "bs__c_req_2": _CTX_VALUE,  # required by create
+            },
+            [
+                _CreateRandom(RPCtxS1, RPCtxS2),
+            ],
+            id="p2",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(RPCtxR1),
+            ],
+            {
+                "bs_revert_c_req_1": _CTX_VALUE,  # required by create
+                "bs_revert_r_req_1": _CTX_VALUE,  # not created autmatically since crete fails
+            },
+            [
+                _CreateSequence(RPCtxR1),
+                _RevertSequence(RPCtxR1),
+            ],
+            id="s1(1r)",
+        ),
+        pytest.param(
+            [
+                ParallelStepGroup(RPCtxR1, RPCtxR2),
+            ],
+            {
+                "bs_revert_c_req_1": _CTX_VALUE,  # required by create
+                "bs_revert_c_req_2": _CTX_VALUE,  # required by create
+                "bs_revert_r_req_1": _CTX_VALUE,  # not created autmatically since crete fails
+                "bs_revert_r_req_2": _CTX_VALUE,  # not created autmatically since crete fails
+            },
+            [
+                _CreateRandom(RPCtxR1, RPCtxR2),
+                _RevertRandom(RPCtxR1, RPCtxR2),
+            ],
+            id="p2(2r)",
+        ),
+    ],
+)
+async def test_operation_context_usage(
+    preserve_caplog_for_async_logging: None,
+    caplog: pytest.LogCaptureFixture,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_name: OperationName,
+    initial_context: OperationContext,
+    expected_order: list[_BaseExpectedStepOrder],
+):
+    caplog.at_level(logging.DEBUG)
+    caplog.clear()
 
-# TODO: inital key already present in operation InitialOperationContextKeyNotAllowedError
+    register_operation(operation_name, operation)
+
+    schedule_id = await get_core(selected_app).create(operation_name, initial_context)
+    assert isinstance(schedule_id, ScheduleId)
+
+    # NOTE: might fail because it raised ProvidedOperationContextKeysAreMissingError check logs
+    await _ensure_expected_order(steps_call_order, expected_order)
+
+    await _ensure_keys_in_store(selected_app, expected_keys=set())
+
+    assert f"{ProvidedOperationContextKeysAreMissingError.__name__}" not in caplog.text
+
+
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, initial_context",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(RPCtxS1),
+            ],
+            {
+                "bs__c_prov_1": _CTX_VALUE,  # already provied by step creates issue
+            },
+            id="s1",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(RPCtxR1),
+            ],
+            {
+                "bs_revert_c_prov_1": _CTX_VALUE,  # already provied by step creates issue
+            },
+            id="s1",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(RPCtxR1),
+            ],
+            {
+                "bs_revert_r_prov_1": _CTX_VALUE,  # already provied by step creates issue
+            },
+            id="s1",
+        ),
+    ],
+)
+async def test_operation_initial_context_using_key_provided_by_step(
+    preserve_caplog_for_async_logging: None,
+    caplog: pytest.LogCaptureFixture,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_name: OperationName,
+    initial_context: OperationContext,
+):
+    caplog.at_level(logging.DEBUG)
+    caplog.clear()
+
+    register_operation(operation_name, operation)
+
+    with pytest.raises(InitialOperationContextKeyNotAllowedError):
+        await get_core(selected_app).create(operation_name, initial_context)
+
+    await _ensure_keys_in_store(selected_app, expected_keys=set())
+
+
 # TODO: test for OperationContextValueIsNoneError (we can only test the ones retruned)
 # TODO: add a test check for proper context usage from step to step and also for the initial_step context usage
 

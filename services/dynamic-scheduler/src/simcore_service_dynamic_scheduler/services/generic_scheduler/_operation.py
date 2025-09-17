@@ -43,14 +43,14 @@ class BaseStep(ABC):
         """
 
     @classmethod
-    def get_create_requires_operation_context_keys(cls) -> set[str]:
+    def get_create_requires_context_keys(cls) -> set[str]:
         """
         [optional] keys that must be present in the OperationContext when CREATE is called
         """
         return set()
 
     @classmethod
-    def get_create_provides_operation_context_keys(cls) -> set[str]:
+    def get_create_provides_context_keys(cls) -> set[str]:
         """
         [optional] keys that will be added to the OperationContext when CREATE is successful
         """
@@ -93,14 +93,14 @@ class BaseStep(ABC):
         return {}
 
     @classmethod
-    def get_revert_requires_operation_context_keys(cls) -> set[str]:
+    def get_revert_requires_context_keys(cls) -> set[str]:
         """
         [optional] keys that must be present in the OperationContext when REVERT is called
         """
         return set()
 
     @classmethod
-    def get_revert_provides_operation_context_keys(cls) -> set[str]:
+    def get_revert_provides_context_keys(cls) -> set[str]:
         """
         [optional] keys that will be added to the OperationContext when REVERT is successful
         """
@@ -260,19 +260,19 @@ def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
 
             detected_steps_names[step_name] = step
 
-            for key in step.get_create_provides_operation_context_keys():
+            for key in step.get_create_provides_context_keys():
                 if key in create_provided_keys:
                     msg = (
                         f"Step {step_name=} provides already provided {key=} in "
-                        f"{step.get_create_provides_operation_context_keys.__name__}()"
+                        f"{step.get_create_provides_context_keys.__name__}()"
                     )
                     raise ValueError(msg)
                 create_provided_keys.add(key)
-            for key in step.get_revert_provides_operation_context_keys():
+            for key in step.get_revert_provides_context_keys():
                 if key in revert_provided_keys:
                     msg = (
                         f"Step {step_name=} provides already provided {key=} in "
-                        f"{step.get_revert_provides_operation_context_keys.__name__}()"
+                        f"{step.get_revert_provides_context_keys.__name__}()"
                     )
                     raise ValueError(msg)
                 revert_provided_keys.add(key)
@@ -296,7 +296,8 @@ def get_operation_provided_context_keys(operation: Operation) -> set[str]:
 
     for step_group in operation:
         for step in step_group.get_step_subgroup_to_run():
-            provided_keys.update(step.get_create_provides_operation_context_keys())
+            provided_keys.update(step.get_create_provides_context_keys())
+            provided_keys.update(step.get_revert_provides_context_keys())
 
     return provided_keys
 
