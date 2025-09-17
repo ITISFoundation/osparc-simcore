@@ -197,6 +197,15 @@ class _FailOnCreateAndRevertBS(_BS):
         raise RuntimeError(msg)
 
 
+class _SleepsForeverBS(_BS):
+    @classmethod
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        await super().create(app, required_context)
+        await asyncio.sleep(1e10)
+
+
 class _BaseExpectedStepOrder:
     def __init__(self, *steps: type[BaseStep]) -> None:
         self.steps = steps
@@ -371,6 +380,15 @@ class _FCR1(_FailOnCreateAndRevertBS): ...
 
 
 class _FCR2(_FailOnCreateAndRevertBS): ...
+
+
+# Below will sleep forever
+
+
+class _SF1(_SleepsForeverBS): ...
+
+
+class _SF2(_SleepsForeverBS): ...
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -682,8 +700,78 @@ async def test_fails_during_revert_is_in_error_state(
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
 
-# TODO: test what happens when fails on cancellation -> require a long running thing
-# -> all should go away at this point since it was intended
+@pytest.mark.parametrize("cancel_count", [1, 10])
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, expected_after_start_order, expected_order",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_S2, _S3, _S4),
+                SingleStepGroup(_SF1),
+            ],
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_S2, _S3, _S4),
+                _CreateSequence(_SF1),
+            ],
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_S2, _S3, _S4),
+                _CreateSequence(_SF1),
+                _RevertSequence(_SF1),
+                _RevertRandom(_S2, _S3, _S4),
+                _RevertSequence(_S1),
+            ],
+            id="s1p3s1(1s)",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_S2, _S3, _S4, _SF1, _SF2),
+            ],
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_SF1, _SF2, _S2, _S3, _S4),
+            ],
+            [
+                _CreateSequence(_S1),
+                _CreateRandom(_S2, _S3, _S4, _SF1, _SF2),
+                _RevertRandom(_S2, _S3, _S4, _SF2, _SF1),
+                _RevertSequence(_S1),
+            ],
+            id="s1p4(1s)",
+        ),
+    ],
+)
+async def test_cancelled_finishes_nicely(
+    preserve_caplog_for_async_logging: None,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_name: OperationName,
+    expected_after_start_order: list[_BaseExpectedStepOrder],
+    expected_order: list[_BaseExpectedStepOrder],
+    cancel_count: NonNegativeInt,
+):
+    register_operation(operation_name, operation)
+
+    core = get_core(selected_app)
+    schedule_id = await core.create(operation_name, {})
+    assert isinstance(schedule_id, ScheduleId)
+
+    await _ensure_expected_order(steps_call_order, expected_after_start_order)
+
+    # cancel in parallel multiple times (worst case)
+    await asyncio.gather(
+        *[core.cancel_schedule(schedule_id) for _ in range(cancel_count)]
+    )
+
+    await _ensure_expected_order(steps_call_order, expected_order)
+
+    await _ensure_keys_in_store(selected_app, expected_keys=set())
 
 
 # TODO: test manual intervention
@@ -701,3 +789,6 @@ async def test_fails_during_revert_is_in_error_state(
 # TODO: inital key already present in operation InitialOperationContextKeyNotAllowedError
 # TODO: test for OperationContextValueIsNoneError (we can only test the ones retruned)
 # TODO: add a test check for proper context usage from step to step and also for the initial_step context usage
+
+
+# TODO: tests to make sure all this still works with interruptions! -> Redis restart or Rabbit restart

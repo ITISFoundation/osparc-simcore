@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Iterable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import timedelta
 from typing import Final
 from uuid import uuid4
@@ -259,8 +259,9 @@ class Core:
                 logging.DEBUG,
                 f"Cancelling step {step_name=} of operation {operation_name=} for schedule {schedule_id=}",
             ):
-                deferred_task_uid = await step_proxy.get("deferred_task_uid")
-                await DeferredRunner.cancel(deferred_task_uid)
+                with suppress(KeyNotFoundInHashError):
+                    deferred_task_uid = await step_proxy.get("deferred_task_uid")
+                    await DeferredRunner.cancel(deferred_task_uid)
 
     async def _get_group_step_proxies(
         self,
@@ -607,3 +608,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 def get_core(app: FastAPI) -> Core:
     core: Core = app.state.generic_scheduler_core
     return core
+
+
+# TODO: refeactor this module to make the code more redable
+# TODO: remove setup teardown since it looks like it's not used
