@@ -31,7 +31,9 @@ def create_troubleshootting_log_message(
     def _collect_causes(exc: BaseException) -> str:
         causes = []
         current = exc.__cause__
-        while current is not None:
+        seen = set()  # Prevent infinite loops
+        while current is not None and id(current) not in seen:
+            seen.add(id(current))
             causes.append(f"[{type(current).__name__}]'{current}'")
             current = getattr(current, "__cause__", None)
         return " <- ".join(causes)

@@ -207,12 +207,16 @@ async def test_periodic_decorator():
     assert mock_func.call_count > 1
 
 
+class CustomError(Exception):
+    pass
+
+
 async def test_periodic_task_logs_error(
     mock_background_task: mock.AsyncMock,
     task_interval: datetime.timedelta,
     caplog: pytest.LogCaptureFixture,
 ):
-    mock_background_task.side_effect = RuntimeError("Test error")
+    mock_background_task.side_effect = CustomError("Test error")
 
     with caplog.at_level(logging.ERROR):
         async with periodic_task(
