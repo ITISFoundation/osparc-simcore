@@ -85,6 +85,14 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this.add(control);
           break;
+        case "help-button":
+          control = new qx.ui.menu.Button().set({
+            label: qx.locale.Manager.tr("Help & Support"),
+            icon: "@FontAwesome5Solid/question-circle/16",
+          });
+          control.addListener("execute", () => osparc.support.SupportCenter.openWindow());
+          this.add(control);
+          break;
         case "market":
           control = new qx.ui.menu.Button(this.tr("The Shop"));
           control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
@@ -213,7 +221,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.addSeparator();
 
       // quick starts and manuals
-      osparc.store.Support.addSupportConversationsToMenu(this);
+      this.getChildControl("help-button");
       this.addSeparator();
 
       this.getChildControl("theme-switcher");

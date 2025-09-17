@@ -38,6 +38,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from simcore_service_api_server.api.dependencies import services
 from simcore_service_api_server.api.dependencies.services import get_rabbitmq_rpc_client
 from simcore_service_api_server.api.routes.functions_routes import get_wb_api_rpc_client
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
@@ -81,6 +82,14 @@ async def mock_rabbitmq_rpc_client(
 
     app.dependency_overrides[get_rabbitmq_rpc_client] = _
     return mocker
+
+
+@pytest.fixture
+async def mock_celery_task_manager(app: FastAPI, mocker: MockerFixture) -> MockType:
+    def _(app: FastAPI):
+        return None
+
+    return mocker.patch.object(services, services.get_task_manager.__name__, _)
 
 
 @pytest.fixture

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from celery import Celery  # type: ignore[import-untyped]
+from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
@@ -21,7 +22,7 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
-from .errors import TaskNotFoundError
+from .errors import TaskNotFoundError, TaskSubmissionError
 
 _logger = logging.getLogger(__name__)
 
@@ -50,21 +51,38 @@ class CeleryTaskManager:
         ):
             task_uuid = uuid4()
             task_id = task_filter.create_task_id(task_uuid=task_uuid)
-            self._celery_app.send_task(
-                task_metadata.name,
-                task_id=task_id,
-                kwargs={"task_id": task_id} | task_params,
-                queue=task_metadata.queue.value,
-            )
 
             expiry = (
                 self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
                 if task_metadata.ephemeral
                 else self._celery_settings.CELERY_RESULT_EXPIRES
             )
-            await self._task_info_store.create_task(
-                task_id, task_metadata, expiry=expiry
-            )
+
+            try:
+                await self._task_info_store.create_task(
+                    task_id, task_metadata, expiry=expiry
+                )
+                self._celery_app.send_task(
+                    task_metadata.name,
+                    task_id=task_id,
+                    kwargs={"task_id": task_id} | task_params,
+                    queue=task_metadata.queue.value,
+                )
+            except CeleryError as exc:
+                try:
+                    await self._task_info_store.remove_task(task_id)
+                except CeleryError:
+                    _logger.warning(
+                        "Unable to cleanup task '%s' during error handling",
+                        task_id,
+                        exc_info=True,
+                    )
+                raise TaskSubmissionError(
+                    task_name=task_metadata.name,
+                    task_id=task_id,
+                    task_params=task_params,
+                ) from exc
+
             return task_uuid
 
     async def cancel_task(self, task_filter: TaskFilter, task_uuid: TaskUUID) -> None:

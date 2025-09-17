@@ -28,9 +28,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
     this.__studyData = studyData;
 
-    const layout = new qx.ui.layout.Grid(12, 2);
-    layout.setColumnFlex(1, 1); // content
-    this._setLayout(layout);
+    this._setLayout(new qx.ui.layout.HBox(10));
     this.setPadding(5);
 
     this.set({
@@ -40,6 +38,9 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
   statics: {
     isMyMessage: function(message) {
+      if (message["userGroupId"] === "system") {
+        return false;
+      }
       return message && osparc.auth.Data.getInstance().getGroupId() === message["userGroupId"];
     }
   },
@@ -66,22 +67,22 @@ qx.Class.define("osparc.conversation.MessageUI", {
         case "thumbnail":
           control = new osparc.ui.basic.UserThumbnail(32).set({
             marginTop: 4,
+            alignY: "top",
           });
-          this._add(control, {
-            row: 0,
-            column: isMyMessage ? 2 : 0,
-            rowSpan: 2,
-          });
+          this._addAt(control, isMyMessage ? 1 : 0);
+          break;
+        case "main-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2).set({
+            alignX: isMyMessage ? "right" : "left"
+          }));
+          this._addAt(control, isMyMessage ? 0 : 1, { flex: 1});
           break;
         case "header-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: isMyMessage ? "right" : "left"
           }));
           control.addAt(new qx.ui.basic.Label("-"), 1);
-          this._add(control, {
-            row: 0,
-            column: 1
-          });
+          this.getChildControl("main-layout").addAt(control, 0);
           break;
         case "user-name":
           control = new qx.ui.basic.Label().set({
@@ -97,25 +98,21 @@ qx.Class.define("osparc.conversation.MessageUI", {
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;
-        case "message-content":
-          control = new osparc.ui.markdown.Markdown().set({
-            noMargin: true,
-            allowGrowX: true,
+        case "message-bubble":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+            alignX: isMyMessage ? "right" : "left"
+          })).set({
+            decorator: "chat-bubble",
+            allowGrowX: false,
+            padding: 8,
           });
-          control.getContentElement().setStyles({
-            "text-align": isMyMessage ? "right" : "left",
-          });
-          this._add(control, {
-            row: 1,
-            column: 1,
-          });
+          const bubbleStyle = isMyMessage ? { "border-top-right-radius": "0px" } : { "border-top-left-radius": "0px" };
+          control.getContentElement().setStyles(bubbleStyle);
+          this.getChildControl("main-layout").addAt(control, 1);
           break;
-        case "spacer":
-          control = new qx.ui.core.Spacer();
-          this._add(control, {
-            row: 1,
-            column: isMyMessage ? 0 : 2,
-          });
+        case "message-content":
+          control = new osparc.ui.markdown.MarkdownChat();
+          this.getChildControl("message-bubble").add(control);
           break;
         case "menu-button": {
           const buttonSize = 22;
@@ -126,14 +123,10 @@ qx.Class.define("osparc.conversation.MessageUI", {
             allowGrowY: false,
             marginTop: 4,
             alignY: "top",
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesome5Solid/ellipsis-v/12",
             focusable: false
           });
-          this._add(control, {
-            row: 0,
-            column: 3,
-            rowSpan: 2,
-          });
+          this._addAt(control, 2);
           break;
         }
       }
@@ -142,13 +135,6 @@ qx.Class.define("osparc.conversation.MessageUI", {
     },
 
     __applyMessage: function(message) {
-      const isMyMessage = this.self().isMyMessage(message);
-      this._getLayout().setColumnFlex(isMyMessage ? 0 : 2, 3); // spacer
-
-      const thumbnail = this.getChildControl("thumbnail");
-
-      const userName = this.getChildControl("user-name");
-
       const createdDateData = new Date(message["created"]);
       const createdDate = osparc.utils.Utils.formatDateAndTime(createdDateData);
       const lastUpdate = this.getChildControl("last-updated");
@@ -163,17 +149,21 @@ qx.Class.define("osparc.conversation.MessageUI", {
       const messageContent = this.getChildControl("message-content");
       messageContent.setValue(message["content"]);
 
-      osparc.store.Users.getInstance().getUser(message["userGroupId"])
-        .then(user => {
-          thumbnail.setUser(user);
-          userName.setValue(user ? user.getLabel() : "Unknown user");
-        })
-        .catch(() => {
+      const thumbnail = this.getChildControl("thumbnail");
+      const userName = this.getChildControl("user-name");
+      if (message["userGroupId"] === "system") {
+        userName.setValue("Support");
+      } else {
+        osparc.store.Users.getInstance().getUser(message["userGroupId"])
+          .then(user => {
+            thumbnail.setUser(user);
+            userName.setValue(user ? user.getLabel() : "Unknown user");
+          })
+          .catch(() => {
             thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());
             userName.setValue("Unknown user");
-        });
-
-      this.getChildControl("spacer");
+          });
+      }
 
       if (this.self().isMyMessage(message)) {
         const menuButton = this.getChildControl("menu-button");
@@ -207,9 +197,19 @@ qx.Class.define("osparc.conversation.MessageUI", {
         resizable: true,
         showClose: true,
       });
-      addMessage.addListener("messageUpdated", e => {
-        win.close();
-        this.fireDataEvent("messageUpdated", e.getData());
+      addMessage.addListener("updateMessage", e => {
+        const content = e.getData();
+        const conversationId = message["conversationId"];
+        const messageId = message["messageId"];
+        if (this.__studyData) {
+          promise = osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], conversationId, messageId, content);
+        } else {
+          promise = osparc.store.ConversationsSupport.getInstance().editMessage(conversationId, messageId, content);
+        }
+        promise.then(data => {
+          win.close();
+          this.fireDataEvent("messageUpdated", data);
+        });
       });
     },
 

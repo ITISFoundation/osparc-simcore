@@ -110,7 +110,7 @@ qx.Class.define("osparc.store.Groups", {
           groupMe.set({
             label: myAuthData.getUserName(),
             description,
-            thumbnail: osparc.utils.Avatar.emailToThumbnail(myAuthData.getEmail(), myAuthData.getUserName()),
+            thumbnail: myAuthData.getAvatar(32),
           })
           return orgs;
         });

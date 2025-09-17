@@ -35,6 +35,7 @@
     "css": [
       "jsontreeviewer/jsonTree.css",
       "hint/hint.css",
+      "marked/markdown.css",
       "common/common.css"
     ]
   },

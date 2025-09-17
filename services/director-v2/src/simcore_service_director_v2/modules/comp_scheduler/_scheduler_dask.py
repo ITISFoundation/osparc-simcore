@@ -24,8 +24,13 @@ from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.redis._client import RedisClientSDK
+from servicelib.redis._semaphore_decorator import (
+    with_limited_concurrency_cm,
+)
 from servicelib.utils import limited_as_completed, limited_gather
 
+from ..._meta import APP_NAME
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendOnDemandNotReadyError,
@@ -67,6 +72,40 @@ _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
 
 
+def _get_redis_client_from_scheduler(
+    _user_id: UserID,
+    scheduler: "DaskScheduler",
+    **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
+) -> RedisClientSDK:
+    return scheduler.redis_client
+
+
+def _get_semaphore_cluster_redis_key(
+    user_id: UserID,
+    *args,  # pylint: disable=unused-argument # noqa: ARG001
+    run_metadata: RunMetadataDict,
+    **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
+) -> str:
+    return f"{APP_NAME}-cluster-user_id_{user_id}-wallet_id_{run_metadata.get('wallet_id')}"
+
+
+def _get_semaphore_capacity_from_scheduler(
+    _user_id: UserID,
+    scheduler: "DaskScheduler",
+    **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
+) -> int:
+    return (
+        scheduler.settings.COMPUTATIONAL_BACKEND_PER_CLUSTER_MAX_DISTRIBUTED_CONCURRENT_CONNECTIONS
+    )
+
+
+@with_limited_concurrency_cm(
+    _get_redis_client_from_scheduler,
+    key=_get_semaphore_cluster_redis_key,
+    capacity=_get_semaphore_capacity_from_scheduler,
+    blocking=True,
+    blocking_timeout=None,
+)
 @asynccontextmanager
 async def _cluster_dask_client(
     user_id: UserID,
