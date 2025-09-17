@@ -36,9 +36,10 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
 
   construct: function() {
     this.base(arguments);
+
     this._setLayout(new qx.ui.layout.Grow());
 
-    this.__queue = [];
+    this.__messageQueue = [];
 
     // force creation of the iframe child control
     this._createChildControl("iframe");
@@ -96,7 +97,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
   },
 
   members: {
-    __queue: null,
+    __messageQueue: null,
     __iframeEl: null,
 
     _createChildControlImpl: function(id) {
@@ -142,7 +143,7 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
 
     __send: function(msg) {
       if (!this.isReady()) {
-        this.__queue.push(msg);
+        this.__messageQueue.push(msg);
         return;
       }
       this.__postMessage(msg);
@@ -152,8 +153,8 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
       const data = ev.data;
       if (data && data.type === "osparc:ready") {
         this.setReady(true);
-        while (this.__queue.length) {
-          this.__postMessage(this.__queue.shift());
+        while (this.__messageQueue.length) {
+          this.__postMessage(this.__messageQueue.shift());
         }
       }
     },
