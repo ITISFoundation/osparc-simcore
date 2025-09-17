@@ -24,7 +24,6 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
     get_core,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
-    OperationContext,
     OperationName,
     ProvidedOperationContext,
     RequiredOperationContext,
@@ -321,13 +320,12 @@ class _RS10(_RevertBS): ...
 
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
-    "operation, initial_operation_context, expected_order",
+    "operation, expected_order",
     [
         pytest.param(
             [
                 SingleStepGroup(_S1),
             ],
-            {},
             [
                 _CreateSequence(_S1),
             ],
@@ -337,7 +335,6 @@ class _RS10(_RevertBS): ...
             [
                 ParallelStepGroup(_S1, _S2),
             ],
-            {},
             [
                 _CreateRandom(_S1, _S2),
             ],
@@ -347,7 +344,6 @@ class _RS10(_RevertBS): ...
             [
                 ParallelStepGroup(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
             ],
-            {},
             [
                 _CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
             ],
@@ -361,7 +357,6 @@ class _RS10(_RevertBS): ...
                 ParallelStepGroup(_S4, _S5, _S6, _S7, _S8, _S9),
                 SingleStepGroup(_S10),
             ],
-            {},
             [
                 _CreateSequence(_S1, _S2, _S3),
                 _CreateRandom(_S4, _S5, _S6, _S7, _S8, _S9),
@@ -373,7 +368,6 @@ class _RS10(_RevertBS): ...
             [
                 SingleStepGroup(_RS1),
             ],
-            {},
             [
                 _CreateSequence(_RS1),
                 _RevertSequence(_RS1),
@@ -384,7 +378,6 @@ class _RS10(_RevertBS): ...
             [
                 ParallelStepGroup(_RS1, _S1, _S2, _S3, _S4, _S5, _S6),
             ],
-            {},
             [
                 _CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
                 _RevertRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
@@ -399,7 +392,6 @@ class _RS10(_RevertBS): ...
                 SingleStepGroup(_S7),  # will not execute
                 ParallelStepGroup(_S8, _S9),  # will not execute
             ],
-            {},
             [
                 _CreateSequence(_S1),
                 _CreateRandom(_S2, _S3, _S4, _S5, _S6),
@@ -417,7 +409,6 @@ class _RS10(_RevertBS): ...
                 SingleStepGroup(_S7),  # will not execute
                 ParallelStepGroup(_S8, _S9),  # will not execute
             ],
-            {},
             [
                 _CreateSequence(_S1),
                 _CreateRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
@@ -451,7 +442,6 @@ class _RS10(_RevertBS): ...
                     _RS10,
                 ),
             ],
-            {},
             [
                 _CreateRandom(
                     _S1,
@@ -502,13 +492,12 @@ class _RS10(_RevertBS): ...
         ),
     ],
 )
-async def test_core_workflow(
+async def test_create_revert_workflow(
     preserve_caplog_for_async_logging: None,
     steps_call_order: list[tuple[str, str]],
     selected_app: FastAPI,
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
-    initial_operation_context: OperationContext,
     expected_order: list[_BaseExpectedStepOrder],
     faker: Faker,
 ):
@@ -516,9 +505,7 @@ async def test_core_workflow(
 
     register_operation(operation_name, operation)
 
-    schedule_id = await get_core(selected_app).create(
-        operation_name, initial_operation_context
-    )
+    schedule_id = await get_core(selected_app).create(operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
@@ -532,9 +519,11 @@ async def test_core_workflow(
 
 
 # TODO: test manual intervention
+
 # TODO: test repeating: how do we stop this one? -> cancel it after a bit as it's supposed to run forever
 # TODO: test fail on repating (what should happen?)
 #   -> should continue like for the status, just logs error and repeats
+
 # TODO: test something with initial_operation_context that requires data from a previous step,
 #   we need a way to express that -> maybe limit a step to emit something in
 #   the context if it already exists
