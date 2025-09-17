@@ -18,7 +18,7 @@
 /**
  * @asset(rocketPreview/build/index.html)
  * @asset(rocketPreview/build/**)
- * @asset(rocketPreview/osparc-bridge.js) // build needs to include it
+ * @asset(rocketPreview/osparc-bridge.js) // index.html needs to include it
  */
 
 /**
