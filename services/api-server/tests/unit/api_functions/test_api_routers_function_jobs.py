@@ -36,11 +36,12 @@ from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskFilter, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server._service_function_jobs_task_client import (
-    _JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS,
-    _JOB_CREATION_TASK_STATUS_PREFIX,
     FunctionJobTaskClientService,
 )
 from simcore_service_api_server.api.dependencies import services as service_dependencies
+from simcore_service_api_server.models.schemas.functions import (
+    FunctionJobCreationTaskStatus,
+)
 from simcore_service_api_server.models.schemas.jobs import JobStatus
 
 _faker = Faker()
@@ -368,11 +369,9 @@ async def test_get_function_job_status(
     ):
         assert data["status"] == job_status
     elif project_job_id is None and job_creation_task_id is None:
-        assert data["status"] == _JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS
+        assert data["status"] == FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
     elif project_job_id is None and job_creation_task_id is not None:
-        assert (
-            data["status"] == f"{_JOB_CREATION_TASK_STATUS_PREFIX}{celery_task_state}"
-        )
+        assert data["status"] == FunctionJobCreationTaskStatus[celery_task_state.name]
     else:
         pytest.fail("Unexpected combination of parameters")
 
