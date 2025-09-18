@@ -7,10 +7,11 @@ from typing import Final
 from uuid import uuid4
 
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from pydantic import NonNegativeInt
-from servicelib.logging_utils import create_troubleshooting_log_kwargs, log_context
+from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
 from ._deferred_runner import DeferredRunner
