@@ -249,9 +249,9 @@ class DaskClient:
                 self.backend.client.publish_dataset(task_future, name=job_id)
             )
 
-            _logger.debug(
+            _logger.info(
                 "Dask task %s started [%s]",
-                f"{task_future.key=}",
+                f"{job_id=}",
                 f"{node_image.command=}",
             )
             return PublishedComputationTask(node_id=node_id, job_id=DaskJobID(job_id))
