@@ -53,7 +53,7 @@ def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
     return count
 
 
-async def _safe_nack(
+async def _nack_message(
     message_handler: MessageHandler,
     max_retries_upon_error: int,
     message: aio_pika.abc.AbstractIncomingMessage,
@@ -73,7 +73,7 @@ async def _safe_nack(
         # NOTE: puts message to the Dead Letter Exchange
         await message.nack(requeue=False)
     else:
-        _logger.exception(
+        _logger.error(
             "Handler '%s' is giving up on message '%s' with body '%s'",
             message_handler,
             message,
@@ -86,33 +86,33 @@ async def _on_message(
     max_retries_upon_error: int,
     message: aio_pika.abc.AbstractIncomingMessage,
 ) -> None:
-    with log_catch(_logger, reraise=False):
-        async with message.process(requeue=True, ignore_processed=True):
-            try:
-                with log_context(
-                    _logger,
-                    logging.DEBUG,
-                    msg=f"Received message from {message.exchange=}, {message.routing_key=}",
-                ):
-                    if not await message_handler(message.body):
-                        await _safe_nack(
-                            message_handler, max_retries_upon_error, message
-                        )
-            except Exception as exc:
-                _logger.exception(
-                    **create_troubleshooting_log_kwargs(
-                        "Unhandled exception raised in message handler",
-                        error=exc,
-                        error_context={
-                            "message_id": message.message_id,
-                            "message_body": message.body,
-                            "message_handler": message_handler.__name__,
-                        },
-                        tip="This could indicate an error in the message handler, please check the message handler code",
+    async with message.process(requeue=True, ignore_processed=True):
+        try:
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                msg=f"Received message from {message.exchange=}, {message.routing_key=}",
+            ):
+                if not await message_handler(message.body):
+                    await _nack_message(
+                        message_handler, max_retries_upon_error, message
                     )
+        except Exception as exc:
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Unhandled exception raised in message handler or when nacking message",
+                    error=exc,
+                    error_context={
+                        "message_id": message.message_id,
+                        "message_body": message.body,
+                        "message_handler": message_handler.__name__,
+                    },
+                    tip="This could indicate an error in the message handler, please check the message handler code",
                 )
-                await _safe_nack(message_handler, max_retries_upon_error, message)
-                raise
+            )
+            with log_catch(_logger, reraise=False):
+                await _nack_message(message_handler, max_retries_upon_error, message)
+            raise
 
 
 @dataclass
