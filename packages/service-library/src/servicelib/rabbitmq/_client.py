@@ -6,6 +6,7 @@ from typing import Final
 from uuid import uuid4
 
 import aio_pika
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import NonNegativeInt
 
 from ..logging_utils import log_catch, log_context
@@ -85,21 +86,33 @@ async def _on_message(
     max_retries_upon_error: int,
     message: aio_pika.abc.AbstractIncomingMessage,
 ) -> None:
-    async with message.process(requeue=True, ignore_processed=True):
-        try:
-            with log_context(
-                _logger,
-                logging.DEBUG,
-                msg=f"Received message from {message.exchange=}, {message.routing_key=}",
-            ):
-                if not await message_handler(message.body):
-                    await _safe_nack(message_handler, max_retries_upon_error, message)
-        except Exception:  # pylint: disable=broad-exception-caught
-            _logger.exception(
-                "Exception raised when handling message. TIP: review your code"
-            )
-            with log_catch(_logger, reraise=False):
+    with log_catch(_logger, reraise=False):
+        async with message.process(requeue=True, ignore_processed=True):
+            try:
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    msg=f"Received message from {message.exchange=}, {message.routing_key=}",
+                ):
+                    if not await message_handler(message.body):
+                        await _safe_nack(
+                            message_handler, max_retries_upon_error, message
+                        )
+            except Exception as exc:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        "Unhandled exception raised in message handler",
+                        error=exc,
+                        error_context={
+                            "message_id": message.message_id,
+                            "message_body": message.body,
+                            "message_handler": message_handler.__name__,
+                        },
+                        tip="This could indicate an error in the message handler, please check the message handler code",
+                    )
+                )
                 await _safe_nack(message_handler, max_retries_upon_error, message)
+                raise
 
 
 @dataclass
@@ -144,6 +157,7 @@ class RabbitMQClient(RabbitMQClientBase):
     async def _get_channel(self) -> aio_pika.abc.AbstractChannel:
         assert self._connection_pool  # nosec
         async with self._connection_pool.acquire() as connection:
+            assert isinstance(connection, aio_pika.RobustConnection)  # nosec
             channel: aio_pika.abc.AbstractChannel = await connection.channel()
             channel.close_callbacks.add(self._channel_close_callback)
             return channel
