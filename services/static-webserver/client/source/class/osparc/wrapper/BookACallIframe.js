@@ -44,6 +44,9 @@ qx.Class.define("osparc.wrapper.BookACallIframe", {
     // Call parent constructor
     this.base(arguments, url);
 
+    this.setAppearance("iframe-no-border");
+
+    // not only once, every time there is a load (e.g. when navigating in the iframe)
     this.addListener("load", () => this.__updateStyles(), this);
   },
 
@@ -57,9 +60,8 @@ qx.Class.define("osparc.wrapper.BookACallIframe", {
       const iframe = this.getContentElement().getDomElement();
       const theme = {
         '--bs-body-bg': colorManager.resolve("background-main-1"),
-        '--osparc-primary': '"red"',
-        '--osparc-secondary': '"green"',
-        '--osparc-text': '"black"'
+        '--osparc-text-color': colorManager.resolve("text"),
+        '--osparc-primary': colorManager.resolve("product-color"),
       };
       iframe.contentWindow.postMessage({
         type: 'osparc-theme',
