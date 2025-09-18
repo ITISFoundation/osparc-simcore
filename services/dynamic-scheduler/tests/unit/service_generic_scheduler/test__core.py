@@ -22,6 +22,15 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.core.application import create_app
 from simcore_service_dynamic_scheduler.services.generic_scheduler import (
+    BaseStep,
+    Operation,
+    OperationName,
+    OperationRegistry,
+    ParallelStepGroup,
+    ProvidedOperationContext,
+    RequiredOperationContext,
+    ScheduleId,
+    SingleStepGroup,
     cancel_operation,
     start_operation,
 )
@@ -33,17 +42,6 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     OperationContext,
-    OperationName,
-    ProvidedOperationContext,
-    RequiredOperationContext,
-    ScheduleId,
-)
-from simcore_service_dynamic_scheduler.services.generic_scheduler._operation import (
-    BaseStep,
-    Operation,
-    OperationRegistry,
-    ParallelStepGroup,
-    SingleStepGroup,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
     get_store,
