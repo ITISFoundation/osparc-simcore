@@ -63,10 +63,11 @@ qx.Class.define("osparc.wrapper.BookACallIframe", {
         '--osparc-text-color': colorManager.resolve("text"),
         '--osparc-primary': colorManager.resolve("product-color"),
       };
+      const url = new URL(this.self().SERVICE_URL);
       iframe.contentWindow.postMessage({
         type: 'osparc-theme',
         theme
-      }, "http://localhost:8000"); // targetOrigin = iframe origin
+      }, url.origin); // targetOrigin = iframe origin
     },
   }
 });
