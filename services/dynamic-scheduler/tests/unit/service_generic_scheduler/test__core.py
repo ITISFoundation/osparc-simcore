@@ -1251,17 +1251,12 @@ async def test_operation_context_usage(
 )
 async def test_operation_initial_context_using_key_provided_by_step(
     preserve_caplog_for_async_logging: None,
-    caplog: pytest.LogCaptureFixture,
-    steps_call_order: list[tuple[str, str]],
     selected_app: FastAPI,
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
     operation_name: OperationName,
     initial_context: OperationContext,
 ):
-    caplog.at_level(logging.DEBUG)
-    caplog.clear()
-
     register_operation(operation_name, operation)
 
     with pytest.raises(InitialOperationContextKeyNotAllowedError):
