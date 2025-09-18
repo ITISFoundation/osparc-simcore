@@ -1,17 +1,24 @@
+import contextlib
 import json
 import logging
 import os
 import re
 import subprocess
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 import docker
 import yaml
+from servicelib.rabbitmq import RabbitMQClient
+from servicelib.redis import RedisClientSDK
 from tenacity import retry
 from tenacity.after import after_log
-from tenacity.stop import stop_after_attempt
+from tenacity.asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 
 
@@ -272,3 +279,56 @@ def save_docker_infos(destination_dir: Path):
             f"wrote docker log and json files for {len(all_containers)} containers in ",
             destination_dir,
         )
+
+
+class _ClientWithPingProtocol(Protocol):
+    async def ping(self) -> bool: ...
+
+
+class ServiceManager:
+    def __init__(
+        self,
+        redis_client: RedisClientSDK,
+        rabbit_client: RabbitMQClient,
+        paused_container: Callable[[str], AbstractAsyncContextManager[None]],
+    ) -> None:
+        self.redis_client = redis_client
+        self.rabbit_client = rabbit_client
+        self.paused_container = paused_container
+
+    @contextlib.asynccontextmanager
+    async def _paused_container(
+        self, container_name: str, client: _ClientWithPingProtocol
+    ) -> AsyncIterator[None]:
+        async with self.paused_container(container_name):
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.1),
+                stop=stop_after_delay(10),
+                reraise=True,
+                retry=retry_if_exception_type(AssertionError),
+            ):
+                with attempt:
+                    assert await client.ping() is False
+            yield
+
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(10),
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt:
+                assert await client.ping() is True
+
+    @contextlib.asynccontextmanager
+    async def pause_rabbit(self) -> AsyncIterator[None]:
+        async with self._paused_container("rabbit", self.rabbit_client):
+            yield
+
+    @contextlib.asynccontextmanager
+    async def pause_redis(self) -> AsyncIterator[None]:
+        # save db for clean restore point
+        await self.redis_client.redis.save()
+
+        async with self._paused_container("redis", self.redis_client):
+            yield
