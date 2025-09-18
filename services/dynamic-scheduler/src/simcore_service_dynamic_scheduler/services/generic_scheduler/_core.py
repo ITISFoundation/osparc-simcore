@@ -349,8 +349,8 @@ class Core:
         _logger.debug("Operation completed: steps_statuses=%s", steps_statuses)
 
         # NOTE: at this point all steps are in a final status
-        if step_group.repeat_steps is True:
-            await self._continue_as_repeat_steps(
+        if step_group.repeat_steps is True and is_creating:
+            await self._continue_as_repeating_steps(
                 schedule_data_proxy,
                 schedule_id,
                 operation_name,
@@ -378,7 +378,7 @@ class Core:
                 step_group,
             )
 
-    async def _continue_as_repeat_steps(
+    async def _continue_as_repeating_steps(
         self,
         schedule_data_proxy: ScheduleDataStoreProxy,
         schedule_id: ScheduleId,
