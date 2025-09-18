@@ -6,6 +6,7 @@ from typing import Final
 from uuid import uuid4
 
 import aio_pika
+from aiormq import ChannelInvalidStateError
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import NonNegativeInt
 
@@ -86,32 +87,47 @@ async def _on_message(
     max_retries_upon_error: int,
     message: aio_pika.abc.AbstractIncomingMessage,
 ) -> None:
-    async with message.process(requeue=True, ignore_processed=True):
-        try:
-            with log_context(
-                _logger,
-                logging.DEBUG,
-                msg=f"Received message from {message.exchange=}, {message.routing_key=}",
-            ):
-                if not await message_handler(message.body):
+    log_error_context = {
+        "message_id": message.message_id,
+        "message_body": message.body,
+        "message_handler": f"{message_handler}",
+    }
+    try:
+        async with message.process(requeue=True, ignore_processed=True):
+            try:
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    msg=f"Received message from {message.exchange=}, {message.routing_key=}",
+                ):
+                    if not await message_handler(message.body):
+                        await _nack_message(
+                            message_handler, max_retries_upon_error, message
+                        )
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        "Unhandled exception raised in message handler or when nacking message",
+                        error=exc,
+                        error_context=log_error_context,
+                        tip="This could indicate an error in the message handler, please check the message handler code",
+                    )
+                )
+                with log_catch(_logger, reraise=False):
                     await _nack_message(
                         message_handler, max_retries_upon_error, message
                     )
-        except Exception as exc:  # pylint: disable=broad-exception-caught
-            _logger.exception(
-                **create_troubleshooting_log_kwargs(
-                    "Unhandled exception raised in message handler or when nacking message",
-                    error=exc,
-                    error_context={
-                        "message_id": message.message_id,
-                        "message_body": message.body,
-                        "message_handler": f"{message_handler}",
-                    },
-                    tip="This could indicate an error in the message handler, please check the message handler code",
-                )
+    except ChannelInvalidStateError as exc:
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Cannot process message because channel is closed. Message will be requeued by RabbitMQ",
+                error=exc,
+                error_context=log_error_context,
+                tip="This could indicate the message handler takes > 30 minutes to complete "
+                "(default time the RabbitMQ broker waits to close a channel when a "
+                "message is not acknowledged) or an issue in RabbitMQ broker itself.",
             )
-            with log_catch(_logger, reraise=False):
-                await _nack_message(message_handler, max_retries_upon_error, message)
+        )
 
 
 @dataclass
