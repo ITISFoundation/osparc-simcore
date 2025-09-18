@@ -6,9 +6,9 @@ from typing import Any, Final
 
 from attr import dataclass
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
     AsyncJobId,
+    AsyncJobOwnerMetadata,
     AsyncJobResult,
     AsyncJobStatus,
 )
@@ -41,7 +41,7 @@ async def cancel(
     *,
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
 ) -> None:
     await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -57,7 +57,7 @@ async def status(
     *,
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
 ) -> AsyncJobStatus:
     _result = await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -75,7 +75,7 @@ async def result(
     *,
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
 ) -> AsyncJobResult:
     _result = await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -92,7 +92,7 @@ async def list_jobs(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
 ) -> list[AsyncJobGet]:
     _result: list[AsyncJobGet] = await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -108,7 +108,7 @@ async def submit(
     *,
     rpc_namespace: RPCNamespace,
     method_name: str,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
     **kwargs,
 ) -> AsyncJobGet:
     _result = await rabbitmq_rpc_client.request(
@@ -138,7 +138,7 @@ async def _wait_for_completion(
     rpc_namespace: RPCNamespace,
     method_name: RPCMethodName,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
     client_timeout: datetime.timedelta,
 ) -> AsyncGenerator[AsyncJobStatus, None]:
     try:
@@ -189,7 +189,7 @@ async def wait_and_get_result(
     rpc_namespace: RPCNamespace,
     method_name: str,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
     client_timeout: datetime.timedelta,
 ) -> AsyncGenerator[AsyncJobComposedResult, None]:
     """when a job is already submitted this will wait for its completion
@@ -236,7 +236,7 @@ async def submit_and_wait(
     *,
     rpc_namespace: RPCNamespace,
     method_name: str,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
     client_timeout: datetime.timedelta,
     **kwargs,
 ) -> AsyncGenerator[AsyncJobComposedResult, None]:

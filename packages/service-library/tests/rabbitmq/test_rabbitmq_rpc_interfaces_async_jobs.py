@@ -8,9 +8,9 @@ import pytest
 from common_library.async_tools import cancel_wait_task
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
     AsyncJobId,
+    AsyncJobOwnerMetadata,
     AsyncJobResult,
     AsyncJobStatus,
 )
@@ -38,8 +38,8 @@ def method_name(faker: Faker) -> RPCMethodName:
 
 
 @pytest.fixture
-def job_filter(faker: Faker) -> AsyncJobFilter:
-    return AsyncJobFilter(
+def job_filter(faker: Faker) -> AsyncJobOwnerMetadata:
+    return AsyncJobOwnerMetadata(
         user_id=faker.pyint(min_value=1),
         product_name=faker.word(),
         task_owner=_ASYNC_JOB_CLIENT_NAME,
@@ -72,7 +72,7 @@ async def async_job_rpc_server(  # noqa: C901
             raise JobMissingError(job_id=f"{job_id}")
 
         async def status(
-            self, job_id: AsyncJobId, job_filter: AsyncJobFilter
+            self, job_id: AsyncJobId, job_filter: AsyncJobOwnerMetadata
         ) -> AsyncJobStatus:
             assert job_filter
             task = self._get_task(job_id)
@@ -82,14 +82,16 @@ async def async_job_rpc_server(  # noqa: C901
                 done=task.done(),
             )
 
-        async def cancel(self, job_id: AsyncJobId, job_filter: AsyncJobFilter) -> None:
+        async def cancel(
+            self, job_id: AsyncJobId, job_filter: AsyncJobOwnerMetadata
+        ) -> None:
             assert job_id
             assert job_filter
             task = self._get_task(job_id)
             task.cancel()
 
         async def result(
-            self, job_id: AsyncJobId, job_filter: AsyncJobFilter
+            self, job_id: AsyncJobId, job_filter: AsyncJobOwnerMetadata
         ) -> AsyncJobResult:
             assert job_filter
             task = self._get_task(job_id)
@@ -102,7 +104,9 @@ async def async_job_rpc_server(  # noqa: C901
                 }
             )
 
-        async def list_jobs(self, job_filter: AsyncJobFilter) -> list[AsyncJobGet]:
+        async def list_jobs(
+            self, job_filter: AsyncJobOwnerMetadata
+        ) -> list[AsyncJobGet]:
             assert job_filter
 
             return [
@@ -113,7 +117,7 @@ async def async_job_rpc_server(  # noqa: C901
                 for t in self.tasks
             ]
 
-        async def submit(self, job_filter: AsyncJobFilter) -> AsyncJobGet:
+        async def submit(self, job_filter: AsyncJobOwnerMetadata) -> AsyncJobGet:
             assert job_filter
             job_id = faker.uuid4(cast_to=None)
             self.tasks.append(asyncio.create_task(_slow_task(), name=f"{job_id}"))
@@ -144,7 +148,7 @@ async def test_async_jobs_methods(
     async_job_rpc_server: RabbitMQRPCClient,
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
     job_id: AsyncJobId,
     method: str,
 ):
@@ -165,7 +169,7 @@ async def test_list_jobs(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
 ):
     await list_jobs(
         rpc_client,
@@ -179,7 +183,7 @@ async def test_submit(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
 ):
     await submit(
         rpc_client,
@@ -193,7 +197,7 @@ async def test_submit_with_invalid_method_name(
     async_job_rpc_server: RabbitMQRPCClient,
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
 ):
     with pytest.raises(RemoteMethodNotRegisteredError):
         await submit(
@@ -209,7 +213,7 @@ async def test_submit_and_wait_properly_timesout(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
 ):
     with pytest.raises(TimeoutError):  # noqa: PT012
         async for _job_composed_result in submit_and_wait(
@@ -227,7 +231,7 @@ async def test_submit_and_wait(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
 ):
     async for job_composed_result in submit_and_wait(
         rpc_client,

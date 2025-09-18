@@ -9,7 +9,7 @@ import tracemalloc
 from datetime import datetime
 
 from common_library.error_codes import ErrorCodeStr
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobOwnerMetadata
 from models_library.products import ProductName
 from models_library.users import UserID
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
@@ -127,7 +127,9 @@ def compose_support_error_msg(
     return ". ".join(sentences)
 
 
-def get_job_filter(*, user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
-    return AsyncJobFilter(
+def get_job_filter(
+    *, user_id: UserID, product_name: ProductName
+) -> AsyncJobOwnerMetadata:
+    return AsyncJobOwnerMetadata(
         user_id=user_id, product_name=product_name, task_owner=APP_NAME
     )

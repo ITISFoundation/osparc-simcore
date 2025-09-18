@@ -1,8 +1,8 @@
 from typing import Literal
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
+    AsyncJobOwnerMetadata,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
@@ -15,8 +15,8 @@ from ..async_jobs.async_jobs import submit
 
 
 async def copy_folders_from_project(
-    client: RabbitMQRPCClient, *, body: FoldersBody, job_filter: AsyncJobFilter
-) -> tuple[AsyncJobGet, AsyncJobFilter]:
+    client: RabbitMQRPCClient, *, body: FoldersBody, job_filter: AsyncJobOwnerMetadata
+) -> tuple[AsyncJobGet, AsyncJobOwnerMetadata]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -34,8 +34,8 @@ async def start_export_data(
     *,
     paths_to_export: list[PathToExport],
     export_as: Literal["path", "download_link"],
-    job_filter: AsyncJobFilter
-) -> tuple[AsyncJobGet, AsyncJobFilter]:
+    job_filter: AsyncJobOwnerMetadata
+) -> tuple[AsyncJobGet, AsyncJobOwnerMetadata]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,

@@ -1,6 +1,8 @@
 from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
+from models_library.products import ProductName
+from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from ..progress_bar import ProgressReport
@@ -42,7 +44,7 @@ class AsyncJobAbort(BaseModel):
     job_id: AsyncJobId
 
 
-class AsyncJobFilter(BaseModel):
+class AsyncJobOwnerMetadata(BaseModel):
     """Data for controlling access to an async job"""
 
     model_config = ConfigDict(
@@ -57,5 +59,6 @@ class AsyncJobFilter(BaseModel):
             ]
         },
     )
-
+    user_id: UserID
+    product_name: ProductName
     task_owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]

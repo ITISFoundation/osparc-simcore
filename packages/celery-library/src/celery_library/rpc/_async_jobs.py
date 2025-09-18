@@ -4,9 +4,9 @@ import logging
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
     AsyncJobId,
+    AsyncJobOwnerMetadata,
     AsyncJobResult,
     AsyncJobStatus,
 )
@@ -17,7 +17,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from servicelib.celery.models import TaskFilter, TaskState
+from servicelib.celery.models import TaskOwnerMetadata, TaskState
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
@@ -34,11 +34,11 @@ router = RPCRouter()
 
 @router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
 async def cancel(
-    task_manager: TaskManager, job_id: AsyncJobId, job_filter: AsyncJobFilter
+    task_manager: TaskManager, job_id: AsyncJobId, job_filter: AsyncJobOwnerMetadata
 ):
     assert task_manager  # nosec
     assert job_filter  # nosec
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
     try:
         await task_manager.cancel_task(
             task_filter=task_filter,
@@ -52,12 +52,12 @@ async def cancel(
 
 @router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
 async def status(
-    task_manager: TaskManager, job_id: AsyncJobId, job_filter: AsyncJobFilter
+    task_manager: TaskManager, job_id: AsyncJobId, job_filter: AsyncJobOwnerMetadata
 ) -> AsyncJobStatus:
     assert task_manager  # nosec
     assert job_filter  # nosec
 
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
     try:
         task_status = await task_manager.get_task_status(
             task_filter=task_filter,
@@ -85,13 +85,13 @@ async def status(
     )
 )
 async def result(
-    task_manager: TaskManager, job_id: AsyncJobId, job_filter: AsyncJobFilter
+    task_manager: TaskManager, job_id: AsyncJobId, job_filter: AsyncJobOwnerMetadata
 ) -> AsyncJobResult:
     assert task_manager  # nosec
     assert job_id  # nosec
     assert job_filter  # nosec
 
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
 
     try:
         _status = await task_manager.get_task_status(
@@ -134,10 +134,10 @@ async def result(
 
 @router.expose(reraise_if_error_type=(JobSchedulerError,))
 async def list_jobs(
-    task_manager: TaskManager, job_filter: AsyncJobFilter
+    task_manager: TaskManager, job_filter: AsyncJobOwnerMetadata
 ) -> list[AsyncJobGet]:
     assert task_manager  # nosec
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
     try:
         tasks = await task_manager.list_tasks(
             task_filter=task_filter,

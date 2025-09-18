@@ -17,7 +17,7 @@ from celery.contrib.testing.worker import TestWorkController
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
+    AsyncJobOwnerMetadata,
     AsyncJobResult,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
@@ -73,7 +73,7 @@ async def _assert_compute_path_size(
         storage_rpc_client,
         location_id=location_id,
         path=path,
-        job_filter=AsyncJobFilter(
+        job_filter=AsyncJobOwnerMetadata(
             user_id=user_id, product_name=product_name, task_owner="PYTEST_CLIENT_NAME"
         ),
     )
@@ -82,7 +82,7 @@ async def _assert_compute_path_size(
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=RPCMethodName(compute_path_size.__name__),
         job_id=async_job.job_id,
-        job_filter=AsyncJobFilter(
+        job_filter=AsyncJobOwnerMetadata(
             user_id=user_id, product_name=product_name, task_owner="PYTEST_CLIENT_NAME"
         ),
         client_timeout=datetime.timedelta(seconds=120),
@@ -110,7 +110,7 @@ async def _assert_delete_paths(
         storage_rpc_client,
         location_id=location_id,
         paths=paths,
-        job_filter=AsyncJobFilter(
+        job_filter=AsyncJobOwnerMetadata(
             user_id=user_id, product_name=product_name, task_owner="PYTEST_CLIENT_NAME"
         ),
     )
@@ -119,7 +119,7 @@ async def _assert_delete_paths(
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=RPCMethodName(compute_path_size.__name__),
         job_id=async_job.job_id,
-        job_filter=AsyncJobFilter(
+        job_filter=AsyncJobOwnerMetadata(
             user_id=user_id, product_name=product_name, task_owner="PYTEST_CLIENT_NAME"
         ),
         client_timeout=datetime.timedelta(seconds=120),

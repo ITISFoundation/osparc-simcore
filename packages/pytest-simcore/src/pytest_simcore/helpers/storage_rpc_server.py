@@ -9,8 +9,8 @@
 from typing import Literal
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
+    AsyncJobOwnerMetadata,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from pydantic import TypeAdapter, validate_call
@@ -27,8 +27,8 @@ class StorageSideEffects:
         *,
         paths_to_export: list[PathToExport],
         export_as: Literal["path", "download_link"],
-        job_filter: AsyncJobFilter,
-    ) -> tuple[AsyncJobGet, AsyncJobFilter]:
+        job_filter: AsyncJobOwnerMetadata,
+    ) -> tuple[AsyncJobGet, AsyncJobOwnerMetadata]:
         assert rabbitmq_rpc_client
         assert job_filter
         assert paths_to_export
@@ -37,8 +37,8 @@ class StorageSideEffects:
         async_job_get = TypeAdapter(AsyncJobGet).validate_python(
             AsyncJobGet.model_json_schema()["examples"][0],
         )
-        async_job_filter = TypeAdapter(AsyncJobFilter).validate_python(
-            AsyncJobFilter.model_json_schema()["examples"][0],
+        async_job_filter = TypeAdapter(AsyncJobOwnerMetadata).validate_python(
+            AsyncJobOwnerMetadata.model_json_schema()["examples"][0],
         )
 
         return async_job_get, async_job_filter

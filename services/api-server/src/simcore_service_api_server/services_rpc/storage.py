@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from functools import partial
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
+    AsyncJobOwnerMetadata,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.products import ProductName
@@ -17,8 +17,8 @@ from ..exceptions.service_errors_utils import service_exception_mapper
 _exception_mapper = partial(service_exception_mapper, service_name="Storage")
 
 
-def get_job_filter(user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
-    return AsyncJobFilter(
+def get_job_filter(user_id: UserID, product_name: ProductName) -> AsyncJobOwnerMetadata:
+    return AsyncJobOwnerMetadata(
         user_id=user_id, product_name=product_name, task_owner=APP_NAME
     )
 

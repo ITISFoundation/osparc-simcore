@@ -6,7 +6,7 @@ import pydantic
 import pytest
 from faker import Faker
 from pydantic import BaseModel, StringConstraints
-from servicelib.celery.models import TaskFilter, TaskUUID
+from servicelib.celery.models import TaskOwnerMetadata, TaskUUID
 
 _faker = Faker()
 
@@ -26,7 +26,7 @@ def task_filter_data() -> dict[str, str | int | bool | None | list[str]]:
 async def test_task_filter_serialization(
     task_filter_data: dict[str, str | int | bool | None | list[str]],
 ):
-    task_filter = TaskFilter.model_validate(task_filter_data)
+    task_filter = TaskOwnerMetadata.model_validate(task_filter_data)
     assert task_filter.model_dump() == task_filter_data
     assert task_filter.model_dump() == task_filter_data
 
@@ -34,7 +34,7 @@ async def test_task_filter_serialization(
 async def test_task_filter_sorting_key_not_serialized():
 
     keys = ["a", "b"]
-    task_filter = TaskFilter.model_validate(
+    task_filter = TaskOwnerMetadata.model_validate(
         {
             "a": _faker.random_int(),
             "b": _faker.word(),
@@ -47,10 +47,10 @@ async def test_task_filter_sorting_key_not_serialized():
 async def test_task_filter_task_uuid(
     task_filter_data: dict[str, str | int | bool | None | list[str]],
 ):
-    task_filter = TaskFilter.model_validate(task_filter_data)
+    task_filter = TaskOwnerMetadata.model_validate(task_filter_data)
     task_uuid = TaskUUID(_faker.uuid4())
     task_id = task_filter.create_task_id(task_uuid)
-    assert TaskFilter.get_task_uuid(task_id=task_id) == task_uuid
+    assert TaskOwnerMetadata.get_task_uuid(task_id=task_id) == task_uuid
 
 
 async def test_create_task_filter_from_task_id():
@@ -62,10 +62,12 @@ async def test_create_task_filter_from_task_id():
         _list: list[str]
 
     mymodel = MyModel(_int=1, _bool=True, _str="test", _list=["a", "b"])
-    task_filter = TaskFilter.model_validate(mymodel.model_dump())
+    task_filter = TaskOwnerMetadata.model_validate(mymodel.model_dump())
     task_uuid = TaskUUID(_faker.uuid4())
     task_id = task_filter.create_task_id(task_uuid)
-    assert TaskFilter.recreate_as_model(task_id=task_id, schema=MyModel) == mymodel
+    assert (
+        TaskOwnerMetadata.recreate_as_model(task_id=task_id, schema=MyModel) == mymodel
+    )
 
 
 @pytest.mark.parametrize(
@@ -81,11 +83,11 @@ async def test_create_task_filter_from_task_id():
 )
 def test_task_filter_validator_raises_on_forbidden_chars(bad_data):
     with pytest.raises(pydantic.ValidationError):
-        TaskFilter.model_validate(bad_data)
+        TaskOwnerMetadata.model_validate(bad_data)
 
 
 async def test_task_owner():
-    class MyFilter(TaskFilter):
+    class MyFilter(TaskOwnerMetadata):
         extra_field: str
 
     with pytest.raises(pydantic.ValidationError):
@@ -94,7 +96,7 @@ async def test_task_owner():
     with pytest.raises(pydantic.ValidationError):
         MyFilter(task_owner="UPPER_CASE", extra_field="value")
 
-    class MyNextFilter(TaskFilter):
+    class MyNextFilter(TaskOwnerMetadata):
         task_owner: Annotated[
             str, StringConstraints(strip_whitespace=True, pattern=r"^the_task_owner$")
         ]

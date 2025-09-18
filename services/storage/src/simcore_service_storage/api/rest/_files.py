@@ -20,7 +20,7 @@ from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
-from servicelib.celery.models import TaskFilter, TaskMetadata, TaskUUID
+from servicelib.celery.models import TaskExecutionMetadata, TaskOwnerMetadata, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from yarl import URL
@@ -43,12 +43,12 @@ from .._worker_tasks._files import complete_upload_file as remote_complete_uploa
 from .dependencies.celery import get_task_manager
 
 
-def _get_task_filter(*, user_id: UserID) -> TaskFilter:
+def _get_task_filter(*, user_id: UserID) -> TaskOwnerMetadata:
     _data = {
         "user_id": user_id,
         "client_name": APP_NAME,
     }
-    return TaskFilter().model_validate(_data)
+    return TaskOwnerMetadata().model_validate(_data)
 
 
 _logger = logging.getLogger(__name__)
@@ -296,7 +296,7 @@ async def complete_upload_file(
     # for completeness
     task_filter = _get_task_filter(user_id=query_params.user_id)
     task_uuid = await task_manager.submit_task(
-        TaskMetadata(
+        TaskExecutionMetadata(
             name=remote_complete_upload_file.__name__,
         ),
         task_filter=task_filter,

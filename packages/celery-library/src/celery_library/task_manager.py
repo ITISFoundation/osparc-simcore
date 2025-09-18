@@ -10,10 +10,10 @@ from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     Task,
-    TaskFilter,
+    TaskExecutionMetadata,
     TaskID,
     TaskInfoStore,
-    TaskMetadata,
+    TaskOwnerMetadata,
     TaskState,
     TaskStatus,
     TaskUUID,
@@ -39,9 +39,9 @@ class CeleryTaskManager:
 
     async def submit_task(
         self,
-        task_metadata: TaskMetadata,
+        task_metadata: TaskExecutionMetadata,
         *,
-        task_filter: TaskFilter,
+        task_filter: TaskOwnerMetadata,
         **task_params,
     ) -> TaskUUID:
         with log_context(
@@ -85,7 +85,9 @@ class CeleryTaskManager:
 
             return task_uuid
 
-    async def cancel_task(self, task_filter: TaskFilter, task_uuid: TaskUUID) -> None:
+    async def cancel_task(
+        self, task_filter: TaskOwnerMetadata, task_uuid: TaskUUID
+    ) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -106,7 +108,7 @@ class CeleryTaskManager:
         self._celery_app.AsyncResult(task_id).forget()
 
     async def get_task_result(
-        self, task_filter: TaskFilter, task_uuid: TaskUUID
+        self, task_filter: TaskOwnerMetadata, task_uuid: TaskUUID
     ) -> Any:
         with log_context(
             _logger,
@@ -149,7 +151,7 @@ class CeleryTaskManager:
         return TaskState(self._celery_app.AsyncResult(task_id).state)
 
     async def get_task_status(
-        self, task_filter: TaskFilter, task_uuid: TaskUUID
+        self, task_filter: TaskOwnerMetadata, task_uuid: TaskUUID
     ) -> TaskStatus:
         with log_context(
             _logger,
@@ -169,7 +171,7 @@ class CeleryTaskManager:
                 ),
             )
 
-    async def list_tasks(self, task_filter: TaskFilter) -> list[Task]:
+    async def list_tasks(self, task_filter: TaskOwnerMetadata) -> list[Task]:
         with log_context(
             _logger,
             logging.DEBUG,

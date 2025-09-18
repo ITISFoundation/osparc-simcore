@@ -24,9 +24,12 @@ class Wildcard:
         return _WILDCARD
 
 
-class TaskFilter(BaseModel):
+class TaskOwnerMetadata(BaseModel):
     """
-    Class for associating metadata with a celery task. The implementation is very flexible and allows "clients" to define their own metadata.
+    Class for associating metadata with a celery task. The implementation is very flexible and allows the task owner to define their own metadata.
+    This could be metadata for validating if a user has access to a given task (e.g. user_id or product_name) or metadata for keeping track of how to handle a task,
+    e.g. which schema will the result of the task have.
+
     The class exposes a filtering mechanism to list tasks using wildcards.
 
     Example usage:
@@ -121,7 +124,7 @@ class TasksQueue(StrEnum):
     API_WORKER_QUEUE = "api_worker_queue"
 
 
-class TaskMetadata(BaseModel):
+class TaskExecutionMetadata(BaseModel):
     name: TaskName
     ephemeral: bool = True
     queue: TasksQueue = TasksQueue.DEFAULT
@@ -129,7 +132,7 @@ class TaskMetadata(BaseModel):
 
 class Task(BaseModel):
     uuid: TaskUUID
-    metadata: TaskMetadata
+    metadata: TaskExecutionMetadata
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -171,17 +174,19 @@ class TaskInfoStore(Protocol):
     async def create_task(
         self,
         task_id: TaskID,
-        task_metadata: TaskMetadata,
+        task_metadata: TaskExecutionMetadata,
         expiry: datetime.timedelta,
     ) -> None: ...
 
     async def task_exists(self, task_id: TaskID) -> bool: ...
 
-    async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None: ...
+    async def get_task_metadata(
+        self, task_id: TaskID
+    ) -> TaskExecutionMetadata | None: ...
 
     async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
 
-    async def list_tasks(self, task_filter: TaskFilter) -> list[Task]: ...
+    async def list_tasks(self, task_filter: TaskOwnerMetadata) -> list[Task]: ...
 
     async def remove_task(self, task_id: TaskID) -> None: ...
 

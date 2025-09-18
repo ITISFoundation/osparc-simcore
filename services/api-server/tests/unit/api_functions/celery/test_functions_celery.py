@@ -41,7 +41,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
-from servicelib.celery.models import TaskID, TaskMetadata, TasksQueue
+from servicelib.celery.models import TaskExecutionMetadata, TaskID, TasksQueue
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
@@ -286,7 +286,7 @@ async def test_celery_error_propagation(
     )
     task_manager = get_task_manager(app=app)
     task_uuid = await task_manager.submit_task(
-        task_metadata=TaskMetadata(
+        task_metadata=TaskExecutionMetadata(
             name="exception_task", queue=TasksQueue.API_WORKER_QUEUE
         ),
         task_filter=task_filter,

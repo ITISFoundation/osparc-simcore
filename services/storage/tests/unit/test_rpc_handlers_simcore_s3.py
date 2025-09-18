@@ -25,7 +25,7 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
+    AsyncJobOwnerMetadata,
     AsyncJobResult,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import JobError
@@ -90,7 +90,7 @@ async def _request_copy_folders(
             body=FoldersBody(
                 source=source_project, destination=dst_project, nodes_map=nodes_map
             ),
-            job_filter=AsyncJobFilter(
+            job_filter=AsyncJobOwnerMetadata(
                 user_id=user_id,
                 product_name=product_name,
                 task_owner="PYTEST_CLIENT_NAME",
@@ -534,7 +534,7 @@ async def _request_start_export_data(
             rpc_client,
             paths_to_export=paths_to_export,
             export_as=export_as,
-            job_filter=AsyncJobFilter(
+            job_filter=AsyncJobOwnerMetadata(
                 user_id=user_id,
                 product_name=product_name,
                 task_owner="PYTEST_CLIENT_NAME",

@@ -32,7 +32,7 @@ from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from servicelib.celery.models import TaskMetadata, TasksQueue, TaskUUID
+from servicelib.celery.models import TaskExecutionMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server.models.schemas.functions import (
     FunctionJobCreationTaskStatus,
@@ -384,7 +384,7 @@ class FunctionJobTaskClientService:
         )
 
         task_uuid = await self._celery_task_manager.submit_task(
-            TaskMetadata(
+            TaskExecutionMetadata(
                 name="run_function",
                 ephemeral=False,
                 queue=TasksQueue.API_WORKER_QUEUE,

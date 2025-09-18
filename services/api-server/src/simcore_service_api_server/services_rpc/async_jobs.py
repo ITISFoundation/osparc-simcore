@@ -2,9 +2,9 @@ import functools
 from dataclasses import dataclass
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
     AsyncJobId,
+    AsyncJobOwnerMetadata,
     AsyncJobResult,
     AsyncJobStatus,
 )
@@ -40,7 +40,9 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def cancel(self, *, job_id: AsyncJobId, job_filter: AsyncJobFilter) -> None:
+    async def cancel(
+        self, *, job_id: AsyncJobId, job_filter: AsyncJobOwnerMetadata
+    ) -> None:
         return await async_jobs.cancel(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -54,7 +56,7 @@ class AsyncJobClient:
         }
     )
     async def status(
-        self, *, job_id: AsyncJobId, job_filter: AsyncJobFilter
+        self, *, job_id: AsyncJobId, job_filter: AsyncJobOwnerMetadata
     ) -> AsyncJobStatus:
         return await async_jobs.status(
             self._rabbitmq_rpc_client,
@@ -72,7 +74,7 @@ class AsyncJobClient:
         }
     )
     async def result(
-        self, *, job_id: AsyncJobId, job_filter: AsyncJobFilter
+        self, *, job_id: AsyncJobId, job_filter: AsyncJobOwnerMetadata
     ) -> AsyncJobResult:
         return await async_jobs.result(
             self._rabbitmq_rpc_client,
@@ -86,7 +88,9 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def list_jobs(self, *, job_filter: AsyncJobFilter) -> list[AsyncJobGet]:
+    async def list_jobs(
+        self, *, job_filter: AsyncJobOwnerMetadata
+    ) -> list[AsyncJobGet]:
         return await async_jobs.list_jobs(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,

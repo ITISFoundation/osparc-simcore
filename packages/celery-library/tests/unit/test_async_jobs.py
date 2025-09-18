@@ -16,8 +16,8 @@ from celery_library.task import register_task
 from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
+    AsyncJobOwnerMetadata,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobError,
@@ -27,7 +27,7 @@ from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata
+from servicelib.celery.models import TaskExecutionMetadata, TaskID, TaskOwnerMetadata
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
@@ -79,12 +79,12 @@ ASYNC_JOBS_RPC_NAMESPACE: Final[RPCNamespace] = TypeAdapter(
 
 @router.expose()
 async def rpc_sync_job(
-    task_manager: TaskManager, *, job_filter: AsyncJobFilter, **kwargs: Any
+    task_manager: TaskManager, *, job_filter: AsyncJobOwnerMetadata, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = sync_job.__name__
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        TaskMetadata(name=task_name), task_filter=task_filter, **kwargs
+        TaskExecutionMetadata(name=task_name), task_filter=task_filter, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -92,12 +92,12 @@ async def rpc_sync_job(
 
 @router.expose()
 async def rpc_async_job(
-    task_manager: TaskManager, *, job_filter: AsyncJobFilter, **kwargs: Any
+    task_manager: TaskManager, *, job_filter: AsyncJobOwnerMetadata, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = async_job.__name__
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        TaskMetadata(name=task_name), task_filter=task_filter, **kwargs
+        TaskExecutionMetadata(name=task_name), task_filter=task_filter, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -158,8 +158,8 @@ async def _start_task_via_rpc(
     user_id: UserID,
     product_name: ProductName,
     **kwargs: Any,
-) -> tuple[AsyncJobGet, AsyncJobFilter]:
-    job_filter = AsyncJobFilter(
+) -> tuple[AsyncJobGet, AsyncJobOwnerMetadata]:
+    job_filter = AsyncJobOwnerMetadata(
         user_id=user_id, product_name=product_name, task_owner="pytest_client"
     )
     async_job_get = await async_jobs.submit(
@@ -197,7 +197,7 @@ async def _wait_for_job(
     rpc_client: RabbitMQRPCClient,
     *,
     async_job_get: AsyncJobGet,
-    job_filter: AsyncJobFilter,
+    job_filter: AsyncJobOwnerMetadata,
     stop_after: timedelta = timedelta(seconds=5),
 ) -> None:
 

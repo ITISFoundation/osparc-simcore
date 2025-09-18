@@ -33,7 +33,7 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.models import TaskFilter, TaskState, TaskStatus, TaskUUID
+from servicelib.celery.models import TaskOwnerMetadata, TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server._service_function_jobs_task_client import (
     FunctionJobTaskClientService,
@@ -294,7 +294,7 @@ async def test_get_function_job_status(
 
     def _mock_task_manager(*args, **kwargs) -> CeleryTaskManager:
         async def _get_task_status(
-            task_uuid: TaskUUID, task_filter: TaskFilter
+            task_uuid: TaskUUID, task_filter: TaskOwnerMetadata
         ) -> TaskStatus:
             assert f"{task_uuid}" == job_creation_task_id
             return TaskStatus(
