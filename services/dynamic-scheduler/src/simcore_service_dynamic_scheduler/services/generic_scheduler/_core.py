@@ -158,6 +158,28 @@ async def _get_step_error_traceback(
     return step_name, await step_proxy.get("error_traceback")
 
 
+async def _get_group_step_proxies(
+    store: Store,
+    *,
+    schedule_id: ScheduleId,
+    operation_name: OperationName,
+    group_index: NonNegativeInt,
+    step_group: BaseStepGroup,
+    is_creating: bool,
+) -> dict[StepName, StepStoreProxy]:
+    return {
+        step.get_step_name(): StepStoreProxy(
+            store=store,
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            step_group_name=step_group.get_step_group_name(index=group_index),
+            step_name=step.get_step_name(),
+            is_creating=is_creating,
+        )
+        for step in step_group.get_step_subgroup_to_run()
+    }
+
+
 class Core:
     def __init__(
         self,
@@ -287,27 +309,6 @@ class Core:
                     await DeferredRunner.cancel(deferred_task_uid)
                     await step_proxy.set("status", StepStatus.CANCELLED)
 
-    async def _get_group_step_proxies(
-        self,
-        *,
-        schedule_id: ScheduleId,
-        operation_name: OperationName,
-        group_index: NonNegativeInt,
-        step_group: BaseStepGroup,
-        is_creating: bool,
-    ) -> dict[StepName, StepStoreProxy]:
-        return {
-            step.get_step_name(): StepStoreProxy(
-                store=self._store,
-                schedule_id=schedule_id,
-                operation_name=operation_name,
-                step_group_name=step_group.get_step_group_name(index=group_index),
-                step_name=step.get_step_name(),
-                is_creating=is_creating,
-            )
-            for step in step_group.get_step_subgroup_to_run()
-        }
-
     async def _on_schedule_event(self, schedule_id: ScheduleId) -> None:
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
@@ -320,7 +321,8 @@ class Core:
         operation = OperationRegistry.get_operation(operation_name)
         step_group = operation[group_index]
 
-        group_step_proxies = await self._get_group_step_proxies(
+        group_step_proxies = await _get_group_step_proxies(
+            self._store,
             schedule_id=schedule_id,
             operation_name=operation_name,
             group_index=group_index,
