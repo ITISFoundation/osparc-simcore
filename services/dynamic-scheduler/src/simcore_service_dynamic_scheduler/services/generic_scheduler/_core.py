@@ -150,12 +150,6 @@ class Core:
         self.unknown_status_wait_before_retry = unknown_status_wait_before_retry
         self._store: Store = get_store(app)
 
-    async def setup(self) -> None:
-        pass
-
-    async def shutdown(self) -> None:
-        pass
-
     async def create(
         self, operation_name: OperationName, initial_operation_context: OperationContext
     ) -> ScheduleId:
@@ -613,10 +607,8 @@ class Core:
 
 
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    app.state.generic_scheduler_core = core = Core(app)
-    await core.setup()
+    app.state.generic_scheduler_core = Core(app)
     yield {}
-    await core.shutdown()
 
 
 def get_core(app: FastAPI) -> Core:
