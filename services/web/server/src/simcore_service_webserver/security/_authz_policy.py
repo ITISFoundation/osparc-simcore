@@ -10,11 +10,11 @@ from aiohttp import web
 from aiohttp_security.abc import (  # type: ignore[import-untyped]
     AbstractAuthorizationPolicy,
 )
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
 from sqlalchemy.exc import DatabaseError as SQLAlchemyDatabaseError
 

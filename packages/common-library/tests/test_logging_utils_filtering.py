@@ -1,10 +1,10 @@
 # pylint: disable=redefined-outer-name
 
 import logging
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
-from servicelib.logging_utils_filtering import GeneralLogFilter
+from common_library.logging.logging_utils_filtering import GeneralLogFilter
 
 
 @pytest.fixture

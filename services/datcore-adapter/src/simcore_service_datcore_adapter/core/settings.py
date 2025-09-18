@@ -1,10 +1,10 @@
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
 from pydantic.networks import AnyUrl
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.tracing import TracingSettings

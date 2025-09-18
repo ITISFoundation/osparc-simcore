@@ -11,6 +11,7 @@ from datetime import datetime
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
@@ -23,7 +24,6 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from simcore_postgres_database.models.users import UserStatus
@@ -115,12 +115,10 @@ async def check_other_registrations(
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
-
     # An account is already registered with this email
     if user := await _auth_service.get_user_or_none(app, email=email):
         user_status = UserStatus(user["status"])
         match user_status:
-
             case UserStatus.ACTIVE:
                 await _raise_if_registered_in_product(
                     app, user_email=user["email"], product=current_product

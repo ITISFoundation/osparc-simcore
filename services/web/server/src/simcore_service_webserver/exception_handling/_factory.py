@@ -4,10 +4,10 @@ from typing import Any, NamedTuple, TypeAlias
 from aiohttp import web
 from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp.rest_responses import safe_status_message
 from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exceptions
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.status_codes_utils import (
     get_code_display_name,
     is_5xx_server_error,
@@ -88,7 +88,6 @@ def create_exception_handler_from_http_info(
         request: web.Request,
         exception: BaseException,
     ) -> web.Response:
-
         # safe formatting, i.e. does not raise
         user_msg = msg_template.format_map(
             _DefaultDict(getattr(exception, "__dict__", {}))

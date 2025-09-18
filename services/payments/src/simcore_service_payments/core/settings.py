@@ -3,6 +3,7 @@ from functools import cached_property
 from typing import Annotated, cast
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import NonNegativeDecimal
 from pydantic import (
     AliasChoices,
@@ -15,7 +16,6 @@ from pydantic import (
     field_validator,
 )
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.email import SMTPSettings
