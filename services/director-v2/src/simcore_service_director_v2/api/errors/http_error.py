@@ -1,9 +1,9 @@
 import logging
 from collections.abc import Awaitable, Callable
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
 from starlette.requests import Request
 from starlette.responses import JSONResponse

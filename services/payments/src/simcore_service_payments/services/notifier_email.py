@@ -10,12 +10,12 @@ from typing import Final
 import httpx
 from aiosmtplib import SMTP
 from attr import dataclass
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from settings_library.email import EmailProtocol, SMTPSettings
 from tenacity import (
     retry,

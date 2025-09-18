@@ -5,9 +5,9 @@ from typing import Final
 
 import arrow
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_context
 
 from ..folders import folders_trash_service

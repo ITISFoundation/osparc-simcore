@@ -1,8 +1,8 @@
 import logging
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 
 from ..services.invitations import InvalidInvitationCodeError
 

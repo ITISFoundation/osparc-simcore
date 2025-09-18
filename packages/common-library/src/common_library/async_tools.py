@@ -2,11 +2,14 @@ import asyncio
 import datetime
 import functools
 import logging
+import sys
 from collections.abc import Awaitable, Callable, Coroutine
 from concurrent.futures import Executor
 from functools import wraps
 from inspect import isawaitable
 from typing import Any, ParamSpec, TypeVar, overload
+
+from .logging.logging_errors import create_troubleshooting_log_kwargs
 
 _logger = logging.getLogger(__name__)
 
@@ -102,11 +105,13 @@ async def cancel_wait_task(
             # from observing the cancellation/finalization of task.
             asyncio.wait_for(task, timeout=max_delay)
         )
-    except TimeoutError:
+    except TimeoutError as exc:
         _logger.exception(
-            "Timeout while cancelling task %s after %s seconds",
-            task.get_name(),
-            max_delay,
+            **create_troubleshooting_log_kwargs(
+                f"Timeout while cancelling task {task.get_name()} after {max_delay} seconds",
+                error=exc,
+                error_context={"task_name": task.get_name(), "max_delay": max_delay},
+            )
         )
         raise
     except asyncio.CancelledError:
@@ -117,7 +122,20 @@ async def cancel_wait_task(
             raise
     finally:
         if not task.done():
-            _logger.error("Failed to cancel %s", task.get_name())
+            current_exception = sys.exception()
+            _logger.error(
+                **create_troubleshooting_log_kwargs(
+                    f"Failed to cancel ask {task.get_name()}",
+                    error=(
+                        current_exception if current_exception else Exception("Unknown")
+                    ),
+                    error_context={
+                        "task_name": task.get_name(),
+                        "max_delay": max_delay,
+                    },
+                    tip="Consider increasing max_delay or fixing the task to handle cancellations properly",
+                )
+            )
         else:
             _logger.debug("Task %s cancelled", task.get_name())
 

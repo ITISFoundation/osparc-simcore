@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from common_library.logging.logging_base import get_log_record_extra
 from faker import Faker
-from servicelib.logging_base import get_log_record_extra
 from servicelib.logging_utils import (
     _DEFAULT_FORMATTING,
     CustomFormatter,

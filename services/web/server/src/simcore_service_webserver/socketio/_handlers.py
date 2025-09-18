@@ -9,14 +9,14 @@ from typing import Any
 
 import socketio.exceptions  # type: ignore[import-untyped]
 from aiohttp import web
+from common_library.logging.logging_base import get_log_record_extra
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.products import ProductName
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.aiohttp.observer import emit
-from servicelib.logging_base import get_log_record_extra
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_context
 from servicelib.request_keys import RQT_USERID_KEY
 

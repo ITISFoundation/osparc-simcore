@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import (
@@ -13,7 +14,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
 
