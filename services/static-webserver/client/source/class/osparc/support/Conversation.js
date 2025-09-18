@@ -288,7 +288,7 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     addSystemMessage: function(type) {
-      type = type || "askAQuestion";
+      type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
 
       const now = new Date();
       const systemMessage = {
