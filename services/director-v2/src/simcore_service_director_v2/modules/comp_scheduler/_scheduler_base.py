@@ -46,7 +46,6 @@ from ...core.errors import (
     DaskClientAcquisisitonError,
     InvalidPipelineError,
     PipelineNotFoundError,
-    TaskSchedulingError,
 )
 from ...core.settings import ComputationalBackendSettings
 from ...models.comp_pipelines import CompPipelineAtDB
@@ -834,6 +833,13 @@ class BaseCompScheduler(ABC):
             # nothing to do
             return comp_tasks
 
+        log_error_context = {
+            "user_id": f"{user_id}",
+            "project_id": f"{project_id}",
+            "tasks_ready_to_start": f"{list(tasks_ready_to_start.keys())}",
+            "comp_run_use_on_demand_clusters": f"{comp_run.use_on_demand_clusters}",
+            "comp_run_run_id": f"{comp_run.run_id}",
+        }
         try:
             await self._start_tasks(
                 user_id=user_id,
@@ -842,6 +848,31 @@ class BaseCompScheduler(ABC):
                 comp_run=comp_run,
                 wake_up_callback=wake_up_callback,
             )
+        except ComputationalBackendOnDemandNotReadyError as exc:
+            _logger.info(
+                **create_troubleshooting_log_kwargs(
+                    "The on demand computational backend is not ready yet. Tasks are set to WAITING_FOR_CLUSTER state until the cluster is ready!",
+                    error=exc,
+                    error_context=log_error_context,
+                )
+            )
+            await publish_project_log(
+                self.rabbitmq_client,
+                user_id,
+                project_id,
+                log=f"{exc}",
+                log_level=logging.INFO,
+            )
+            await CompTasksRepository.instance(
+                self.db_engine
+            ).update_project_tasks_state(
+                project_id,
+                comp_run.run_id,
+                list(tasks_ready_to_start.keys()),
+                RunningState.WAITING_FOR_CLUSTER,
+            )
+            for task in tasks_ready_to_start:
+                comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
         except (
             ComputationalBackendNotConnectedError,
             ComputationalSchedulerChangedError,
@@ -852,16 +883,9 @@ class BaseCompScheduler(ABC):
                     "Computational backend is not connected. Tasks are set back "
                     "to WAITING_FOR_CLUSTER state until scheduler comes back!",
                     error=exc,
-                    error_context={
-                        "user_id": f"{user_id}",
-                        "project_id": f"{project_id}",
-                        "tasks_ready_to_start": f"{list(tasks_ready_to_start.keys())}",
-                        "comp_run_use_on_demand_clusters": f"{comp_run.use_on_demand_clusters}",
-                        "comp_run.run_id": f"{comp_run.run_id}",
-                    },
+                    error_context=log_error_context,
                 )
             )
-
             await publish_project_log(
                 self.rabbitmq_client,
                 user_id,
@@ -883,77 +907,12 @@ class BaseCompScheduler(ABC):
             for task in tasks_ready_to_start:
                 comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
 
-        except ComputationalBackendOnDemandNotReadyError as exc:
-            _logger.info(
-                **create_troubleshooting_log_kwargs(
-                    "The on demand computational backend is not ready yet. Tasks are set to WAITING_FOR_CLUSTER state until the cluster is ready!",
-                    error=exc,
-                    error_context={
-                        "user_id": f"{user_id}",
-                        "project_id": f"{project_id}",
-                        "tasks_ready_to_start": f"{list(tasks_ready_to_start.keys())}",
-                        "comp_run_use_on_demand_clusters": f"{comp_run.use_on_demand_clusters}",
-                        "comp_run.run_id": f"{comp_run.run_id}",
-                    },
-                )
-            )
-            await publish_project_log(
-                self.rabbitmq_client,
-                user_id,
-                project_id,
-                log=f"{exc}",
-                log_level=logging.INFO,
-            )
-
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
-                project_id,
-                comp_run.run_id,
-                list(tasks_ready_to_start.keys()),
-                RunningState.WAITING_FOR_CLUSTER,
-            )
-            for task in tasks_ready_to_start:
-                comp_tasks[f"{task}"].state = RunningState.WAITING_FOR_CLUSTER
-        except TaskSchedulingError as exc:
-            _logger.exception(
-                **create_troubleshooting_log_kwargs(
-                    "A task could not be scheduled, it is set to FAILED and the rest of the pipeline will be ABORTED",
-                    error=exc,
-                    error_context={
-                        "user_id": f"{user_id}",
-                        "project_id": f"{project_id}",
-                        "node_id": f"{exc.node_id}",
-                        "tasks_ready_to_start": f"{list(tasks_ready_to_start.keys())}",
-                        "comp_run_use_on_demand_clusters": f"{comp_run.use_on_demand_clusters}",
-                        "comp_run.run_id": f"{comp_run.run_id}",
-                    },
-                )
-            )
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
-                project_id,
-                comp_run.run_id,
-                [exc.node_id],
-                RunningState.FAILED,
-                exc.get_errors(),
-                optional_progress=1.0,
-                optional_stopped=arrow.utcnow().datetime,
-            )
-            comp_tasks[f"{exc.node_id}"].state = RunningState.FAILED
         except Exception as exc:
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
                     "Unexpected error happened when scheduling tasks, all tasks to start are set to FAILED and the rest of the pipeline will be ABORTED",
                     error=exc,
-                    error_context={
-                        "user_id": f"{comp_run.user_id}",
-                        "project_id": f"{comp_run.project_uuid}",
-                        "tasks_ready_to_start": f"{list(tasks_ready_to_start.keys())}",
-                        "comp_run_use_on_demand_clusters": f"{comp_run.use_on_demand_clusters}",
-                        "comp_run.run_id": f"{comp_run.run_id}",
-                    },
+                    error_context=log_error_context,
                 )
             )
             await CompTasksRepository.instance(
