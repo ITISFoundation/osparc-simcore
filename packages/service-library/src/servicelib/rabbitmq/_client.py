@@ -118,6 +118,8 @@ async def _on_message(
                         message_handler, max_retries_upon_error, message
                     )
     except ChannelInvalidStateError as exc:
+        # NOTE: this error can happen as can be seen in aio-pika code
+        # see https://github.com/mosquito/aio-pika/blob/master/aio_pika/robust_queue.py
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 "Cannot process message because channel is closed. Message will be requeued by RabbitMQ",
