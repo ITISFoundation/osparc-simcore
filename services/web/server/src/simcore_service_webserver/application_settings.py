@@ -5,6 +5,7 @@ from typing import Annotated, Any, Final, Literal
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.exclude import Unset
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.utils.change_case import snake_to_camel
@@ -17,7 +18,6 @@ from pydantic import (
 )
 from pydantic.fields import Field
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -612,7 +612,6 @@ _unset = Unset.VALUE
 
 
 def setup_settings(app: web.Application) -> ApplicationSettings:
-
     settings: ApplicationSettings = ApplicationSettings.create_from_envs()
     app[APP_SETTINGS_KEY] = settings
     _logger.debug(

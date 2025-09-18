@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from common_library.logging.logging_base import get_log_record_extra
 from common_library.user_messages import user_message
 from models_library.api_schemas_webserver.auth import (
     AccountRequestInfo,
@@ -13,7 +14,6 @@ from servicelib.aiohttp.requests_validation import (
     handle_validation_as_http_error,
     parse_request_body_as,
 )
-from servicelib.logging_base import get_log_record_extra
 from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task
 

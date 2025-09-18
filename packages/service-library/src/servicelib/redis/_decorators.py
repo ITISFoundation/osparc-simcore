@@ -9,12 +9,12 @@ from typing import Any, Final, ParamSpec, TypeVar
 import arrow
 import redis.exceptions
 from common_library.async_tools import cancel_wait_task
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from redis.asyncio.lock import Lock
 
 from ..background_task import periodic
-from ..logging_errors import create_troubleshooting_log_kwargs
 from ._client import RedisClientSDK
-from ._constants import DEFAULT_LOCK_TTL
+from ._constants import DEFAULT_EXPECTED_LOCK_OVERALL_TIME, DEFAULT_LOCK_TTL
 from ._errors import CouldNotAcquireLockError, LockLostError
 from ._utils import auto_extend_lock
 
@@ -95,6 +95,7 @@ def exclusive(
             ):
                 raise CouldNotAcquireLockError(lock=lock)
 
+            lock_acquisition_time = arrow.utcnow()
             try:
                 async with asyncio.TaskGroup() as tg:
                     started_event = asyncio.Event()
@@ -157,6 +158,19 @@ def exclusive(
                             "Look for synchronous code that prevents refreshing the lock or asyncio loop overload.",
                         )
                     )
+                finally:
+                    lock_release_time = arrow.utcnow()
+                    locking_time = lock_release_time - lock_acquisition_time
+                    if locking_time > DEFAULT_EXPECTED_LOCK_OVERALL_TIME:
+                        _logger.warning(
+                            "Lock `%s' for %s was held for %s which is longer than the expected (%s). "
+                            "TIP: consider reducing the locking time by optimizing the code inside "
+                            "the critical section or increasing the default locking time",
+                            redis_lock_key,
+                            coro.__name__,
+                            locking_time,
+                            DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
+                        )
 
         return _wrapper
 

@@ -3,11 +3,11 @@ import logging
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
 from models_library.function_services_catalog._utils import ServiceNotFound
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 
 from ....exception_handling import create_error_context_from_request
 from ....utils import compose_support_error_msg

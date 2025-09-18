@@ -18,6 +18,7 @@ from typing import Final, cast
 import distributed
 from aiohttp import ClientResponseError
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
@@ -56,7 +57,6 @@ from models_library.services import ServiceRunID
 from models_library.users import UserID
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
@@ -249,9 +249,9 @@ class DaskClient:
                 self.backend.client.publish_dataset(task_future, name=job_id)
             )
 
-            _logger.debug(
+            _logger.info(
                 "Dask task %s started [%s]",
-                f"{task_future.key=}",
+                f"{job_id=}",
                 f"{node_image.command=}",
             )
             return PublishedComputationTask(node_id=node_id, job_id=DaskJobID(job_id))

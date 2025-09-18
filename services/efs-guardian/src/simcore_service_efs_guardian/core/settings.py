@@ -3,11 +3,11 @@ from functools import cached_property
 from typing import Annotated, Final, cast
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, VersionTag
 from pydantic import AliasChoices, ByteSize, Field, TypeAdapter, field_validator
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.postgres import PostgresSettings

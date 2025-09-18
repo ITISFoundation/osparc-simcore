@@ -1,9 +1,9 @@
 import logging
 
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 
 from ._utils import ExceptionHandler, create_error_json_response
 
