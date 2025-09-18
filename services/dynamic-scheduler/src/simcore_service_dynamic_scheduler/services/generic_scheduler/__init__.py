@@ -15,16 +15,16 @@ from ._operation import (
 )
 
 __all__: tuple[str, ...] = (
-    "start_operation",
-    "SingleStepGroup",
-    "ScheduleId",
-    "RequiredOperationContext",
-    "ProvidedOperationContext",
-    "ParallelStepGroup",
-    "OperationRegistry",
-    "OperationName",
-    "Operation",
-    "get_generic_scheduler_lifespans",
-    "cancel_operation",
     "BaseStep",
+    "cancel_operation",
+    "get_generic_scheduler_lifespans",
+    "Operation",
+    "OperationName",
+    "OperationRegistry",
+    "ParallelStepGroup",
+    "ProvidedOperationContext",
+    "RequiredOperationContext",
+    "ScheduleId",
+    "SingleStepGroup",
+    "start_operation",
 )
