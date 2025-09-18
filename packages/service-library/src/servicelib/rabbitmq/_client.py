@@ -105,7 +105,7 @@ async def _on_message(
                     error_context={
                         "message_id": message.message_id,
                         "message_body": message.body,
-                        "message_handler": message_handler.__name__,
+                        "message_handler": f"{message_handler}",
                     },
                     tip="This could indicate an error in the message handler, please check the message handler code",
                 )
