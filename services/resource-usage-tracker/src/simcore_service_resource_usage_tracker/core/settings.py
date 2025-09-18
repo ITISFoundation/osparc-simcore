@@ -2,10 +2,10 @@ import datetime
 from functools import cached_property
 from typing import cast
 
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum
 from pydantic import AliasChoices, Field, PositiveInt, field_validator
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.postgres import PostgresSettings

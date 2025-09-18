@@ -3,11 +3,11 @@ import warnings
 from functools import cached_property
 from typing import cast
 
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from pydantic import AliasChoices, Field, NonNegativeInt, PositiveInt, field_validator
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.postgres import PostgresSettings
