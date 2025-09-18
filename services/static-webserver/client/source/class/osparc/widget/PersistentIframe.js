@@ -358,8 +358,16 @@ qx.Class.define("osparc.widget.PersistentIframe", {
             }
             break;
           }
+          // { type: "openSupport", message: {question: "", answer: ""} }
           case "openSupport": {
-            osparc.support.SupportCenter.openWindow();
+            const supportCenterWindow = osparc.support.SupportCenter.openWindow();
+            // for now prefill the text box with the question
+            if (data["message"] && data["message"]["question"]) {
+              supportCenterWindow.proposeConversation(
+                osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT,
+                `From your last question: "${data["message"]["question"]}"`
+              );
+            }
             break;
           }
         }
