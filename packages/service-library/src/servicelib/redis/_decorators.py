@@ -163,7 +163,7 @@ def exclusive(
                     locking_time = lock_release_time - lock_acquisition_time
                     if locking_time > DEFAULT_EXPECTED_LOCK_OVERALL_TIME:
                         _logger.warning(
-                            "Lock `%s'for %s was held for %s which is longer than the expected (%s). "
+                            "Lock `%s' for %s was held for %s which is longer than the expected (%s). "
                             "TIP: consider reducing the locking time by optimizing the code inside "
                             "the critical section or increasing the default locking time",
                             redis_lock_key,
