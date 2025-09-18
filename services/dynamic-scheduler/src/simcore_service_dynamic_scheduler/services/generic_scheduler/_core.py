@@ -10,7 +10,7 @@ from common_library.error_codes import create_error_code
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from pydantic import NonNegativeInt
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
@@ -202,7 +202,7 @@ class Core:
             )
         except Exception as err:  # pylint:disable=broad-exception-caught
             error_code = create_error_code(err)
-            log_kwargs = create_troubleshootting_log_kwargs(
+            log_kwargs = create_troubleshooting_log_kwargs(
                 "Unexpected error druing scheduling",
                 error=err,
                 error_code=error_code,

@@ -277,16 +277,19 @@ def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
                     raise ValueError(msg)
                 revert_provided_keys.add(key)
 
-        if k == len(operation) - 1 and step_group.repeat_steps is True:
-            if any(
+        if (
+            k == len(operation) - 1
+            and step_group.repeat_steps is True
+            and any(
                 step.wait_for_manual_intervention()
                 for step in step_group.get_step_subgroup_to_run()
-            ):
-                msg = (
-                    "Step groups with repeat_steps=True cannot have steps that require "
-                    "manual intervention. This would lead to a deadlock."
-                )
-                raise ValueError(msg)
+            )
+        ):
+            msg = (
+                "Step groups with repeat_steps=True cannot have steps that require "
+                "manual intervention. This would lead to a deadlock."
+            )
+            raise ValueError(msg)
 
     return detected_steps_names
 
