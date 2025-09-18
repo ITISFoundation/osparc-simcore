@@ -20,6 +20,7 @@ from simcore_service_dynamic_scheduler.services.director_v0 import (
 
 @pytest.fixture
 def app_environment(
+    disable_generic_scheduler_lifespan: None,
     disable_postgres_lifespan: None,
     disable_redis_lifespan: None,
     disable_rabbitmq_lifespan: None,
