@@ -3,20 +3,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
-from ..products import ProductName
 from ..progress_bar import ProgressReport
-from ..users import UserID
 
 AsyncJobId: TypeAlias = UUID
 AsyncJobName: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1)
 ]
-
-
-class AsyncJobFilterBase(BaseModel):
-    """Base class for async job filters"""
-
-    model_config = ConfigDict(extra="forbid")
 
 
 class AsyncJobStatus(BaseModel):
@@ -50,24 +42,20 @@ class AsyncJobAbort(BaseModel):
     job_id: AsyncJobId
 
 
-class AsyncJobFilter(AsyncJobFilterBase):
+class AsyncJobFilter(BaseModel):
     """Data for controlling access to an async job"""
 
     model_config = ConfigDict(
+        extra="allow",
         json_schema_extra={
             "examples": [
                 {
                     "product_name": "osparc",
                     "user_id": 123,
-                    "client_name": "web_client",
+                    "task_owner": "web_client",
                 }
             ]
         },
     )
 
-    product_name: ProductName
-    user_id: UserID
-    task_owner: Annotated[  # this is the name of the app which *submits* the async job. It is mainly used for filtering purposes
-        str,
-        StringConstraints(min_length=1, pattern=r"^[^\s]+$"),
-    ]
+    task_owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]
