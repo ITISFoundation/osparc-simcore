@@ -4,6 +4,7 @@ from typing import Annotated, Final, Literal, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -24,7 +25,6 @@ from pydantic import (
 )
 from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings

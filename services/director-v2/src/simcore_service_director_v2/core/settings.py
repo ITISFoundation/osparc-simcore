@@ -7,6 +7,7 @@ from functools import cached_property
 from typing import Annotated, cast
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt
@@ -24,7 +25,6 @@ from pydantic import (
     PositiveInt,
     field_validator,
 )
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings

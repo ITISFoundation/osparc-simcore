@@ -4,6 +4,7 @@ import logging
 from aiohttp import web
 from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
@@ -47,7 +48,6 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON

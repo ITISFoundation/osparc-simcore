@@ -58,6 +58,7 @@ qx.Class.define("osparc.support.Conversation", {
     SYSTEM_MESSAGE_TYPE: {
       ASK_A_QUESTION: "askAQuestion",
       BOOK_A_CALL: "bookACall",
+      ESCALATE_TO_SUPPORT: "escalateToSupport",
       REPORT_OEC: "reportOEC",
       FOLLOW_UP: "followUp",
     },
@@ -305,6 +306,9 @@ qx.Class.define("osparc.support.Conversation", {
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           msg = greet + "Let us know what your availability is and we will get back to you shortly to schedule a meeting.";
+          break;
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
+          msg = greet + "Our support team will take it from here — please confirm or edit your question below to get started.";
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.FOLLOW_UP:
           msg = "A support ticket has been created.\nOur team will review your request and contact you soon.";

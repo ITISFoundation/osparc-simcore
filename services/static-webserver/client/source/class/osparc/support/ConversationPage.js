@@ -160,7 +160,7 @@ qx.Class.define("osparc.support.ConversationPage", {
       return control || this.base(arguments, id);
     },
 
-    proposeConversation: function(type) {
+    proposeConversation: function(type, prefillText) {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
       this.setConversation(null);
 
@@ -174,11 +174,18 @@ qx.Class.define("osparc.support.ConversationPage", {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           title.setValue(this.tr("Book a Call"));
           break;
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
+          title.setValue(this.tr("Ask a Question"));
+          break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.REPORT_OEC:
           title.setValue(this.tr("Report an Error"));
           break;
       }
       conversationContent.addSystemMessage(type);
+
+      if (prefillText) {
+        this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(prefillText);
+      }
     },
 
     __applyConversation: function(conversation) {

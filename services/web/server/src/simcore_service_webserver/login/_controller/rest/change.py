@@ -2,8 +2,8 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
 
@@ -270,7 +270,6 @@ async def initiate_change_email(request: web.Request):
 @routes.post(f"/{API_VTAG}/auth/change-password", name="auth_change_password")
 @login_required
 async def change_password(request: web.Request):
-
     passwords = await parse_request_body_as(ChangePasswordBody, request)
     user_id = request[RQT_USERID_KEY]
     user = await _auth_service.get_user_or_none(request.app, user_id=user_id)

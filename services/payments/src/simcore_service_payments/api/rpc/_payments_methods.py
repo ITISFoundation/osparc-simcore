@@ -1,6 +1,7 @@
 import logging
 from decimal import Decimal
 
+from common_library.logging.logging_base import get_log_record_extra
 from fastapi import FastAPI
 from models_library.api_schemas_payments.errors import (
     PaymentsError,
@@ -18,7 +19,6 @@ from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
-from servicelib.logging_base import get_log_record_extra
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RPCRouter
 

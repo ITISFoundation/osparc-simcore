@@ -5,7 +5,7 @@ import logging
 import pytest
 from common_library.error_codes import create_error_code, parse_error_code_parts
 from common_library.errors_classes import OsparcErrorMixin
-from servicelib.logging_errors import (
+from common_library.logging.logging_errors import (
     create_troubleshooting_log_kwargs,
     create_troubleshooting_log_message,
 )

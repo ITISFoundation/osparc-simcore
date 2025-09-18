@@ -5,10 +5,10 @@ from collections.abc import AsyncIterable, Iterator
 from typing import Final
 
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import QueueName, RabbitMQClient
 

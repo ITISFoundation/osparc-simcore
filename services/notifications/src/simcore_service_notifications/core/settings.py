@@ -1,9 +1,9 @@
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, field_validator
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
