@@ -67,7 +67,7 @@ class AsyncJobFilter(AsyncJobFilterBase):
 
     product_name: ProductName
     user_id: UserID
-    client_name: Annotated[  # this is the name of the app which *submits* the async job. It is mainly used for filtering purposes
+    task_owner: Annotated[  # this is the name of the app which *submits* the async job. It is mainly used for filtering purposes
         str,
         StringConstraints(min_length=1, pattern=r"^[^\s]+$"),
     ]

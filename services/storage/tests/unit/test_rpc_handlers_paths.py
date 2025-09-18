@@ -74,7 +74,7 @@ async def _assert_compute_path_size(
         location_id=location_id,
         path=path,
         job_filter=AsyncJobFilter(
-            user_id=user_id, product_name=product_name, client_name="PYTEST_CLIENT_NAME"
+            user_id=user_id, product_name=product_name, task_owner="PYTEST_CLIENT_NAME"
         ),
     )
     async for job_composed_result in wait_and_get_result(
@@ -83,7 +83,7 @@ async def _assert_compute_path_size(
         method_name=RPCMethodName(compute_path_size.__name__),
         job_id=async_job.job_id,
         job_filter=AsyncJobFilter(
-            user_id=user_id, product_name=product_name, client_name="PYTEST_CLIENT_NAME"
+            user_id=user_id, product_name=product_name, task_owner="PYTEST_CLIENT_NAME"
         ),
         client_timeout=datetime.timedelta(seconds=120),
     ):
@@ -111,7 +111,7 @@ async def _assert_delete_paths(
         location_id=location_id,
         paths=paths,
         job_filter=AsyncJobFilter(
-            user_id=user_id, product_name=product_name, client_name="PYTEST_CLIENT_NAME"
+            user_id=user_id, product_name=product_name, task_owner="PYTEST_CLIENT_NAME"
         ),
     )
     async for job_composed_result in wait_and_get_result(
@@ -120,7 +120,7 @@ async def _assert_delete_paths(
         method_name=RPCMethodName(compute_path_size.__name__),
         job_id=async_job.job_id,
         job_filter=AsyncJobFilter(
-            user_id=user_id, product_name=product_name, client_name="PYTEST_CLIENT_NAME"
+            user_id=user_id, product_name=product_name, task_owner="PYTEST_CLIENT_NAME"
         ),
         client_timeout=datetime.timedelta(seconds=120),
     ):

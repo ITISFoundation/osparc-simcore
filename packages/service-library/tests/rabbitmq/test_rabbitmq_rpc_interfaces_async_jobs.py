@@ -42,7 +42,7 @@ def job_filter(faker: Faker) -> AsyncJobFilter:
     return AsyncJobFilter(
         user_id=faker.pyint(min_value=1),
         product_name=faker.word(),
-        client_name=_ASYNC_JOB_CLIENT_NAME,
+        task_owner=_ASYNC_JOB_CLIENT_NAME,
     )
 
 

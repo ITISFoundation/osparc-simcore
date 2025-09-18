@@ -160,7 +160,7 @@ async def _start_task_via_rpc(
     **kwargs: Any,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
     job_filter = AsyncJobFilter(
-        user_id=user_id, product_name=product_name, client_name="pytest_client"
+        user_id=user_id, product_name=product_name, task_owner="pytest_client"
     )
     async_job_get = await async_jobs.submit(
         rabbitmq_rpc_client=client,

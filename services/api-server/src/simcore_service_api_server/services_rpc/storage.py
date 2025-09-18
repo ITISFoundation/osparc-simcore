@@ -19,7 +19,7 @@ _exception_mapper = partial(service_exception_mapper, service_name="Storage")
 
 def get_job_filter(user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
     return AsyncJobFilter(
-        user_id=user_id, product_name=product_name, client_name=APP_NAME
+        user_id=user_id, product_name=product_name, task_owner=APP_NAME
     )
 
 

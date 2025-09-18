@@ -93,7 +93,7 @@ async def _request_copy_folders(
             job_filter=AsyncJobFilter(
                 user_id=user_id,
                 product_name=product_name,
-                client_name="PYTEST_CLIENT_NAME",
+                task_owner="PYTEST_CLIENT_NAME",
             ),
         )
 
@@ -537,7 +537,7 @@ async def _request_start_export_data(
             job_filter=AsyncJobFilter(
                 user_id=user_id,
                 product_name=product_name,
-                client_name="PYTEST_CLIENT_NAME",
+                task_owner="PYTEST_CLIENT_NAME",
             ),
         )
 
