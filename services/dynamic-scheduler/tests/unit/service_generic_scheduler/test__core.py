@@ -153,6 +153,7 @@ _STEPS_CALL_ORDER: list[tuple[str, str]] = []
 
 @pytest.fixture
 def steps_call_order() -> Iterable[list[tuple[str, str]]]:
+    _STEPS_CALL_ORDER.clear()
     yield _STEPS_CALL_ORDER
     _STEPS_CALL_ORDER.clear()
 
@@ -1276,7 +1277,7 @@ async def test_operation_initial_context_using_key_provided_by_step(
 
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
-    "operation, initial_context",
+    "operation, initial_context, expected_order",
     [
         pytest.param(
             [
@@ -1285,6 +1286,9 @@ async def test_operation_initial_context_using_key_provided_by_step(
             {
                 # `bs__c_req_1` is missing
             },
+            [
+                _RevertSequence(RPCtxS1),
+            ],
             id="missing_context_key",
         ),
         pytest.param(
@@ -1294,6 +1298,9 @@ async def test_operation_initial_context_using_key_provided_by_step(
             {
                 "bs__c_req_1": None,
             },
+            [
+                _RevertSequence(RPCtxS1),
+            ],
             id="context_key_is_none",
         ),
     ],
@@ -1301,11 +1308,13 @@ async def test_operation_initial_context_using_key_provided_by_step(
 async def test_step_does_not_receive_context_key_or_is_none(
     preserve_caplog_for_async_logging: None,
     caplog: pytest.LogCaptureFixture,
+    steps_call_order: list[tuple[str, str]],
     selected_app: FastAPI,
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
     operation_name: OperationName,
     initial_context: OperationContext,
+    expected_order: list[_BaseExpectedStepOrder],
 ):
     caplog.at_level(logging.DEBUG)
     caplog.clear()
@@ -1316,6 +1325,8 @@ async def test_step_does_not_receive_context_key_or_is_none(
     assert isinstance(schedule_id, ScheduleId)
 
     await _esnure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
+
+    await _ensure_expected_order(steps_call_order, expected_order)
 
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
