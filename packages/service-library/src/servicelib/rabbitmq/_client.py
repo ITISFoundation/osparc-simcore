@@ -97,7 +97,7 @@ async def _on_message(
                     await _nack_message(
                         message_handler, max_retries_upon_error, message
                     )
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
                     "Unhandled exception raised in message handler or when nacking message",
