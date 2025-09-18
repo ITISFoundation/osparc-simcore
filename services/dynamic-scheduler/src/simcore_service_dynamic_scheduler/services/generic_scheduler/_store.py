@@ -427,6 +427,3 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 def get_store(app: FastAPI) -> Store:
     assert isinstance(app.state.generic_scheduler_store, Store)  # nosec
     return app.state.generic_scheduler_store
-
-
-# TODO: might need a model for reading the entire thing as a dict with optinal keys (for the UI)
