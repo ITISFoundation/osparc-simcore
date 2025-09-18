@@ -21,8 +21,9 @@ from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.core.application import create_app
-from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
-    get_core,
+from simcore_service_dynamic_scheduler.services.generic_scheduler import (
+    cancel_operation,
+    start_operation,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
@@ -751,7 +752,7 @@ async def test_create_revert_order(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await get_core(selected_app).create(operation_name, {})
+    schedule_id = await start_operation(selected_app, operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
     await _ensure_expected_order(steps_call_order, expected_order)
@@ -866,7 +867,7 @@ async def test_fails_during_revert_is_in_error_state(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await get_core(selected_app).create(operation_name, {})
+    schedule_id = await start_operation(selected_app, operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
     await _ensure_expected_order(steps_call_order, expected_order)
@@ -933,15 +934,14 @@ async def test_cancelled_finishes_nicely(
 ):
     register_operation(operation_name, operation)
 
-    core = get_core(selected_app)
-    schedule_id = await core.create(operation_name, {})
+    schedule_id = await start_operation(selected_app, operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
     await _ensure_expected_order(steps_call_order, expected_before_cancel_order)
 
     # cancel in parallel multiple times (worst case)
     await asyncio.gather(
-        *[core.cancel_schedule(schedule_id) for _ in range(cancel_count)]
+        *[cancel_operation(selected_app, schedule_id) for _ in range(cancel_count)]
     )
 
     await _ensure_expected_order(steps_call_order, expected_order)
@@ -1029,8 +1029,7 @@ async def test_repeating_step(
 ):
     register_operation(operation_name, operation)
 
-    core = get_core(selected_app)
-    schedule_id = await core.create(operation_name, {})
+    schedule_id = await start_operation(selected_app, operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
     await _ensure_expected_order(
@@ -1038,7 +1037,7 @@ async def test_repeating_step(
     )
 
     # cancelling stops the loop and causes revert to run
-    await core.cancel_schedule(schedule_id)
+    await cancel_operation(selected_app, schedule_id)
 
     await _ensure_expected_order(
         steps_call_order, expected_order, use_only_last_entries=True
@@ -1119,8 +1118,7 @@ async def test_wait_for_manual_intervention(
 ):
     register_operation(operation_name, operation)
 
-    core = get_core(selected_app)
-    schedule_id = await core.create(operation_name, {})
+    schedule_id = await start_operation(selected_app, operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
@@ -1131,7 +1129,7 @@ async def test_wait_for_manual_intervention(
 
     # even if cancelled, state of waiting for manual intervention remains the same
     with pytest.raises(CannotCancelWhileWaitingForManualInterventionError):
-        await core.cancel_schedule(schedule_id)
+        await cancel_operation(selected_app, schedule_id)
     # give some time for a "possible cancellation" to be processed
     await asyncio.sleep(0.1)
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
@@ -1214,7 +1212,7 @@ async def test_operation_context_usage(
 
     register_operation(operation_name, operation)
 
-    schedule_id = await get_core(selected_app).create(operation_name, initial_context)
+    schedule_id = await start_operation(selected_app, operation_name, initial_context)
     assert isinstance(schedule_id, ScheduleId)
 
     # NOTE: might fail because it raised ProvidedOperationContextKeysAreMissingError check logs
@@ -1270,7 +1268,7 @@ async def test_operation_initial_context_using_key_provided_by_step(
     register_operation(operation_name, operation)
 
     with pytest.raises(InitialOperationContextKeyNotAllowedError):
-        await get_core(selected_app).create(operation_name, initial_context)
+        await start_operation(selected_app, operation_name, initial_context)
 
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
@@ -1321,7 +1319,7 @@ async def test_step_does_not_receive_context_key_or_is_none(
 
     register_operation(operation_name, operation)
 
-    schedule_id = await get_core(selected_app).create(operation_name, initial_context)
+    schedule_id = await start_operation(selected_app, operation_name, initial_context)
     assert isinstance(schedule_id, ScheduleId)
 
     await _esnure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
@@ -1515,7 +1513,7 @@ async def test_step_does_not_provide_declared_key_or_is_none(
 
     register_operation(operation_name, operation)
 
-    schedule_id = await get_core(selected_app).create(operation_name, initial_context)
+    schedule_id = await start_operation(selected_app, operation_name, initial_context)
     assert isinstance(schedule_id, ScheduleId)
 
     await _esnure_log_mesage(caplog, message=expected_error_str)

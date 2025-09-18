@@ -624,5 +624,17 @@ def get_core(app: FastAPI) -> Core:
     return core
 
 
+async def start_operation(
+    app: FastAPI,
+    operation_name: OperationName,
+    initial_operation_context: OperationContext,
+) -> ScheduleId:
+    return await get_core(app).create(operation_name, initial_operation_context)
+
+
+async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
+    await get_core(app).cancel_schedule(schedule_id)
+
+
 # TODO: refeactor this module to make the code more redable
 # TODO: remove setup teardown since it looks like it's not used
