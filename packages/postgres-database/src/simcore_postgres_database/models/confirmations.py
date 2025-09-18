@@ -1,15 +1,16 @@
-""" User's confirmations table
+"""User's confirmations table
 
-    - Keeps a list of tokens to identify an action (registration, invitation, reset, etc) authorized
-    by link to a a user in the framework
-    - These tokens have an expiration date defined by configuration
+- Keeps a list of tokens to identify an action (registration, invitation, reset, etc) authorized
+by link to a a user in the framework
+- These tokens have an expiration date defined by configuration
 
 """
+
 import enum
 
 import sqlalchemy as sa
 
-from ._common import RefActions
+from ._common import RefActions, column_created_datetime
 from .base import metadata
 from .users import users
 
@@ -47,12 +48,8 @@ confirmations = sa.Table(
         sa.Text,
         doc="Extra data associated to the action. SEE handlers_confirmation.py::email_confirmation",
     ),
-    sa.Column(
-        "created_at",
-        sa.DateTime(),
-        nullable=False,
-        # NOTE: that here it would be convenient to have a server_default=now()!
-        doc="Creation date of this code."
+    column_created_datetime(
+        doc="Creation date of this code. "
         "Can be used as reference to determine the expiration date. SEE ${ACTION}_CONFIRMATION_LIFETIME",
     ),
     # constraints ----------------
