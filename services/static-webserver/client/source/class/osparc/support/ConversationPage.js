@@ -185,9 +185,13 @@ qx.Class.define("osparc.support.ConversationPage", {
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           title.setValue(this.tr("Book a Call"));
+          break;
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL_3RD: {
+          title.setValue(this.tr("Book a Call 3rd"));
           const bookACallIframe = this.getChildControl("book-a-call-iframe");
           this.getChildControl("main-stack").setSelection([bookACallIframe]);
           break;
+        }
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
           title.setValue(this.tr("Ask a Question"));
           break;

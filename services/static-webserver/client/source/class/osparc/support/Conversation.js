@@ -58,6 +58,7 @@ qx.Class.define("osparc.support.Conversation", {
     SYSTEM_MESSAGE_TYPE: {
       ASK_A_QUESTION: "askAQuestion",
       BOOK_A_CALL: "bookACall",
+      BOOK_A_CALL_3RD: "bookACall3rd",
       ESCALATE_TO_SUPPORT: "escalateToSupport",
       REPORT_OEC: "reportOEC",
       FOLLOW_UP: "followUp",
@@ -317,8 +318,8 @@ qx.Class.define("osparc.support.Conversation", {
       if (msg) {
         systemMessage["content"] = msg;
         systemMessage["systemMessageType"] = type;
+        this.addMessage(systemMessage);
       }
-      this.addMessage(systemMessage);
     },
 
     addMessage: function(message) {
