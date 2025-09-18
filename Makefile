@@ -178,6 +178,9 @@ DOCKER_BUILDX_CACHE_FROM ?= /tmp/.buildx-cache
 DOCKER_BUILDX_CACHE_TO ?= /tmp/.buildx-cache
 DOCKER_TARGET_PLATFORMS ?= linux/amd64
 comma := ,
+DISABLE_CACHE_TO ?= 0
+
+
 
 define _docker_compose_build
 $(eval INCLUDED_SERVICES := $(filter-out $(exclude), $(SERVICES_NAMES_TO_BUILD))) \
@@ -211,8 +214,9 @@ docker buildx bake --allow=fs.read=.. \
 	--file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) \
-			--set $(service).cache-from=type=gha$(comma)scope=$(service)) \
+		$(if $(DISABLE_CACHE_TO),,\
+			--set $(service).cache-to=type=gha$(comma)mode=max$(comma)scope=$(service) ) \
+		--set $(service).cache-from=type=gha$(comma)scope=$(service)) \
 	) &&\
 popd;
 endef
