@@ -27,6 +27,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     InitialOperationContextKeyNotAllowedError,
+    OperationContextValueIsNoneError,
     ProvidedOperationContextKeysAreMissingError,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
@@ -444,6 +445,13 @@ async def _ensure_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> Non
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             await _assert_keys_in_store(app, expected_keys=expected_keys)
+
+
+async def _esnure_log_mesage(caplog: pytest.LogCaptureFixture, *, message: str) -> None:
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0)  # wait for envet to trigger
+            assert message in caplog.text
 
 
 ############## TESTS ##############
@@ -1213,6 +1221,7 @@ async def test_operation_context_usage(
 
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
+    assert f"{OperationContextValueIsNoneError.__name__}" not in caplog.text
     assert f"{ProvidedOperationContextKeysAreMissingError.__name__}" not in caplog.text
 
 
@@ -1265,8 +1274,245 @@ async def test_operation_initial_context_using_key_provided_by_step(
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-# TODO: test for OperationContextValueIsNoneError (we can only test the ones retruned)
-# TODO: add a test check for proper context usage from step to step and also for the initial_step context usage
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, initial_context",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(RPCtxS1),
+            ],
+            {
+                # `bs__c_req_1` is missing
+            },
+            id="missing_context_key",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(RPCtxS1),
+            ],
+            {
+                "bs__c_req_1": None,
+            },
+            id="context_key_is_none",
+        ),
+    ],
+)
+async def test_step_does_not_receive_context_key_or_is_none(
+    preserve_caplog_for_async_logging: None,
+    caplog: pytest.LogCaptureFixture,
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_name: OperationName,
+    initial_context: OperationContext,
+):
+    caplog.at_level(logging.DEBUG)
+    caplog.clear()
+
+    register_operation(operation_name, operation)
+
+    schedule_id = await get_core(selected_app).create(operation_name, initial_context)
+    assert isinstance(schedule_id, ScheduleId)
+
+    await _esnure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
+
+    await _ensure_keys_in_store(selected_app, expected_keys=set())
+
+
+class _BadImplementedStep(BaseStep):
+    @classmethod
+    def _get_provided_context(
+        cls, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext:
+        print("GOT", required_context)
+        return_values = {}
+        to_return = required_context["to_return"]
+        if to_return["add_to_return"]:
+            return_values.update(to_return["keys"])
+
+        return return_values
+
+    # CREATE
+
+    @classmethod
+    def get_create_requires_context_keys(cls) -> set[str]:
+        return {"to_return", "trigger_revert"}
+
+    @classmethod
+    def get_create_provides_context_keys(cls) -> set[str]:
+        return {"a_key"}
+
+    @classmethod
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        print("INJECTED_CONTEXT_C", required_context)
+        _ = app
+        _STEPS_CALL_ORDER.append((cls.__name__, _CREATED))
+
+        if required_context.get("trigger_revert"):
+            msg = "triggering revert"
+            raise RuntimeError(msg)
+
+        return cls._get_provided_context(required_context)
+
+    # REVERT
+
+    @classmethod
+    def get_revert_requires_context_keys(cls) -> set[str]:
+        return {"to_return", "trigger_revert"}
+
+    @classmethod
+    def get_revert_provides_context_keys(cls) -> set[str]:
+        return {"a_key"}
+
+    @classmethod
+    async def revert(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        print("INJECTED_CONTEXT_R", required_context)
+        _ = app
+        _STEPS_CALL_ORDER.append((cls.__name__, _REVERTED))
+
+        return cls._get_provided_context(required_context)
+
+
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, initial_context, expected_error_str, expected_order, expected_keys",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(_BadImplementedStep),
+            ],
+            {
+                "trigger_revert": False,
+                "to_return": {
+                    "add_to_return": True,
+                    "keys": {"a_key": None},
+                },
+            },
+            f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
+            [
+                _CreateSequence(_BadImplementedStep),
+                _RevertSequence(_BadImplementedStep),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:R",
+                "SCH:{schedule_id}:OP_CTX:test_op",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_BadImplementedStep",
+                "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
+            },
+            id="create-returns-key-set-to-None",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_BadImplementedStep),
+            ],
+            {
+                "trigger_revert": False,
+                "to_return": {
+                    "add_to_return": False,
+                },
+            },
+            f"{ProvidedOperationContextKeysAreMissingError.__name__}: Provided context {{}} is missing keys {{'a_key'",
+            [
+                _CreateSequence(_BadImplementedStep),
+                _RevertSequence(_BadImplementedStep),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:R",
+                "SCH:{schedule_id}:OP_CTX:test_op",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_BadImplementedStep",
+                "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
+            },
+            id="create-does-not-set-the-key-to-return",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_BadImplementedStep),
+            ],
+            {
+                "trigger_revert": True,
+                "to_return": {
+                    "add_to_return": True,
+                    "keys": {"a_key": None},
+                },
+            },
+            f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
+            [
+                _CreateSequence(_BadImplementedStep),
+                _RevertSequence(_BadImplementedStep),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:R",
+                "SCH:{schedule_id}:OP_CTX:test_op",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_BadImplementedStep",
+                "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
+            },
+            id="revert-returns-key-set-to-None",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_BadImplementedStep),
+            ],
+            {
+                "trigger_revert": True,
+                "to_return": {
+                    "add_to_return": False,
+                },
+            },
+            f"{ProvidedOperationContextKeysAreMissingError.__name__}: Provided context {{}} is missing keys {{'a_key'",
+            [
+                _CreateSequence(_BadImplementedStep),
+                _RevertSequence(_BadImplementedStep),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:R",
+                "SCH:{schedule_id}:OP_CTX:test_op",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_BadImplementedStep",
+                "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
+            },
+            id="revert-does-not-set-the-key-to-return",
+        ),
+    ],
+)
+async def test_step_does_not_provide_declared_key_or_is_none(
+    preserve_caplog_for_async_logging: None,
+    caplog: pytest.LogCaptureFixture,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_name: OperationName,
+    initial_context: OperationContext,
+    expected_error_str: str,
+    expected_order: list[_BaseExpectedStepOrder],
+    expected_keys: set[str],
+):
+    caplog.at_level(logging.DEBUG)
+    caplog.clear()
+
+    register_operation(operation_name, operation)
+
+    schedule_id = await get_core(selected_app).create(operation_name, initial_context)
+    assert isinstance(schedule_id, ScheduleId)
+
+    await _esnure_log_mesage(caplog, message=expected_error_str)
+
+    await _ensure_expected_order(steps_call_order, expected_order)
+
+    formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
+    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
 
 # TODO: tests to make sure all this still works with interruptions! -> Redis restart or Rabbit restart

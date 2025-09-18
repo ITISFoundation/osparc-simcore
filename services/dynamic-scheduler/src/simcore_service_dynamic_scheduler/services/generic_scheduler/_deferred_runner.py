@@ -104,12 +104,9 @@ def _raise_if_any_context_value_is_none(
 
 
 def _raise_if_provided_context_keys_are_missing_or_none(
-    provided_context: ProvidedOperationContext | None,
+    provided_context: ProvidedOperationContext,
     expected_keys: set[str],
 ) -> None:
-    if not provided_context:
-        return
-
     missing_keys = expected_keys - provided_context.keys()
     if missing_keys:
         raise ProvidedOperationContextKeysAreMissingError(
@@ -185,7 +182,8 @@ class DeferredRunner(BaseDeferredHandler[None]):
             )
             _raise_if_any_context_value_is_none(required_context)
 
-            provided_operation_context = await step.create(app, required_context)
+            step_provided_operation_context = await step.create(app, required_context)
+            provided_operation_context = step_provided_operation_context or {}
             create_provides_keys = step.get_create_provides_context_keys()
 
             _raise_if_provided_context_keys_are_missing_or_none(
@@ -197,7 +195,8 @@ class DeferredRunner(BaseDeferredHandler[None]):
             )
             _raise_if_any_context_value_is_none(required_context)
 
-            provided_operation_context = await step.revert(app, required_context)
+            step_provided_operation_context = await step.revert(app, required_context)
+            provided_operation_context = step_provided_operation_context or {}
             revert_provides_keys = step.get_revert_provides_context_keys()
 
             _raise_if_provided_context_keys_are_missing_or_none(
