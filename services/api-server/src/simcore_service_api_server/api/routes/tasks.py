@@ -63,7 +63,7 @@ async def list_tasks(
         product_name=product_name,
     )
     tasks = await task_manager.list_tasks(
-        task_filter=task_filter,
+        owner_metadata=task_filter,
     )
 
     app_router = app.router
@@ -108,7 +108,7 @@ async def get_task_status(
         product_name=product_name,
     )
     task_status = await task_manager.get_task_status(
-        task_filter=task_filter,
+        owner_metadata=task_filter,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -146,7 +146,7 @@ async def cancel_task(
         product_name=product_name,
     )
     await task_manager.cancel_task(
-        task_filter=task_filter,
+        owner_metadata=task_filter,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -182,7 +182,7 @@ async def get_task_result(
     )
 
     task_status = await task_manager.get_task_status(
-        task_filter=task_filter,
+        owner_metadata=task_filter,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -193,7 +193,7 @@ async def get_task_result(
         )
 
     task_result = await task_manager.get_task_result(
-        task_filter=task_filter,
+        owner_metadata=task_filter,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 

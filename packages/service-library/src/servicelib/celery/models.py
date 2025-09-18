@@ -24,7 +24,7 @@ class Wildcard:
         return _WILDCARD
 
 
-class TaskOwnerMetadata(BaseModel):
+class OwnerMetadata(BaseModel):
     """
     Class for associating metadata with a celery task. The implementation is very flexible and allows the task owner to define their own metadata.
     This could be metadata for validating if a user has access to a given task (e.g. user_id or product_name) or metadata for keeping track of how to handle a task,
@@ -33,13 +33,13 @@ class TaskOwnerMetadata(BaseModel):
     The class exposes a filtering mechanism to list tasks using wildcards.
 
     Example usage:
-        class MyTaskFilter(TaskFilter):
+        class StorageOwnerMetadata(OwnerMetadata):
             user_id: int | Wildcard
             product_name: int | Wildcard
-            owner: str
+            owner = "storage-service"
 
-        Listing tasks using the filter `MyTaskFilter(user_id=123, product_name=Wildcard(), owner="my-app")` will return all tasks with
-        user_id 123, any product_name submitted from my-app.
+        Listing tasks using the filter `StorageOwnerMetadata(user_id=123, product_name=Wildcard())` will return all tasks with
+        user_id 123, any product_name submitted from storage-service.
 
     If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model). I.e. one can recover the metadata from the task:
         metadata -> task_uuid -> metadata
@@ -124,7 +124,7 @@ class TasksQueue(StrEnum):
     API_WORKER_QUEUE = "api_worker_queue"
 
 
-class TaskExecutionMetadata(BaseModel):
+class ExecutionMetadata(BaseModel):
     name: TaskName
     ephemeral: bool = True
     queue: TasksQueue = TasksQueue.DEFAULT
@@ -132,7 +132,7 @@ class TaskExecutionMetadata(BaseModel):
 
 class Task(BaseModel):
     uuid: TaskUUID
-    metadata: TaskExecutionMetadata
+    metadata: ExecutionMetadata
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -174,19 +174,17 @@ class TaskInfoStore(Protocol):
     async def create_task(
         self,
         task_id: TaskID,
-        task_metadata: TaskExecutionMetadata,
+        task_metadata: ExecutionMetadata,
         expiry: datetime.timedelta,
     ) -> None: ...
 
     async def task_exists(self, task_id: TaskID) -> bool: ...
 
-    async def get_task_metadata(
-        self, task_id: TaskID
-    ) -> TaskExecutionMetadata | None: ...
+    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None: ...
 
     async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
 
-    async def list_tasks(self, task_filter: TaskOwnerMetadata) -> list[Task]: ...
+    async def list_tasks(self, task_filter: OwnerMetadata) -> list[Task]: ...
 
     async def remove_task(self, task_id: TaskID) -> None: ...
 

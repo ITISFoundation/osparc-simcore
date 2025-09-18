@@ -32,7 +32,7 @@ from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from servicelib.celery.models import TaskExecutionMetadata, TasksQueue, TaskUUID
+from servicelib.celery.models import ExecutionMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server.models.schemas.functions import (
     FunctionJobCreationTaskStatus,
@@ -85,7 +85,7 @@ async def _celery_task_status(
     )
     try:
         task_status = await task_manager.get_task_status(
-            task_uuid=TaskUUID(job_creation_task_id), task_filter=task_filter
+            task_uuid=TaskUUID(job_creation_task_id), owner_metadata=task_filter
         )
         return FunctionJobCreationTaskStatus[task_status.task_state]
     except TaskNotFoundError as err:
@@ -384,7 +384,7 @@ class FunctionJobTaskClientService:
         )
 
         task_uuid = await self._celery_task_manager.submit_task(
-            TaskExecutionMetadata(
+            ExecutionMetadata(
                 name="run_function",
                 ephemeral=False,
                 queue=TasksQueue.API_WORKER_QUEUE,

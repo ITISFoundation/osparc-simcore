@@ -7,8 +7,8 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
 from servicelib.celery.models import (
-    TaskExecutionMetadata,
-    TaskOwnerMetadata,
+    ExecutionMetadata,
+    OwnerMetadata,
     TasksQueue,
 )
 from servicelib.celery.task_manager import TaskManager
@@ -30,9 +30,9 @@ async def copy_folders_from_project(
     body: FoldersBody,
 ) -> AsyncJobGet:
     task_name = deep_copy_files_from_project.__name__
-    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
+    task_filter = OwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        task_metadata=TaskExecutionMetadata(
+        execution_metadata=ExecutionMetadata(
             name=task_name,
         ),
         task_filter=task_filter,
@@ -56,9 +56,9 @@ async def start_export_data(
         task_name = export_data_as_download_link.__name__
     else:
         raise ValueError(f"Invalid export_as value: {export_as}")
-    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
+    task_filter = OwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        task_metadata=TaskExecutionMetadata(
+        execution_metadata=ExecutionMetadata(
             name=task_name,
             ephemeral=False,
             queue=TasksQueue.CPU_BOUND,

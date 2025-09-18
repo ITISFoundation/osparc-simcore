@@ -27,7 +27,7 @@ from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskExecutionMetadata, TaskID, TaskOwnerMetadata
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskID
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
@@ -82,9 +82,9 @@ async def rpc_sync_job(
     task_manager: TaskManager, *, job_filter: AsyncJobOwnerMetadata, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = sync_job.__name__
-    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
+    task_filter = OwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        TaskExecutionMetadata(name=task_name), task_filter=task_filter, **kwargs
+        ExecutionMetadata(name=task_name), task_filter=task_filter, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -95,9 +95,9 @@ async def rpc_async_job(
     task_manager: TaskManager, *, job_filter: AsyncJobOwnerMetadata, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = async_job.__name__
-    task_filter = TaskOwnerMetadata.model_validate(job_filter.model_dump())
+    task_filter = OwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        TaskExecutionMetadata(name=task_name), task_filter=task_filter, **kwargs
+        ExecutionMetadata(name=task_name), task_filter=task_filter, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -160,7 +160,7 @@ async def _start_task_via_rpc(
     **kwargs: Any,
 ) -> tuple[AsyncJobGet, AsyncJobOwnerMetadata]:
     job_filter = AsyncJobOwnerMetadata(
-        user_id=user_id, product_name=product_name, task_owner="pytest_client"
+        user_id=user_id, product_name=product_name, owner="pytest_client"
     )
     async_job_get = await async_jobs.submit(
         rabbitmq_rpc_client=client,
@@ -304,7 +304,7 @@ async def test_async_jobs_cancel(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        job_filter=job_filter,
+        owner_metadata=job_filter,
     )
 
     jobs = await async_jobs.list_jobs(

@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Final
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 from servicelib.celery.models import (
+    ExecutionMetadata,
+    OwnerMetadata,
     Task,
-    TaskExecutionMetadata,
     TaskID,
     TaskInfoStore,
-    TaskOwnerMetadata,
     Wildcard,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
@@ -35,7 +35,7 @@ class RedisTaskInfoStore:
     async def create_task(
         self,
         task_id: TaskID,
-        task_metadata: TaskExecutionMetadata,
+        task_metadata: ExecutionMetadata,
         expiry: timedelta,
     ) -> None:
         task_key = _build_key(task_id)
@@ -51,7 +51,7 @@ class RedisTaskInfoStore:
             expiry,
         )
 
-    async def get_task_metadata(self, task_id: TaskID) -> TaskExecutionMetadata | None:
+    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None:
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
                 _build_key(task_id), _CELERY_TASK_METADATA_KEY
@@ -61,7 +61,7 @@ class RedisTaskInfoStore:
             return None
 
         try:
-            return TaskExecutionMetadata.model_validate_json(raw_result)
+            return ExecutionMetadata.model_validate_json(raw_result)
         except ValidationError as exc:
             _logger.debug(
                 "Failed to deserialize task metadata for task %s: %s", task_id, f"{exc}"
@@ -85,7 +85,7 @@ class RedisTaskInfoStore:
             )
             return None
 
-    async def list_tasks(self, task_filter: TaskOwnerMetadata) -> list[Task]:
+    async def list_tasks(self, task_filter: OwnerMetadata) -> list[Task]:
         search_key = _CELERY_TASK_INFO_PREFIX + task_filter.create_task_id(
             task_uuid=Wildcard()
         )
@@ -112,10 +112,10 @@ class RedisTaskInfoStore:
                 continue
 
             with contextlib.suppress(ValidationError):
-                task_metadata = TaskExecutionMetadata.model_validate_json(raw_metadata)
+                task_metadata = ExecutionMetadata.model_validate_json(raw_metadata)
                 tasks.append(
                     Task(
-                        uuid=TaskOwnerMetadata.get_task_uuid(key),
+                        uuid=OwnerMetadata.get_task_uuid(key),
                         metadata=task_metadata,
                     )
                 )

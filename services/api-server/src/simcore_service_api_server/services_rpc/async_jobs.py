@@ -47,7 +47,7 @@ class AsyncJobClient:
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=job_id,
-            job_filter=job_filter,
+            owner_metadata=job_filter,
         )
 
     @_exception_mapper(

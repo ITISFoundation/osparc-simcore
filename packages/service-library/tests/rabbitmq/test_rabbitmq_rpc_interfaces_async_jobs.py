@@ -42,7 +42,7 @@ def job_filter(faker: Faker) -> AsyncJobOwnerMetadata:
     return AsyncJobOwnerMetadata(
         user_id=faker.pyint(min_value=1),
         product_name=faker.word(),
-        task_owner=_ASYNC_JOB_CLIENT_NAME,
+        owner=_ASYNC_JOB_CLIENT_NAME,
     )
 
 

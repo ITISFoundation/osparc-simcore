@@ -10,7 +10,7 @@ from models_library.functions import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import Field, StringConstraints
-from servicelib.celery.models import TaskOwnerMetadata
+from servicelib.celery.models import OwnerMetadata
 
 from ..._meta import APP_NAME
 from ...api.dependencies.authentication import Identity
@@ -33,7 +33,7 @@ pydantic_types_to_register = (
 )
 
 
-class ApiWorkerTaskFilter(TaskOwnerMetadata):
+class ApiWorkerTaskFilter(OwnerMetadata):
     user_id: UserID
     product_name: ProductName
     owner: Annotated[

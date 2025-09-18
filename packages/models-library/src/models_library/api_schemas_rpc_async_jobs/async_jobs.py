@@ -61,4 +61,4 @@ class AsyncJobOwnerMetadata(BaseModel):
     )
     user_id: UserID
     product_name: ProductName
-    task_owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]
+    owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]
