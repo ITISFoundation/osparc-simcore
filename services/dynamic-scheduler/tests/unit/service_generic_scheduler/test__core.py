@@ -16,7 +16,6 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from pydantic import NonNegativeInt
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
@@ -26,7 +25,6 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     BaseStep,
     Operation,
     OperationName,
-    OperationRegistry,
     ParallelStepGroup,
     ProvidedOperationContext,
     RequiredOperationContext,
@@ -74,16 +72,6 @@ _PARALLEL_APP_CREATION: Final[NonNegativeInt] = 5
 
 
 @pytest.fixture
-def disable_other_generic_scheduler_modules(mocker: MockerFixture) -> None:
-    # these also use redis
-    generic_scheduler_module = (
-        "simcore_service_dynamic_scheduler.services.generic_scheduler"
-    )
-    mocker.patch(f"{generic_scheduler_module}._store.lifespan")
-    mocker.patch(f"{generic_scheduler_module}._core.lifespan")
-
-
-@pytest.fixture
 def app_environment(
     disable_postgres_lifespan: None,
     disable_service_tracker_lifespan: None,
@@ -127,20 +115,6 @@ async def selected_app(
         *[get_app() for _ in range(app_count)], limit=_PARALLEL_APP_CREATION
     )
     return choice(apps)
-
-
-@pytest.fixture
-def register_operation() -> Iterable[Callable[[OperationName, Operation], None]]:
-    to_unregister: list[OperationName] = []
-
-    def _(opration_name: OperationName, operation: Operation) -> None:
-        OperationRegistry.register(opration_name, operation)
-        to_unregister.append(opration_name)
-
-    yield _
-
-    for opration_name in to_unregister:
-        OperationRegistry.unregister(opration_name)
 
 
 @pytest.fixture
