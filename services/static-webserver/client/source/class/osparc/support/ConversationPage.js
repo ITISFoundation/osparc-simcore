@@ -148,13 +148,23 @@ qx.Class.define("osparc.support.ConversationPage", {
           this.getChildControl("buttons-layout").addAt(control, 4);
           break;
         }
+        case "main-stack":
+          control = new qx.ui.container.Stack();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "conversation-container":
+          control = new qx.ui.container.Scroll();
+          this.getChildControl("main-stack").add(control);
+          break;
         case "conversation-content":
           control = new osparc.support.Conversation();
-          const scroll = new qx.ui.container.Scroll();
-          scroll.add(control);
-          this._add(scroll, {
-            flex: 1,
-          });
+          this.getChildControl("conversation-container").add(control);
+          break;
+        case "book-a-call-iframe":
+          control = new osparc.wrapper.BookACallIframe();
+          this.getChildControl("main-stack").add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -167,12 +177,16 @@ qx.Class.define("osparc.support.ConversationPage", {
       const title = this.getChildControl("conversation-title");
       const conversationContent = this.getChildControl("conversation-content");
       conversationContent.clearAllMessages();
+      const conversationContainer = this.getChildControl("conversation-container");
+      this.getChildControl("main-stack").setSelection([conversationContainer]);
       switch (type) {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
           title.setValue(this.tr("Ask a Question"));
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           title.setValue(this.tr("Book a Call"));
+          const bookACallIframe = this.getChildControl("book-a-call-iframe");
+          this.getChildControl("main-stack").setSelection([bookACallIframe]);
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
           title.setValue(this.tr("Ask a Question"));
