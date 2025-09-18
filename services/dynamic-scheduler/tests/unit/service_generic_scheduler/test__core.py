@@ -7,7 +7,6 @@ import logging
 import re
 from collections.abc import AsyncIterable, Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack
-from copy import deepcopy
 from datetime import timedelta
 from secrets import choice
 from typing import Any, Final
@@ -50,6 +49,16 @@ from tenacity import (
     retry_if_exception_type,
     stop_after_delay,
     wait_fixed,
+)
+from utils import (
+    CREATED,
+    REVERTED,
+    BaseExpectedStepOrder,
+    CreateRandom,
+    CreateSequence,
+    RevertRandom,
+    RevertSequence,
+    ensure_expected_order,
 )
 
 pytest_simcore_core_services_selection = [
@@ -132,10 +141,6 @@ def steps_call_order() -> Iterable[list[tuple[str, str]]]:
     _STEPS_CALL_ORDER.clear()
 
 
-_CREATED: Final[str] = "create"
-_REVERTED: Final[str] = "revert"
-
-
 class _BS(BaseStep):
     @classmethod
     async def create(
@@ -143,7 +148,7 @@ class _BS(BaseStep):
     ) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
-        _STEPS_CALL_ORDER.append((cls.__name__, _CREATED))
+        _STEPS_CALL_ORDER.append((cls.__name__, CREATED))
 
         return {
             **required_context,
@@ -156,7 +161,7 @@ class _BS(BaseStep):
     ) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
-        _STEPS_CALL_ORDER.append((cls.__name__, _REVERTED))
+        _STEPS_CALL_ORDER.append((cls.__name__, REVERTED))
 
         return {
             **required_context,
@@ -304,113 +309,6 @@ class _BaseRequiresProvidesRevertContext(_RevertBS, _MixingGetKeNumber):
         }
 
 
-class _BaseExpectedStepOrder:
-    def __init__(self, *steps: type[BaseStep]) -> None:
-        self.steps = steps
-
-    def __len__(self) -> int:
-        return len(self.steps)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({', '.join(step.get_step_name() for step in self.steps)})"
-
-
-class _CreateSequence(_BaseExpectedStepOrder):
-    """steps appear in a sequence as CREATE"""
-
-
-class _CreateRandom(_BaseExpectedStepOrder):
-    """steps appear in any given order as CREATE"""
-
-
-class _RevertSequence(_BaseExpectedStepOrder):
-    """steps appear in a sequence as REVERT"""
-
-
-class _RevertRandom(_BaseExpectedStepOrder):
-    """steps appear in any given order as REVERT"""
-
-
-def _assert_order_sequence(
-    remaning_call_order: list[tuple[str, str]],
-    steps: tuple[type[BaseStep], ...],
-    *,
-    expected: str,
-) -> None:
-    for step in steps:
-        step_name, actual = remaning_call_order.pop(0)
-        assert step_name == step.get_step_name()
-        assert actual == expected
-
-
-def _assert_order_random(
-    remaning_call_order: list[tuple[str, str]],
-    steps: tuple[type[BaseStep], ...],
-    *,
-    expected: str,
-) -> None:
-    steps_names = {step.get_step_name() for step in steps}
-    for _ in steps:
-        step_name, actual = remaning_call_order.pop(0)
-        assert step_name in steps_names
-        assert actual == expected
-        steps_names.remove(step_name)
-
-
-def _asseert_expected_order(
-    steps_call_order: list[tuple[str, str]],
-    expected_order: list[_BaseExpectedStepOrder],
-    *,
-    use_only_first_entries: bool,
-    use_only_last_entries: bool,
-) -> None:
-    assert not (use_only_first_entries and use_only_last_entries)
-
-    expected_order_length = sum(len(x) for x in expected_order)
-
-    # below operations are destructive make a copy
-    call_order = deepcopy(steps_call_order)
-
-    if use_only_first_entries:
-        call_order = call_order[:expected_order_length]
-    if use_only_last_entries:
-        call_order = call_order[-expected_order_length:]
-
-    assert len(call_order) == expected_order_length
-
-    for group in expected_order:
-        if isinstance(group, _CreateSequence):
-            _assert_order_sequence(call_order, group.steps, expected=_CREATED)
-        elif isinstance(group, _CreateRandom):
-            _assert_order_random(call_order, group.steps, expected=_CREATED)
-        elif isinstance(group, _RevertSequence):
-            _assert_order_sequence(call_order, group.steps, expected=_REVERTED)
-        elif isinstance(group, _RevertRandom):
-            _assert_order_random(call_order, group.steps, expected=_REVERTED)
-        else:
-            msg = f"Unknown {group=}"
-            raise NotImplementedError(msg)
-    assert not call_order, f"Left overs {call_order=}"
-
-
-async def _ensure_expected_order(
-    steps_call_order: list[tuple[str, str]],
-    expected_order: list[_BaseExpectedStepOrder],
-    *,
-    use_only_first_entries: bool = False,
-    use_only_last_entries: bool = False,
-) -> None:
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
-            await asyncio.sleep(0)  # wait for envet to trigger
-            _asseert_expected_order(
-                steps_call_order,
-                expected_order,
-                use_only_first_entries=use_only_first_entries,
-                use_only_last_entries=use_only_last_entries,
-            )
-
-
 async def _assert_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
     keys = set(await get_store(app).redis.keys())
     assert keys == expected_keys
@@ -549,7 +447,7 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 SingleStepGroup(_S1),
             ],
             [
-                _CreateSequence(_S1),
+                CreateSequence(_S1),
             ],
             id="s1",
         ),
@@ -558,7 +456,7 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 ParallelStepGroup(_S1, _S2),
             ],
             [
-                _CreateRandom(_S1, _S2),
+                CreateRandom(_S1, _S2),
             ],
             id="p2",
         ),
@@ -567,7 +465,7 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 ParallelStepGroup(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
             ],
             [
-                _CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
+                CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
             ],
             id="p10",
         ),
@@ -580,9 +478,9 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 SingleStepGroup(_S10),
             ],
             [
-                _CreateSequence(_S1, _S2, _S3),
-                _CreateRandom(_S4, _S5, _S6, _S7, _S8, _S9),
-                _CreateSequence(_S10),
+                CreateSequence(_S1, _S2, _S3),
+                CreateRandom(_S4, _S5, _S6, _S7, _S8, _S9),
+                CreateSequence(_S10),
             ],
             id="s1-s1-s1-p6-s1",
         ),
@@ -591,8 +489,8 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 SingleStepGroup(_RS1),
             ],
             [
-                _CreateSequence(_RS1),
-                _RevertSequence(_RS1),
+                CreateSequence(_RS1),
+                RevertSequence(_RS1),
             ],
             id="s1(1r)",
         ),
@@ -601,8 +499,8 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 ParallelStepGroup(_RS1, _S1, _S2, _S3, _S4, _S5, _S6),
             ],
             [
-                _CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
-                _RevertRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
+                CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
+                RevertRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
             ],
             id="p7(1r)",
         ),
@@ -615,12 +513,12 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 ParallelStepGroup(_S8, _S9),  # will not execute
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _S4, _S5, _S6),
-                _CreateSequence(_RS1),
-                _RevertSequence(_RS1),
-                _RevertRandom(_S2, _S3, _S4, _S5, _S6),
-                _RevertSequence(_S1),
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4, _S5, _S6),
+                CreateSequence(_RS1),
+                RevertSequence(_RS1),
+                RevertRandom(_S2, _S3, _S4, _S5, _S6),
+                RevertSequence(_S1),
             ],
             id="s1-p5-s1(1r)-s1-p2",
         ),
@@ -632,10 +530,10 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 ParallelStepGroup(_S8, _S9),  # will not execute
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
-                _RevertRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
-                _RevertSequence(_S1),
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
+                RevertRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
+                RevertSequence(_S1),
             ],
             id="s1-p6(1r)-s1-p2",
         ),
@@ -665,7 +563,7 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 ),
             ],
             [
-                _CreateRandom(
+                CreateRandom(
                     _S1,
                     _S2,
                     _S3,
@@ -687,7 +585,7 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                     _RS9,
                     _RS10,
                 ),
-                _RevertRandom(
+                RevertRandom(
                     _S1,
                     _S2,
                     _S3,
@@ -721,14 +619,14 @@ async def test_create_revert_order(
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
     operation_name: OperationName,
-    expected_order: list[_BaseExpectedStepOrder],
+    expected_order: list[BaseExpectedStepOrder],
 ):
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
-    await _ensure_expected_order(steps_call_order, expected_order)
+    await ensure_expected_order(steps_call_order, expected_order)
 
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
@@ -742,8 +640,8 @@ async def test_create_revert_order(
                 SingleStepGroup(_FCR1),
             ],
             [
-                _CreateSequence(_FCR1),
-                _RevertSequence(_FCR1),
+                CreateSequence(_FCR1),
+                RevertSequence(_FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -760,8 +658,8 @@ async def test_create_revert_order(
                 SingleStepGroup(_FCR1),
             ],
             [
-                _CreateSequence(_S1, _FCR1),
-                _RevertSequence(_FCR1),
+                CreateSequence(_S1, _FCR1),
+                RevertSequence(_FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -780,9 +678,9 @@ async def test_create_revert_order(
                 ParallelStepGroup(_FCR1, _S2, _S3),
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _FCR1),
-                _RevertRandom(_S2, _S3, _FCR1),
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _FCR1),
+                RevertRandom(_S2, _S3, _FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -805,9 +703,9 @@ async def test_create_revert_order(
                 ParallelStepGroup(_FCR1, _FCR2, _S2, _S3),
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _FCR1, _FCR2),
-                _RevertRandom(_S2, _S3, _FCR2, _FCR1),
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _FCR1, _FCR2),
+                RevertRandom(_S2, _S3, _FCR2, _FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -835,7 +733,7 @@ async def test_fails_during_revert_is_in_error_state(
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
     operation_name: OperationName,
-    expected_order: list[_BaseExpectedStepOrder],
+    expected_order: list[BaseExpectedStepOrder],
     expected_keys: set[str],
 ):
     register_operation(operation_name, operation)
@@ -843,7 +741,7 @@ async def test_fails_during_revert_is_in_error_state(
     schedule_id = await start_operation(selected_app, operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
-    await _ensure_expected_order(steps_call_order, expected_order)
+    await ensure_expected_order(steps_call_order, expected_order)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
@@ -861,17 +759,17 @@ async def test_fails_during_revert_is_in_error_state(
                 SingleStepGroup(_SF1),
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _S4),
-                _CreateSequence(_SF1),
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateSequence(_SF1),
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _S4),
-                _CreateSequence(_SF1),
-                _RevertSequence(_SF1),
-                _RevertRandom(_S2, _S3, _S4),
-                _RevertSequence(_S1),
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateSequence(_SF1),
+                RevertSequence(_SF1),
+                RevertRandom(_S2, _S3, _S4),
+                RevertSequence(_S1),
             ],
             id="s1p3s1(1s)",
         ),
@@ -881,14 +779,14 @@ async def test_fails_during_revert_is_in_error_state(
                 ParallelStepGroup(_S2, _S3, _S4, _SF1, _SF2),
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_SF1, _SF2, _S2, _S3, _S4),
+                CreateSequence(_S1),
+                CreateRandom(_SF1, _SF2, _S2, _S3, _S4),
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _S4, _SF1, _SF2),
-                _RevertRandom(_S2, _S3, _S4, _SF2, _SF1),
-                _RevertSequence(_S1),
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4, _SF1, _SF2),
+                RevertRandom(_S2, _S3, _S4, _SF2, _SF1),
+                RevertSequence(_S1),
             ],
             id="s1p4(1s)",
         ),
@@ -901,8 +799,8 @@ async def test_cancelled_finishes_nicely(
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
     operation_name: OperationName,
-    expected_before_cancel_order: list[_BaseExpectedStepOrder],
-    expected_order: list[_BaseExpectedStepOrder],
+    expected_before_cancel_order: list[BaseExpectedStepOrder],
+    expected_order: list[BaseExpectedStepOrder],
     cancel_count: NonNegativeInt,
 ):
     register_operation(operation_name, operation)
@@ -910,14 +808,14 @@ async def test_cancelled_finishes_nicely(
     schedule_id = await start_operation(selected_app, operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
-    await _ensure_expected_order(steps_call_order, expected_before_cancel_order)
+    await ensure_expected_order(steps_call_order, expected_before_cancel_order)
 
     # cancel in parallel multiple times (worst case)
     await asyncio.gather(
         *[cancel_operation(selected_app, schedule_id) for _ in range(cancel_count)]
     )
 
-    await _ensure_expected_order(steps_call_order, expected_order)
+    await ensure_expected_order(steps_call_order, expected_order)
 
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
@@ -936,10 +834,10 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
                     _S1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
                 ),
             ],
-            [_CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
+            [CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
             [
-                *[_CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
-                _RevertSequence(_S1),
+                *[CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
+                RevertSequence(_S1),
             ],
             id="s1(r)",
         ),
@@ -952,10 +850,10 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
                     wait_before_repeat=_FAST_REPEAT_INTERVAL,
                 ),
             ],
-            [_CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
+            [CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
             [
-                *[_CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
-                _RevertRandom(_S1, _S2),
+                *[CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
+                RevertRandom(_S1, _S2),
             ],
             id="p2(r)",
         ),
@@ -965,10 +863,10 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
                     _RS1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
                 ),
             ],
-            [_CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
+            [CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
             [
-                *[_CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
-                _RevertSequence(_RS1),
+                *[CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
+                RevertSequence(_RS1),
             ],
             id="s1(rf)",
         ),
@@ -981,10 +879,10 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
                     wait_before_repeat=_FAST_REPEAT_INTERVAL,
                 ),
             ],
-            [_CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
+            [CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
             [
-                *[_CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
-                _RevertRandom(_RS1, _RS2),
+                *[CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
+                RevertRandom(_RS1, _RS2),
             ],
             id="p2(rf)",
         ),
@@ -997,22 +895,22 @@ async def test_repeating_step(
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
     operation_name: OperationName,
-    expected_before_cancel_order: list[_BaseExpectedStepOrder],
-    expected_order: list[_BaseExpectedStepOrder],
+    expected_before_cancel_order: list[BaseExpectedStepOrder],
+    expected_order: list[BaseExpectedStepOrder],
 ):
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
     assert isinstance(schedule_id, ScheduleId)
 
-    await _ensure_expected_order(
+    await ensure_expected_order(
         steps_call_order, expected_before_cancel_order, use_only_first_entries=True
     )
 
     # cancelling stops the loop and causes revert to run
     await cancel_operation(selected_app, schedule_id)
 
-    await _ensure_expected_order(
+    await ensure_expected_order(
         steps_call_order, expected_order, use_only_last_entries=True
     )
 
@@ -1030,9 +928,9 @@ async def test_repeating_step(
                 SingleStepGroup(_WMI1),
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _S4),
-                _CreateSequence(_WMI1),
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateSequence(_WMI1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1056,9 +954,9 @@ async def test_repeating_step(
                 ParallelStepGroup(_S9, _S10),  # will be ignored
             ],
             [
-                _CreateSequence(_S1),
-                _CreateRandom(_S2, _S3, _S4),
-                _CreateRandom(_WMI1, _WMI2, _S5, _S6, _S7),
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateRandom(_WMI1, _WMI2, _S5, _S6, _S7),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1086,7 +984,7 @@ async def test_wait_for_manual_intervention(
     register_operation: Callable[[OperationName, Operation], None],
     operation: Operation,
     operation_name: OperationName,
-    expected_order: list[_BaseExpectedStepOrder],
+    expected_order: list[BaseExpectedStepOrder],
     expected_keys: set[str],
 ):
     register_operation(operation_name, operation)
@@ -1096,7 +994,7 @@ async def test_wait_for_manual_intervention(
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
 
-    await _ensure_expected_order(steps_call_order, expected_order)
+    await ensure_expected_order(steps_call_order, expected_order)
 
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
@@ -1120,7 +1018,7 @@ async def test_wait_for_manual_intervention(
                 "bs__c_req_1": _CTX_VALUE,  # required by create
             },
             [
-                _CreateSequence(RPCtxS1),
+                CreateSequence(RPCtxS1),
             ],
             id="s1",
         ),
@@ -1133,7 +1031,7 @@ async def test_wait_for_manual_intervention(
                 "bs__c_req_2": _CTX_VALUE,  # required by create
             },
             [
-                _CreateRandom(RPCtxS1, RPCtxS2),
+                CreateRandom(RPCtxS1, RPCtxS2),
             ],
             id="p2",
         ),
@@ -1146,8 +1044,8 @@ async def test_wait_for_manual_intervention(
                 "bs_revert_r_req_1": _CTX_VALUE,  # not created autmatically since crete fails
             },
             [
-                _CreateSequence(RPCtxR1),
-                _RevertSequence(RPCtxR1),
+                CreateSequence(RPCtxR1),
+                RevertSequence(RPCtxR1),
             ],
             id="s1(1r)",
         ),
@@ -1162,8 +1060,8 @@ async def test_wait_for_manual_intervention(
                 "bs_revert_r_req_2": _CTX_VALUE,  # not created autmatically since crete fails
             },
             [
-                _CreateRandom(RPCtxR1, RPCtxR2),
-                _RevertRandom(RPCtxR1, RPCtxR2),
+                CreateRandom(RPCtxR1, RPCtxR2),
+                RevertRandom(RPCtxR1, RPCtxR2),
             ],
             id="p2(2r)",
         ),
@@ -1178,7 +1076,7 @@ async def test_operation_context_usage(
     operation: Operation,
     operation_name: OperationName,
     initial_context: OperationContext,
-    expected_order: list[_BaseExpectedStepOrder],
+    expected_order: list[BaseExpectedStepOrder],
 ):
     caplog.at_level(logging.DEBUG)
     caplog.clear()
@@ -1189,7 +1087,7 @@ async def test_operation_context_usage(
     assert isinstance(schedule_id, ScheduleId)
 
     # NOTE: might fail because it raised ProvidedOperationContextKeysAreMissingError check logs
-    await _ensure_expected_order(steps_call_order, expected_order)
+    await ensure_expected_order(steps_call_order, expected_order)
 
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
@@ -1258,7 +1156,7 @@ async def test_operation_initial_context_using_key_provided_by_step(
                 # `bs__c_req_1` is missing
             },
             [
-                _RevertSequence(RPCtxS1),
+                RevertSequence(RPCtxS1),
             ],
             id="missing_context_key",
         ),
@@ -1270,7 +1168,7 @@ async def test_operation_initial_context_using_key_provided_by_step(
                 "bs__c_req_1": None,
             },
             [
-                _RevertSequence(RPCtxS1),
+                RevertSequence(RPCtxS1),
             ],
             id="context_key_is_none",
         ),
@@ -1285,7 +1183,7 @@ async def test_step_does_not_receive_context_key_or_is_none(
     operation: Operation,
     operation_name: OperationName,
     initial_context: OperationContext,
-    expected_order: list[_BaseExpectedStepOrder],
+    expected_order: list[BaseExpectedStepOrder],
 ):
     caplog.at_level(logging.DEBUG)
     caplog.clear()
@@ -1297,7 +1195,7 @@ async def test_step_does_not_receive_context_key_or_is_none(
 
     await _esnure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
 
-    await _ensure_expected_order(steps_call_order, expected_order)
+    await ensure_expected_order(steps_call_order, expected_order)
 
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
@@ -1331,7 +1229,7 @@ class _BadImplementedStep(BaseStep):
     ) -> ProvidedOperationContext | None:
         print("INJECTED_CONTEXT_C", required_context)
         _ = app
-        _STEPS_CALL_ORDER.append((cls.__name__, _CREATED))
+        _STEPS_CALL_ORDER.append((cls.__name__, CREATED))
 
         if required_context.get("trigger_revert"):
             msg = "triggering revert"
@@ -1355,7 +1253,7 @@ class _BadImplementedStep(BaseStep):
     ) -> ProvidedOperationContext | None:
         print("INJECTED_CONTEXT_R", required_context)
         _ = app
-        _STEPS_CALL_ORDER.append((cls.__name__, _REVERTED))
+        _STEPS_CALL_ORDER.append((cls.__name__, REVERTED))
 
         return cls._get_provided_context(required_context)
 
@@ -1377,8 +1275,8 @@ class _BadImplementedStep(BaseStep):
             },
             f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
             [
-                _CreateSequence(_BadImplementedStep),
-                _RevertSequence(_BadImplementedStep),
+                CreateSequence(_BadImplementedStep),
+                RevertSequence(_BadImplementedStep),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1402,8 +1300,8 @@ class _BadImplementedStep(BaseStep):
             },
             f"{ProvidedOperationContextKeysAreMissingError.__name__}: Provided context {{}} is missing keys {{'a_key'",
             [
-                _CreateSequence(_BadImplementedStep),
-                _RevertSequence(_BadImplementedStep),
+                CreateSequence(_BadImplementedStep),
+                RevertSequence(_BadImplementedStep),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1428,8 +1326,8 @@ class _BadImplementedStep(BaseStep):
             },
             f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
             [
-                _CreateSequence(_BadImplementedStep),
-                _RevertSequence(_BadImplementedStep),
+                CreateSequence(_BadImplementedStep),
+                RevertSequence(_BadImplementedStep),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1453,8 +1351,8 @@ class _BadImplementedStep(BaseStep):
             },
             f"{ProvidedOperationContextKeysAreMissingError.__name__}: Provided context {{}} is missing keys {{'a_key'",
             [
-                _CreateSequence(_BadImplementedStep),
-                _RevertSequence(_BadImplementedStep),
+                CreateSequence(_BadImplementedStep),
+                RevertSequence(_BadImplementedStep),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1478,7 +1376,7 @@ async def test_step_does_not_provide_declared_key_or_is_none(
     operation_name: OperationName,
     initial_context: OperationContext,
     expected_error_str: str,
-    expected_order: list[_BaseExpectedStepOrder],
+    expected_order: list[BaseExpectedStepOrder],
     expected_keys: set[str],
 ):
     caplog.at_level(logging.DEBUG)
@@ -1491,7 +1389,7 @@ async def test_step_does_not_provide_declared_key_or_is_none(
 
     await _esnure_log_mesage(caplog, message=expected_error_str)
 
-    await _ensure_expected_order(steps_call_order, expected_order)
+    await ensure_expected_order(steps_call_order, expected_order)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)

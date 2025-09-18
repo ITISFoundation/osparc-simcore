@@ -1,0 +1,127 @@
+import asyncio
+from copy import deepcopy
+from typing import Any, Final
+
+from simcore_service_dynamic_scheduler.services.generic_scheduler import BaseStep
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
+
+_RETRY_PARAMS: Final[dict[str, Any]] = {
+    "wait": wait_fixed(0.1),
+    "stop": stop_after_delay(5),
+    "retry": retry_if_exception_type(AssertionError),
+}
+
+CREATED: Final[str] = "create"
+REVERTED: Final[str] = "revert"
+
+
+class BaseExpectedStepOrder:
+    def __init__(self, *steps: type[BaseStep]) -> None:
+        self.steps = steps
+
+    def __len__(self) -> int:
+        return len(self.steps)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({', '.join(step.get_step_name() for step in self.steps)})"
+
+
+class CreateSequence(BaseExpectedStepOrder):
+    """steps appear in a sequence as CREATE"""
+
+
+class CreateRandom(BaseExpectedStepOrder):
+    """steps appear in any given order as CREATE"""
+
+
+class RevertSequence(BaseExpectedStepOrder):
+    """steps appear in a sequence as REVERT"""
+
+
+class RevertRandom(BaseExpectedStepOrder):
+    """steps appear in any given order as REVERT"""
+
+
+def _assert_order_sequence(
+    remaning_call_order: list[tuple[str, str]],
+    steps: tuple[type[BaseStep], ...],
+    *,
+    expected: str,
+) -> None:
+    for step in steps:
+        step_name, actual = remaning_call_order.pop(0)
+        assert step_name == step.get_step_name()
+        assert actual == expected
+
+
+def _assert_order_random(
+    remaning_call_order: list[tuple[str, str]],
+    steps: tuple[type[BaseStep], ...],
+    *,
+    expected: str,
+) -> None:
+    steps_names = {step.get_step_name() for step in steps}
+    for _ in steps:
+        step_name, actual = remaning_call_order.pop(0)
+        assert step_name in steps_names
+        assert actual == expected
+        steps_names.remove(step_name)
+
+
+def _asseert_expected_order(
+    steps_call_order: list[tuple[str, str]],
+    expected_order: list[BaseExpectedStepOrder],
+    *,
+    use_only_first_entries: bool,
+    use_only_last_entries: bool,
+) -> None:
+    assert not (use_only_first_entries and use_only_last_entries)
+
+    expected_order_length = sum(len(x) for x in expected_order)
+
+    # below operations are destructive make a copy
+    call_order = deepcopy(steps_call_order)
+
+    if use_only_first_entries:
+        call_order = call_order[:expected_order_length]
+    if use_only_last_entries:
+        call_order = call_order[-expected_order_length:]
+
+    assert len(call_order) == expected_order_length
+
+    for group in expected_order:
+        if isinstance(group, CreateSequence):
+            _assert_order_sequence(call_order, group.steps, expected=CREATED)
+        elif isinstance(group, CreateRandom):
+            _assert_order_random(call_order, group.steps, expected=CREATED)
+        elif isinstance(group, RevertSequence):
+            _assert_order_sequence(call_order, group.steps, expected=REVERTED)
+        elif isinstance(group, RevertRandom):
+            _assert_order_random(call_order, group.steps, expected=REVERTED)
+        else:
+            msg = f"Unknown {group=}"
+            raise NotImplementedError(msg)
+    assert not call_order, f"Left overs {call_order=}"
+
+
+async def ensure_expected_order(
+    detected_calls: list[tuple[str, str]],
+    expected_order: list[BaseExpectedStepOrder],
+    *,
+    use_only_first_entries: bool = False,
+    use_only_last_entries: bool = False,
+) -> None:
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0)  # wait for envet to trigger
+            _asseert_expected_order(
+                detected_calls,
+                expected_order,
+                use_only_first_entries=use_only_first_entries,
+                use_only_last_entries=use_only_last_entries,
+            )

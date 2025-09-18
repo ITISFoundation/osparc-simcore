@@ -8,7 +8,6 @@ from contextlib import (
     AbstractAsyncContextManager,
     asynccontextmanager,
 )
-from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from multiprocessing import Process, Queue
@@ -31,16 +30,17 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     BaseStep,
     Operation,
     OperationName,
+    ParallelStepGroup,
     ProvidedOperationContext,
     RequiredOperationContext,
     SingleStepGroup,
     start_operation,
 )
-from tenacity import (
-    AsyncRetrying,
-    retry_if_exception_type,
-    stop_after_delay,
-    wait_fixed,
+from utils import (
+    BaseExpectedStepOrder,
+    CreateRandom,
+    CreateSequence,
+    ensure_expected_order,
 )
 
 pytest_simcore_core_services_selection = [
@@ -63,13 +63,6 @@ def _get_random_duration_before_interrupting() -> NonNegativeFloat:
     )
     print(f"⏳ Waiting {ranom_duration:.1f} seconds before interrupting...")
     return ranom_duration
-
-
-_RETRY_PARAMS: Final[dict[str, Any]] = {
-    "wait": wait_fixed(0.1),
-    "stop": stop_after_delay(_OPERATION_MIN_RUNTIME.total_seconds() * 3),
-    "retry": retry_if_exception_type(AssertionError),
-}
 
 
 @pytest.fixture
@@ -123,12 +116,12 @@ async def multiprocessing_queue() -> _AsyncMultiprocessingQueue:
 
 class _QueuePoller:
     def __init__(self, queue: _AsyncMultiprocessingQueue) -> None:
-        self._events: list[Any] = []
+        self._events: list[tuple[str, str]] = []
         self.queue = queue
 
     @property
-    def events(self) -> list[Any]:
-        return deepcopy(self._events)
+    def events(self) -> list[tuple[str, str]]:
+        return self._events
 
     async def poll_worker(self) -> None:
         while True:
@@ -260,16 +253,37 @@ class _BS(BaseStep):
 class _BS1(_BS): ...
 
 
+class _BS2(_BS): ...
+
+
+class _BS3(_BS): ...
+
+
 @pytest.mark.parametrize(
-    "operation",
+    "operation, expected_order",
     [
-        [
-            SingleStepGroup(_BS1),
-        ]
+        pytest.param(
+            [
+                SingleStepGroup(_BS1),
+            ],
+            [
+                CreateSequence(_BS1),
+            ],
+            id="s1",
+        ),
+        pytest.param(
+            [
+                ParallelStepGroup(_BS1, _BS2, _BS3),
+            ],
+            [
+                CreateRandom(_BS1, _BS2, _BS3),
+            ],
+            id="p3",
+        ),
     ],
 )
 @pytest.mark.parametrize("interruption_type", list(_InterruptionType))
-async def test_recover_from_interruption(
+async def test_can_recover_from_interruption(
     app_environment: EnvVarsDict,
     interruption_type: _InterruptionType,
     rabbit_client: RabbitMQClient,
@@ -279,6 +293,7 @@ async def test_recover_from_interruption(
     operation: Operation,
     queue_poller: _QueuePoller,
     process_manager: _ProcessManager,
+    expected_order: list[BaseExpectedStepOrder],
 ) -> None:
     operation_name: OperationName = "test_op"
     register_operation(operation_name, operation)
@@ -291,28 +306,26 @@ async def test_recover_from_interruption(
             print(f"[{interruption_type}]: will pause ⚙️")
             async with service_manager.pause_rabbit():
                 print(f"[{interruption_type}]: paused ⏸️")
+
                 await asyncio.sleep(_get_random_duration_before_interrupting())
             print(f"[{interruption_type}]: unpaused ⏯️")
         case _InterruptionType.RABBIT:
             print(f"[{interruption_type}]: will pause ⚙️")
             async with service_manager.pause_rabbit():
                 print(f"[{interruption_type}]: paused ⏸️")
+
                 await asyncio.sleep(_get_random_duration_before_interrupting())
             print(f"[{interruption_type}]: unpaused ⏯️")
         case _InterruptionType.DYNAMIC_SCHEDULER:
             print(f"[{interruption_type}]: will pause ⚙️")
             process_manager.kill()
             print(f"[{interruption_type}]: paused ⏸️")
+
             await asyncio.sleep(_get_random_duration_before_interrupting())
             process_manager.start(operation_name)
             print(f"[{interruption_type}]: unpaused ⏯️")
-
         case _:
             msg = f"Unhandled interruption_type={interruption_type}"
             raise RuntimeError(msg)
 
-    # wait for operation completion
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
-            await asyncio.sleep(0)  # yield control to event loop
-            assert len(queue_poller.events) == 1
+    await ensure_expected_order(queue_poller.events, expected_order)
