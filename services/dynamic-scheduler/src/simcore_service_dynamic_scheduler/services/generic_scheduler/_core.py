@@ -628,4 +628,3 @@ async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
 
 
 # TODO: refeactor this module to make the code more redable
-# TODO: remove setup teardown since it looks like it's not used
