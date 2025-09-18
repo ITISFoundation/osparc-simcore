@@ -7,12 +7,14 @@ from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, ParamSpec, TypeVar
 
+import arrow
 from common_library.async_tools import cancel_wait_task
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 
 from ..background_task import periodic
 from ._client import RedisClientSDK
 from ._constants import (
+    DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
     DEFAULT_SEMAPHORE_TTL,
     DEFAULT_SOCKET_TIMEOUT,
 )
@@ -42,6 +44,7 @@ async def _managed_semaphore_execution(
     if not await semaphore.acquire():
         raise SemaphoreAcquisitionError(name=semaphore_key, capacity=semaphore.capacity)
 
+    lock_acquisition_time = arrow.utcnow()
     try:
         # NOTE: Use TaskGroup for proper exception propagation, this ensures that in case of error the context manager will be properly exited
         # and the semaphore released.
@@ -100,6 +103,18 @@ async def _managed_semaphore_execution(
                     "Look for synchronous code that prevents refreshing the semaphore or asyncio loop overload.",
                 )
             )
+        finally:
+            lock_release_time = arrow.utcnow()
+            locking_time = lock_release_time - lock_acquisition_time
+            if locking_time > DEFAULT_EXPECTED_LOCK_OVERALL_TIME:
+                _logger.warning(
+                    "Semaphore '%s' was held for %s which is longer than expected (%s). "
+                    "TIP: consider reducing the locking time by optimizing the code inside "
+                    "the critical section or increasing the default locking time",
+                    semaphore_key,
+                    locking_time,
+                    DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
+                )
 
 
 def _create_semaphore(
