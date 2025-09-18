@@ -138,6 +138,26 @@ def _raise_if_overwrites_any_operation_provided_key(
             )
 
 
+async def _get_step_error_traceback(
+    store: Store,
+    *,
+    schedule_id: ScheduleId,
+    operation_name: OperationName,
+    current_step_group: BaseStepGroup,
+    group_index: NonNegativeInt,
+    step_name: StepName,
+) -> tuple[StepName, str]:
+    step_proxy = StepStoreProxy(
+        store=store,
+        schedule_id=schedule_id,
+        operation_name=operation_name,
+        step_group_name=current_step_group.get_step_group_name(index=group_index),
+        step_name=step_name,
+        is_creating=False,
+    )
+    return step_name, await step_proxy.get("error_traceback")
+
+
 class Core:
     def __init__(
         self,
@@ -541,25 +561,16 @@ class Core:
         ]
 
         if failed_step_names:
-
-            async def _get_step_error_traceback(  # TODO: extract function form here
-                step_name: StepName,
-            ) -> tuple[StepName, str]:
-                step_proxy = StepStoreProxy(
-                    store=self._store,
-                    schedule_id=schedule_id,
-                    operation_name=operation_name,
-                    step_group_name=current_step_group.get_step_group_name(
-                        index=group_index
-                    ),
-                    step_name=step_name,
-                    is_creating=False,
-                )
-                return step_name, await step_proxy.get("error_traceback")
-
             error_tracebacks: list[tuple[StepName, str]] = await limited_gather(
                 *(
-                    _get_step_error_traceback(step_name)
+                    _get_step_error_traceback(
+                        self._store,
+                        schedule_id=schedule_id,
+                        operation_name=operation_name,
+                        current_step_group=current_step_group,
+                        group_index=group_index,
+                        step_name=step_name,
+                    )
                     for step_name in failed_step_names
                 ),
                 limit=_PARALLEL_STATUS_REQUESTS,
