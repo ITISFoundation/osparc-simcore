@@ -1,9 +1,11 @@
+from typing import Annotated
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=protected-access
 import pydantic
 import pytest
 from faker import Faker
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 from servicelib.celery.models import TaskFilter, TaskUUID
 
 _faker = Faker()
@@ -80,3 +82,22 @@ async def test_create_task_filter_from_task_id():
 def test_task_filter_validator_raises_on_forbidden_chars(bad_data):
     with pytest.raises(pydantic.ValidationError):
         TaskFilter.model_validate(bad_data)
+
+
+async def test_task_owner():
+    class MyFilter(TaskFilter):
+        extra_field: str
+
+    with pytest.raises(pydantic.ValidationError):
+        MyFilter(task_owner="", extra_field="value")
+
+    with pytest.raises(pydantic.ValidationError):
+        MyFilter(task_owner="UPPER_CASE", extra_field="value")
+
+    class MyNextFilter(TaskFilter):
+        task_owner: Annotated[
+            str, StringConstraints(strip_whitespace=True, pattern=r"^the_task_owner$")
+        ]
+
+    with pytest.raises(pydantic.ValidationError):
+        MyNextFilter(task_owner="wrong_owner")

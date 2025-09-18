@@ -44,6 +44,7 @@ class TaskFilter(BaseModel):
     """
 
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
+    task_owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]
 
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:
