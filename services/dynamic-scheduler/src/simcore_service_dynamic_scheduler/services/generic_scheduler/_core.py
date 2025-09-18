@@ -226,6 +226,22 @@ class Core:
         await enqueue_schedule_event(self.app, schedule_id)
         return schedule_id
 
+    async def _set_unexpected_opration_state(
+        self,
+        schedule_id: ScheduleId,
+        operation_error_type: OperationErrorType,
+        message: str,
+    ) -> None:
+        schedule_data_proxy = ScheduleDataStoreProxy(
+            store=self._store, schedule_id=schedule_id
+        )
+        await schedule_data_proxy.set_multiple(
+            {
+                "operation_error_type": operation_error_type,
+                "operation_error_message": message,
+            }
+        )
+
     @asynccontextmanager
     async def _safe_event(self, schedule_id: ScheduleId) -> AsyncIterator[None]:
         try:
@@ -430,6 +446,7 @@ class Core:
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
+        # restaret steps in group
         await limited_gather(
             *(x.remove() for x in step_proxies),
             limit=_PARALLEL_STATUS_REQUESTS,
@@ -612,22 +629,6 @@ class Core:
             direction="revert", steps_statuses=steps_statuses, schedule_id=schedule_id
         )
 
-    async def _set_unexpected_opration_state(
-        self,
-        schedule_id: ScheduleId,
-        operation_error_type: OperationErrorType,
-        message: str,
-    ) -> None:
-        schedule_data_proxy = ScheduleDataStoreProxy(
-            store=self._store, schedule_id=schedule_id
-        )
-        await schedule_data_proxy.set_multiple(
-            {
-                "operation_error_type": operation_error_type,
-                "operation_error_message": message,
-            }
-        )
-
 
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     app.state.generic_scheduler_core = Core(app)
@@ -649,6 +650,3 @@ async def start_operation(
 
 async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
     await get_core(app).cancel_schedule(schedule_id)
-
-
-# TODO: refeactor this module to make the code more redable
