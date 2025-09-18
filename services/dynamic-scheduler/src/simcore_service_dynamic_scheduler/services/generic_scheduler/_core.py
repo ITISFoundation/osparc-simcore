@@ -263,7 +263,7 @@ class Core:
                 step_name=step_name,
                 is_creating=is_creating,
             )
-            with log_context(
+            with log_context(  # noqa: SIM117
                 _logger,
                 logging.DEBUG,
                 f"Cancelling step {step_name=} of {operation_name=} for {schedule_id=}",
