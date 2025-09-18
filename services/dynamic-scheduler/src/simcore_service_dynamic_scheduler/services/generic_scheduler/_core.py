@@ -349,7 +349,16 @@ class Core:
         _logger.debug("Operation completed: steps_statuses=%s", steps_statuses)
 
         # NOTE: at this point all steps are in a final status
-        if is_creating:
+        if step_group.repeat_steps is True:
+            await self._continue_as_repeat_steps(
+                schedule_data_proxy,
+                schedule_id,
+                operation_name,
+                group_index,
+                step_group,
+                group_step_proxies,
+            )
+        elif is_creating:
             await self._continue_handling_as_creation(
                 steps_statuses,
                 schedule_data_proxy,
@@ -358,7 +367,6 @@ class Core:
                 group_index,
                 step_group,
                 operation,
-                group_step_proxies,
             )
         else:
             await self._continue_handling_as_reverting(
@@ -370,6 +378,52 @@ class Core:
                 step_group,
             )
 
+    async def _continue_as_repeat_steps(
+        self,
+        schedule_data_proxy: ScheduleDataStoreProxy,
+        schedule_id: ScheduleId,
+        operation_name: OperationName,
+        group_index: NonNegativeInt,
+        current_step_group: BaseStepGroup,
+        group_step_proxies: dict[StepName, StepStoreProxy],
+    ) -> None:
+        _logger.debug(
+            "REPEATING step_group='%s' in operation_name='%s' for schedule_id='%s'",
+            current_step_group.get_step_group_name(index=group_index),
+            operation_name,
+            schedule_id,
+        )
+        # wait before repeating
+        await asyncio.sleep(current_step_group.wait_before_repeat.total_seconds())
+
+        step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
+
+        requeired_steps_statuses = await _get_steps_statuses(step_proxies)
+        if any(
+            status == StepStatus.CANCELLED
+            for status in requeired_steps_statuses.values()
+        ):
+            # was cancelled
+            await schedule_data_proxy.set("is_creating", value=False)
+            await enqueue_schedule_event(self.app, schedule_id)
+            return
+
+        await limited_gather(
+            *(x.remove() for x in step_proxies),
+            limit=_PARALLEL_STATUS_REQUESTS,
+        )
+
+        group_proxy = StepGroupProxy(
+            store=self._store,
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            step_group_name=current_step_group.get_step_group_name(index=group_index),
+            is_creating=True,
+        )
+        await group_proxy.remove()
+
+        await enqueue_schedule_event(self.app, schedule_id)
+
     async def _continue_handling_as_creation(
         self,
         steps_statuses: dict[StepName, StepStatus],
@@ -379,51 +433,7 @@ class Core:
         group_index: NonNegativeInt,
         current_step_group: BaseStepGroup,
         operation: Operation,
-        group_step_proxies: dict[StepName, StepStoreProxy],
     ) -> None:
-        # does step require repeating?
-        if current_step_group.repeat_steps is True:
-            # TODO: all this could even be a separate function since the repeat looks like a thing on its own
-            _logger.debug(
-                "REPEATING step_group='%s' in operation_name='%s' for schedule_id='%s'",
-                current_step_group.get_step_group_name(index=group_index),
-                operation_name,
-                schedule_id,
-            )
-            # wait before repeating
-            await asyncio.sleep(current_step_group.wait_before_repeat.total_seconds())
-
-            step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
-
-            requeired_steps_statuses = await _get_steps_statuses(step_proxies)
-            if any(
-                status == StepStatus.CANCELLED
-                for status in requeired_steps_statuses.values()
-            ):
-                # was cancelled
-                await schedule_data_proxy.set("is_creating", value=False)
-                await enqueue_schedule_event(self.app, schedule_id)
-                return
-
-            await limited_gather(
-                *(x.remove() for x in step_proxies),
-                limit=_PARALLEL_STATUS_REQUESTS,
-            )
-
-            group_proxy = StepGroupProxy(
-                store=self._store,
-                schedule_id=schedule_id,
-                operation_name=operation_name,
-                step_group_name=current_step_group.get_step_group_name(
-                    index=group_index
-                ),
-                is_creating=True,
-            )
-            await group_proxy.remove()
-
-            await enqueue_schedule_event(self.app, schedule_id)
-            return
-
         # if all in SUUCESS -> move to next
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
             try:
