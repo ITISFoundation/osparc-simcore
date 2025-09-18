@@ -1521,6 +1521,3 @@ async def test_step_does_not_provide_declared_key_or_is_none(
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
-
-
-# TODO: tests to make sure all this still works with interruptions! -> Redis restart or Rabbit restart
