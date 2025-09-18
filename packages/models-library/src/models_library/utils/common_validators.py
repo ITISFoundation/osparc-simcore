@@ -18,12 +18,15 @@ SEE https://docs.pydantic.dev/usage/validators/#reuse-validators
 import enum
 import functools
 import operator
-from typing import Any
+from typing import Any, Final
 
 from common_library.json_serialization import json_loads
 from orjson import JSONDecodeError
 from pydantic import BaseModel, BeforeValidator
 from pydantic.alias_generators import to_camel
+
+WILDCARD_CHARS: Final[set[str]] = {"*", "?"}
+MIN_NON_WILDCARD_CHARS: Final[int] = 3
 
 
 def trim_string_before(max_length: int) -> BeforeValidator:
@@ -145,3 +148,21 @@ def to_camel_recursive(data: dict[str, Any]) -> dict[str, Any]:
         else:
             new_dict[new_key] = value
     return new_dict
+
+
+def ensure_pattern_has_enough_characters(
+    min_non_wildcard_chars: int = MIN_NON_WILDCARD_CHARS,
+    wildcard_chars: set[str] | None = None,
+) -> BeforeValidator:
+    if wildcard_chars is None:
+        wildcard_chars = WILDCARD_CHARS
+
+    def _validator(value):
+        non_wildcard_chars = len([c for c in value if c not in wildcard_chars])
+
+        if non_wildcard_chars < min_non_wildcard_chars:
+            msg = f"Pattern {value} must contain at least {min_non_wildcard_chars} non-wildcard characters, got {non_wildcard_chars}"
+            raise ValueError(msg)
+        return value
+
+    return BeforeValidator(_validator)
