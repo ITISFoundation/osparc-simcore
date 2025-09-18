@@ -6,8 +6,8 @@ from functools import cached_property
 from typing import Final
 
 from aiohttp import web
+from common_library.logging.logging_base import get_log_record_extra
 from models_library.users import UserID
-from servicelib.logging_base import get_log_record_extra
 from servicelib.logging_utils import log_context
 
 from .models import ResourcesDict, UserSession

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from celery_library.errors import TaskNotFoundError
 from common_library.exclude import as_dict_exclude_none
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -33,7 +34,6 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from servicelib.celery.models import TaskMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from simcore_service_api_server.models.schemas.functions import (
     FunctionJobCreationTaskStatus,
 )
@@ -137,15 +137,16 @@ class FunctionJobTaskClientService:
             pagination_offset=pagination_offset, pagination_limit=pagination_limit
         )
 
-        function_jobs_list_ws, meta = (
-            await self._web_rpc_client.list_function_jobs_with_status(
-                user_id=self.user_id,
-                product_name=self.product_name,
-                filter_by_function_id=filter_by_function_id,
-                filter_by_function_job_ids=filter_by_function_job_ids,
-                filter_by_function_job_collection_id=filter_by_function_job_collection_id,
-                **pagination_kwargs,
-            )
+        (
+            function_jobs_list_ws,
+            meta,
+        ) = await self._web_rpc_client.list_function_jobs_with_status(
+            user_id=self.user_id,
+            product_name=self.product_name,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+            **pagination_kwargs,
         )
 
         for function_job_wso in function_jobs_list_ws:
@@ -297,7 +298,6 @@ class FunctionJobTaskClientService:
         function_job: RegisteredFunctionJob,
         stored_job_outputs: FunctionOutputs | None,
     ) -> FunctionOutputs:
-
         if stored_job_outputs is not None:
             return stored_job_outputs
 
@@ -360,7 +360,6 @@ class FunctionJobTaskClientService:
         parent_project_uuid: ProjectID | None = None,
         parent_node_id: NodeID | None = None,
     ) -> RegisteredFunctionJob:
-
         job_inputs = await self._function_job_service.create_function_job_inputs(
             function=function, function_inputs=function_inputs
         )

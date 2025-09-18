@@ -1,5 +1,5 @@
 import logging
-from typing import Any, TypedDict
+from typing import Any, Final, TypedDict
 
 from common_library.error_codes import ErrorCodeStr
 from common_library.errors_classes import OsparcErrorMixin
@@ -8,6 +8,8 @@ from common_library.json_serialization import json_dumps, representation_encoder
 from .logging_base import LogExtra, get_log_record_extra
 
 _logger = logging.getLogger(__name__)
+
+_MAX_LOGGED_CAUSES: Final[int] = 10
 
 
 def create_troubleshooting_log_message(
@@ -36,7 +38,7 @@ def create_troubleshooting_log_message(
             seen.add(id(current))
             causes.append(f"[{type(current).__name__}]'{current}'")
             current = getattr(current, "__cause__", None)
-            if len(causes) > 10:  # Prevent excessive chains
+            if len(causes) > _MAX_LOGGED_CAUSES:  # Prevent excessive chains
                 causes.append("[... truncated]")
                 break
         return " <- ".join(causes)

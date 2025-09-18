@@ -8,6 +8,7 @@ import re
 from typing import cast
 
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_webserver.projects import (
     ProjectDocument,
     ProjectDocumentVersion,
@@ -15,7 +16,6 @@ from models_library.api_schemas_webserver.projects import (
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects import ProjectType as ProjectTypeAPI
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_context
 from servicelib.redis import (
     PROJECT_DB_UPDATE_REDIS_LOCK_KEY,

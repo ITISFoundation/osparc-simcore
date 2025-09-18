@@ -8,9 +8,9 @@ from collections.abc import AsyncIterator
 from datetime import timedelta
 
 from aiohttp import web
+from common_library.logging.logging_base import get_log_record_extra
 from models_library.users import UserID
 from servicelib.background_task_utils import exclusive_periodic
-from servicelib.logging_base import get_log_record_extra
 from servicelib.logging_utils import log_context
 
 from ..login import login_service

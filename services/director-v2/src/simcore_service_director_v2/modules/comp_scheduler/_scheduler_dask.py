@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 import arrow
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
@@ -22,7 +23,6 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis._client import RedisClientSDK
 from servicelib.redis._semaphore_decorator import (
