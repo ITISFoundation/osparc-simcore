@@ -112,7 +112,6 @@ async def _on_message(
             )
             with log_catch(_logger, reraise=False):
                 await _nack_message(message_handler, max_retries_upon_error, message)
-            raise
 
 
 @dataclass
