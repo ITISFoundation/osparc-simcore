@@ -278,8 +278,8 @@ def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
                 revert_provided_keys.add(key)
 
         if (
-            k == len(operation) - 1
-            and step_group.repeat_steps is True
+            step_group.repeat_steps is True
+            and k == len(operation) - 1
             and any(
                 step.wait_for_manual_intervention()
                 for step in step_group.get_step_subgroup_to_run()
