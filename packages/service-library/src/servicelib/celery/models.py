@@ -36,9 +36,9 @@ class TaskOwnerMetadata(BaseModel):
         class MyTaskFilter(TaskFilter):
             user_id: int | Wildcard
             product_name: int | Wildcard
-            client_name: str
+            owner: str
 
-        Listing tasks using the filter `MyTaskFilter(user_id=123, product_name=Wildcard(), client_name="my-app")` will return all tasks with
+        Listing tasks using the filter `MyTaskFilter(user_id=123, product_name=Wildcard(), owner="my-app")` will return all tasks with
         user_id 123, any product_name submitted from my-app.
 
     If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model). I.e. one can recover the metadata from the task:
@@ -47,7 +47,7 @@ class TaskOwnerMetadata(BaseModel):
     """
 
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
-    task_owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]
+    owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]
 
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:

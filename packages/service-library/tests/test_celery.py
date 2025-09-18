@@ -91,10 +91,10 @@ async def test_task_owner():
         extra_field: str
 
     with pytest.raises(pydantic.ValidationError):
-        MyFilter(task_owner="", extra_field="value")
+        MyFilter(owner="", extra_field="value")
 
     with pytest.raises(pydantic.ValidationError):
-        MyFilter(task_owner="UPPER_CASE", extra_field="value")
+        MyFilter(owner="UPPER_CASE", extra_field="value")
 
     class MyNextFilter(TaskOwnerMetadata):
         task_owner: Annotated[

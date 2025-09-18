@@ -36,6 +36,6 @@ pydantic_types_to_register = (
 class ApiWorkerTaskFilter(TaskOwnerMetadata):
     user_id: UserID
     product_name: ProductName
-    task_owner: Annotated[
+    owner: Annotated[
         str, StringConstraints(pattern=rf"^{APP_NAME}$"), Field(frozen=True)
     ] = APP_NAME
