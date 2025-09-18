@@ -185,8 +185,12 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
         )
         if possibly_lost_scheduled_pipelines:
             _logger.error(
-                "found %d lost pipelines, they will be re-scheduled now",
+                "found %d lost pipelines, they will be re-scheduled now. '%s'",
                 len(possibly_lost_scheduled_pipelines),
+                ", ".join(
+                    f"{run.project_uuid=}|{run.iteration=}"
+                    for run in possibly_lost_scheduled_pipelines
+                ),
             )
 
         rabbitmq_client = get_rabbitmq_client(app)

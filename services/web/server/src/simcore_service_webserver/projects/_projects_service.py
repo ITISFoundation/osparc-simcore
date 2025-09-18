@@ -22,6 +22,7 @@ from uuid import uuid4
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
@@ -84,7 +85,6 @@ from servicelib.common_headers import (
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.logging_base import get_log_record_extra
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc

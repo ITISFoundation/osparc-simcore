@@ -14,6 +14,7 @@ from typing import Annotated, Any, Final, Literal, TypeAlias
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import (
     BaseModel,
     Field,
@@ -23,7 +24,6 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from simcore_postgres_database.models.classifiers import group_classifiers
 
 from ..db.plugin import get_database_engine_legacy

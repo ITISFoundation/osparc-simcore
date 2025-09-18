@@ -8,9 +8,9 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 
 from ..background_task import periodic
-from ..logging_errors import create_troubleshooting_log_kwargs
 from ._client import RedisClientSDK
 from ._constants import (
     DEFAULT_SEMAPHORE_TTL,

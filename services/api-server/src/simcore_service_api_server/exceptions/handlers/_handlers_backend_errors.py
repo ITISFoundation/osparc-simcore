@@ -1,7 +1,7 @@
 import logging
 
 from common_library.error_codes import create_error_code
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
 from starlette.requests import Request
 from starlette.responses import JSONResponse

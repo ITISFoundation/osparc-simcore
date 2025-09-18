@@ -13,11 +13,11 @@ from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from common_library.error_codes import ErrorCodeStr, create_error_code
 from common_library.json_serialization import json_dumps, json_loads
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
 from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
 
-from ..logging_errors import create_troubleshooting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..rest_responses import is_enveloped_from_text
@@ -202,7 +202,6 @@ def _handle_exception_as_http_error(
 
 
 def error_middleware_factory(api_version: str) -> Middleware:
-
     @web.middleware
     async def _middleware_handler(request: web.Request, handler: Handler):
         """

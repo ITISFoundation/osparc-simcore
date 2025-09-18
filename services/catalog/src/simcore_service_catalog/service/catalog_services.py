@@ -4,6 +4,7 @@ import logging
 from contextlib import suppress
 from typing import Literal, TypeVar
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     MyServiceGet,
@@ -22,9 +23,6 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import HttpUrl
-from servicelib.logging_errors import (
-    create_troubleshooting_log_kwargs,
-)
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogInconsistentError,
@@ -108,7 +106,6 @@ def _to_latest_get_schema(
     access_rights_db: list[ServiceAccessRightsDB],
     service_manifest: ServiceMetaDataPublished,
 ) -> LatestServiceGet:
-
     assert len(service_db.history) == 0  # nosec
 
     return LatestServiceGet.model_validate(
@@ -397,7 +394,6 @@ async def get_catalog_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
-
     access_rights = await check_catalog_service_permissions(
         repo=repo,
         product_name=product_name,
@@ -449,7 +445,6 @@ async def update_catalog_service(
     service_version: ServiceVersion,
     update: ServiceUpdateV2,
 ) -> ServiceGetV2:
-
     if is_function_service(service_key):
         raise CatalogForbiddenError(
             name=f"function service {service_key}:{service_version}",
@@ -482,7 +477,6 @@ async def update_catalog_service(
 
     # Updates service_access_rights (they can be added/removed/modified)
     if update.access_rights:
-
         # before
         previous_gids = [r.gid for r in access_rights]
 
@@ -602,7 +596,6 @@ async def batch_get_user_services(
         ]
     ],
 ) -> list[MyServiceGet]:
-
     services_access_rights = await repo.batch_get_services_access_rights(
         key_versions=ids, product_name=product_name
     )
@@ -612,7 +605,6 @@ async def batch_get_user_services(
 
     my_services = []
     for service_key, service_version in ids:
-
         # Evaluate user's access-rights to this service key:version
         access_rights = services_access_rights.get((service_key, service_version), [])
         my_access_rights = ServiceGroupAccessRightsV2(execute=False, write=False)
@@ -695,7 +687,6 @@ async def list_user_service_release_history(
     # result options
     include_compatibility: bool = False,
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:
-
     total_count, history = await repo.get_service_history_page(
         # NOTE: that the service history might be different for each user
         # since access rights are defined on a version basis (i.e. one use can have access to v1 but ot to v2)

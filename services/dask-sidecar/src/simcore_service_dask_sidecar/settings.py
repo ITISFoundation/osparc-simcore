@@ -2,10 +2,10 @@ from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, cast
 
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings

@@ -2,6 +2,7 @@ import logging
 from typing import Annotated, Any
 
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
@@ -16,7 +17,6 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
-from servicelib.logging_errors import create_troubleshooting_log_kwargs
 from simcore_service_api_server.models.domain.celery_models import ApiWorkerTaskFilter
 
 from ...models.schemas.base import ApiServerEnvelope
@@ -57,7 +57,6 @@ async def list_tasks(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
-
     task_manager = get_task_manager(app)
     task_filter = ApiWorkerTaskFilter(
         user_id=user_id,

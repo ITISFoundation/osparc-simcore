@@ -5,9 +5,8 @@ from datetime import datetime
 from functools import wraps
 from typing import Any, Final, ParamSpec, TypeVar
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
-
-from .logging_errors import create_troubleshooting_log_kwargs
 
 _logger = logging.getLogger(__name__)
 
