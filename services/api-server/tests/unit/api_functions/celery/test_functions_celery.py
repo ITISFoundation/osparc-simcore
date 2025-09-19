@@ -56,7 +56,9 @@ from simcore_service_api_server.celery_worker.worker_tasks.functions_tasks impor
 )
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
-from simcore_service_api_server.models.domain.celery_models import ApiWorkerTaskFilter
+from simcore_service_api_server.models.domain.celery_models import (
+    ApiServerOwnerMetadata,
+)
 from simcore_service_api_server.models.domain.functions import (
     PreRegisteredFunctionJobData,
 )
@@ -280,7 +282,7 @@ async def test_celery_error_propagation(
     with_api_server_celery_worker: TestWorkController,
 ):
 
-    task_filter = ApiWorkerTaskFilter(
+    task_filter = ApiServerOwnerMetadata(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
     )

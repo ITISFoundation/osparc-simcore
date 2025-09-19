@@ -47,7 +47,7 @@ from .exceptions.function_errors import (
     FunctionJobCacheNotFoundError,
 )
 from .models.api_resources import JobLinks
-from .models.domain.celery_models import ApiWorkerTaskFilter
+from .models.domain.celery_models import ApiServerOwnerMetadata
 from .models.schemas.functions import FunctionJobCreationTaskStatus
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
@@ -79,7 +79,7 @@ async def _celery_task_status(
 ) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
         return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
-    task_filter = ApiWorkerTaskFilter(
+    task_filter = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
@@ -379,7 +379,7 @@ class FunctionJobTaskClientService:
         )
 
         # run function in celery task
-        task_filter = ApiWorkerTaskFilter(
+        task_filter = ApiServerOwnerMetadata(
             user_id=user_identity.user_id, product_name=user_identity.product_name
         )
 

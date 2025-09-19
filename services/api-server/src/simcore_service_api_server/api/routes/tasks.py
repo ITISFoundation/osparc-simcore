@@ -17,7 +17,9 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
-from simcore_service_api_server.models.domain.celery_models import ApiWorkerTaskFilter
+from simcore_service_api_server.models.domain.celery_models import (
+    ApiServerOwnerMetadata,
+)
 
 from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
@@ -58,7 +60,7 @@ async def list_tasks(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiWorkerTaskFilter(
+    task_filter = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
@@ -103,7 +105,7 @@ async def get_task_status(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiWorkerTaskFilter(
+    task_filter = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
@@ -141,7 +143,7 @@ async def cancel_task(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiWorkerTaskFilter(
+    task_filter = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
@@ -176,7 +178,7 @@ async def get_task_result(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiWorkerTaskFilter(
+    task_filter = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )

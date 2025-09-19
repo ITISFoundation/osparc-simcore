@@ -33,7 +33,7 @@ pydantic_types_to_register = (
 )
 
 
-class ApiWorkerTaskFilter(OwnerMetadata):
+class ApiServerOwnerMetadata(OwnerMetadata):
     user_id: UserID
     product_name: ProductName
     owner: Annotated[
