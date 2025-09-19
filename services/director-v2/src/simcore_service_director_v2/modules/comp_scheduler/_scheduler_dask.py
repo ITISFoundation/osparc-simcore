@@ -12,7 +12,6 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
-from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from models_library.clusters import BaseCluster
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
@@ -370,9 +369,8 @@ class DaskScheduler(BaseCompScheduler):
                     self._process_task_result(
                         task,
                         result,
-                        comp_run.metadata,
                         iteration,
-                        comp_run.run_id,
+                        comp_run,
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ),
@@ -381,6 +379,7 @@ class DaskScheduler(BaseCompScheduler):
                 with log_catch(_logger, reraise=False):
                     task_can_be_cleaned, job_id = await future
                     if task_can_be_cleaned:
+                        assert job_id is not None  # nosec
                         await client.release_task_result(job_id)
 
     async def _handle_successful_run(
@@ -529,102 +528,100 @@ class DaskScheduler(BaseCompScheduler):
         self,
         task: TaskStateTracker,
         result: BaseException | TaskOutputData,
-        run_metadata: RunMetadataDict,
         iteration: Iteration,
-        run_id: PositiveInt,
-    ) -> tuple[bool, str]:
+        comp_run: CompRunsAtDB,
+    ) -> tuple[bool, str | None]:
         """Returns True and the job ID if the task was successfully processed and can be released from the Dask cluster."""
-        _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
-        assert task.current.job_id  # nosec
-        (
-            _service_key,
-            _service_version,
-            user_id,
-            project_id,
-            node_id,
-        ) = parse_dask_job_id(task.current.job_id)
+        with log_context(
+            _logger, logging.DEBUG, msg=f"{comp_run.run_id=}, {task=}, {result=}"
+        ):
+            log_error_context = {
+                "user_id": comp_run.user_id,
+                "project_id": comp_run.project_uuid,
+                "node_id": task.current.node_id,
+                "job_id": task.current.job_id,
+            }
 
-        assert task.current.project_id == project_id  # nosec
-        assert task.current.node_id == node_id  # nosec
-        log_error_context = {
-            "user_id": user_id,
-            "project_id": project_id,
-            "node_id": node_id,
-            "job_id": task.current.job_id,
-        }
+            if isinstance(result, TaskOutputData):
+                (
+                    task_final_state,
+                    simcore_platform_status,
+                    task_errors,
+                    task_completed,
+                ) = await self._handle_successful_run(
+                    task.current, result, log_error_context
+                )
 
-        if isinstance(result, TaskOutputData):
-            (
-                task_final_state,
-                simcore_platform_status,
-                task_errors,
-                task_completed,
-            ) = await self._handle_successful_run(
-                task.current, result, log_error_context
+            elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
+                (
+                    task_final_state,
+                    simcore_platform_status,
+                    task_errors,
+                    task_completed,
+                ) = await self._handle_computational_retrieval_error(
+                    task.current, comp_run.user_id, result, log_error_context
+                )
+            elif isinstance(result, ComputationalBackendNotConnectedError):
+                (
+                    task_final_state,
+                    simcore_platform_status,
+                    task_errors,
+                    task_completed,
+                ) = await self._handle_computational_backend_not_connected_error(
+                    task.current, result, log_error_context
+                )
+            else:
+                (
+                    task_final_state,
+                    simcore_platform_status,
+                    task_errors,
+                    task_completed,
+                ) = await self._handle_task_error(
+                    task.current, result, log_error_context
+                )
+
+                # we need to remove any invalid files in the storage
+                await clean_task_output_and_log_files_if_invalid(
+                    self.db_engine,
+                    comp_run.user_id,
+                    comp_run.project_uuid,
+                    task.current.node_id,
+                )
+
+            if task_completed:
+                # resource tracking
+                await publish_service_resource_tracking_stopped(
+                    self.rabbitmq_client,
+                    ServiceRunID.get_resource_tracking_run_id_for_computational(
+                        comp_run.user_id,
+                        comp_run.project_uuid,
+                        task.current.node_id,
+                        iteration,
+                    ),
+                    simcore_platform_status=simcore_platform_status,
+                )
+                # instrumentation
+                await publish_service_stopped_metrics(
+                    self.rabbitmq_client,
+                    user_id=comp_run.user_id,
+                    simcore_user_agent=comp_run.metadata.get(
+                        "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+                    ),
+                    task=task.current,
+                    task_final_state=task_final_state,
+                )
+
+            await CompTasksRepository(self.db_engine).update_project_tasks_state(
+                task.current.project_id,
+                comp_run.run_id,
+                [task.current.node_id],
+                task_final_state if task_completed else task.previous.state,
+                errors=task_errors,
+                optional_progress=1 if task_completed else None,
+                optional_stopped=arrow.utcnow().datetime if task_completed else None,
             )
 
-        elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
-            (
-                task_final_state,
-                simcore_platform_status,
-                task_errors,
-                task_completed,
-            ) = await self._handle_computational_retrieval_error(
-                task.current, user_id, result, log_error_context
-            )
-        elif isinstance(result, ComputationalBackendNotConnectedError):
-            (
-                task_final_state,
-                simcore_platform_status,
-                task_errors,
-                task_completed,
-            ) = await self._handle_computational_backend_not_connected_error(
-                task.current, result, log_error_context
-            )
-        else:
-            (
-                task_final_state,
-                simcore_platform_status,
-                task_errors,
-                task_completed,
-            ) = await self._handle_task_error(task.current, result, log_error_context)
-
-            # we need to remove any invalid files in the storage
-            await clean_task_output_and_log_files_if_invalid(
-                self.db_engine, user_id, project_id, node_id
-            )
-
-        if task_completed:
-            # resource tracking
-            await publish_service_resource_tracking_stopped(
-                self.rabbitmq_client,
-                ServiceRunID.get_resource_tracking_run_id_for_computational(
-                    user_id, project_id, node_id, iteration
-                ),
-                simcore_platform_status=simcore_platform_status,
-            )
-            # instrumentation
-            await publish_service_stopped_metrics(
-                self.rabbitmq_client,
-                user_id=user_id,
-                simcore_user_agent=run_metadata.get(
-                    "simcore_user_agent", UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-                ),
-                task=task.current,
-                task_final_state=task_final_state,
-            )
-
-        await CompTasksRepository(self.db_engine).update_project_tasks_state(
-            task.current.project_id,
-            run_id,
-            [task.current.node_id],
-            task_final_state if task_completed else task.previous.state,
-            errors=task_errors,
-            optional_progress=1 if task_completed else None,
-            optional_stopped=arrow.utcnow().datetime if task_completed else None,
-        )
-
-        return task_completed, task.current.job_id
+            return task_completed, task.current.job_id
 
     async def _task_progress_change_handler(
         self, event: tuple[UnixTimestamp, Any]
