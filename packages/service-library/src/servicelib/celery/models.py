@@ -19,7 +19,7 @@ _WILDCARD: Final[str] = "*"
 _FORBIDDEN_CHARS = (_WILDCARD, _TASK_ID_KEY_DELIMITATOR, "=")
 
 
-class Wildcard:
+class Wildcard(BaseModel):
     def __str__(self) -> str:
         return _WILDCARD
 
