@@ -123,11 +123,7 @@ async def _start_and_mark_as_started(
         expected_steps_count=expected_steps_count,
     )
     await step_proxy.set_multiple(
-        {
-            "deferred_created": True,
-            "status": StepStatus.SCHEDULED,
-            "success_processed": False,  # TODO: remove this one, not used more than likely
-        }
+        {"deferred_created": True, "status": StepStatus.SCHEDULED}
     )
 
 

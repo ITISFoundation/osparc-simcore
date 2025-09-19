@@ -205,7 +205,6 @@ async def test_step_store_proxy_workflow(
             "error_traceback": "mock_traceback",
             "requires_manual_intervention": True,
             "deferred_created": True,
-            "success_processed": False,
         }
     )
     await _assert_keys(store, {hash_key})
@@ -218,7 +217,6 @@ async def test_step_store_proxy_workflow(
             "error_traceback",
             "requires_manual_intervention",
             "deferred_created",
-            "success_processed",
         },
     )
 
@@ -232,7 +230,6 @@ async def test_step_store_proxy_workflow(
             "error_traceback",
             "requires_manual_intervention",
             "deferred_created",
-            "success_processed",
         )
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
@@ -335,7 +332,6 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
             "deferred_task_uid": TaskUID("mytask"),
             "requires_manual_intervention": True,
             "error_traceback": "mock_traceback",
-            "success_processed": False,
         }
     )
 
