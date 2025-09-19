@@ -48,15 +48,12 @@ from ...utils.rabbitmq import (
     publish_service_stopped_metrics,
 )
 from ..clusters_keeper import get_or_create_on_demand_cluster
-from ..dask_client import DaskClient, PublishedComputationTask
+from ..dask_client import DaskClient
 from ..dask_clients_pool import DaskClientsPool
 from ..db.repositories.comp_runs import (
     CompRunsRepository,
 )
 from ..db.repositories.comp_tasks import CompTasksRepository
-from ._constants import (
-    MAX_CONCURRENT_PIPELINE_SCHEDULING,
-)
 from ._models import TaskStateTracker
 from ._scheduler_base import BaseCompScheduler
 from ._utils import (
@@ -68,6 +65,7 @@ _logger = logging.getLogger(__name__)
 _DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{project_id}:{run_id}"
 _TASK_RETRIEVAL_ERROR_TYPE: Final[str] = "task-result-retrieval-timeout"
 _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: Final[str] = "check_time"
+_PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
 
 
 @asynccontextmanager
@@ -149,37 +147,24 @@ class DaskScheduler(BaseCompScheduler):
                 RunningState.PENDING,
             )
             # each task is started independently
-            results: list[list[PublishedComputationTask]] = await limited_gather(
-                *(
-                    client.send_computation_tasks(
-                        user_id=user_id,
-                        project_id=project_id,
-                        tasks={node_id: task.image},
-                        hardware_info=task.hardware_info,
-                        callback=wake_up_callback,
-                        metadata=comp_run.metadata,
-                        resource_tracking_run_id=ServiceRunID.get_resource_tracking_run_id_for_computational(
-                            user_id, project_id, node_id, comp_run.iteration
-                        ),
-                    )
-                    for node_id, task in scheduled_tasks.items()
-                ),
-                log=_logger,
-                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
-            )
+            for node_id, task in scheduled_tasks.items():
+                published_tasks = await client.send_computation_tasks(
+                    user_id=user_id,
+                    project_id=project_id,
+                    tasks={node_id: task.image},
+                    hardware_info=task.hardware_info,
+                    callback=wake_up_callback,
+                    metadata=comp_run.metadata,
+                    resource_tracking_run_id=ServiceRunID.get_resource_tracking_run_id_for_computational(
+                        user_id, project_id, node_id, comp_run.iteration
+                    ),
+                )
 
             # update the database so we do have the correct job_ids there
-            await limited_gather(
-                *(
-                    comp_tasks_repo.update_project_task_job_id(
-                        project_id, task.node_id, comp_run.run_id, task.job_id
-                    )
-                    for task_sents in results
-                    for task in task_sents
-                ),
-                log=_logger,
-                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
-            )
+            for task in published_tasks:
+                await comp_tasks_repo.update_project_task_job_id(
+                    project_id, task.node_id, comp_run.run_id, task.job_id
+                )
 
     async def _get_tasks_status(
         self,
@@ -208,7 +193,7 @@ class DaskScheduler(BaseCompScheduler):
         tasks: list[CompTaskAtDB],
         comp_run: CompRunsAtDB,
     ) -> None:
-        task_progresses = []
+        task_progress_events = []
         try:
             async with _cluster_dask_client(
                 user_id,
@@ -218,42 +203,33 @@ class DaskScheduler(BaseCompScheduler):
                 run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
-                task_progresses = [
+                task_progress_events = [
                     t
                     for t in await client.get_tasks_progress(
                         [f"{t.job_id}" for t in tasks],
                     )
                     if t is not None
                 ]
-            await limited_gather(
-                *(
-                    CompTasksRepository(self.db_engine).update_project_task_progress(
-                        t.task_owner.project_id,
-                        t.task_owner.node_id,
-                        comp_run.run_id,
-                        t.progress,
-                    )
-                    for t in task_progresses
-                ),
-                log=_logger,
-                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
-            )
+            for progress_event in task_progress_events:
+                await CompTasksRepository(self.db_engine).update_project_task_progress(
+                    progress_event.task_owner.project_id,
+                    progress_event.task_owner.node_id,
+                    comp_run.run_id,
+                    progress_event.progress,
+                )
 
         except ComputationalBackendOnDemandNotReadyError:
             _logger.info("The on demand computational backend is not ready yet...")
 
         comp_tasks_repo = CompTasksRepository(self.db_engine)
+        for task in task_progress_events:
+            await comp_tasks_repo.update_project_task_progress(
+                task.task_owner.project_id,
+                task.task_owner.node_id,
+                comp_run.run_id,
+                task.progress,
+            )
         await limited_gather(
-            *(
-                comp_tasks_repo.update_project_task_progress(
-                    t.task_owner.project_id,
-                    t.task_owner.node_id,
-                    comp_run.run_id,
-                    t.progress,
-                )
-                for t in task_progresses
-                if t
-            ),
             *(
                 publish_service_progress(
                     self.rabbitmq_client,
@@ -262,11 +238,10 @@ class DaskScheduler(BaseCompScheduler):
                     node_id=t.task_owner.node_id,
                     progress=t.progress,
                 )
-                for t in task_progresses
-                if t
+                for t in task_progress_events
             ),
             log=_logger,
-            limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
+            limit=_PUBLICATION_CONCURRENCY_LIMIT,
         )
 
     async def _release_resources(self, comp_run: CompRunsAtDB) -> None:
@@ -300,25 +275,14 @@ class DaskScheduler(BaseCompScheduler):
                 run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
-                await limited_gather(
-                    *(
-                        client.abort_computation_task(t.job_id)
-                        for t in tasks
-                        if t.job_id
-                    ),
-                    log=_logger,
-                    limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
-                )
-                # tasks that have no-worker must be unpublished as these are blocking forever
-                await limited_gather(
-                    *(
-                        client.release_task_result(t.job_id)
-                        for t in tasks
-                        if t.state is RunningState.WAITING_FOR_RESOURCES and t.job_id
-                    ),
-                    log=_logger,
-                    limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
-                )
+                for t in tasks:
+                    if not t.job_id:
+                        _logger.warning("%s has no job_id, cannot be stopped", t)
+                        continue
+                    await client.abort_computation_task(t.job_id)
+                    # tasks that have no-worker must be unpublished as these are blocking forever
+                    if t.state is RunningState.WAITING_FOR_RESOURCES:
+                        await client.release_task_result(t.job_id)
 
     async def _process_completed_tasks(
         self,
@@ -342,7 +306,7 @@ class DaskScheduler(BaseCompScheduler):
                 ),
                 reraise=False,
                 log=_logger,
-                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
+                limit=1,  # to avoid overloading the dask scheduler
             )
             async for future in limited_as_completed(
                 (
@@ -354,7 +318,7 @@ class DaskScheduler(BaseCompScheduler):
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ),
-                limit=MAX_CONCURRENT_PIPELINE_SCHEDULING,
+                limit=10,  # this is not accessing the dask-scheduelr (only db)
             ):
                 with log_catch(_logger, reraise=False):
                     task_can_be_cleaned, job_id = await future
