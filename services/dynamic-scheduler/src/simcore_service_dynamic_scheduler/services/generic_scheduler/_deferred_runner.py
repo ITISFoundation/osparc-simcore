@@ -65,7 +65,7 @@ def get_step_group_proxy(context: DeferredContext) -> StepGroupProxy:
     )
 
 
-def _get_opration_context_proxy(context: DeferredContext) -> OperationContextProxy:
+def get_opration_context_proxy(context: DeferredContext) -> OperationContextProxy:
     app: FastAPI = context["app"]
     schedule_id: ScheduleId = context["schedule_id"]
     operation_name: OperationName = context["operation_name"]
@@ -174,7 +174,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
 
         step = _get_step(context)
 
-        opration_context_proxy = _get_opration_context_proxy(context)
+        opration_context_proxy = get_opration_context_proxy(context)
 
         if is_creating:
             required_context = await opration_context_proxy.get_required_context(
