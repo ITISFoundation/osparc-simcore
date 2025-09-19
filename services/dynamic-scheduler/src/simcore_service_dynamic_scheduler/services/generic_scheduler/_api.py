@@ -30,8 +30,7 @@ async def restart_create_operation_step_in_manual_intervention(
 ) -> None:
     """
     restarts a step waiting for manual intervention
-    NOTE: to be used only with steps with wait_for_manual_intervention=True
-    and only to restart the `create`
+    NOTE: to be used only with steps where `wait_for_manual_intervention()` is True
     """
     await get_core(app).restart_operation_step_in_error(
         schedule_id, step_name, in_manual_intervention=True

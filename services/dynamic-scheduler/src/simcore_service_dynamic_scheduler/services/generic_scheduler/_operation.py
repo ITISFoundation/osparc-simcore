@@ -352,7 +352,7 @@ class OperationRegistry:
                 registerd_operations=list(cls._OPERATIONS.keys()),
             )
 
-        steps_names = list(cls._OPERATIONS[operation_name]["steps"].keys())
+        steps_names = set(cls._OPERATIONS[operation_name]["steps"].keys())
         if step_name not in steps_names:
             raise StepNotFoundInoperationError(
                 step_name=step_name,
