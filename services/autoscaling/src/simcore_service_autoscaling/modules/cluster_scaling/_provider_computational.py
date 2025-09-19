@@ -88,7 +88,13 @@ class ComputationalAutoscalingProvider:
 
     def get_task_required_resources(self, task) -> Resources:
         assert self  # nosec
-        return utils.resources_from_dask_task(task)
+        task_required_resources = utils.resources_from_dask_task(task)
+        # ensure cpu is set at least to 1 as dask-workers use 1 thread per CPU
+        if task_required_resources.cpus < 1.0:
+            task_required_resources = task_required_resources.model_copy(
+                update={"cpus": 1.0}
+            )
+        return task_required_resources
 
     async def get_task_defined_instance(
         self, app: FastAPI, task
