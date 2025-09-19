@@ -34,11 +34,15 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     restart_revert_operation_step_in_error,
     start_operation,
 )
+from simcore_service_dynamic_scheduler.services.generic_scheduler._core import get_core
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     InitialOperationContextKeyNotAllowedError,
     OperationContextValueIsNoneError,
     ProvidedOperationContextKeysAreMissingError,
+    StepNameNotInCurrentGroupError,
+    StepNotInErrorStateError,
+    StepNotWaitingForManualInterventionError,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     OperationContext,
@@ -1231,7 +1235,58 @@ async def test_restart_revert_operation_step_in_error(
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-# TODO: add tests for all errors raised by `restart_operation_step_in_error`
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize("in_manual_intervention", [True, False])
+async def test_errors_with_restart_operation_step_in_error(
+    preserve_caplog_for_async_logging: None,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation_name: OperationName,
+    in_manual_intervention: bool,
+):
+    operation: Operation = [
+        SingleStepGroup(_S1),
+        ParallelStepGroup(_S2, _S3, _S4),
+        ParallelStepGroup(_SF1, _FCR1),  # sleeps here forever
+    ]
+    register_operation(operation_name, operation)
+
+    schedule_id = await start_operation(selected_app, operation_name, {})
+    assert isinstance(schedule_id, ScheduleId)
+
+    await ensure_expected_order(
+        steps_call_order,
+        [
+            CreateSequence(_S1),
+            CreateRandom(_S2, _S3, _S4),
+            CreateRandom(_SF1, _FCR1),
+        ],
+    )
+
+    with pytest.raises(StepNameNotInCurrentGroupError):
+        await get_core(selected_app).restart_operation_step_in_error(
+            schedule_id,
+            _S5.get_step_name(),
+            in_manual_intervention=in_manual_intervention,
+        )
+
+    with pytest.raises(StepNotInErrorStateError):
+        await get_core(selected_app).restart_operation_step_in_error(
+            schedule_id,
+            _SF1.get_step_name(),
+            in_manual_intervention=in_manual_intervention,
+        )
+
+    if not in_manual_intervention:
+        # force restart of step as it would be in manual intervention
+        # this is not allowed
+        with pytest.raises(StepNotWaitingForManualInterventionError):
+            await get_core(selected_app).restart_operation_step_in_error(
+                schedule_id,
+                _FCR1.get_step_name(),
+                in_manual_intervention=True,
+            )
 
 
 @pytest.mark.parametrize("app_count", [10])
