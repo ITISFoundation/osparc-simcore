@@ -90,6 +90,14 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
     return []
 
 
+def list_pre_pulled_images_tag_keys(tags: EC2Tags) -> list[AWSTagKey]:
+    return [
+        TypeAdapter(AWSTagKey).validate_python(key)
+        for key in tags
+        if PRE_PULLED_IMAGES_RE.match(key)
+    ]
+
+
 def ec2_warm_buffer_startup_script(
     ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
 ) -> str:
