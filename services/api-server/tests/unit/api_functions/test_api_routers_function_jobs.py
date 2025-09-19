@@ -294,7 +294,7 @@ async def test_get_function_job_status(
 
     def _mock_task_manager(*args, **kwargs) -> CeleryTaskManager:
         async def _get_task_status(
-            task_uuid: TaskUUID, task_filter: OwnerMetadata
+            task_uuid: TaskUUID, owner_metadata: OwnerMetadata
         ) -> TaskStatus:
             assert f"{task_uuid}" == job_creation_task_id
             return TaskStatus(
