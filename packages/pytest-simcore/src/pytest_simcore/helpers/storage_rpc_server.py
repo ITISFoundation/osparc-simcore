@@ -12,6 +12,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
 from pytest_mock import MockType
 from servicelib.celery.models import OwnerMetadata
@@ -28,6 +29,7 @@ class StorageSideEffects:
         paths_to_export: list[PathToExport],
         export_as: Literal["path", "download_link"],
         owner_metadata: OwnerMetadata,
+        user_id: UserID
     ) -> tuple[AsyncJobGet, OwnerMetadata]:
         assert rabbitmq_rpc_client
         assert owner_metadata
@@ -37,8 +39,5 @@ class StorageSideEffects:
         async_job_get = TypeAdapter(AsyncJobGet).validate_python(
             AsyncJobGet.model_json_schema()["examples"][0],
         )
-        async_job_filter = TypeAdapter(OwnerMetadata).validate_python(
-            OwnerMetadata.model_json_schema()["examples"][0],
-        )
 
-        return async_job_get, async_job_filter
+        return async_job_get, owner_metadata
