@@ -10,12 +10,10 @@ from datetime import datetime
 from typing import Annotated
 
 from common_library.error_codes import ErrorCodeStr
-from conftest import product_name
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import Field, StringConstraints
 from servicelib.celery.models import OwnerMetadata
-from test_models_api_keys import user_id
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )

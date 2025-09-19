@@ -54,7 +54,7 @@ class AsyncJobOwnerMetadata(BaseModel):
                 {
                     "product_name": "osparc",
                     "user_id": 123,
-                    "task_owner": "web_client",
+                    "owner": "web_client",
                 }
             ]
         },
