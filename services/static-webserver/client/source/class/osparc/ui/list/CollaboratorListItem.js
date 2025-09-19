@@ -18,6 +18,12 @@
 qx.Class.define("osparc.ui.list.CollaboratorListItem", {
   extend: osparc.ui.list.ListItem,
 
+  construct: function() {
+    this.base(arguments);
+
+    this.setCursor("default");
+  },
+
   properties: {
     collabType: {
       check: [
@@ -169,7 +175,9 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       // highlight me
       const email = osparc.auth.Data.getInstance().getEmail();
       if (value && value.includes(email)) {
-        this.addState("selected");
+        this.setBackgroundColor("background-selected");
+      } else {
+        this.setBackgroundColor("background-main-2");
       }
     },
 

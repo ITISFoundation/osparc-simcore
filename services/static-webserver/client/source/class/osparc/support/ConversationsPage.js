@@ -27,6 +27,9 @@ qx.Class.define("osparc.support.ConversationsPage", {
     this.getChildControl("conversations-list");
     this.getChildControl("ask-a-question-button");
     this.getChildControl("book-a-call-button");
+    if (osparc.utils.Utils.isDevelopmentPlatform()) {
+      this.getChildControl("book-a-call-button-3rd");
+    }
   },
 
   events: {
@@ -63,7 +66,7 @@ qx.Class.define("osparc.support.ConversationsPage", {
             allowGrowX: false,
             center: true,
           });
-          control.addListener("execute", () => this.fireDataEvent("createConversation", "askAQuestion"), this);
+          control.addListener("execute", () => this.fireDataEvent("createConversation", osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION), this);
           this.getChildControl("buttons-layout").add(control);
           break;
         case "book-a-call-button":
@@ -72,7 +75,16 @@ qx.Class.define("osparc.support.ConversationsPage", {
             allowGrowX: false,
             center: true,
           });
-          control.addListener("execute", () => this.fireDataEvent("createConversation", "bookACall"), this);
+          control.addListener("execute", () => this.fireDataEvent("createConversation", osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL), this);
+          this.getChildControl("buttons-layout").add(control);
+          break;
+        case "book-a-call-button-3rd":
+          control = new qx.ui.form.Button(this.tr("Book a Call 3rd"), "@FontAwesome5Solid/phone/14").set({
+            appearance: "strong-button",
+            allowGrowX: false,
+            center: true,
+          });
+          control.addListener("execute", () => this.fireDataEvent("createConversation", osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL_3RD), this);
           this.getChildControl("buttons-layout").add(control);
           break;
       }

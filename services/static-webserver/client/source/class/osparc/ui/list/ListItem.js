@@ -151,7 +151,9 @@ qx.Class.define("osparc.ui.list.ListItem", {
           break;
         case "title":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            selectable: true,
+            rich: true,
           });
           this._add(control, {
             row: 0,
@@ -161,7 +163,8 @@ qx.Class.define("osparc.ui.list.ListItem", {
         case "subtitle":
           control = new qx.ui.basic.Label().set({
             font: "text-13",
-            rich: true
+            selectable: true,
+            rich: true,
           });
           this._add(control, {
             row: 1,
