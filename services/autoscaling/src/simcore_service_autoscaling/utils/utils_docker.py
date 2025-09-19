@@ -36,6 +36,7 @@ from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..constants import (
+    DOCKER_COMPOSE_CMD,
     DOCKER_COMPOSE_PULL_SCRIPT_PATH,
     PRE_PULL_COMPOSE_PATH,
 )
@@ -468,7 +469,7 @@ def get_docker_pull_images_on_start_bash_command(
     write_docker_compose_pull_script_cmd = " ".join(
         [
             "echo",
-            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{_DOCKER_COMPOSE_CMD} --project-name=autoscaleprepull --file={_PRE_PULL_COMPOSE_PATH} pull --ignore-pull-failures"',
+            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{DOCKER_COMPOSE_CMD} --project-name=autoscaleprepull --file={PRE_PULL_COMPOSE_PATH} pull --ignore-pull-failures"',
             ">",
             f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
         ]
