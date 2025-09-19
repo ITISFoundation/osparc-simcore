@@ -82,7 +82,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
           const indicator = this.getChildControl("disk-indicator")
           control = new qx.ui.basic.Label().set({
             value: "",
-            font: "text-13",
+            font: "text-12",
             textColor: "contrasted-text-light",
             alignX: "center",
             alignY: "middle",
