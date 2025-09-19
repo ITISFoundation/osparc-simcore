@@ -217,7 +217,9 @@ class _BS(BaseStep):
         return 10
 
     @classmethod
-    async def get_create_timeout(cls, context: DeferredContext) -> timedelta:
+    async def get_create_wait_between_attempts(
+        cls, context: DeferredContext
+    ) -> timedelta:
         _ = context
         return _STEP_SLEEP_DURATION
 

@@ -63,8 +63,10 @@ class BaseStep(ABC):
         return _DEFAULT_STEP_RETRIES
 
     @classmethod
-    async def get_create_timeout(cls, context: DeferredContext) -> timedelta:
-        """[optional] timeout between retires case of creation"""
+    async def get_create_wait_between_attempts(
+        cls, context: DeferredContext
+    ) -> timedelta:
+        """[optional] wait time between retires case of creation"""
         assert context  # nosec
         return _DEFAULT_STEP_TIMEOUT
 
@@ -113,7 +115,9 @@ class BaseStep(ABC):
         return _DEFAULT_STEP_RETRIES
 
     @classmethod
-    async def get_revert_timeout(cls, context: DeferredContext) -> timedelta:
+    async def get_revert_wait_between_attempts(
+        cls, context: DeferredContext
+    ) -> timedelta:
         """[optional] timeout between retires in case of failure"""
         assert context  # nosec
         return _DEFAULT_STEP_TIMEOUT

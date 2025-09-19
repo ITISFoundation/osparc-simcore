@@ -154,9 +154,9 @@ class DeferredRunner(BaseDeferredHandler[None]):
         is_creating = context["is_creating"]
         step = _get_step(context)
         return (
-            await step.get_create_timeout(context)
+            await step.get_create_wait_between_attempts(context)
             if is_creating
-            else await step.get_revert_timeout(context)
+            else await step.get_revert_wait_between_attempts(context)
         )
 
     @classmethod
