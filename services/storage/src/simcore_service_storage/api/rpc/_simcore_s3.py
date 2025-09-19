@@ -2,10 +2,10 @@ from typing import Literal
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
-    AsyncJobOwnerMetadata,
 )
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.users import UserID
 from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
@@ -26,17 +26,17 @@ router = RPCRouter()
 @router.expose(reraise_if_error_type=None)
 async def copy_folders_from_project(
     task_manager: TaskManager,
-    job_filter: AsyncJobOwnerMetadata,
+    owner_metadata: OwnerMetadata,
     body: FoldersBody,
+    user_id: UserID,
 ) -> AsyncJobGet:
     task_name = deep_copy_files_from_project.__name__
-    task_filter = OwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
         execution_metadata=ExecutionMetadata(
             name=task_name,
         ),
-        owner_metadata=task_filter,
-        user_id=job_filter.user_id,
+        owner_metadata=owner_metadata,
+        user_id=user_id,
         body=body,
     )
 
@@ -46,9 +46,10 @@ async def copy_folders_from_project(
 @router.expose()
 async def start_export_data(
     task_manager: TaskManager,
-    job_filter: AsyncJobOwnerMetadata,
+    owner_metadata: OwnerMetadata,
     paths_to_export: list[PathToExport],
     export_as: Literal["path", "download_link"],
+    user_id: UserID,
 ) -> AsyncJobGet:
     if export_as == "path":
         task_name = export_data.__name__
@@ -56,15 +57,14 @@ async def start_export_data(
         task_name = export_data_as_download_link.__name__
     else:
         raise ValueError(f"Invalid export_as value: {export_as}")
-    task_filter = OwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
         execution_metadata=ExecutionMetadata(
             name=task_name,
             ephemeral=False,
             queue=TasksQueue.CPU_BOUND,
         ),
-        owner_metadata=task_filter,
-        user_id=job_filter.user_id,
+        owner_metadata=owner_metadata,
+        user_id=user_id,
         paths_to_export=paths_to_export,
     )
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)

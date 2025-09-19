@@ -1,8 +1,6 @@
 from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
-from models_library.products import ProductName
-from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from ..progress_bar import ProgressReport
@@ -42,23 +40,3 @@ class AsyncJobGet(BaseModel):
 class AsyncJobAbort(BaseModel):
     result: bool
     job_id: AsyncJobId
-
-
-class AsyncJobOwnerMetadata(BaseModel):
-    """Data for controlling access to an async job"""
-
-    model_config = ConfigDict(
-        extra="allow",
-        json_schema_extra={
-            "examples": [
-                {
-                    "product_name": "osparc",
-                    "user_id": 123,
-                    "owner": "web_client",
-                }
-            ]
-        },
-    )
-    user_id: UserID
-    product_name: ProductName
-    owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]
