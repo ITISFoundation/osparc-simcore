@@ -1,6 +1,6 @@
 import datetime
 from enum import StrEnum
-from typing import Annotated, Any, Final, Protocol, Self, TypeAlias, TypeVar
+from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
@@ -15,13 +15,10 @@ TaskName: TypeAlias = Annotated[
 ]
 TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
-_WILDCARD: Final[str] = "*"
-_FORBIDDEN_CHARS = (_WILDCARD, _TASK_ID_KEY_DELIMITATOR, "=")
+_FORBIDDEN_KEYS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
+_FORBIDDEN_VALUES = (_TASK_ID_KEY_DELIMITATOR, "=")
 
-
-class Wildcard(BaseModel):
-    def __str__(self) -> str:
-        return _WILDCARD
+Wildcard: TypeAlias = Literal["*"]
 
 
 class OwnerMetadata(BaseModel):
@@ -38,7 +35,7 @@ class OwnerMetadata(BaseModel):
             product_name: int | Wildcard
             owner = "storage-service"
 
-        Listing tasks using the filter `StorageOwnerMetadata(user_id=123, product_name=Wildcard())` will return all tasks with
+        Listing tasks using the filter `StorageOwnerMetadata(user_id=123, product_name="*")` will return all tasks with
         user_id 123, any product_name submitted from storage-service.
 
     If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model). I.e. one can recover the metadata from the task:
@@ -52,12 +49,10 @@ class OwnerMetadata(BaseModel):
     def _check_valid_filters(self) -> Self:
         for key, value in self.model_dump().items():
             # forbidden keys
-            if any(x in key for x in _FORBIDDEN_CHARS):
+            if any(x in key for x in _FORBIDDEN_KEYS):
                 raise ValueError(f"Invalid filter key: '{key}'")
             # forbidden values
-            if not isinstance(value, Wildcard) and any(
-                x in f"{value}" for x in _FORBIDDEN_CHARS
-            ):
+            if any(x in f"{value}" for x in _FORBIDDEN_VALUES):
                 raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
         return self
 

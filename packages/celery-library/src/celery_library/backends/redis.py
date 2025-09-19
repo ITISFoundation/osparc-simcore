@@ -11,7 +11,6 @@ from servicelib.celery.models import (
     Task,
     TaskID,
     TaskInfoStore,
-    Wildcard,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
@@ -87,7 +86,7 @@ class RedisTaskInfoStore:
 
     async def list_tasks(self, task_filter: OwnerMetadata) -> list[Task]:
         search_key = _CELERY_TASK_INFO_PREFIX + task_filter.create_task_id(
-            task_uuid=Wildcard()
+            task_uuid="*"
         )
 
         keys: list[str] = []

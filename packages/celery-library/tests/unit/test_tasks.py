@@ -251,7 +251,7 @@ async def test_filtering_listing_tasks(
 
         search_filter = MyFilter(
             user_id=user_id,
-            product_name=Wildcard(),
+            product_name="*",
             owner=_owner,
         )
         tasks = await celery_task_manager.list_tasks(search_filter)
