@@ -147,10 +147,6 @@ class BaseStepGroup(ABC):
         """returns the name of this step group"""
 
     @abstractmethod
-    def get_steps_names(self) -> list[StepName]:
-        """return sorted list of StepName"""
-
-    @abstractmethod
     def get_step_subgroup_to_run(self) -> StepsSubGroup:
         """returns subgroups of steps to run"""
 
@@ -180,9 +176,6 @@ class SingleStepGroup(BaseStepGroup):
 
     def get_step_group_name(self, *, index: NonNegativeInt) -> StepGroupName:
         return f"{index}S{'R' if self.repeat_steps else ''}"
-
-    def get_steps_names(self) -> list[StepName]:
-        return [self._step.get_step_name()]
 
     def get_step_subgroup_to_run(self) -> StepsSubGroup:
         return TypeAdapter(StepsSubGroup).validate_python((self._step,))
@@ -215,9 +208,6 @@ class ParallelStepGroup(BaseStepGroup):
 
     def get_step_group_name(self, *, index: NonNegativeInt) -> StepGroupName:
         return f"{index}P{'R' if self.repeat_steps else ''}"
-
-    def get_steps_names(self) -> list[StepName]:
-        return sorted(x.get_step_name() for x in self._steps)
 
     def get_step_subgroup_to_run(self) -> StepsSubGroup:
         return TypeAdapter(StepsSubGroup).validate_python(tuple(self._steps))
