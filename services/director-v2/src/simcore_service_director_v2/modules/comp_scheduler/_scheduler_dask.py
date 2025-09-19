@@ -528,8 +528,8 @@ class DaskScheduler(BaseCompScheduler):
         ):
             log_error_context = {
                 "user_id": comp_run.user_id,
-                "project_id": comp_run.project_uuid,
-                "node_id": task.current.node_id,
+                "project_id": f"{comp_run.project_uuid}",
+                "node_id": f"{task.current.node_id}",
                 "job_id": task.current.job_id,
             }
 
