@@ -5,7 +5,7 @@ from typing import Annotated
 import pydantic
 import pytest
 from faker import Faker
-from pydantic import BaseModel, StringConstraints
+from pydantic import StringConstraints
 from servicelib.celery.models import OwnerMetadata, TaskUUID
 
 _faker = Faker()
@@ -20,6 +20,7 @@ def task_filter_data() -> dict[str, str | int | bool | None | list[str]]:
         "none": None,
         "uuid": _faker.uuid4(),
         "list": [_faker.word() for _ in range(3)],
+        "owner": _faker.word().lower(),
     }
 
 
@@ -33,12 +34,9 @@ async def test_task_filter_serialization(
 
 async def test_task_filter_sorting_key_not_serialized():
 
-    keys = ["a", "b"]
+    keys = ["a", "b", "owner"]
     task_filter = OwnerMetadata.model_validate(
-        {
-            "a": _faker.random_int(),
-            "b": _faker.word(),
-        }
+        {"a": _faker.random_int(), "b": _faker.word(), "owner": _faker.word().lower()}
     )
     expected_key = ":".join([f"{k}={getattr(task_filter, k)}" for k in sorted(keys)])
     assert task_filter._build_task_id_prefix() == expected_key
@@ -55,16 +53,17 @@ async def test_task_filter_task_uuid(
 
 async def test_create_task_filter_from_task_id():
 
-    class MyModel(BaseModel):
+    class MyModel(OwnerMetadata):
         _int: int
         _bool: bool
         _str: str
         _list: list[str]
 
-    mymodel = MyModel(_int=1, _bool=True, _str="test", _list=["a", "b"])
-    task_filter = OwnerMetadata.model_validate(mymodel.model_dump())
+    mymodel = MyModel(
+        _int=1, _bool=True, _str="test", _list=["a", "b"], owner="myowner"
+    )
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = task_filter.create_task_id(task_uuid)
+    task_id = mymodel.create_task_id(task_uuid)
     assert OwnerMetadata.recreate_as_model(task_id=task_id, schema=MyModel) == mymodel
 
 

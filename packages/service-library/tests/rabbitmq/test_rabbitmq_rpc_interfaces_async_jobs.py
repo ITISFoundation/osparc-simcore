@@ -166,7 +166,7 @@ async def test_async_jobs_methods(
             rpc_client,
             rpc_namespace=namespace,
             job_id=job_id,
-            job_filter=owner_metadata,
+            owner_metadata=owner_metadata,
         )
 
 
