@@ -29,7 +29,7 @@ from ._store import (
 )
 
 
-def _get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
+def get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
     app: FastAPI = context["app"]
     schedule_id: ScheduleId = context["schedule_id"]
     operation_name: OperationName = context["operation_name"]
@@ -48,7 +48,7 @@ def _get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
     )
 
 
-def _get_step_group_proxy(context: DeferredContext) -> StepGroupProxy:
+def get_step_group_proxy(context: DeferredContext) -> StepGroupProxy:
     app: FastAPI = context["app"]
     schedule_id: ScheduleId = context["schedule_id"]
     operation_name: OperationName = context["operation_name"]
@@ -90,7 +90,7 @@ async def _send_group_done_check_event(context: DeferredContext) -> None:
     expected_steps_count: NonNegativeInt = context["expected_steps_count"]
 
     if (
-        await _get_step_group_proxy(context).increment_and_get_done_steps_count()
+        await get_step_group_proxy(context).increment_and_get_done_steps_count()
         == expected_steps_count
     ):
         await enqueue_schedule_event(app, schedule_id)
@@ -161,7 +161,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
 
     @classmethod
     async def on_created(cls, task_uid: TaskUID, context: DeferredContext) -> None:
-        await _get_step_store_proxy(context).set_multiple(
+        await get_step_store_proxy(context).set_multiple(
             {"deferred_task_uid": task_uid, "status": StepStatus.CREATED}
         )
 
@@ -170,7 +170,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
         app = context["app"]
         is_creating = context["is_creating"]
 
-        await _get_step_store_proxy(context).set("status", StepStatus.RUNNING)
+        await get_step_store_proxy(context).set("status", StepStatus.RUNNING)
 
         step = _get_step(context)
 
@@ -208,7 +208,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
     @classmethod
     async def on_result(cls, result: None, context: DeferredContext) -> None:
         _ = result
-        await _get_step_store_proxy(context).set("status", StepStatus.SUCCESS)
+        await get_step_store_proxy(context).set("status", StepStatus.SUCCESS)
 
         await _send_group_done_check_event(context)
 
@@ -216,7 +216,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
     async def on_finished_with_error(
         cls, error: TaskResultError, context: DeferredContext
     ) -> None:
-        await _get_step_store_proxy(context).set_multiple(
+        await get_step_store_proxy(context).set_multiple(
             {"status": StepStatus.FAILED, "error_traceback": error.format_error()}
         )
 
@@ -224,6 +224,6 @@ class DeferredRunner(BaseDeferredHandler[None]):
 
     @classmethod
     async def on_cancelled(cls, context: DeferredContext) -> None:
-        await _get_step_store_proxy(context).set("status", StepStatus.CANCELLED)
+        await get_step_store_proxy(context).set("status", StepStatus.CANCELLED)
 
         await _send_group_done_check_event(context)

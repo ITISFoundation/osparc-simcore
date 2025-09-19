@@ -58,7 +58,11 @@ class BaseStep(ABC):
 
     @classmethod
     async def get_create_retries(cls, context: DeferredContext) -> int:
-        """[optional] amount of retires in case of creation"""
+        """
+        [optional] amount of retires in case of creation
+        HINT: you can use `get_step_group_proxy(context)` and `get_step_store_proxy(context)`
+        to implement custom retry strategy
+        """
         assert context  # nosec
         return _DEFAULT_STEP_RETRIES
 
@@ -66,7 +70,11 @@ class BaseStep(ABC):
     async def get_create_wait_between_attempts(
         cls, context: DeferredContext
     ) -> timedelta:
-        """[optional] wait time between retires case of creation"""
+        """
+        [optional] wait time between retires case of creation
+        HINT: you can use `get_step_group_proxy(context)` and `get_step_store_proxy(context)`
+        to implement custom retry strategy
+        """
         assert context  # nosec
         return _DEFAULT_STEP_TIMEOUT
 
@@ -110,7 +118,11 @@ class BaseStep(ABC):
 
     @classmethod
     async def get_revert_retries(cls, context: DeferredContext) -> int:
-        """[optional] amount of retires in case of failure"""
+        """
+        [optional] amount of retires in case of failure
+        HINT: you can use `get_step_group_proxy(context)` and `get_step_store_proxy(context)`
+        to implement custom retry strategy
+        """
         assert context  # nosec
         return _DEFAULT_STEP_RETRIES
 
@@ -118,7 +130,11 @@ class BaseStep(ABC):
     async def get_revert_wait_between_attempts(
         cls, context: DeferredContext
     ) -> timedelta:
-        """[optional] timeout between retires in case of failure"""
+        """
+        [optional] timeout between retires in case of failure
+        HINT: you can use `get_step_group_proxy(context)` and `get_step_store_proxy(context)`
+        to implement custom retry strategy
+        """
         assert context  # nosec
         return _DEFAULT_STEP_TIMEOUT
 
