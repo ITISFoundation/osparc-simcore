@@ -426,7 +426,7 @@ class DaskClient:
         return await limited_gather(
             *(_get_task_progress(job_id) for job_id in job_ids),
             log=_logger,
-            limit=_MAX_CONCURRENT_CLIENT_CONNECTIONS,
+            limit=1,
         )
 
     async def get_tasks_status(self, job_ids: Iterable[str]) -> list[RunningState]:
@@ -509,7 +509,7 @@ class DaskClient:
         return await limited_gather(
             *(_get_task_state(job_id) for job_id in job_ids),
             log=_logger,
-            limit=_MAX_CONCURRENT_CLIENT_CONNECTIONS,
+            limit=1,
         )
 
     async def abort_computation_task(self, job_id: str) -> None:
