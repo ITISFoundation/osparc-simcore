@@ -268,11 +268,6 @@ class Core:
                 message=log_kwargs["msg"],
             )
 
-    async def safe_on_schedule_event(self, schedule_id: ScheduleId) -> None:
-        # NOTE: do not call this directly, you are doing something wrong
-        async with self._safe_event(schedule_id):
-            await self._on_schedule_event(schedule_id)
-
     async def cancel_schedule(self, schedule_id: ScheduleId) -> None:
         """
         Cancels and runs destruction of the operation
@@ -417,6 +412,11 @@ class Core:
             is_creating=is_creating,
             expected_steps_count=len(step_group),
         )
+
+    async def safe_on_schedule_event(self, schedule_id: ScheduleId) -> None:
+        # NOTE: do not call this directly, you are doing something wrong
+        async with self._safe_event(schedule_id):
+            await self._on_schedule_event(schedule_id)
 
     async def _on_schedule_event(self, schedule_id: ScheduleId) -> None:
         schedule_data_proxy = ScheduleDataStoreProxy(
