@@ -36,5 +36,6 @@ class StorageService:
             owner_metadata=ApiServerOwnerMetadata(
                 user_id=self._user_id, product_name=self._product_name
             ),
+            user_id=self._user_id,
         )
         return async_job_get
