@@ -575,8 +575,8 @@ def _try_assign_task_to_ec2_instance(
             _logger.debug(
                 "%s",
                 f"assigned task with {task_required_resources=}, {task_required_ec2_instance=} to "
-                f"{instance.ec2_instance.id=}:{instance.ec2_instance.type}, "
-                f"remaining resources:{instance.available_resources}/{instance.ec2_instance.resources}",
+                f"{instance.ec2_instance.id=}:{instance.ec2_instance.type=}, "
+                f"{instance.available_resources=}, {instance.ec2_instance.resources=}",
             )
             return True
     return False
@@ -599,8 +599,8 @@ def _try_assign_task_to_ec2_instance_type(
             _logger.debug(
                 "%s",
                 f"assigned task with {task_required_resources=}, {task_required_ec2_instance=} to "
-                f"{instance.instance_type}, "
-                f"remaining resources:{instance.available_resources}/{instance.instance_type.resources}",
+                f"{instance.instance_type=}, "
+                f"{instance.available_resources=}, {instance.instance_type.resources=}",
             )
             return True
     return False
@@ -1217,7 +1217,10 @@ async def _scale_down_unused_cluster_instances(
 ) -> Cluster:
     if any(not instance.has_assigned_tasks() for instance in cluster.active_nodes):
         # ask the provider to try to retire nodes actively
-        with log_catch(_logger, reraise=False):
+        with (
+            log_catch(_logger, reraise=False),
+            log_context(_logger, logging.INFO, "actively ask to retire unused nodes"),
+        ):
             await auto_scaling_mode.try_retire_nodes(app)
     cluster = await _deactivate_empty_nodes(app, cluster)
     return await _try_scale_down_cluster(app, cluster)
