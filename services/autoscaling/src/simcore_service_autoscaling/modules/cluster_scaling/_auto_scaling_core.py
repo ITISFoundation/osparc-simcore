@@ -28,7 +28,14 @@ from servicelib.utils import limited_gather
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ...constants import DOCKER_JOIN_COMMAND_EC2_TAG_KEY, DOCKER_JOIN_COMMAND_NAME
+from ...constants import (
+    DOCKER_JOIN_COMMAND_EC2_TAG_KEY,
+    DOCKER_JOIN_COMMAND_NAME,
+    DOCKER_PULL_COMMAND,
+    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    MACHINE_PULLING_EC2_TAG_KEY,
+    PREPULL_COMMAND_NAME,
+)
 from ...core.errors import (
     Ec2InvalidDnsNameError,
     TaskBestFittingInstanceNotFoundError,
@@ -56,9 +63,12 @@ from ...utils.rabbitmq import (
     post_tasks_progress_message,
 )
 from ...utils.warm_buffer_machines import (
+    dump_pre_pulled_images_as_tags,
     get_activated_warm_buffer_ec2_tags,
     get_deactivated_warm_buffer_ec2_tags,
     is_warm_buffer_machine,
+    list_pre_pulled_images_tag_keys,
+    load_pre_pulled_images_from_tags,
 )
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
@@ -1348,6 +1358,118 @@ async def _notify_autoscaling_status(
             get_instrumentation(app).cluster_metrics.update_from_cluster(cluster)
 
 
+async def _ensure_hot_buffers_have_pre_pulled_images(
+    app: FastAPI, cluster: Cluster
+) -> None:
+    if not cluster.hot_buffer_drained_nodes:
+        return
+    ssm_client = get_ssm_client(app)
+    ec2_client = get_ec2_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    # check if we have hot buffers that need to pull images
+    hot_buffer_nodes_needing_pre_pull = []
+    for node in cluster.hot_buffer_drained_nodes:
+        if MACHINE_PULLING_EC2_TAG_KEY in node.ec2_instance.tags:
+            # check the pulling state
+            ssm_command_id = node.ec2_instance.tags.get(
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
+            )
+            if not ssm_command_id:
+                _logger.warning(
+                    "%s has pulling tag but no command id, removing tag",
+                    node.ec2_instance.id,
+                )
+                await ec2_client.remove_instances_tags(
+                    [node.ec2_instance], tag_keys=[MACHINE_PULLING_EC2_TAG_KEY]
+                )
+                continue
+            ssm_command = await ssm_client.get_command(
+                node.ec2_instance.id, command_id=ssm_command_id
+            )
+            if ssm_command.status == "Success":
+                _logger.info("%s finished pre-pulling images", node.ec2_instance.id)
+                await ec2_client.remove_instances_tags(
+                    [node.ec2_instance],
+                    tag_keys=[
+                        MACHINE_PULLING_EC2_TAG_KEY,
+                        MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                    ],
+                )
+            elif ssm_command.status in ("Failed", "TimedOut"):
+                _logger.error(
+                    "%s failed pre-pulling images, status is %s. this will be retried later",
+                    node.ec2_instance.id,
+                    ssm_command.status,
+                )
+                await ec2_client.remove_instances_tags(
+                    [node.ec2_instance],
+                    tag_keys=[
+                        MACHINE_PULLING_EC2_TAG_KEY,
+                        MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                        *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
+                    ],
+                )
+            else:
+                _logger.info(
+                    "%s is still pre-pulling images, status is %s",
+                    node.ec2_instance.id,
+                    ssm_command.status,
+                )
+            continue
+
+        # check what they have
+        pre_pulled_images = load_pre_pulled_images_from_tags(node.ec2_instance.tags)
+        desired_pre_pulled_images = (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                node.ec2_instance.type
+            ].pre_pull_images
+        )
+        if pre_pulled_images != desired_pre_pulled_images:
+            _logger.info(
+                "%s needs to pre-pull images %s, currently has %s",
+                node.ec2_instance.id,
+                desired_pre_pulled_images,
+                pre_pulled_images,
+            )
+            hot_buffer_nodes_needing_pre_pull.append(node)
+
+    # now trigger pre-pull on these nodes
+    for node in hot_buffer_nodes_needing_pre_pull:
+        _logger.info(
+            "triggering pre-pull of images %s on %s of type %s",
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                node.ec2_instance.type
+            ].pre_pull_images,
+            node.ec2_instance.id,
+            node.ec2_instance.type,
+        )
+        desired_pre_pulled_images = (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                node.ec2_instance.type
+            ].pre_pull_images
+        )
+        change_docker_compose_and_pull_command = " && ".join(
+            (
+                utils_docker.write_compose_file_command(desired_pre_pulled_images),
+                DOCKER_PULL_COMMAND,
+            )
+        )
+        ssm_command = await ssm_client.send_command(
+            tuple(i.ec2_instance.id for i in hot_buffer_nodes_needing_pre_pull),
+            command=change_docker_compose_and_pull_command,
+            command_name=PREPULL_COMMAND_NAME,
+        )
+        await ec2_client.set_instances_tags(
+            tuple(i.ec2_instance for i in hot_buffer_nodes_needing_pre_pull),
+            tags={
+                MACHINE_PULLING_EC2_TAG_KEY: "true",
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
+            }
+            | dump_pre_pulled_images_as_tags(desired_pre_pulled_images),
+        )
+
+
 async def auto_scale_cluster(
     *, app: FastAPI, auto_scaling_mode: AutoscalingProvider
 ) -> None:
@@ -1374,6 +1496,8 @@ async def auto_scale_cluster(
     cluster = await _autoscale_cluster(
         app, cluster, auto_scaling_mode, allowed_instance_types
     )
+
+    # ensure hot buffers have desired pre-pulled images
 
     # notify
     await _notify_machine_creation_progress(app, cluster)
