@@ -389,7 +389,7 @@ class FunctionJobTaskClientService:
                 ephemeral=False,
                 queue=TasksQueue.API_WORKER_QUEUE,
             ),
-            task_filter=task_filter,
+            owner_metadata=task_filter,
             user_identity=user_identity,
             function=function,
             pre_registered_function_job_data=pre_registered_function_job_data,

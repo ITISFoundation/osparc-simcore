@@ -299,7 +299,7 @@ async def complete_upload_file(
         ExecutionMetadata(
             name=remote_complete_upload_file.__name__,
         ),
-        task_filter=task_filter,
+        owner_metadata=task_filter,
         user_id=query_params.user_id,
         location_id=location_id,
         file_id=file_id,

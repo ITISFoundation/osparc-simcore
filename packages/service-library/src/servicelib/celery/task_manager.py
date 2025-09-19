@@ -18,7 +18,7 @@ class TaskManager(Protocol):
         self,
         execution_metadata: ExecutionMetadata,
         *,
-        task_filter: OwnerMetadata,
+        owner_metadata: OwnerMetadata,
         **task_param
     ) -> TaskUUID: ...
 

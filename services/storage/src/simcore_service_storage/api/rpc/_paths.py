@@ -30,7 +30,7 @@ async def compute_path_size(
         execution_metadata=ExecutionMetadata(
             name=task_name,
         ),
-        task_filter=task_filter,
+        owner_metadata=task_filter,
         user_id=job_filter.user_id,
         location_id=location_id,
         path=path,
@@ -52,7 +52,7 @@ async def delete_paths(
         execution_metadata=ExecutionMetadata(
             name=task_name,
         ),
-        task_filter=task_filter,
+        owner_metadata=task_filter,
         user_id=job_filter.user_id,
         location_id=location_id,
         paths=paths,

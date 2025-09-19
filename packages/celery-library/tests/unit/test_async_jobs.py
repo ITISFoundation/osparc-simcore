@@ -84,7 +84,7 @@ async def rpc_sync_job(
     task_name = sync_job.__name__
     task_filter = OwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        ExecutionMetadata(name=task_name), task_filter=task_filter, **kwargs
+        ExecutionMetadata(name=task_name), owner_metadata=task_filter, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -97,7 +97,7 @@ async def rpc_async_job(
     task_name = async_job.__name__
     task_filter = OwnerMetadata.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        ExecutionMetadata(name=task_name), task_filter=task_filter, **kwargs
+        ExecutionMetadata(name=task_name), owner_metadata=task_filter, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)

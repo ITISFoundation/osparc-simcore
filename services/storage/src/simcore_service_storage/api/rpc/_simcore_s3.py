@@ -35,7 +35,7 @@ async def copy_folders_from_project(
         execution_metadata=ExecutionMetadata(
             name=task_name,
         ),
-        task_filter=task_filter,
+        owner_metadata=task_filter,
         user_id=job_filter.user_id,
         body=body,
     )
@@ -63,7 +63,7 @@ async def start_export_data(
             ephemeral=False,
             queue=TasksQueue.CPU_BOUND,
         ),
-        task_filter=task_filter,
+        owner_metadata=task_filter,
         user_id=job_filter.user_id,
         paths_to_export=paths_to_export,
     )
