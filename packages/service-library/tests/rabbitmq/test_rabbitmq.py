@@ -314,7 +314,7 @@ async def test_subscribe_always_returns_fails_stops(
 
 
 @pytest.mark.parametrize("topics", _TOPICS)
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_publish_with_no_registered_subscriber(
     on_message_spy: mock.Mock,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
@@ -476,7 +476,7 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
 
 @pytest.fixture
 async def ensure_queue_deletion(
-    create_rabbitmq_client: Callable[[str], RabbitMQClient]
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ) -> AsyncIterator[Callable[[QueueName], None]]:
     created_queues = set()
 
@@ -723,7 +723,7 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     await _assert_message_received(mocked_message_parser, 0)
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rabbit_not_using_the_same_exchange_type_raises(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
@@ -738,7 +738,7 @@ async def test_rabbit_not_using_the_same_exchange_type_raises(
         await client.subscribe(exchange_name, mocked_message_parser, topics=[])
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_unsubscribe_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
