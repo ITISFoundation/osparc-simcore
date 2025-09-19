@@ -378,8 +378,7 @@ class DaskScheduler(BaseCompScheduler):
             ):
                 with log_catch(_logger, reraise=False):
                     task_can_be_cleaned, job_id = await future
-                    if task_can_be_cleaned:
-                        assert job_id is not None  # nosec
+                    if task_can_be_cleaned and job_id:
                         await client.release_task_result(job_id)
 
     async def _handle_successful_run(
@@ -410,11 +409,9 @@ class DaskScheduler(BaseCompScheduler):
     async def _handle_computational_retrieval_error(
         self,
         task: CompTaskAtDB,
-        user_id: UserID,
         result: ComputationalBackendTaskResultsNotReadyError,
         log_error_context: dict[str, Any],
     ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
-        assert task.job_id  # nosec
         _logger.warning(
             **create_troubleshooting_log_kwargs(
                 f"Retrieval of task {task.job_id} result timed-out",
@@ -447,10 +444,7 @@ class DaskScheduler(BaseCompScheduler):
                     type=_TASK_RETRIEVAL_ERROR_TYPE,
                     ctx={
                         _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY: f"{check_time}",
-                        "user_id": user_id,
-                        "project_id": f"{task.project_id}",
-                        "node_id": f"{task.node_id}",
-                        "job_id": task.job_id,
+                        **log_error_context,
                     },
                 )
             )
@@ -471,7 +465,6 @@ class DaskScheduler(BaseCompScheduler):
         result: ComputationalBackendNotConnectedError,
         log_error_context: dict[str, Any],
     ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
-        assert task.job_id  # nosec
         _logger.warning(
             **create_troubleshooting_log_kwargs(
                 f"Computational backend disconnected when retrieving task {task.job_id} result",
@@ -491,8 +484,6 @@ class DaskScheduler(BaseCompScheduler):
         result: BaseException,
         log_error_context: dict[str, Any],
     ) -> tuple[RunningState, SimcorePlatformStatus, list[ErrorDict], bool]:
-        assert task.job_id  # nosec
-
         # the task itself failed, check why
         if isinstance(result, TaskCancelledError):
             _logger.info(
@@ -559,7 +550,7 @@ class DaskScheduler(BaseCompScheduler):
                     task_errors,
                     task_completed,
                 ) = await self._handle_computational_retrieval_error(
-                    task.current, comp_run.user_id, result, log_error_context
+                    task.current, result, log_error_context
                 )
             elif isinstance(result, ComputationalBackendNotConnectedError):
                 (
