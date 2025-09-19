@@ -1,6 +1,11 @@
 from pathlib import Path
 from typing import Annotated
 
+from models_library.utils.common_validators import (
+    MIN_NON_WILDCARD_CHARS,
+    WILDCARD_CHARS,
+    ensure_pattern_has_enough_characters,
+)
 from pydantic import BaseModel, Field
 
 from ..api_schemas_storage.storage_schemas import (
@@ -42,3 +47,13 @@ PathToExport = Path
 
 class DataExportPost(InputSchema):
     paths: list[PathToExport]
+
+
+class SearchBodyParams(InputSchema):
+    name_pattern: Annotated[
+        str,
+        ensure_pattern_has_enough_characters(),
+        Field(
+            description=f"Name pattern with wildcard support {tuple(WILDCARD_CHARS)}. Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
+        ),
+    ]
