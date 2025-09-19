@@ -98,7 +98,7 @@ async def _get_steps_statuses(
     return dict(result)
 
 
-async def _is_operation_in_progress_status(
+def _is_operation_in_progress_status(
     steps_statuses: dict[StepName, StepStatus],
 ) -> bool:
     return any(status in _IN_PROGRESS_STATUSES for status in steps_statuses.values())
@@ -376,7 +376,7 @@ class Core:
         _logger.debug("DETECTED: steps_statuses=%s", steps_statuses)
 
         # wait for all steps to finish before continuing
-        if await _is_operation_in_progress_status(steps_statuses):
+        if _is_operation_in_progress_status(steps_statuses):
             _logger.debug(
                 "Operation '%s' has not finished: steps_statuses='%s'",
                 operation_name,
