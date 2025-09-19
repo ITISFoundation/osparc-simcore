@@ -393,6 +393,38 @@ async def _activate_and_notify(
     return dataclasses.replace(drained_node, node=updated_node)
 
 
+async def _cancel_previous_pulling_command_if_any(
+    app: FastAPI,
+    instance: EC2InstanceData,
+) -> None:
+    if not (
+        (MACHINE_PULLING_EC2_TAG_KEY in instance.tags)
+        and (MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY in instance.tags)
+    ):
+        # nothing to do
+        return
+
+    ssm_client = get_ssm_client(app)
+    ec2_client = get_ec2_client(app)
+    command_id = instance.tags[MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY]
+    command = await ssm_client.get_command(instance.id, command_id)
+    if command.status in ("Pending", "InProgress"):
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"cancelling previous pulling {command_id} on {instance.id}",
+        ):
+            await ssm_client.cancel_command(instance.id, command_id)
+        await ec2_client.remove_instances_tags(
+            [instance],
+            tags=[
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                MACHINE_PULLING_EC2_TAG_KEY,
+                *list_pre_pulled_images_tag_keys(instance.tags),
+            ],
+        )
+
+
 async def _activate_drained_nodes(
     app: FastAPI,
     cluster: Cluster,
@@ -413,6 +445,12 @@ async def _activate_drained_nodes(
         logging.INFO,
         f"activate {len(nodes_to_activate)} drained nodes {[n.ec2_instance.id for n in nodes_to_activate]}",
     ):
+        await asyncio.gather(
+            *(
+                _cancel_previous_pulling_command_if_any(app, n.ec2_instance)
+                for n in nodes_to_activate
+            )
+        )
         activated_nodes = await asyncio.gather(
             *(_activate_and_notify(app, node) for node in nodes_to_activate)
         )
