@@ -215,6 +215,7 @@ async def compute_path_size(request: web.Request) -> web.Response:
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         ),
+        user_id=req_ctx.user_id,
     )
 
     return _create_data_response_from_async_job(request, async_job)
@@ -240,6 +241,7 @@ async def batch_delete_paths(request: web.Request):
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         ),
+        user_id=req_ctx.user_id,
     )
     return _create_data_response_from_async_job(request, async_job)
 
@@ -507,6 +509,7 @@ async def export_data(request: web.Request) -> web.Response:
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
         ),
+        user_id=_req_ctx.user_id,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
