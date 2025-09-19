@@ -31,6 +31,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     SingleStepGroup,
     cancel_operation,
     restart_create_operation_step_in_manual_intervention,
+    restart_revert_operation_step_in_error,
     start_operation,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
@@ -181,6 +182,21 @@ class _RevertBS(_BS):
         raise RuntimeError(msg)
 
 
+class _GlobalStepIssueTracker:
+    has_issue: bool = True
+
+    @classmethod
+    def set_issue_solved(cls) -> None:
+        cls.has_issue = False
+
+
+@pytest.fixture
+def reset_step_issue_tracker() -> Iterable[None]:
+    _GlobalStepIssueTracker.has_issue = True
+    yield
+    _GlobalStepIssueTracker.has_issue = True
+
+
 class _FailOnCreateAndRevertBS(_BS):
     @classmethod
     async def create(
@@ -195,8 +211,9 @@ class _FailOnCreateAndRevertBS(_BS):
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         await super().revert(app, required_context)
-        msg = "always fails on REVERT"
-        raise RuntimeError(msg)
+        if _GlobalStepIssueTracker.has_issue:
+            msg = "sometimes fails only on REVERT"
+            raise RuntimeError(msg)
 
 
 class _SleepsForeverBS(_BS):
@@ -208,30 +225,30 @@ class _SleepsForeverBS(_BS):
         await asyncio.sleep(1e10)
 
 
-class _GlobalManualInterventionTracker:
-    raise_on_create: bool = True
-
-
-@pytest.fixture
-def reset_raise_on_create() -> Iterable[None]:
-    _GlobalManualInterventionTracker.raise_on_create = True
-    yield
-    _GlobalManualInterventionTracker.raise_on_create = True
-
-
 class _WaitManualInerventionBS(_BS):
     @classmethod
     async def create(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         await super().create(app, required_context)
-        if _GlobalManualInterventionTracker.raise_on_create:
-            msg = "always fails only on CREATE"
+        if _GlobalStepIssueTracker.has_issue:
+            msg = "sometimes fails only on CREATE"
             raise RuntimeError(msg)
 
     @classmethod
     def wait_for_manual_intervention(cls) -> bool:
         return True
+
+
+def _get_steps_matching_class(
+    operation: Operation, *, match: type[BaseStep]
+) -> list[type]:
+    return [
+        step
+        for group in operation
+        for step in group.get_step_subgroup_to_run()
+        if issubclass(step, match)
+    ]
 
 
 def _compose_key(
@@ -427,6 +444,9 @@ class _FCR1(_FailOnCreateAndRevertBS): ...
 class _FCR2(_FailOnCreateAndRevertBS): ...
 
 
+class _FCR3(_FailOnCreateAndRevertBS): ...
+
+
 # Below will sleep forever
 
 
@@ -446,17 +466,6 @@ class _WMI2(_WaitManualInerventionBS): ...
 
 
 class _WMI3(_WaitManualInerventionBS): ...
-
-
-def _get_wait_manaul_intervention_steps(
-    operation: Operation,
-) -> list[type[_WaitManualInerventionBS]]:
-    result: list[type[_WaitManualInerventionBS]] = []
-    for group in operation:
-        for step in group.get_step_subgroup_to_run():
-            if issubclass(step, _WaitManualInerventionBS):
-                result.append(step)
-    return result
 
 
 # Below steps which require and provide context keys
@@ -1035,7 +1044,7 @@ async def test_repeating_step(
     ],
 )
 async def test_wait_for_manual_intervention(
-    reset_raise_on_create: None,
+    reset_step_issue_tracker: None,
     preserve_caplog_for_async_logging: None,
     steps_call_order: list[tuple[str, str]],
     selected_app: FastAPI,
@@ -1064,9 +1073,11 @@ async def test_wait_for_manual_intervention(
     await asyncio.sleep(0.1)
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
-    # unblock all waiting for manual intervention steps and restart them
-    steps_to_restart = _get_wait_manaul_intervention_steps(operation)
-    _GlobalManualInterventionTracker.raise_on_create = False
+    # set step to no longer raise and restart the failed steps
+    steps_to_restart = _get_steps_matching_class(
+        operation, match=_WaitManualInerventionBS
+    )
+    _GlobalStepIssueTracker.set_issue_solved()
     await limited_gather(
         *(
             restart_create_operation_step_in_manual_intervention(
@@ -1076,12 +1087,146 @@ async def test_wait_for_manual_intervention(
         ),
         limit=_PARALLEL_RESTARTS,
     )
-    # should finish normally
+    # should finish schedule operation
     await ensure_expected_order(steps_call_order, after_restart_expected_order)
     await _ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-# TODO: restart_revert_operation_step_in_error
+@pytest.mark.parametrize("app_count", [10])
+@pytest.mark.parametrize(
+    "operation, expected_order, expected_keys, after_restart_expected_order",
+    [
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_S2, _S3, _S4),
+                SingleStepGroup(_FCR1),
+                # below are not included in any expected order
+                ParallelStepGroup(_S5, _S6),
+                SingleStepGroup(_S7),
+            ],
+            [
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateSequence(_FCR1),
+                RevertSequence(_FCR1),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1P:C",
+                "SCH:{schedule_id}:GROUPS:test_op:2S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:2S:R",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_S1",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S3",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S4",
+                "SCH:{schedule_id}:STEPS:test_op:2S:C:_FCR1",
+                "SCH:{schedule_id}:STEPS:test_op:2S:R:_FCR1",
+            },
+            [
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateSequence(_FCR1),
+                RevertSequence(_FCR1),
+                RevertSequence(_FCR1),  # this one is retried
+                RevertRandom(_S2, _S3, _S4),
+                RevertSequence(_S1),
+            ],
+            id="s1-p3-s1(1mi)",
+        ),
+        pytest.param(
+            [
+                SingleStepGroup(_S1),
+                ParallelStepGroup(_S2, _S3, _S4),
+                ParallelStepGroup(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
+                # below are not included in any expected order
+                SingleStepGroup(_S8),
+                ParallelStepGroup(_S9, _S10),
+            ],
+            [
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
+            ],
+            {
+                "SCH:{schedule_id}",
+                "SCH:{schedule_id}:GROUPS:test_op:0S:C",
+                "SCH:{schedule_id}:GROUPS:test_op:1P:C",
+                "SCH:{schedule_id}:GROUPS:test_op:2P:C",
+                "SCH:{schedule_id}:GROUPS:test_op:2P:R",
+                "SCH:{schedule_id}:STEPS:test_op:0S:C:_S1",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S2",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S3",
+                "SCH:{schedule_id}:STEPS:test_op:1P:C:_S4",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_S5",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_S6",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_S7",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_FCR1",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_FCR2",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_FCR3",
+                "SCH:{schedule_id}:STEPS:test_op:2P:R:_S5",
+                "SCH:{schedule_id}:STEPS:test_op:2P:R:_S6",
+                "SCH:{schedule_id}:STEPS:test_op:2P:R:_S7",
+                "SCH:{schedule_id}:STEPS:test_op:2P:R:_FCR1",
+                "SCH:{schedule_id}:STEPS:test_op:2P:R:_FCR2",
+                "SCH:{schedule_id}:STEPS:test_op:2P:R:_FCR3",
+            },
+            [
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
+                RevertRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
+                RevertRandom(_FCR1, _FCR2, _FCR3),  # retried steps
+                RevertRandom(_S2, _S3, _S4),
+                RevertSequence(_S1),
+            ],
+            id="s1-p3-p6(3mi)",
+        ),
+    ],
+)
+async def test_restart_revert_operation_step_in_error(
+    reset_step_issue_tracker: None,
+    preserve_caplog_for_async_logging: None,
+    steps_call_order: list[tuple[str, str]],
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation: Operation,
+    operation_name: OperationName,
+    expected_order: list[BaseExpectedStepOrder],
+    expected_keys: set[str],
+    after_restart_expected_order: list[BaseExpectedStepOrder],
+):
+    register_operation(operation_name, operation)
+
+    schedule_id = await start_operation(selected_app, operation_name, {})
+    assert isinstance(schedule_id, ScheduleId)
+
+    formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
+
+    await ensure_expected_order(steps_call_order, expected_order)
+    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+
+    # set step to no longer raise and restart the failed steps
+    steps_to_restart = _get_steps_matching_class(
+        operation, match=_FailOnCreateAndRevertBS
+    )
+    _GlobalStepIssueTracker.set_issue_solved()
+    await limited_gather(
+        *(
+            restart_revert_operation_step_in_error(
+                selected_app, schedule_id, step.get_step_name()
+            )
+            for step in steps_to_restart
+        ),
+        limit=_PARALLEL_RESTARTS,
+    )
+    # should finish schedule operation
+    await ensure_expected_order(steps_call_order, after_restart_expected_order)
+    await _ensure_keys_in_store(selected_app, expected_keys=set())
+
+
+# TODO: add tests for all errors raised by `restart_operation_step_in_error`
 
 
 @pytest.mark.parametrize("app_count", [10])

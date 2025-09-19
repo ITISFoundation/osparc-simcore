@@ -762,7 +762,7 @@ async def restart_create_operation_step_in_manual_intervention(
     )
 
 
-async def restart_revert_operation_step_in_error(  # TODO: add test for this
+async def restart_revert_operation_step_in_error(
     app: FastAPI, schedule_id: ScheduleId, step_name: StepName
 ) -> None:
     """restarts a step stuck in `revert` in an error state"""
