@@ -17,6 +17,7 @@ TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 _FORBIDDEN_KEYS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
 _FORBIDDEN_VALUES = (_TASK_ID_KEY_DELIMITATOR, "=")
+_VALID_VALUE_TYPES = (int, float, bool, str)
 
 Wildcard: TypeAlias = Literal["*"]
 
@@ -54,6 +55,9 @@ class OwnerMetadata(BaseModel):
             # forbidden values
             if any(x in f"{value}" for x in _FORBIDDEN_VALUES):
                 raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
+            if not any(isinstance(value, type_) for type_ in _VALID_VALUE_TYPES):
+                # restrict value types to ensure smooth serialization/deserialization
+                raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
         return self
 
     def _build_task_id_prefix(self) -> str:
@@ -71,9 +75,9 @@ class OwnerMetadata(BaseModel):
         )
 
     @classmethod
-    def recreate_as_model(cls, task_id: TaskID, schema: type[ModelType]) -> ModelType:
+    def validate_from_task_id(cls, task_id: TaskID) -> Self:
         filter_dict = cls._recreate_data(task_id)
-        return schema.model_validate(filter_dict)
+        return cls.model_validate(filter_dict)
 
     @classmethod
     def _recreate_data(cls, task_id: TaskID) -> dict[str, Any]:

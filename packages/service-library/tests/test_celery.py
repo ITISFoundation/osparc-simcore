@@ -1,3 +1,4 @@
+import typing
 from typing import Annotated
 
 # pylint: disable=redefined-outer-name
@@ -6,7 +7,12 @@ import pydantic
 import pytest
 from faker import Faker
 from pydantic import StringConstraints
-from servicelib.celery.models import OwnerMetadata, TaskUUID, Wildcard
+from servicelib.celery.models import (
+    _VALID_VALUE_TYPES,
+    OwnerMetadata,
+    TaskUUID,
+    Wildcard,
+)
 
 _faker = Faker()
 
@@ -68,17 +74,31 @@ async def test_task_filter_task_uuid(
 async def test_create_task_filter_from_task_id():
 
     class MyModel(OwnerMetadata):
-        _int: int
-        _bool: bool
-        _str: str
-        _list: list[str]
+        int_: int
+        bool_: bool
+        str_: str
+        float_: float
 
-    mymodel = MyModel(
-        _int=1, _bool=True, _str="test", _list=["a", "b"], owner="myowner"
-    )
+    # Check that all elements in _VALID_VALUE_TYPES are represented in MyModel's field types
+    mymodel_types = set()
+    for field in MyModel.model_fields.values():
+        field_type = field.annotation
+        origin = typing.get_origin(field_type)
+        if origin is typing.Union:
+            types_to_check = typing.get_args(field_type)
+        else:
+            types_to_check = [field_type]
+        for t in types_to_check:
+            if t is not Wildcard:
+                mymodel_types.add(t)
+    for valid_type in _VALID_VALUE_TYPES:
+        assert valid_type in mymodel_types, f"{valid_type} not represented in MyModel"
+
+    mymodel = MyModel(int_=1, bool_=True, str_="test", float_=1.0, owner="myowner")
     task_uuid = TaskUUID(_faker.uuid4())
     task_id = mymodel.create_task_id(task_uuid)
-    assert OwnerMetadata.recreate_as_model(task_id=task_id, schema=MyModel) == mymodel
+    mymodel_recreated = MyModel.validate_from_task_id(task_id=task_id)
+    assert mymodel_recreated == mymodel
 
 
 @pytest.mark.parametrize(
