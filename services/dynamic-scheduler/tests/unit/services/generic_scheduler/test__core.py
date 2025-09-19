@@ -1208,6 +1208,10 @@ async def test_restart_revert_operation_step_in_error(
     await ensure_expected_order(steps_call_order, expected_order)
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
+    # give some time for the deferred runner to store the errors
+    # avoids flkayness
+    await asyncio.sleep(0.1)
+
     # set step to no longer raise and restart the failed steps
     steps_to_restart = _get_steps_matching_class(
         operation, match=_FailOnCreateAndRevertBS
