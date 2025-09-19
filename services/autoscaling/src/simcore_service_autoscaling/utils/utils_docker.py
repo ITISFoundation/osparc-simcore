@@ -8,7 +8,6 @@ import logging
 import re
 from contextlib import suppress
 from copy import deepcopy
-from pathlib import Path
 from typing import Final, cast
 
 import arrow
@@ -36,6 +35,10 @@ from servicelib.utils import logged_gather
 from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
+from ..constants import (
+    DOCKER_COMPOSE_PULL_SCRIPT_PATH,
+    PRE_PULL_COMPOSE_PATH,
+)
 from ..core.settings import ApplicationSettings
 from ..models import AssociatedInstance
 from ..modules.docker import AutoscalingDocker
@@ -443,12 +446,6 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
     )
 
 
-_DOCKER_COMPOSE_CMD: Final[str] = "docker compose"
-_PRE_PULL_COMPOSE_PATH: Final[Path] = Path("/docker-pull.compose.yml")
-_DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
-_CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
-
-
 def write_compose_file_command(
     docker_tags: list[DockerGenericTag],
 ) -> str:
@@ -459,7 +456,7 @@ def write_compose_file_command(
         },
     }
     compose_yaml = yaml.safe_dump(compose)
-    return " ".join(["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"])
+    return " ".join(["echo", f'"{compose_yaml}"', ">", f"{PRE_PULL_COMPOSE_PATH}"])
 
 
 def get_docker_pull_images_on_start_bash_command(
@@ -473,13 +470,13 @@ def get_docker_pull_images_on_start_bash_command(
             "echo",
             f'"#!/bin/sh\necho Pulling started at \\$(date)\n{_DOCKER_COMPOSE_CMD} --project-name=autoscaleprepull --file={_PRE_PULL_COMPOSE_PATH} pull --ignore-pull-failures"',
             ">",
-            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
+            f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
         ]
     )
     make_docker_compose_script_executable = " ".join(
-        ["chmod", "+x", f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"]
+        ["chmod", "+x", f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}"]
     )
-    docker_compose_pull_cmd = " ".join([f".{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
+    docker_compose_pull_cmd = " ".join([f".{DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
     return " && ".join(
         [
             write_compose_file_command(docker_tags),

@@ -35,9 +35,9 @@ from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...constants import (
-    BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-    BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
     DOCKER_PULL_COMMAND,
+    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    MACHINE_PULLING_EC2_TAG_KEY,
     PREPULL_COMMAND_NAME,
 )
 from ...core.settings import get_application_settings
@@ -137,7 +137,7 @@ async def _analyze_running_instance_state(
     """Analyze and categorize running instance based on its current state."""
     ssm_client = get_ssm_client(app)
 
-    if BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
+    if MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
         buffer_pool.pulling_instances.add(instance)
     elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
         await _handle_ssm_connected_instance(
@@ -344,8 +344,8 @@ async def _handle_pool_image_pulling(
         await ec2_client.set_instances_tags(
             tuple(pool.waiting_to_pull_instances),
             tags={
-                BUFFER_MACHINE_PULLING_EC2_TAG_KEY: "true",
-                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
+                MACHINE_PULLING_EC2_TAG_KEY: "true",
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
             },
         )
 
@@ -353,9 +353,7 @@ async def _handle_pool_image_pulling(
     broken_instances_to_terminate: set[EC2InstanceData] = set()
     # wait for the image pulling to complete
     for instance in pool.pulling_instances:
-        if ssm_command_id := instance.tags.get(
-            BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
-        ):
+        if ssm_command_id := instance.tags.get(MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY):
             ssm_command = await ssm_client.get_command(
                 instance.id, command_id=ssm_command_id
             )
@@ -418,8 +416,8 @@ async def _handle_image_pre_pulling(
             "pending buffer instances completed pulling of images, stopping them",
         ):
             tag_keys_to_remove = (
-                BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
-                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                MACHINE_PULLING_EC2_TAG_KEY,
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
             )
             await ec2_client.remove_instances_tags(
                 tuple(instances_to_stop),
