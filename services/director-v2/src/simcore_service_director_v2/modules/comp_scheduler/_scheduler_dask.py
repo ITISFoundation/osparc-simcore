@@ -147,6 +147,7 @@ class DaskScheduler(BaseCompScheduler):
                 RunningState.PENDING,
             )
             # each task is started independently
+
             for node_id, task in scheduled_tasks.items():
                 published_tasks = await client.send_computation_tasks(
                     user_id=user_id,
@@ -160,10 +161,16 @@ class DaskScheduler(BaseCompScheduler):
                     ),
                 )
 
-            # update the database so we do have the correct job_ids there
-            for task in published_tasks:
-                await comp_tasks_repo.update_project_task_job_id(
-                    project_id, task.node_id, comp_run.run_id, task.job_id
+                # update the database so we do have the correct job_ids there
+                await limited_gather(
+                    *(
+                        comp_tasks_repo.update_project_task_job_id(
+                            project_id, task.node_id, comp_run.run_id, task.job_id
+                        )
+                        for task in published_tasks
+                    ),
+                    log=_logger,
+                    limit=1,
                 )
 
     async def _get_tasks_status(
