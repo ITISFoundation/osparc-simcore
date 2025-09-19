@@ -260,9 +260,11 @@ async def test_step_group_proxy(
 
     assert await _get_steps_count() is None
 
-    for i in range(10):
+    for _ in range(10):
         await step_group_proxy.increment_and_get_done_steps_count()
-        assert await _get_steps_count() == i + 1
+        assert await _get_steps_count() == 1
+        await step_group_proxy.decrement_and_get_done_steps_count()
+        assert await _get_steps_count() == 0
 
     await step_group_proxy.remove()
     assert await _get_steps_count() is None

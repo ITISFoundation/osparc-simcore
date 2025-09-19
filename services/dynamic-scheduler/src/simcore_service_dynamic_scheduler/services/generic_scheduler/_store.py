@@ -167,6 +167,12 @@ class Store:
             self.redis.hincrby(hash_key, key, amount=1)
         )
 
+    async def decrease_and_get(self, hash_key: str, key: str) -> NonNegativeInt:
+        """decrease a key in a hash by 1 and returns the new value"""
+        return await handle_redis_returns_union_types(
+            self.redis.hincrby(hash_key, key, amount=-1)
+        )
+
 
 class _UpdateScheduleDataDict(TypedDict):
     operation_name: NotRequired[OperationName]
@@ -264,6 +270,9 @@ class StepGroupProxy:
     async def increment_and_get_done_steps_count(self) -> NonNegativeInt:
         return await self._store.increase_and_get(self._get_hash_key(), "done_steps")
 
+    async def decrement_and_get_done_steps_count(self) -> NonNegativeInt:
+        return await self._store.decrease_and_get(self._get_hash_key(), "done_steps")
+
     async def remove(self) -> None:
         await self._store.remove(self._get_hash_key())
 
@@ -277,7 +286,7 @@ class _StepDict(TypedDict):
     success_processed: NotRequired[bool]
 
 
-_DeleteStepKeys = Literal[
+DeleteStepKeys = Literal[
     "deferred_created",
     "status",
     "deferred_task_uid",
@@ -356,7 +365,7 @@ class StepStoreProxy:
     async def set_multiple(self, values: _StepDict) -> None:
         await self._store.set_multiple(self._get_hash_key(), updates=values)  # type: ignore[arg-type]
 
-    async def delete(self, *keys: _DeleteStepKeys) -> None:
+    async def delete(self, *keys: DeleteStepKeys) -> None:
         await self._store.delete(self._get_hash_key(), *keys)
 
     async def remove(self) -> None:
