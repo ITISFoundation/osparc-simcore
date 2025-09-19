@@ -1263,6 +1263,8 @@ async def test_errors_with_restart_operation_step_in_error(
             CreateRandom(_SF1, _FCR1),
         ],
     )
+    # give some time for the deferred runner to store the errors
+    await asyncio.sleep(0.1)
 
     with pytest.raises(StepNameNotInCurrentGroupError):
         await get_core(selected_app).restart_operation_step_in_error(
@@ -1281,9 +1283,6 @@ async def test_errors_with_restart_operation_step_in_error(
     if not in_manual_intervention:
         # force restart of step as it would be in manual intervention
         # this is not allowed
-
-        # give some time for the deferred runner to store the errors
-        await asyncio.sleep(0.1)
         with pytest.raises(StepNotWaitingForManualInterventionError):
             await get_core(selected_app).restart_operation_step_in_error(
                 schedule_id,
