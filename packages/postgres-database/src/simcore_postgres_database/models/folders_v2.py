@@ -33,6 +33,7 @@ folders_v2 = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(
             "folders_v2.folder_id",
+            onupdate=RefActions.CASCADE,
             name="fk_new_folders_to_folders_id",
         ),
         nullable=True,
@@ -77,6 +78,7 @@ folders_v2 = sa.Table(
             "groups.gid",
             name="fk_new_folders_to_groups_gid",
             ondelete=RefActions.SET_NULL,
+            onupdate=RefActions.CASCADE,
         ),
         nullable=True,
     ),
