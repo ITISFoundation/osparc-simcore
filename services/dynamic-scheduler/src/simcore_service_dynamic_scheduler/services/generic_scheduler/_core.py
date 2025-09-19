@@ -158,7 +158,7 @@ async def _get_step_error_traceback(
     return step_name, await step_proxy.get("error_traceback")
 
 
-async def _get_group_step_proxies(
+def _get_group_step_proxies(
     store: Store,
     *,
     schedule_id: ScheduleId,
@@ -337,7 +337,7 @@ class Core:
         operation = OperationRegistry.get_operation(operation_name)
         step_group = operation[group_index]
 
-        group_step_proxies = await _get_group_step_proxies(
+        group_step_proxies = _get_group_step_proxies(
             self._store,
             schedule_id=schedule_id,
             operation_name=operation_name,
