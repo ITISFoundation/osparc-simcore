@@ -40,7 +40,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
   construct: function(node) {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(4, 1);
+    const grid = new qx.ui.layout.Grid(2, 1);
     grid.setColumnFlex(1, 1);
 
     this.set({
@@ -222,10 +222,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
           break;
         case "middle-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
             alignY: "middle"
           })).set({
-            padding: [3, 4]
+            padding: 4
           });
           this.add(control, {
             row: 0,
@@ -245,7 +245,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           const type = osparc.service.Utils.getType(nodeType);
           if (type) {
             control.set({
-              icon: type.icon + "14",
+              icon: type.icon + "13",
               toolTipText: type.label
             });
           } else if (this.getNode().isUnknown()) {
@@ -595,14 +595,11 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const width = 120;
       this.__setNodeUIWidth(width);
 
-      const label = new qx.ui.basic.Label().set({
-        font: "text-18"
+      const valueLabel = new qx.ui.basic.Label().set({
+        paddingLeft: 4,
+        font: "text-14"
       });
-      const middleContainer = this.getChildControl("middle-container");
-      middleContainer.add(label);
-
-      this.getNode().bind("outputs", label, "value", {
-        converter: outputs => {
+      const outputToValue = outputs => {
           if ("out_1" in outputs && "value" in outputs["out_1"]) {
             const val = outputs["out_1"]["value"];
             if (Array.isArray(val)) {
@@ -611,8 +608,18 @@ qx.Class.define("osparc.workbench.NodeUI", {
             return String(val);
           }
           return "";
-        }
+      }
+      this.getNode().bind("outputs", valueLabel, "value", {
+        converter: outputs => outputToValue(outputs)
       });
+      this.getNode().bind("outputs", valueLabel, "toolTipText", {
+        converter: outputs => outputToValue(outputs)
+      });
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.add(valueLabel, {
+        flex: 1
+      });
+
       this.fireEvent("updateNodeDecorator");
     },
 
@@ -642,15 +649,17 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoProbeUI: function() {
-      const width = 150;
+      const width = 120;
       this.__setNodeUIWidth(width);
 
       const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        paddingLeft: 5,
-        font: "text-12"
+        paddingLeft: 4,
+        font: "text-14"
       });
       const middleContainer = this.getChildControl("middle-container");
-      middleContainer.add(linkLabel);
+      middleContainer.add(linkLabel, {
+        flex: 1
+      });
 
       this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(linkLabel), this);
       this.__setProbeValue(linkLabel);
