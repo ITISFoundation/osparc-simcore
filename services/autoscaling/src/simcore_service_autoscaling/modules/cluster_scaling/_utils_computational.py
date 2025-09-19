@@ -16,7 +16,9 @@ _DEFAULT_MAX_RAM: Final[int] = 1024
 
 def resources_from_dask_task(task: DaskTask) -> Resources:
     return Resources(
-        cpus=task.required_resources.get("CPU", _DEFAULT_MAX_CPU),
+        cpus=min(
+            task.required_resources.get("CPU", _DEFAULT_MAX_CPU), 1.0
+        ),  # NOTE: dask-workers use 1 thread per CPU so going below will not scale
         ram=task.required_resources.get("RAM", _DEFAULT_MAX_RAM),
     )
 
