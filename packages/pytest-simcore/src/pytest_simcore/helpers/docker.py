@@ -8,18 +8,20 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager
 from enum import Enum
 from pathlib import Path
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 import docker
 import yaml
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.redis import RedisClientSDK
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
+
+if TYPE_CHECKING:
+    from servicelib.rabbitmq import RabbitMQClient
+    from servicelib.redis import RedisClientSDK
 
 
 # NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status2 because some of the
@@ -288,8 +290,8 @@ class _ClientWithPingProtocol(Protocol):
 class ServiceManager:
     def __init__(
         self,
-        redis_client: RedisClientSDK,
-        rabbit_client: RabbitMQClient,
+        redis_client: "RedisClientSDK",
+        rabbit_client: "RabbitMQClient",
         paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     ) -> None:
         self.redis_client = redis_client
