@@ -94,9 +94,9 @@ async def test_task_owner():
         MyFilter(owner="UPPER_CASE", extra_field="value")
 
     class MyNextFilter(OwnerMetadata):
-        task_owner: Annotated[
+        owner: Annotated[
             str, StringConstraints(strip_whitespace=True, pattern=r"^the_task_owner$")
         ]
 
     with pytest.raises(pydantic.ValidationError):
-        MyNextFilter(task_owner="wrong_owner")
+        MyNextFilter(owner="wrong_owner")
