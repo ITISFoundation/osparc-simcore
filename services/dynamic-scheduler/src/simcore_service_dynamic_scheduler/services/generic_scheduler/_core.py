@@ -489,7 +489,7 @@ class Core:
                 group_step_proxies,
             )
         elif is_creating:
-            await self._continue_handling_as_creation(
+            await self._continue_as_creation(
                 steps_statuses,
                 schedule_data_proxy,
                 schedule_id,
@@ -499,7 +499,7 @@ class Core:
                 operation,
             )
         else:
-            await self._continue_handling_as_reverting(
+            await self._continue_as_reverting(
                 steps_statuses,
                 schedule_data_proxy,
                 schedule_id,
@@ -555,7 +555,7 @@ class Core:
 
         await enqueue_schedule_event(self.app, schedule_id)
 
-    async def _continue_handling_as_creation(
+    async def _continue_as_creation(
         self,
         steps_statuses: dict[StepName, StepStatus],
         schedule_data_proxy: ScheduleDataStoreProxy,
@@ -637,7 +637,7 @@ class Core:
             direction="creation", steps_statuses=steps_statuses, schedule_id=schedule_id
         )
 
-    async def _continue_handling_as_reverting(
+    async def _continue_as_reverting(
         self,
         steps_statuses: dict[StepName, StepStatus],
         schedule_data_proxy: ScheduleDataStoreProxy,
