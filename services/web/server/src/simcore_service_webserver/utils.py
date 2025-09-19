@@ -7,11 +7,15 @@ import logging
 import os
 import tracemalloc
 from datetime import datetime
+from typing import Annotated
 
 from common_library.error_codes import ErrorCodeStr
+from conftest import product_name
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import Field, StringConstraints
 from servicelib.celery.models import OwnerMetadata
+from test_models_api_keys import user_id
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
@@ -127,5 +131,9 @@ def compose_support_error_msg(
     return ". ".join(sentences)
 
 
-def get_owner_metadata(*, user_id: UserID, product_name: ProductName) -> OwnerMetadata:
-    return OwnerMetadata(user_id=user_id, product_name=product_name, owner=APP_NAME)
+class WebServerOwnerMetadata(OwnerMetadata):
+    user_id: UserID
+    product_name: ProductName
+    owner: Annotated[
+        str, StringConstraints(pattern=rf"^{APP_NAME}$"), Field(frozen=True)
+    ] = APP_NAME

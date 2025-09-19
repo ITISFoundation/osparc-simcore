@@ -33,7 +33,7 @@ from yarl import URL
 from ..projects.models import ProjectDict
 from ..projects.utils import NodesMap
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..utils import get_owner_metadata
+from ..utils import WebServerOwnerMetadata
 from .settings import StorageSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ async def copy_data_folders_from_project(
             rabbitmq_client,
             method_name="copy_folders_from_project",
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_filter=get_owner_metadata(
+            owner_metadata=WebServerOwnerMetadata(
                 user_id=user_id,
                 product_name=product_name,
             ),

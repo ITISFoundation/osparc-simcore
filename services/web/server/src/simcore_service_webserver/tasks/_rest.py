@@ -29,6 +29,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.long_running_tasks import lrt_api
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
+from simcore_service_webserver.utils import WebServerOwnerMetadata
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -36,7 +37,6 @@ from ..long_running_tasks.plugin import webserver_request_context_decorator
 from ..models import AuthenticatedRequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
-from ..utils import get_owner_metadata
 from ._exception_handlers import handle_export_data_exceptions
 
 log = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     user_async_jobs = await async_jobs.list_jobs(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_filter=get_owner_metadata(
+        owner_metadata=WebServerOwnerMetadata(
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
         ),
@@ -119,7 +119,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,
-        job_filter=get_owner_metadata(
+        owner_metadata=WebServerOwnerMetadata(
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
         ),
@@ -155,7 +155,7 @@ async def cancel_async_job(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,
-        owner_metadata=get_owner_metadata(
+        owner_metadata=WebServerOwnerMetadata(
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
         ),
@@ -183,7 +183,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,
-        job_filter=get_owner_metadata(
+        owner_metadata=WebServerOwnerMetadata(
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
         ),
