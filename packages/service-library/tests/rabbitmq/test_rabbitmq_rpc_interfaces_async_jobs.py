@@ -6,7 +6,6 @@ from typing import Final
 
 import pytest
 from common_library.async_tools import cancel_wait_task
-from conftest import UserID
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
