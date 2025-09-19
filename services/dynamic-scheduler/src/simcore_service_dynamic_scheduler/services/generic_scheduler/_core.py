@@ -40,6 +40,7 @@ from ._operation import (
     get_operation_provided_context_keys,
 )
 from ._store import (
+    DeleteStepKeys,
     OperationContextProxy,
     OperationRemovalProxy,
     ScheduleDataStoreProxy,
@@ -125,7 +126,7 @@ async def _start_and_mark_as_started(
         {
             "deferred_created": True,
             "status": StepStatus.SCHEDULED,
-            "success_processed": False,
+            "success_processed": False,  # TODO: remove this one, not used more than likely
         }
     )
 
@@ -371,6 +372,11 @@ class Core:
         except KeyNotFoundInHashError as exc:
             raise StepNotInErrorStateError(step_name=step_name) from exc
 
+        step_keys_to_remove: list[DeleteStepKeys] = [
+            "deferred_created",
+            "error_traceback",
+            "deferred_task_uid",
+        ]
         if in_manual_intervention:
             requires_manual_intervention: bool = False
             with suppress(KeyNotFoundInHashError):
@@ -381,14 +387,40 @@ class Core:
             if requires_manual_intervention is False:
                 raise StepNotWaitingForManualInterventionError(step_name=step_name)
 
-            await step_proxy.delete("error_traceback", "requires_manual_intervention")
-        else:
-            await step_proxy.delete("error_traceback")
+            step_keys_to_remove.append("requires_manual_intervention")
 
-        await _start_and_mark_as_started(
-            step_proxy, is_creating=True, expected_steps_count=len(step_group)
+        # reset previous Run and restart this step
+        schedule_data_proxy = ScheduleDataStoreProxy(
+            store=self._store, schedule_id=schedule_id
         )
-        await enqueue_schedule_event(self.app, schedule_id)
+        group_proxy = StepGroupProxy(
+            store=self._store,
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            step_group_name=step_group_name,
+            is_creating=is_creating,
+        )
+
+        # remove previus entries for the step
+        await step_proxy.delete(*step_keys_to_remove)
+        await schedule_data_proxy.delete(
+            "operation_error_type", "operation_error_message"
+        )
+        await group_proxy.decrement_and_get_done_steps_count()
+
+        _logger.debug(
+            "Restarting step_name='%s' of operation_name='%s' for schedule_id='%s' after '%s'",
+            step_name,
+            operation_name,
+            schedule_id,
+            "manual intervention" if in_manual_intervention else "error in revert",
+        )
+        # restart only this step
+        await _start_and_mark_as_started(
+            step_proxy,
+            is_creating=is_creating,
+            expected_steps_count=len(step_group),
+        )
 
     async def _on_schedule_event(self, schedule_id: ScheduleId) -> None:
         schedule_data_proxy = ScheduleDataStoreProxy(
