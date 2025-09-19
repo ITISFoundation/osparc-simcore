@@ -6,36 +6,50 @@ import pydantic
 import pytest
 from faker import Faker
 from pydantic import StringConstraints
-from servicelib.celery.models import OwnerMetadata, TaskUUID
+from servicelib.celery.models import OwnerMetadata, TaskUUID, Wildcard
 
 _faker = Faker()
 
 
+class _TestOwnerMetadata(OwnerMetadata):
+    string_: str
+    int_: int
+    bool_: bool
+    none_: None
+    uuid_: str
+    list_: list[str]
+
+
 @pytest.fixture
-def task_filter_data() -> dict[str, str | int | bool | None | list[str]]:
-    return {
-        "string": _faker.word(),
-        "int": _faker.random_int(),
-        "bool": _faker.boolean(),
-        "none": None,
-        "uuid": _faker.uuid4(),
-        "list": [_faker.word() for _ in range(3)],
+def owner_metadata() -> dict[str, str | int | bool | None | list[str]]:
+    data = {
+        "string_": _faker.word(),
+        "int_": _faker.random_int(),
+        "bool_": _faker.boolean(),
+        "none_": None,
+        "uuid_": _faker.uuid4(),
+        "list_": [_faker.word() for _ in range(3)],
         "owner": _faker.word().lower(),
     }
+    _TestOwnerMetadata.model_validate(data)  # ensure it's valid
+    return data
 
 
 async def test_task_filter_serialization(
-    task_filter_data: dict[str, str | int | bool | None | list[str]],
+    owner_metadata: dict[str, str | int | bool | None | list[str]],
 ):
-    task_filter = OwnerMetadata.model_validate(task_filter_data)
-    assert task_filter.model_dump() == task_filter_data
-    assert task_filter.model_dump() == task_filter_data
+    task_filter = _TestOwnerMetadata.model_validate(owner_metadata)
+    assert task_filter.model_dump() == owner_metadata
 
 
 async def test_task_filter_sorting_key_not_serialized():
 
+    class _OwnerMetadata(OwnerMetadata):
+        a: int | Wildcard
+        b: str | Wildcard
+
     keys = ["a", "b", "owner"]
-    task_filter = OwnerMetadata.model_validate(
+    task_filter = _OwnerMetadata.model_validate(
         {"a": _faker.random_int(), "b": _faker.word(), "owner": _faker.word().lower()}
     )
     expected_key = ":".join([f"{k}={getattr(task_filter, k)}" for k in sorted(keys)])
@@ -43,9 +57,9 @@ async def test_task_filter_sorting_key_not_serialized():
 
 
 async def test_task_filter_task_uuid(
-    task_filter_data: dict[str, str | int | bool | None | list[str]],
+    owner_metadata: dict[str, str | int | bool | None | list[str]],
 ):
-    task_filter = OwnerMetadata.model_validate(task_filter_data)
+    task_filter = _TestOwnerMetadata.model_validate(owner_metadata)
     task_uuid = TaskUUID(_faker.uuid4())
     task_id = task_filter.create_task_id(task_uuid)
     assert OwnerMetadata.get_task_uuid(task_id=task_id) == task_uuid
