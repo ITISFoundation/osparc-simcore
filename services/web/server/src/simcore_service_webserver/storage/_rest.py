@@ -57,7 +57,7 @@ from ..models import AuthenticatedRequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ..tasks._exception_handlers import handle_export_data_exceptions
-from ..utils import get_job_filter
+from ..utils import WebServerOwnerMetadata
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
@@ -211,10 +211,11 @@ async def compute_path_size(request: web.Request) -> web.Response:
         rabbitmq_rpc_client,
         location_id=path_params.location_id,
         path=path_params.path,
-        job_filter=get_job_filter(
+        owner_metadata=WebServerOwnerMetadata(
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         ),
+        user_id=req_ctx.user_id,
     )
 
     return _create_data_response_from_async_job(request, async_job)
@@ -236,10 +237,11 @@ async def batch_delete_paths(request: web.Request):
         rabbitmq_rpc_client,
         location_id=path_params.location_id,
         paths=body.paths,
-        job_filter=get_job_filter(
+        owner_metadata=WebServerOwnerMetadata(
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         ),
+        user_id=req_ctx.user_id,
     )
     return _create_data_response_from_async_job(request, async_job)
 
@@ -503,10 +505,11 @@ async def export_data(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         paths_to_export=export_data_post.paths,
         export_as="path",
-        job_filter=get_job_filter(
+        owner_metadata=WebServerOwnerMetadata(
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
         ),
+        user_id=_req_ctx.user_id,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(

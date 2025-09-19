@@ -7,11 +7,13 @@ import logging
 import os
 import tracemalloc
 from datetime import datetime
+from typing import Annotated
 
 from common_library.error_codes import ErrorCodeStr
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import Field, StringConstraints
+from servicelib.celery.models import OwnerMetadata
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
@@ -127,7 +129,9 @@ def compose_support_error_msg(
     return ". ".join(sentences)
 
 
-def get_job_filter(*, user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
-    return AsyncJobFilter(
-        user_id=user_id, product_name=product_name, client_name=APP_NAME
-    )
+class WebServerOwnerMetadata(OwnerMetadata):
+    user_id: UserID
+    product_name: ProductName
+    owner: Annotated[
+        str, StringConstraints(pattern=rf"^{APP_NAME}$"), Field(frozen=True)
+    ] = APP_NAME

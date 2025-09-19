@@ -1,6 +1,6 @@
 import datetime
 from enum import StrEnum
-from typing import Annotated, Any, Final, Protocol, Self, TypeAlias, TypeVar
+from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
@@ -15,46 +15,48 @@ TaskName: TypeAlias = Annotated[
 ]
 TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
-_WILDCARD: Final[str] = "*"
-_FORBIDDEN_CHARS = (_WILDCARD, _TASK_ID_KEY_DELIMITATOR, "=")
+_FORBIDDEN_KEYS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
+_FORBIDDEN_VALUES = (_TASK_ID_KEY_DELIMITATOR, "=")
+_VALID_VALUE_TYPES = (int, float, bool, str)
+
+Wildcard: TypeAlias = Literal["*"]
 
 
-class Wildcard:
-    def __str__(self) -> str:
-        return _WILDCARD
-
-
-class TaskFilter(BaseModel):
+class OwnerMetadata(BaseModel):
     """
-    Class for associating metadata with a celery task. The implementation is very flexible and allows "clients" to define their own metadata.
+    Class for associating metadata with a celery task. The implementation is very flexible and allows the task owner to define their own metadata.
+    This could be metadata for validating if a user has access to a given task (e.g. user_id or product_name) or metadata for keeping track of how to handle a task,
+    e.g. which schema will the result of the task have.
+
     The class exposes a filtering mechanism to list tasks using wildcards.
 
     Example usage:
-        class MyTaskFilter(TaskFilter):
+        class StorageOwnerMetadata(OwnerMetadata):
             user_id: int | Wildcard
             product_name: int | Wildcard
-            client_name: str
+            owner = "storage-service"
 
-        Listing tasks using the filter `MyTaskFilter(user_id=123, product_name=Wildcard(), client_name="my-app")` will return all tasks with
-        user_id 123, any product_name submitted from my-app.
+        Listing tasks using the filter `StorageOwnerMetadata(user_id=123, product_name="*")` will return all tasks with
+        user_id 123, any product_name submitted from storage-service.
 
     If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model). I.e. one can recover the metadata from the task:
         metadata -> task_uuid -> metadata
 
     """
 
-    model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
+    owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]
 
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:
         for key, value in self.model_dump().items():
             # forbidden keys
-            if any(x in key for x in _FORBIDDEN_CHARS):
+            if any(x in key for x in _FORBIDDEN_KEYS):
                 raise ValueError(f"Invalid filter key: '{key}'")
             # forbidden values
-            if not isinstance(value, Wildcard) and any(
-                x in f"{value}" for x in _FORBIDDEN_CHARS
-            ):
+            if any(x in f"{value}" for x in _FORBIDDEN_VALUES):
+                raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
+            if not any(isinstance(value, type_) for type_ in _VALID_VALUE_TYPES):
+                # restrict value types to ensure smooth serialization/deserialization
                 raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
         return self
 
@@ -73,9 +75,9 @@ class TaskFilter(BaseModel):
         )
 
     @classmethod
-    def recreate_as_model(cls, task_id: TaskID, schema: type[ModelType]) -> ModelType:
+    def validate_from_task_id(cls, task_id: TaskID) -> Self:
         filter_dict = cls._recreate_data(task_id)
-        return schema.model_validate(filter_dict)
+        return cls.model_validate(filter_dict)
 
     @classmethod
     def _recreate_data(cls, task_id: TaskID) -> dict[str, Any]:
@@ -120,7 +122,7 @@ class TasksQueue(StrEnum):
     API_WORKER_QUEUE = "api_worker_queue"
 
 
-class TaskMetadata(BaseModel):
+class ExecutionMetadata(BaseModel):
     name: TaskName
     ephemeral: bool = True
     queue: TasksQueue = TasksQueue.DEFAULT
@@ -128,7 +130,7 @@ class TaskMetadata(BaseModel):
 
 class Task(BaseModel):
     uuid: TaskUUID
-    metadata: TaskMetadata
+    metadata: ExecutionMetadata
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -170,17 +172,17 @@ class TaskInfoStore(Protocol):
     async def create_task(
         self,
         task_id: TaskID,
-        task_metadata: TaskMetadata,
+        task_metadata: ExecutionMetadata,
         expiry: datetime.timedelta,
     ) -> None: ...
 
     async def task_exists(self, task_id: TaskID) -> bool: ...
 
-    async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None: ...
+    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None: ...
 
     async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
 
-    async def list_tasks(self, task_filter: TaskFilter) -> list[Task]: ...
+    async def list_tasks(self, task_filter: OwnerMetadata) -> list[Task]: ...
 
     async def remove_task(self, task_id: TaskID) -> None: ...
 

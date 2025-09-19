@@ -1,69 +1,104 @@
+import typing
+from typing import Annotated
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=protected-access
 import pydantic
 import pytest
 from faker import Faker
-from pydantic import BaseModel
-from servicelib.celery.models import TaskFilter, TaskUUID
+from pydantic import StringConstraints
+from servicelib.celery.models import (
+    _VALID_VALUE_TYPES,
+    OwnerMetadata,
+    TaskUUID,
+    Wildcard,
+)
 
 _faker = Faker()
 
 
+class _TestOwnerMetadata(OwnerMetadata):
+    string_: str
+    int_: int
+    bool_: bool
+    none_: None
+    uuid_: str
+    list_: list[str]
+
+
 @pytest.fixture
-def task_filter_data() -> dict[str, str | int | bool | None | list[str]]:
-    return {
-        "string": _faker.word(),
-        "int": _faker.random_int(),
-        "bool": _faker.boolean(),
-        "none": None,
-        "uuid": _faker.uuid4(),
-        "list": [_faker.word() for _ in range(3)],
+def owner_metadata() -> dict[str, str | int | bool | None | list[str]]:
+    data = {
+        "string_": _faker.word(),
+        "int_": _faker.random_int(),
+        "bool_": _faker.boolean(),
+        "none_": None,
+        "uuid_": _faker.uuid4(),
+        "list_": [_faker.word() for _ in range(3)],
+        "owner": _faker.word().lower(),
     }
+    _TestOwnerMetadata.model_validate(data)  # ensure it's valid
+    return data
 
 
 async def test_task_filter_serialization(
-    task_filter_data: dict[str, str | int | bool | None | list[str]],
+    owner_metadata: dict[str, str | int | bool | None | list[str]],
 ):
-    task_filter = TaskFilter.model_validate(task_filter_data)
-    assert task_filter.model_dump() == task_filter_data
-    assert task_filter.model_dump() == task_filter_data
+    task_filter = _TestOwnerMetadata.model_validate(owner_metadata)
+    assert task_filter.model_dump() == owner_metadata
 
 
 async def test_task_filter_sorting_key_not_serialized():
 
-    keys = ["a", "b"]
-    task_filter = TaskFilter.model_validate(
-        {
-            "a": _faker.random_int(),
-            "b": _faker.word(),
-        }
+    class _OwnerMetadata(OwnerMetadata):
+        a: int | Wildcard
+        b: str | Wildcard
+
+    keys = ["a", "b", "owner"]
+    task_filter = _OwnerMetadata.model_validate(
+        {"a": _faker.random_int(), "b": _faker.word(), "owner": _faker.word().lower()}
     )
     expected_key = ":".join([f"{k}={getattr(task_filter, k)}" for k in sorted(keys)])
     assert task_filter._build_task_id_prefix() == expected_key
 
 
 async def test_task_filter_task_uuid(
-    task_filter_data: dict[str, str | int | bool | None | list[str]],
+    owner_metadata: dict[str, str | int | bool | None | list[str]],
 ):
-    task_filter = TaskFilter.model_validate(task_filter_data)
+    task_filter = _TestOwnerMetadata.model_validate(owner_metadata)
     task_uuid = TaskUUID(_faker.uuid4())
     task_id = task_filter.create_task_id(task_uuid)
-    assert TaskFilter.get_task_uuid(task_id=task_id) == task_uuid
+    assert OwnerMetadata.get_task_uuid(task_id=task_id) == task_uuid
 
 
 async def test_create_task_filter_from_task_id():
 
-    class MyModel(BaseModel):
-        _int: int
-        _bool: bool
-        _str: str
-        _list: list[str]
+    class MyModel(OwnerMetadata):
+        int_: int
+        bool_: bool
+        str_: str
+        float_: float
 
-    mymodel = MyModel(_int=1, _bool=True, _str="test", _list=["a", "b"])
-    task_filter = TaskFilter.model_validate(mymodel.model_dump())
+    # Check that all elements in _VALID_VALUE_TYPES are represented in MyModel's field types
+    mymodel_types = set()
+    for field in MyModel.model_fields.values():
+        field_type = field.annotation
+        origin = typing.get_origin(field_type)
+        if origin is typing.Union:
+            types_to_check = typing.get_args(field_type)
+        else:
+            types_to_check = [field_type]
+        for t in types_to_check:
+            if t is not Wildcard:
+                mymodel_types.add(t)
+    for valid_type in _VALID_VALUE_TYPES:
+        assert valid_type in mymodel_types, f"{valid_type} not represented in MyModel"
+
+    mymodel = MyModel(int_=1, bool_=True, str_="test", float_=1.0, owner="myowner")
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = task_filter.create_task_id(task_uuid)
-    assert TaskFilter.recreate_as_model(task_id=task_id, schema=MyModel) == mymodel
+    task_id = mymodel.create_task_id(task_uuid)
+    mymodel_recreated = MyModel.validate_from_task_id(task_id=task_id)
+    assert mymodel_recreated == mymodel
 
 
 @pytest.mark.parametrize(
@@ -79,4 +114,23 @@ async def test_create_task_filter_from_task_id():
 )
 def test_task_filter_validator_raises_on_forbidden_chars(bad_data):
     with pytest.raises(pydantic.ValidationError):
-        TaskFilter.model_validate(bad_data)
+        OwnerMetadata.model_validate(bad_data)
+
+
+async def test_task_owner():
+    class MyFilter(OwnerMetadata):
+        extra_field: str
+
+    with pytest.raises(pydantic.ValidationError):
+        MyFilter(owner="", extra_field="value")
+
+    with pytest.raises(pydantic.ValidationError):
+        MyFilter(owner="UPPER_CASE", extra_field="value")
+
+    class MyNextFilter(OwnerMetadata):
+        owner: Annotated[
+            str, StringConstraints(strip_whitespace=True, pattern=r"^the_task_owner$")
+        ]
+
+    with pytest.raises(pydantic.ValidationError):
+        MyNextFilter(owner="wrong_owner")
