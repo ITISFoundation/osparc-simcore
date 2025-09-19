@@ -45,10 +45,10 @@ from .dependencies.celery import get_task_manager
 
 def _get_task_filter(*, user_id: UserID) -> OwnerMetadata:
     _data = {
+        "owner": APP_NAME,
         "user_id": user_id,
-        "client_name": APP_NAME,
     }
-    return OwnerMetadata().model_validate(_data)
+    return OwnerMetadata.model_validate(_data)
 
 
 _logger = logging.getLogger(__name__)
