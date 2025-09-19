@@ -45,6 +45,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     this.set({
       appearance: "node-ui-cap",
+      decorator: "rounded",
       layout: grid,
       showMinimize: false,
       showMaximize: false,
@@ -53,10 +54,6 @@ qx.Class.define("osparc.workbench.NodeUI", {
       resizable: false,
       allowMaximize: false,
       contentPadding: this.self().CONTENT_PADDING
-    });
-
-    this.getContentElement().setStyles({
-      "border-radius": "4px"
     });
 
     const captionBar = this.getChildControl("captionbar");
@@ -282,7 +279,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
         case "progress":
           control = new qx.ui.indicator.ProgressBar().set({
             height: 10,
-            margin: 4
+            margin: 4,
+            decorator: "rounded",
           });
           this.add(control, {
             row: 1,
