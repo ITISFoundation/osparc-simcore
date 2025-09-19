@@ -24,7 +24,7 @@ DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
 
 
 DOCKER_PULL_COMMAND: Final[str] = (
-    "docker compose -f /docker-pull.compose.yml -p buffering pull"
+    f"{DOCKER_COMPOSE_CMD} -f {PRE_PULL_COMPOSE_PATH} -p buffering pull"
 )
 
 PRE_PULLED_IMAGES_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
