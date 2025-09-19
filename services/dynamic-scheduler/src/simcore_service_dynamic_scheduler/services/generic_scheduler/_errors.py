@@ -52,3 +52,19 @@ class CannotCancelWhileWaitingForManualInterventionError(BaseGenericSchedulerErr
     msg_template: str = (
         "Cannot cancel schedule_id='{schedule_id}' while one or more steps are waiting for manual intervention."
     )
+
+
+class StepNameNotInCurrentGroupError(BaseGenericSchedulerError):
+    msg_template: str = (
+        "step_name='{step_name}' not in current step_group_name='{step_group_name}' of operation_name='{operation_name}'"
+    )
+
+
+class StepNotInErrorStateError(BaseGenericSchedulerError):
+    msg_template: str = (
+        "step_name='{step_name}' is not in an error state and cannot be restarted"
+    )
+
+
+class StepNotWaitingForManualInterventionError(BaseGenericSchedulerError):
+    msg_template: str = "step_name='{step_name}' is not waiting for manual intervention"

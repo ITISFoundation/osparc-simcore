@@ -20,6 +20,9 @@ from ._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     InitialOperationContextKeyNotAllowedError,
     KeyNotFoundInHashError,
+    StepNameNotInCurrentGroupError,
+    StepNotInErrorStateError,
+    StepNotWaitingForManualInterventionError,
     UnexpectedStepHandlingError,
 )
 from ._models import (
@@ -348,8 +351,11 @@ class Core:
         if step_name not in {
             step.get_step_name() for step in step_group.get_step_subgroup_to_run()
         }:
-            msg = f"step_name='{step_name}' not in current step_group_name='{step_group_name}' of operation_name='{operation_name}'"
-            raise ValueError(msg)
+            raise StepNameNotInCurrentGroupError(
+                step_name=step_name,
+                step_group_name=step_group_name,
+                operation_name=operation_name,
+            )
 
         step_proxy = StepStoreProxy(
             store=self._store,
@@ -363,8 +369,7 @@ class Core:
         try:
             await step_proxy.get("error_traceback")
         except KeyNotFoundInHashError as exc:
-            msg = f"Step '{step_name}' is not in error state and cannot be restarted"
-            raise ValueError(msg) from exc
+            raise StepNotInErrorStateError(step_name=step_name) from exc
 
         if in_manual_intervention:
             requires_manual_intervention: bool = False
@@ -374,8 +379,7 @@ class Core:
                 )
 
             if requires_manual_intervention is False:
-                msg = f"Step '{step_name}' is not waiting for manual intervention"
-                raise ValueError(msg)
+                raise StepNotWaitingForManualInterventionError(step_name=step_name)
 
             await step_proxy.delete("error_traceback", "requires_manual_intervention")
         else:
