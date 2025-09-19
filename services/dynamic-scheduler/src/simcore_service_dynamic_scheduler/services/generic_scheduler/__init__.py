@@ -1,4 +1,4 @@
-from ._core import (
+from ._api import (
     cancel_operation,
     restart_create_operation_step_in_manual_intervention,
     restart_revert_operation_step_in_error,
@@ -29,8 +29,6 @@ __all__: tuple[str, ...] = (
     "BaseStep",
     "cancel_operation",
     "get_generic_scheduler_lifespans",
-    "restart_create_operation_step_in_manual_intervention",
-    "restart_revert_operation_step_in_error",
     "get_opration_context_proxy",
     "get_step_group_proxy",
     "get_step_store_proxy",
@@ -41,6 +39,8 @@ __all__: tuple[str, ...] = (
     "ParallelStepGroup",
     "ProvidedOperationContext",
     "RequiredOperationContext",
+    "restart_create_operation_step_in_manual_intervention",
+    "restart_revert_operation_step_in_error",
     "ScheduleId",
     "SingleStepGroup",
     "start_operation",
