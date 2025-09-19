@@ -192,7 +192,7 @@ class Core:
         self.unknown_status_wait_before_retry = unknown_status_wait_before_retry
         self._store: Store = get_store(app)
 
-    async def create(
+    async def start_operation(
         self, operation_name: OperationName, initial_operation_context: OperationContext
     ) -> ScheduleId:
         """entrypoint for sceduling returns a unique schedule_id"""
@@ -324,6 +324,67 @@ class Core:
                     deferred_task_uid = await step_proxy.get("deferred_task_uid")
                     await DeferredRunner.cancel(deferred_task_uid)
                     await step_proxy.set("status", StepStatus.CANCELLED)
+
+    async def restart_operation_step_in_error(
+        self,
+        schedule_id: ScheduleId,
+        step_name: StepName,
+        *,
+        in_manual_intervention: bool,
+    ) -> None:
+        # only if a step is waiting for manual intervention this will restart it
+        # hwo to check if it's waitin for manual intervention?
+        schedule_data_proxy = ScheduleDataStoreProxy(
+            store=self._store, schedule_id=schedule_id
+        )
+        is_creating = await schedule_data_proxy.get("is_creating")
+        operation_name = await schedule_data_proxy.get("operation_name")
+        group_index = await schedule_data_proxy.get("group_index")
+
+        operation = OperationRegistry.get_operation(operation_name)
+        step_group = operation[group_index]
+        step_group_name = step_group.get_step_group_name(index=group_index)
+
+        if step_name not in {
+            step.get_step_name() for step in step_group.get_step_subgroup_to_run()
+        }:
+            msg = f"step_name='{step_name}' not in current step_group_name='{step_group_name}' of operation_name='{operation_name}'"
+            raise ValueError(msg)
+
+        step_proxy = StepStoreProxy(
+            store=self._store,
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            step_group_name=step_group_name,
+            step_name=step_name,
+            is_creating=is_creating,
+        )
+
+        try:
+            await step_proxy.get("error_traceback")
+        except KeyNotFoundInHashError as exc:
+            msg = f"Step '{step_name}' is not in error state and cannot be restarted"
+            raise ValueError(msg) from exc
+
+        if in_manual_intervention:
+            requires_manual_intervention: bool = False
+            with suppress(KeyNotFoundInHashError):
+                requires_manual_intervention = await step_proxy.get(
+                    "requires_manual_intervention"
+                )
+
+            if requires_manual_intervention is False:
+                msg = f"Step '{step_name}' is not waiting for manual intervention"
+                raise ValueError(msg)
+
+            await step_proxy.delete("error_traceback", "requires_manual_intervention")
+        else:
+            await step_proxy.delete("error_traceback")
+
+        await _start_and_mark_as_started(
+            step_proxy, is_creating=True, expected_steps_count=len(step_group)
+        )
+        await enqueue_schedule_event(self.app, schedule_id)
 
     async def _on_schedule_event(self, schedule_id: ScheduleId) -> None:
         schedule_data_proxy = ScheduleDataStoreProxy(
@@ -645,8 +706,34 @@ async def start_operation(
     operation_name: OperationName,
     initial_operation_context: OperationContext,
 ) -> ScheduleId:
-    return await get_core(app).create(operation_name, initial_operation_context)
+    """starts an operation by it's given name and initial context"""
+    return await get_core(app).start_operation(
+        operation_name, initial_operation_context
+    )
 
 
 async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
+    """aborts an opration and triggers revert of all it's executed steps"""
     await get_core(app).cancel_schedule(schedule_id)
+
+
+async def restart_create_operation_step_in_manual_intervention(
+    app: FastAPI, schedule_id: ScheduleId, step_name: StepName
+) -> None:
+    """
+    restarts a step waiting for manual intervention
+    NOTE: to be used only with steps with wait_for_manual_intervention=True
+    and only to restart the `create`
+    """
+    await get_core(app).restart_operation_step_in_error(
+        schedule_id, step_name, in_manual_intervention=True
+    )
+
+
+async def restart_revert_operation_step_in_error(  # TODO: add test for this
+    app: FastAPI, schedule_id: ScheduleId, step_name: StepName
+) -> None:
+    """restarts a step stuck in `revert` in an error state"""
+    await get_core(app).restart_operation_step_in_error(
+        schedule_id, step_name, in_manual_intervention=False
+    )
