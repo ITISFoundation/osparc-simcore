@@ -434,6 +434,9 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
                     await monitoring_task
 
 
+_AIODOCKER_PULLING_TIMEOUT_S: Final[int] = 60 * _MINUTE
+
+
 async def pull_image(
     docker_client: Docker,
     docker_auth: DockerBasicAuth,
@@ -448,6 +451,7 @@ async def pull_image(
             "username": docker_auth.username,
             "password": docker_auth.password.get_secret_value(),
         },
+        timeout=_AIODOCKER_PULLING_TIMEOUT_S,
     ):
         await log_publishing_cb(
             f"Pulling {service_key}:{service_version}: {pull_progress}...",
