@@ -1133,7 +1133,7 @@ async def test_wait_for_manual_intervention(
                 RevertRandom(_S2, _S3, _S4),
                 RevertSequence(_S1),
             ],
-            id="s1-p3-s1(1mi)",
+            id="s1-p3-s1(1r)",
         ),
         pytest.param(
             [
@@ -1148,6 +1148,7 @@ async def test_wait_for_manual_intervention(
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
                 CreateRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
+                RevertRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1181,7 +1182,7 @@ async def test_wait_for_manual_intervention(
                 RevertRandom(_S2, _S3, _S4),
                 RevertSequence(_S1),
             ],
-            id="s1-p3-p6(3mi)",
+            id="s1-p3-p6(3r)",
         ),
     ],
 )
