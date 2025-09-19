@@ -652,7 +652,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
       const linkLabel = new osparc.ui.basic.LinkLabel().set({
         paddingLeft: 4,
-        font: "text-14"
+        font: "text-14",
+        rich: false, // this will make the ellipsis work
       });
       const middleContainer = this.getChildControl("middle-container");
       middleContainer.add(linkLabel, {
