@@ -35,6 +35,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
+from servicelib.utils import limited_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ...constants import UNDEFINED_STR_METADATA
@@ -79,6 +80,7 @@ _logger = logging.getLogger(__name__)
 _MAX_WAITING_TIME_FOR_UNKNOWN_TASKS: Final[datetime.timedelta] = datetime.timedelta(
     seconds=30
 )
+_PUBLICATION_CONCURRENCY_LIMIT: Final[int] = 10
 
 
 def _auto_schedule_callback(
@@ -336,7 +338,7 @@ class BaseCompScheduler(ABC):
             project_id, dag
         )
         if running_tasks := [t for t in tasks.values() if _need_heartbeat(t)]:
-            await asyncio.gather(
+            await limited_gather(
                 *(
                     publish_service_resource_tracking_heartbeat(
                         self.rabbitmq_client,
@@ -345,17 +347,15 @@ class BaseCompScheduler(ABC):
                         ),
                     )
                     for t in running_tasks
-                )
+                ),
+                log=_logger,
+                limit=_PUBLICATION_CONCURRENCY_LIMIT,
             )
-            comp_tasks_repo = CompTasksRepository(self.db_engine)
-            await asyncio.gather(
-                *(
-                    comp_tasks_repo.update_project_task_last_heartbeat(
-                        t.project_id, t.node_id, run_id, utc_now
-                    )
-                    for t in running_tasks
+            comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
+            for task in running_tasks:
+                await comp_tasks_repo.update_project_task_last_heartbeat(
+                    project_id, task.node_id, run_id, utc_now
                 )
-            )
 
     async def _get_changed_tasks_from_backend(
         self,
@@ -400,7 +400,7 @@ class BaseCompScheduler(ABC):
         utc_now = arrow.utcnow().datetime
 
         # resource tracking
-        await asyncio.gather(
+        await limited_gather(
             *(
                 publish_service_resource_tracking_started(
                     self.rabbitmq_client,
@@ -462,10 +462,12 @@ class BaseCompScheduler(ABC):
                     service_additional_metadata={},
                 )
                 for t in tasks
-            )
+            ),
+            log=_logger,
+            limit=_PUBLICATION_CONCURRENCY_LIMIT,
         )
         # instrumentation
-        await asyncio.gather(
+        await limited_gather(
             *(
                 publish_service_started_metrics(
                     self.rabbitmq_client,
@@ -476,24 +478,22 @@ class BaseCompScheduler(ABC):
                     task=t,
                 )
                 for t in tasks
-            )
+            ),
+            log=_logger,
+            limit=_PUBLICATION_CONCURRENCY_LIMIT,
         )
 
         # update DB
         comp_tasks_repo = CompTasksRepository(self.db_engine)
-        await asyncio.gather(
-            *(
-                comp_tasks_repo.update_project_tasks_state(
-                    t.project_id,
-                    run_id,
-                    [t.node_id],
-                    t.state,
-                    optional_started=utc_now,
-                    optional_progress=t.progress,
-                )
-                for t in tasks
+        for task in tasks:
+            await comp_tasks_repo.update_project_tasks_state(
+                project_id,
+                run_id,
+                [task.node_id],
+                task.state,
+                optional_started=utc_now,
+                optional_progress=task.progress,
             )
-        )
         await CompRunsRepository.instance(self.db_engine).mark_as_started(
             user_id=user_id,
             project_id=project_id,
@@ -504,18 +504,14 @@ class BaseCompScheduler(ABC):
     async def _process_waiting_tasks(
         self, tasks: list[TaskStateTracker], run_id: PositiveInt
     ) -> None:
-        comp_tasks_repo = CompTasksRepository(self.db_engine)
-        await asyncio.gather(
-            *(
-                comp_tasks_repo.update_project_tasks_state(
-                    t.current.project_id,
-                    run_id,
-                    [t.current.node_id],
-                    t.current.state,
-                )
-                for t in tasks
+        comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
+        for task in tasks:
+            await comp_tasks_repo.update_project_tasks_state(
+                task.current.project_id,
+                run_id,
+                [task.current.node_id],
+                task.current.state,
             )
-        )
 
     async def _update_states_from_comp_backend(
         self,
