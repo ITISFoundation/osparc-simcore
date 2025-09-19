@@ -414,7 +414,6 @@ class Core:
         )
 
     async def safe_on_schedule_event(self, schedule_id: ScheduleId) -> None:
-        # NOTE: do not call this directly, you are doing something wrong
         async with self._safe_event(schedule_id):
             await self._on_schedule_event(schedule_id)
 
