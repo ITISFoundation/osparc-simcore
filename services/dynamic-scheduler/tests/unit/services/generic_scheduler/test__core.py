@@ -30,6 +30,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     ScheduleId,
     SingleStepGroup,
     cancel_operation,
+    restart_create_operation_step_in_manual_intervention,
     start_operation,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
@@ -78,6 +79,7 @@ _RETRY_PARAMS: Final[dict[str, Any]] = {
 
 
 _PARALLEL_APP_CREATION: Final[NonNegativeInt] = 5
+_PARALLEL_RESTARTS: Final[NonNegativeInt] = 5
 
 
 @pytest.fixture
@@ -206,7 +208,27 @@ class _SleepsForeverBS(_BS):
         await asyncio.sleep(1e10)
 
 
-class _WaitManualInerventionBS(_RevertBS):
+class _GlobalManualInterventionTracker:
+    raise_on_create: bool = True
+
+
+@pytest.fixture
+def reset_raise_on_create() -> Iterable[None]:
+    _GlobalManualInterventionTracker.raise_on_create = True
+    yield
+    _GlobalManualInterventionTracker.raise_on_create = True
+
+
+class _WaitManualInerventionBS(_BS):
+    @classmethod
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        await super().create(app, required_context)
+        if _GlobalManualInterventionTracker.raise_on_create:
+            msg = "always fails only on CREATE"
+            raise RuntimeError(msg)
+
     @classmethod
     def wait_for_manual_intervention(cls) -> bool:
         return True
@@ -421,6 +443,20 @@ class _WMI1(_WaitManualInerventionBS): ...
 
 
 class _WMI2(_WaitManualInerventionBS): ...
+
+
+class _WMI3(_WaitManualInerventionBS): ...
+
+
+def _get_wait_manaul_intervention_steps(
+    operation: Operation,
+) -> list[type[_WaitManualInerventionBS]]:
+    result: list[type[_WaitManualInerventionBS]] = []
+    for group in operation:
+        for step in group.get_step_subgroup_to_run():
+            if issubclass(step, _WaitManualInerventionBS):
+                result.append(step)
+    return result
 
 
 # Below steps which require and provide context keys
@@ -919,13 +955,16 @@ async def test_repeating_step(
 
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
-    "operation, expected_order, expected_keys",
+    "operation, expected_order, expected_keys, after_restart_expected_order",
     [
         pytest.param(
             [
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_S2, _S3, _S4),
                 SingleStepGroup(_WMI1),
+                # below are not included when waiting for manual intervention
+                ParallelStepGroup(_S5, _S6),
+                SingleStepGroup(_S7),
             ],
             [
                 CreateSequence(_S1),
@@ -943,20 +982,29 @@ async def test_repeating_step(
                 "SCH:{schedule_id}:STEPS:test_op:1P:C:_S4",
                 "SCH:{schedule_id}:STEPS:test_op:2S:C:_WMI1",
             },
+            [
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateSequence(_WMI1),
+                CreateSequence(_WMI1),  # retried step
+                CreateRandom(_S5, _S6),  # it is completed now
+                CreateSequence(_S7),  # it is completed now
+            ],
             id="s1-p3-s1(1mi)",
         ),
         pytest.param(
             [
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_S2, _S3, _S4),
-                ParallelStepGroup(_WMI1, _WMI2, _S5, _S6, _S7),
-                SingleStepGroup(_S8),  # will be ignored
-                ParallelStepGroup(_S9, _S10),  # will be ignored
+                ParallelStepGroup(_WMI1, _WMI2, _WMI3, _S5, _S6, _S7),
+                # below are not included when waiting for manual intervention
+                SingleStepGroup(_S8),
+                ParallelStepGroup(_S9, _S10),
             ],
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
-                CreateRandom(_WMI1, _WMI2, _S5, _S6, _S7),
+                CreateRandom(_WMI1, _WMI2, _WMI3, _S5, _S6, _S7),
             ],
             {
                 "SCH:{schedule_id}",
@@ -972,12 +1020,22 @@ async def test_repeating_step(
                 "SCH:{schedule_id}:STEPS:test_op:2P:C:_S7",
                 "SCH:{schedule_id}:STEPS:test_op:2P:C:_WMI1",
                 "SCH:{schedule_id}:STEPS:test_op:2P:C:_WMI2",
+                "SCH:{schedule_id}:STEPS:test_op:2P:C:_WMI3",
             },
-            id="s1-p3-p5(2mi)",
+            [
+                CreateSequence(_S1),
+                CreateRandom(_S2, _S3, _S4),
+                CreateRandom(_WMI1, _WMI2, _WMI3, _S5, _S6, _S7),
+                CreateRandom(_WMI1, _WMI2, _WMI3),  # retried steps
+                CreateSequence(_S8),  # it is completed now
+                CreateRandom(_S9, _S10),  # it is completed now
+            ],
+            id="s1-p3-p6(3mi)",
         ),
     ],
 )
 async def test_wait_for_manual_intervention(
+    reset_raise_on_create: None,
     preserve_caplog_for_async_logging: None,
     steps_call_order: list[tuple[str, str]],
     selected_app: FastAPI,
@@ -986,6 +1044,7 @@ async def test_wait_for_manual_intervention(
     operation_name: OperationName,
     expected_order: list[BaseExpectedStepOrder],
     expected_keys: set[str],
+    after_restart_expected_order: list[BaseExpectedStepOrder],
 ):
     register_operation(operation_name, operation)
 
@@ -1004,6 +1063,25 @@ async def test_wait_for_manual_intervention(
     # give some time for a "possible cancellation" to be processed
     await asyncio.sleep(0.1)
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+
+    # unblock all waiting for manual intervention steps and restart them
+    steps_to_restart = _get_wait_manaul_intervention_steps(operation)
+    _GlobalManualInterventionTracker.raise_on_create = False
+    await limited_gather(
+        *(
+            restart_create_operation_step_in_manual_intervention(
+                selected_app, schedule_id, step.get_step_name()
+            )
+            for step in steps_to_restart
+        ),
+        limit=_PARALLEL_RESTARTS,
+    )
+    # should finish normally
+    await ensure_expected_order(steps_call_order, after_restart_expected_order)
+    await _ensure_keys_in_store(selected_app, expected_keys=set())
+
+
+# TODO: restart_revert_operation_step_in_error
 
 
 @pytest.mark.parametrize("app_count", [10])
