@@ -94,7 +94,7 @@ _DASK_DEFAULT_TIMEOUT_S: Final[int] = 10
 
 
 _UserCallbackInSepThread = Callable[[], None]
-_MAX_CONCURRENT_CLIENT_CONNECTIONS: Final[int] = 10
+_MAX_CONCURRENT_CLIENT_CONNECTIONS: Final[int] = 1
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -426,7 +426,7 @@ class DaskClient:
         return await limited_gather(
             *(_get_task_progress(job_id) for job_id in job_ids),
             log=_logger,
-            limit=1,
+            limit=_MAX_CONCURRENT_CLIENT_CONNECTIONS,
         )
 
     async def get_tasks_status(self, job_ids: Iterable[str]) -> list[RunningState]:
@@ -509,7 +509,7 @@ class DaskClient:
         return await limited_gather(
             *(_get_task_state(job_id) for job_id in job_ids),
             log=_logger,
-            limit=1,
+            limit=_MAX_CONCURRENT_CLIENT_CONNECTIONS,
         )
 
     async def abort_computation_task(self, job_id: str) -> None:
