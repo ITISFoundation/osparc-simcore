@@ -150,7 +150,7 @@ class DistributedSemaphore(BaseModel):
     @property
     def holder_key(self) -> str:
         """Redis key for this instance's holder entry."""
-        return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:{self.instance_id}"
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders:{self.instance_id}"
 
     @computed_field
     @property
@@ -191,8 +191,10 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
         blocking_timeout_seconds = 1
         if self.blocking:
-            blocking_timeout_seconds = int(
-                self.blocking_timeout.total_seconds() if self.blocking_timeout else 0
+            blocking_timeout_seconds = (
+                int(self.blocking_timeout.total_seconds())
+                if self.blocking_timeout
+                else 60
             )
 
         # Execute the Lua scripts atomically
@@ -217,11 +219,9 @@ class DistributedSemaphore(BaseModel):
                 self.key,
                 self.instance_id,
             )
-            if self.blocking:
-                raise SemaphoreAcquisitionError(
-                    name=self.key, capacity=self.capacity
-                ) from e
-            return False
+            raise SemaphoreAcquisitionError(
+                name=self.key, capacity=self.capacity
+            ) from e
 
         assert len(tokens_key_token) == 2  # nosec
         assert tokens_key_token[0] == self.tokens_key  # nosec
@@ -231,7 +231,7 @@ class DistributedSemaphore(BaseModel):
         result = await cls.acquire_script(  # pylint: disable=not-callable
             keys=[self.holders_key, self.holder_key],
             args=[
-                token[0],
+                token,
                 self.instance_id,
                 ttl_seconds,
             ],
