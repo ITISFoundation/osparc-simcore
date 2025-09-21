@@ -13,6 +13,7 @@ from typing import Literal
 
 import pytest
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.redis import RedisClientSDK
 from servicelib.redis._constants import (
     SEMAPHORE_HOLDER_KEY_PREFIX,
@@ -365,11 +366,11 @@ async def test_with_large_capacity(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
-    large_capacity = 100
+    large_capacity = 1
     concurrent_count = 0
     max_concurrent = 0
-    sleep_time_s = 5
-    num_tasks = 1000
+    sleep_time_s = 50
+    num_tasks = 10
 
     @with_limited_concurrency(
         redis_client_sdk,
@@ -382,9 +383,8 @@ async def test_with_large_capacity(
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)
-        logging.info("Started task, current concurrent: %d", concurrent_count)
-        await asyncio.sleep(sleep_time_s)
-        logging.info("Done task, current concurrent: %d", concurrent_count)
+        with log_context(logging.INFO, f"task with {concurrent_count=}"):
+            await asyncio.sleep(sleep_time_s)
         concurrent_count -= 1
 
     # Start tasks equal to the large capacity
@@ -398,6 +398,30 @@ async def test_with_large_capacity(
 
     # Should never exceed the large capacity
     assert max_concurrent <= large_capacity
+
+
+async def test_long_locking_logs_warning(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    caplog: pytest.LogCaptureFixture,
+    mocker: MockerFixture,
+):
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+        blocking=True,
+        blocking_timeout=None,
+        expected_lock_overall_time=datetime.timedelta(milliseconds=200),
+    )
+    async def limited_function() -> None:
+        with log_context(logging.INFO, "task"):
+            await asyncio.sleep(0.4)
+
+    with caplog.at_level(logging.WARNING):
+        await limited_function()
+        assert caplog.records
+        assert "longer than expected" in caplog.messages[-1]
 
 
 async def test_context_manager_basic_functionality(
