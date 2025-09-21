@@ -424,6 +424,38 @@ async def test_long_locking_logs_warning(
         assert "longer than expected" in caplog.messages[-1]
 
 
+async def test_semaphore_fair_queuing(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+):
+    entered_order: list[int] = []
+
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+    )
+    async def limited_function(call_id: int):
+        entered_order.append(call_id)
+        await asyncio.sleep(0.1)
+        return call_id
+
+    # Launch tasks in a specific order
+    num_tasks = 10
+    tasks = []
+    for i in range(num_tasks):
+        tasks.append(asyncio.create_task(limited_function(i)))
+        await asyncio.sleep(0.01)  # Small delay to help preserve order
+    results = await asyncio.gather(*tasks)
+
+    # All should complete successfully and in order
+    assert results == list(range(num_tasks))
+    # The order in which they entered the critical section should match the order of submission
+    assert entered_order == list(
+        range(num_tasks)
+    ), f"Expected fair queuing, got {entered_order}"
+
+
 async def test_context_manager_basic_functionality(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
