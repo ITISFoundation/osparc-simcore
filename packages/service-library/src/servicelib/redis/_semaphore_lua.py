@@ -33,6 +33,7 @@ RENEW_SEMAPHORE_SCRIPT: Final[str] = _load_script("renew_semaphore")
 COUNT_SEMAPHORE_SCRIPT: Final[str] = _load_script("count_semaphore")
 
 # fair semaphore scripts (token pool based)
+REGISTER_FAIR_SEMAPHORE_SCRIPT: Final[str] = _load_script("register_semaphore_holder")
 ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT: Final[str] = _load_script("acquire_fair_semaphore_v2")
 RELEASE_FAIR_SEMAPHORE_V2_SCRIPT: Final[str] = _load_script("release_fair_semaphore_v2")
 CLEANUP_FAIR_SEMAPHORE_V2_SCRIPT: Final[str] = _load_script("cleanup_fair_semaphore_v2")

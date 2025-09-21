@@ -4,6 +4,7 @@ import uuid
 from types import TracebackType
 from typing import Annotated, ClassVar
 
+import redis.exceptions
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
     BaseModel,
@@ -13,6 +14,7 @@ from pydantic import (
     field_validator,
 )
 from redis.commands.core import AsyncScript
+from servicelib.redis._utils import handle_redis_returns_union_types
 
 from ._client import RedisClientSDK
 from ._constants import (
@@ -29,6 +31,7 @@ from ._errors import (
 from ._semaphore_lua import (
     ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT,
     COUNT_FAIR_SEMAPHORE_V2_SCRIPT,
+    REGISTER_FAIR_SEMAPHORE_SCRIPT,
     RELEASE_FAIR_SEMAPHORE_V2_SCRIPT,
     RENEW_FAIR_SEMAPHORE_V2_SCRIPT,
     SCRIPT_BAD_EXIT_CODE,
@@ -92,6 +95,7 @@ class DistributedSemaphore(BaseModel):
     ] = DEFAULT_FACTORY
 
     # Class and/or Private state attributes (not part of the model)
+    register_semaphore: ClassVar[AsyncScript | None] = None
     acquire_script: ClassVar[AsyncScript | None] = None
     count_script: ClassVar[AsyncScript | None] = None
     release_script: ClassVar[AsyncScript | None] = None
@@ -104,6 +108,9 @@ class DistributedSemaphore(BaseModel):
         caches the script SHA, so this is efficient. Even if called multiple times,
         the script is only registered once."""
         if cls.acquire_script is None:
+            cls.register_semaphore = redis_client.redis.register_script(
+                REGISTER_FAIR_SEMAPHORE_SCRIPT
+            )
             cls.acquire_script = redis_client.redis.register_script(
                 ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT
             )
@@ -145,6 +152,12 @@ class DistributedSemaphore(BaseModel):
         """Redis key for this instance's holder entry."""
         return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:{self.instance_id}"
 
+    @computed_field
+    @property
+    def holder_prefix(self) -> str:
+        """Prefix for holder keys (used in cleanup)."""
+        return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:"
+
     # Additional validation
     @field_validator("ttl")
     @classmethod
@@ -176,22 +189,51 @@ class DistributedSemaphore(BaseModel):
         """
 
         ttl_seconds = int(self.ttl.total_seconds())
-        blocking_timeout_seconds = 0.1
+        blocking_timeout_seconds = 1
         if self.blocking:
-            blocking_timeout_seconds = (
+            blocking_timeout_seconds = int(
                 self.blocking_timeout.total_seconds() if self.blocking_timeout else 0
             )
 
-        # Execute the Lua script atomically
+        # Execute the Lua scripts atomically
         cls = type(self)
+        assert cls.register_semaphore is not None  # nosec
+        await cls.register_semaphore(
+            keys=[self.tokens_key, self.holders_key],
+            args=[self.capacity, ttl_seconds],
+            client=self.redis_client.redis,
+        )  # pylint: disable=not-callable
+
+        try:
+            # this is blocking pop with timeout
+            tokens_key_token: list[str] = await handle_redis_returns_union_types(
+                self.redis_client.redis.brpop(
+                    [self.tokens_key], timeout=blocking_timeout_seconds
+                )
+            )
+        except redis.exceptions.TimeoutError as e:
+            _logger.debug(
+                "Timeout acquiring semaphore '%s' (instance: %s)",
+                self.key,
+                self.instance_id,
+            )
+            if self.blocking:
+                raise SemaphoreAcquisitionError(
+                    name=self.key, capacity=self.capacity
+                ) from e
+            return False
+
+        assert len(tokens_key_token) == 2  # nosec
+        assert tokens_key_token[0] == self.tokens_key  # nosec
+        token = tokens_key_token[1]
+
         assert cls.acquire_script is not None  # nosec
         result = await cls.acquire_script(  # pylint: disable=not-callable
-            keys=[self.tokens_key, self.holders_key, self.holder_key],
+            keys=[self.holders_key, self.holder_key],
             args=[
+                token[0],
                 self.instance_id,
-                self.capacity,
                 ttl_seconds,
-                blocking_timeout_seconds,
             ],
             client=self.redis_client.redis,
         )
@@ -209,6 +251,7 @@ class DistributedSemaphore(BaseModel):
                 current_count,
             )
             return True
+
         if status == "timeout":
             if self.blocking:
                 _logger.debug(
@@ -261,6 +304,7 @@ class DistributedSemaphore(BaseModel):
                 self.instance_id,
                 current_count,
             )
+            return
 
         # Instance was already expired or not acquired
         assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
