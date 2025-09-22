@@ -219,6 +219,13 @@ async def _cleanup_after_finishing(
     _logger.debug("Operation for schedule_id='%s' %s successfully", verb, schedule_id)
 
 
+async def _requires_manual_intervention(step_proxy: StepStoreProxy) -> bool:
+    try:
+        return await step_proxy.get("requires_manual_intervention")
+    except KeyNotFoundInHashError:
+        return False
+
+
 class Core:
     def __init__(
         self,
@@ -340,11 +347,16 @@ class Core:
             is_creating=is_creating,
         )
 
+        # not allowed to cancel while waiting for manual intervention
         if any(
-            step.wait_for_manual_intervention()
-            for step in group.get_step_subgroup_to_run()
+            await limited_gather(
+                *(
+                    _requires_manual_intervention(step)
+                    for step in group_step_proxies.values()
+                ),
+                limit=_PARALLEL_STATUS_REQUESTS,
+            )
         ):
-            # TODO: this looks wrong, it should check the actual step status
             raise CannotCancelWhileWaitingForManualInterventionError(
                 schedule_id=schedule_id
             )
