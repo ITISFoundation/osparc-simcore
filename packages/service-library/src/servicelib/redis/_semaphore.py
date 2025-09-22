@@ -207,16 +207,17 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         try:
-            stop_condition = stop_after_delay(0)  # non-blocking by default
-            if self.blocking:
-                stop_condition = (
-                    stop_after_delay(self.blocking_timeout)
-                    if self.blocking_timeout
-                    else stop_never
-                )
 
             @retry(
-                stop=stop_condition,
+                stop=(
+                    stop_after_delay(0)
+                    if not self.blocking
+                    else (
+                        stop_after_delay(self.blocking_timeout)
+                        if self.blocking_timeout
+                        else stop_never
+                    )
+                ),
                 wait=wait_random_exponential(min=0.1),
                 retry=retry_if_exception_type(redis.exceptions.TimeoutError),
             )
@@ -373,7 +374,7 @@ class DistributedSemaphore(BaseModel):
 
     async def is_acquired(self) -> bool:
         """Check if the semaphore is currently acquired by this instance."""
-        return (
+        return bool(
             await handle_redis_returns_union_types(
                 self.redis_client.redis.exists(self.holder_key)
             )
