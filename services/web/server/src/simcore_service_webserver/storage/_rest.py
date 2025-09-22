@@ -14,6 +14,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
 )
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
+    AsyncJobId,
 )
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
@@ -67,7 +68,6 @@ from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.celery import get_task_manager
 from simcore_service_webserver.storage._rest_schemas import StreamHeaders
-from simcore_service_webserver.tasks._rest import AsyncJobId
 from yarl import URL
 
 from .._meta import API_VTAG
