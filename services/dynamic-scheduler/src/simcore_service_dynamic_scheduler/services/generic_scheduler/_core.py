@@ -310,12 +310,12 @@ class Core:
             return
 
         # 3. all steps are in a final state, process them
-        _logger.debug("Operation completed: steps_statuses=%s", steps_statuses)
+        _logger.debug("steps_statuses=%s in final state in operation", steps_statuses)
 
         if step_group.repeat_steps is True and is_creating:
             # Meaning check:
-            # A1. if any of the repeating steps was cancelled -> move to revert
-            # A2. otherwise restart all steps in the group
+            # 3A1. if any of the repeating steps was cancelled -> move to revert
+            # 3A2. otherwise restart all steps in the group
             await self._continue_as_repeating_group(
                 schedule_data_proxy,
                 schedule_id,
@@ -326,9 +326,9 @@ class Core:
             )
         elif is_creating:
             # Meaning check:
-            # B1. if all steps in group in SUUCESS -> move to next group
-            # B2. if manual intervention is required -> do nothing else
-            # B3. if any step in CANCELLED or FAILED(and not in manual intervention) -> move to revert
+            # 3B1. if all steps in group in SUUCESS -> move to next group
+            # 3B2. if manual intervention is required -> do nothing else
+            # 3B3. if any step in CANCELLED or FAILED(and not in manual intervention) -> move to revert
             await self._continue_as_creation(
                 steps_statuses,
                 schedule_data_proxy,
@@ -340,9 +340,9 @@ class Core:
             )
         else:
             # Meaning check:
-            # C1. if all steps in gorup in SUUCESS -> go back to previous group untill done
-            # C2. it is unexpected to have a FAILED step -> do nothing else
-            # C3. it is unexpected to have a CANCELLED step -> do nothing else
+            # 3C1. if all steps in gorup in SUUCESS -> go back to previous group untill done
+            # 3C2. it is unexpected to have a FAILED step -> do nothing else
+            # 3C3. it is unexpected to have a CANCELLED step -> do nothing else
             await self._continue_as_reverting(
                 steps_statuses,
                 schedule_data_proxy,
@@ -375,14 +375,14 @@ class Core:
         # since a cancellation request might have been requested
         steps_stauses = await get_steps_statuses(step_proxies)
 
-        # A1. if any of the repeating steps was cancelled -> move to revert
+        # 3A1. if any of the repeating steps was cancelled -> move to revert
         if any(status == StepStatus.CANCELLED for status in steps_stauses.values()):
             # NOTE:
             await schedule_data_proxy.set("is_creating", value=False)
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
-        # A2. otherwise restart all steps in the group
+        # 3A2. otherwise restart all steps in the group
         await limited_gather(
             *(x.remove() for x in step_proxies), limit=PARALLEL_STATUS_REQUESTS
         )
@@ -406,7 +406,7 @@ class Core:
         current_step_group: BaseStepGroup,
         operation: Operation,
     ) -> None:
-        # B1. if all steps in group in SUUCESS -> move to next group
+        # 3B1. if all steps in group in SUUCESS -> move to next group
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
             try:
                 next_group_index = group_index + 1
@@ -422,7 +422,7 @@ class Core:
 
             return
 
-        # B2. if manual intervention is required -> do nothing else
+        # 3B2. if manual intervention is required -> do nothing else
         manual_intervention_step_names: set[StepName] = set()
         current_step_group.get_step_subgroup_to_run()
         for step in current_step_group.get_step_subgroup_to_run():
@@ -452,7 +452,7 @@ class Core:
             )
             return
 
-        # B3. if any step in CANCELLED or FAILED(and not in manual intervention) -> move to revert
+        # 3B3. if any step in CANCELLED or FAILED(and not in manual intervention) -> move to revert
         if any(
             s in {StepStatus.FAILED, StepStatus.CANCELLED}
             for s in steps_statuses.values()
@@ -479,7 +479,7 @@ class Core:
         group_index: NonNegativeInt,
         current_step_group: BaseStepGroup,
     ) -> None:
-        # C1. if all steps in gorup in SUUCESS -> go back to previous group untill done
+        # 3C1. if all steps in gorup in SUUCESS -> go back to previous group untill done
         if all(s == StepStatus.SUCCESS for s in steps_statuses.values()):
             previous_group_index = group_index - 1
             if previous_group_index < 0:
@@ -493,7 +493,7 @@ class Core:
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
-        # C2. it is unexpected to have a FAILED step -> do nothing else
+        # 3C2. it is unexpected to have a FAILED step -> do nothing else
         if failed_step_names := [
             n for n, s in steps_statuses.items() if s == StepStatus.FAILED
         ]:
@@ -527,7 +527,7 @@ class Core:
             )
             return
 
-        # C3. it is unexpected to have a CANCELLED step -> do nothing else
+        # 3C3. it is unexpected to have a CANCELLED step -> do nothing else
         if cancelled_step_names := [
             n for n, s in steps_statuses.items() if s == StepStatus.CANCELLED
         ]:
