@@ -164,6 +164,7 @@ async def search(
                     created_at=item.created_at,
                     modified_at=item.last_modified,
                     is_directory=item.is_directory,
+                    size=item.file_size,
                 )
                 for item in page
             ]
