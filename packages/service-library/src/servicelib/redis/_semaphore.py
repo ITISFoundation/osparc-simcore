@@ -272,40 +272,17 @@ class DistributedSemaphore(BaseModel):
         assert isinstance(result, list)  # nosec
         exit_code, status, token, current_count = result
 
-        if exit_code == SCRIPT_OK_EXIT_CODE:
-            _logger.debug(
-                "Acquired semaphore '%s' with token %s (instance: %s, count: %s)",
-                self.key,
-                token,
-                self.instance_id,
-                current_count,
-            )
-            return True
-
-        if status == "timeout":
-            if self.blocking:
-                _logger.debug(
-                    "Timeout acquiring semaphore '%s' (instance: %s, count: %s)",
-                    self.key,
-                    self.instance_id,
-                    current_count,
-                )
-                raise SemaphoreAcquisitionError(name=self.key, capacity=self.capacity)
-            _logger.debug(
-                "Timeout acquiring semaphore '%s' (instance: %s, count: %s)",
-                self.key,
-                self.instance_id,
-                current_count,
-            )
-            return False
+        assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
+        assert status == "acquired"  # nosec
 
         _logger.debug(
-            "Failed to acquire semaphore '%s' - %s (count: %s)",
+            "Acquired semaphore '%s' with token %s (instance: %s, count: %s)",
             self.key,
-            status,
+            token,
+            self.instance_id,
             current_count,
         )
-        raise SemaphoreAcquisitionError(name=self.key, capacity=self.capacity)
+        return True
 
     async def release(self) -> None:
         """
