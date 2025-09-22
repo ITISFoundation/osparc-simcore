@@ -35,7 +35,6 @@ from ._errors import (
 )
 from ._semaphore_lua import (
     ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT,
-    COUNT_FAIR_SEMAPHORE_V2_SCRIPT,
     REGISTER_FAIR_SEMAPHORE_SCRIPT,
     RELEASE_FAIR_SEMAPHORE_V2_SCRIPT,
     RENEW_FAIR_SEMAPHORE_V2_SCRIPT,
@@ -103,7 +102,6 @@ class DistributedSemaphore(BaseModel):
     # Class and/or Private state attributes (not part of the model)
     register_semaphore: ClassVar[AsyncScript | None] = None
     acquire_script: ClassVar[AsyncScript | None] = None
-    count_script: ClassVar[AsyncScript | None] = None
     release_script: ClassVar[AsyncScript | None] = None
     renew_script: ClassVar[AsyncScript | None] = None
 
@@ -119,9 +117,6 @@ class DistributedSemaphore(BaseModel):
             )
             cls.acquire_script = redis_client.redis.register_script(
                 ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT
-            )
-            cls.count_script = redis_client.redis.register_script(
-                COUNT_FAIR_SEMAPHORE_V2_SCRIPT
             )
             cls.release_script = redis_client.redis.register_script(
                 RELEASE_FAIR_SEMAPHORE_V2_SCRIPT
