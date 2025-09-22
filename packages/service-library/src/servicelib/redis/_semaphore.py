@@ -179,7 +179,7 @@ class DistributedSemaphore(BaseModel):
         cls = type(self)
         assert cls.register_semaphore is not None  # nosec
         await cls.register_semaphore(  # pylint: disable=not-callable
-            keys=[self.tokens_key, self.holders_key],
+            keys=[self.tokens_key, self.holders_set],
             args=[self.capacity, ttl_seconds],
             client=self.redis_client.redis,
         )
@@ -260,7 +260,7 @@ class DistributedSemaphore(BaseModel):
         cls = type(self)
         assert cls.acquire_script is not None  # nosec
         result = await cls.acquire_script(  # pylint: disable=not-callable
-            keys=[self.holders_key, self.holder_key],
+            keys=[self.holders_set, self.holder_key],
             args=[
                 token,
                 self.instance_id,
@@ -297,7 +297,7 @@ class DistributedSemaphore(BaseModel):
         cls = type(self)
         assert cls.release_script is not None  # nosec
         result = await cls.release_script(  # pylint: disable=not-callable
-            keys=[self.tokens_key, self.holders_key, self.holder_key],
+            keys=[self.tokens_key, self.holders_set, self.holder_key],
             args=[self.instance_id],
             client=self.redis_client.redis,
         )
@@ -342,7 +342,7 @@ class DistributedSemaphore(BaseModel):
         cls = type(self)
         assert cls.renew_script is not None  # nosec
         result = await cls.renew_script(  # pylint: disable=not-callable
-            keys=[self.holders_key, self.holder_key],
+            keys=[self.holders_set, self.holder_key],
             args=[self.instance_id, ttl_seconds],
             client=self.redis_client.redis,
         )
@@ -383,7 +383,7 @@ class DistributedSemaphore(BaseModel):
     async def get_current_count(self) -> int:
         """Get the current number of semaphore holders"""
         return await handle_redis_returns_union_types(
-            self.redis_client.redis.scard(self.holders_key)
+            self.redis_client.redis.scard(self.holders_set)
         )
 
     async def get_available_count(self) -> int:
