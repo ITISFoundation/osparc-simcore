@@ -13,6 +13,7 @@ from ._errors import (
 )
 from ._models import (
     OperationContext,
+    OperationErrorType,
     OperationName,
     ScheduleId,
     StepName,
@@ -25,6 +26,7 @@ from ._operation import (
 )
 from ._store import (
     OperationRemovalProxy,
+    ScheduleDataStoreProxy,
     StepStoreProxy,
     Store,
 )
@@ -203,3 +205,18 @@ async def get_requires_manual_intervention(step_proxy: StepStoreProxy) -> bool:
         return await step_proxy.get("requires_manual_intervention")
     except KeyNotFoundInHashError:
         return False
+
+
+async def set_unexpected_opration_state(
+    store: Store,
+    schedule_id: ScheduleId,
+    operation_error_type: OperationErrorType,
+    message: str,
+) -> None:
+    schedule_data_proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
+    await schedule_data_proxy.set_multiple(
+        {
+            "operation_error_type": operation_error_type,
+            "operation_error_message": message,
+        }
+    )

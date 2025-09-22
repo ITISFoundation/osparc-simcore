@@ -23,6 +23,7 @@ from ._core_utils import (
     get_steps_statuses,
     is_operation_in_progress_status,
     raise_if_overwrites_any_operation_provided_key,
+    set_unexpected_opration_state,
     start_and_mark_as_started,
     start_steps_and_get_count,
 )
@@ -111,22 +112,6 @@ class Core:
         await enqueue_schedule_event(self.app, schedule_id)
         return schedule_id
 
-    async def _set_unexpected_opration_state(
-        self,
-        schedule_id: ScheduleId,
-        operation_error_type: OperationErrorType,
-        message: str,
-    ) -> None:
-        schedule_data_proxy = ScheduleDataStoreProxy(
-            store=self._store, schedule_id=schedule_id
-        )
-        await schedule_data_proxy.set_multiple(
-            {
-                "operation_error_type": operation_error_type,
-                "operation_error_message": message,
-            }
-        )
-
     @asynccontextmanager
     async def _safe_event(self, schedule_id: ScheduleId) -> AsyncIterator[None]:
         try:
@@ -147,7 +132,8 @@ class Core:
                 tip="This is a bug, please report it to the developers",
             )
             _logger.exception(**log_kwargs)
-            await self._set_unexpected_opration_state(
+            await set_unexpected_opration_state(
+                self._store,
                 schedule_id,
                 OperationErrorType.FRAMEWORK_ISSUE,
                 message=log_kwargs["msg"],
@@ -489,8 +475,8 @@ class Core:
                 f"requires manual intervention for steps: {manual_intervention_step_names}"
             )
             _logger.warning(message)
-            await self._set_unexpected_opration_state(
-                schedule_id, OperationErrorType.STEP_ISSUE, message=message
+            await set_unexpected_opration_state(
+                self._store, schedule_id, OperationErrorType.STEP_ISSUE, message=message
             )
             return
 
@@ -564,8 +550,8 @@ class Core:
                 f"please report to developers:\n{formatted_tracebacks}"
             )
             _logger.error(message)
-            await self._set_unexpected_opration_state(
-                schedule_id, OperationErrorType.STEP_ISSUE, message=message
+            await set_unexpected_opration_state(
+                self._store, schedule_id, OperationErrorType.STEP_ISSUE, message=message
             )
             return
 
@@ -578,8 +564,11 @@ class Core:
                 f"{cancelled_step_names}. This should not happen, please report to developers."
             )
             _logger.error(message)
-            await self._set_unexpected_opration_state(
-                schedule_id, OperationErrorType.FRAMEWORK_ISSUE, message=message
+            await set_unexpected_opration_state(
+                self._store,
+                schedule_id,
+                OperationErrorType.FRAMEWORK_ISSUE,
+                message=message,
             )
             return
 
