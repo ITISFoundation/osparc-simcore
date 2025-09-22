@@ -57,3 +57,11 @@ class SearchBodyParams(InputSchema):
             description=f"Name pattern with wildcard support {tuple(WILDCARD_CHARS)}. Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
         ),
     ]
+    items_per_page: Annotated[
+        int,
+        Field(
+            description="Number of items per page",
+            ge=1,
+            le=MAX_NUMBER_OF_PATHS_PER_PAGE,
+        ),
+    ] = DEFAULT_NUMBER_OF_PATHS_PER_PAGE

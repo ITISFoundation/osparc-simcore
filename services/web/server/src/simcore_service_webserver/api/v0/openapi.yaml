@@ -17109,6 +17109,15 @@ components:
         namePattern:
           type: string
           title: Namepattern
+          description: Name pattern with wildcard support ('*', '?'). Minimum of 3
+            non-wildcard characters required.
+        itemsPerPage:
+          type: integer
+          maximum: 1000
+          minimum: 1
+          title: Itemsperpage
+          description: Number of items per page
+          default: 50
       type: object
       required:
       - namePattern
@@ -18075,17 +18084,23 @@ components:
         status_href:
           type: string
           title: Status Href
-        result_href:
-          type: string
-          title: Result Href
         abort_href:
           type: string
           title: Abort Href
+        result_href:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Href
+        result_stream_href:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Stream Href
       type: object
       required:
       - task_id
       - status_href
-      - result_href
       - abort_href
       title: TaskGet
     TaskInfoDict:
