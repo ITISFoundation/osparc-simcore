@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Iterable
-from datetime import timedelta
 from typing import Final
 
 from pydantic import NonNegativeInt
@@ -30,9 +29,7 @@ from ._store import (
     Store,
 )
 
-_PARALLEL_STATUS_REQUESTS: Final[NonNegativeInt] = 5
-_DEFAULT_UNKNOWN_STATUS_MAX_RETRY: Final[NonNegativeInt] = 3
-_DEFAULT_UNKNOWN_STATUS_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=1)
+PARALLEL_STATUS_REQUESTS: Final[NonNegativeInt] = 5
 
 _logger = logging.getLogger(__name__)
 
@@ -58,7 +55,7 @@ async def get_steps_statuses(
 ) -> dict[StepName, StepStatus]:
     result: list[tuple[StepName, StepStatus]] = await limited_gather(
         *(_get_step_status(step) for step in step_proxies),
-        limit=_PARALLEL_STATUS_REQUESTS,
+        limit=PARALLEL_STATUS_REQUESTS,
     )
     return dict(result)
 
@@ -157,7 +154,7 @@ async def _get_steps_to_start(
 ) -> list[StepStoreProxy]:
     result: list[tuple[bool, StepStoreProxy]] = await limited_gather(
         *(_get_was_step_started(step) for step in step_proxies),
-        limit=_PARALLEL_STATUS_REQUESTS,
+        limit=PARALLEL_STATUS_REQUESTS,
     )
     return [proxy for was_started, proxy in result if was_started is False]
 
@@ -186,7 +183,7 @@ async def start_steps_and_get_count(
                     )
                     for step_proxy in to_start_step_proxies
                 ),
-                limit=_PARALLEL_STATUS_REQUESTS,
+                limit=PARALLEL_STATUS_REQUESTS,
             )
         return len(to_start_step_proxies)
     return 0

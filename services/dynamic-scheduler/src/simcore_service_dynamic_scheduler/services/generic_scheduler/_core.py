@@ -15,6 +15,7 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
 from ._core_utils import (
+    PARALLEL_STATUS_REQUESTS,
     cleanup_after_finishing,
     get_group_step_proxies,
     get_requires_manual_intervention,
@@ -58,7 +59,6 @@ from ._store import (
     get_store,
 )
 
-_PARALLEL_STATUS_REQUESTS: Final[NonNegativeInt] = 5
 _DEFAULT_UNKNOWN_STATUS_MAX_RETRY: Final[NonNegativeInt] = 3
 _DEFAULT_UNKNOWN_STATUS_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=1)
 
@@ -193,7 +193,7 @@ class Core:
                     get_requires_manual_intervention(step)
                     for step in group_step_proxies.values()
                 ),
-                limit=_PARALLEL_STATUS_REQUESTS,
+                limit=PARALLEL_STATUS_REQUESTS,
             )
         ):
             raise CannotCancelWhileWaitingForManualInterventionError(
@@ -426,7 +426,7 @@ class Core:
 
         # A2. otherwise restart all steps in the group
         await limited_gather(
-            *(x.remove() for x in step_proxies), limit=_PARALLEL_STATUS_REQUESTS
+            *(x.remove() for x in step_proxies), limit=PARALLEL_STATUS_REQUESTS
         )
         group_proxy = StepGroupProxy(
             store=self._store,
@@ -551,7 +551,7 @@ class Core:
                     )
                     for step_name in failed_step_names
                 ),
-                limit=_PARALLEL_STATUS_REQUESTS,
+                limit=PARALLEL_STATUS_REQUESTS,
             )
 
             formatted_tracebacks = "\n".join(
