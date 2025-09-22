@@ -8,6 +8,7 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.celery import setup_celery
 
 from ._meta import (
     WELCOME_AUTH_APP_MSG,
@@ -184,6 +185,10 @@ def create_application() -> web.Application:
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_realtime_collaboration(app)
+
+    # celery
+
+    setup_celery(app)
 
     # NOTE: *last* events
     app.on_startup.append(_create_welcome_banner(WELCOME_MSG))

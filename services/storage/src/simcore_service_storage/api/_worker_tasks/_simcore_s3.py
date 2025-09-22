@@ -17,7 +17,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskID
+from servicelib.celery.models import TaskDataEvent, TaskID, TaskStatusEvent
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
@@ -139,30 +139,42 @@ async def search(
     user_id: UserID,
     project_id: ProjectID | None,
     name_pattern: str,
-) -> list[SearchResult]:
+) -> None:
     with log_context(
         _logger,
         logging.INFO,
         f"'{task_id}' search file {name_pattern=}",
     ):
-        dsm = get_dsm_provider(get_app_server(task.app).app).get(
+        app_server = get_app_server(task.app)
+        dsm = get_dsm_provider(app_server.app).get(
             SimcoreS3DataManager.get_location_id()
         )
 
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
-        return [
-            SearchResult(
-                name=item.file_name,
-                project_id=item.project_id,
-                created_at=item.created_at,
-                modified_at=item.last_modified,
-                is_directory=item.is_directory,
+        async for page in dsm.search(
+            user_id=user_id,
+            project_id=project_id,
+            name_pattern=name_pattern,
+        ):
+            data = [
+                SearchResult(
+                    name=item.file_name,
+                    project_id=item.project_id,
+                    created_at=item.created_at,
+                    modified_at=item.last_modified,
+                    is_directory=item.is_directory,
+                )
+                for item in page
+            ]
+
+            await app_server.task_manager.publish_task_event(
+                task_id,
+                TaskDataEvent(
+                    data=TypeAdapter(list[SearchResult]).validate_python(data)
+                ),
             )
-            async for page in dsm.search(
-                user_id=user_id,
-                project_id=project_id,
-                name_pattern=name_pattern,
-            )
-            for item in page
-        ]
+
+        await app_server.task_manager.publish_task_event(
+            task_id, TaskStatusEvent(data="done")
+        )

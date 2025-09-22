@@ -36,6 +36,16 @@ def create_data_response(data: Any, *, status: int = HTTP_200_OK) -> web.Respons
     return web.json_response(enveloped_payload, dumps=json_dumps, status=status)
 
 
+def create_event_stream_response(event_generator: Any) -> web.Response:
+    return web.Response(
+        body=event_generator(),
+        status=HTTP_200_OK,
+        reason=get_code_description(HTTP_200_OK),
+        content_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
+
+
 MAX_STATUS_MESSAGE_LENGTH: Final[int] = 100
 
 

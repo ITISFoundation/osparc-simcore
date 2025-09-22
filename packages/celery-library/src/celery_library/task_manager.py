@@ -1,4 +1,5 @@
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
@@ -10,6 +11,7 @@ from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     Task,
+    TaskEvent,
     TaskFilter,
     TaskID,
     TaskInfoStore,
@@ -182,6 +184,21 @@ class CeleryTaskManager:
             task_id=task_id,
             report=report,
         )
+
+    async def publish_task_event(self, task_id: TaskID, event: TaskEvent) -> None:
+        await self._task_info_store.publish_task_event(task_id, event)
+
+    async def consume_task_events(
+        self,
+        task_filter: TaskFilter,
+        task_uuid: TaskUUID,
+        last_id: str,
+    ) -> AsyncIterator[TaskEvent]:
+        task_id = task_filter.create_task_id(task_uuid=task_uuid)
+        async for event in self._task_info_store.consume_task_events(
+            task_id=task_id, last_id=last_id
+        ):
+            yield event
 
 
 if TYPE_CHECKING:

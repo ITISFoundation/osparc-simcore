@@ -1,6 +1,6 @@
 import urllib.parse
 from datetime import datetime
-from typing import Any
+from typing import Any, Self
 
 from common_library.exclude import Unset
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -46,5 +46,17 @@ class TaskBase(BaseModel):
 
 class TaskGet(TaskBase):
     status_href: str
-    result_href: str
     abort_href: str
+    result_href: str | None = (
+        None  # Path to get the result of the task in content-type application/json
+    )
+    result_stream_href: str | None = (
+        None  # Path to get the result of the task in content-type text/event-stream
+    )
+
+    @model_validator(mode="after")
+    def _validate_result_hrefs(self) -> Self:
+        if not (self.result_href or self.result_stream_href):
+            msg = "Either result_href or result_stream_href must be set"
+            raise ValueError(msg)
+        return self

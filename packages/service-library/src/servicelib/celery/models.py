@@ -1,10 +1,11 @@
 import datetime
+from collections.abc import AsyncIterator
 from enum import StrEnum
-from typing import Annotated, Any, Final, Protocol, Self, TypeAlias, TypeVar
+from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 from pydantic.config import JsonDict
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
@@ -126,6 +127,23 @@ class TaskMetadata(BaseModel):
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
+class TaskDataEvent(BaseModel):
+    type: Literal["data"] = "data"
+    event_id: str | None = None
+    data: Any
+
+
+class TaskStatusEvent(BaseModel):
+    type: Literal["status"] = "status"
+    event_id: str | None = None
+    data: Literal["done", "error"]
+
+
+TaskEvent: TypeAlias = Annotated[
+    TaskDataEvent | TaskStatusEvent, Field(discriminator="type")
+]
+
+
 class Task(BaseModel):
     uuid: TaskUUID
     metadata: TaskMetadata
@@ -185,8 +203,18 @@ class TaskInfoStore(Protocol):
     async def remove_task(self, task_id: TaskID) -> None: ...
 
     async def set_task_progress(
-        self, task_id: TaskID, report: ProgressReport
+        self,
+        task_id: TaskID,
+        report: ProgressReport,
     ) -> None: ...
+
+    async def publish_task_event(self, task_id: TaskID, event: TaskEvent) -> None: ...
+
+    def consume_task_events(
+        self,
+        task_id: TaskID,
+        last_id: str,
+    ) -> AsyncIterator[TaskEvent]: ...
 
 
 class TaskStatus(BaseModel):

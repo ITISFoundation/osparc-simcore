@@ -5,7 +5,7 @@ Mostly resolves and redirect to storage API
 
 import logging
 import urllib.parse
-from typing import Any, Final, NamedTuple
+from typing import Annotated, Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
@@ -31,15 +31,27 @@ from models_library.api_schemas_webserver.storage import (
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, BaseModel, ByteSize, TypeAdapter, field_validator
+from pydantic import (
+    AfterValidator,
+    AnyUrl,
+    BaseModel,
+    ByteSize,
+    TypeAdapter,
+    field_validator,
+)
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+    parse_request_headers_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.aiohttp.rest_responses import (
+    create_data_response,
+    create_event_stream_response,
+)
+from servicelib.celery.models import TaskEvent, TaskFilter
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size as remote_compute_path_size,
@@ -53,6 +65,9 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
 )
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
+from simcore_service_webserver.celery import get_task_manager
+from simcore_service_webserver.storage._rest_schemas import StreamHeaders
+from simcore_service_webserver.tasks._rest import AsyncJobId
 from yarl import URL
 
 from .._meta import API_VTAG
@@ -524,25 +539,26 @@ async def export_data(request: web.Request) -> web.Response:
     )
 
 
+def _allow_only_simcore(v: int) -> int:
+    if v != 0:
+        msg = (
+            f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
+        )
+        raise ValueError(msg)
+    return v
+
+
 @routes.post(_storage_locations_prefix + "/{location_id}/search", name="search")
 @login_required
 @permission_required("storage.files.*")
 @handle_exceptions
 async def search(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
-        location_id: LocationID
-
-        @field_validator("location_id")
-        @classmethod
-        def allow_only_simcore(cls, v: int) -> int:
-            if v != 0:
-                msg = f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
-                raise ValueError(msg)
-            return v
+        location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-    _ = parse_request_path_parameters_as(_PathParams, request)
+    parse_request_path_parameters_as(_PathParams, request)
     search_body = await parse_request_body_as(
         model_schema_cls=SearchBodyParams, request=request
     )
@@ -564,3 +580,49 @@ async def search(request: web.Request) -> web.Response:
         ),
         status=status.HTTP_202_ACCEPTED,
     )
+
+
+def format_sse(event: TaskEvent, event_name) -> bytes:
+    sse = ""
+    if event_name:
+        sse += f"event: {event_name}\n"
+    sse += f"data: {event.model_dump_json()}\n\n"
+    return sse.encode("utf-8")
+
+
+@routes.get(
+    _storage_locations_prefix + "/{location_id}/search/{job_id}/stream",
+    name="stream_search",
+)
+@login_required
+@permission_required("storage.files.*")
+@handle_exceptions
+async def stream_search(request: web.Request) -> web.Response:
+    class _PathParams(BaseModel):
+        location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
+        job_id: AsyncJobId
+
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(_PathParams, request)
+    header_params = parse_request_headers_as(StreamHeaders, request)
+
+    task_manager = get_task_manager(request.app)
+    task_filter = get_job_filter(
+        user_id=_req_ctx.user_id,
+        product_name=_req_ctx.product_name,
+    )
+
+    async def event_generator():
+        async for event in task_manager.consume_task_events(
+            task_filter=TaskFilter.model_validate(task_filter.model_dump()),
+            task_uuid=path_params.job_id,
+            last_id=header_params.last_event_id,
+        ):
+            yield format_sse(event, event_name=event.type)
+            if event.type == "status" and getattr(event, "data", None) in (
+                "done",
+                "error",
+            ):
+                break
+
+    return create_event_stream_response(event_generator=event_generator)

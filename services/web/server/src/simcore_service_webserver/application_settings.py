@@ -19,6 +19,7 @@ from pydantic import (
 from pydantic.fields import Field
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
+from settings_library.celery import CelerySettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
@@ -195,6 +196,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             json_schema_extra={"auto_default_from_env": True},
             description="catalog service client's plugin",
+        ),
+    ]
+    WEBSERVER_CELERY: Annotated[
+        CelerySettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="celery plugin",
         ),
     ]
     WEBSERVER_DB: Annotated[
