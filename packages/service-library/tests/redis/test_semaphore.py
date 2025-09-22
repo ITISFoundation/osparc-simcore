@@ -104,7 +104,6 @@ async def test_semaphore_acquire_release_single(
         redis_client=redis_client_sdk,
         key=semaphore_name,
         capacity=semaphore_capacity,
-        ttl=datetime.timedelta(seconds=60),
     )
 
     # Initially not acquired
