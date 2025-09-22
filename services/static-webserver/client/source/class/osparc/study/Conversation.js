@@ -30,7 +30,7 @@ qx.Class.define("osparc.study.Conversation", {
     this.__messages = [];
 
     if (conversationData) {
-      const conversation = new osparc.data.model.Conversation(conversationData);
+      const conversation = new osparc.data.model.Conversation(conversationData, this.__studyData);
       this.setConversation(conversation);
       this.setLabel(conversationData["name"]);
     } else {
@@ -120,7 +120,7 @@ qx.Class.define("osparc.study.Conversation", {
             // create new conversation first
             osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"], newLabel)
               .then(data => {
-                const conversation = new osparc.data.model.Conversation(data);
+                const conversation = new osparc.data.model.Conversation(data, this.__studyData);
                 this.setConversation(conversation);
                 this.getChildControl("button").setLabel(newLabel);
               });
@@ -209,7 +209,7 @@ qx.Class.define("osparc.study.Conversation", {
           // create new conversation first
           osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"])
             .then(data => {
-              const newConversation = new osparc.data.model.Conversation(data);
+              const newConversation = new osparc.data.model.Conversation(data, this.__studyData);
               this.setConversation(newConversation);
               this.__postMessage(content);
             });
@@ -224,7 +224,7 @@ qx.Class.define("osparc.study.Conversation", {
           // create new conversation first
           osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"])
             .then(data => {
-              const newConversation = new osparc.data.model.Conversation(data);
+              const newConversation = new osparc.data.model.Conversation(data, this.__studyData);
               this.setConversation(newConversation);
               this.__postNotify(userGid);
             });
@@ -255,27 +255,6 @@ qx.Class.define("osparc.study.Conversation", {
         });
     },
 
-    __getNextRequest: function() {
-      const params = {
-        url: {
-          studyId: this.__studyData["uuid"],
-          conversationId: this.getConversationId(),
-          offset: 0,
-          limit: 42
-        }
-      };
-      const nextRequestParams = this.__nextRequestParams;
-      if (nextRequestParams) {
-        params.url.offset = nextRequestParams.offset;
-        params.url.limit = nextRequestParams.limit;
-      }
-      const options = {
-        resolveWResponse: true
-      };
-      return osparc.data.Resources.fetch("conversationsStudies", "getMessagesPage", params, options)
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
     __reloadMessages: function(removeMessages = true) {
       if (this.getConversationId() === null) {
         // temporary conversation page
@@ -285,16 +264,15 @@ qx.Class.define("osparc.study.Conversation", {
         return;
       }
 
-      this.__messagesList.show();
-      this.__loadMoreMessages.show();
-      this.__loadMoreMessages.setFetching(true);
-
       if (removeMessages) {
         this.__messages = [];
         this.__messagesList.removeAll();
       }
+      this.__messagesList.show();
 
-      this.__getNextRequest()
+      this.__loadMoreMessages.show();
+      this.__loadMoreMessages.setFetching(true);
+      this.getConversation().getNextMessages()
         .then(resp => {
           const messages = resp["data"];
           messages.forEach(message => this.addMessage(message));
@@ -403,7 +381,8 @@ qx.Class.define("osparc.study.Conversation", {
       // Update the UI element from the messages list
       this.__messagesList.getChildren().forEach(control => {
         if ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]) {
-          control.setMessage(message);
+          // Force a new reference
+          control.setMessage(Object.assign({}, message));
           return;
         }
       });
