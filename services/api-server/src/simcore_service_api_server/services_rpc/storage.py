@@ -9,11 +9,11 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.storage import simcore_s3 as storage_rpc
-from simcore_service_api_server.models.domain.celery_models import (
-    ApiServerOwnerMetadata,
-)
 
 from ..exceptions.service_errors_utils import service_exception_mapper
+from ..models.domain.celery_models import (
+    ApiServerOwnerMetadata,
+)
 
 _exception_mapper = partial(service_exception_mapper, service_name="Storage")
 

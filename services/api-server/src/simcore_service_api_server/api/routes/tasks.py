@@ -17,10 +17,10 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
-from simcore_service_api_server.models.domain.celery_models import (
+
+from ...models.domain.celery_models import (
     ApiServerOwnerMetadata,
 )
-
 from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
 from ..dependencies.authentication import get_current_user_id, get_product_name
