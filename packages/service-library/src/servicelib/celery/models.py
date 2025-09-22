@@ -7,7 +7,7 @@ from uuid import UUID
 import orjson
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 from pydantic.config import JsonDict
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
@@ -57,7 +57,13 @@ class OwnerMetadata(BaseModel):
 
     """
 
-    owner: Annotated[str, StringConstraints(min_length=1, pattern=r"^[a-z_-]+$")]
+    owner: Annotated[
+        str,
+        StringConstraints(min_length=1, pattern=r"^[a-z_-]+$"),
+        Field(
+            description='Identifies the service owning the task. Should be the "APP_NAME" of the service.'
+        ),
+    ]
 
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:
