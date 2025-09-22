@@ -163,7 +163,7 @@ qx.Class.define("osparc.study.Conversations", {
       const studyData = this.getStudyData();
       let conversationPage = null;
       if (conversationData) {
-        conversationPage = new osparc.study.Conversation(studyData, conversationData);
+        conversationPage = new osparc.study.Conversation(conversationData, studyData);
         conversationPage.setLabel(conversationData["name"]);
         const conversationId = conversationData["conversationId"];
         osparc.store.ConversationsProject.getInstance().addListener("conversationDeleted", e => {
@@ -174,7 +174,7 @@ qx.Class.define("osparc.study.Conversations", {
         });
       } else {
         // create a temporary conversation
-        conversationPage = new osparc.study.Conversation(studyData);
+        conversationPage = new osparc.study.Conversation(null, studyData);
         conversationPage.setLabel(this.tr("new"));
       }
       return conversationPage;

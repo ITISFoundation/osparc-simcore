@@ -20,10 +20,10 @@ qx.Class.define("osparc.study.Conversation", {
   extend: qx.ui.tabview.Page,
 
   /**
-    * @param studyData {String} Study Data
     * @param conversationData {Object} Conversation Data
+    * @param studyData {String} Study Data
     */
-  construct: function(studyData, conversationData) {
+  construct: function(conversationData, studyData) {
     this.base(arguments);
 
     this.__studyData = studyData;
