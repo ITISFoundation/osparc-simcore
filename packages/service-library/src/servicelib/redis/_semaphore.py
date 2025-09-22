@@ -158,12 +158,6 @@ class DistributedSemaphore(BaseModel):
         """Redis key for this instance's holder entry."""
         return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders_:{self.instance_id}"
 
-    @computed_field
-    @property
-    def holder_prefix(self) -> str:
-        """Prefix for holder keys (used in cleanup)."""
-        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders_:"
-
     # Additional validation
     @field_validator("ttl")
     @classmethod
