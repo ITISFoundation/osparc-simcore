@@ -216,7 +216,7 @@ class TaskInfoStore(Protocol):
     def consume_task_events(
         self,
         task_id: TaskID,
-        last_id: str | None,
+        last_id: str | None = None,
     ) -> AsyncIterator[TaskEvent]: ...
 
 
