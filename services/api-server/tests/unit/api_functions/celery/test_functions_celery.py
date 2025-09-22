@@ -282,7 +282,7 @@ async def test_celery_error_propagation(
     with_api_server_celery_worker: TestWorkController,
 ):
 
-    task_filter = ApiServerOwnerMetadata(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
     )
@@ -291,7 +291,7 @@ async def test_celery_error_propagation(
         execution_metadata=ExecutionMetadata(
             name="exception_task", queue=TasksQueue.API_WORKER_QUEUE
         ),
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
     )
 
     with pytest.raises(HTTPStatusError) as exc_info:
