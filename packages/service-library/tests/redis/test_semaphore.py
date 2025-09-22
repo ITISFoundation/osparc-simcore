@@ -290,6 +290,43 @@ async def test_semaphore_context_manager_with_exception(
     assert await captured_semaphore.get_current_count() == 0
 
 
+async def test_semaphore_ttl_cleanup(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+    short_ttl: datetime.timedelta,
+):
+    # Create semaphore with explicit short TTL
+    semaphore = DistributedSemaphore(
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=short_ttl,
+    )
+
+    # Manually add an expired entry
+    expired_instance_id = "expired-instance"
+    current_time = asyncio.get_event_loop().time()
+    # Make sure it's definitely expired by using the short TTL
+    expired_time = current_time - short_ttl.total_seconds() - 1
+
+    await redis_client_sdk.redis.zadd(
+        semaphore.semaphore_key, {expired_instance_id: expired_time}
+    )
+
+    # Verify the entry was added
+    initial_count = await redis_client_sdk.redis.zcard(semaphore.semaphore_key)
+    assert initial_count == 1
+
+    # Current count should clean up expired entries
+    count = await semaphore.get_current_count()
+    assert count == 0
+
+    # Verify expired entry was removed
+    remaining = await redis_client_sdk.redis.zcard(semaphore.semaphore_key)
+    assert remaining == 0
+
+
 async def test_multiple_semaphores_different_keys(
     redis_client_sdk: RedisClientSDK,
     faker: Faker,
