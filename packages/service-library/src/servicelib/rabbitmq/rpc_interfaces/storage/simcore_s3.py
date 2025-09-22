@@ -34,7 +34,7 @@ async def start_export_data(
     *,
     paths_to_export: list[PathToExport],
     export_as: Literal["path", "download_link"],
-    job_filter: AsyncJobFilter
+    job_filter: AsyncJobFilter,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
@@ -52,6 +52,7 @@ async def start_search(
     *,
     job_filter: AsyncJobFilter,
     name_pattern: str,
+    items_per_page: int,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
@@ -59,5 +60,6 @@ async def start_search(
         method_name=TypeAdapter(RPCMethodName).validate_python("start_search"),
         job_filter=job_filter,
         name_pattern=name_pattern,
+        items_per_page=items_per_page,
     )
     return async_job_rpc_get, job_filter

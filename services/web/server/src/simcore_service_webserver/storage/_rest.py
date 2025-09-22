@@ -558,7 +558,7 @@ async def search(request: web.Request) -> web.Response:
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-    parse_request_path_parameters_as(_PathParams, request)
+    path_params = parse_request_path_parameters_as(_PathParams, request)
     search_body = await parse_request_body_as(
         model_schema_cls=SearchBodyParams, request=request
     )
@@ -569,6 +569,7 @@ async def search(request: web.Request) -> web.Response:
             product_name=_req_ctx.product_name,
         ),
         name_pattern=search_body.name_pattern,
+        items_per_page=search_body.items_per_page,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
@@ -576,7 +577,7 @@ async def search(request: web.Request) -> web.Response:
             task_id=_job_id,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_job_id)))}",
-            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=_job_id)))}",
+            result_stream_href=f"{request.url.with_path(str(request.app.router['stream_search'].url_for(location_id=str(path_params.location_id), job_id=_job_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )

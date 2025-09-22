@@ -139,6 +139,7 @@ async def search(
     user_id: UserID,
     project_id: ProjectID | None,
     name_pattern: str,
+    items_per_page: int,
 ) -> None:
     with log_context(
         _logger,
@@ -156,6 +157,7 @@ async def search(
             user_id=user_id,
             project_id=project_id,
             name_pattern=name_pattern,
+            items_per_page=items_per_page,
         ):
             data = [
                 SearchResult(
