@@ -15,6 +15,7 @@ from pydantic import (
 )
 from redis.commands.core import AsyncScript
 from tenacity import (
+    RetryError,
     retry,
     retry_if_exception_type,
     stop_after_delay,
@@ -182,7 +183,7 @@ class DistributedSemaphore(BaseModel):
             raise ValueError(msg)
         return v
 
-    async def _initialize_semaphore(self) -> None:
+    async def _ensure_semaphore_initialized(self) -> None:
         """Initializes the semaphore in Redis if not already done."""
         ttl_seconds = int(self.ttl.total_seconds())
         cls = type(self)
@@ -203,6 +204,7 @@ class DistributedSemaphore(BaseModel):
         Raises:
             SemaphoreAcquisitionError: If acquisition fails and blocking=True
         """
+        await self._ensure_semaphore_initialized()
 
         if await self.is_acquired():
             _logger.debug(
@@ -219,19 +221,19 @@ class DistributedSemaphore(BaseModel):
                 self.blocking_timeout.total_seconds() if self.blocking_timeout else 0
             )
 
-        await self._initialize_semaphore()
-
         try:
 
             @retry(
-                stop=stop_after_delay(blocking_timeout_seconds),
+                stop=stop_after_delay(  # this is the time after the first attempt
+                    blocking_timeout_seconds
+                ),
                 wait=wait_random_exponential(min=0.1),
                 retry=retry_if_exception_type(redis.exceptions.TimeoutError),
-                reraise=True,
             )
             async def _try_acquire() -> list[str] | None:
                 # NOTE: brpop returns None on timeout
                 # NOTE: the timeout here is for the socket, not for the semaphore itself
+
                 tokens_key_token: list[str] | None = (
                     await handle_redis_returns_union_types(
                         self.redis_client.redis.brpop(
@@ -243,8 +245,10 @@ class DistributedSemaphore(BaseModel):
                 return tokens_key_token
 
             tokens_key_token = await _try_acquire()
-        except redis.exceptions.TimeoutError as e:
-            # when this triggers it is the socket timeout of the client
+        except RetryError as e:
+            # NOTE: this can happen with either the blocking timeout or the socket timeout
+            # but the blocking timeout is anyway hit since tenacity did not retry more
+            # therefore we can safely assume we could not acquire the semaphore in time
             _logger.debug(
                 "Timeout acquiring semaphore '%s' (instance: %s)",
                 self.key,
@@ -257,6 +261,7 @@ class DistributedSemaphore(BaseModel):
             return False
 
         if tokens_key_token is None:
+            # NOTE: when BRPOP returns None it means it timed out properly
             # when this triggers it is the blocking timeout of the brpop call
             _logger.debug(
                 "Timeout acquiring semaphore '%s' (instance: %s)",
@@ -425,7 +430,7 @@ class DistributedSemaphore(BaseModel):
 
     async def get_available_count(self) -> int:
         """Get the number of available semaphore slots"""
-        await self._initialize_semaphore()
+        await self._ensure_semaphore_initialized()
         return await handle_redis_returns_union_types(
             self.redis_client.redis.llen(self.tokens_key)
         )
