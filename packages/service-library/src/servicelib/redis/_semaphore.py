@@ -4,6 +4,7 @@ import uuid
 from types import TracebackType
 from typing import Annotated, ClassVar
 
+import redis.exceptions
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
     BaseModel,
@@ -13,15 +14,7 @@ from pydantic import (
     field_validator,
 )
 from redis.commands.core import AsyncScript
-from tenacity import (
-    RetryError,
-    before_sleep_log,
-    retry,
-    retry_if_not_result,
-    stop_after_delay,
-    stop_never,
-    wait_random_exponential,
-)
+from servicelib.redis._utils import handle_redis_returns_union_types
 
 from ._client import RedisClientSDK
 from ._constants import (
@@ -36,10 +29,11 @@ from ._errors import (
     SemaphoreNotAcquiredError,
 )
 from ._semaphore_lua import (
-    ACQUIRE_SEMAPHORE_SCRIPT,
-    COUNT_SEMAPHORE_SCRIPT,
-    RELEASE_SEMAPHORE_SCRIPT,
-    RENEW_SEMAPHORE_SCRIPT,
+    ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT,
+    COUNT_FAIR_SEMAPHORE_V2_SCRIPT,
+    REGISTER_FAIR_SEMAPHORE_SCRIPT,
+    RELEASE_FAIR_SEMAPHORE_V2_SCRIPT,
+    RENEW_FAIR_SEMAPHORE_V2_SCRIPT,
     SCRIPT_BAD_EXIT_CODE,
     SCRIPT_OK_EXIT_CODE,
 )
@@ -101,6 +95,7 @@ class DistributedSemaphore(BaseModel):
     ] = DEFAULT_FACTORY
 
     # Class and/or Private state attributes (not part of the model)
+    register_semaphore: ClassVar[AsyncScript | None] = None
     acquire_script: ClassVar[AsyncScript | None] = None
     count_script: ClassVar[AsyncScript | None] = None
     release_script: ClassVar[AsyncScript | None] = None
@@ -113,17 +108,20 @@ class DistributedSemaphore(BaseModel):
         caches the script SHA, so this is efficient. Even if called multiple times,
         the script is only registered once."""
         if cls.acquire_script is None:
+            cls.register_semaphore = redis_client.redis.register_script(
+                REGISTER_FAIR_SEMAPHORE_SCRIPT
+            )
             cls.acquire_script = redis_client.redis.register_script(
-                ACQUIRE_SEMAPHORE_SCRIPT
+                ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT
             )
             cls.count_script = redis_client.redis.register_script(
-                COUNT_SEMAPHORE_SCRIPT
+                COUNT_FAIR_SEMAPHORE_V2_SCRIPT
             )
             cls.release_script = redis_client.redis.register_script(
-                RELEASE_SEMAPHORE_SCRIPT
+                RELEASE_FAIR_SEMAPHORE_V2_SCRIPT
             )
             cls.renew_script = redis_client.redis.register_script(
-                RENEW_SEMAPHORE_SCRIPT
+                RENEW_FAIR_SEMAPHORE_V2_SCRIPT
             )
 
     def __init__(self, **data) -> None:
@@ -138,9 +136,27 @@ class DistributedSemaphore(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
+    def tokens_key(self) -> str:
+        """Redis key for the token pool LIST."""
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:tokens"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def holders_key(self) -> str:
+        """Redis key for the holders SET."""
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def holder_key(self) -> str:
         """Redis key for this instance's holder entry."""
-        return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:{self.instance_id}"
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders:{self.instance_id}"
+
+    @computed_field
+    @property
+    def holder_prefix(self) -> str:
+        """Prefix for holder keys (used in cleanup)."""
+        return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:"
 
     # Additional validation
     @field_validator("ttl")
@@ -172,31 +188,94 @@ class DistributedSemaphore(BaseModel):
             SemaphoreAcquisitionError: If acquisition fails and blocking=True
         """
 
-        if not self.blocking:
-            # Non-blocking: try once
-            return await self._try_acquire()
-
-        # Blocking
-        @retry(
-            wait=wait_random_exponential(min=0.1, max=2),
-            reraise=True,
-            stop=(
-                stop_after_delay(self.blocking_timeout.total_seconds())
+        ttl_seconds = int(self.ttl.total_seconds())
+        blocking_timeout_seconds = 1
+        if self.blocking:
+            blocking_timeout_seconds = (
+                int(self.blocking_timeout.total_seconds())
                 if self.blocking_timeout
-                else stop_never
-            ),
-            retry=retry_if_not_result(lambda acquired: acquired),
-            before_sleep=before_sleep_log(_logger, logging.DEBUG),
-        )
-        async def _blocking_acquire() -> bool:
-            return await self._try_acquire()
+                else 60
+            )
+
+        # Execute the Lua scripts atomically
+        cls = type(self)
+        assert cls.register_semaphore is not None  # nosec
+        await cls.register_semaphore(
+            keys=[self.tokens_key, self.holders_key],
+            args=[self.capacity, ttl_seconds],
+            client=self.redis_client.redis,
+        )  # pylint: disable=not-callable
 
         try:
-            return await _blocking_acquire()
-        except RetryError as exc:
+            # this is blocking pop with timeout
+            tokens_key_token: list[str] = await handle_redis_returns_union_types(
+                self.redis_client.redis.brpop(
+                    [self.tokens_key], timeout=blocking_timeout_seconds
+                )
+            )
+        except redis.exceptions.TimeoutError as e:
+            _logger.debug(
+                "Timeout acquiring semaphore '%s' (instance: %s)",
+                self.key,
+                self.instance_id,
+            )
             raise SemaphoreAcquisitionError(
                 name=self.key, capacity=self.capacity
-            ) from exc
+            ) from e
+
+        assert len(tokens_key_token) == 2  # nosec
+        assert tokens_key_token[0] == self.tokens_key  # nosec
+        token = tokens_key_token[1]
+
+        assert cls.acquire_script is not None  # nosec
+        result = await cls.acquire_script(  # pylint: disable=not-callable
+            keys=[self.holders_key, self.holder_key],
+            args=[
+                token,
+                self.instance_id,
+                ttl_seconds,
+            ],
+            client=self.redis_client.redis,
+        )
+
+        # Lua script returns: [exit_code, status, current_count, expired_count]
+        assert isinstance(result, list)  # nosec
+        exit_code, status, token, current_count = result
+
+        if exit_code == SCRIPT_OK_EXIT_CODE:
+            _logger.debug(
+                "Acquired semaphore '%s' with token %s (instance: %s, count: %s)",
+                self.key,
+                token,
+                self.instance_id,
+                current_count,
+            )
+            return True
+
+        if status == "timeout":
+            if self.blocking:
+                _logger.debug(
+                    "Timeout acquiring semaphore '%s' (instance: %s, count: %s)",
+                    self.key,
+                    self.instance_id,
+                    current_count,
+                )
+                raise SemaphoreAcquisitionError(name=self.key, capacity=self.capacity)
+            _logger.debug(
+                "Timeout acquiring semaphore '%s' (instance: %s, count: %s)",
+                self.key,
+                self.instance_id,
+                current_count,
+            )
+            return False
+
+        _logger.debug(
+            "Failed to acquire semaphore '%s' - %s (count: %s)",
+            self.key,
+            status,
+            current_count,
+        )
+        raise SemaphoreAcquisitionError(name=self.key, capacity=self.capacity)
 
     async def release(self) -> None:
         """
@@ -205,76 +284,38 @@ class DistributedSemaphore(BaseModel):
         Raises:
             SemaphoreNotAcquiredError: If semaphore was not acquired by this instance
         """
-        ttl_seconds = int(self.ttl.total_seconds())
 
         # Execute the release Lua script atomically
         cls = type(self)
         assert cls.release_script is not None  # nosec
         result = await cls.release_script(  # pylint: disable=not-callable
-            keys=(
-                self.semaphore_key,
-                self.holder_key,
-            ),
-            args=(
-                self.instance_id,
-                str(ttl_seconds),
-            ),
+            keys=[self.tokens_key, self.holders_key, self.holder_key],
+            args=[self.instance_id],
             client=self.redis_client.redis,
         )
 
         assert isinstance(result, list)  # nosec
-        exit_code, status, current_count, expired_count = result
-        result = status
-
-        if result == "released":
-            assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
-            _logger.debug(
-                "Released semaphore '%s' (instance: %s, count: %s, expired: %s)",
-                self.key,
-                self.instance_id,
-                current_count,
-                expired_count,
-            )
-        else:
-            # Instance wasn't in the semaphore set - this shouldn't happen
-            # but let's handle it gracefully
-            assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
-            raise SemaphoreNotAcquiredError(name=self.key)
-
-    async def _try_acquire(self) -> bool:
-        ttl_seconds = int(self.ttl.total_seconds())
-
-        # Execute the Lua script atomically
-        cls = type(self)
-        assert cls.acquire_script is not None  # nosec
-        result = await cls.acquire_script(  # pylint: disable=not-callable
-            keys=(self.semaphore_key, self.holder_key),
-            args=(self.instance_id, str(self.capacity), str(ttl_seconds)),
-            client=self.redis_client.redis,
-        )
-
-        # Lua script returns: [exit_code, status, current_count, expired_count]
-        assert isinstance(result, list)  # nosec
-        exit_code, status, current_count, expired_count = result
-
+        exit_code, status, current_count = result
         if exit_code == SCRIPT_OK_EXIT_CODE:
+            assert status == "released"  # nosec
             _logger.debug(
-                "Acquired semaphore '%s' (instance: %s, count: %s, expired: %s)",
+                "Released semaphore '%s' (instance: %s, count: %s)",
                 self.key,
                 self.instance_id,
                 current_count,
-                expired_count,
             )
-            return True
+            return
 
-        _logger.debug(
-            "Failed to acquire semaphore '%s' - %s (count: %s, expired: %s)",
+        # Instance was already expired or not acquired
+        assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
+        _logger.error(
+            "Failed to release semaphore '%s' - %s (instance: %s, count: %s)",
             self.key,
             status,
+            self.instance_id,
             current_count,
-            expired_count,
         )
-        return False
+        raise SemaphoreNotAcquiredError(name=self.key)
 
     async def reacquire(self) -> None:
         """
@@ -293,72 +334,50 @@ class DistributedSemaphore(BaseModel):
         cls = type(self)
         assert cls.renew_script is not None  # nosec
         result = await cls.renew_script(  # pylint: disable=not-callable
-            keys=(self.semaphore_key, self.holder_key),
-            args=(
-                self.instance_id,
-                str(ttl_seconds),
-            ),
+            keys=[self.holders_key, self.holder_key],
+            args=[self.instance_id, ttl_seconds],
             client=self.redis_client.redis,
         )
 
         assert isinstance(result, list)  # nosec
-        exit_code, status, current_count, expired_count = result
+        exit_code, status, current_count = result
 
-        # Lua script returns: 'renewed' or status message
-        if status == "renewed":
-            assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
+        if exit_code == SCRIPT_OK_EXIT_CODE:
+            assert status == "renewed"  # nosec
             _logger.debug(
-                "Renewed semaphore '%s' (instance: %s, count: %s, expired: %s)",
+                "Renewed semaphore '%s' (instance: %s, count: %s)",
                 self.key,
                 self.instance_id,
                 current_count,
-                expired_count,
             )
-        else:
-            assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
-            if status == "expired":
-                _logger.warning(
-                    "Semaphore '%s' holder key expired (instance: %s, count: %s, expired: %s)",
-                    self.key,
-                    self.instance_id,
-                    current_count,
-                    expired_count,
-                )
-            elif status == "not_held":
-                _logger.warning(
-                    "Semaphore '%s' not held (instance: %s, count: %s, expired: %s)",
-                    self.key,
-                    self.instance_id,
-                    current_count,
-                    expired_count,
-                )
+            return
+        assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
 
-            raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
+        _logger.warning(
+            "Semaphore '%s' holder key was lost (instance: %s, status: %s, count: %s)",
+            self.key,
+            self.instance_id,
+            status,
+            current_count,
+        )
+
+        raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
 
     async def get_current_count(self) -> int:
         """Get the current number of semaphore holders"""
-        ttl_seconds = int(self.ttl.total_seconds())
 
-        # Execute the count Lua script atomically
         cls = type(self)
         assert cls.count_script is not None  # nosec
         result = await cls.count_script(  # pylint: disable=not-callable
-            keys=(self.semaphore_key,),
-            args=(str(ttl_seconds),),
+            keys=[self.holders_key, self.tokens_key],
+            args=[self.capacity],
             client=self.redis_client.redis,
         )
 
         assert isinstance(result, list)  # nosec
-        current_count, expired_count = result
+        current_holders, available_tokens, capacity = result
 
-        if int(expired_count) > 0:
-            _logger.debug(
-                "Cleaned up %s expired entries from semaphore '%s'",
-                expired_count,
-                self.key,
-            )
-
-        return int(current_count)
+        return int(current_holders)
 
     async def get_available_count(self) -> int:
         """Get the number of available semaphore slots"""
