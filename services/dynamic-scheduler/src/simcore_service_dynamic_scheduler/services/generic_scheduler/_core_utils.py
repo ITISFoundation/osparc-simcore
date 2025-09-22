@@ -1,7 +1,10 @@
 import logging
-from collections.abc import Iterable
+from collections.abc import AsyncIterator, Iterable
+from contextlib import asynccontextmanager
 from typing import Final
 
+from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
@@ -220,3 +223,31 @@ async def set_unexpected_opration_state(
             "operation_error_message": message,
         }
     )
+
+
+@asynccontextmanager
+async def safe_event(store: Store, schedule_id: ScheduleId) -> AsyncIterator[None]:
+    try:
+        yield
+    except KeyNotFoundInHashError as err:
+        _logger.debug(
+            "Cannot process schedule_id='%s' since it's data was not found: %s",
+            schedule_id,
+            err,
+        )
+    except Exception as err:  # pylint:disable=broad-exception-caught
+        error_code = create_error_code(err)
+        log_kwargs = create_troubleshooting_log_kwargs(
+            "Unexpected error druing scheduling",
+            error=err,
+            error_code=error_code,
+            error_context={"schedule_id": schedule_id},
+            tip="This is a bug, please report it to the developers",
+        )
+        _logger.exception(**log_kwargs)
+        await set_unexpected_opration_state(
+            store,
+            schedule_id,
+            OperationErrorType.FRAMEWORK_ISSUE,
+            message=log_kwargs["msg"],
+        )

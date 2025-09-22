@@ -1,13 +1,11 @@
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Iterable
-from contextlib import asynccontextmanager, suppress
+from contextlib import suppress
 from datetime import timedelta
 from typing import Final
 from uuid import uuid4
 
-from common_library.error_codes import create_error_code
-from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from pydantic import NonNegativeInt
@@ -23,6 +21,7 @@ from ._core_utils import (
     get_steps_statuses,
     is_operation_in_progress_status,
     raise_if_overwrites_any_operation_provided_key,
+    safe_event,
     set_unexpected_opration_state,
     start_and_mark_as_started,
     start_steps_and_get_count,
@@ -111,33 +110,6 @@ class Core:
 
         await enqueue_schedule_event(self.app, schedule_id)
         return schedule_id
-
-    @asynccontextmanager
-    async def _safe_event(self, schedule_id: ScheduleId) -> AsyncIterator[None]:
-        try:
-            yield
-        except KeyNotFoundInHashError as err:
-            _logger.debug(
-                "Cannot process schedule_id='%s' since it's data was not found: %s",
-                schedule_id,
-                err,
-            )
-        except Exception as err:  # pylint:disable=broad-exception-caught
-            error_code = create_error_code(err)
-            log_kwargs = create_troubleshooting_log_kwargs(
-                "Unexpected error druing scheduling",
-                error=err,
-                error_code=error_code,
-                error_context={"schedule_id": schedule_id},
-                tip="This is a bug, please report it to the developers",
-            )
-            _logger.exception(**log_kwargs)
-            await set_unexpected_opration_state(
-                self._store,
-                schedule_id,
-                OperationErrorType.FRAMEWORK_ISSUE,
-                message=log_kwargs["msg"],
-            )
 
     async def cancel_schedule(self, schedule_id: ScheduleId) -> None:
         """
@@ -291,7 +263,7 @@ class Core:
         )
 
     async def safe_on_schedule_event(self, schedule_id: ScheduleId) -> None:
-        async with self._safe_event(schedule_id):
+        async with safe_event(self._store, schedule_id):
             await self._on_schedule_event(schedule_id)
 
     async def _on_schedule_event(self, schedule_id: ScheduleId) -> None:
