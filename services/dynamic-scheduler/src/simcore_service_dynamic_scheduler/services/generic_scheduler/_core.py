@@ -180,6 +180,36 @@ def _get_group_step_proxies(
     }
 
 
+async def _start_steps_and_get_count(
+    group_step_proxies: dict[StepName, StepStoreProxy],
+    *,
+    is_creating: bool,
+    group_step_count: NonNegativeInt,
+) -> NonNegativeInt:
+    if to_start_step_proxies := await _get_steps_to_start(group_step_proxies.values()):
+        steps_to_start_names = [
+            step_proxy.step_name for step_proxy in to_start_step_proxies
+        ]
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            f"starting steps: {steps_to_start_names=}",
+        ):
+            await limited_gather(
+                *(
+                    _start_and_mark_as_started(
+                        step_proxy,
+                        is_creating=is_creating,
+                        expected_steps_count=group_step_count,
+                    )
+                    for step_proxy in to_start_step_proxies
+                ),
+                limit=_PARALLEL_STATUS_REQUESTS,
+            )
+        return len(to_start_step_proxies)
+    return 0
+
+
 class Core:
     def __init__(
         self,
@@ -437,37 +467,21 @@ class Core:
             step_group=step_group,
             is_creating=is_creating,
         )
-        group_step_count = len(step_group)
 
-        # get steps to start
-        if to_start_step_proxies := await _get_steps_to_start(
-            group_step_proxies.values()
-        ):
-            steps_to_start_names = [
-                step_proxy.step_name for step_proxy in to_start_step_proxies
-            ]
-            with log_context(
-                _logger,
-                logging.DEBUG,
-                f"starting steps: {steps_to_start_names=}",
-            ):
-                await limited_gather(
-                    *(
-                        _start_and_mark_as_started(
-                            step_proxy,
-                            is_creating=is_creating,
-                            expected_steps_count=group_step_count,
-                        )
-                        for step_proxy in to_start_step_proxies
-                    ),
-                    limit=_PARALLEL_STATUS_REQUESTS,
-                )
+        # 1. ensure all steps in the group are started
+        started_steps_couunt = await _start_steps_and_get_count(
+            group_step_proxies,
+            is_creating=is_creating,
+            group_step_count=len(step_group),
+        )
+        if started_steps_couunt > 0:
+            # since steps were started, we wait for next event to check their status
             return
 
         steps_statuses = await _get_steps_statuses(group_step_proxies.values())
         _logger.debug("DETECTED: steps_statuses=%s", steps_statuses)
 
-        # wait for all steps to finish before continuing
+        # 2. wait for all steps to finish before continuing
         if _is_operation_in_progress_status(steps_statuses):
             _logger.debug(
                 "Operation '%s' has not finished: steps_statuses='%s'",
@@ -476,9 +490,8 @@ class Core:
             )
             return
 
+        # 3. all steps are in a final state, process them
         _logger.debug("Operation completed: steps_statuses=%s", steps_statuses)
-        # TODO: try to extarct and restructure these functions a bit better
-        # at this point all steps are in a final status
         if step_group.repeat_steps is True and is_creating:
             await self._continue_as_repeating_group(
                 schedule_data_proxy,
@@ -523,27 +536,26 @@ class Core:
             operation_name,
             schedule_id,
         )
+        step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
+
         # wait before repeating
         await asyncio.sleep(current_step_group.wait_before_repeat.total_seconds())
 
-        step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
-
-        requeired_steps_statuses = await _get_steps_statuses(step_proxies)
+        # if any of the repeating steps was cancelled, trigger cancellation action
+        # of the entire operation
         if any(
             status == StepStatus.CANCELLED
-            for status in requeired_steps_statuses.values()
+            for status in (await _get_steps_statuses(step_proxies)).values()
         ):
-            # was cancelled
+            # set to revert operation
             await schedule_data_proxy.set("is_creating", value=False)
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
-        # restaret steps in group
+        # restart all steps in the group
         await limited_gather(
-            *(x.remove() for x in step_proxies),
-            limit=_PARALLEL_STATUS_REQUESTS,
+            *(x.remove() for x in step_proxies), limit=_PARALLEL_STATUS_REQUESTS
         )
-
         group_proxy = StepGroupProxy(
             store=self._store,
             schedule_id=schedule_id,
@@ -552,7 +564,6 @@ class Core:
             is_creating=True,
         )
         await group_proxy.remove()
-
         await enqueue_schedule_event(self.app, schedule_id)
 
     async def _continue_as_creation(
