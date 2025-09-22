@@ -35,7 +35,7 @@ class RedisTaskInfoStore:
     async def create_task(
         self,
         task_id: TaskID,
-        task_metadata: ExecutionMetadata,
+        execution_metadata: ExecutionMetadata,
         expiry: timedelta,
     ) -> None:
         task_key = _build_key(task_id)
@@ -43,7 +43,7 @@ class RedisTaskInfoStore:
             self._redis_client_sdk.redis.hset(
                 name=task_key,
                 key=_CELERY_TASK_METADATA_KEY,
-                value=task_metadata.model_dump_json(),
+                value=execution_metadata.model_dump_json(),
             )
         )
         await self._redis_client_sdk.redis.expire(
@@ -112,11 +112,11 @@ class RedisTaskInfoStore:
                 continue
 
             with contextlib.suppress(ValidationError):
-                task_metadata = ExecutionMetadata.model_validate_json(raw_metadata)
+                execution_metadata = ExecutionMetadata.model_validate_json(raw_metadata)
                 tasks.append(
                     Task(
                         uuid=OwnerMetadata.get_task_uuid(key),
-                        metadata=task_metadata,
+                        metadata=execution_metadata,
                     )
                 )
 

@@ -179,7 +179,7 @@ class TaskInfoStore(Protocol):
     async def create_task(
         self,
         task_id: TaskID,
-        task_metadata: ExecutionMetadata,
+        execution_metadata: ExecutionMetadata,
         expiry: datetime.timedelta,
     ) -> None: ...
 
