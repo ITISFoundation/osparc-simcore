@@ -176,6 +176,17 @@ class DistributedSemaphore(BaseModel):
             raise ValueError(msg)
         return v
 
+    async def _initialize_semaphore(self) -> None:
+        """Initializes the semaphore in Redis if not already done."""
+        ttl_seconds = int(self.ttl.total_seconds())
+        cls = type(self)
+        assert cls.register_semaphore is not None  # nosec
+        await cls.register_semaphore(  # pylint: disable=not-callable
+            keys=[self.tokens_key, self.holders_key],
+            args=[self.capacity, ttl_seconds],
+            client=self.redis_client.redis,
+        )
+
     async def acquire(self) -> bool:
         """
         Acquire the semaphore.
@@ -202,14 +213,7 @@ class DistributedSemaphore(BaseModel):
                 self.blocking_timeout.total_seconds() if self.blocking_timeout else 0
             )
 
-        # Execute the Lua scripts atomically
-        cls = type(self)
-        assert cls.register_semaphore is not None  # nosec
-        await cls.register_semaphore(  # pylint: disable=not-callable
-            keys=[self.tokens_key, self.holders_key],
-            args=[self.capacity, ttl_seconds],
-            client=self.redis_client.redis,
-        )
+        await self._initialize_semaphore()
 
         try:
             # this is blocking pop with timeout
@@ -234,6 +238,7 @@ class DistributedSemaphore(BaseModel):
         assert tokens_key_token[0] == self.tokens_key  # nosec
         token = tokens_key_token[1]
 
+        cls = type(self)
         assert cls.acquire_script is not None  # nosec
         result = await cls.acquire_script(  # pylint: disable=not-callable
             keys=[self.holders_key, self.holder_key],
@@ -387,6 +392,7 @@ class DistributedSemaphore(BaseModel):
 
     async def get_available_count(self) -> int:
         """Get the number of available semaphore slots"""
+        await self._initialize_semaphore()
         return await handle_redis_returns_union_types(
             self.redis_client.redis.llen(self.tokens_key)
         )

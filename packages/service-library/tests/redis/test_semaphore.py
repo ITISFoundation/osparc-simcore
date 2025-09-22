@@ -14,7 +14,6 @@ from pytest_mock import MockerFixture
 from servicelib.redis import RedisClientSDK
 from servicelib.redis._constants import (
     DEFAULT_SEMAPHORE_TTL,
-    SEMAPHORE_HOLDER_KEY_PREFIX,
     SEMAPHORE_KEY_PREFIX,
 )
 from servicelib.redis._errors import SemaphoreLostError
@@ -60,7 +59,7 @@ async def test_semaphore_initialization(
     assert semaphore.instance_id is not None
     assert semaphore.semaphore_key == f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}"
     assert semaphore.holder_key.startswith(
-        f"{SEMAPHORE_HOLDER_KEY_PREFIX}{semaphore_name}:"
+        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}:holders_:"
     )
 
 
@@ -109,6 +108,9 @@ async def test_semaphore_acquire_release_single(
     )
 
     # Initially not acquired
+    assert await semaphore.get_current_count() == 0
+    assert await semaphore.get_available_count() == semaphore_capacity
+    assert await semaphore.is_acquired() is False
 
     # Acquire successfully
     result = await semaphore.acquire()
@@ -117,6 +119,7 @@ async def test_semaphore_acquire_release_single(
     # Check Redis state
     assert await semaphore.get_current_count() == 1
     assert await semaphore.get_available_count() == semaphore_capacity - 1
+    assert await semaphore.is_acquired() is True
 
     # Acquire again on same instance should return True immediately and keep the same count (reentrant)
     result = await semaphore.acquire()
