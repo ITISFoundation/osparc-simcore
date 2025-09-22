@@ -24,6 +24,10 @@ _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
 _CELERY_TASK_METADATA_KEY: Final[str] = "metadata"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 
+_CELERY_TASK_STREAM_DEFAULT_ID: Final[str] = "0-0"
+_CELERY_TASK_STREAM_BLOCK_TIMEOUT: Final[int] = 3 * 1000  # milliseconds
+_CELERY_TASK_STREAM_COUNT: Final[int] = 10
+
 _logger = logging.getLogger(__name__)
 
 
@@ -156,10 +160,11 @@ class RedisTaskInfoStore:
         self, task_id: TaskID, last_id: str | None = None
     ) -> AsyncIterator[TaskEvent]:
         stream_key = _build_stream_key(task_id)
-        _logger.exception("Last id: %s", last_id)
         while True:
             messages = await self._redis_client_sdk.redis.xread(
-                {stream_key: last_id or "0-0"}, block=5000, count=10
+                {stream_key: last_id or _CELERY_TASK_STREAM_DEFAULT_ID},
+                block=_CELERY_TASK_STREAM_BLOCK_TIMEOUT,
+                count=_CELERY_TASK_STREAM_COUNT,
             )
             if not messages:
                 continue
