@@ -127,20 +127,23 @@ class TaskMetadata(BaseModel):
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
-class TaskDataEvent(BaseModel):
-    type: Literal["data"] = "data"
+class BaseTaskEvent(BaseModel):
     event_id: str | None = None
+
+
+class TaskDataEvent(BaseTaskEvent):
+    type: Literal["data"]
     data: Any
 
 
-class TaskStatusEvent(BaseModel):
-    type: Literal["status"] = "status"
-    event_id: str | None = None
+class TaskStatusEvent(BaseTaskEvent):
+    type: Literal["status"]
     data: Literal["done", "error"]
 
 
-TaskEvent: TypeAlias = Annotated[
-    TaskDataEvent | TaskStatusEvent, Field(discriminator="type")
+TaskEvent = Annotated[
+    TaskDataEvent | TaskStatusEvent,
+    Field(discriminator="type"),
 ]
 
 
@@ -213,7 +216,7 @@ class TaskInfoStore(Protocol):
     def consume_task_events(
         self,
         task_id: TaskID,
-        last_id: str,
+        last_id: str | None,
     ) -> AsyncIterator[TaskEvent]: ...
 
 

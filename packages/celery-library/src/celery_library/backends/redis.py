@@ -172,7 +172,9 @@ class RedisTaskInfoStore:
                         continue
 
                     try:
-                        event = TypeAdapter(TaskEvent).validate_json(raw_event)
+                        event: TaskEvent = TypeAdapter(TaskEvent).validate_json(
+                            raw_event
+                        )
                         event.event_id = msg_id
                         yield event
                     except ValidationError:

@@ -192,7 +192,7 @@ class CeleryTaskManager:
         self,
         task_filter: TaskFilter,
         task_uuid: TaskUUID,
-        last_id: str,
+        last_id: str | None = None,
     ) -> AsyncIterator[TaskEvent]:
         task_id = task_filter.create_task_id(task_uuid=task_uuid)
         async for event in self._task_info_store.consume_task_events(
