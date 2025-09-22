@@ -1,8 +1,11 @@
 import datetime
 from enum import StrEnum
-from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeAlias, TypeVar
+from types import NoneType
+from typing import Annotated, Final, Literal, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
+import orjson
+from common_library.json_serialization import json_dumps, json_loads
 from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
 from pydantic.config import JsonDict
@@ -17,7 +20,17 @@ TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 _FORBIDDEN_KEYS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
 _FORBIDDEN_VALUES = (_TASK_ID_KEY_DELIMITATOR, "=")
-_VALID_VALUE_TYPES = (int, float, bool, str)
+AllowedTypes = (
+    int
+    | float
+    | bool
+    | str
+    | NoneType
+    | list[str]
+    | list[int]
+    | list[float]
+    | list[bool]
+)
 
 Wildcard: TypeAlias = Literal["*"]
 
@@ -55,50 +68,45 @@ class OwnerMetadata(BaseModel):
             # forbidden values
             if any(x in f"{value}" for x in _FORBIDDEN_VALUES):
                 raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
-            if not any(isinstance(value, type_) for type_ in _VALID_VALUE_TYPES):
-                # restrict value types to ensure smooth serialization/deserialization
-                raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
+
+        class _ValidationModel(BaseModel):
+            filters: dict[str, AllowedTypes]
+
+        _ValidationModel.model_validate({"filters": self.model_dump()})
         return self
 
-    def _build_task_id_prefix(self) -> str:
-        filter_dict = self.model_dump()
+    def model_dump_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskID:
+        data = self.model_dump(mode="json")
+        data.update({"task_uuid": f"{task_uuid}"})
         return _TASK_ID_KEY_DELIMITATOR.join(
-            [f"{key}={filter_dict[key]}" for key in sorted(filter_dict)]
-        )
-
-    def create_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskID:
-        return _TASK_ID_KEY_DELIMITATOR.join(
-            [
-                self._build_task_id_prefix(),
-                f"task_uuid={task_uuid}",
-            ]
+            [f"{k}={json_dumps(v)}" for k, v in sorted(data.items())]
         )
 
     @classmethod
-    def validate_from_task_id(cls, task_id: TaskID) -> Self:
-        filter_dict = cls._recreate_data(task_id)
-        return cls.model_validate(filter_dict)
+    def model_validate_task_id(cls, task_id: TaskID) -> Self:
+        data = cls._deserialize_task_id(task_id)
+        data.pop("task_uuid", None)
+        return cls.model_validate(data)
 
     @classmethod
-    def _recreate_data(cls, task_id: TaskID) -> dict[str, Any]:
-        """Recreates the filter data from a task_id string
-        WARNING: does not validate types. For that use `recreate_model` instead
-        """
+    def _deserialize_task_id(cls, task_id: TaskID) -> dict[str, AllowedTypes]:
+        key_value_pairs = [
+            item.split("=") for item in task_id.split(_TASK_ID_KEY_DELIMITATOR)
+        ]
         try:
-            parts = task_id.split(_TASK_ID_KEY_DELIMITATOR)
-            return {
-                key: value
-                for part in parts[:-1]
-                if (key := part.split("=")[0]) and (value := part.split("=")[1])
-            }
-        except (IndexError, ValueError) as err:
+            return {key: json_loads(value) for key, value in key_value_pairs}
+        except orjson.JSONDecodeError as err:
             raise ValueError(f"Invalid task_id format: {task_id}") from err
 
     @classmethod
     def get_task_uuid(cls, task_id: TaskID) -> TaskUUID:
+        data = cls._deserialize_task_id(task_id)
         try:
-            return UUID(task_id.split(_TASK_ID_KEY_DELIMITATOR)[-1].split("=")[1])
-        except (IndexError, ValueError) as err:
+            uuid_string = data["task_uuid"]
+            if not isinstance(uuid_string, str):
+                raise ValueError(f"Invalid task_id format: {task_id}")
+            return TaskUUID(uuid_string)
+        except ValueError as err:
             raise ValueError(f"Invalid task_id format: {task_id}") from err
 
 

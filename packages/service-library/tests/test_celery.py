@@ -1,4 +1,4 @@
-import typing
+from types import NoneType
 from typing import Annotated
 
 # pylint: disable=redefined-outer-name
@@ -8,7 +8,6 @@ import pytest
 from faker import Faker
 from pydantic import StringConstraints
 from servicelib.celery.models import (
-    _VALID_VALUE_TYPES,
     OwnerMetadata,
     TaskUUID,
     Wildcard,
@@ -23,7 +22,6 @@ class _TestOwnerMetadata(OwnerMetadata):
     bool_: bool
     none_: None
     uuid_: str
-    list_: list[str]
 
 
 @pytest.fixture
@@ -34,7 +32,6 @@ def owner_metadata() -> dict[str, str | int | bool | None | list[str]]:
         "bool_": _faker.boolean(),
         "none_": None,
         "uuid_": _faker.uuid4(),
-        "list_": [_faker.word() for _ in range(3)],
         "owner": _faker.word().lower(),
     }
     _TestOwnerMetadata.model_validate(data)  # ensure it's valid
@@ -67,37 +64,38 @@ async def test_task_filter_task_uuid(
 ):
     task_filter = _TestOwnerMetadata.model_validate(owner_metadata)
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = task_filter.create_task_id(task_uuid)
+    task_id = task_filter.model_dump_task_id(task_uuid)
     assert OwnerMetadata.get_task_uuid(task_id=task_id) == task_uuid
 
 
-async def test_create_task_filter_from_task_id():
+async def test_owner_metadata_task_id_dump_and_validate():
 
     class MyModel(OwnerMetadata):
         int_: int
         bool_: bool
         str_: str
         float_: float
+        none_: NoneType
+        list_s: list[str]
+        list_i: list[int]
+        list_f: list[float]
+        list_b: list[bool]
 
-    # Check that all elements in _VALID_VALUE_TYPES are represented in MyModel's field types
-    mymodel_types = set()
-    for field in MyModel.model_fields.values():
-        field_type = field.annotation
-        origin = typing.get_origin(field_type)
-        if origin is typing.Union:
-            types_to_check = typing.get_args(field_type)
-        else:
-            types_to_check = [field_type]
-        for t in types_to_check:
-            if t is not Wildcard:
-                mymodel_types.add(t)
-    for valid_type in _VALID_VALUE_TYPES:
-        assert valid_type in mymodel_types, f"{valid_type} not represented in MyModel"
-
-    mymodel = MyModel(int_=1, bool_=True, str_="test", float_=1.0, owner="myowner")
+    mymodel = MyModel(
+        int_=1,
+        none_=None,
+        bool_=True,
+        str_="test",
+        float_=1.0,
+        owner="myowner",
+        list_b=[True, False],
+        list_f=[1.0, 2.0],
+        list_i=[1, 2],
+        list_s=["a", "b"],
+    )
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = mymodel.create_task_id(task_uuid)
-    mymodel_recreated = MyModel.validate_from_task_id(task_id=task_id)
+    task_id = mymodel.model_dump_task_id(task_uuid)
+    mymodel_recreated = MyModel.model_validate_task_id(task_id=task_id)
     assert mymodel_recreated == mymodel
 
 
