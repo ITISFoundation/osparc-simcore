@@ -1,14 +1,14 @@
 -- Fair distributed semaphore using token pool (BRPOP-based)
--- KEYS[1]: tokens_key (LIST of available tokens)
--- KEYS[2]: holders_key (SET of current holder instance IDs)
+-- KEYS[1]: holders_key (SET of current holder instance IDs)
+-- KEYS[2]: holder_key (individual holder TTL key for this instance)
 
--- ARGV[1]: instance_id
--- ARGV[2]: capacity (max concurrent holders)
--- ARGV[3]: ttl_seconds
+-- ARGV[1]: token (the token received from BRPOP)
+-- ARGV[2]: instance_id (the instance trying to acquire the semaphore)
+-- ARGV[3]: ttl_seconds (for the holder_key)
 --
 -- Returns: {exit_code, status, token, current_count}
--- exit_code: 0 if acquired, 255 if timeout/failed
--- status: 'acquired' or 'timeout'
+-- exit_code: 0 if acquired
+-- status: 'acquired'
 
 local holders_key = KEYS[1]
 local holder_key = KEYS[2]

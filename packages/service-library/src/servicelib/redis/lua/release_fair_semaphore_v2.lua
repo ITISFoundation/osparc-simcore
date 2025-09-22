@@ -2,6 +2,7 @@
 -- KEYS[1]: tokens_key (LIST of available tokens)
 -- KEYS[2]: holders_key (SET of current holders)
 -- KEYS[3]: holder_key (individual holder TTL key for this instance)
+
 -- ARGV[1]: instance_id
 --
 -- Returns: {exit_code, status, current_count}

@@ -1,13 +1,11 @@
 -- Simple token initialization and management for Python BRPOP
 -- KEYS[1]: tokens_key (LIST of available tokens)
 -- KEYS[2]: holders_key (SET of current holder instance IDs)
--- KEYS[3]: holder_key (individual holder TTL key for this instance)
--- ARGV[1]: instance_id
--- ARGV[2]: capacity (max concurrent holders)
--- ARGV[3]: ttl_seconds
--- ARGV[4]: token (the token received from BRPOP)
+
+-- ARGV[1]: capacity (max concurrent holders)
+-- ARGV[2]: ttl_seconds
 --
--- Returns: {exit_code, status, current_count}
+-- Returns: {exit_code}
 -- exit_code: 0 if registered successfully
 
 local tokens_key = KEYS[1]
