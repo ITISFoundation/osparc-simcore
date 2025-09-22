@@ -281,10 +281,16 @@ async def test_semaphore_blocking_acquire_waits(
     await semaphore2.release()
 
 
+@pytest.mark.parametrize(
+    "exception",
+    [RuntimeError, asyncio.CancelledError],
+    ids=str,
+)
 async def test_semaphore_context_manager_with_exception(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
     semaphore_capacity: int,
+    exception: type[Exception | asyncio.CancelledError],
 ):
     captured_semaphore: DistributedSemaphore | None = None
 
@@ -296,10 +302,9 @@ async def test_semaphore_context_manager_with_exception(
         ) as sem:
             nonlocal captured_semaphore
             captured_semaphore = sem
-            msg = "Test exception"
-            raise RuntimeError(msg)
+            raise exception("Test")
 
-    with pytest.raises(RuntimeError, match="Test exception"):
+    with pytest.raises(exception, match="Test"):
         await _raising_context()
 
     # Should be released even after exception
