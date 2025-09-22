@@ -79,7 +79,7 @@ qx.Class.define("osparc.support.ConversationsPage", {
           this.getChildControl("buttons-layout").add(control);
           break;
         case "book-a-call-button-3rd":
-          control = new qx.ui.form.Button(this.tr("Book a Call 3rd"), "@FontAwesome5Solid/phone/14").set({
+          control = new qx.ui.form.Button(this.tr("Book a Call"), "@FontAwesome5Solid/flask/14").set({
             appearance: "strong-button",
             allowGrowX: false,
             center: true,
