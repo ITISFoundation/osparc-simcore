@@ -215,30 +215,29 @@ class DistributedSemaphore(BaseModel):
             return True
 
         ttl_seconds = int(self.ttl.total_seconds())
-        blocking_timeout_seconds = 0.001
-        if self.blocking:
-            blocking_timeout_seconds = (
-                self.blocking_timeout.total_seconds() if self.blocking_timeout else 0
-            )
 
         try:
 
             @retry(
                 stop=stop_after_delay(  # this is the time after the first attempt
-                    blocking_timeout_seconds
+                    (self.blocking_timeout or 0) if self.blocking else 0
                 ),
                 wait=wait_random_exponential(min=0.1),
                 retry=retry_if_exception_type(redis.exceptions.TimeoutError),
             )
             async def _try_acquire() -> list[str] | None:
                 # NOTE: brpop returns None on timeout
-                # NOTE: the timeout here is for the socket, not for the semaphore itself
+                # NOTE: redis-py library timeouts when the socket times out which is defined
+                # elsewhere on the client (e.g. DEFAULT_SOCKET_TIMEOUT)
+                # we always block forever since tenacity takes care of timing out
+                # therefore we can distinguish between a proper timeout (returns None) and a socket
+                # timeout (raises an exception)
 
                 tokens_key_token: list[str] | None = (
                     await handle_redis_returns_union_types(
                         self.redis_client.redis.brpop(
                             [self.tokens_key],
-                            timeout=blocking_timeout_seconds,
+                            timeout=None,  # NOTE: we always block forever since tenacity takes care of timing out
                         )
                     )
                 )
@@ -246,9 +245,7 @@ class DistributedSemaphore(BaseModel):
 
             tokens_key_token = await _try_acquire()
         except RetryError as e:
-            # NOTE: this can happen with either the blocking timeout or the socket timeout
-            # but the blocking timeout is anyway hit since tenacity did not retry more
-            # therefore we can safely assume we could not acquire the semaphore in time
+            # NOTE: if we end up here that means we could not acquire the semaphore
             _logger.debug(
                 "Timeout acquiring semaphore '%s' (instance: %s)",
                 self.key,
@@ -260,19 +257,8 @@ class DistributedSemaphore(BaseModel):
                 ) from e
             return False
 
-        if tokens_key_token is None:
-            # NOTE: when BRPOP returns None it means it timed out properly
-            # when this triggers it is the blocking timeout of the brpop call
-            _logger.debug(
-                "Timeout acquiring semaphore '%s' (instance: %s)",
-                self.key,
-                self.instance_id,
-            )
-            if self.blocking:
-                raise SemaphoreAcquisitionError(name=self.key, capacity=self.capacity)
-            return False
-
-        assert len(tokens_key_token) == 2  # nosec
+        assert tokens_key_token is not None  # nosec
+        assert len(tokens_key_token) == 2  # nosec  # noqa: PLR2004
         assert tokens_key_token[0] == self.tokens_key  # nosec
         token = tokens_key_token[1]
 
