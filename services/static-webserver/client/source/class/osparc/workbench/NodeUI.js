@@ -45,7 +45,6 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     this.set({
       appearance: "node-ui-cap",
-      decorator: "rounded",
       layout: grid,
       showMinimize: false,
       showMaximize: false,
