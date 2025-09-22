@@ -135,6 +135,7 @@ class RedisTaskInfoStore:
 
     async def remove_task(self, task_id: TaskID) -> None:
         await self._redis_client_sdk.redis.delete(_build_info_key(task_id))
+        await self._redis_client_sdk.redis.delete(_build_stream_key(task_id))
 
     async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
         await handle_redis_returns_union_types(
