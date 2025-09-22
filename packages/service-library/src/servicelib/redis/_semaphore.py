@@ -14,7 +14,6 @@ from pydantic import (
     field_validator,
 )
 from redis.commands.core import AsyncScript
-from servicelib.redis._utils import handle_redis_returns_union_types
 
 from ._client import RedisClientSDK
 from ._constants import (
@@ -37,6 +36,7 @@ from ._semaphore_lua import (
     SCRIPT_BAD_EXIT_CODE,
     SCRIPT_OK_EXIT_CODE,
 )
+from ._utils import handle_redis_returns_union_types
 
 _logger = logging.getLogger(__name__)
 
@@ -150,7 +150,7 @@ class DistributedSemaphore(BaseModel):
     @property
     def holder_key(self) -> str:
         """Redis key for this instance's holder entry."""
-        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders:{self.instance_id}"
+        return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:{self.instance_id}"
 
     @computed_field
     @property
@@ -200,11 +200,11 @@ class DistributedSemaphore(BaseModel):
         # Execute the Lua scripts atomically
         cls = type(self)
         assert cls.register_semaphore is not None  # nosec
-        await cls.register_semaphore(
+        await cls.register_semaphore(  # pylint: disable=not-callable
             keys=[self.tokens_key, self.holders_key],
             args=[self.capacity, ttl_seconds],
             client=self.redis_client.redis,
-        )  # pylint: disable=not-callable
+        )
 
         try:
             # this is blocking pop with timeout
@@ -219,9 +219,11 @@ class DistributedSemaphore(BaseModel):
                 self.key,
                 self.instance_id,
             )
-            raise SemaphoreAcquisitionError(
-                name=self.key, capacity=self.capacity
-            ) from e
+            if self.blocking:
+                raise SemaphoreAcquisitionError(
+                    name=self.key, capacity=self.capacity
+                ) from e
+            return False
 
         assert len(tokens_key_token) == 2  # nosec
         assert tokens_key_token[0] == self.tokens_key  # nosec
