@@ -116,14 +116,14 @@ def test_task_filter_validator_raises_on_forbidden_chars(bad_data):
 
 
 async def test_task_owner():
-    class MyFilter(OwnerMetadata):
+    class MyOwnerMetadata(OwnerMetadata):
         extra_field: str
 
     with pytest.raises(pydantic.ValidationError):
-        MyFilter(owner="", extra_field="value")
+        MyOwnerMetadata(owner="", extra_field="value")
 
     with pytest.raises(pydantic.ValidationError):
-        MyFilter(owner="UPPER_CASE", extra_field="value")
+        MyOwnerMetadata(owner="UPPER_CASE", extra_field="value")
 
     class MyNextFilter(OwnerMetadata):
         owner: Annotated[
