@@ -79,13 +79,13 @@ async def _celery_task_status(
 ) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
         return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
-    task_filter = ApiServerOwnerMetadata(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
     try:
         task_status = await task_manager.get_task_status(
-            task_uuid=TaskUUID(job_creation_task_id), owner_metadata=task_filter
+            task_uuid=TaskUUID(job_creation_task_id), owner_metadata=owner_metadata
         )
         return FunctionJobCreationTaskStatus[task_status.task_state]
     except TaskNotFoundError as err:
@@ -96,7 +96,7 @@ async def _celery_task_status(
                 error=err,
                 error_context={
                     "task_uuid": TaskUUID(job_creation_task_id),
-                    "task_filter": task_filter,
+                    "owner_metadata": owner_metadata,
                     "user_id": user_id,
                     "product_name": product_name,
                 },
@@ -379,7 +379,8 @@ class FunctionJobTaskClientService:
         )
 
         # run function in celery task
-        task_filter = ApiServerOwnerMetadata(
+
+        owner_metadata = ApiServerOwnerMetadata(
             user_id=user_identity.user_id, product_name=user_identity.product_name
         )
 
@@ -389,7 +390,7 @@ class FunctionJobTaskClientService:
                 ephemeral=False,
                 queue=TasksQueue.API_WORKER_QUEUE,
             ),
-            owner_metadata=task_filter,
+            owner_metadata=owner_metadata,
             user_identity=user_identity,
             function=function,
             pre_registered_function_job_data=pre_registered_function_job_data,

@@ -60,12 +60,12 @@ async def list_tasks(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiServerOwnerMetadata(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
     tasks = await task_manager.list_tasks(
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
     )
 
     app_router = app.router
@@ -105,12 +105,12 @@ async def get_task_status(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiServerOwnerMetadata(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
     task_status = await task_manager.get_task_status(
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -143,12 +143,12 @@ async def cancel_task(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiServerOwnerMetadata(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
     await task_manager.cancel_task(
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -178,13 +178,13 @@ async def get_task_result(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiServerOwnerMetadata(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
 
     task_status = await task_manager.get_task_status(
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -195,7 +195,7 @@ async def get_task_result(
         )
 
     task_result = await task_manager.get_task_result(
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
