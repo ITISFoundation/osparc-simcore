@@ -39,7 +39,7 @@ pytest_simcore_core_services_selection = ["redis"]
 pytest_simcore_ops_services_selection = []
 
 
-class MyTaskFilter(OwnerMetadata):
+class MyOwnerMetadata(OwnerMetadata):
     user_id: int
 
 
@@ -103,7 +103,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    task_filter = MyTaskFilter(user_id=42, owner="test-owner")
+    task_filter = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await celery_task_manager.submit_task(
         ExecutionMetadata(
@@ -134,7 +134,7 @@ async def test_submitting_task_with_failure_results_with_error(
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    task_filter = MyTaskFilter(user_id=42, owner="test-owner")
+    task_filter = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await celery_task_manager.submit_task(
         ExecutionMetadata(
@@ -163,7 +163,7 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    task_filter = MyTaskFilter(user_id=42, owner="test-owner")
+    task_filter = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await celery_task_manager.submit_task(
         ExecutionMetadata(
@@ -186,7 +186,7 @@ async def test_listing_task_uuids_contains_submitted_task(
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    task_filter = MyTaskFilter(user_id=42, owner="test-owner")
+    task_filter = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await celery_task_manager.submit_task(
         ExecutionMetadata(
@@ -212,18 +212,18 @@ async def test_filtering_listing_tasks(
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    class MyFilter(OwnerMetadata):
+    class MyOwnerMetadata(OwnerMetadata):
         user_id: int
         product_name: str | Wildcard
 
     user_id = 42
     _owner = "test-owner"
     expected_task_uuids: set[TaskUUID] = set()
-    all_tasks: list[tuple[TaskUUID, MyFilter]] = []
+    all_tasks: list[tuple[TaskUUID, MyOwnerMetadata]] = []
 
     try:
         for _ in range(5):
-            task_filter = MyFilter(
+            task_filter = MyOwnerMetadata(
                 user_id=user_id, product_name=_faker.word(), owner=_owner
             )
             task_uuid = await celery_task_manager.submit_task(
@@ -236,7 +236,7 @@ async def test_filtering_listing_tasks(
             all_tasks.append((task_uuid, task_filter))
 
         for _ in range(3):
-            task_filter = MyFilter(
+            task_filter = MyOwnerMetadata(
                 user_id=_faker.pyint(min_value=100, max_value=200),
                 product_name=_faker.word(),
                 owner=_owner,
@@ -249,7 +249,7 @@ async def test_filtering_listing_tasks(
             )
             all_tasks.append((task_uuid, task_filter))
 
-        search_filter = MyFilter(
+        search_filter = MyOwnerMetadata(
             user_id=user_id,
             product_name="*",
             owner=_owner,
