@@ -37,7 +37,7 @@ def with_short_default_semaphore_ttl(
 ) -> datetime.timedelta:
     short_ttl = datetime.timedelta(seconds=0.5)
     mocker.patch(
-        "servicelib.redis._semaphore._DEFAULT_SEMAPHORE_TTL",
+        "servicelib.redis._semaphore.DEFAULT_SEMAPHORE_TTL",
         short_ttl,
     )
     return short_ttl
@@ -99,6 +99,7 @@ async def test_semaphore_acquire_release_single(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
     semaphore_capacity: int,
+    with_short_default_semaphore_ttl: datetime.timedelta,
 ):
     semaphore = DistributedSemaphore(
         redis_client=redis_client_sdk,
@@ -142,6 +143,24 @@ async def test_semaphore_acquire_release_single(
         match=f"Semaphore '{semaphore_name}' was lost by this instance",
     ):
         await semaphore.reacquire()
+
+    # now check what happens once TTL is expired
+    await semaphore.acquire()
+    assert await semaphore.get_current_count() == 1
+    assert await semaphore.get_available_count() == semaphore_capacity - 1
+    await asyncio.sleep(with_short_default_semaphore_ttl.total_seconds() + 0.1)
+    # TTL expired, reacquire should fail
+    with pytest.raises(
+        SemaphoreLostError,
+        match=f"Semaphore '{semaphore_name}' was lost by this instance",
+    ):
+        await semaphore.reacquire()
+    # and release should also fail
+    with pytest.raises(
+        SemaphoreNotAcquiredError,
+        match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
+    ):
+        await semaphore.release()
 
 
 async def test_semaphore_context_manager(
