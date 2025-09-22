@@ -164,7 +164,7 @@ async def search(
                     name=item.file_name,
                     project_id=item.project_id,
                     created_at=item.created_at,
-                    modified_at=item.last_modified,
+                    last_modified=item.last_modified,
                     is_directory=item.is_directory,
                     size=item.file_size,
                 )
