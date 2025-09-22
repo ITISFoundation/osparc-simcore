@@ -144,15 +144,15 @@ class DistributedSemaphore(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def holders_key(self) -> str:
+    def holders_set(self) -> str:
         """Redis key for the holders SET."""
-        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders"
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders_set"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def holder_key(self) -> str:
         """Redis key for this instance's holder entry."""
-        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders_:{self.instance_id}"
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders:{self.instance_id}"
 
     # Additional validation
     @field_validator("ttl")

@@ -59,7 +59,7 @@ async def test_semaphore_initialization(
     assert semaphore.instance_id is not None
     assert semaphore.semaphore_key == f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}"
     assert semaphore.holder_key.startswith(
-        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}:holders_:"
+        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}:holders:"
     )
 
 
