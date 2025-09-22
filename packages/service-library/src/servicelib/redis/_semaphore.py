@@ -22,6 +22,7 @@ from tenacity import (
     stop_never,
     wait_random_exponential,
 )
+from tenacity.stop import stop_base
 
 from ._client import RedisClientSDK
 from ._constants import (
@@ -206,18 +207,19 @@ class DistributedSemaphore(BaseModel):
 
         ttl_seconds = int(self.ttl.total_seconds())
 
+        # Determine retry stop condition based on blocking configuration
+        stop_condition: stop_base = stop_after_delay(0)
+        if self.blocking:
+            stop_condition = (
+                stop_after_delay(self.blocking_timeout)
+                if self.blocking_timeout
+                else stop_never
+            )
+
         try:
 
             @retry(
-                stop=(
-                    stop_after_delay(0)
-                    if not self.blocking
-                    else (
-                        stop_after_delay(self.blocking_timeout)
-                        if self.blocking_timeout
-                        else stop_never
-                    )
-                ),
+                stop=stop_condition,
                 wait=wait_random_exponential(min=0.1, max=0.5),
                 retry=retry_if_exception_type(redis.exceptions.TimeoutError),
             )
