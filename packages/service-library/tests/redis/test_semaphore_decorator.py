@@ -15,9 +15,7 @@ import pytest
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.redis import RedisClientSDK
-from servicelib.redis._constants import (
-    SEMAPHORE_HOLDER_KEY_PREFIX,
-)
+from servicelib.redis._constants import SEMAPHORE_KEY_PREFIX
 from servicelib.redis._errors import SemaphoreLostError
 from servicelib.redis._semaphore import (
     DistributedSemaphore,
@@ -136,7 +134,7 @@ async def test_auto_renewal_lose_semaphore_raises(
 
     # Find and delete all holder keys for this semaphore
     holder_keys = await redis_client_sdk.redis.keys(
-        f"{SEMAPHORE_HOLDER_KEY_PREFIX}{semaphore_name}:*"
+        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}:holders_:*"
     )
     assert holder_keys, "Holder keys should exist before deletion"
     await redis_client_sdk.redis.delete(*holder_keys)
@@ -736,7 +734,7 @@ async def test_context_manager_lose_semaphore_raises(
 
     # Find and delete all holder keys for this semaphore
     holder_keys = await redis_client_sdk.redis.keys(
-        f"{SEMAPHORE_HOLDER_KEY_PREFIX}{semaphore_name}:*"
+        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}:holders_:*"
     )
     assert holder_keys, "Holder keys should exist before deletion"
     await redis_client_sdk.redis.delete(*holder_keys)
