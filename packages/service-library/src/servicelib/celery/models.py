@@ -33,6 +33,7 @@ AllowedTypes = (
 )
 
 Wildcard: TypeAlias = Literal["*"]
+WILDCARD: Final[Wildcard] = "*"
 
 
 class OwnerMetadata(BaseModel):
@@ -47,10 +48,11 @@ class OwnerMetadata(BaseModel):
         class StorageOwnerMetadata(OwnerMetadata):
             user_id: int | Wildcard
             product_name: int | Wildcard
-            owner = "storage-service"
+            owner = APP_NAME
 
-        Listing tasks using the filter `StorageOwnerMetadata(user_id=123, product_name="*")` will return all tasks with
-        user_id 123, any product_name submitted from storage-service.
+        Where APP_NAME is the name of the service. Listing tasks using the filter
+        `StorageOwnerMetadata(user_id=123, product_name=WILDCARD)` will return all tasks with
+        user_id 123, any product_name submitted from the service.
 
     If the metadata schema is known, the class allows deserializing the metadata (recreate_as_model). I.e. one can recover the metadata from the task:
         metadata -> task_uuid -> metadata
