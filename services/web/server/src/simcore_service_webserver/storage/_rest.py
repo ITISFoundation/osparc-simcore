@@ -583,7 +583,7 @@ async def search(request: web.Request) -> web.Response:
     )
 
 
-def format_sse(event: TaskEvent, event_name) -> bytes:
+def _format_sse(event: TaskEvent, event_name) -> bytes:
     sse = ""
     if event_name:
         sse += f"event: {event_name}\n"
@@ -619,7 +619,7 @@ async def stream_search(request: web.Request) -> web.Response:
             task_uuid=path_params.job_id,
             last_id=header_params.last_event_id,
         ):
-            yield format_sse(event, event_name=event.type)
+            yield _format_sse(event, event_name=event.type)
             if event.type == "status" and getattr(event, "data", None) in (
                 "done",
                 "error",

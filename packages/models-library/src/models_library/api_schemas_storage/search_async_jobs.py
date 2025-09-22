@@ -1,11 +1,12 @@
 import datetime
 from typing import Literal
 
+from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.projects import ProjectID
-from pydantic import BaseModel, ByteSize
+from pydantic import ByteSize
 
 
-class SearchResult(BaseModel):
+class SearchResult(OutputSchema):
     name: str
     created_at: datetime.datetime
     modified_at: datetime.datetime
