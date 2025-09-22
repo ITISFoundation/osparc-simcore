@@ -8,7 +8,6 @@ loads(dumps(my_object))
 
 """
 
-import asyncio
 import logging
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -241,9 +240,6 @@ class DaskClient:
             )
             # NOTE: the callback is running in a secondary thread, and takes a future as arg
             task_future.add_done_callback(lambda _: callback())
-            await distributed.Variable(job_id, client=self.backend.client).set(
-                task_future
-            )
 
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.publish_dataset(task_future, name=job_id)
@@ -560,12 +556,6 @@ class DaskClient:
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
         try:
-            # NOTE: The distributed Variable holds the future of the tasks in the dask-scheduler
-            # Alas, deleting the variable is done asynchronously and there is no way to ensure
-            # the variable was effectively deleted.
-            # This is annoying as one can re-create the variable without error.
-            var = distributed.Variable(job_id, client=self.backend.client)
-            await asyncio.get_event_loop().run_in_executor(None, var.delete)
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
