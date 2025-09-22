@@ -14,6 +14,12 @@ from pydantic import (
     field_validator,
 )
 from redis.commands.core import AsyncScript
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_random_exponential,
+)
 
 from ._client import RedisClientSDK
 from ._constants import (
@@ -216,13 +222,29 @@ class DistributedSemaphore(BaseModel):
         await self._initialize_semaphore()
 
         try:
-            # this is blocking pop with timeout
-            tokens_key_token: list[str] = await handle_redis_returns_union_types(
-                self.redis_client.redis.brpop(
-                    [self.tokens_key], timeout=blocking_timeout_seconds
-                )
+
+            @retry(
+                stop=stop_after_delay(blocking_timeout_seconds),
+                wait=wait_random_exponential(min=0.1),
+                retry=retry_if_exception_type(redis.exceptions.TimeoutError),
+                reraise=True,
             )
+            async def _try_acquire() -> list[str] | None:
+                # NOTE: brpop returns None on timeout
+                # NOTE: the timeout here is for the socket, not for the semaphore itself
+                tokens_key_token: list[str] | None = (
+                    await handle_redis_returns_union_types(
+                        self.redis_client.redis.brpop(
+                            [self.tokens_key],
+                            timeout=blocking_timeout_seconds,
+                        )
+                    )
+                )
+                return tokens_key_token
+
+            tokens_key_token = await _try_acquire()
         except redis.exceptions.TimeoutError as e:
+            # when this triggers it is the socket timeout of the client
             _logger.debug(
                 "Timeout acquiring semaphore '%s' (instance: %s)",
                 self.key,
@@ -232,6 +254,17 @@ class DistributedSemaphore(BaseModel):
                 raise SemaphoreAcquisitionError(
                     name=self.key, capacity=self.capacity
                 ) from e
+            return False
+
+        if tokens_key_token is None:
+            # when this triggers it is the blocking timeout of the brpop call
+            _logger.debug(
+                "Timeout acquiring semaphore '%s' (instance: %s)",
+                self.key,
+                self.instance_id,
+            )
+            if self.blocking:
+                raise SemaphoreAcquisitionError(name=self.key, capacity=self.capacity)
             return False
 
         assert len(tokens_key_token) == 2  # nosec
