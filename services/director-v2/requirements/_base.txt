@@ -797,7 +797,7 @@ pyyaml==6.0.2
     #   dask
     #   distributed
     #   uvicorn
-redis==6.1.0
+redis==6.4.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

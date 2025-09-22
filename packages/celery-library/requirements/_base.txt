@@ -119,7 +119,7 @@ jsonschema==4.23.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2025.4.1
     # via jsonschema
-kombu==5.5.3
+kombu==5.5.4
     # via celery
 markdown-it-py==3.0.0
     # via rich
@@ -211,7 +211,9 @@ orjson==3.10.18
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
 packaging==25.0
-    # via opentelemetry-instrumentation
+    # via
+    #   kombu
+    #   opentelemetry-instrumentation
 pamqp==3.3.0
     # via aiormq
 prompt-toolkit==3.0.51
@@ -313,7 +315,7 @@ pyyaml==6.0.2
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-redis==5.3.0
+redis==5.3.1
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

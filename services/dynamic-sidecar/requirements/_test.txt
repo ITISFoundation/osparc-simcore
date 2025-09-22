@@ -53,7 +53,7 @@ docker==7.1.0
     # via -r requirements/_test.in
 faker==36.2.2
     # via -r requirements/_test.in
-fakeredis==2.30.3
+fakeredis==2.31.1
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -131,7 +131,7 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-redis==5.2.1
+redis==6.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

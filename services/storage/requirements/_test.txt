@@ -118,7 +118,7 @@ docker==7.1.0
     #   pytest-docker-tools
 faker==36.1.1
     # via -r requirements/_test.in
-fakeredis==2.27.0
+fakeredis==2.31.1
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -201,7 +201,7 @@ jsonschema-specifications==2024.10.1
     #   -c requirements/_base.txt
     #   jsonschema
     #   openapi-schema-validator
-kombu==5.5.3
+kombu==5.5.4
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -239,6 +239,7 @@ openapi-spec-validator==0.7.1
 packaging==24.2
     # via
     #   -c requirements/_base.txt
+    #   kombu
     #   pytest
     #   pytest-sugar
 pandas==2.2.3
@@ -285,6 +286,10 @@ pygments==2.19.1
     # via
     #   -c requirements/_base.txt
     #   pytest
+pyjwt==2.10.1
+    # via
+    #   -c requirements/_base.txt
+    #   redis
 pyparsing==3.2.1
     # via moto
 pytest==8.4.1
@@ -337,7 +342,7 @@ pyyaml==6.0.2
     #   jsonschema-path
     #   moto
     #   responses
-redis==5.2.1
+redis==5.3.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

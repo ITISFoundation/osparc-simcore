@@ -55,7 +55,7 @@ execnet==2.1.1
     # via pytest-xdist
 faker==36.1.1
     # via -r requirements/_test.in
-fakeredis==2.30.3
+fakeredis==2.31.1
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -217,7 +217,7 @@ pyyaml==6.0.2
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   jsonschema-path
-redis==5.2.1
+redis==6.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

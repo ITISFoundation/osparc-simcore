@@ -91,7 +91,7 @@ docker==7.1.0
     #   moto
 faker==37.4.0
     # via -r requirements/_test.in
-fakeredis==2.30.1
+fakeredis==2.31.1
     # via -r requirements/_test.in
 flask==3.1.1
     # via
@@ -263,7 +263,7 @@ pyyaml==6.0.2
     #   jsonschema-path
     #   moto
     #   responses
-redis==6.2.0
+redis==6.4.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

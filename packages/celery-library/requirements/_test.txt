@@ -56,7 +56,7 @@ docker==7.1.0
     #   pytest-docker-tools
 faker==37.3.0
     # via -r requirements/_test.in
-fakeredis==2.30.3
+fakeredis==2.31.1
     # via -r requirements/_test.in
 flexcache==0.3
     # via pint
@@ -80,7 +80,7 @@ idna==3.10
     #   requests
 iniconfig==2.1.0
     # via pytest
-kombu==5.5.3
+kombu==5.5.4
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -90,6 +90,7 @@ lupa==2.5
 packaging==25.0
     # via
     #   -c requirements/_base.txt
+    #   kombu
     #   pytest
     #   pytest-sugar
 pint==0.24.4
@@ -164,7 +165,7 @@ pyyaml==6.0.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-redis==5.3.0
+redis==5.3.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
