@@ -330,8 +330,7 @@ class DistributedSemaphore(BaseModel):
 
     async def reacquire(self) -> None:
         """
-        Atomically renew a semaphore entry using Lua script.
-
+        Atomically renew a semaphore
         This function is intended to be called by decorators or external renewal mechanisms.
 
 
