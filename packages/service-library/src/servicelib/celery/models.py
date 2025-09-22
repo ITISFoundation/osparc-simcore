@@ -132,12 +132,12 @@ class BaseTaskEvent(BaseModel):
 
 
 class TaskDataEvent(BaseTaskEvent):
-    type: Literal["data"]
+    type: Literal["data"] = "data"
     data: Any
 
 
 class TaskStatusEvent(BaseTaskEvent):
-    type: Literal["status"]
+    type: Literal["status"] = "status"
     data: Literal["done", "error"]
 
 
