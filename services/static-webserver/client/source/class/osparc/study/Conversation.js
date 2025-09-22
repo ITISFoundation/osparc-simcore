@@ -32,6 +32,9 @@ qx.Class.define("osparc.study.Conversation", {
     if (conversationData) {
       const conversation = new osparc.data.model.Conversation(conversationData);
       this.setConversation(conversation);
+      this.setLabel(conversationData["name"]);
+    } else {
+      this.setLabel(this.tr("new"));
     }
 
     this._setLayout(new qx.ui.layout.VBox(5));
