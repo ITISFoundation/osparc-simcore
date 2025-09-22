@@ -29,12 +29,11 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.long_running_tasks import lrt_api
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
-from simcore_service_webserver.utils import WebServerOwnerMetadata
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..long_running_tasks.plugin import webserver_request_context_decorator
-from ..models import AuthenticatedRequestContext
+from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ._exception_handlers import handle_export_data_exceptions

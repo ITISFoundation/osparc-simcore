@@ -53,11 +53,10 @@ from yarl import URL
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..models import AuthenticatedRequestContext
+from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ..tasks._exception_handlers import handle_export_data_exceptions
-from ..utils import WebServerOwnerMetadata
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 

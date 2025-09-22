@@ -30,10 +30,10 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from yarl import URL
 
+from ..models import WebServerOwnerMetadata
 from ..projects.models import ProjectDict
 from ..projects.utils import NodesMap
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..utils import WebServerOwnerMetadata
 from .settings import StorageSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
