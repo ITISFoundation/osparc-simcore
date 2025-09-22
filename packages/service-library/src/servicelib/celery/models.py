@@ -69,10 +69,10 @@ class OwnerMetadata(BaseModel):
             if any(x in f"{value}" for x in _FORBIDDEN_VALUES):
                 raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
 
-        class _ValidationModel(BaseModel):
+        class _TypeValidationModel(BaseModel):
             filters: dict[str, AllowedTypes]
 
-        _ValidationModel.model_validate({"filters": self.model_dump()})
+        _TypeValidationModel.model_validate({"filters": self.model_dump()})
         return self
 
     def model_dump_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskID:
