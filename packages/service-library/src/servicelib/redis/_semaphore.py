@@ -218,7 +218,7 @@ class DistributedSemaphore(BaseModel):
                         else stop_never
                     )
                 ),
-                wait=wait_random_exponential(min=0.1),
+                wait=wait_random_exponential(min=0.1, max=0.5),
                 retry=retry_if_exception_type(redis.exceptions.TimeoutError),
             )
             async def _try_acquire() -> list[str] | None:
