@@ -312,6 +312,7 @@ class Core:
         # 3) all steps are in a final state, process them
         _logger.debug("steps_statuses=%s in final state in operation", steps_statuses)
 
+        # REPEATING
         if step_group.repeat_steps is True and is_creating:
             # 3A1) if any of the repeating steps was cancelled -> move to revert
             # 3A2) otherwise restart all steps in the group
@@ -323,6 +324,8 @@ class Core:
                 step_group,
                 group_step_proxies,
             )
+
+        # CREATING
         elif is_creating:
             # 3B1) if all steps in group in SUUCESS
             # - 3B1a) move to next group
@@ -338,6 +341,8 @@ class Core:
                 step_group,
                 operation,
             )
+
+        # REVERTING
         else:
             # 3C1) if all steps in gorup in SUUCESS
             # - 3C1a) reached the end of the REVERT operation, remove all created data
