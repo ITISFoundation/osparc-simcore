@@ -210,6 +210,15 @@ async def _start_steps_and_get_count(
     return 0
 
 
+async def _cleanup_after_finishing(
+    store: Store, *, schedule_id: ScheduleId, is_creating: bool
+) -> None:
+    removal_proxy = OperationRemovalProxy(store=store, schedule_id=schedule_id)
+    await removal_proxy.remove()
+    verb = "COMPLETED" if is_creating else "REVERTED"
+    _logger.debug("Operation for schedule_id='%s' %s successfully", verb, schedule_id)
+
+
 class Core:
     def __init__(
         self,
@@ -322,24 +331,25 @@ class Core:
         operation = OperationRegistry.get_operation(operation_name)
         group = operation[group_index]
 
+        group_step_proxies = _get_group_step_proxies(
+            self._store,
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            group_index=group_index,
+            step_group=group,
+            is_creating=is_creating,
+        )
+
         if any(
             step.wait_for_manual_intervention()
             for step in group.get_step_subgroup_to_run()
         ):
+            # TODO: this looks wrong, it should check the actual step status
             raise CannotCancelWhileWaitingForManualInterventionError(
                 schedule_id=schedule_id
             )
 
-        for step in group.get_step_subgroup_to_run():
-            step_name = step.get_step_name()
-            step_proxy = StepStoreProxy(
-                store=self._store,
-                schedule_id=schedule_id,
-                operation_name=operation_name,
-                step_group_name=group.get_step_group_name(index=group_index),
-                step_name=step_name,
-                is_creating=is_creating,
-            )
+        for step_name, step_proxy in group_step_proxies.items():
             with log_context(  # noqa: SIM117
                 _logger,
                 logging.DEBUG,
@@ -540,14 +550,13 @@ class Core:
 
         # wait before repeating
         await asyncio.sleep(current_step_group.wait_before_repeat.total_seconds())
+        # since some time passed, query all steps statuses again,
+        # since a cancellation request might have been requested
+        steps_stauses = await _get_steps_statuses(step_proxies)
 
-        # if any of the repeating steps was cancelled, trigger cancellation action
-        # of the entire operation
-        if any(
-            status == StepStatus.CANCELLED
-            for status in (await _get_steps_statuses(step_proxies)).values()
-        ):
-            # set to revert operation
+        # if any of the repeating steps was cancelled -> move to revert
+        if any(status == StepStatus.CANCELLED for status in steps_stauses.values()):
+            # NOTE:
             await schedule_data_proxy.set("is_creating", value=False)
             await enqueue_schedule_event(self.app, schedule_id)
             return
@@ -576,7 +585,7 @@ class Core:
         current_step_group: BaseStepGroup,
         operation: Operation,
     ) -> None:
-        # if all in SUUCESS -> move to next
+        # if all in SUUCESS -> move to next group
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
             try:
                 next_group_index = group_index + 1
@@ -585,14 +594,9 @@ class Core:
                 await schedule_data_proxy.set("group_index", value=next_group_index)
                 await enqueue_schedule_event(self.app, schedule_id)
             except IndexError:
-                removal_proxy = OperationRemovalProxy(
-                    store=self._store, schedule_id=schedule_id
-                )
-                await removal_proxy.remove()
-                _logger.debug(
-                    "Operation '%s' for schedule_id='%s' COMPLETED successfully",
-                    operation_name,
-                    schedule_id,
+                # reached the end of the CREATE operation, remove all created data
+                await _cleanup_after_finishing(
+                    self._store, schedule_id=schedule_id, is_creating=True
                 )
 
             return
@@ -657,19 +661,13 @@ class Core:
         group_index: NonNegativeInt,
         current_step_group: BaseStepGroup,
     ) -> None:
-        # if all in SUUCESS -> go back to previous untill done
+        # if all steps in gorup in SUUCESS -> go back to previous group untill done
         if all(s == StepStatus.SUCCESS for s in steps_statuses.values()):
             previous_group_index = group_index - 1
             if previous_group_index < 0:
-                removal_proxy = OperationRemovalProxy(
-                    store=self._store, schedule_id=schedule_id
-                )
-                await removal_proxy.remove()
-
-                _logger.debug(
-                    "Operation %s for schedule_id='%s' REVERTED successfully",
-                    operation_name,
-                    schedule_id,
+                # reached the end of the REVERT operation, remove all created data
+                await _cleanup_after_finishing(
+                    self._store, schedule_id=schedule_id, is_creating=False
                 )
                 return
 
@@ -677,12 +675,10 @@ class Core:
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
-        # if any in FAILED this is unexpected falg to be investigated
-        failed_step_names: list[StepName] = [
+        # it is unexpected to have a FAILED step, requires investigation
+        if failed_step_names := [
             n for n, s in steps_statuses.items() if s == StepStatus.FAILED
-        ]
-
-        if failed_step_names:
+        ]:
             error_tracebacks: list[tuple[StepName, str]] = await limited_gather(
                 *(
                     _get_step_error_traceback(
@@ -713,11 +709,10 @@ class Core:
             )
             return
 
-        # if any CANCELLD: this is unexpected falg to be investigated
-        cancelled_step_names: list[StepName] = [
+        # it is unexpected to have a CANCELLED step, requires investigation
+        if cancelled_step_names := [
             n for n, s in steps_statuses.items() if s == StepStatus.CANCELLED
-        ]
-        if cancelled_step_names:
+        ]:
             message = (
                 f"Operation 'revert' for schedule_id='{schedule_id}' was cancelled for steps: "
                 f"{cancelled_step_names}. This should not happen, please report to developers."
