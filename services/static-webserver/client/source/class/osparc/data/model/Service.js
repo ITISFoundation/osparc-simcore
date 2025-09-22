@@ -52,6 +52,7 @@ qx.Class.define("osparc.data.model.Service", {
     key: {
       check: "String",
       nullable: false,
+      event: "changeKey",
       init: null
     },
 
@@ -128,6 +129,7 @@ qx.Class.define("osparc.data.model.Service", {
     bootOptions: {
       check: "Object",
       init: {},
+      event: "changeBootOptions",
       nullable: true
     },
 
