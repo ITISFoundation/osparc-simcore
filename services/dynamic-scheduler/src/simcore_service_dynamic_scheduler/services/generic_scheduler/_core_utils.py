@@ -1,0 +1,208 @@
+import logging
+from collections.abc import Iterable
+from datetime import timedelta
+from typing import Final
+
+from pydantic import NonNegativeInt
+from servicelib.logging_utils import log_context
+from servicelib.utils import limited_gather
+
+from ._deferred_runner import DeferredRunner
+from ._errors import (
+    InitialOperationContextKeyNotAllowedError,
+    KeyNotFoundInHashError,
+)
+from ._models import (
+    OperationContext,
+    OperationName,
+    ScheduleId,
+    StepName,
+    StepStatus,
+)
+from ._operation import (
+    BaseStepGroup,
+    Operation,
+    get_operation_provided_context_keys,
+)
+from ._store import (
+    OperationRemovalProxy,
+    StepStoreProxy,
+    Store,
+)
+
+_PARALLEL_STATUS_REQUESTS: Final[NonNegativeInt] = 5
+_DEFAULT_UNKNOWN_STATUS_MAX_RETRY: Final[NonNegativeInt] = 3
+_DEFAULT_UNKNOWN_STATUS_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=1)
+
+_logger = logging.getLogger(__name__)
+
+
+_IN_PROGRESS_STATUSES: Final[set[StepStatus]] = {
+    StepStatus.SCHEDULED,
+    StepStatus.CREATED,
+    StepStatus.RUNNING,
+}
+
+
+async def _get_step_status(step_proxy: StepStoreProxy) -> tuple[StepName, StepStatus]:
+    try:
+        status = await step_proxy.get("status")
+    except KeyNotFoundInHashError:
+        status = StepStatus.UNKNOWN
+
+    return step_proxy.step_name, status
+
+
+async def get_steps_statuses(
+    step_proxies: Iterable[StepStoreProxy],
+) -> dict[StepName, StepStatus]:
+    result: list[tuple[StepName, StepStatus]] = await limited_gather(
+        *(_get_step_status(step) for step in step_proxies),
+        limit=_PARALLEL_STATUS_REQUESTS,
+    )
+    return dict(result)
+
+
+def is_operation_in_progress_status(
+    steps_statuses: dict[StepName, StepStatus],
+) -> bool:
+    return any(status in _IN_PROGRESS_STATUSES for status in steps_statuses.values())
+
+
+async def start_and_mark_as_started(
+    step_proxy: StepStoreProxy,
+    *,
+    is_creating: bool,
+    expected_steps_count: NonNegativeInt,
+) -> None:
+    await DeferredRunner.start(
+        schedule_id=step_proxy.schedule_id,
+        operation_name=step_proxy.operation_name,
+        step_group_name=step_proxy.step_group_name,
+        step_name=step_proxy.step_name,
+        is_creating=is_creating,
+        expected_steps_count=expected_steps_count,
+    )
+    await step_proxy.set_multiple(
+        {"deferred_created": True, "status": StepStatus.SCHEDULED}
+    )
+
+
+def raise_if_overwrites_any_operation_provided_key(
+    operation: Operation, initial_operation_context: OperationContext
+) -> None:
+    operation_provided_context_keys = get_operation_provided_context_keys(operation)
+    for key in initial_operation_context:
+        if key in operation_provided_context_keys:
+            raise InitialOperationContextKeyNotAllowedError(
+                key=key, operation=operation
+            )
+
+
+async def get_step_error_traceback(
+    store: Store,
+    *,
+    schedule_id: ScheduleId,
+    operation_name: OperationName,
+    current_step_group: BaseStepGroup,
+    group_index: NonNegativeInt,
+    step_name: StepName,
+) -> tuple[StepName, str]:
+    step_proxy = StepStoreProxy(
+        store=store,
+        schedule_id=schedule_id,
+        operation_name=operation_name,
+        step_group_name=current_step_group.get_step_group_name(index=group_index),
+        step_name=step_name,
+        is_creating=False,
+    )
+    return step_name, await step_proxy.get("error_traceback")
+
+
+def get_group_step_proxies(
+    store: Store,
+    *,
+    schedule_id: ScheduleId,
+    operation_name: OperationName,
+    group_index: NonNegativeInt,
+    step_group: BaseStepGroup,
+    is_creating: bool,
+) -> dict[StepName, StepStoreProxy]:
+    return {
+        step.get_step_name(): StepStoreProxy(
+            store=store,
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            step_group_name=step_group.get_step_group_name(index=group_index),
+            step_name=step.get_step_name(),
+            is_creating=is_creating,
+        )
+        for step in step_group.get_step_subgroup_to_run()
+    }
+
+
+async def _get_was_step_started(
+    step_proxy: StepStoreProxy,
+) -> tuple[bool, StepStoreProxy]:
+    try:
+        was_stated = (await step_proxy.get("deferred_created")) is True
+    except KeyNotFoundInHashError:
+        was_stated = False
+
+    return was_stated, step_proxy
+
+
+async def _get_steps_to_start(
+    step_proxies: Iterable[StepStoreProxy],
+) -> list[StepStoreProxy]:
+    result: list[tuple[bool, StepStoreProxy]] = await limited_gather(
+        *(_get_was_step_started(step) for step in step_proxies),
+        limit=_PARALLEL_STATUS_REQUESTS,
+    )
+    return [proxy for was_started, proxy in result if was_started is False]
+
+
+async def start_steps_and_get_count(
+    group_step_proxies: dict[StepName, StepStoreProxy],
+    *,
+    is_creating: bool,
+    group_step_count: NonNegativeInt,
+) -> NonNegativeInt:
+    if to_start_step_proxies := await _get_steps_to_start(group_step_proxies.values()):
+        steps_to_start_names = [
+            step_proxy.step_name for step_proxy in to_start_step_proxies
+        ]
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            f"starting steps: {steps_to_start_names=}",
+        ):
+            await limited_gather(
+                *(
+                    start_and_mark_as_started(
+                        step_proxy,
+                        is_creating=is_creating,
+                        expected_steps_count=group_step_count,
+                    )
+                    for step_proxy in to_start_step_proxies
+                ),
+                limit=_PARALLEL_STATUS_REQUESTS,
+            )
+        return len(to_start_step_proxies)
+    return 0
+
+
+async def cleanup_after_finishing(
+    store: Store, *, schedule_id: ScheduleId, is_creating: bool
+) -> None:
+    removal_proxy = OperationRemovalProxy(store=store, schedule_id=schedule_id)
+    await removal_proxy.remove()
+    verb = "COMPLETED" if is_creating else "REVERTED"
+    _logger.debug("Operation for schedule_id='%s' %s successfully", verb, schedule_id)
+
+
+async def get_requires_manual_intervention(step_proxy: StepStoreProxy) -> bool:
+    try:
+        return await step_proxy.get("requires_manual_intervention")
+    except KeyNotFoundInHashError:
+        return False
