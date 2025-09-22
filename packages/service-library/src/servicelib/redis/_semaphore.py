@@ -19,6 +19,7 @@ from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_delay,
+    stop_never,
     wait_random_exponential,
 )
 
@@ -206,11 +207,16 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = int(self.ttl.total_seconds())
 
         try:
+            stop_condition = stop_after_delay(0)  # non-blocking by default
+            if self.blocking:
+                stop_condition = (
+                    stop_after_delay(self.blocking_timeout)
+                    if self.blocking_timeout
+                    else stop_never
+                )
 
             @retry(
-                stop=stop_after_delay(  # this is the time after the first attempt
-                    (self.blocking_timeout or 0) if self.blocking else 0
-                ),
+                stop=stop_condition,
                 wait=wait_random_exponential(min=0.1),
                 retry=retry_if_exception_type(redis.exceptions.TimeoutError),
             )

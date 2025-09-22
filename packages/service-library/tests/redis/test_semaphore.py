@@ -239,6 +239,17 @@ async def test_semaphore_blocking_timeout(
         ):
             await semaphore2.acquire()
 
+        # now try infinite timeout
+        semaphore3 = DistributedSemaphore(
+            redis_client=redis_client_sdk,
+            key=semaphore_name,
+            capacity=capacity,
+            blocking_timeout=None,  # wait forever
+        )
+        acquire_task = asyncio.create_task(semaphore3.acquire())
+        await asyncio.sleep(5)  # give some time to start acquiring
+        assert not acquire_task.done()
+
 
 async def test_semaphore_blocking_acquire_waits(
     redis_client_sdk: RedisClientSDK,
