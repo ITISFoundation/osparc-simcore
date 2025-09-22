@@ -75,7 +75,7 @@ class AsyncJobSideEffects:
         rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
         *,
         rpc_namespace: RPCNamespace,
-        job_filter: OwnerMetadata,
+        owner_metadata: OwnerMetadata,
         filter_: str = "",
     ) -> list[AsyncJobGet]:
         if self.exception is not None:

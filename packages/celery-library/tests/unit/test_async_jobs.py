@@ -156,17 +156,17 @@ async def _start_task_via_rpc(
     product_name: ProductName,
     **kwargs: Any,
 ) -> tuple[AsyncJobGet, OwnerMetadata]:
-    job_filter = OwnerMetadata(
+    owner_metadata = OwnerMetadata(
         user_id=user_id, product_name=product_name, owner="pytest_client"
     )
     async_job_get = await async_jobs.submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         method_name=rpc_task_name,
-        owner_metadata=job_filter,
+        owner_metadata=owner_metadata,
         **kwargs,
     )
-    return async_job_get, job_filter
+    return async_job_get, owner_metadata
 
 
 @pytest.fixture
@@ -288,7 +288,7 @@ async def test_async_jobs_cancel(
     product_name: ProductName,
     exposed_rpc_start: str,
 ):
-    async_job_get, job_filter = await _start_task_via_rpc(
+    async_job_get, owner_metadata = await _start_task_via_rpc(
         async_jobs_rabbitmq_rpc_client,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
@@ -301,13 +301,13 @@ async def test_async_jobs_cancel(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        owner_metadata=job_filter,
+        owner_metadata=owner_metadata,
     )
 
     jobs = await async_jobs.list_jobs(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
-        owner_metadata=job_filter,
+        owner_metadata=owner_metadata,
     )
     assert async_job_get.job_id not in [job.job_id for job in jobs]
 
@@ -316,7 +316,7 @@ async def test_async_jobs_cancel(
             async_jobs_rabbitmq_rpc_client,
             rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
             job_id=async_job_get.job_id,
-            owner_metadata=job_filter,
+            owner_metadata=owner_metadata,
         )
 
     with pytest.raises(JobMissingError):
@@ -324,7 +324,7 @@ async def test_async_jobs_cancel(
             async_jobs_rabbitmq_rpc_client,
             rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
             job_id=async_job_get.job_id,
-            owner_metadata=job_filter,
+            owner_metadata=owner_metadata,
         )
 
 
