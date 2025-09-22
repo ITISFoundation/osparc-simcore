@@ -103,13 +103,14 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    task_filter = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await celery_task_manager.submit_task(
         ExecutionMetadata(
             name=fake_file_processor.__name__,
         ),
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
         files=[f"file{n}" for n in range(5)],
     )
 
@@ -119,14 +120,16 @@ async def test_submitting_task_calling_async_function_results_with_success_state
         stop=stop_after_delay(30),
     ):
         with attempt:
-            status = await celery_task_manager.get_task_status(task_filter, task_uuid)
+            status = await celery_task_manager.get_task_status(
+                owner_metadata, task_uuid
+            )
             assert status.task_state == TaskState.SUCCESS
 
     assert (
-        await celery_task_manager.get_task_status(task_filter, task_uuid)
+        await celery_task_manager.get_task_status(owner_metadata, task_uuid)
     ).task_state == TaskState.SUCCESS
     assert (
-        await celery_task_manager.get_task_result(task_filter, task_uuid)
+        await celery_task_manager.get_task_result(owner_metadata, task_uuid)
     ) == "archive.zip"
 
 
@@ -134,13 +137,14 @@ async def test_submitting_task_with_failure_results_with_error(
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    task_filter = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await celery_task_manager.submit_task(
         ExecutionMetadata(
             name=failure_task.__name__,
         ),
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
     )
 
     for attempt in Retrying(
@@ -151,11 +155,11 @@ async def test_submitting_task_with_failure_results_with_error(
 
         with attempt:
             raw_result = await celery_task_manager.get_task_result(
-                task_filter, task_uuid
+                owner_metadata, task_uuid
             )
             assert isinstance(raw_result, TransferrableCeleryError)
 
-    raw_result = await celery_task_manager.get_task_result(task_filter, task_uuid)
+    raw_result = await celery_task_manager.get_task_result(owner_metadata, task_uuid)
     assert f"{raw_result}" == "Something strange happened: BOOM!"
 
 
@@ -163,36 +167,38 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    task_filter = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await celery_task_manager.submit_task(
         ExecutionMetadata(
             name=dreamer_task.__name__,
         ),
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
     )
 
     await asyncio.sleep(3.0)
 
-    await celery_task_manager.cancel_task(task_filter, task_uuid)
+    await celery_task_manager.cancel_task(owner_metadata, task_uuid)
 
     with pytest.raises(TaskNotFoundError):
-        await celery_task_manager.get_task_status(task_filter, task_uuid)
+        await celery_task_manager.get_task_status(owner_metadata, task_uuid)
 
-    assert task_uuid not in await celery_task_manager.list_tasks(task_filter)
+    assert task_uuid not in await celery_task_manager.list_tasks(owner_metadata)
 
 
 async def test_listing_task_uuids_contains_submitted_task(
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-    task_filter = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await celery_task_manager.submit_task(
         ExecutionMetadata(
             name=dreamer_task.__name__,
         ),
-        owner_metadata=task_filter,
+        owner_metadata=owner_metadata,
     )
 
     for attempt in Retrying(
@@ -201,11 +207,11 @@ async def test_listing_task_uuids_contains_submitted_task(
         stop=stop_after_delay(10),
     ):
         with attempt:
-            tasks = await celery_task_manager.list_tasks(task_filter)
+            tasks = await celery_task_manager.list_tasks(owner_metadata)
             assert any(task.uuid == task_uuid for task in tasks)
 
-        tasks = await celery_task_manager.list_tasks(task_filter)
-        assert any(task.uuid == task_uuid for task in tasks)
+    tasks = await celery_task_manager.list_tasks(owner_metadata)
+    assert any(task.uuid == task_uuid for task in tasks)
 
 
 async def test_filtering_listing_tasks(
@@ -223,20 +229,20 @@ async def test_filtering_listing_tasks(
 
     try:
         for _ in range(5):
-            task_filter = MyOwnerMetadata(
+            owner_metadata = MyOwnerMetadata(
                 user_id=user_id, product_name=_faker.word(), owner=_owner
             )
             task_uuid = await celery_task_manager.submit_task(
                 ExecutionMetadata(
                     name=dreamer_task.__name__,
                 ),
-                owner_metadata=task_filter,
+                owner_metadata=owner_metadata,
             )
             expected_task_uuids.add(task_uuid)
-            all_tasks.append((task_uuid, task_filter))
+            all_tasks.append((task_uuid, owner_metadata))
 
         for _ in range(3):
-            task_filter = MyOwnerMetadata(
+            owner_metadata = MyOwnerMetadata(
                 user_id=_faker.pyint(min_value=100, max_value=200),
                 product_name=_faker.word(),
                 owner=_owner,
@@ -245,18 +251,18 @@ async def test_filtering_listing_tasks(
                 ExecutionMetadata(
                     name=dreamer_task.__name__,
                 ),
-                owner_metadata=task_filter,
+                owner_metadata=owner_metadata,
             )
-            all_tasks.append((task_uuid, task_filter))
+            all_tasks.append((task_uuid, owner_metadata))
 
-        search_filter = MyOwnerMetadata(
+        search_owner_metadata = MyOwnerMetadata(
             user_id=user_id,
             product_name="*",
             owner=_owner,
         )
-        tasks = await celery_task_manager.list_tasks(search_filter)
+        tasks = await celery_task_manager.list_tasks(search_owner_metadata)
         assert expected_task_uuids == {task.uuid for task in tasks}
     finally:
         # clean up all tasks. this should ideally be done in the fixture
-        for task_uuid, task_filter in all_tasks:
-            await celery_task_manager.cancel_task(task_filter, task_uuid)
+        for task_uuid, owner_metadata in all_tasks:
+            await celery_task_manager.cancel_task(owner_metadata, task_uuid)
