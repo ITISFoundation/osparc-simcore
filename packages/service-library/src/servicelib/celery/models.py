@@ -1,6 +1,5 @@
 import datetime
 from enum import StrEnum
-from types import NoneType
 from typing import Annotated, Final, Literal, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
@@ -21,15 +20,7 @@ _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 _FORBIDDEN_KEYS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
 _FORBIDDEN_VALUES = (_TASK_ID_KEY_DELIMITATOR, "=")
 AllowedTypes = (
-    int
-    | float
-    | bool
-    | str
-    | NoneType
-    | list[str]
-    | list[int]
-    | list[float]
-    | list[bool]
+    int | float | bool | str | None | list[str] | list[int] | list[float] | list[bool]
 )
 
 Wildcard: TypeAlias = Literal["*"]
