@@ -15,6 +15,7 @@ from http.client import HTTPException
 from typing import Final, cast
 
 import distributed
+import distributed.client
 from aiohttp import ClientResponseError
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
@@ -68,6 +69,7 @@ from tenacity.wait import wait_fixed
 
 from ..core.errors import (
     ComputationalBackendNoS3AccessError,
+    ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
     TaskSchedulingError,
@@ -92,7 +94,7 @@ _DASK_DEFAULT_TIMEOUT_S: Final[int] = 10
 
 
 _UserCallbackInSepThread = Callable[[], None]
-_MAX_CONCURRENT_CLIENT_CONNECTIONS: Final[int] = 10
+_MAX_CONCURRENT_CLIENT_CONNECTIONS: Final[int] = 1
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -552,6 +554,11 @@ class DaskClient:
             raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc
         except distributed.TimeoutError as exc:
             raise ComputationalBackendTaskResultsNotReadyError(job_id=job_id) from exc
+        except (
+            distributed.client.FutureCancelledError,
+            distributed.client.FuturesCancelledError,
+        ) as exc:
+            raise ComputationalBackendNotConnectedError from exc
 
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
