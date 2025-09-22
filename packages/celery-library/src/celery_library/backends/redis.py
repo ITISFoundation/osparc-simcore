@@ -158,9 +158,6 @@ class RedisTaskInfoStore:
             stream_key,
             {"event": event.model_dump_json()},
         )
-        await self._redis_client_sdk.redis.expire(
-            stream_key, _CELERY_TASK_STREAM_EXPIRE_DEFAULT, nx=True
-        )
 
     async def consume_task_events(
         self, task_id: TaskID, last_id: str | None = None
