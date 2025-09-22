@@ -422,8 +422,19 @@ async def test_long_locking_logs_warning(
         assert "longer than expected" in caplog.messages[-1]
 
 
-@pytest.mark.skip
+@pytest.fixture
+def with_slow_redis_socket_timeout(
+    mock_redis_socket_timeout: None, mocker: MockerFixture
+) -> None:
+    # put back to higher value to allow normal operations
+    mocker.patch(
+        "servicelib.redis._client.DEFAULT_SOCKET_TIMEOUT",
+        datetime.timedelta(seconds=30),
+    )
+
+
 async def test_semaphore_fair_queuing(
+    with_slow_redis_socket_timeout: None,
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
@@ -436,7 +447,7 @@ async def test_semaphore_fair_queuing(
     )
     async def limited_function(call_id: int):
         entered_order.append(call_id)
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.2)
         return call_id
 
     # Launch tasks in a specific order
@@ -444,7 +455,7 @@ async def test_semaphore_fair_queuing(
     tasks = []
     for i in range(num_tasks):
         tasks.append(asyncio.create_task(limited_function(i)))
-        await asyncio.sleep(0.01)  # Small delay to help preserve order
+        await asyncio.sleep(0.1)  # Small delay to help preserve order
     results = await asyncio.gather(*tasks)
 
     # All should complete successfully and in order
