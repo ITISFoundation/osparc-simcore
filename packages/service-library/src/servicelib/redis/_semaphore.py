@@ -19,7 +19,6 @@ from ._client import RedisClientSDK
 from ._constants import (
     DEFAULT_SEMAPHORE_TTL,
     DEFAULT_SOCKET_TIMEOUT,
-    SEMAPHORE_HOLDER_KEY_PREFIX,
     SEMAPHORE_KEY_PREFIX,
 )
 from ._errors import (
@@ -150,13 +149,13 @@ class DistributedSemaphore(BaseModel):
     @property
     def holder_key(self) -> str:
         """Redis key for this instance's holder entry."""
-        return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:{self.instance_id}"
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders_:{self.instance_id}"
 
     @computed_field
     @property
     def holder_prefix(self) -> str:
         """Prefix for holder keys (used in cleanup)."""
-        return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:"
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders_:"
 
     # Additional validation
     @field_validator("ttl")
@@ -187,6 +186,14 @@ class DistributedSemaphore(BaseModel):
         Raises:
             SemaphoreAcquisitionError: If acquisition fails and blocking=True
         """
+
+        if await self.is_acquired():
+            _logger.debug(
+                "Semaphore '%s' already acquired by this instance (instance: %s)",
+                self.key,
+                self.instance_id,
+            )
+            return True
 
         ttl_seconds = int(self.ttl.total_seconds())
         blocking_timeout_seconds = 0.001
@@ -363,26 +370,26 @@ class DistributedSemaphore(BaseModel):
 
         raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
 
-    async def get_current_count(self) -> int:
-        """Get the current number of semaphore holders"""
-
-        cls = type(self)
-        assert cls.count_script is not None  # nosec
-        result = await cls.count_script(  # pylint: disable=not-callable
-            keys=[self.holders_key, self.tokens_key],
-            args=[self.capacity],
-            client=self.redis_client.redis,
+    async def is_acquired(self) -> bool:
+        """Check if the semaphore is currently acquired by this instance."""
+        return (
+            await handle_redis_returns_union_types(
+                self.redis_client.redis.exists(self.holder_key)
+            )
+            == 1
         )
 
-        assert isinstance(result, list)  # nosec
-        current_holders, available_tokens, capacity = result
-
-        return int(current_holders)
+    async def get_current_count(self) -> int:
+        """Get the current number of semaphore holders"""
+        return await handle_redis_returns_union_types(
+            self.redis_client.redis.scard(self.holders_key)
+        )
 
     async def get_available_count(self) -> int:
         """Get the number of available semaphore slots"""
-        current_count = await self.get_current_count()
-        return max(0, self.capacity - current_count)
+        return await handle_redis_returns_union_types(
+            self.redis_client.redis.llen(self.tokens_key)
+        )
 
     # Context manager support
     async def __aenter__(self) -> "DistributedSemaphore":

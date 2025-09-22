@@ -102,7 +102,10 @@ async def test_semaphore_acquire_release_single(
     semaphore_capacity: int,
 ):
     semaphore = DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=datetime.timedelta(seconds=60),
     )
 
     # Initially not acquired
@@ -216,7 +219,10 @@ async def test_semaphore_blocking_timeout(
 
     # First semaphore acquires
     async with DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=capacity
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=capacity,
+        ttl=datetime.timedelta(seconds=60),
     ):
         # Second semaphore should timeout
         semaphore2 = DistributedSemaphore(
