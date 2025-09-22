@@ -45,7 +45,8 @@ async def setup_celery_task_manager(app: web.Application):
 
 
 def get_task_manager(app: web.Application) -> TaskManager:
-    return app[_APP_CELERY_TASK_MANAGER]
+    task_manager: CeleryTaskManager = app[_APP_CELERY_TASK_MANAGER]
+    return task_manager
 
 
 # PLUGIN SETUP --------------------------------------------------------------------------
