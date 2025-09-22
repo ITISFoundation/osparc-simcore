@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Final
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 from servicelib.celery.models import (
+    WILDCARD,
     ExecutionMetadata,
     OwnerMetadata,
     Task,
@@ -84,9 +85,9 @@ class RedisTaskInfoStore:
             )
             return None
 
-    async def list_tasks(self, task_filter: OwnerMetadata) -> list[Task]:
-        search_key = _CELERY_TASK_INFO_PREFIX + task_filter.model_dump_task_id(
-            task_uuid="*"
+    async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
+        search_key = _CELERY_TASK_INFO_PREFIX + owner_metadata.model_dump_task_id(
+            task_uuid=WILDCARD
         )
 
         keys: list[str] = []
