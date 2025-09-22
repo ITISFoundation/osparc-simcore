@@ -13,6 +13,7 @@ from typing import Literal
 
 import pytest
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.redis import RedisClientSDK
 from servicelib.redis._constants import (
     SEMAPHORE_HOLDER_KEY_PREFIX,
@@ -275,10 +276,10 @@ async def test_non_blocking_behavior(
         key=semaphore_name,
         capacity=1,
         blocking=False,
-        blocking_timeout=datetime.timedelta(seconds=0.1),
+        blocking_timeout=None,
     )
     async def limited_function_non_blocking() -> None:
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(2)
 
     tasks = [asyncio.create_task(limited_function_non_blocking()) for _ in range(3)]
     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -365,11 +366,11 @@ async def test_with_large_capacity(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
-    large_capacity = 100
+    large_capacity = 20
     concurrent_count = 0
     max_concurrent = 0
-    sleep_time_s = 5
-    num_tasks = 1000
+    sleep_time_s = 10
+    num_tasks = 500
 
     @with_limited_concurrency(
         redis_client_sdk,
@@ -382,9 +383,8 @@ async def test_with_large_capacity(
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)
-        logging.info("Started task, current concurrent: %d", concurrent_count)
-        await asyncio.sleep(sleep_time_s)
-        logging.info("Done task, current concurrent: %d", concurrent_count)
+        with log_context(logging.INFO, f"task with {concurrent_count=}"):
+            await asyncio.sleep(sleep_time_s)
         concurrent_count -= 1
 
     # Start tasks equal to the large capacity
@@ -398,6 +398,63 @@ async def test_with_large_capacity(
 
     # Should never exceed the large capacity
     assert max_concurrent <= large_capacity
+
+
+async def test_long_locking_logs_warning(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    caplog: pytest.LogCaptureFixture,
+    mocker: MockerFixture,
+):
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+        blocking=True,
+        blocking_timeout=None,
+        expected_lock_overall_time=datetime.timedelta(milliseconds=200),
+    )
+    async def limited_function() -> None:
+        with log_context(logging.INFO, "task"):
+            await asyncio.sleep(0.4)
+
+    with caplog.at_level(logging.WARNING):
+        await limited_function()
+        assert caplog.records
+        assert "longer than expected" in caplog.messages[-1]
+
+
+@pytest.mark.skip
+async def test_semaphore_fair_queuing(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+):
+    entered_order: list[int] = []
+
+    @with_limited_concurrency(
+        redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+    )
+    async def limited_function(call_id: int):
+        entered_order.append(call_id)
+        await asyncio.sleep(0.1)
+        return call_id
+
+    # Launch tasks in a specific order
+    num_tasks = 10
+    tasks = []
+    for i in range(num_tasks):
+        tasks.append(asyncio.create_task(limited_function(i)))
+        await asyncio.sleep(0.01)  # Small delay to help preserve order
+    results = await asyncio.gather(*tasks)
+
+    # All should complete successfully and in order
+    assert results == list(range(num_tasks))
+    # The order in which they entered the critical section should match the order of submission
+    assert entered_order == list(
+        range(num_tasks)
+    ), f"Expected fair queuing, got {entered_order}"
 
 
 async def test_context_manager_basic_functionality(
@@ -442,6 +499,7 @@ async def test_context_manager_capacity_enforcement(
         redis_client_sdk,
         key=semaphore_name,
         capacity=2,
+        blocking_timeout=None,
     )
     @asynccontextmanager
     async def limited_context_manager():

@@ -38,6 +38,7 @@ async def _managed_semaphore_execution(
     semaphore_key: str,
     ttl: datetime.timedelta,
     execution_context: str,
+    expected_lock_overall_time: datetime.timedelta,
 ) -> AsyncIterator:
     """Common semaphore management logic with auto-renewal."""
     # Acquire the semaphore first
@@ -106,14 +107,14 @@ async def _managed_semaphore_execution(
         finally:
             lock_release_time = arrow.utcnow()
             locking_time = lock_release_time - lock_acquisition_time
-            if locking_time > DEFAULT_EXPECTED_LOCK_OVERALL_TIME:
+            if locking_time > expected_lock_overall_time:
                 _logger.warning(
                     "Semaphore '%s' was held for %s which is longer than expected (%s). "
                     "TIP: consider reducing the locking time by optimizing the code inside "
                     "the critical section or increasing the default locking time",
                     semaphore_key,
                     locking_time,
-                    DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
+                    expected_lock_overall_time,
                 )
 
 
@@ -157,6 +158,7 @@ def with_limited_concurrency(
     ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
     blocking: bool = True,
     blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
+    expected_lock_overall_time: datetime.timedelta = DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
 ) -> Callable[
     [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
 ]:
@@ -174,6 +176,7 @@ def with_limited_concurrency(
         ttl: Time-to-live for semaphore entries (default: 5 minutes)
         blocking: Whether to block when semaphore is full (default: True)
         blocking_timeout: Maximum time to wait when blocking (default: socket timeout)
+        expected_lock_overall_time: helper for logging warnings if lock is held longer than expected
 
     Example:
         @with_limited_concurrency(
@@ -209,7 +212,11 @@ def with_limited_concurrency(
             )
 
             async with _managed_semaphore_execution(
-                semaphore, semaphore_key, ttl, f"coroutine_{coro.__name__}"
+                semaphore,
+                semaphore_key,
+                ttl,
+                f"coroutine_{coro.__name__}",
+                expected_lock_overall_time,
             ):
                 return await coro(*args, **kwargs)
 
@@ -226,6 +233,7 @@ def with_limited_concurrency_cm(
     ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
     blocking: bool = True,
     blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
+    expected_lock_overall_time: datetime.timedelta = DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
 ) -> Callable[
     [Callable[P, AbstractAsyncContextManager[R]]],
     Callable[P, AbstractAsyncContextManager[R]],
@@ -244,6 +252,7 @@ def with_limited_concurrency_cm(
         ttl: Time-to-live for semaphore entries (default: 5 minutes)
         blocking: Whether to block when semaphore is full (default: True)
         blocking_timeout: Maximum time to wait when blocking (default: socket timeout)
+        expected_lock_overall_time: helper for logging warnings if lock is held longer than expected
 
     Example:
         @asynccontextmanager
@@ -281,7 +290,11 @@ def with_limited_concurrency_cm(
 
             async with (
                 _managed_semaphore_execution(
-                    semaphore, semaphore_key, ttl, f"context_manager_{cm_func.__name__}"
+                    semaphore,
+                    semaphore_key,
+                    ttl,
+                    f"context_manager_{cm_func.__name__}",
+                    expected_lock_overall_time,
                 ),
                 cm_func(*args, **kwargs) as value,
             ):
