@@ -189,12 +189,10 @@ class DistributedSemaphore(BaseModel):
         """
 
         ttl_seconds = int(self.ttl.total_seconds())
-        blocking_timeout_seconds = 1
+        blocking_timeout_seconds = 0.001
         if self.blocking:
             blocking_timeout_seconds = (
-                int(self.blocking_timeout.total_seconds())
-                if self.blocking_timeout
-                else 60
+                self.blocking_timeout.total_seconds() if self.blocking_timeout else 0
             )
 
         # Execute the Lua scripts atomically
