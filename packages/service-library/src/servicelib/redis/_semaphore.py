@@ -450,7 +450,7 @@ async def distributed_semaphore(
         started: asyncio.Event,
         cancellation_event: asyncio.Event,
     ) -> None:
-        if cancellation_event.is_set() or asyncio.current_task().cancelled():
+        if cancellation_event.is_set():
             raise asyncio.CancelledError
         if not started.is_set():
             started.set()
