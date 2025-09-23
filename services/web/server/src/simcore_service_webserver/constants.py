@@ -9,7 +9,7 @@ from servicelib.aiohttp.application_keys import (
     APP_FIRE_AND_FORGET_TASKS_KEY,
     APP_SETTINGS_KEY,
 )
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 
 from ._meta import APP_NAME
 

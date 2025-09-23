@@ -18,8 +18,8 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.aiohttp.observer import emit
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.logging_utils import log_context
-from servicelib.request_keys import RQT_USERID_KEY
 
 from ..groups.api import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required

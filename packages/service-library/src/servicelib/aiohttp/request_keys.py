@@ -1,6 +1,5 @@
-""" Storage keys in requests
+"""Storage keys in requests"""
 
-"""
 from typing import Final
 
 # RQT=request
