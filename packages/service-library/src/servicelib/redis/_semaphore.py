@@ -1,11 +1,17 @@
+import asyncio
+import contextlib
 import datetime
 import logging
+import socket
 import uuid
-from types import TracebackType
+from collections.abc import AsyncIterator
 from typing import Annotated, ClassVar
 
+import arrow
 import redis.exceptions
+from common_library.async_tools import cancel_wait_task
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import (
     BaseModel,
     Field,
@@ -24,8 +30,10 @@ from tenacity import (
 )
 from tenacity.stop import stop_base
 
+from ..background_task import periodic
 from ._client import RedisClientSDK
 from ._constants import (
+    DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
     DEFAULT_SEMAPHORE_TTL,
     DEFAULT_SOCKET_TIMEOUT,
     SEMAPHORE_KEY_PREFIX,
@@ -407,15 +415,111 @@ class DistributedSemaphore(BaseModel):
             self.redis_client.redis.llen(self.tokens_key)
         )
 
-    # Context manager support
-    async def __aenter__(self) -> "DistributedSemaphore":
-        await self.acquire()
-        return self
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+@contextlib.asynccontextmanager
+async def distributed_semaphore(
+    redis_client: RedisClientSDK,
+    *,
+    key: str,
+    capacity: PositiveInt,
+    ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
+    blocking: bool = True,
+    blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
+    expected_lock_overall_time: datetime.timedelta = DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
+) -> AsyncIterator[DistributedSemaphore]:
+    """
+    Async context manager for DistributedSemaphore.
+
+    Example:
+        async with distributed_semaphore(redis_client, "my_resource", capacity=3) as sem:
+            # Only 3 instances can execute this block concurrently
+            await do_limited_work()
+    """
+    semaphore = DistributedSemaphore(
+        redis_client=redis_client,
+        key=key,
+        capacity=capacity,
+        ttl=ttl,
+        blocking=blocking,
+        blocking_timeout=blocking_timeout,
+    )
+
+    @periodic(interval=semaphore.ttl / 3, raise_on_error=True)
+    async def _periodic_reacquisition(
+        semaphore: DistributedSemaphore, started: asyncio.Event
     ) -> None:
-        await self.release()
+        await semaphore.reacquire()
+        if not started.is_set():
+            started.set()
+
+    try:
+        if not await semaphore.acquire():
+            raise SemaphoreAcquisitionError(name=key, instance_id=semaphore.instance_id)
+        lock_acquisition_time = arrow.utcnow()
+
+        async with (
+            asyncio.TaskGroup() as tg
+        ):  # NOTE: using task group ensures proper cancellation propagation of parent task
+            auto_reacquisition_started = asyncio.Event()
+            auto_reacquisition_task = tg.create_task(
+                _periodic_reacquisition(semaphore, auto_reacquisition_started),
+                name=f"semaphore/auto_reacquisition_task_{semaphore.key}_{semaphore.instance_id}",
+            )
+            await auto_reacquisition_started.wait()
+
+            yield semaphore
+
+            await cancel_wait_task(auto_reacquisition_task)
+    except BaseExceptionGroup as eg:
+        semaphore_lost_errors, other_errors = eg.split(
+            SemaphoreLostError | SemaphoreNotAcquiredError
+        )
+        if other_errors:
+            assert len(other_errors.exceptions) == 1  # nosec
+            raise other_errors from eg
+        assert semaphore_lost_errors is not None  # nosec
+        assert len(semaphore_lost_errors.exceptions) == 1  # nosec
+        raise semaphore_lost_errors.exceptions[0] from eg
+    finally:
+        try:
+            await semaphore.release()
+        except SemaphoreNotAcquiredError as exc:
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    f"Unexpected error while releasing semaphore '{semaphore.key}'",
+                    error=exc,
+                    error_context={
+                        "semaphore_key": semaphore.key,
+                        "semaphore_instance_id": semaphore.instance_id,
+                        "hostname": socket.gethostname(),
+                    },
+                    tip="This indicates a logic error in the code using the semaphore",
+                )
+            )
+        except SemaphoreLostError as exc:
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    f"Unexpected error while releasing semaphore '{semaphore.key}'",
+                    error=exc,
+                    error_context={
+                        "semaphore_key": semaphore.key,
+                        "semaphore_instance_id": semaphore.instance_id,
+                        "hostname": socket.gethostname(),
+                    },
+                    tip="This indicates that the semaphore was lost or expired before release. "
+                    "Look for synchronouse code or the loop is very busy and cannot schedule the reacquisition task.",
+                )
+            )
+        finally:
+            lock_release_time = arrow.utcnow()
+            locking_time = lock_release_time - lock_acquisition_time
+            if locking_time > expected_lock_overall_time:
+                _logger.warning(
+                    "Semaphore '%s' was held for %s by %s which is longer than expected (%s). "
+                    "TIP: consider reducing the locking time by optimizing the code inside "
+                    "the critical section or increasing the default locking time",
+                    semaphore.key,
+                    locking_time,
+                    semaphore.instance_id,
+                    expected_lock_overall_time,
+                )

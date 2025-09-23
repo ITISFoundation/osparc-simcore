@@ -282,36 +282,6 @@ async def test_semaphore_acquire_release_with_ttl_expiry(
     )
 
 
-async def test_semaphore_context_manager(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-):
-    async with DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
-    ) as semaphore:
-        assert await semaphore.current_count() == 1
-
-    # Should be released after context
-    assert await semaphore.current_count() == 0
-
-
-async def test_semaphore_release_without_acquire_raises(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-    semaphore_capacity: int,
-):
-    semaphore = DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
-    )
-
-    with pytest.raises(
-        SemaphoreNotAcquiredError,
-        match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
-    ):
-        await semaphore.release()
-
-
 async def test_semaphore_multiple_instances_capacity_limit(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,

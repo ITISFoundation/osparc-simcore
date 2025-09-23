@@ -43,7 +43,9 @@ async def _managed_semaphore_execution(
     """Common semaphore management logic with auto-renewal."""
     # Acquire the semaphore first
     if not await semaphore.acquire():
-        raise SemaphoreAcquisitionError(name=semaphore_key, capacity=semaphore.capacity)
+        raise SemaphoreAcquisitionError(
+            name=semaphore_key, instance_id=semaphore.instance_id
+        )
 
     lock_acquisition_time = arrow.utcnow()
     try:
