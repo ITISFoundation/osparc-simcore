@@ -165,12 +165,14 @@ async def _get_steps_to_start(
     return [proxy for was_started, proxy in result if was_started is False]
 
 
-async def start_steps_and_get_count(
+async def start_steps_which_were_not_started(
     group_step_proxies: dict[StepName, StepStoreProxy],
     *,
     is_creating: bool,
     group_step_count: NonNegativeInt,
-) -> NonNegativeInt:
+) -> bool:
+    """retruns True if any step was started"""
+    started_count: NonNegativeInt = 0
     if to_start_step_proxies := await _get_steps_to_start(group_step_proxies.values()):
         steps_to_start_names = [
             step_proxy.step_name for step_proxy in to_start_step_proxies
@@ -191,8 +193,8 @@ async def start_steps_and_get_count(
                 ),
                 limit=PARALLEL_STATUS_REQUESTS,
             )
-        return len(to_start_step_proxies)
-    return 0
+        started_count = len(to_start_step_proxies)
+    return started_count > 0
 
 
 async def cleanup_after_finishing(

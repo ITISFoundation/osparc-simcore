@@ -24,7 +24,7 @@ from ._core_utils import (
     safe_event,
     set_unexpected_opration_state,
     start_and_mark_as_started,
-    start_steps_and_get_count,
+    start_steps_which_were_not_started,
 )
 from ._deferred_runner import DeferredRunner
 from ._dependencies import enqueue_schedule_event
@@ -288,12 +288,11 @@ class Core:
         )
 
         # 1) ensure all steps in the group are started
-        started_steps_couunt = await start_steps_and_get_count(
+        if await start_steps_which_were_not_started(
             group_step_proxies,
             is_creating=is_creating,
             group_step_count=len(step_group),
-        )
-        if started_steps_couunt > 0:
+        ):
             # since steps were started, we wait for next event to check their status
             return
 
