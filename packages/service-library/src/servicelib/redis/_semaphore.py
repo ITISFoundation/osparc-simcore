@@ -141,19 +141,25 @@ class DistributedSemaphore(BaseModel):
     @property
     def semaphore_key(self) -> str:
         """Redis key for the semaphore sorted set."""
-        return f"{SEMAPHORE_KEY_PREFIX}{self.key}"
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}_cap{self.capacity}"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def tokens_key(self) -> str:
         """Redis key for the token pool LIST."""
-        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:tokens"
+        return f"{self.semaphore_key}:tokens"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def holders_set(self) -> str:
         """Redis key for the holders SET."""
-        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders_set"
+        return f"{self.semaphore_key}:holders_set"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def holder_key(self) -> str:
+        """Redis key for this instance's holder entry."""
+        return f"{self.semaphore_key}:holders:{self.instance_id}"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -166,12 +172,6 @@ class DistributedSemaphore(BaseModel):
     def tokens_set_ttl(self) -> datetime.timedelta:
         """TTL for the tokens SET"""
         return self.ttl * 5
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def holder_key(self) -> str:
-        """Redis key for this instance's holder entry."""
-        return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders:{self.instance_id}"
 
     @field_validator("ttl")
     @classmethod

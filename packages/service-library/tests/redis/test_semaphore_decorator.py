@@ -134,7 +134,7 @@ async def test_auto_renewal_lose_semaphore_raises(
 
     # Find and delete all holder keys for this semaphore
     holder_keys = await redis_client_sdk.redis.keys(
-        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}:holders:*"
+        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}_cap{semaphore_capacity}:holders:*"
     )
     assert holder_keys, "Holder keys should exist before deletion"
     await redis_client_sdk.redis.delete(*holder_keys)
@@ -734,7 +734,7 @@ async def test_context_manager_lose_semaphore_raises(
 
     # Find and delete all holder keys for this semaphore
     holder_keys = await redis_client_sdk.redis.keys(
-        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}:holders:*"
+        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}_cap{semaphore_capacity}:holders:*"
     )
     assert holder_keys, "Holder keys should exist before deletion"
     await redis_client_sdk.redis.delete(*holder_keys)

@@ -60,7 +60,10 @@ async def test_semaphore_initialization(
     assert semaphore.ttl == DEFAULT_SEMAPHORE_TTL
     assert semaphore.blocking is True
     assert semaphore.instance_id is not None
-    assert semaphore.semaphore_key == f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}"
+    assert (
+        semaphore.semaphore_key
+        == f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}_cap{semaphore_capacity}"
+    )
     assert semaphore.tokens_key.startswith(f"{semaphore.semaphore_key}:")
     assert semaphore.holders_set.startswith(f"{semaphore.semaphore_key}:")
     assert semaphore.holder_key.startswith(f"{semaphore.semaphore_key}:")
