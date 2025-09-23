@@ -40,6 +40,7 @@ from ._constants import (
 )
 from ._errors import (
     SemaphoreAcquisitionError,
+    SemaphoreError,
     SemaphoreLostError,
     SemaphoreNotAcquiredError,
 )
@@ -452,10 +453,10 @@ async def distributed_semaphore(
         if not started.is_set():
             started.set()
 
+    lock_acquisition_time = arrow.utcnow()
     try:
         if not await semaphore.acquire():
             raise SemaphoreAcquisitionError(name=key, instance_id=semaphore.instance_id)
-        lock_acquisition_time = arrow.utcnow()
 
         async with (
             asyncio.TaskGroup() as tg
@@ -471,15 +472,13 @@ async def distributed_semaphore(
 
             await cancel_wait_task(auto_reacquisition_task)
     except BaseExceptionGroup as eg:
-        semaphore_lost_errors, other_errors = eg.split(
-            SemaphoreLostError | SemaphoreNotAcquiredError
-        )
+        semaphore_errors, other_errors = eg.split(SemaphoreError)
         if other_errors:
             assert len(other_errors.exceptions) == 1  # nosec
-            raise other_errors from eg
-        assert semaphore_lost_errors is not None  # nosec
-        assert len(semaphore_lost_errors.exceptions) == 1  # nosec
-        raise semaphore_lost_errors.exceptions[0] from eg
+            raise other_errors.exceptions[0] from eg
+        assert semaphore_errors is not None  # nosec
+        assert len(semaphore_errors.exceptions) == 1  # nosec
+        raise semaphore_errors.exceptions[0] from eg
     finally:
         try:
             await semaphore.release()

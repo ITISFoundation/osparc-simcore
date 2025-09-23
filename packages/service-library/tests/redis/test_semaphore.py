@@ -496,7 +496,7 @@ async def test_semaphore_context_manager_with_exception(
     captured_semaphore: DistributedSemaphore | None = None
 
     async def _raising_context():
-        async with DistributedSemaphore(
+        async with distributed_semaphore(
             redis_client=redis_client_sdk,
             key=semaphore_name,
             capacity=semaphore_capacity,
@@ -524,10 +524,10 @@ async def test_multiple_semaphores_different_keys(
     capacity = 1
 
     async with (
-        DistributedSemaphore(
+        distributed_semaphore(
             redis_client=redis_client_sdk, key=key1, capacity=capacity
         ),
-        DistributedSemaphore(
+        distributed_semaphore(
             redis_client=redis_client_sdk, key=key2, capacity=capacity
         ),
     ):
