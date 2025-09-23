@@ -88,31 +88,31 @@ class OwnerMetadata(BaseModel):
         )
 
     @classmethod
-    def model_validate_task_key(cls, task_id: TaskKey) -> Self:
-        data = cls._deserialize_task_key(task_id)
+    def model_validate_task_key(cls, task_key: TaskKey) -> Self:
+        data = cls._deserialize_task_key(task_key)
         data.pop(_TASK_UUID_KEY, None)
         return cls.model_validate(data)
 
     @classmethod
-    def _deserialize_task_key(cls, task_id: TaskKey) -> dict[str, AllowedTypes]:
+    def _deserialize_task_key(cls, task_key: TaskKey) -> dict[str, AllowedTypes]:
         key_value_pairs = [
-            item.split("=") for item in task_id.split(_TASK_ID_KEY_DELIMITATOR)
+            item.split("=") for item in task_key.split(_TASK_ID_KEY_DELIMITATOR)
         ]
         try:
             return {key: json_loads(value) for key, value in key_value_pairs}
         except orjson.JSONDecodeError as err:
-            raise ValueError(f"Invalid task_id format: {task_id}") from err
+            raise ValueError(f"Invalid task_id format: {task_key}") from err
 
     @classmethod
-    def get_task_uuid(cls, task_id: TaskKey) -> TaskUUID:
-        data = cls._deserialize_task_key(task_id)
+    def get_task_uuid(cls, task_key: TaskKey) -> TaskUUID:
+        data = cls._deserialize_task_key(task_key)
         try:
             uuid_string = data.get(_TASK_UUID_KEY)
             if not isinstance(uuid_string, str):
-                raise ValueError(f"Invalid task_id format: {task_id}")
+                raise ValueError(f"Invalid task_id format: {task_key}")
             return TaskUUID(uuid_string)
         except ValueError as err:
-            raise ValueError(f"Invalid task_id format: {task_id}") from err
+            raise ValueError(f"Invalid task_id format: {task_key}") from err
 
 
 class TaskState(StrEnum):
@@ -189,18 +189,20 @@ class TaskInfoStore(Protocol):
         expiry: datetime.timedelta,
     ) -> None: ...
 
-    async def task_exists(self, task_id: TaskKey) -> bool: ...
+    async def task_exists(self, task_key: TaskKey) -> bool: ...
 
-    async def get_task_metadata(self, task_id: TaskKey) -> ExecutionMetadata | None: ...
+    async def get_task_metadata(
+        self, task_key: TaskKey
+    ) -> ExecutionMetadata | None: ...
 
-    async def get_task_progress(self, task_id: TaskKey) -> ProgressReport | None: ...
+    async def get_task_progress(self, task_key: TaskKey) -> ProgressReport | None: ...
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
-    async def remove_task(self, task_id: TaskKey) -> None: ...
+    async def remove_task(self, task_key: TaskKey) -> None: ...
 
     async def set_task_progress(
-        self, task_id: TaskKey, report: ProgressReport
+        self, task_key: TaskKey, report: ProgressReport
     ) -> None: ...
 
 

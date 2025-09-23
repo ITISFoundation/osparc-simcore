@@ -181,7 +181,7 @@ class CeleryTaskManager:
 
     async def set_task_progress(self, task_id: TaskKey, report: ProgressReport) -> None:
         await self._task_info_store.set_task_progress(
-            task_id=task_id,
+            task_key=task_id,
             report=report,
         )
 
