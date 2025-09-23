@@ -140,8 +140,8 @@ async def test_semaphore_acquire_release_basic(
 
     # reacquire after release should fail
     with pytest.raises(
-        SemaphoreLostError,
-        match=f"Semaphore '{semaphore_name}' was lost by this instance",
+        SemaphoreNotAcquiredError,
+        match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
     ):
         await semaphore.reacquire()
 
