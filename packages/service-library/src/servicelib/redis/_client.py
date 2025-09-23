@@ -71,6 +71,7 @@ class RedisClientSDK:
         )
         self._is_healthy = False
         self._started_event_task_health_check = asyncio.Event()
+        self._cancelled_event_task_health_check = asyncio.Event()
 
     async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
@@ -78,6 +79,8 @@ class RedisClientSDK:
             assert self._started_event_task_health_check  # nosec
             self._started_event_task_health_check.set()
             self._is_healthy = await self.ping()
+            if self._cancelled_event_task_health_check.is_set():
+                raise asyncio.CancelledError
 
         self._task_health_check = asyncio.create_task(
             _periodic_check_health(),
@@ -99,10 +102,8 @@ class RedisClientSDK:
             if self._task_health_check:
                 assert self._started_event_task_health_check  # nosec
                 await self._started_event_task_health_check.wait()
-
-                await cancel_wait_task(
-                    self._task_health_check, max_delay=_HEALTHCHECK_TIMEOUT_S
-                )
+                self._cancelled_event_task_health_check.set()
+                await cancel_wait_task(self._task_health_check, max_delay=None)
 
             await self._client.aclose(close_connection_pool=True)
 
