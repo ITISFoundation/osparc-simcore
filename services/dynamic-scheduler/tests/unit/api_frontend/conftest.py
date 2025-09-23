@@ -143,15 +143,6 @@ def download_playwright_browser() -> None:
 async def async_page(download_playwright_browser: None) -> AsyncIterable[Page]:
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        # Create a new incognito context (no shared cache/cookies)
-        context = await browser.new_context()
-        page = await context.new_page()
-        # Optional: Intercept requests to forcibly disable cache
-        await page.route(
-            "**/*",
-            lambda route, request: route.continue_(
-                headers={**request.headers, "Cache-Control": "no-store"}
-            ),
-        )
+        page = await browser.new_page()
         yield page
         await browser.close()
