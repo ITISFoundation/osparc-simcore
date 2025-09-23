@@ -41,5 +41,7 @@ redis.call('SETEX', holder_key, ttl_seconds, token)
 -- Step 4: Renew the holders set and tokens list TTLs to prevent infinite growth
 redis.call('EXPIRE', holders_key, holders_ttl_seconds)
 redis.call('EXPIRE', tokens_key, tokens_ttl_seconds)
+local init_marker_tokens_key = tokens_key .. ':initialized'
+redis.call('EXPIRE', init_marker_tokens_key, tokens_ttl_seconds)
 
 return {0, 'renewed', redis.call('SCARD', holders_key)}
