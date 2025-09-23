@@ -333,6 +333,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                 "document": latestStudyData,
               };
               this.__applyProjectDocument(latestData);
+            })
+            .catch(err => {
+              console.error("Failed to re-sync project document after WebSocket reconnect:", err);
             });
         });
       });
