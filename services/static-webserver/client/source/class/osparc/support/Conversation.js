@@ -17,33 +17,13 @@
 
 
 qx.Class.define("osparc.support.Conversation", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.conversation.Conversation,
 
   /**
     * @param conversation {osparc.data.model.Conversation} Conversation
     */
   construct: function(conversation) {
-    this.base(arguments);
-
-    this.__messages = [];
-
-    this._setLayout(new qx.ui.layout.VBox(5));
-
-    this.__buildLayout();
-
-    if (conversation) {
-      this.setConversation(conversation);
-    }
-  },
-
-  properties: {
-    conversation: {
-      check: "osparc.data.model.Conversation",
-      init: null,
-      nullable: true,
-      event: "changeConversation",
-      apply: "__applyConversation",
-    },
+    this.base(arguments, conversation);
   },
 
   statics: {
@@ -58,49 +38,9 @@ qx.Class.define("osparc.support.Conversation", {
   },
 
   members: {
-    __messages: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "spacer-top":
-          control = new qx.ui.core.Spacer();
-          this._addAt(control, 0, {
-            flex: 100 // high number to keep even a one message list at the bottom
-          });
-          break;
-        case "messages-container-scroll":
-          control = new qx.ui.container.Scroll();
-          this._addAt(control, 1, {
-            flex: 1
-          });
-          break;
-        case "messages-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            alignY: "middle"
-          });
-          this.getChildControl("messages-container-scroll").add(control);
-          break;
-        case "load-more-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
-          control.addListener("execute", () => this.__reloadMessages());
-          this._addAt(control, 2);
-          break;
-        case "support-suggestion":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            alignY: "middle"
-          });
-          this._addAt(control, 3);
-          break;
-        case "add-message":
-          control = new osparc.conversation.AddMessage().set({
-            padding: 5,
-          });
-          this.bind("conversation", control, "conversationId", {
-            converter: conversation => conversation ? conversation.getConversationId() : null
-          });
-          this._addAt(control, 4);
-          break;
         case "share-project-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
             backgroundColor: "strong-main",
@@ -123,9 +63,9 @@ qx.Class.define("osparc.support.Conversation", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
-      this.getChildControl("spacer-top");
-      this.getChildControl("messages-container");
+    _buildLayout: function() {
+      this.base(arguments);
+
       const addMessages = this.getChildControl("add-message");
       addMessages.addListener("addMessage", e => {
         const content = e.getData();
@@ -145,9 +85,9 @@ qx.Class.define("osparc.support.Conversation", {
               let isBookACall = false;
               // make these checks first, setConversation will reload messages
               if (
-                this.__messages.length === 1 &&
-                this.__messages[0]["systemMessageType"] &&
-                this.__messages[0]["systemMessageType"] === osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL
+                this._messages.length === 1 &&
+                this._messages[0]["systemMessageType"] &&
+                this._messages[0]["systemMessageType"] === osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL
               ) {
                 isBookACall = true;
               }
@@ -172,31 +112,15 @@ qx.Class.define("osparc.support.Conversation", {
       });
     },
 
+    _applyConversation: function(conversation) {
+      this.base(arguments, conversation);
+
+      this.__populateShareProjectCheckbox();
+    },
+
     __postMessage: function(content) {
       const conversationId = this.getConversation().getConversationId();
       return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
-    },
-
-    __applyConversation: function(conversation) {
-      this.clearAllMessages();
-      this.__reloadMessages();
-
-      if (conversation) {
-        conversation.addListener("messageAdded", e => {
-          const data = e.getData();
-          this.addMessage(data);
-        });
-        conversation.addListener("messageUpdated", e => {
-          const data = e.getData();
-          this.updateMessage(data);
-        });
-        conversation.addListener("messageDeleted", e => {
-          const data = e.getData();
-          this.deleteMessage(data);
-        });
-      }
-
-      this.__populateShareProjectCheckbox();
     },
 
     __populateShareProjectCheckbox: function() {
@@ -259,26 +183,6 @@ qx.Class.define("osparc.support.Conversation", {
         });
     },
 
-    __reloadMessages: function() {
-      const loadMoreMessages = this.getChildControl("load-more-button");
-      if (this.getConversation() === null) {
-        loadMoreMessages.hide();
-        return;
-      }
-
-      loadMoreMessages.show();
-      loadMoreMessages.setFetching(true);
-      this.getConversation().getNextMessages()
-        .then(resp => {
-          const messages = resp["data"];
-          messages.forEach(message => this.addMessage(message));
-          if (resp["_links"]["next"] === null && loadMoreMessages) {
-            loadMoreMessages.exclude();
-          }
-        })
-        .finally(() => loadMoreMessages.setFetching(false));
-    },
-
     addSystemMessage: function(type) {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
 
@@ -311,92 +215,6 @@ qx.Class.define("osparc.support.Conversation", {
         systemMessage["content"] = msg;
         systemMessage["systemMessageType"] = type;
         this.addMessage(systemMessage);
-      }
-    },
-
-    addMessage: function(message) {
-      // ignore it if it was already there
-      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
-      if (messageIndex !== -1) {
-        return;
-      }
-
-      // determine insertion index for latest‐first order
-      const newTime = new Date(message["created"]);
-      let insertAt = this.__messages.findIndex(m => new Date(m["created"]) > newTime);
-      if (insertAt === -1) {
-        insertAt = this.__messages.length;
-      }
-
-      // Insert the message in the messages array
-      this.__messages.splice(insertAt, 0, message);
-
-      // Add the UI element to the messages list
-      let control = null;
-      switch (message["type"]) {
-        case "MESSAGE":
-          control = new osparc.conversation.MessageUI(message);
-          control.addListener("messageUpdated", e => this.updateMessage(e.getData()));
-          control.addListener("messageDeleted", e => this.deleteMessage(e.getData()));
-          break;
-        case "NOTIFICATION":
-          control = new osparc.conversation.NotificationUI(message);
-          break;
-      }
-      if (control) {
-        // insert into the UI at the same position
-        const messagesContainer = this.getChildControl("messages-container");
-        messagesContainer.addAt(control, insertAt);
-      }
-
-      // scroll to bottom
-      // add timeout to ensure the scroll happens after the UI is updated
-      setTimeout(() => {
-        const messagesScroll = this.getChildControl("messages-container-scroll");
-        messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
-      }, 50);
-    },
-
-    clearAllMessages: function() {
-      this.__messages = [];
-      this.getChildControl("messages-container").removeAll();
-    },
-
-    deleteMessage: function(message) {
-      // remove it from the messages array
-      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
-      if (messageIndex === -1) {
-        return;
-      }
-      this.__messages.splice(messageIndex, 1);
-
-      // Remove the UI element from the messages list
-      const messagesContainer = this.getChildControl("messages-container");
-      const children = messagesContainer.getChildren();
-      const controlIndex = children.findIndex(
-        ctrl => ("getMessage" in ctrl && ctrl.getMessage()["messageId"] === message["messageId"])
-      );
-      if (controlIndex > -1) {
-        messagesContainer.remove(children[controlIndex]);
-      }
-    },
-
-    updateMessage: function(message) {
-      // Replace the message in the messages array
-      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
-      if (messageIndex === -1) {
-        return;
-      }
-      this.__messages[messageIndex] = message;
-
-      // Update the UI element from the messages list
-      const messagesContainer = this.getChildControl("messages-container");
-      const messageUI = messagesContainer.getChildren().find(control => {
-        return "getMessage" in control && control.getMessage()["messageId"] === message["messageId"];
-      });
-      if (messageUI) {
-        // Force a new reference
-        messageUI.setMessage(Object.assign({}, message));
       }
     },
   }
