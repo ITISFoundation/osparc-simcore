@@ -446,29 +446,37 @@ async def distributed_semaphore(
 
     @periodic(interval=semaphore.ttl / 3, raise_on_error=True)
     async def _periodic_reacquisition(
-        semaphore: DistributedSemaphore, started: asyncio.Event
+        semaphore: DistributedSemaphore,
+        started: asyncio.Event,
+        cancellation_event: asyncio.Event,
     ) -> None:
-        await semaphore.reacquire()
+        if cancellation_event.is_set():
+            raise asyncio.CancelledError
         if not started.is_set():
             started.set()
+        await semaphore.reacquire()
 
-    lock_acquisition_time = arrow.utcnow()
     try:
         if not await semaphore.acquire():
             raise SemaphoreAcquisitionError(name=key, instance_id=semaphore.instance_id)
+
+        lock_acquisition_time = arrow.utcnow()
 
         async with (
             asyncio.TaskGroup() as tg
         ):  # NOTE: using task group ensures proper cancellation propagation of parent task
             auto_reacquisition_started = asyncio.Event()
+            cancellation_event = asyncio.Event()
             auto_reacquisition_task = tg.create_task(
-                _periodic_reacquisition(semaphore, auto_reacquisition_started),
+                _periodic_reacquisition(
+                    semaphore, auto_reacquisition_started, cancellation_event
+                ),
                 name=f"semaphore/auto_reacquisition_task_{semaphore.key}_{semaphore.instance_id}",
             )
             await auto_reacquisition_started.wait()
 
             yield semaphore
-
+            cancellation_event.set()  # NOTE: this ensure cancellation is effective
             await cancel_wait_task(auto_reacquisition_task)
     except BaseExceptionGroup as eg:
         semaphore_errors, other_errors = eg.split(SemaphoreError)
@@ -508,16 +516,15 @@ async def distributed_semaphore(
                     "Look for synchronouse code or the loop is very busy and cannot schedule the reacquisition task.",
                 )
             )
-        finally:
-            lock_release_time = arrow.utcnow()
-            locking_time = lock_release_time - lock_acquisition_time
-            if locking_time > expected_lock_overall_time:
-                _logger.warning(
-                    "Semaphore '%s' was held for %s by %s which is longer than expected (%s). "
-                    "TIP: consider reducing the locking time by optimizing the code inside "
-                    "the critical section or increasing the default locking time",
-                    semaphore.key,
-                    locking_time,
-                    semaphore.instance_id,
-                    expected_lock_overall_time,
-                )
+        lock_release_time = arrow.utcnow()
+        locking_time = lock_release_time - lock_acquisition_time
+        if locking_time > expected_lock_overall_time:
+            _logger.warning(
+                "Semaphore '%s' was held for %s by %s which is longer than expected (%s). "
+                "TIP: consider reducing the locking time by optimizing the code inside "
+                "the critical section or increasing the default locking time",
+                semaphore.key,
+                locking_time,
+                semaphore.instance_id,
+                expected_lock_overall_time,
+            )
