@@ -364,7 +364,7 @@ async def test_with_large_capacity(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
-    large_capacity = 20
+    large_capacity = 100
     concurrent_count = 0
     max_concurrent = 0
     sleep_time_s = 10
