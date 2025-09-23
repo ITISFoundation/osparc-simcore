@@ -5,6 +5,7 @@ from typing import Annotated
 # pylint: disable=protected-access
 import pydantic
 import pytest
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from pydantic import StringConstraints
 from servicelib.celery.models import (
@@ -51,12 +52,17 @@ async def test_task_filter_sorting_key_not_serialized():
         a: int | Wildcard
         b: str | Wildcard
 
-    keys = ["a", "b", "owner"]
-    task_filter = _OwnerMetadata.model_validate(
+    owner_metadata = _OwnerMetadata.model_validate(
         {"a": _faker.random_int(), "b": _faker.word(), "owner": _faker.word().lower()}
     )
-    expected_key = ":".join([f"{k}={getattr(task_filter, k)}" for k in sorted(keys)])
-    assert task_filter._build_task_id_prefix() == expected_key
+    task_uuid = TaskUUID(_faker.uuid4())
+    copy_owner_metadata = owner_metadata.model_dump()
+    copy_owner_metadata.update({"task_uuid": f"{task_uuid}"})
+
+    expected_key = ":".join(
+        [f"{k}={json_dumps(v)}" for k, v in sorted(copy_owner_metadata.items())]
+    )
+    assert owner_metadata.model_dump_task_id(task_uuid=task_uuid) == expected_key
 
 
 async def test_task_filter_task_uuid(
