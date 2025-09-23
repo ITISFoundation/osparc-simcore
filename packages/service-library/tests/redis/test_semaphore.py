@@ -84,6 +84,13 @@ async def test_invalid_semaphore_initialization(
             capacity=1,
             ttl=datetime.timedelta(seconds=0),
         )
+    with pytest.raises(ValueError, match="TTL must be positive"):
+        DistributedSemaphore(
+            redis_client=redis_client_sdk,
+            key=semaphore_name,
+            capacity=1,
+            ttl=datetime.timedelta(seconds=0.5),
+        )
     with pytest.raises(ValueError, match="Timeout must be positive"):
         DistributedSemaphore(
             redis_client=redis_client_sdk,
@@ -113,11 +120,9 @@ async def test_semaphore_acquire_release_basic(
     assert await semaphore.size() == semaphore_capacity
     assert await semaphore.is_acquired() is False
 
-    # Acquire successfully
+    # Acquire
     result = await semaphore.acquire()
     assert result is True
-
-    # Check Redis state
     assert await semaphore.current_count() == 1
     assert await semaphore.size() == semaphore_capacity - 1
     assert await semaphore.is_acquired() is True
@@ -127,16 +132,19 @@ async def test_semaphore_acquire_release_basic(
     assert result is True
     assert await semaphore.current_count() == 1
     assert await semaphore.size() == semaphore_capacity - 1
+    assert await semaphore.is_acquired() is True
 
     # reacquire should just work
     await semaphore.reacquire()
     assert await semaphore.current_count() == 1
     assert await semaphore.size() == semaphore_capacity - 1
+    assert await semaphore.is_acquired() is True
 
     # Release
     await semaphore.release()
     assert await semaphore.current_count() == 0
     assert await semaphore.size() == semaphore_capacity
+    assert await semaphore.is_acquired() is False
 
     # reacquire after release should fail
     with pytest.raises(
@@ -145,6 +153,7 @@ async def test_semaphore_acquire_release_basic(
     ):
         await semaphore.reacquire()
 
+    # so does release again
     with pytest.raises(
         SemaphoreNotAcquiredError,
         match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
@@ -178,8 +187,8 @@ async def test_semaphore_acquire_release_with_ttl_expiry(
         await semaphore.reacquire()
     # and release should also fail
     with pytest.raises(
-        SemaphoreNotAcquiredError,
-        match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
+        SemaphoreLostError,
+        match=f"Semaphore '{semaphore_name}' was lost by this instance",
     ):
         await semaphore.release()
 
