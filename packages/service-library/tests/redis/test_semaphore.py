@@ -95,7 +95,7 @@ async def test_invalid_semaphore_initialization(
         )
 
 
-async def test_semaphore_acquire_release_single(
+async def test_semaphore_acquire_release_basic(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
     semaphore_capacity: int,
@@ -145,11 +145,31 @@ async def test_semaphore_acquire_release_single(
     ):
         await semaphore.reacquire()
 
-    # now check what happens once TTL is expired
+    with pytest.raises(
+        SemaphoreNotAcquiredError,
+        match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
+    ):
+        await semaphore.release()
+
+
+async def test_semaphore_acquire_release_with_ttl_expiry(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    semaphore_capacity: int,
+    with_short_default_semaphore_ttl: datetime.timedelta,
+):
+    semaphore = DistributedSemaphore(
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=semaphore_capacity,
+        ttl=with_short_default_semaphore_ttl,
+    )
     await semaphore.acquire()
     assert await semaphore.current_count() == 1
     assert await semaphore.size() == semaphore_capacity - 1
+    # wait for TTL to expire
     await asyncio.sleep(with_short_default_semaphore_ttl.total_seconds() + 0.1)
+
     # TTL expired, reacquire should fail
     with pytest.raises(
         SemaphoreLostError,
@@ -255,7 +275,7 @@ async def test_semaphore_blocking_timeout(
 
         with pytest.raises(
             SemaphoreAcquisitionError,
-            match=f"Could not acquire semaphore '{semaphore_name}' \\(capacity: {capacity}\\)",
+            match=f"Could not acquire semaphore '{semaphore_name}' by this instance",
         ):
             await semaphore2.acquire()
 
@@ -330,7 +350,7 @@ async def test_semaphore_context_manager_with_exception(
     # Should be released even after exception
     assert captured_semaphore is not None
     # captured_semaphore is guaranteed to be not None by the assert above
-    assert await captured_semaphore.get_current_count() == 0
+    assert await captured_semaphore.current_count() == 0
 
 
 async def test_multiple_semaphores_different_keys(

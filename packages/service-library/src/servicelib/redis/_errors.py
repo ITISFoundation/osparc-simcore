@@ -27,11 +27,15 @@ ProjectLockError: TypeAlias = redis.exceptions.LockError  # NOTE: backwards comp
 
 
 class SemaphoreAcquisitionError(BaseRedisError):
-    msg_template: str = "Could not acquire semaphore '{name}' (capacity: {capacity})"
+    msg_template: str = (
+        "Could not acquire semaphore '{name}' by this instance `{instance_id}`"
+    )
 
 
 class SemaphoreNotAcquiredError(BaseRedisError):
-    msg_template: str = "Semaphore '{name}' was not acquired by this instance"
+    msg_template: str = (
+        "Semaphore '{name}' was not acquired by this instance `{instance_id}`"
+    )
 
 
 class SemaphoreLostError(BaseRedisError):

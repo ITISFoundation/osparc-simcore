@@ -250,7 +250,7 @@ class DistributedSemaphore(BaseModel):
             )
             if self.blocking:
                 raise SemaphoreAcquisitionError(
-                    name=self.key, capacity=self.capacity
+                    name=self.key, instance_id=self.instance_id
                 ) from e
             return False
 
@@ -327,7 +327,10 @@ class DistributedSemaphore(BaseModel):
             self.instance_id,
             current_count,
         )
-        raise SemaphoreNotAcquiredError(name=self.key)
+        if status == "not_held":
+            raise SemaphoreNotAcquiredError(name=self.key, instance_id=self.instance_id)
+        assert status == "already_expired"  # nosec
+        raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
 
     async def reacquire(self) -> None:
         """
@@ -371,7 +374,9 @@ class DistributedSemaphore(BaseModel):
             status,
             current_count,
         )
-
+        if status == "not_held":
+            raise SemaphoreNotAcquiredError(name=self.key, instance_id=self.instance_id)
+        assert status == "already_expired"  # nosec
         raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
 
     async def is_acquired(self) -> bool:
