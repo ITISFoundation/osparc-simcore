@@ -15,9 +15,7 @@ import pytest
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.redis import RedisClientSDK
-from servicelib.redis._constants import (
-    SEMAPHORE_HOLDER_KEY_PREFIX,
-)
+from servicelib.redis._constants import SEMAPHORE_KEY_PREFIX
 from servicelib.redis._errors import SemaphoreLostError
 from servicelib.redis._semaphore import (
     DistributedSemaphore,
@@ -94,8 +92,8 @@ async def test_auto_renewal(
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
-    assert await temp_semaphore.get_current_count() == 1
-    assert await temp_semaphore.get_available_count() == semaphore_capacity - 1
+    assert await temp_semaphore.current_count() == 1
+    assert await temp_semaphore.available_tokens() == semaphore_capacity - 1
 
     # Wait for work to complete
     result = await task
@@ -103,8 +101,8 @@ async def test_auto_renewal(
     assert work_completed.is_set()
 
     # After completion, semaphore should be released
-    assert await temp_semaphore.get_current_count() == 0
-    assert await temp_semaphore.get_available_count() == semaphore_capacity
+    assert await temp_semaphore.current_count() == 0
+    assert await temp_semaphore.available_tokens() == semaphore_capacity
 
 
 async def test_auto_renewal_lose_semaphore_raises(
@@ -136,7 +134,7 @@ async def test_auto_renewal_lose_semaphore_raises(
 
     # Find and delete all holder keys for this semaphore
     holder_keys = await redis_client_sdk.redis.keys(
-        f"{SEMAPHORE_HOLDER_KEY_PREFIX}{semaphore_name}:*"
+        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}_cap{semaphore_capacity}:holders:*"
     )
     assert holder_keys, "Holder keys should exist before deletion"
     await redis_client_sdk.redis.delete(*holder_keys)
@@ -337,7 +335,7 @@ async def test_user_exceptions_properly_reraised(
         ttl=short_ttl,
     )
     assert (
-        await test_semaphore.get_current_count() == 0
+        await test_semaphore.current_count() == 0
     ), "Semaphore should be released after exception"
 
 
@@ -366,7 +364,7 @@ async def test_with_large_capacity(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
-    large_capacity = 20
+    large_capacity = 100
     concurrent_count = 0
     max_concurrent = 0
     sleep_time_s = 10
@@ -379,16 +377,18 @@ async def test_with_large_capacity(
         blocking=True,
         blocking_timeout=None,
     )
-    async def limited_function() -> None:
+    async def limited_function(task_id: int) -> None:
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)
-        with log_context(logging.INFO, f"task with {concurrent_count=}"):
+        with log_context(logging.INFO, f"{task_id=}") as ctx:
+            ctx.logger.info("started %s with %s", task_id, concurrent_count)
             await asyncio.sleep(sleep_time_s)
+            ctx.logger.info("done %s with %s", task_id, concurrent_count)
         concurrent_count -= 1
 
     # Start tasks equal to the large capacity
-    tasks = [asyncio.create_task(limited_function()) for _ in range(num_tasks)]
+    tasks = [asyncio.create_task(limited_function(i)) for i in range(num_tasks)]
     done, pending = await asyncio.wait(
         tasks,
         timeout=float(num_tasks) / float(large_capacity) * 10.0 * float(sleep_time_s),
@@ -404,7 +404,6 @@ async def test_long_locking_logs_warning(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
     caplog: pytest.LogCaptureFixture,
-    mocker: MockerFixture,
 ):
     @with_limited_concurrency(
         redis_client_sdk,
@@ -424,7 +423,6 @@ async def test_long_locking_logs_warning(
         assert "longer than expected" in caplog.messages[-1]
 
 
-@pytest.mark.skip
 async def test_semaphore_fair_queuing(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
@@ -438,7 +436,7 @@ async def test_semaphore_fair_queuing(
     )
     async def limited_function(call_id: int):
         entered_order.append(call_id)
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.2)
         return call_id
 
     # Launch tasks in a specific order
@@ -446,7 +444,7 @@ async def test_semaphore_fair_queuing(
     tasks = []
     for i in range(num_tasks):
         tasks.append(asyncio.create_task(limited_function(i)))
-        await asyncio.sleep(0.01)  # Small delay to help preserve order
+        await asyncio.sleep(0.1)  # Small delay to help preserve order
     results = await asyncio.gather(*tasks)
 
     # All should complete successfully and in order
@@ -458,37 +456,6 @@ async def test_semaphore_fair_queuing(
 
 
 async def test_context_manager_basic_functionality(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-):
-    call_count = 0
-
-    @with_limited_concurrency_cm(
-        redis_client_sdk,
-        key=semaphore_name,
-        capacity=1,
-    )
-    @asynccontextmanager
-    async def limited_context_manager():
-        nonlocal call_count
-        call_count += 1
-        yield call_count
-
-    # Multiple concurrent context managers
-    async def use_context_manager() -> int:
-        async with limited_context_manager() as value:
-            await asyncio.sleep(0.1)
-            return value
-
-    tasks = [asyncio.create_task(use_context_manager()) for _ in range(3)]
-    results = await asyncio.gather(*tasks)
-
-    # All should complete successfully
-    assert len(results) == 3
-    assert all(isinstance(r, int) for r in results)
-
-
-async def test_context_manager_capacity_enforcement(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
@@ -512,13 +479,17 @@ async def test_context_manager_capacity_enforcement(
         finally:
             concurrent_count -= 1
 
-    async def use_context_manager() -> None:
+    async def use_context_manager() -> int:
         async with limited_context_manager():
             await asyncio.sleep(0.1)
+            return 1
 
     # Start concurrent context managers
     tasks = [asyncio.create_task(use_context_manager()) for _ in range(20)]
-    await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks)
+    # All should complete successfully
+    assert len(results) == 20
+    assert all(isinstance(r, int) for r in results)
 
     # Should never exceed capacity of 2
     assert max_concurrent <= 2
@@ -596,16 +567,16 @@ async def test_context_manager_auto_renewal(
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
-    assert await temp_semaphore.get_current_count() == 1
-    assert await temp_semaphore.get_available_count() == semaphore_capacity - 1
+    assert await temp_semaphore.current_count() == 1
+    assert await temp_semaphore.available_tokens() == semaphore_capacity - 1
 
     # Wait for work to complete
     await task
     assert work_completed.is_set()
 
     # After completion, semaphore should be released
-    assert await temp_semaphore.get_current_count() == 0
-    assert await temp_semaphore.get_available_count() == semaphore_capacity
+    assert await temp_semaphore.current_count() == 0
+    assert await temp_semaphore.available_tokens() == semaphore_capacity
 
 
 async def test_context_manager_with_callable_parameters(
@@ -736,7 +707,7 @@ async def test_context_manager_lose_semaphore_raises(
 
     # Find and delete all holder keys for this semaphore
     holder_keys = await redis_client_sdk.redis.keys(
-        f"{SEMAPHORE_HOLDER_KEY_PREFIX}{semaphore_name}:*"
+        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}_cap{semaphore_capacity}:holders:*"
     )
     assert holder_keys, "Holder keys should exist before deletion"
     await redis_client_sdk.redis.delete(*holder_keys)

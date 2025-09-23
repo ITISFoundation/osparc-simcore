@@ -1,10 +1,17 @@
+import asyncio
+import contextlib
 import datetime
 import logging
+import socket
 import uuid
-from types import TracebackType
+from collections.abc import AsyncIterator
 from typing import Annotated, ClassVar
 
+import arrow
+import redis.exceptions
+from common_library.async_tools import cancel_wait_task
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import (
     BaseModel,
     Field,
@@ -14,35 +21,33 @@ from pydantic import (
 )
 from redis.commands.core import AsyncScript
 from tenacity import (
-    RetryError,
-    before_sleep_log,
     retry,
-    retry_if_not_result,
-    stop_after_delay,
-    stop_never,
+    retry_if_exception_type,
     wait_random_exponential,
 )
 
+from ..background_task import periodic
 from ._client import RedisClientSDK
 from ._constants import (
+    DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
     DEFAULT_SEMAPHORE_TTL,
-    DEFAULT_SOCKET_TIMEOUT,
-    SEMAPHORE_HOLDER_KEY_PREFIX,
     SEMAPHORE_KEY_PREFIX,
 )
 from ._errors import (
     SemaphoreAcquisitionError,
+    SemaphoreError,
     SemaphoreLostError,
     SemaphoreNotAcquiredError,
 )
 from ._semaphore_lua import (
     ACQUIRE_SEMAPHORE_SCRIPT,
-    COUNT_SEMAPHORE_SCRIPT,
+    REGISTER_SEMAPHORE_TOKEN_SCRIPT,
     RELEASE_SEMAPHORE_SCRIPT,
     RENEW_SEMAPHORE_SCRIPT,
     SCRIPT_BAD_EXIT_CODE,
     SCRIPT_OK_EXIT_CODE,
 )
+from ._utils import handle_redis_returns_union_types
 
 _logger = logging.getLogger(__name__)
 
@@ -91,7 +96,7 @@ class DistributedSemaphore(BaseModel):
     blocking_timeout: Annotated[
         datetime.timedelta | None,
         Field(description="Maximum time to wait when blocking"),
-    ] = DEFAULT_SOCKET_TIMEOUT
+    ] = None
     instance_id: Annotated[
         str,
         Field(
@@ -101,10 +106,12 @@ class DistributedSemaphore(BaseModel):
     ] = DEFAULT_FACTORY
 
     # Class and/or Private state attributes (not part of the model)
+    register_semaphore: ClassVar[AsyncScript | None] = None
     acquire_script: ClassVar[AsyncScript | None] = None
-    count_script: ClassVar[AsyncScript | None] = None
     release_script: ClassVar[AsyncScript | None] = None
     renew_script: ClassVar[AsyncScript | None] = None
+
+    _token: str | None = None  # currently held token, if any
 
     @classmethod
     def _register_scripts(cls, redis_client: RedisClientSDK) -> None:
@@ -113,11 +120,11 @@ class DistributedSemaphore(BaseModel):
         caches the script SHA, so this is efficient. Even if called multiple times,
         the script is only registered once."""
         if cls.acquire_script is None:
+            cls.register_semaphore = redis_client.redis.register_script(
+                REGISTER_SEMAPHORE_TOKEN_SCRIPT
+            )
             cls.acquire_script = redis_client.redis.register_script(
                 ACQUIRE_SEMAPHORE_SCRIPT
-            )
-            cls.count_script = redis_client.redis.register_script(
-                COUNT_SEMAPHORE_SCRIPT
             )
             cls.release_script = redis_client.redis.register_script(
                 RELEASE_SEMAPHORE_SCRIPT
@@ -134,19 +141,42 @@ class DistributedSemaphore(BaseModel):
     @property
     def semaphore_key(self) -> str:
         """Redis key for the semaphore sorted set."""
-        return f"{SEMAPHORE_KEY_PREFIX}{self.key}"
+        return f"{SEMAPHORE_KEY_PREFIX}{self.key}_cap{self.capacity}"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def tokens_key(self) -> str:
+        """Redis key for the token pool LIST."""
+        return f"{self.semaphore_key}:tokens"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def holders_set(self) -> str:
+        """Redis key for the holders SET."""
+        return f"{self.semaphore_key}:holders_set"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def holder_key(self) -> str:
         """Redis key for this instance's holder entry."""
-        return f"{SEMAPHORE_HOLDER_KEY_PREFIX}{self.key}:{self.instance_id}"
+        return f"{self.semaphore_key}:holders:{self.instance_id}"
 
-    # Additional validation
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def holders_set_ttl(self) -> datetime.timedelta:
+        """TTL for the holders SET"""
+        return self.ttl * 5
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def tokens_set_ttl(self) -> datetime.timedelta:
+        """TTL for the tokens SET"""
+        return self.ttl * 5
+
     @field_validator("ttl")
     @classmethod
     def validate_ttl(cls, v: datetime.timedelta) -> datetime.timedelta:
-        if v.total_seconds() <= 0:
+        if v.total_seconds() < 1:
             msg = "TTL must be positive"
             raise ValueError(msg)
         return v
@@ -161,6 +191,64 @@ class DistributedSemaphore(BaseModel):
             raise ValueError(msg)
         return v
 
+    async def _ensure_semaphore_initialized(self) -> None:
+        """Initializes the semaphore in Redis if not already done."""
+        assert self.register_semaphore is not None  # nosec
+        await self.register_semaphore(  # pylint: disable=not-callable
+            keys=[self.tokens_key, self.holders_set],
+            args=[self.capacity, self.holders_set_ttl.total_seconds()],
+            client=self.redis_client.redis,
+        )
+
+    async def _blocking_acquire(self) -> str | None:
+        @retry(
+            wait=wait_random_exponential(min=0.1, max=0.5),
+            retry=retry_if_exception_type(redis.exceptions.TimeoutError),
+        )
+        async def _acquire_forever_on_socket_timeout() -> list[str] | None:
+            # NOTE: brpop returns None on timeout
+
+            tokens_key_token: list[str] | None = await handle_redis_returns_union_types(
+                self.redis_client.redis.brpop(
+                    [self.tokens_key],
+                    timeout=None,  # NOTE: we always block forever since tenacity takes care of timing out
+                )
+            )
+            return tokens_key_token
+
+        try:
+            # NOTE: redis-py library timeouts when the defined socket timeout triggers
+            # The BRPOP command itself could timeout but the redis-py socket timeout defeats the purpose
+            # so we always block forever on BRPOP, tenacity takes care of retrying when a socket timeout happens
+            # and we use asyncio.timeout to enforce the blocking_timeout if defined
+            async with asyncio.timeout(
+                self.blocking_timeout.total_seconds() if self.blocking_timeout else None
+            ):
+                tokens_key_token = await _acquire_forever_on_socket_timeout()
+            assert tokens_key_token is not None  # nosec
+            assert len(tokens_key_token) == 2  # nosec  # noqa: PLR2004
+            assert tokens_key_token[0] == self.tokens_key  # nosec
+            return tokens_key_token[1]
+        except TimeoutError as e:
+            raise SemaphoreAcquisitionError(
+                name=self.key, instance_id=self.instance_id
+            ) from e
+
+    async def _non_blocking_acquire(self) -> str | None:
+        token: str | list[str] | None = await handle_redis_returns_union_types(
+            self.redis_client.redis.rpop(self.tokens_key)
+        )
+        if token is None:
+            _logger.debug(
+                "Semaphore '%s' not acquired (no tokens available) (instance: %s)",
+                self.key,
+                self.instance_id,
+            )
+            return None
+
+        assert isinstance(token, str)  # nosec
+        return token
+
     async def acquire(self) -> bool:
         """
         Acquire the semaphore.
@@ -171,115 +259,102 @@ class DistributedSemaphore(BaseModel):
         Raises:
             SemaphoreAcquisitionError: If acquisition fails and blocking=True
         """
+        await self._ensure_semaphore_initialized()
 
-        if not self.blocking:
-            # Non-blocking: try once
-            return await self._try_acquire()
-
-        # Blocking
-        @retry(
-            wait=wait_random_exponential(min=0.1, max=2),
-            reraise=True,
-            stop=(
-                stop_after_delay(self.blocking_timeout.total_seconds())
-                if self.blocking_timeout
-                else stop_never
-            ),
-            retry=retry_if_not_result(lambda acquired: acquired),
-            before_sleep=before_sleep_log(_logger, logging.DEBUG),
-        )
-        async def _blocking_acquire() -> bool:
-            return await self._try_acquire()
-
-        try:
-            return await _blocking_acquire()
-        except RetryError as exc:
-            raise SemaphoreAcquisitionError(
-                name=self.key, capacity=self.capacity
-            ) from exc
-
-    async def release(self) -> None:
-        """
-        Release the semaphore atomically using Lua script.
-
-        Raises:
-            SemaphoreNotAcquiredError: If semaphore was not acquired by this instance
-        """
-        ttl_seconds = int(self.ttl.total_seconds())
-
-        # Execute the release Lua script atomically
-        cls = type(self)
-        assert cls.release_script is not None  # nosec
-        result = await cls.release_script(  # pylint: disable=not-callable
-            keys=(
-                self.semaphore_key,
-                self.holder_key,
-            ),
-            args=(
-                self.instance_id,
-                str(ttl_seconds),
-            ),
-            client=self.redis_client.redis,
-        )
-
-        assert isinstance(result, list)  # nosec
-        exit_code, status, current_count, expired_count = result
-        result = status
-
-        if result == "released":
-            assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
+        if await self.is_acquired():
             _logger.debug(
-                "Released semaphore '%s' (instance: %s, count: %s, expired: %s)",
+                "Semaphore '%s' already acquired by this instance (instance: %s)",
                 self.key,
                 self.instance_id,
-                current_count,
-                expired_count,
             )
+            return True
+
+        if self.blocking is False:
+            self._token = await self._non_blocking_acquire()
+            if not self._token:
+                return False
         else:
-            # Instance wasn't in the semaphore set - this shouldn't happen
-            # but let's handle it gracefully
-            assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
-            raise SemaphoreNotAcquiredError(name=self.key)
+            self._token = await self._blocking_acquire()
 
-    async def _try_acquire(self) -> bool:
-        ttl_seconds = int(self.ttl.total_seconds())
-
-        # Execute the Lua script atomically
-        cls = type(self)
-        assert cls.acquire_script is not None  # nosec
-        result = await cls.acquire_script(  # pylint: disable=not-callable
-            keys=(self.semaphore_key, self.holder_key),
-            args=(self.instance_id, str(self.capacity), str(ttl_seconds)),
+        assert self._token is not None  # nosec
+        # set up the semaphore holder with a TTL
+        assert self.acquire_script is not None  # nosec
+        result = await self.acquire_script(  # pylint: disable=not-callable
+            keys=[self.holders_set, self.holder_key],
+            args=[
+                self._token,
+                self.instance_id,
+                self.ttl.total_seconds(),
+                self.holders_set_ttl.total_seconds(),
+            ],
             client=self.redis_client.redis,
         )
 
         # Lua script returns: [exit_code, status, current_count, expired_count]
         assert isinstance(result, list)  # nosec
-        exit_code, status, current_count, expired_count = result
+        exit_code, status, token, current_count = result
 
+        assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
+        assert status == "acquired"  # nosec
+
+        _logger.debug(
+            "Acquired semaphore '%s' with token %s (instance: %s, count: %s)",
+            self.key,
+            token,
+            self.instance_id,
+            current_count,
+        )
+        return True
+
+    async def release(self) -> None:
+        """
+        Release the semaphore
+
+        Raises:
+            SemaphoreNotAcquiredError: If semaphore was not acquired by this instance
+        """
+
+        # Execute the release Lua script atomically
+        assert self.release_script is not None  # nosec
+        release_args = [self.instance_id]
+        if self._token is not None:
+            release_args.append(self._token)
+        result = await self.release_script(  # pylint: disable=not-callable
+            keys=[self.tokens_key, self.holders_set, self.holder_key],
+            args=release_args,
+            client=self.redis_client.redis,
+        )
+        self._token = None
+
+        assert isinstance(result, list)  # nosec
+        exit_code, status, current_count = result
         if exit_code == SCRIPT_OK_EXIT_CODE:
+            assert status == "released"  # nosec
             _logger.debug(
-                "Acquired semaphore '%s' (instance: %s, count: %s, expired: %s)",
+                "Released semaphore '%s' (instance: %s, count: %s)",
                 self.key,
                 self.instance_id,
                 current_count,
-                expired_count,
             )
-            return True
+            return
 
-        _logger.debug(
-            "Failed to acquire semaphore '%s' - %s (count: %s, expired: %s)",
+        # Instance was already expired or not acquired
+        assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
+        _logger.error(
+            "Failed to release semaphore '%s' - %s (instance: %s, count: %s)",
             self.key,
             status,
+            self.instance_id,
             current_count,
-            expired_count,
         )
-        return False
+        if status == "not_held":
+            raise SemaphoreNotAcquiredError(name=self.key, instance_id=self.instance_id)
+        assert status == "expired"  # nosec
+        raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
 
     async def reacquire(self) -> None:
         """
-        Atomically renew a semaphore entry using Lua script.
-
+        Re-acquire a semaphore
         This function is intended to be called by decorators or external renewal mechanisms.
 
 
@@ -287,93 +362,184 @@ class DistributedSemaphore(BaseModel):
             SemaphoreLostError: If the semaphore was lost or expired
         """
 
-        ttl_seconds = int(self.ttl.total_seconds())
+        ttl_seconds = self.ttl.total_seconds()
 
         # Execute the renewal Lua script atomically
-        cls = type(self)
-        assert cls.renew_script is not None  # nosec
-        result = await cls.renew_script(  # pylint: disable=not-callable
-            keys=(self.semaphore_key, self.holder_key),
-            args=(
+        assert self.renew_script is not None  # nosec
+        result = await self.renew_script(  # pylint: disable=not-callable
+            keys=[self.holders_set, self.holder_key, self.tokens_key],
+            args=[
                 self.instance_id,
-                str(ttl_seconds),
-            ),
+                ttl_seconds,
+                self.holders_set_ttl.total_seconds(),
+                self.tokens_set_ttl.total_seconds(),
+            ],
             client=self.redis_client.redis,
         )
 
         assert isinstance(result, list)  # nosec
-        exit_code, status, current_count, expired_count = result
+        exit_code, status, current_count = result
 
-        # Lua script returns: 'renewed' or status message
-        if status == "renewed":
-            assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
+        if exit_code == SCRIPT_OK_EXIT_CODE:
+            assert status == "renewed"  # nosec
             _logger.debug(
-                "Renewed semaphore '%s' (instance: %s, count: %s, expired: %s)",
+                "Renewed semaphore '%s' (instance: %s, count: %s)",
                 self.key,
                 self.instance_id,
                 current_count,
-                expired_count,
             )
-        else:
-            assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
-            if status == "expired":
-                _logger.warning(
-                    "Semaphore '%s' holder key expired (instance: %s, count: %s, expired: %s)",
-                    self.key,
-                    self.instance_id,
-                    current_count,
-                    expired_count,
-                )
-            elif status == "not_held":
-                _logger.warning(
-                    "Semaphore '%s' not held (instance: %s, count: %s, expired: %s)",
-                    self.key,
-                    self.instance_id,
-                    current_count,
-                    expired_count,
-                )
+            return
+        assert exit_code == SCRIPT_BAD_EXIT_CODE  # nosec
 
-            raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
+        _logger.warning(
+            "Semaphore '%s' holder key was lost (instance: %s, status: %s, count: %s)",
+            self.key,
+            self.instance_id,
+            status,
+            current_count,
+        )
+        if status == "not_held":
+            raise SemaphoreNotAcquiredError(name=self.key, instance_id=self.instance_id)
+        assert status == "expired"  # nosec
+        raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
 
-    async def get_current_count(self) -> int:
-        """Get the current number of semaphore holders"""
-        ttl_seconds = int(self.ttl.total_seconds())
-
-        # Execute the count Lua script atomically
-        cls = type(self)
-        assert cls.count_script is not None  # nosec
-        result = await cls.count_script(  # pylint: disable=not-callable
-            keys=(self.semaphore_key,),
-            args=(str(ttl_seconds),),
-            client=self.redis_client.redis,
+    async def is_acquired(self) -> bool:
+        """Check if the semaphore is currently acquired by this instance."""
+        return bool(
+            await handle_redis_returns_union_types(
+                self.redis_client.redis.exists(self.holder_key)
+            )
+            == 1
         )
 
-        assert isinstance(result, list)  # nosec
-        current_count, expired_count = result
+    async def current_count(self) -> int:
+        """Get the current number of semaphore holders"""
+        return await handle_redis_returns_union_types(
+            self.redis_client.redis.scard(self.holders_set)
+        )
 
-        if int(expired_count) > 0:
-            _logger.debug(
-                "Cleaned up %s expired entries from semaphore '%s'",
-                expired_count,
-                self.key,
-            )
+    async def available_tokens(self) -> int:
+        """Get the size of the semaphore (number of available tokens)"""
+        await self._ensure_semaphore_initialized()
+        return await handle_redis_returns_union_types(
+            self.redis_client.redis.llen(self.tokens_key)
+        )
 
-        return int(current_count)
 
-    async def get_available_count(self) -> int:
-        """Get the number of available semaphore slots"""
-        current_count = await self.get_current_count()
-        return max(0, self.capacity - current_count)
+@contextlib.asynccontextmanager
+async def distributed_semaphore(  # noqa: C901
+    redis_client: RedisClientSDK,
+    *,
+    key: str,
+    capacity: PositiveInt,
+    ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
+    blocking: bool = True,
+    blocking_timeout: datetime.timedelta | None = None,
+    expected_lock_overall_time: datetime.timedelta = DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
+) -> AsyncIterator[DistributedSemaphore]:
+    """
+    Async context manager for DistributedSemaphore.
 
-    # Context manager support
-    async def __aenter__(self) -> "DistributedSemaphore":
-        await self.acquire()
-        return self
+    Example:
+        async with distributed_semaphore(redis_client, "my_resource", capacity=3) as sem:
+            # Only 3 instances can execute this block concurrently
+            await do_limited_work()
+    """
+    semaphore = DistributedSemaphore(
+        redis_client=redis_client,
+        key=key,
+        capacity=capacity,
+        ttl=ttl,
+        blocking=blocking,
+        blocking_timeout=blocking_timeout,
+    )
 
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
+    @periodic(interval=semaphore.ttl / 3, raise_on_error=True)
+    async def _periodic_reacquisition(
+        semaphore: DistributedSemaphore,
+        started: asyncio.Event,
+        cancellation_event: asyncio.Event,
     ) -> None:
-        await self.release()
+        if cancellation_event.is_set():
+            raise asyncio.CancelledError
+        if not started.is_set():
+            started.set()
+        await semaphore.reacquire()
+
+    lock_acquisition_time = None
+    try:
+        if not await semaphore.acquire():
+            raise SemaphoreAcquisitionError(name=key, instance_id=semaphore.instance_id)
+
+        lock_acquisition_time = arrow.utcnow()
+
+        async with (
+            asyncio.TaskGroup() as tg
+        ):  # NOTE: using task group ensures proper cancellation propagation of parent task
+            auto_reacquisition_started = asyncio.Event()
+            cancellation_event = asyncio.Event()
+            auto_reacquisition_task = tg.create_task(
+                _periodic_reacquisition(
+                    semaphore, auto_reacquisition_started, cancellation_event
+                ),
+                name=f"semaphore/auto_reacquisition_task_{semaphore.key}_{semaphore.instance_id}",
+            )
+            await auto_reacquisition_started.wait()
+            try:
+                # NOTE: this try/finally ensures that cancellation_event is set when we exit the context
+                # even in case of exceptions
+                yield semaphore
+            finally:
+                cancellation_event.set()  # NOTE: this ensure cancellation is effective
+                await cancel_wait_task(auto_reacquisition_task)
+    except BaseExceptionGroup as eg:
+        semaphore_errors, other_errors = eg.split(SemaphoreError)
+        if other_errors:
+            assert len(other_errors.exceptions) == 1  # nosec
+            raise other_errors.exceptions[0] from eg
+        assert semaphore_errors is not None  # nosec
+        assert len(semaphore_errors.exceptions) == 1  # nosec
+        raise semaphore_errors.exceptions[0] from eg
+    finally:
+        try:
+            await semaphore.release()
+        except SemaphoreNotAcquiredError as exc:
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    f"Unexpected error while releasing semaphore '{semaphore.key}'",
+                    error=exc,
+                    error_context={
+                        "semaphore_key": semaphore.key,
+                        "semaphore_instance_id": semaphore.instance_id,
+                        "hostname": socket.gethostname(),
+                    },
+                    tip="This indicates a logic error in the code using the semaphore",
+                )
+            )
+        except SemaphoreLostError as exc:
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    f"Unexpected error while releasing semaphore '{semaphore.key}'",
+                    error=exc,
+                    error_context={
+                        "semaphore_key": semaphore.key,
+                        "semaphore_instance_id": semaphore.instance_id,
+                        "hostname": socket.gethostname(),
+                    },
+                    tip="This indicates that the semaphore was lost or expired before release. "
+                    "Look for synchronouse code or the loop is very busy and cannot schedule the reacquisition task.",
+                )
+            )
+        if lock_acquisition_time is not None:
+            lock_release_time = arrow.utcnow()
+            locking_time = lock_release_time - lock_acquisition_time
+            if locking_time > expected_lock_overall_time:
+                _logger.warning(
+                    "Semaphore '%s' was held for %s by %s which is longer than expected (%s). "
+                    "TIP: consider reducing the locking time by optimizing the code inside "
+                    "the critical section or increasing the default locking time",
+                    semaphore.key,
+                    locking_time,
+                    semaphore.instance_id,
+                    expected_lock_overall_time,
+                )

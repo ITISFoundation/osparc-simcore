@@ -132,7 +132,6 @@ async def _assert_handler_called_with_json(
 @pytest.fixture
 async def client(
     docker_registry: str,
-    mock_redis_socket_timeout: None,
     aiohttp_client: Callable,
     app_config: dict[str, Any],
     rabbit_service: RabbitSettings,
