@@ -5,8 +5,6 @@ import asyncio
 import subprocess
 from collections.abc import AsyncIterable
 from contextlib import suppress
-from typing import Final
-from unittest.mock import AsyncMock
 
 import nicegui
 import pytest
@@ -17,6 +15,7 @@ from hypercorn.asyncio import serve
 from hypercorn.config import Config
 from playwright.async_api import Page, async_playwright
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -26,37 +25,19 @@ from simcore_service_dynamic_scheduler.core.application import create_app
 from simcore_service_dynamic_scheduler.core.settings import ApplicationSettings
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
-_MODULE: Final["str"] = "simcore_service_dynamic_scheduler"
-
 
 @pytest.fixture
 def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        f"{_MODULE}.services.status_monitor._monitor.Monitor._worker_check_services_require_status_update"
+        "simcore_service_dynamic_scheduler.services.status_monitor._monitor.Monitor._worker_check_services_require_status_update"
     )
-
-
-@pytest.fixture
-def mock_stop_dynamic_service(mocker: MockerFixture) -> AsyncMock:
-    async_mock = AsyncMock()
-    mocker.patch(
-        f"{_MODULE}.api.frontend.routes._service.stop_dynamic_service", async_mock
-    )
-    return async_mock
-
-
-@pytest.fixture
-def mock_remove_tracked_service(mocker: MockerFixture) -> AsyncMock:
-    async_mock = AsyncMock()
-    mocker.patch(
-        f"{_MODULE}.api.frontend.routes._service.remove_tracked_service", async_mock
-    )
-    return async_mock
 
 
 @pytest.fixture
 def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
+    use_internal_scheduler: bool,  # defined in conftest inside subdirectiories of this module
     postgres_db: sa.engine.Engine,
     postgres_host_config: PostgresTestConfig,
     disable_status_monitor_background_task: None,
@@ -64,6 +45,12 @@ def app_environment(
     redis_service: RedisSettings,
     remove_redis_data: None,
 ) -> EnvVarsDict:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER": f"{use_internal_scheduler}",
+        },
+    )
     return app_environment
 
 

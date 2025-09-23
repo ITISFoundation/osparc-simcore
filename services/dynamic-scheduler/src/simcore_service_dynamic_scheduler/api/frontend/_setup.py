@@ -2,14 +2,18 @@ import nicegui
 from fastapi import FastAPI
 
 from ...core.settings import ApplicationSettings
+from . import routes_external_scheduler
 from ._utils import set_parent_app
-from .routes import router
 
 
 def initialize_frontend(app: FastAPI) -> None:
     settings: ApplicationSettings = app.state.settings
 
-    nicegui.app.include_router(router)
+    if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
+        nicegui.app.include_router(routes_external_scheduler.router)
+    else:
+        # nicegui.app.include_router(routes_external_scheduler.router)
+        pass
 
     nicegui.ui.run_with(
         app,
