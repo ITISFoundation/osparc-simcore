@@ -27,8 +27,8 @@ def decode_celery_transferrable_error(error: TransferrableCeleryError) -> Except
 
 
 class TaskSubmissionError(OsparcErrorMixin, Exception):
-    msg_template = "Unable to submit task {task_name} with id '{task_key}' and params {task_params}"
+    msg_template = "Unable to submit task {task_name} with key '{task_key}' and params {task_params}"
 
 
 class TaskNotFoundError(OsparcErrorMixin, Exception):
-    msg_template = "Task with id '{task_key}' was not found"
+    msg_template = "Task with key '{task_key}' was not found"
