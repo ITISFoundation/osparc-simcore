@@ -68,10 +68,10 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from servicelib.sse.models import SSEEvent, SSEHeaders
-from simcore_service_webserver.celery import get_task_manager
 from yarl import URL
 
 from .._meta import API_VTAG
+from ..celery import get_task_manager
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
