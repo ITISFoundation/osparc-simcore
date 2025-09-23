@@ -134,6 +134,7 @@ async def copy_data_folders_from_project(
                 },
             ),
             client_timeout=datetime.timedelta(seconds=_TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
+            user_id=user_id,
         ):
             yield job_composed_result
 
