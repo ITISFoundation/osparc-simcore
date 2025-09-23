@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from models_library.functions import RegisteredFunction, RegisteredFunctionJob
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from servicelib.celery.models import TaskID
+from servicelib.celery.models import TaskKey
 from simcore_service_api_server._service_function_jobs import FunctionJobService
 
 from ...api.dependencies.authentication import Identity
@@ -103,7 +103,7 @@ async def _assemble_function_job_service(
 
 async def run_function(
     task: Task,
-    task_id: TaskID,
+    task_id: TaskKey,
     *,
     user_identity: Identity,
     function: RegisteredFunction,

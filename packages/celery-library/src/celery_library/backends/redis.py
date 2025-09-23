@@ -10,8 +10,8 @@ from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
-    TaskID,
     TaskInfoStore,
+    TaskKey,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
@@ -24,7 +24,7 @@ _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 _logger = logging.getLogger(__name__)
 
 
-def _build_key(task_id: TaskID) -> str:
+def _build_key(task_id: TaskKey) -> str:
     return _CELERY_TASK_INFO_PREFIX + task_id
 
 
@@ -34,7 +34,7 @@ class RedisTaskInfoStore:
 
     async def create_task(
         self,
-        task_id: TaskID,
+        task_id: TaskKey,
         execution_metadata: ExecutionMetadata,
         expiry: timedelta,
     ) -> None:
@@ -51,7 +51,7 @@ class RedisTaskInfoStore:
             expiry,
         )
 
-    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None:
+    async def get_task_metadata(self, task_id: TaskKey) -> ExecutionMetadata | None:
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
                 _build_key(task_id), _CELERY_TASK_METADATA_KEY
@@ -68,7 +68,7 @@ class RedisTaskInfoStore:
             )
             return None
 
-    async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None:
+    async def get_task_progress(self, task_id: TaskKey) -> ProgressReport | None:
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
                 _build_key(task_id), _CELERY_TASK_PROGRESS_KEY
@@ -122,10 +122,10 @@ class RedisTaskInfoStore:
 
         return tasks
 
-    async def remove_task(self, task_id: TaskID) -> None:
+    async def remove_task(self, task_id: TaskKey) -> None:
         await self._redis_client_sdk.redis.delete(_build_key(task_id))
 
-    async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
+    async def set_task_progress(self, task_id: TaskKey, report: ProgressReport) -> None:
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hset(
                 name=_build_key(task_id),
@@ -134,7 +134,7 @@ class RedisTaskInfoStore:
             )
         )
 
-    async def task_exists(self, task_id: TaskID) -> bool:
+    async def task_exists(self, task_id: TaskKey) -> bool:
         n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
         assert isinstance(n, int)  # nosec
         return n > 0

@@ -7,7 +7,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
-from servicelib.celery.models import TaskID
+from servicelib.celery.models import TaskKey
 from servicelib.logging_utils import log_context
 
 from ...dsm import get_dsm_provider
@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 async def complete_upload_file(
     task: Task,
-    task_id: TaskID,
+    task_id: TaskKey,
     user_id: UserID,
     location_id: LocationID,
     file_id: StorageFileID,

@@ -15,7 +15,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskID
+from servicelib.celery.models import TaskKey
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
@@ -26,7 +26,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _task_progress_cb(
-    task: Task, task_id: TaskID, report: ProgressReport
+    task: Task, task_id: TaskKey, report: ProgressReport
 ) -> None:
     worker = get_app_server(task.app).task_manager
     assert task.name  # nosec
@@ -37,7 +37,7 @@ async def _task_progress_cb(
 
 
 async def deep_copy_files_from_project(
-    task: Task, task_id: TaskID, user_id: UserID, body: FoldersBody
+    task: Task, task_id: TaskKey, user_id: UserID, body: FoldersBody
 ) -> dict[str, Any]:
     with log_context(
         _logger,
@@ -66,7 +66,7 @@ async def deep_copy_files_from_project(
 
 async def export_data(
     task: Task,
-    task_id: TaskID,
+    task_id: TaskKey,
     *,
     user_id: UserID,
     paths_to_export: list[PathToExport],
@@ -108,7 +108,7 @@ async def export_data(
 
 async def export_data_as_download_link(
     task: Task,
-    task_id: TaskID,
+    task_id: TaskKey,
     *,
     user_id: UserID,
     paths_to_export: list[PathToExport],

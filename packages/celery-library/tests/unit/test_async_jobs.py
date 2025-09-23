@@ -26,7 +26,7 @@ from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskID
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskKey
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
@@ -121,13 +121,13 @@ async def _process_action(action: str, payload: Any) -> Any:
     return None
 
 
-def sync_job(task: Task, task_id: TaskID, action: Action, payload: Any) -> Any:
+def sync_job(task: Task, task_id: TaskKey, action: Action, payload: Any) -> Any:
     _ = task
     _ = task_id
     return asyncio.run(_process_action(action, payload))
 
 
-async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -> Any:
+async def async_job(task: Task, task_id: TaskKey, action: Action, payload: Any) -> Any:
     _ = task
     _ = task_id
     return await _process_action(action, payload)

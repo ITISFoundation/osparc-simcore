@@ -12,8 +12,8 @@ from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
-    TaskID,
     TaskInfoStore,
+    TaskKey,
     TaskState,
     TaskStatus,
     TaskUUID,
@@ -100,11 +100,11 @@ class CeleryTaskManager:
             await self._task_info_store.remove_task(task_id)
             await self._forget_task(task_id)
 
-    async def task_exists(self, task_id: TaskID) -> bool:
+    async def task_exists(self, task_id: TaskKey) -> bool:
         return await self._task_info_store.task_exists(task_id)
 
     @make_async()
-    def _forget_task(self, task_id: TaskID) -> None:
+    def _forget_task(self, task_id: TaskKey) -> None:
         self._celery_app.AsyncResult(task_id).forget()
 
     async def get_task_result(
@@ -129,7 +129,7 @@ class CeleryTaskManager:
             return result
 
     async def _get_task_progress_report(
-        self, task_id: TaskID, task_state: TaskState
+        self, task_id: TaskKey, task_state: TaskState
     ) -> ProgressReport:
         if task_state in (TaskState.STARTED, TaskState.RETRY):
             progress = await self._task_info_store.get_task_progress(task_id)
@@ -147,7 +147,7 @@ class CeleryTaskManager:
         )
 
     @make_async()
-    def _get_task_celery_state(self, task_id: TaskID) -> TaskState:
+    def _get_task_celery_state(self, task_id: TaskKey) -> TaskState:
         return TaskState(self._celery_app.AsyncResult(task_id).state)
 
     async def get_task_status(
@@ -179,7 +179,7 @@ class CeleryTaskManager:
         ):
             return await self._task_info_store.list_tasks(owner_metadata)
 
-    async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
+    async def set_task_progress(self, task_id: TaskKey, report: ProgressReport) -> None:
         await self._task_info_store.set_task_progress(
             task_id=task_id,
             report=report,

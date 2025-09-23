@@ -38,7 +38,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.aiohttp import status
 from servicelib.celery.app_server import BaseAppServer
-from servicelib.celery.models import TaskID
+from servicelib.celery.models import TaskKey
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
@@ -489,7 +489,7 @@ async def test_run_project_function(
 
     job = await functions_tasks.run_function(
         task=MagicMock(spec=Task),
-        task_id=TaskID(_faker.uuid4()),
+        task_id=TaskKey(_faker.uuid4()),
         user_identity=user_identity,
         function=mock_registered_project_function,
         pre_registered_function_job_data=pre_registered_function_job_data,

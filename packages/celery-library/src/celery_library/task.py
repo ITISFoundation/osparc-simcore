@@ -10,7 +10,7 @@ from celery import Celery, Task  # type: ignore[import-untyped]
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from pydantic import NonNegativeInt
-from servicelib.celery.models import TaskID
+from servicelib.celery.models import TaskKey
 
 from .errors import encode_celery_transferrable_error
 from .utils import get_app_server
@@ -47,7 +47,7 @@ def _async_task_wrapper(
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
 
-            async def _run_task(task_id: TaskID) -> R:
+            async def _run_task(task_id: TaskKey) -> R:
                 try:
                     async with asyncio.TaskGroup() as tg:
                         async_io_task = tg.create_task(
@@ -140,7 +140,7 @@ def _error_handling(
 @overload
 def register_task(
     app: Celery,
-    fn: Callable[Concatenate[Task, TaskID, P], Coroutine[Any, Any, R]],
+    fn: Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]],
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
@@ -164,7 +164,7 @@ def register_task(
 def register_task(  # type: ignore[misc]
     app: Celery,
     fn: (
-        Callable[Concatenate[Task, TaskID, P], Coroutine[Any, Any, R]]
+        Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]]
         | Callable[Concatenate[Task, P], R]
     ),
     task_name: str | None = None,

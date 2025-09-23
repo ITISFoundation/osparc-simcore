@@ -23,7 +23,7 @@ from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
-    TaskID,
+    TaskKey,
     TaskState,
     TaskUUID,
     Wildcard,
@@ -60,7 +60,7 @@ async def _fake_file_processor(
     return "archive.zip"
 
 
-def fake_file_processor(task: Task, task_id: TaskID, files: list[str]) -> str:
+def fake_file_processor(task: Task, task_id: TaskKey, files: list[str]) -> str:
     assert task_id
     assert task.name
     _logger.info("Calling _fake_file_processor")
@@ -74,14 +74,14 @@ class MyError(OsparcErrorMixin, Exception):
     msg_template = "Something strange happened: {msg}"
 
 
-def failure_task(task: Task, task_id: TaskID) -> None:
+def failure_task(task: Task, task_id: TaskKey) -> None:
     assert task_id
     assert task
     msg = "BOOM!"
     raise MyError(msg=msg)
 
 
-async def dreamer_task(task: Task, task_id: TaskID) -> list[int]:
+async def dreamer_task(task: Task, task_id: TaskKey) -> list[int]:
     numbers = []
     for _ in range(30):
         numbers.append(randint(1, 90))  # noqa: S311

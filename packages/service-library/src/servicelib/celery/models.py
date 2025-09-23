@@ -11,7 +11,7 @@ from pydantic.config import JsonDict
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 
-TaskID: TypeAlias = str
+TaskKey: TypeAlias = str
 TaskName: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1)
 ]
@@ -75,7 +75,7 @@ class OwnerMetadata(BaseModel):
         _TypeValidationModel.model_validate({"filters": self.model_dump()})
         return self
 
-    def model_dump_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskID:
+    def model_dump_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskKey:
         data = self.model_dump(mode="json")
         data.update({"task_uuid": f"{task_uuid}"})
         return _TASK_ID_KEY_DELIMITATOR.join(
@@ -83,13 +83,13 @@ class OwnerMetadata(BaseModel):
         )
 
     @classmethod
-    def model_validate_task_id(cls, task_id: TaskID) -> Self:
+    def model_validate_task_id(cls, task_id: TaskKey) -> Self:
         data = cls._deserialize_task_id(task_id)
         data.pop("task_uuid", None)
         return cls.model_validate(data)
 
     @classmethod
-    def _deserialize_task_id(cls, task_id: TaskID) -> dict[str, AllowedTypes]:
+    def _deserialize_task_id(cls, task_id: TaskKey) -> dict[str, AllowedTypes]:
         key_value_pairs = [
             item.split("=") for item in task_id.split(_TASK_ID_KEY_DELIMITATOR)
         ]
@@ -99,7 +99,7 @@ class OwnerMetadata(BaseModel):
             raise ValueError(f"Invalid task_id format: {task_id}") from err
 
     @classmethod
-    def get_task_uuid(cls, task_id: TaskID) -> TaskUUID:
+    def get_task_uuid(cls, task_id: TaskKey) -> TaskUUID:
         data = cls._deserialize_task_id(task_id)
         try:
             uuid_string = data["task_uuid"]
@@ -179,23 +179,23 @@ class Task(BaseModel):
 class TaskInfoStore(Protocol):
     async def create_task(
         self,
-        task_id: TaskID,
+        task_id: TaskKey,
         execution_metadata: ExecutionMetadata,
         expiry: datetime.timedelta,
     ) -> None: ...
 
-    async def task_exists(self, task_id: TaskID) -> bool: ...
+    async def task_exists(self, task_id: TaskKey) -> bool: ...
 
-    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None: ...
+    async def get_task_metadata(self, task_id: TaskKey) -> ExecutionMetadata | None: ...
 
-    async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
+    async def get_task_progress(self, task_id: TaskKey) -> ProgressReport | None: ...
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
-    async def remove_task(self, task_id: TaskID) -> None: ...
+    async def remove_task(self, task_id: TaskKey) -> None: ...
 
     async def set_task_progress(
-        self, task_id: TaskID, report: ProgressReport
+        self, task_id: TaskKey, report: ProgressReport
     ) -> None: ...
 
 
