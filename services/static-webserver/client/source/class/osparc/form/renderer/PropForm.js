@@ -929,6 +929,10 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       ctrlLink.addListener("mouseout", () => highlightEdgeUI(false));
 
       const fromNode = study.getWorkbench().getNode(fromNodeId);
+      if (!fromNode) {
+        console.error("Node not found while creating link", fromNodeId);
+        return false;
+      }
       const prettifyLinkString = () => {
         const port = fromNode.getOutput(fromPortId);
         const fromPortLabel = port ? port.label : null;
