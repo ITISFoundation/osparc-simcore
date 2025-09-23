@@ -17,9 +17,9 @@ _logger = logging.getLogger(__name__)
 
 
 async def compute_path_size(
-    task: Task, task_id: TaskKey, user_id: UserID, location_id: LocationID, path: Path
+    task: Task, task_key: TaskKey, user_id: UserID, location_id: LocationID, path: Path
 ) -> ByteSize:
-    assert task_id  # nosec
+    assert task_key  # nosec
     with log_context(
         _logger,
         logging.INFO,
@@ -31,12 +31,12 @@ async def compute_path_size(
 
 async def delete_paths(
     task: Task,
-    task_id: TaskKey,
+    task_key: TaskKey,
     user_id: UserID,
     location_id: LocationID,
     paths: set[Path],
 ) -> None:
-    assert task_id  # nosec
+    assert task_key  # nosec
     with log_context(
         _logger,
         logging.INFO,

@@ -103,7 +103,7 @@ async def _assemble_function_job_service(
 
 async def run_function(
     task: Task,
-    task_id: TaskKey,
+    task_key: TaskKey,
     *,
     user_identity: Identity,
     function: RegisteredFunction,
@@ -113,7 +113,7 @@ async def run_function(
     x_simcore_parent_project_uuid: ProjectID | None,
     x_simcore_parent_node_id: NodeID | None,
 ) -> RegisteredFunctionJob:
-    assert task_id  # nosec
+    assert task_key  # nosec
     app = get_app_server(task.app).app
     function_job_service = await _assemble_function_job_service(
         app=app, user_identity=user_identity
