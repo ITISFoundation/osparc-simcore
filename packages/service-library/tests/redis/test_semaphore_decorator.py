@@ -153,7 +153,7 @@ async def test_decorator_with_callable_parameters(
 ):
     executed_keys = []
 
-    def get_redis_client(*args, **kwargs):
+    def get_redis_client(*args, **kwargs) -> RedisClientSDK:
         return redis_client_sdk
 
     def get_key(user_id: str, resource: str) -> str:
@@ -196,7 +196,7 @@ async def test_decorator_capacity_enforcement(
         key=semaphore_name,
         capacity=2,
     )
-    async def limited_function():
+    async def limited_function() -> None:
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)

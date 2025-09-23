@@ -14,16 +14,25 @@ local holders_key = KEYS[2]
 local capacity = tonumber(ARGV[1])
 local ttl_seconds = tonumber(ARGV[2])
 
--- Step 1: Initialize token pool if needed (first time setup)
-local tokens_exist = redis.call('EXISTS', tokens_key)
-local holders_exist = redis.call('EXISTS', holders_key)
-if tokens_exist == 0 and holders_exist == 0 then
+-- Use a persistent marker to track if semaphore was ever initialized
+local init_marker_key = tokens_key .. ':initialized'
+
+-- Check if we've ever initialized this semaphore
+local was_initialized = redis.call('EXISTS', init_marker_key)
+
+if was_initialized == 0 then
+    -- First time initialization - set the permanent marker
+    redis.call('SET', init_marker_key, '1')
+    redis.call('EXPIRE', init_marker_key, ttl_seconds)
+
     -- Initialize with capacity number of tokens
     for i = 1, capacity do
         redis.call('LPUSH', tokens_key, 'token_' .. i)
     end
-    -- Set expiry on tokens list to prevent infinite growth
+    -- Set expiry on tokens list
     redis.call('EXPIRE', tokens_key, ttl_seconds)
+    return {0, 'initialized'}
 end
 
-return 0
+
+return {0, 'already_initialized'}

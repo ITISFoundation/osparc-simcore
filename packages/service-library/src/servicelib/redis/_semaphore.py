@@ -194,11 +194,15 @@ class DistributedSemaphore(BaseModel):
     async def _ensure_semaphore_initialized(self) -> None:
         """Initializes the semaphore in Redis if not already done."""
         assert self.register_semaphore is not None  # nosec
-        await self.register_semaphore(  # pylint: disable=not-callable
+        result = await self.register_semaphore(  # pylint: disable=not-callable
             keys=[self.tokens_key, self.holders_set],
             args=[self.capacity, self.holders_set_ttl.total_seconds()],
             client=self.redis_client.redis,
         )
+        assert isinstance(result, list)  # nosec
+        exit_code, status = result
+        assert exit_code == SCRIPT_OK_EXIT_CODE  # nosec
+        _logger.debug("Semaphore '%s' init status: %s", self.key, status)
 
     async def _blocking_acquire(self) -> str | None:
         @retry(
@@ -462,9 +466,9 @@ async def distributed_semaphore(  # noqa: C901
     ) -> None:
         if cancellation_event.is_set():
             raise asyncio.CancelledError
+        await semaphore.reacquire()
         if not started.is_set():
             started.set()
-        await semaphore.reacquire()
 
     lock_acquisition_time = None
     try:
