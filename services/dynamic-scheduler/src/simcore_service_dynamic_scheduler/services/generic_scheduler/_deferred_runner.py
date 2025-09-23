@@ -65,7 +65,7 @@ def get_step_group_proxy(context: DeferredContext) -> StepGroupProxy:
     )
 
 
-def get_opration_context_proxy(context: DeferredContext) -> OperationContextProxy:
+def get_operation_context_proxy(context: DeferredContext) -> OperationContextProxy:
     app: FastAPI = context["app"]
     schedule_id: ScheduleId = context["schedule_id"]
     operation_name: OperationName = context["operation_name"]
@@ -175,10 +175,10 @@ class DeferredRunner(BaseDeferredHandler[None]):
 
         step = _get_step(context)
 
-        opration_context_proxy = get_opration_context_proxy(context)
+        operation_context_proxy = get_operation_context_proxy(context)
 
         if is_creating:
-            required_context = await opration_context_proxy.get_required_context(
+            required_context = await operation_context_proxy.get_required_context(
                 *step.get_create_requires_context_keys()
             )
             _raise_if_any_context_value_is_none(required_context)
@@ -191,7 +191,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
                 provided_operation_context, create_provides_keys
             )
         else:
-            required_context = await opration_context_proxy.get_required_context(
+            required_context = await operation_context_proxy.get_required_context(
                 *step.get_revert_requires_context_keys()
             )
             _raise_if_any_context_value_is_none(required_context)
@@ -204,7 +204,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
                 provided_operation_context, revert_provides_keys
             )
 
-        await opration_context_proxy.set_provided_context(provided_operation_context)
+        await operation_context_proxy.set_provided_context(provided_operation_context)
 
     @classmethod
     async def on_result(cls, result: None, context: DeferredContext) -> None:

@@ -1,11 +1,11 @@
 from ._api import (
     cancel_operation,
     restart_operation_stuck_in_error_during_revert,
-    restart_operation_sutck_in_manual_intervention_during_create,
+    restart_operation_stuck_in_manual_intervention_during_create,
     start_operation,
 )
 from ._deferred_runner import (
-    get_opration_context_proxy,
+    get_operation_context_proxy,
     get_step_group_proxy,
     get_step_store_proxy,
 )
@@ -29,7 +29,7 @@ __all__: tuple[str, ...] = (
     "BaseStep",
     "cancel_operation",
     "get_generic_scheduler_lifespans",
-    "get_opration_context_proxy",
+    "get_operation_context_proxy",
     "get_step_group_proxy",
     "get_step_store_proxy",
     "Operation",
@@ -39,8 +39,8 @@ __all__: tuple[str, ...] = (
     "ParallelStepGroup",
     "ProvidedOperationContext",
     "RequiredOperationContext",
-    "restart_operation_sutck_in_manual_intervention_during_create",
     "restart_operation_stuck_in_error_during_revert",
+    "restart_operation_stuck_in_manual_intervention_during_create",
     "ScheduleId",
     "SingleStepGroup",
     "start_operation",

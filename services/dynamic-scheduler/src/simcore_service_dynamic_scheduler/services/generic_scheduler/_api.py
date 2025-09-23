@@ -25,7 +25,7 @@ async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
     await get_core(app).cancel_operation(schedule_id)
 
 
-async def restart_operation_sutck_in_manual_intervention_during_create(
+async def restart_operation_stuck_in_manual_intervention_during_create(
     app: FastAPI, schedule_id: ScheduleId, step_name: StepName
 ) -> None:
     """

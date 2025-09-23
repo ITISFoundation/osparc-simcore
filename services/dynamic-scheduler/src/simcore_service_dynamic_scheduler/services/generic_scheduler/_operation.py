@@ -60,7 +60,7 @@ class BaseStep(ABC):
     async def get_create_retries(cls, context: DeferredContext) -> int:
         """
         [optional] amount of retires in case of creation
-        HINT: you can use `get_opration_context_proxy()`, `get_step_group_proxy(context)`
+        HINT: you can use `get_operation_context_proxy()`, `get_step_group_proxy(context)`
             and `get_step_store_proxy(context)` to implement custom retry strategy
         """
         assert context  # nosec
@@ -72,7 +72,7 @@ class BaseStep(ABC):
     ) -> timedelta:
         """
         [optional] wait time between retires case of creation
-        HINT: you can use `get_opration_context_proxy()`, `get_step_group_proxy(context)`
+        HINT: you can use `get_operation_context_proxy()`, `get_step_group_proxy(context)`
             and `get_step_store_proxy(context)` to implement custom retry strategy
         """
         assert context  # nosec
@@ -120,7 +120,7 @@ class BaseStep(ABC):
     async def get_revert_retries(cls, context: DeferredContext) -> int:
         """
         [optional] amount of retires in case of failure
-        HINT: you can use `get_opration_context_proxy()`, `get_step_group_proxy(context)`
+        HINT: you can use `get_operation_context_proxy()`, `get_step_group_proxy(context)`
             and `get_step_store_proxy(context)` to implement custom retry strategy
         """
         assert context  # nosec
@@ -132,7 +132,7 @@ class BaseStep(ABC):
     ) -> timedelta:
         """
         [optional] timeout between retires in case of failure
-        HINT: you can use `get_opration_context_proxy()`, `get_step_group_proxy(context)`
+        HINT: you can use `get_operation_context_proxy()`, `get_step_group_proxy(context)`
             and `get_step_store_proxy(context)` to implement custom retry strategy
         """
         assert context  # nosec

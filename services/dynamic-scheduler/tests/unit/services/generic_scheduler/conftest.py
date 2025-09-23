@@ -12,11 +12,11 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
 def register_operation() -> Iterable[Callable[[OperationName, Operation], None]]:
     to_unregister: list[OperationName] = []
 
-    def _(opration_name: OperationName, operation: Operation) -> None:
-        OperationRegistry.register(opration_name, operation)
-        to_unregister.append(opration_name)
+    def _(operation_name: OperationName, operation: Operation) -> None:
+        OperationRegistry.register(operation_name, operation)
+        to_unregister.append(operation_name)
 
     yield _
 
-    for opration_name in to_unregister:
-        OperationRegistry.unregister(opration_name)
+    for operation_name in to_unregister:
+        OperationRegistry.unregister(operation_name)

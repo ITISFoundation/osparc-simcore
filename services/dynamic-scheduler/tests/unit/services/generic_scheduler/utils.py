@@ -73,7 +73,7 @@ def _assert_order_random(
         steps_names.remove(step_name)
 
 
-def _asseert_expected_order(
+def _assert_expected_order(
     steps_call_order: list[tuple[str, str]],
     expected_order: list[BaseExpectedStepOrder],
     *,
@@ -119,7 +119,7 @@ async def ensure_expected_order(
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)  # wait for envet to trigger
-            _asseert_expected_order(
+            _assert_expected_order(
                 detected_calls,
                 expected_order,
                 use_only_first_entries=use_only_first_entries,
