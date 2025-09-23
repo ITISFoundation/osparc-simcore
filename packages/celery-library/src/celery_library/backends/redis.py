@@ -174,8 +174,6 @@ class RedisTaskInfoStore:
                 continue
             for _, events in messages:
                 for msg_id, data in events:
-                    last_id = msg_id
-
                     raw_event = data.get("event")
                     if raw_event is None:
                         continue
