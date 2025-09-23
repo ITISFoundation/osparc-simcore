@@ -109,8 +109,8 @@ async def test_semaphore_acquire_release_single(
     )
 
     # Initially not acquired
-    assert await semaphore.get_current_count() == 0
-    assert await semaphore.get_available_count() == semaphore_capacity
+    assert await semaphore.current_count() == 0
+    assert await semaphore.size() == semaphore_capacity
     assert await semaphore.is_acquired() is False
 
     # Acquire successfully
@@ -118,25 +118,25 @@ async def test_semaphore_acquire_release_single(
     assert result is True
 
     # Check Redis state
-    assert await semaphore.get_current_count() == 1
-    assert await semaphore.get_available_count() == semaphore_capacity - 1
+    assert await semaphore.current_count() == 1
+    assert await semaphore.size() == semaphore_capacity - 1
     assert await semaphore.is_acquired() is True
 
     # Acquire again on same instance should return True immediately and keep the same count (reentrant)
     result = await semaphore.acquire()
     assert result is True
-    assert await semaphore.get_current_count() == 1
-    assert await semaphore.get_available_count() == semaphore_capacity - 1
+    assert await semaphore.current_count() == 1
+    assert await semaphore.size() == semaphore_capacity - 1
 
     # reacquire should just work
     await semaphore.reacquire()
-    assert await semaphore.get_current_count() == 1
-    assert await semaphore.get_available_count() == semaphore_capacity - 1
+    assert await semaphore.current_count() == 1
+    assert await semaphore.size() == semaphore_capacity - 1
 
     # Release
     await semaphore.release()
-    assert await semaphore.get_current_count() == 0
-    assert await semaphore.get_available_count() == semaphore_capacity
+    assert await semaphore.current_count() == 0
+    assert await semaphore.size() == semaphore_capacity
 
     # reacquire after release should fail
     with pytest.raises(
@@ -147,8 +147,8 @@ async def test_semaphore_acquire_release_single(
 
     # now check what happens once TTL is expired
     await semaphore.acquire()
-    assert await semaphore.get_current_count() == 1
-    assert await semaphore.get_available_count() == semaphore_capacity - 1
+    assert await semaphore.current_count() == 1
+    assert await semaphore.size() == semaphore_capacity - 1
     await asyncio.sleep(with_short_default_semaphore_ttl.total_seconds() + 0.1)
     # TTL expired, reacquire should fail
     with pytest.raises(
@@ -172,10 +172,10 @@ async def test_semaphore_context_manager(
     async with DistributedSemaphore(
         redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
     ) as semaphore:
-        assert await semaphore.get_current_count() == 1
+        assert await semaphore.current_count() == 1
 
     # Should be released after context
-    assert await semaphore.get_current_count() == 0
+    assert await semaphore.current_count() == 0
 
 
 async def test_semaphore_release_without_acquire_raises(
@@ -216,13 +216,13 @@ async def test_semaphore_multiple_instances_capacity_limit(
         assert await semaphore.acquire() is False
 
     # Check counts
-    assert await semaphores[0].get_current_count() == 2
-    assert await semaphores[0].get_available_count() == 0
+    assert await semaphores[0].current_count() == 2
+    assert await semaphores[0].size() == 0
 
     # Release one
     await semaphores[0].release()
-    assert await semaphores[0].get_current_count() == 1
-    assert await semaphores[0].get_available_count() == 1
+    assert await semaphores[0].current_count() == 1
+    assert await semaphores[0].size() == 1
 
     # Now third can acquire
     assert await semaphores[2].acquire() is True

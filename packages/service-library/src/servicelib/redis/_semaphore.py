@@ -155,7 +155,6 @@ class DistributedSemaphore(BaseModel):
         """Redis key for this instance's holder entry."""
         return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders:{self.instance_id}"
 
-    # Additional validation
     @field_validator("ttl")
     @classmethod
     def validate_ttl(cls, v: datetime.timedelta) -> datetime.timedelta:
@@ -255,11 +254,13 @@ class DistributedSemaphore(BaseModel):
                 ) from e
             return False
 
+        # If we got here it means we acquired a token
         assert tokens_key_token is not None  # nosec
         assert len(tokens_key_token) == 2  # nosec  # noqa: PLR2004
         assert tokens_key_token[0] == self.tokens_key  # nosec
         token = tokens_key_token[1]
 
+        # set up the semaphore holder with a TTL
         cls = type(self)
         assert cls.acquire_script is not None  # nosec
         result = await cls.acquire_script(  # pylint: disable=not-callable
@@ -290,7 +291,7 @@ class DistributedSemaphore(BaseModel):
 
     async def release(self) -> None:
         """
-        Release the semaphore atomically using Lua script.
+        Release the semaphore
 
         Raises:
             SemaphoreNotAcquiredError: If semaphore was not acquired by this instance
@@ -330,7 +331,7 @@ class DistributedSemaphore(BaseModel):
 
     async def reacquire(self) -> None:
         """
-        Atomically renew a semaphore
+        Re-acquire a semaphore
         This function is intended to be called by decorators or external renewal mechanisms.
 
 
@@ -382,14 +383,14 @@ class DistributedSemaphore(BaseModel):
             == 1
         )
 
-    async def get_current_count(self) -> int:
+    async def current_count(self) -> int:
         """Get the current number of semaphore holders"""
         return await handle_redis_returns_union_types(
             self.redis_client.redis.scard(self.holders_set)
         )
 
-    async def get_available_count(self) -> int:
-        """Get the number of available semaphore slots"""
+    async def size(self) -> int:
+        """Get the size of the semaphore (number of available tokens)"""
         await self._ensure_semaphore_initialized()
         return await handle_redis_returns_union_types(
             self.redis_client.redis.llen(self.tokens_key)

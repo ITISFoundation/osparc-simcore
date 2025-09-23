@@ -92,8 +92,8 @@ async def test_auto_renewal(
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
-    assert await temp_semaphore.get_current_count() == 1
-    assert await temp_semaphore.get_available_count() == semaphore_capacity - 1
+    assert await temp_semaphore.current_count() == 1
+    assert await temp_semaphore.size() == semaphore_capacity - 1
 
     # Wait for work to complete
     result = await task
@@ -101,8 +101,8 @@ async def test_auto_renewal(
     assert work_completed.is_set()
 
     # After completion, semaphore should be released
-    assert await temp_semaphore.get_current_count() == 0
-    assert await temp_semaphore.get_available_count() == semaphore_capacity
+    assert await temp_semaphore.current_count() == 0
+    assert await temp_semaphore.size() == semaphore_capacity
 
 
 async def test_auto_renewal_lose_semaphore_raises(
@@ -335,7 +335,7 @@ async def test_user_exceptions_properly_reraised(
         ttl=short_ttl,
     )
     assert (
-        await test_semaphore.get_current_count() == 0
+        await test_semaphore.current_count() == 0
     ), "Semaphore should be released after exception"
 
 
@@ -605,16 +605,16 @@ async def test_context_manager_auto_renewal(
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
-    assert await temp_semaphore.get_current_count() == 1
-    assert await temp_semaphore.get_available_count() == semaphore_capacity - 1
+    assert await temp_semaphore.current_count() == 1
+    assert await temp_semaphore.size() == semaphore_capacity - 1
 
     # Wait for work to complete
     await task
     assert work_completed.is_set()
 
     # After completion, semaphore should be released
-    assert await temp_semaphore.get_current_count() == 0
-    assert await temp_semaphore.get_available_count() == semaphore_capacity
+    assert await temp_semaphore.current_count() == 0
+    assert await temp_semaphore.size() == semaphore_capacity
 
 
 async def test_context_manager_with_callable_parameters(
