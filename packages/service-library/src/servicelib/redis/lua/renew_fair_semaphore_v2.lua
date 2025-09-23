@@ -18,23 +18,18 @@ local ttl_seconds = tonumber(ARGV[2])
 local is_holder = redis.call('SISMEMBER', holders_key, instance_id)
 if is_holder == 0 then
     -- Not in holders set
-    local current_count = redis.call('SCARD', holders_key)
-    return {255, 'not_held', current_count}
+    return {255, 'not_held', redis.call('SCARD', holders_key)}
 end
 
 -- Step 2: Check if holder key exists (to detect if it expired)
 local exists = redis.call('EXISTS', holder_key)
 if exists == 0 then
-    -- Holder key expired - remove from set and fail renewal
-    redis.call('SREM', holders_key, instance_id)
-    local current_count = redis.call('SCARD', holders_key)
-    return {255, 'expired', current_count}
+    -- Holder key expired
+    return {255, 'expired', redis.call('SCARD', holders_key)}
 end
 
 -- Step 3: Renew the holder key TTL
 local token = redis.call('GET', holder_key)
 redis.call('SETEX', holder_key, ttl_seconds, token)
 
-local current_count = redis.call('SCARD', holders_key)
-
-return {0, 'renewed', current_count}
+return {0, 'renewed', redis.call('SCARD', holders_key)}

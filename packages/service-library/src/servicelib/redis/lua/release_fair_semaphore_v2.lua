@@ -19,21 +19,17 @@ local instance_id = ARGV[1]
 local is_holder = redis.call('SISMEMBER', holders_key, instance_id)
 if is_holder == 0 then
     -- Not in holders set - check if holder key exists
-    local exists = redis.call('EXISTS', holder_key)
-    if exists == 1 then
-        -- Holder key exists but not in set - clean it up
-        redis.call('DEL', holder_key)
-        return {255, 'already_expired', redis.call('SCARD', holders_key)}
-    else
-        return {255, 'not_held', redis.call('SCARD', holders_key)}
-    end
+    return {255, 'not_held', redis.call('SCARD', holders_key)}
 end
 
--- Step 2: Get the token from holder key before releasing
+-- Step 2: Get the token from holder key
 local token = redis.call('GET', holder_key)
 if not token then
-    -- Fallback token if somehow missing
-    token = 'token_default'
+    -- the token expired but we are still in the holders set
+    -- this indicates a lost semaphore (e.g. due to TTL expiry)
+    -- remove from holders set and return error
+    redis.call('SREM', holders_key, instance_id)
+    return {255, 'already_expired', redis.call('SCARD', holders_key)}
 end
 
 -- Step 3: Release the semaphore
@@ -44,6 +40,5 @@ redis.call('DEL', holder_key)
 -- This automatically unblocks any waiting BRPOP calls
 redis.call('LPUSH', tokens_key, token)
 
-local new_count = redis.call('SCARD', holders_key)
 
-return {0, 'released', new_count}
+return {0, 'released', redis.call('SCARD', holders_key)}
