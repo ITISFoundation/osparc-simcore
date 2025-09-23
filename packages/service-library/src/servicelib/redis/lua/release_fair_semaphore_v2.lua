@@ -4,6 +4,7 @@
 -- KEYS[3]: holder_key (individual holder TTL key for this instance)
 
 -- ARGV[1]: instance_id
+-- ARGV[2]: passed_token (the token held by this instance or nil if unknown)
 --
 -- Returns: {exit_code, status, current_count}
 -- exit_code: 0 if released, 255 if failed
@@ -14,6 +15,7 @@ local holders_key = KEYS[2]
 local holder_key = KEYS[3]
 
 local instance_id = ARGV[1]
+local passed_token = ARGV[2]
 
 -- Step 1: Check if this instance is currently a holder
 local is_holder = redis.call('SISMEMBER', holders_key, instance_id)
@@ -29,6 +31,11 @@ if not token then
     -- this indicates a lost semaphore (e.g. due to TTL expiry)
     -- remove from holders set and return error
     redis.call('SREM', holders_key, instance_id)
+    -- if the token was passed return it to the pool
+    if passed_token then
+        redis.call('LPUSH', tokens_key, passed_token)
+    end
+    -- Note: we do NOT push a recovered token since we don't know its state
     return {255, 'expired', redis.call('SCARD', holders_key)}
 end
 

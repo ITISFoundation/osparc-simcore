@@ -107,6 +107,8 @@ class DistributedSemaphore(BaseModel):
     release_script: ClassVar[AsyncScript | None] = None
     renew_script: ClassVar[AsyncScript | None] = None
 
+    _token: str | None = None  # currently held token, if any
+
     @classmethod
     def _register_scripts(cls, redis_client: RedisClientSDK) -> None:
         """Register Lua scripts with Redis if not already done.
@@ -258,7 +260,7 @@ class DistributedSemaphore(BaseModel):
         assert tokens_key_token is not None  # nosec
         assert len(tokens_key_token) == 2  # nosec  # noqa: PLR2004
         assert tokens_key_token[0] == self.tokens_key  # nosec
-        token = tokens_key_token[1]
+        self._token = tokens_key_token[1]
 
         # set up the semaphore holder with a TTL
         cls = type(self)
@@ -266,7 +268,7 @@ class DistributedSemaphore(BaseModel):
         result = await cls.acquire_script(  # pylint: disable=not-callable
             keys=[self.holders_set, self.holder_key],
             args=[
-                token,
+                self._token,
                 self.instance_id,
                 ttl_seconds,
             ],
@@ -300,9 +302,12 @@ class DistributedSemaphore(BaseModel):
         # Execute the release Lua script atomically
         cls = type(self)
         assert cls.release_script is not None  # nosec
+        release_args = [self.instance_id]
+        if self._token is not None:
+            release_args.append(self._token)
         result = await cls.release_script(  # pylint: disable=not-callable
             keys=[self.tokens_key, self.holders_set, self.holder_key],
-            args=[self.instance_id],
+            args=release_args,
             client=self.redis_client.redis,
         )
 

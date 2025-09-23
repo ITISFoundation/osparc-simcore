@@ -58,9 +58,9 @@ async def test_semaphore_initialization(
     assert semaphore.blocking is True
     assert semaphore.instance_id is not None
     assert semaphore.semaphore_key == f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}"
-    assert semaphore.holder_key.startswith(
-        f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}:holders:"
-    )
+    assert semaphore.tokens_key.startswith(f"{semaphore.semaphore_key}:")
+    assert semaphore.holders_set.startswith(f"{semaphore.semaphore_key}:")
+    assert semaphore.holder_key.startswith(f"{semaphore.semaphore_key}:")
 
 
 async def test_invalid_semaphore_initialization(
@@ -102,6 +102,28 @@ async def test_invalid_semaphore_initialization(
         )
 
 
+async def _assert_semaphore_redis_state(
+    redis_client_sdk: RedisClientSDK,
+    semaphore: DistributedSemaphore,
+    *,
+    expected_count: int,
+    expected_free_tokens: int,
+    expected_expired: bool = False,
+):
+    """Helper to assert the internal Redis state of the semaphore"""
+    holders = await redis_client_sdk.redis.smembers(semaphore.holders_set)
+    assert len(holders) == expected_count
+    if expected_count > 0:
+        assert semaphore.instance_id in holders
+        holder_key_exists = await redis_client_sdk.redis.exists(semaphore.holder_key)
+        if expected_expired:
+            assert holder_key_exists == 0
+        else:
+            assert holder_key_exists == 1
+    tokens = await redis_client_sdk.redis.lrange(semaphore.tokens_key, 0, -1)
+    assert len(tokens) == expected_free_tokens
+
+
 async def test_semaphore_acquire_release_basic(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
@@ -119,6 +141,12 @@ async def test_semaphore_acquire_release_basic(
     assert await semaphore.current_count() == 0
     assert await semaphore.size() == semaphore_capacity
     assert await semaphore.is_acquired() is False
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=0,
+        expected_free_tokens=semaphore_capacity,
+    )
 
     # Acquire
     result = await semaphore.acquire()
@@ -126,6 +154,12 @@ async def test_semaphore_acquire_release_basic(
     assert await semaphore.current_count() == 1
     assert await semaphore.size() == semaphore_capacity - 1
     assert await semaphore.is_acquired() is True
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=1,
+        expected_free_tokens=semaphore_capacity - 1,
+    )
 
     # Acquire again on same instance should return True immediately and keep the same count (reentrant)
     result = await semaphore.acquire()
@@ -133,18 +167,36 @@ async def test_semaphore_acquire_release_basic(
     assert await semaphore.current_count() == 1
     assert await semaphore.size() == semaphore_capacity - 1
     assert await semaphore.is_acquired() is True
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=1,
+        expected_free_tokens=semaphore_capacity - 1,
+    )
 
     # reacquire should just work
     await semaphore.reacquire()
     assert await semaphore.current_count() == 1
     assert await semaphore.size() == semaphore_capacity - 1
     assert await semaphore.is_acquired() is True
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=1,
+        expected_free_tokens=semaphore_capacity - 1,
+    )
 
     # Release
     await semaphore.release()
     assert await semaphore.current_count() == 0
     assert await semaphore.size() == semaphore_capacity
     assert await semaphore.is_acquired() is False
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=0,
+        expected_free_tokens=semaphore_capacity,
+    )
 
     # reacquire after release should fail
     with pytest.raises(
@@ -152,6 +204,12 @@ async def test_semaphore_acquire_release_basic(
         match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
     ):
         await semaphore.reacquire()
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=0,
+        expected_free_tokens=semaphore_capacity,
+    )
 
     # so does release again
     with pytest.raises(
@@ -159,6 +217,12 @@ async def test_semaphore_acquire_release_basic(
         match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
     ):
         await semaphore.release()
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=0,
+        expected_free_tokens=semaphore_capacity,
+    )
 
 
 async def test_semaphore_acquire_release_with_ttl_expiry(
@@ -176,8 +240,22 @@ async def test_semaphore_acquire_release_with_ttl_expiry(
     await semaphore.acquire()
     assert await semaphore.current_count() == 1
     assert await semaphore.size() == semaphore_capacity - 1
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=1,
+        expected_free_tokens=semaphore_capacity - 1,
+    )
+
     # wait for TTL to expire
     await asyncio.sleep(with_short_default_semaphore_ttl.total_seconds() + 0.1)
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=1,
+        expected_free_tokens=semaphore_capacity - 1,
+        expected_expired=True,
+    )
 
     # TTL expired, reacquire should fail
     with pytest.raises(
@@ -185,12 +263,25 @@ async def test_semaphore_acquire_release_with_ttl_expiry(
         match=f"Semaphore '{semaphore_name}' was lost by this instance",
     ):
         await semaphore.reacquire()
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=1,
+        expected_free_tokens=semaphore_capacity - 1,
+        expected_expired=True,
+    )
     # and release should also fail
     with pytest.raises(
         SemaphoreLostError,
         match=f"Semaphore '{semaphore_name}' was lost by this instance",
     ):
         await semaphore.release()
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=0,
+        expected_free_tokens=semaphore_capacity,
+    )
 
 
 async def test_semaphore_context_manager(
