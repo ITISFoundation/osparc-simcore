@@ -459,37 +459,6 @@ async def test_context_manager_basic_functionality(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
-    call_count = 0
-
-    @with_limited_concurrency_cm(
-        redis_client_sdk,
-        key=semaphore_name,
-        capacity=1,
-    )
-    @asynccontextmanager
-    async def limited_context_manager():
-        nonlocal call_count
-        call_count += 1
-        yield call_count
-
-    # Multiple concurrent context managers
-    async def use_context_manager() -> int:
-        async with limited_context_manager() as value:
-            await asyncio.sleep(0.1)
-            return value
-
-    tasks = [asyncio.create_task(use_context_manager()) for _ in range(3)]
-    results = await asyncio.gather(*tasks)
-
-    # All should complete successfully
-    assert len(results) == 3
-    assert all(isinstance(r, int) for r in results)
-
-
-async def test_context_manager_capacity_enforcement(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-):
     concurrent_count = 0
     max_concurrent = 0
 
@@ -510,13 +479,17 @@ async def test_context_manager_capacity_enforcement(
         finally:
             concurrent_count -= 1
 
-    async def use_context_manager() -> None:
+    async def use_context_manager() -> int:
         async with limited_context_manager():
             await asyncio.sleep(0.1)
+            return 1
 
     # Start concurrent context managers
     tasks = [asyncio.create_task(use_context_manager()) for _ in range(20)]
-    await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks)
+    # All should complete successfully
+    assert len(results) == 20
+    assert all(isinstance(r, int) for r in results)
 
     # Should never exceed capacity of 2
     assert max_concurrent <= 2
