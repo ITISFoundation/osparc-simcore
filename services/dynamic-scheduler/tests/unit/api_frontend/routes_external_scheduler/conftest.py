@@ -13,7 +13,7 @@ _MODULE: Final["str"] = (
 
 @pytest.fixture
 def use_internal_scheduler() -> bool:
-    return True
+    return False
 
 
 @pytest.fixture
