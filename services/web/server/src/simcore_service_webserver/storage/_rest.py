@@ -39,6 +39,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.celery.models import OwnerMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size as remote_compute_path_size,
@@ -210,9 +211,11 @@ async def compute_path_size(request: web.Request) -> web.Response:
         rabbitmq_rpc_client,
         location_id=path_params.location_id,
         path=path_params.path,
-        owner_metadata=WebServerOwnerMetadata(
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
         ),
         user_id=req_ctx.user_id,
     )
@@ -236,9 +239,11 @@ async def batch_delete_paths(request: web.Request):
         rabbitmq_rpc_client,
         location_id=path_params.location_id,
         paths=body.paths,
-        owner_metadata=WebServerOwnerMetadata(
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
         ),
         user_id=req_ctx.user_id,
     )
@@ -504,9 +509,11 @@ async def export_data(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         paths_to_export=export_data_post.paths,
         export_as="path",
-        owner_metadata=WebServerOwnerMetadata(
-            user_id=_req_ctx.user_id,
-            product_name=_req_ctx.product_name,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            ).model_dump()
         ),
         user_id=_req_ctx.user_id,
     )

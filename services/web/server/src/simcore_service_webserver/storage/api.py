@@ -23,6 +23,7 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.celery.models import OwnerMetadata
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     AsyncJobComposedResult,
@@ -119,9 +120,11 @@ async def copy_data_folders_from_project(
             rabbitmq_client,
             method_name="copy_folders_from_project",
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            owner_metadata=WebServerOwnerMetadata(
-                user_id=user_id,
-                product_name=product_name,
+            owner_metadata=OwnerMetadata.model_validate(
+                WebServerOwnerMetadata(
+                    user_id=user_id,
+                    product_name=product_name,
+                ).model_dump()
             ),
             body=TypeAdapter(FoldersBody).validate_python(
                 {
