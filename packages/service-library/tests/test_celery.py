@@ -144,7 +144,7 @@ def test_owner_metadata_serialize_deserialize(test_owner_metadata):
     test_owner_metadata = _TestOwnerMetadata.model_validate(test_owner_metadata)
     data = test_owner_metadata.model_dump()
     deserialized_data = OwnerMetadata.model_validate(data)
-    assert len(_TestOwnerMetadata.model_fields) == len(
+    assert len(_TestOwnerMetadata.model_fields) > len(
         OwnerMetadata.model_fields
     )  # ensure extra data is available in _TestOwnerMetadata -> needed for RPC
     assert deserialized_data.model_dump() == data
