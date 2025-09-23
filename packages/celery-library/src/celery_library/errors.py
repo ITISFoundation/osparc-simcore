@@ -31,4 +31,4 @@ class TaskSubmissionError(OsparcErrorMixin, Exception):
 
 
 class TaskNotFoundError(OsparcErrorMixin, Exception):
-    msg_template = "Task with key '{task_key}' was not found"
+    msg_template = "Task with uuid '{task_uuid}' and owner_metadata '{owner_metadata}' was not found"

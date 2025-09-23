@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 
+import json
 from collections.abc import Callable
 
 import pytest
@@ -51,7 +52,11 @@ async def create_mock_task_manager(
         )
         for state in list(TaskState)
     ]
-    + [TaskNotFoundError(task_key=_faker.uuid4())],
+    + [
+        TaskNotFoundError(
+            task_uuid=_faker.uuid4(), owner_metadata=json.dumps({"owner": "test-owner"})
+        )
+    ],
 )
 @pytest.mark.parametrize("job_creation_task_id", [_faker.uuid4(), None])
 async def test_celery_status_conversion(

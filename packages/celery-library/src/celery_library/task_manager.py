@@ -95,7 +95,9 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_key):
-                raise TaskNotFoundError(task_key=task_key)
+                raise TaskNotFoundError(
+                    task_uuid=task_uuid, owner_metadata=owner_metadata
+                )
 
             await self._task_info_store.remove_task(task_key)
             await self._forget_task(task_key)
@@ -117,7 +119,9 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_key):
-                raise TaskNotFoundError(task_key=task_key)
+                raise TaskNotFoundError(
+                    task_uuid=task_uuid, owner_metadata=owner_metadata
+                )
 
             async_result = self._celery_app.AsyncResult(task_key)
             result = async_result.result
@@ -160,7 +164,9 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_key):
-                raise TaskNotFoundError(task_key=task_key)
+                raise TaskNotFoundError(
+                    task_uuid=task_uuid, owner_metadata=owner_metadata
+                )
 
             task_state = await self._get_task_celery_state(task_key)
             return TaskStatus(
