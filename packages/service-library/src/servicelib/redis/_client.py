@@ -78,6 +78,7 @@ class RedisClientSDK:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
             assert self._started_event_task_health_check  # nosec
+            assert self._cancelled_event_task_health_check  # nosec
             self._started_event_task_health_check.set()
             self._is_healthy = await self.ping()
             if self._cancelled_event_task_health_check.is_set():
@@ -103,6 +104,7 @@ class RedisClientSDK:
             if self._task_health_check:
                 assert self._started_event_task_health_check  # nosec
                 await self._started_event_task_health_check.wait()
+                assert self._cancelled_event_task_health_check  # nosec
                 self._cancelled_event_task_health_check.set()
                 await cancel_wait_task(self._task_health_check, max_delay=None)
 
