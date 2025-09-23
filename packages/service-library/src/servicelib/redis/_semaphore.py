@@ -310,6 +310,7 @@ class DistributedSemaphore(BaseModel):
             args=release_args,
             client=self.redis_client.redis,
         )
+        self._token = None
 
         assert isinstance(result, list)  # nosec
         exit_code, status, current_count = result
