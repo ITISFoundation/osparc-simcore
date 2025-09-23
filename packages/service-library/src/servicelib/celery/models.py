@@ -68,7 +68,7 @@ class OwnerMetadata(BaseModel):
             if any(x in key for x in _FORBIDDEN_KEY_CHARS):
                 raise ValueError(f"Invalid filter key: '{key}'")
             # forbidden value chars
-            if any(x in f"{value}" for x in _FORBIDDEN_VALUE_CHARS):
+            if any(x in json_dumps(value) for x in _FORBIDDEN_VALUE_CHARS):
                 raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
 
         if _TASK_UUID_KEY in self.model_dump():
