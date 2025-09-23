@@ -354,11 +354,23 @@ async def test_semaphore_multiple_instances_capacity_limit(
     await semaphores[2].release()
 
 
+@pytest.fixture
+def with_slow_redis_socket_timeout(
+    mock_redis_socket_timeout: None, mocker: MockerFixture
+) -> None:
+    # put back to higher value to allow normal operations
+    mocker.patch(
+        "servicelib.redis._client.DEFAULT_SOCKET_TIMEOUT",
+        datetime.timedelta(seconds=30),
+    )
+
+
 async def test_semaphore_with_timeout(
+    with_slow_redis_socket_timeout,
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
-    timeout = datetime.timedelta(seconds=0.5)
+    timeout = datetime.timedelta(seconds=1)
     semaphore1 = DistributedSemaphore(
         redis_client=redis_client_sdk,
         key=semaphore_name,

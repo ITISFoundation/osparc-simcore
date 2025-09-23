@@ -21,14 +21,10 @@ from pydantic import (
 )
 from redis.commands.core import AsyncScript
 from tenacity import (
-    RetryError,
     retry,
     retry_if_exception_type,
-    stop_after_delay,
-    stop_never,
     wait_random_exponential,
 )
-from tenacity.stop import stop_base
 
 from ..background_task import periodic
 from ._client import RedisClientSDK
@@ -195,6 +191,55 @@ class DistributedSemaphore(BaseModel):
             client=self.redis_client.redis,
         )
 
+    async def _blocking_acquire(self) -> str | None:
+        @retry(
+            wait=wait_random_exponential(min=0.1, max=0.5),
+            retry=retry_if_exception_type(redis.exceptions.TimeoutError),
+        )
+        async def _acquire_forever_on_socket_timeout() -> list[str] | None:
+            # NOTE: brpop returns None on timeout
+
+            tokens_key_token: list[str] | None = await handle_redis_returns_union_types(
+                self.redis_client.redis.brpop(
+                    [self.tokens_key],
+                    timeout=None,  # NOTE: we always block forever since tenacity takes care of timing out
+                )
+            )
+            return tokens_key_token
+
+        try:
+            # NOTE: redis-py library timeouts when the defined socket timeout triggers (e.g. DEFAULT_SOCKET_TIMEOUT)
+            # The BRPOP command itself could timeout but the redis-py socket timeout defeats the purpose
+            # so we always block forever on BRPOP, tenacity takes care of retrying when a socket timeout happens
+            # and we use asyncio.timeout to enforce the blocking_timeout if defined
+            async with asyncio.timeout(
+                self.blocking_timeout.total_seconds() if self.blocking_timeout else None
+            ):
+                tokens_key_token = await _acquire_forever_on_socket_timeout()
+            assert tokens_key_token is not None  # nosec
+            assert len(tokens_key_token) == 2  # nosec  # noqa: PLR2004
+            assert tokens_key_token[0] == self.tokens_key  # nosec
+            return tokens_key_token[1]
+        except TimeoutError as e:
+            raise SemaphoreAcquisitionError(
+                name=self.key, instance_id=self.instance_id
+            ) from e
+
+    async def _non_blocking_acquire(self) -> str | None:
+        token: str | list[str] | None = await handle_redis_returns_union_types(
+            self.redis_client.redis.rpop(self.tokens_key)
+        )
+        if token is None:
+            _logger.debug(
+                "Semaphore '%s' not acquired (no tokens available) (instance: %s)",
+                self.key,
+                self.instance_id,
+            )
+            return None
+
+        assert isinstance(token, str)  # nosec
+        return token
+
     async def acquire(self) -> bool:
         """
         Acquire the semaphore.
@@ -217,60 +262,14 @@ class DistributedSemaphore(BaseModel):
 
         ttl_seconds = self.ttl.total_seconds()
 
-        # Determine retry stop condition based on blocking configuration
-        stop_condition: stop_base = stop_after_delay(0)
-        if self.blocking:
-            stop_condition = (
-                stop_after_delay(self.blocking_timeout)
-                if self.blocking_timeout
-                else stop_never
-            )
+        if self.blocking is False:
+            self._token = await self._non_blocking_acquire()
+            if not self._token:
+                return False
+        else:
+            self._token = await self._blocking_acquire()
 
-        try:
-
-            @retry(
-                stop=stop_condition,
-                wait=wait_random_exponential(min=0.1, max=0.5),
-                retry=retry_if_exception_type(redis.exceptions.TimeoutError),
-            )
-            async def _try_acquire() -> list[str] | None:
-                # NOTE: brpop returns None on timeout
-                # NOTE: redis-py library timeouts when the socket times out which is defined
-                # elsewhere on the client (e.g. DEFAULT_SOCKET_TIMEOUT)
-                # we always block forever since tenacity takes care of timing out
-                # therefore we can distinguish between a proper timeout (returns None) and a socket
-                # timeout (raises an exception)
-
-                tokens_key_token: list[str] | None = (
-                    await handle_redis_returns_union_types(
-                        self.redis_client.redis.brpop(
-                            [self.tokens_key],
-                            timeout=None,  # NOTE: we always block forever since tenacity takes care of timing out
-                        )
-                    )
-                )
-                return tokens_key_token
-
-            tokens_key_token = await _try_acquire()
-        except RetryError as e:
-            # NOTE: if we end up here that means we could not acquire the semaphore
-            _logger.debug(
-                "Timeout acquiring semaphore '%s' (instance: %s)",
-                self.key,
-                self.instance_id,
-            )
-            if self.blocking:
-                raise SemaphoreAcquisitionError(
-                    name=self.key, instance_id=self.instance_id
-                ) from e
-            return False
-
-        # If we got here it means we acquired a token
-        assert tokens_key_token is not None  # nosec
-        assert len(tokens_key_token) == 2  # nosec  # noqa: PLR2004
-        assert tokens_key_token[0] == self.tokens_key  # nosec
-        self._token = tokens_key_token[1]
-
+        assert self._token is not None  # nosec
         # set up the semaphore holder with a TTL
         cls = type(self)
         assert cls.acquire_script is not None  # nosec
