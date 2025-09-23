@@ -23,7 +23,7 @@ if tokens_exist == 0 and holders_exist == 0 then
         redis.call('LPUSH', tokens_key, 'token_' .. i)
     end
     -- Set expiry on tokens list to prevent infinite growth
-    -- redis.call('EXPIRE', tokens_key, ttl_seconds)
+    redis.call('EXPIRE', tokens_key, ttl_seconds)
 end
 
 return 0

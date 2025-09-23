@@ -157,6 +157,18 @@ class DistributedSemaphore(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
+    def holders_set_ttl(self) -> datetime.timedelta:
+        """TTL for the holders SET"""
+        return self.ttl * 5
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def tokens_set_ttl(self) -> datetime.timedelta:
+        """TTL for the tokens SET"""
+        return self.ttl * 5
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def holder_key(self) -> str:
         """Redis key for this instance's holder entry."""
         return f"{SEMAPHORE_KEY_PREFIX}{self.key}:holders:{self.instance_id}"
@@ -181,12 +193,11 @@ class DistributedSemaphore(BaseModel):
 
     async def _ensure_semaphore_initialized(self) -> None:
         """Initializes the semaphore in Redis if not already done."""
-        ttl_seconds = self.ttl.total_seconds()
         cls = type(self)
         assert cls.register_semaphore is not None  # nosec
         await cls.register_semaphore(  # pylint: disable=not-callable
             keys=[self.tokens_key, self.holders_set],
-            args=[self.capacity, ttl_seconds],
+            args=[self.capacity, self.holders_set_ttl.total_seconds()],
             client=self.redis_client.redis,
         )
 
@@ -259,8 +270,6 @@ class DistributedSemaphore(BaseModel):
             )
             return True
 
-        ttl_seconds = self.ttl.total_seconds()
-
         if self.blocking is False:
             self._token = await self._non_blocking_acquire()
             if not self._token:
@@ -277,7 +286,8 @@ class DistributedSemaphore(BaseModel):
             args=[
                 self._token,
                 self.instance_id,
-                ttl_seconds,
+                self.ttl.total_seconds(),
+                self.holders_set_ttl.total_seconds(),
             ],
             client=self.redis_client.redis,
         )
@@ -361,8 +371,13 @@ class DistributedSemaphore(BaseModel):
         cls = type(self)
         assert cls.renew_script is not None  # nosec
         result = await cls.renew_script(  # pylint: disable=not-callable
-            keys=[self.holders_set, self.holder_key],
-            args=[self.instance_id, ttl_seconds],
+            keys=[self.holders_set, self.holder_key, self.tokens_key],
+            args=[
+                self.instance_id,
+                ttl_seconds,
+                self.holders_set_ttl.total_seconds(),
+                self.tokens_set_ttl.total_seconds(),
+            ],
             client=self.redis_client.redis,
         )
 
