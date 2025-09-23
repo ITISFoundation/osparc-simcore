@@ -51,7 +51,7 @@ async def create_mock_task_manager(
         )
         for state in list(TaskState)
     ]
-    + [TaskNotFoundError(task_id=_faker.uuid4())],
+    + [TaskNotFoundError(task_key=_faker.uuid4())],
 )
 @pytest.mark.parametrize("job_creation_task_id", [_faker.uuid4(), None])
 async def test_celery_status_conversion(

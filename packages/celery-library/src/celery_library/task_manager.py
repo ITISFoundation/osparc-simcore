@@ -65,7 +65,7 @@ class CeleryTaskManager:
                 self._celery_app.send_task(
                     execution_metadata.name,
                     task_id=task_key,
-                    kwargs={"task_id": task_key} | task_params,
+                    kwargs={"task_key": task_key} | task_params,
                     queue=execution_metadata.queue.value,
                 )
             except CeleryError as exc:
@@ -79,7 +79,7 @@ class CeleryTaskManager:
                     )
                 raise TaskSubmissionError(
                     task_name=execution_metadata.name,
-                    task_id=task_key,
+                    task_key=task_key,
                     task_params=task_params,
                 ) from exc
 
@@ -95,7 +95,7 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_key):
-                raise TaskNotFoundError(task_id=task_key)
+                raise TaskNotFoundError(task_key=task_key)
 
             await self._task_info_store.remove_task(task_key)
             await self._forget_task(task_key)
@@ -117,7 +117,7 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_key):
-                raise TaskNotFoundError(task_id=task_key)
+                raise TaskNotFoundError(task_key=task_key)
 
             async_result = self._celery_app.AsyncResult(task_key)
             result = async_result.result
@@ -160,7 +160,7 @@ class CeleryTaskManager:
         ):
             task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_key):
-                raise TaskNotFoundError(task_id=task_key)
+                raise TaskNotFoundError(task_key=task_key)
 
             task_state = await self._get_task_celery_state(task_key)
             return TaskStatus(
