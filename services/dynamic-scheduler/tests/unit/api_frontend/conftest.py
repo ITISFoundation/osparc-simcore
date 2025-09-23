@@ -33,6 +33,11 @@ def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+def use_internal_scheduler() -> bool:
+    pytest.fail("please define use_internal_scheduler fixture in your tests folder")
+
+
+@pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
