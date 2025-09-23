@@ -8,7 +8,6 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.celery.plugin import setup_celery
 
 from ._meta import (
     WELCOME_AUTH_APP_MSG,
@@ -22,6 +21,7 @@ from .announcements.plugin import setup_announcements
 from .api_keys.plugin import setup_api_keys
 from .application_settings import get_application_settings, setup_settings
 from .catalog.plugin import setup_catalog
+from .celery.plugin import setup_celery
 from .collaboration.bootstrap import (
     setup_realtime_collaboration,
 )
