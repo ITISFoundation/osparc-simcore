@@ -12,6 +12,7 @@ from servicelib.celery.models import (
     TASK_DONE_STATES,
     Task,
     TaskEvent,
+    TaskEventID,
     TaskFilter,
     TaskID,
     TaskInfoStore,
@@ -193,7 +194,7 @@ class CeleryTaskManager:
         task_filter: TaskFilter,
         task_uuid: TaskUUID,
         last_id: str | None = None,
-    ) -> AsyncIterator[TaskEvent]:
+    ) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]:
         task_id = task_filter.create_task_id(task_uuid=task_uuid)
         async for event in self._task_info_store.consume_task_events(
             task_id=task_id, last_id=last_id
