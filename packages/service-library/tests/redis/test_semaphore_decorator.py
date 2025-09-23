@@ -361,6 +361,7 @@ async def test_cancelled_error_preserved(
 
 @pytest.mark.heavy_load
 async def test_with_large_capacity(
+    with_slow_redis_socket_timeout: None,
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
@@ -377,16 +378,18 @@ async def test_with_large_capacity(
         blocking=True,
         blocking_timeout=None,
     )
-    async def limited_function() -> None:
+    async def limited_function(task_id: int) -> None:
         nonlocal concurrent_count, max_concurrent
         concurrent_count += 1
         max_concurrent = max(max_concurrent, concurrent_count)
-        with log_context(logging.INFO, f"task with {concurrent_count=}"):
+        with log_context(logging.INFO, f"{task_id=}") as ctx:
+            ctx.logger.info("started %s with %s", task_id, concurrent_count)
             await asyncio.sleep(sleep_time_s)
+            ctx.logger.info("done %s with %s", task_id, concurrent_count)
         concurrent_count -= 1
 
     # Start tasks equal to the large capacity
-    tasks = [asyncio.create_task(limited_function()) for _ in range(num_tasks)]
+    tasks = [asyncio.create_task(limited_function(i)) for i in range(num_tasks)]
     done, pending = await asyncio.wait(
         tasks,
         timeout=float(num_tasks) / float(large_capacity) * 10.0 * float(sleep_time_s),
