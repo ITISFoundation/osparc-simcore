@@ -466,9 +466,9 @@ async def distributed_semaphore(  # noqa: C901
     ) -> None:
         if cancellation_event.is_set():
             raise asyncio.CancelledError
-        await semaphore.reacquire()
         if not started.is_set():
             started.set()
+        await semaphore.reacquire()
 
     lock_acquisition_time = None
     try:
