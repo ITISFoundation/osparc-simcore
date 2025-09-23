@@ -35,7 +35,7 @@ pytest_simcore_ops_services_selection = [
 def with_short_default_semaphore_ttl(
     mocker: MockerFixture,
 ) -> datetime.timedelta:
-    short_ttl = datetime.timedelta(seconds=1)
+    short_ttl = datetime.timedelta(seconds=2)
     mocker.patch(
         "servicelib.redis._semaphore.DEFAULT_SEMAPHORE_TTL",
         short_ttl,
