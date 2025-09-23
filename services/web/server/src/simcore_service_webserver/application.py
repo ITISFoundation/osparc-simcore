@@ -8,7 +8,7 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.celery import setup_celery
+from simcore_service_webserver.celery.plugin import setup_celery
 
 from ._meta import (
     WELCOME_AUTH_APP_MSG,
