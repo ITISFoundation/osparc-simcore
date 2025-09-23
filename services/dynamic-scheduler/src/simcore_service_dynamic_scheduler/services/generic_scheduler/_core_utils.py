@@ -34,9 +34,10 @@ from ._store import (
     Store,
 )
 
-PARALLEL_STATUS_REQUESTS: Final[NonNegativeInt] = 5
-
 _logger = logging.getLogger(__name__)
+
+
+PARALLEL_STATUS_REQUESTS: Final[NonNegativeInt] = 5
 
 
 _IN_PROGRESS_STATUSES: Final[set[StepStatus]] = {
@@ -44,6 +45,12 @@ _IN_PROGRESS_STATUSES: Final[set[StepStatus]] = {
     StepStatus.CREATED,
     StepStatus.RUNNING,
 }
+
+
+def is_operation_in_progress_status(
+    steps_statuses: dict[StepName, StepStatus],
+) -> bool:
+    return any(status in _IN_PROGRESS_STATUSES for status in steps_statuses.values())
 
 
 async def _get_step_status(step_proxy: StepStoreProxy) -> tuple[StepName, StepStatus]:
@@ -63,12 +70,6 @@ async def get_steps_statuses(
         limit=PARALLEL_STATUS_REQUESTS,
     )
     return dict(result)
-
-
-def is_operation_in_progress_status(
-    steps_statuses: dict[StepName, StepStatus],
-) -> bool:
-    return any(status in _IN_PROGRESS_STATUSES for status in steps_statuses.values())
 
 
 async def start_and_mark_as_started(
