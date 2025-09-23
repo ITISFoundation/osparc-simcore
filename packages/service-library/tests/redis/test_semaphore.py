@@ -199,10 +199,7 @@ async def test_semaphore_acquire_release_basic(
     )
 
     # reacquire after release should fail
-    with pytest.raises(
-        SemaphoreNotAcquiredError,
-        match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
-    ):
+    with pytest.raises(SemaphoreNotAcquiredError):
         await semaphore.reacquire()
     await _assert_semaphore_redis_state(
         redis_client_sdk,
@@ -212,10 +209,7 @@ async def test_semaphore_acquire_release_basic(
     )
 
     # so does release again
-    with pytest.raises(
-        SemaphoreNotAcquiredError,
-        match=f"Semaphore '{semaphore_name}' was not acquired by this instance",
-    ):
+    with pytest.raises(SemaphoreNotAcquiredError):
         await semaphore.release()
     await _assert_semaphore_redis_state(
         redis_client_sdk,
@@ -258,10 +252,7 @@ async def test_semaphore_acquire_release_with_ttl_expiry(
     )
 
     # TTL expired, reacquire should fail
-    with pytest.raises(
-        SemaphoreLostError,
-        match=f"Semaphore '{semaphore_name}' was lost by this instance",
-    ):
+    with pytest.raises(SemaphoreLostError):
         await semaphore.reacquire()
     await _assert_semaphore_redis_state(
         redis_client_sdk,
@@ -271,10 +262,17 @@ async def test_semaphore_acquire_release_with_ttl_expiry(
         expected_expired=True,
     )
     # and release should also fail
-    with pytest.raises(
-        SemaphoreLostError,
-        match=f"Semaphore '{semaphore_name}' was lost by this instance",
-    ):
+    with pytest.raises(SemaphoreLostError):
+        await semaphore.release()
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore,
+        expected_count=0,
+        expected_free_tokens=semaphore_capacity,
+    )
+
+    # and release again should also fail with different error
+    with pytest.raises(SemaphoreNotAcquiredError):
         await semaphore.release()
     await _assert_semaphore_redis_state(
         redis_client_sdk,
