@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Final
 
 from models_library.utils.common_validators import (
     MIN_NON_WILDCARD_CHARS,
@@ -15,6 +15,9 @@ from ..api_schemas_storage.storage_schemas import (
 from ..projects_nodes_io import LocationID
 from ..rest_pagination import CursorQueryParameters
 from ._base import InputSchema
+
+MAX_SEARCH_ITEMS_PER_PAGE: Final[int] = 25
+DEFAULT_MAX_SEARCH_ITEMS_PER_PAGE: Final[int] = 50
 
 
 class StorageLocationPathParams(BaseModel):
@@ -57,11 +60,11 @@ class SearchBodyParams(InputSchema):
             description=f"Name pattern with wildcard support {tuple(WILDCARD_CHARS)}. Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
         ),
     ]
-    items_per_page: Annotated[
+    max_items_per_page: Annotated[
         int,
         Field(
-            description="Number of items per page",
+            description="Max number of items per page",
             ge=1,
-            le=MAX_NUMBER_OF_PATHS_PER_PAGE,
+            le=MAX_SEARCH_ITEMS_PER_PAGE,
         ),
-    ] = DEFAULT_NUMBER_OF_PATHS_PER_PAGE
+    ] = DEFAULT_MAX_SEARCH_ITEMS_PER_PAGE

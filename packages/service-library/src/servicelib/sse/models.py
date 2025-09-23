@@ -1,6 +1,16 @@
 from typing import Annotated
 
-from pydantic import BaseModel, BeforeValidator
+from pydantic import BaseModel, BeforeValidator, Field
+
+
+class SSEHeaders(BaseModel):
+    last_event_id: Annotated[
+        str | None,
+        Field(
+            description="Optional last event ID",
+            alias="Last-Event-ID",
+        ),
+    ] = None
 
 
 def _normalize_data(v: str | list[str]) -> list[str]:

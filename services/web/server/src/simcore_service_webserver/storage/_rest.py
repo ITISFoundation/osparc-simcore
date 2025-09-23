@@ -67,9 +67,8 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
 )
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
-from servicelib.sse import SSEEvent
+from servicelib.sse.models import SSEEvent, SSEHeaders
 from simcore_service_webserver.celery import get_task_manager
-from simcore_service_webserver.storage._rest_schemas import StreamHeaders
 from yarl import URL
 
 from .._meta import API_VTAG
@@ -571,7 +570,7 @@ async def search(request: web.Request) -> web.Response:
             product_name=_req_ctx.product_name,
         ),
         name_pattern=search_body.name_pattern,
-        items_per_page=search_body.items_per_page,
+        max_items_per_page=search_body.max_items_per_page,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
@@ -599,7 +598,7 @@ async def stream_search(request: web.Request) -> web.Response:
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
-    header_params = parse_request_headers_as(StreamHeaders, request)
+    header_params = parse_request_headers_as(SSEHeaders, request)
 
     task_manager = get_task_manager(request.app)
     task_filter = get_job_filter(
