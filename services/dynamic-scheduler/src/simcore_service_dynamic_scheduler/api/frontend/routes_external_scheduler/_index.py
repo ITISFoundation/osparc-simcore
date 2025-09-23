@@ -9,8 +9,8 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ....services.service_tracker import TrackedServiceModel, get_all_tracked_services
 from ....services.service_tracker._models import SchedulerServiceState
-from .._render_utils import base_page, get_iso_formatted_date
 from .._utils import get_parent_app, get_settings
+from ._render_utils import base_page, get_iso_formatted_date
 
 router = APIRouter()
 
