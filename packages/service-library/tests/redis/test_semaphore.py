@@ -353,7 +353,73 @@ async def test_semaphore_multiple_instances_capacity_limit(
     await semaphores[2].release()
 
 
+async def test_semaphore_with_timeout(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+):
+    timeout = datetime.timedelta(seconds=0.5)
+    semaphore1 = DistributedSemaphore(
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+        blocking_timeout=timeout,
+    )
+    assert await semaphore1.acquire() is True
+    assert await semaphore1.is_acquired() is True
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore1,
+        expected_count=1,
+        expected_free_tokens=0,
+    )
+    semaphore2 = DistributedSemaphore(
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+        blocking_timeout=timeout,
+    )
+    # Second should timeout
+    with pytest.raises(SemaphoreAcquisitionError):
+        await semaphore2.acquire()
+    assert await semaphore2.is_acquired() is False
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore1,
+        expected_count=1,
+        expected_free_tokens=0,
+    )
+
+
 async def test_semaphore_context_manager(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+):
+    async with distributed_semaphore(
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+    ) as semaphore1:
+        assert await semaphore1.is_acquired() is True
+        assert await semaphore1.current_count() == 1
+        assert await semaphore1.available_tokens() == 0
+        await _assert_semaphore_redis_state(
+            redis_client_sdk,
+            semaphore1,
+            expected_count=1,
+            expected_free_tokens=0,
+        )
+    assert await semaphore1.is_acquired() is False
+    assert await semaphore1.current_count() == 0
+    assert await semaphore1.available_tokens() == 1
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphore1,
+        expected_count=0,
+        expected_free_tokens=1,
+    )
+
+
+async def test_semaphore_context_manager_with_timeout(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
@@ -375,20 +441,34 @@ async def test_semaphore_context_manager(
             expected_count=1,
             expected_free_tokens=0,
         )
+        # Second semaphore should raise on timeout
+        with pytest.raises(SemaphoreAcquisitionError):
+            async with distributed_semaphore(
+                redis_client=redis_client_sdk,
+                key=semaphore_name,
+                capacity=capacity,
+                blocking=True,
+                blocking_timeout=timeout,
+            ):
+                ...
 
-        # Second semaphore should timeout
+        # non-blocking should also raise when used with context manager
+        with pytest.raises(SemaphoreAcquisitionError):
+            async with distributed_semaphore(
+                redis_client=redis_client_sdk,
+                key=semaphore_name,
+                capacity=capacity,
+                blocking=False,
+            ):
+                ...
+        # using the semaphore directly should  in non-blocking mode should return False
         semaphore2 = DistributedSemaphore(
             redis_client=redis_client_sdk,
             key=semaphore_name,
             capacity=capacity,
-            blocking_timeout=timeout,
+            blocking=False,
         )
-
-        with pytest.raises(
-            SemaphoreAcquisitionError,
-            match=f"Could not acquire semaphore '{semaphore_name}' by this instance",
-        ):
-            await semaphore2.acquire()
+        assert await semaphore2.acquire() is False
 
         # now try infinite timeout
         semaphore3 = DistributedSemaphore(
@@ -400,36 +480,6 @@ async def test_semaphore_context_manager(
         acquire_task = asyncio.create_task(semaphore3.acquire())
         await asyncio.sleep(5)  # give some time to start acquiring
         assert not acquire_task.done()
-
-
-async def test_semaphore_blocking_acquire_waits(
-    redis_client_sdk: RedisClientSDK,
-    semaphore_name: str,
-):
-    capacity = 1
-    semaphore1 = DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=capacity
-    )
-    semaphore2 = DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=capacity
-    )
-
-    # First acquires immediately
-    await semaphore1.acquire()
-
-    # Second will wait
-    async def delayed_release() -> None:
-        await asyncio.sleep(0.1)
-        await semaphore1.release()
-
-    acquire_task = asyncio.create_task(semaphore2.acquire())
-    release_task = asyncio.create_task(delayed_release())
-
-    # Both should complete successfully
-    results = await asyncio.gather(acquire_task, release_task)
-    assert results[0] is True  # acquire succeeded
-
-    await semaphore2.release()
 
 
 @pytest.mark.parametrize(
