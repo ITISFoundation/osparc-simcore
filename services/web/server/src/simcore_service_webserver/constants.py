@@ -17,10 +17,11 @@ if TYPE_CHECKING:
     # Application settings key - defined here to avoid circular imports
     from .application_settings import ApplicationSettings
 
-
-APP_SETTINGS_KEY: web.AppKey[ApplicationSettings] = web.AppKey(
-    "APP_SETTINGS_KEY", "ApplicationSettings"  # Use string to avoid import
-)
+    APP_SETTINGS_KEY: web.AppKey[ApplicationSettings] = web.AppKey(
+        "APP_SETTINGS_KEY", ApplicationSettings
+    )
+else:
+    APP_SETTINGS_KEY: web.AppKey = web.AppKey("APP_SETTINGS_KEY", None)
 
 
 # Application storage keys
