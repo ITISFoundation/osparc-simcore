@@ -107,7 +107,7 @@ class OwnerMetadata(BaseModel):
     def get_task_uuid(cls, task_id: TaskKey) -> TaskUUID:
         data = cls._deserialize_task_key(task_id)
         try:
-            uuid_string = data[_TASK_UUID_KEY]
+            uuid_string = data.get(_TASK_UUID_KEY)
             if not isinstance(uuid_string, str):
                 raise ValueError(f"Invalid task_id format: {task_id}")
             return TaskUUID(uuid_string)
