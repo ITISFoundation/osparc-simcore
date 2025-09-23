@@ -329,7 +329,7 @@ class DistributedSemaphore(BaseModel):
         )
         if status == "not_held":
             raise SemaphoreNotAcquiredError(name=self.key, instance_id=self.instance_id)
-        assert status == "already_expired"  # nosec
+        assert status == "expired"  # nosec
         raise SemaphoreLostError(name=self.key, instance_id=self.instance_id)
 
     async def reacquire(self) -> None:

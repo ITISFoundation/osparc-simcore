@@ -7,7 +7,7 @@
 --
 -- Returns: {exit_code, status, current_count}
 -- exit_code: 0 if released, 255 if failed
--- status: 'released', 'not_held', or 'already_expired'
+-- status: 'released', 'not_held', or 'expired'
 
 local tokens_key = KEYS[1]
 local holders_key = KEYS[2]
@@ -29,7 +29,7 @@ if not token then
     -- this indicates a lost semaphore (e.g. due to TTL expiry)
     -- remove from holders set and return error
     redis.call('SREM', holders_key, instance_id)
-    return {255, 'already_expired', redis.call('SCARD', holders_key)}
+    return {255, 'expired', redis.call('SCARD', holders_key)}
 end
 
 -- Step 3: Release the semaphore
