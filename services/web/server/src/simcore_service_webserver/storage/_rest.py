@@ -9,6 +9,7 @@ from typing import Annotated, Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
 )
@@ -613,7 +614,7 @@ async def stream_search(request: web.Request) -> web.Response:
             last_id=header_params.last_event_id,
         ):
             yield SSEEvent(
-                id=event_id, event=event.type, data=event.model_dump_json()
+                id=event_id, event=event.type, data=[json_dumps(event.data)]
             ).serialize()
             if event.type == "status" and getattr(event, "data", None) in (
                 "done",
