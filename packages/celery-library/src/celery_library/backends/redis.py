@@ -86,7 +86,7 @@ class RedisTaskInfoStore:
             return None
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
-        search_key = _CELERY_TASK_INFO_PREFIX + owner_metadata.model_dump_task_id(
+        search_key = _CELERY_TASK_INFO_PREFIX + owner_metadata.model_dump_task_key(
             task_uuid=WILDCARD
         )
 

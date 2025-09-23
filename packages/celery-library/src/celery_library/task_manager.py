@@ -50,7 +50,7 @@ class CeleryTaskManager:
             msg=f"Submit {execution_metadata.name=}: {owner_metadata=} {task_params=}",
         ):
             task_uuid = uuid4()
-            task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+            task_id = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
 
             expiry = (
                 self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
@@ -93,7 +93,7 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"task cancellation: {owner_metadata=} {task_uuid=}",
         ):
-            task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+            task_id = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_id):
                 raise TaskNotFoundError(task_id=task_id)
 
@@ -115,7 +115,7 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Get task result: {owner_metadata=} {task_uuid=}",
         ):
-            task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+            task_id = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_id):
                 raise TaskNotFoundError(task_id=task_id)
 
@@ -158,7 +158,7 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Getting task status: {owner_metadata=} {task_uuid=}",
         ):
-            task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+            task_id = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_id):
                 raise TaskNotFoundError(task_id=task_id)
 

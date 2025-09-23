@@ -62,7 +62,7 @@ async def test_task_filter_sorting_key_not_serialized():
     expected_key = ":".join(
         [f"{k}={json_dumps(v)}" for k, v in sorted(copy_owner_metadata.items())]
     )
-    assert owner_metadata.model_dump_task_id(task_uuid=task_uuid) == expected_key
+    assert owner_metadata.model_dump_task_key(task_uuid=task_uuid) == expected_key
 
 
 async def test_task_filter_task_uuid(
@@ -70,7 +70,7 @@ async def test_task_filter_task_uuid(
 ):
     task_filter = _TestOwnerMetadata.model_validate(test_owner_metadata)
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = task_filter.model_dump_task_id(task_uuid)
+    task_id = task_filter.model_dump_task_key(task_uuid)
     assert OwnerMetadata.get_task_uuid(task_id=task_id) == task_uuid
 
 
@@ -100,8 +100,8 @@ async def test_owner_metadata_task_id_dump_and_validate():
         list_s=["a", "b"],
     )
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = mymodel.model_dump_task_id(task_uuid)
-    mymodel_recreated = MyModel.model_validate_task_id(task_id=task_id)
+    task_id = mymodel.model_dump_task_key(task_uuid)
+    mymodel_recreated = MyModel.model_validate_task_key(task_id=task_id)
     assert mymodel_recreated == mymodel
 
 
