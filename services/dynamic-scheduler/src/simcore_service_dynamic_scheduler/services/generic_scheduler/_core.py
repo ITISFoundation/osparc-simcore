@@ -366,49 +366,41 @@ class Core:
 
         # 3) advancing operation in mode
         step_group_name = step_group.get_step_group_name(index=group_index)
-
-        def _log_as_mode(mode: str) -> None:
-            _logger.debug(
-                "%s step_group_name='%s' in operation_name='%s' for schedule_id='%s'",
-                mode,
-                step_group_name,
-                operation_name,
-                schedule_id,
-            )
+        base_message = f"{step_group_name=} in {operation_name=} for {schedule_id=}"
 
         if step_group.repeat_steps is True and is_creating:
-            _log_as_mode("REPEATING")
-            await self._advance_as_repeating(
-                schedule_data_proxy,
-                schedule_id,
-                operation_name,
-                group_index,
-                step_group,
-                group_step_proxies,
-            )
+            with log_context(_logger, logging.DEBUG, f"REPEATING {base_message}"):
+                await self._advance_as_repeating(
+                    schedule_data_proxy,
+                    schedule_id,
+                    operation_name,
+                    group_index,
+                    step_group,
+                    group_step_proxies,
+                )
 
         elif is_creating:
-            _log_as_mode("CREATING")
-            await self._advance_as_creating(
-                steps_statuses,
-                schedule_data_proxy,
-                schedule_id,
-                operation_name,
-                group_index,
-                step_group,
-                operation,
-            )
+            with log_context(_logger, logging.DEBUG, f"CREATING {base_message}"):
+                await self._advance_as_creating(
+                    steps_statuses,
+                    schedule_data_proxy,
+                    schedule_id,
+                    operation_name,
+                    group_index,
+                    step_group,
+                    operation,
+                )
 
         else:
-            _log_as_mode("REVERTING")
-            await self._advance_as_reverting(
-                steps_statuses,
-                schedule_data_proxy,
-                schedule_id,
-                operation_name,
-                group_index,
-                step_group,
-            )
+            with log_context(_logger, logging.DEBUG, f"REVERTING {base_message}"):
+                await self._advance_as_reverting(
+                    steps_statuses,
+                    schedule_data_proxy,
+                    schedule_id,
+                    operation_name,
+                    group_index,
+                    step_group,
+                )
 
     async def _advance_as_repeating(
         self,
