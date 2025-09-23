@@ -408,7 +408,7 @@ class DistributedSemaphore(BaseModel):
             self.redis_client.redis.scard(self.holders_set)
         )
 
-    async def size(self) -> int:
+    async def available_tokens(self) -> int:
         """Get the size of the semaphore (number of available tokens)"""
         await self._ensure_semaphore_initialized()
         return await handle_redis_returns_union_types(

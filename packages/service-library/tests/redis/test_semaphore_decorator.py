@@ -93,7 +93,7 @@ async def test_auto_renewal(
         ttl=short_ttl,
     )
     assert await temp_semaphore.current_count() == 1
-    assert await temp_semaphore.size() == semaphore_capacity - 1
+    assert await temp_semaphore.available_tokens() == semaphore_capacity - 1
 
     # Wait for work to complete
     result = await task
@@ -102,7 +102,7 @@ async def test_auto_renewal(
 
     # After completion, semaphore should be released
     assert await temp_semaphore.current_count() == 0
-    assert await temp_semaphore.size() == semaphore_capacity
+    assert await temp_semaphore.available_tokens() == semaphore_capacity
 
 
 async def test_auto_renewal_lose_semaphore_raises(
@@ -606,7 +606,7 @@ async def test_context_manager_auto_renewal(
         ttl=short_ttl,
     )
     assert await temp_semaphore.current_count() == 1
-    assert await temp_semaphore.size() == semaphore_capacity - 1
+    assert await temp_semaphore.available_tokens() == semaphore_capacity - 1
 
     # Wait for work to complete
     await task
@@ -614,7 +614,7 @@ async def test_context_manager_auto_renewal(
 
     # After completion, semaphore should be released
     assert await temp_semaphore.current_count() == 0
-    assert await temp_semaphore.size() == semaphore_capacity
+    assert await temp_semaphore.available_tokens() == semaphore_capacity
 
 
 async def test_context_manager_with_callable_parameters(

@@ -145,7 +145,7 @@ async def test_semaphore_acquire_release_basic(
 
     # Initially not acquired
     assert await semaphore.current_count() == 0
-    assert await semaphore.size() == semaphore_capacity
+    assert await semaphore.available_tokens() == semaphore_capacity
     assert await semaphore.is_acquired() is False
     await _assert_semaphore_redis_state(
         redis_client_sdk,
@@ -158,7 +158,7 @@ async def test_semaphore_acquire_release_basic(
     result = await semaphore.acquire()
     assert result is True
     assert await semaphore.current_count() == 1
-    assert await semaphore.size() == semaphore_capacity - 1
+    assert await semaphore.available_tokens() == semaphore_capacity - 1
     assert await semaphore.is_acquired() is True
     await _assert_semaphore_redis_state(
         redis_client_sdk,
@@ -171,7 +171,7 @@ async def test_semaphore_acquire_release_basic(
     result = await semaphore.acquire()
     assert result is True
     assert await semaphore.current_count() == 1
-    assert await semaphore.size() == semaphore_capacity - 1
+    assert await semaphore.available_tokens() == semaphore_capacity - 1
     assert await semaphore.is_acquired() is True
     await _assert_semaphore_redis_state(
         redis_client_sdk,
@@ -183,7 +183,7 @@ async def test_semaphore_acquire_release_basic(
     # reacquire should just work
     await semaphore.reacquire()
     assert await semaphore.current_count() == 1
-    assert await semaphore.size() == semaphore_capacity - 1
+    assert await semaphore.available_tokens() == semaphore_capacity - 1
     assert await semaphore.is_acquired() is True
     await _assert_semaphore_redis_state(
         redis_client_sdk,
@@ -195,7 +195,7 @@ async def test_semaphore_acquire_release_basic(
     # Release
     await semaphore.release()
     assert await semaphore.current_count() == 0
-    assert await semaphore.size() == semaphore_capacity
+    assert await semaphore.available_tokens() == semaphore_capacity
     assert await semaphore.is_acquired() is False
     await _assert_semaphore_redis_state(
         redis_client_sdk,
@@ -239,7 +239,7 @@ async def test_semaphore_acquire_release_with_ttl_expiry(
     )
     await semaphore.acquire()
     assert await semaphore.current_count() == 1
-    assert await semaphore.size() == semaphore_capacity - 1
+    assert await semaphore.available_tokens() == semaphore_capacity - 1
     await _assert_semaphore_redis_state(
         redis_client_sdk,
         semaphore,
@@ -312,14 +312,14 @@ async def test_semaphore_multiple_instances_capacity_limit(
     assert await semaphores[1].is_acquired() is False
     for sem in semaphores[:4]:
         assert await sem.current_count() == 1
-        assert await sem.size() == capacity - 1
+        assert await sem.available_tokens() == capacity - 1
 
     # acquire second
     assert await semaphores[1].acquire() is True
     for sem in semaphores[:2]:
         assert await sem.is_acquired() is True
         assert await sem.current_count() == 2
-        assert await sem.size() == capacity - 2
+        assert await sem.available_tokens() == capacity - 2
         await _assert_semaphore_redis_state(
             redis_client_sdk,
             sem,
@@ -333,20 +333,20 @@ async def test_semaphore_multiple_instances_capacity_limit(
         assert await sem.acquire() is False
         assert await sem.is_acquired() is False
         assert await sem.current_count() == 2
-        assert await sem.size() == capacity - 2
+        assert await sem.available_tokens() == capacity - 2
 
     # Release one
     await semaphores[0].release()
     assert await semaphores[0].is_acquired() is False
     for sem in semaphores[:4]:
         assert await sem.current_count() == 1
-        assert await sem.size() == capacity - 1
+        assert await sem.available_tokens() == capacity - 1
 
     # Now third can acquire
     assert await semaphores[2].acquire() is True
     for sem in semaphores[:4]:
         assert await sem.current_count() == 2
-        assert await sem.size() == capacity - 2
+        assert await sem.available_tokens() == capacity - 2
 
     # Clean up
     await semaphores[1].release()
@@ -368,7 +368,7 @@ async def test_semaphore_context_manager(
     ) as semaphore1:
         assert await semaphore1.is_acquired() is True
         assert await semaphore1.current_count() == 1
-        assert await semaphore1.size() == 0
+        assert await semaphore1.available_tokens() == 0
         await _assert_semaphore_redis_state(
             redis_client_sdk,
             semaphore1,
