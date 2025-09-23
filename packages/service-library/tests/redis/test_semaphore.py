@@ -21,6 +21,7 @@ from servicelib.redis._semaphore import (
     DistributedSemaphore,
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
+    distributed_semaphore,
 )
 from servicelib.redis._utils import handle_redis_returns_union_types
 
@@ -301,31 +302,58 @@ async def test_semaphore_multiple_instances_capacity_limit(
 
     # Acquire first two should succeed
     assert await semaphores[0].acquire() is True
+    assert await semaphores[0].is_acquired() is True
+    await _assert_semaphore_redis_state(
+        redis_client_sdk,
+        semaphores[0],
+        expected_count=1,
+        expected_free_tokens=capacity - 1,
+    )
+    assert await semaphores[1].is_acquired() is False
+    for sem in semaphores[:4]:
+        assert await sem.current_count() == 1
+        assert await sem.size() == capacity - 1
+
+    # acquire second
     assert await semaphores[1].acquire() is True
+    for sem in semaphores[:2]:
+        assert await sem.is_acquired() is True
+        assert await sem.current_count() == 2
+        assert await sem.size() == capacity - 2
+        await _assert_semaphore_redis_state(
+            redis_client_sdk,
+            sem,
+            expected_count=2,
+            expected_free_tokens=capacity - 2,
+        )
 
     # Third and fourth should fail in non-blocking mode
-    for semaphore in semaphores[2:]:
-        semaphore.blocking = False
-        assert await semaphore.acquire() is False
-
-    # Check counts
-    assert await semaphores[0].current_count() == 2
-    assert await semaphores[0].size() == 0
+    for sem in semaphores[2:]:
+        sem.blocking = False
+        assert await sem.acquire() is False
+        assert await sem.is_acquired() is False
+        assert await sem.current_count() == 2
+        assert await sem.size() == capacity - 2
 
     # Release one
     await semaphores[0].release()
-    assert await semaphores[0].current_count() == 1
-    assert await semaphores[0].size() == 1
+    assert await semaphores[0].is_acquired() is False
+    for sem in semaphores[:4]:
+        assert await sem.current_count() == 1
+        assert await sem.size() == capacity - 1
 
     # Now third can acquire
     assert await semaphores[2].acquire() is True
+    for sem in semaphores[:4]:
+        assert await sem.current_count() == 2
+        assert await sem.size() == capacity - 2
 
     # Clean up
     await semaphores[1].release()
     await semaphores[2].release()
 
 
-async def test_semaphore_blocking_timeout(
+async def test_semaphore_context_manager(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
@@ -333,11 +361,21 @@ async def test_semaphore_blocking_timeout(
     timeout = datetime.timedelta(seconds=0.1)
 
     # First semaphore acquires
-    async with DistributedSemaphore(
+    async with distributed_semaphore(
         redis_client=redis_client_sdk,
         key=semaphore_name,
         capacity=capacity,
-    ):
+    ) as semaphore1:
+        assert await semaphore1.is_acquired() is True
+        assert await semaphore1.current_count() == 1
+        assert await semaphore1.size() == 0
+        await _assert_semaphore_redis_state(
+            redis_client_sdk,
+            semaphore1,
+            expected_count=1,
+            expected_free_tokens=0,
+        )
+
         # Second semaphore should timeout
         semaphore2 = DistributedSemaphore(
             redis_client=redis_client_sdk,
