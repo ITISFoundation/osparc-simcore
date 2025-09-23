@@ -313,7 +313,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToNodeUpdated();
       this.__listenToNodeProgress();
       this.__listenToNoMoreCreditsEvents();
-      this.__listenToEvent();
+      this.__listenToServiceCustomEvents();
       this.__listenToServiceStatus();
       this.__listenToStatePorts();
     },
@@ -514,7 +514,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __listenToEvent: function() {
+    __listenToServiceCustomEvents: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
       // callback for events
