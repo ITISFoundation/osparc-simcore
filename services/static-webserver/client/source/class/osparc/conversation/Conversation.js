@@ -137,6 +137,10 @@ qx.Class.define("osparc.conversation.Conversation", {
         .finally(() => loadMoreMessages.setFetching(false));
     },
 
+    _createMessageUI: function(message) {
+      return new osparc.conversation.MessageUI(message);
+    },
+
     clearAllMessages: function() {
       this._messages = [];
       this.getChildControl("messages-container").removeAll();
@@ -163,7 +167,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       let control = null;
       switch (message["type"]) {
         case "MESSAGE":
-          control = new osparc.conversation.MessageUI(message);
+          control = this._createMessageUI(message);
           control.addListener("messageUpdated", e => this.updateMessage(e.getData()));
           control.addListener("messageDeleted", e => this.deleteMessage(e.getData()));
           break;
