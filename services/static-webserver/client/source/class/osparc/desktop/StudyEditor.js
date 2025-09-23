@@ -727,13 +727,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       osparc.data.Resources.fetch("runPipeline", "startPipeline", params)
         .then(resp => this.__onPipelineSubmitted(resp))
         .catch(err => {
-          let msg = err.message;
           const errStatus = err.status;
           if (errStatus == "409") {
-            this.getStudyLogger().error(null, "Pipeline is already running");
+            osparc.FlashMessenger.logError(err);
+            const msg = osparc.FlashMessenger.extractMessage(err);
+            this.getStudyLogger().error(null, msg);
           } else if (errStatus == "422") {
             this.getStudyLogger().info(null, "The pipeline is up-to-date");
-            msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
+            const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
             const win = new osparc.ui.window.Confirmation(msg).set({
               caption: this.tr("Re-run"),
               confirmText: this.tr("Run"),
