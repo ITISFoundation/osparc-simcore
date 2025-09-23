@@ -31,7 +31,7 @@ async def _task_progress_cb(
     worker = get_app_server(task.app).task_manager
     assert task.name  # nosec
     await worker.set_task_progress(
-        task_id=task_id,
+        task_key=task_id,
         report=report,
     )
 

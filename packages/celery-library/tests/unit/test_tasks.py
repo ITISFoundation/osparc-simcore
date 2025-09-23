@@ -52,7 +52,7 @@ async def _fake_file_processor(
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
             await get_app_server(celery_app).task_manager.set_task_progress(
-                task_id=task_id,
+                task_key=task_id,
                 report=ProgressReport(actual_value=n / len(files)),
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
