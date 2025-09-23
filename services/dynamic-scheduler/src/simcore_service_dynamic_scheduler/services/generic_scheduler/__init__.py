@@ -1,7 +1,7 @@
 from ._api import (
     cancel_operation,
-    restart_create_operation_step_in_manual_intervention,
-    restart_revert_operation_step_in_error,
+    restart_operation_stuck_in_error_during_revert,
+    restart_operation_sutck_in_manual_intervention_during_create,
     start_operation,
 )
 from ._deferred_runner import (
@@ -39,8 +39,8 @@ __all__: tuple[str, ...] = (
     "ParallelStepGroup",
     "ProvidedOperationContext",
     "RequiredOperationContext",
-    "restart_create_operation_step_in_manual_intervention",
-    "restart_revert_operation_step_in_error",
+    "restart_operation_sutck_in_manual_intervention_during_create",
+    "restart_operation_stuck_in_error_during_revert",
     "ScheduleId",
     "SingleStepGroup",
     "start_operation",

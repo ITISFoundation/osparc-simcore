@@ -21,26 +21,26 @@ async def start_operation(
 
 
 async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
-    """aborts an opration and triggers revert of all it's executed steps"""
-    await get_core(app).cancel_schedule(schedule_id)
+    """puts an operation to revert from the point it currently is"""
+    await get_core(app).cancel_operation(schedule_id)
 
 
-async def restart_create_operation_step_in_manual_intervention(
+async def restart_operation_sutck_in_manual_intervention_during_create(
     app: FastAPI, schedule_id: ScheduleId, step_name: StepName
 ) -> None:
     """
     restarts a step waiting for manual intervention
     NOTE: to be used only with steps where `wait_for_manual_intervention()` is True
     """
-    await get_core(app).restart_operation_step_in_error(
+    await get_core(app).restart_operation_step_stuck_in_error(
         schedule_id, step_name, in_manual_intervention=True
     )
 
 
-async def restart_revert_operation_step_in_error(
+async def restart_operation_stuck_in_error_during_revert(
     app: FastAPI, schedule_id: ScheduleId, step_name: StepName
 ) -> None:
     """restarts a step stuck in `revert` in an error state"""
-    await get_core(app).restart_operation_step_in_error(
+    await get_core(app).restart_operation_step_stuck_in_error(
         schedule_id, step_name, in_manual_intervention=False
     )

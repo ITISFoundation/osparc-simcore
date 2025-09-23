@@ -37,7 +37,7 @@ from ._store import (
 _logger = logging.getLogger(__name__)
 
 
-PARALLEL_STATUS_REQUESTS: Final[NonNegativeInt] = 5
+PARALLEL_REQUESTS: Final[NonNegativeInt] = 5
 
 
 _IN_PROGRESS_STATUSES: Final[set[StepStatus]] = {
@@ -47,7 +47,7 @@ _IN_PROGRESS_STATUSES: Final[set[StepStatus]] = {
 }
 
 
-def is_operation_in_progress_status(
+def are_any_steps_in_a_progress_status(
     steps_statuses: dict[StepName, StepStatus],
 ) -> bool:
     return any(status in _IN_PROGRESS_STATUSES for status in steps_statuses.values())
@@ -67,7 +67,7 @@ async def get_steps_statuses(
 ) -> dict[StepName, StepStatus]:
     result: list[tuple[StepName, StepStatus]] = await limited_gather(
         *(_get_step_status(step) for step in step_proxies),
-        limit=PARALLEL_STATUS_REQUESTS,
+        limit=PARALLEL_REQUESTS,
     )
     return dict(result)
 
@@ -160,7 +160,7 @@ async def _get_steps_to_start(
 ) -> list[StepStoreProxy]:
     result: list[tuple[bool, StepStoreProxy]] = await limited_gather(
         *(_get_was_step_started(step) for step in step_proxies),
-        limit=PARALLEL_STATUS_REQUESTS,
+        limit=PARALLEL_REQUESTS,
     )
     return [proxy for was_started, proxy in result if was_started is False]
 
@@ -191,7 +191,7 @@ async def start_steps_which_were_not_started(
                     )
                     for step_proxy in to_start_step_proxies
                 ),
-                limit=PARALLEL_STATUS_REQUESTS,
+                limit=PARALLEL_REQUESTS,
             )
         started_count = len(to_start_step_proxies)
     return started_count > 0

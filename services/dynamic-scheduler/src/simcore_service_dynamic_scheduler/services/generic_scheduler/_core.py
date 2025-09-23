@@ -13,13 +13,13 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
 from ._core_utils import (
-    PARALLEL_STATUS_REQUESTS,
+    PARALLEL_REQUESTS,
+    are_any_steps_in_a_progress_status,
     cleanup_after_finishing,
     get_group_step_proxies,
     get_requires_manual_intervention,
     get_step_error_traceback,
     get_steps_statuses,
-    is_operation_in_progress_status,
     raise_if_overwrites_any_operation_provided_key,
     safe_event,
     set_unexpected_opration_state,
@@ -80,7 +80,7 @@ class Core:
     async def start_operation(
         self, operation_name: OperationName, initial_operation_context: OperationContext
     ) -> ScheduleId:
-        """entrypoint for sceduling returns a unique schedule_id"""
+        """start an operation by it's given name and providing an initial context"""
         schedule_id: ScheduleId = f"{uuid4()}"
 
         # check if operation is registerd
@@ -111,10 +111,11 @@ class Core:
         await enqueue_schedule_event(self.app, schedule_id)
         return schedule_id
 
-    async def cancel_schedule(self, schedule_id: ScheduleId) -> None:
+    async def cancel_operation(self, schedule_id: ScheduleId) -> None:
         """
-        Cancels and runs destruction of the operation
-        NOTE: if cancels all steps if is_creating is True or does nothing if is_creating is False
+        Sets the operation to revert form the point in which it arrived in:
+        - when is_creating=True: cancels all steps & moves operation to revert
+        - when is_creating=False: does nothing, since revert is already running
         """
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
@@ -151,14 +152,14 @@ class Core:
                     get_requires_manual_intervention(step)
                     for step in group_step_proxies.values()
                 ),
-                limit=PARALLEL_STATUS_REQUESTS,
+                limit=PARALLEL_REQUESTS,
             )
         ):
             raise CannotCancelWhileWaitingForManualInterventionError(
                 schedule_id=schedule_id
             )
 
-        for step_name, step_proxy in group_step_proxies.items():
+        async def _cancel_step(step_name: StepName, step_proxy: StepStoreProxy) -> None:
             with log_context(  # noqa: SIM117
                 _logger,
                 logging.DEBUG,
@@ -169,15 +170,25 @@ class Core:
                     await DeferredRunner.cancel(deferred_task_uid)
                     await step_proxy.set("status", StepStatus.CANCELLED)
 
-    async def restart_operation_step_in_error(
+        await limited_gather(
+            *(
+                _cancel_step(step_name, step_proxy)
+                for step_name, step_proxy in group_step_proxies.items()
+            ),
+            limit=PARALLEL_REQUESTS,
+        )
+
+    async def restart_operation_step_stuck_in_error(
         self,
         schedule_id: ScheduleId,
         step_name: StepName,
         *,
         in_manual_intervention: bool,
     ) -> None:
-        # only if a step is waiting for manual intervention this will restart it
-        # hwo to check if it's waitin for manual intervention?
+        """
+        Force a step stuck in an error state to retry.
+        Will raise errors if step cannot be retried.
+        """
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
         )
@@ -229,7 +240,7 @@ class Core:
 
             step_keys_to_remove.append("requires_manual_intervention")
 
-        # reset previous Run and restart this step
+        # restart the step
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
         )
@@ -264,9 +275,51 @@ class Core:
 
     async def safe_on_schedule_event(self, schedule_id: ScheduleId) -> None:
         async with safe_event(self._store, schedule_id):
-            await self._on_schedule_event(schedule_id)
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                f"processing schedule_event for schedule_id={schedule_id}",
+                log_duration=True,
+            ):
+                await self._on_schedule_event(schedule_id)
 
     async def _on_schedule_event(self, schedule_id: ScheduleId) -> None:
+        """
+        A schedule event is what advances the `operation` processing. Multiple schedule events
+        are required to complete an operation.
+
+        An `operation` is moved from one `step group` to the next one until all `steps` are done.
+        Steps: always finish, automatically retry and are guaranteed to be in a final state
+        (SUCCESS, FAILED, CANCELLED).
+        Processing continues when all steps are in a final state.
+
+        From this point onwards an `operation` can be advanced in one the following modes:
+        - `CEREATEING`: default mode when starting an operation
+            - runs the `create()` of each step in each group (`first` -> `last` group)
+            - when done, it removes all operation data
+        - `REVERTING`: revert the actions of `create()` in reverse order to CREATING
+            - runs the `revert()` of each step in each group (`current` -> `first` group)
+            - when done, it removes all operation data
+        - `REPEATING`: repeats the `create()` of all steps in a group
+            - waits and runs the `create()` of all the steps in last group in the operation
+            - never completes, unless operation is cancelled
+
+        NOTE: `REPEATING` is triggered by setting `BaseStepGroup(repeat_steps=True)` during definition
+        of an `operation`.
+        NOTE: `REVERTING` is triggered by calling `cancel_operation()` or when a step finishes with
+        status `FAILED` or `CANCELLED` (except in manual intervention).
+
+        There are 3 reasons why an operation will hang:
+        - MANUAL_INTERVENTION: step failed during `create()` and flagged for manual intervention
+            -> requires support intervention
+        - STEP_ISSUE: a step failed during `revert()` due to an error in the step's revert code
+            -> unexpected behviour / requires developer intervention
+        - FRAMEWORK_ISSUE: a step failed during `revert()` because it was cancelled
+            -> unexpected behviour / requires developer intervention
+
+        NOTE: only MANUAL_INTERVENTION is an allowed to happen all other failuires are to be treated
+        # as bugs and reported.
+        """
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
         )
@@ -287,35 +340,45 @@ class Core:
             is_creating=is_creating,
         )
 
-        # 1) ensure all steps in the group are started
+        # 1) ensure all operation steps in the group are started before advancing
         if await start_steps_which_were_not_started(
             group_step_proxies,
             is_creating=is_creating,
             group_step_count=len(step_group),
         ):
-            # since steps were started, we wait for next event to check their status
             return
 
+        # 2) wait for all steps to finish before advancing
         steps_statuses = await get_steps_statuses(group_step_proxies.values())
-        _logger.debug("DETECTED: steps_statuses=%s", steps_statuses)
-
-        # 2) wait for all steps to finish before continuing
-        if is_operation_in_progress_status(steps_statuses):
+        _logger.debug(
+            "DETECTED: steps_statuses=%s in operation=%s for scheuled_id=%s",
+            steps_statuses,
+            operation_name,
+            schedule_id,
+        )
+        if are_any_steps_in_a_progress_status(steps_statuses):
             _logger.debug(
-                "Operation '%s' has not finished: steps_statuses='%s'",
+                "operation_name='%s' has steps still in progress steps_statuses='%s'",
                 operation_name,
                 group_step_proxies,
             )
             return
 
-        # 3) all steps are in a final state, process them
-        _logger.debug("steps_statuses=%s in final state in operation", steps_statuses)
+        # 3) advancing operation in mode
+        step_group_name = step_group.get_step_group_name(index=group_index)
 
-        # REPEATING
+        def _log_as_mode(mode: str) -> None:
+            _logger.debug(
+                "%s step_group_name='%s' in operation_name='%s' for schedule_id='%s'",
+                mode,
+                step_group_name,
+                operation_name,
+                schedule_id,
+            )
+
         if step_group.repeat_steps is True and is_creating:
-            # 3A1) if any of the repeating steps was cancelled -> move to revert
-            # 3A2) otherwise restart all steps in the group
-            await self._continue_as_repeating_group(
+            _log_as_mode("REPEATING")
+            await self._advance_as_repeating(
                 schedule_data_proxy,
                 schedule_id,
                 operation_name,
@@ -324,14 +387,9 @@ class Core:
                 group_step_proxies,
             )
 
-        # CREATING
         elif is_creating:
-            # 3B1) if all steps in group in SUUCESS
-            # - 3B1a) move to next group
-            # - 3B1b) reached the end of the CREATE operation, remove all created data
-            # 3B2) if manual intervention is required -> do nothing else
-            # 3B3) if any step in CANCELLED or FAILED(and not in manual intervention) -> move to revert
-            await self._continue_as_creation(
+            _log_as_mode("CREATING")
+            await self._advance_as_creating(
                 steps_statuses,
                 schedule_data_proxy,
                 schedule_id,
@@ -341,14 +399,9 @@ class Core:
                 operation,
             )
 
-        # REVERTING
         else:
-            # 3C1) if all steps in gorup in SUUCESS
-            # - 3C1a) reached the end of the REVERT operation, remove all created data
-            # - 3C1b) go back to previous group untill done
-            # 3C2) it is unexpected to have a FAILED step -> do nothing else
-            # 3C3) it is unexpected to have a CANCELLED step -> do nothing else
-            await self._continue_as_reverting(
+            _log_as_mode("REVERTING")
+            await self._advance_as_reverting(
                 steps_statuses,
                 schedule_data_proxy,
                 schedule_id,
@@ -357,7 +410,7 @@ class Core:
                 step_group,
             )
 
-    async def _continue_as_repeating_group(
+    async def _advance_as_repeating(
         self,
         schedule_data_proxy: ScheduleDataStoreProxy,
         schedule_id: ScheduleId,
@@ -366,30 +419,30 @@ class Core:
         current_step_group: BaseStepGroup,
         group_step_proxies: dict[StepName, StepStoreProxy],
     ) -> None:
-        _logger.debug(
-            "REPEATING step_group='%s' in operation_name='%s' for schedule_id='%s'",
-            current_step_group.get_step_group_name(index=group_index),
-            operation_name,
-            schedule_id,
-        )
+        # REPEATING logic:
+        # 1) sleep before repeating
+        # 2) if any of the repeating steps was cancelled -> move to revert
+        # 3) -> restart all steps in the group
+
         step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
 
-        # wait before repeating
+        # 1) sleep before repeating
         await asyncio.sleep(current_step_group.wait_before_repeat.total_seconds())
-        # since some time passed, query all steps statuses again,
-        # since a cancellation request might have been requested
-        steps_stauses = await get_steps_statuses(step_proxies)
 
-        # 3A1) if any of the repeating steps was cancelled -> move to revert
+        # 2) if any of the repeating steps was cancelled -> move to revert
+
+        # since some time passed, query all steps statuses again,
+        # a cancellation request might have been requested
+        steps_stauses = await get_steps_statuses(step_proxies)
         if any(status == StepStatus.CANCELLED for status in steps_stauses.values()):
             # NOTE:
             await schedule_data_proxy.set("is_creating", value=False)
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
-        # 3A2) otherwise restart all steps in the group
+        # 3) -> restart all steps in the group
         await limited_gather(
-            *(x.remove() for x in step_proxies), limit=PARALLEL_STATUS_REQUESTS
+            *(x.remove() for x in step_proxies), limit=PARALLEL_REQUESTS
         )
         group_proxy = StepGroupProxy(
             store=self._store,
@@ -401,7 +454,7 @@ class Core:
         await group_proxy.remove()
         await enqueue_schedule_event(self.app, schedule_id)
 
-    async def _continue_as_creation(
+    async def _advance_as_creating(
         self,
         steps_statuses: dict[StepName, StepStatus],
         schedule_data_proxy: ScheduleDataStoreProxy,
@@ -411,9 +464,17 @@ class Core:
         current_step_group: BaseStepGroup,
         operation: Operation,
     ) -> None:
-        # 3B1) if all steps in group in SUUCESS
+        # CREATION logic:
+        # 1) if all steps in group in SUUCESS
+        # - 1a) -> move to next group
+        # - 1b) if reached the end of the CREATE operation -> remove all created data
+        # 2) if manual intervention is required -> do nothing else
+        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to revert
+
+        # 1) if all steps in group in SUUCESS
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
-            # 3B1a) move to next group
+
+            # 1a) -> move to next group
             try:
                 next_group_index = group_index + 1
                 # does a next group exist?
@@ -421,14 +482,15 @@ class Core:
                 await schedule_data_proxy.set("group_index", value=next_group_index)
                 await enqueue_schedule_event(self.app, schedule_id)
             except IndexError:
-                # 3B1b) reached the end of the CREATE operation, remove all created data
+
+                # 1b) if reached the end of the CREATE operation -> remove all created data
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_creating=True
                 )
 
             return
 
-        # 3B2) if manual intervention is required -> do nothing else
+        # 2) if manual intervention is required -> do nothing else
         manual_intervention_step_names: set[StepName] = set()
         current_step_group.get_step_subgroup_to_run()
         for step in current_step_group.get_step_subgroup_to_run():
@@ -458,7 +520,7 @@ class Core:
             )
             return
 
-        # 3B3) if any step in CANCELLED or FAILED(and not in manual intervention) -> move to revert
+        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to revert
         if any(
             s in {StepStatus.FAILED, StepStatus.CANCELLED}
             for s in steps_statuses.values()
@@ -476,7 +538,7 @@ class Core:
             direction="creation", steps_statuses=steps_statuses, schedule_id=schedule_id
         )
 
-    async def _continue_as_reverting(
+    async def _advance_as_reverting(
         self,
         steps_statuses: dict[StepName, StepStatus],
         schedule_data_proxy: ScheduleDataStoreProxy,
@@ -485,22 +547,30 @@ class Core:
         group_index: NonNegativeInt,
         current_step_group: BaseStepGroup,
     ) -> None:
-        # 3C1) if all steps in gorup in SUUCESS
+        # REVERT logic:
+        # 1) if all steps in gorup in SUUCESS
+        # - 1a) if reached the end of the REVERT operation -> remove all created data
+        # - 1b) -> move to previous group
+        # 2) it is unexpected to have a FAILED step -> do nothing else
+        # 3) it is unexpected to have a CANCELLED step -> do nothing else
+
+        # 1) if all steps in gorup in SUUCESS
         if all(s == StepStatus.SUCCESS for s in steps_statuses.values()):
             previous_group_index = group_index - 1
             if previous_group_index < 0:
-                # 3C1a) reached the end of the REVERT operation, remove all created data
+
+                # 1a) if reached the end of the REVERT operation -> remove all created data
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_creating=False
                 )
                 return
 
-            # 3C1b) go back to previous group untill done
+            # 1b) -> move to previous group
             await schedule_data_proxy.set("group_index", value=previous_group_index)
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
-        # 3C2) it is unexpected to have a FAILED step -> do nothing else
+        # 2) it is unexpected to have a FAILED step -> do nothing else
         if failed_step_names := [
             n for n, s in steps_statuses.items() if s == StepStatus.FAILED
         ]:
@@ -516,7 +586,7 @@ class Core:
                     )
                     for step_name in failed_step_names
                 ),
-                limit=PARALLEL_STATUS_REQUESTS,
+                limit=PARALLEL_REQUESTS,
             )
 
             formatted_tracebacks = "\n".join(
@@ -525,7 +595,7 @@ class Core:
             )
             message = (
                 f"Operation 'revert' for schedule_id='{schedule_id}' failed for steps: "
-                f"{failed_step_names}. Step code should never fail during destruction, "
+                f"'{failed_step_names}'. Step code should never fail during destruction, "
                 f"please report to developers:\n{formatted_tracebacks}"
             )
             _logger.error(message)
@@ -534,13 +604,13 @@ class Core:
             )
             return
 
-        # 3C3) it is unexpected to have a CANCELLED step -> do nothing else
+        # 3) it is unexpected to have a CANCELLED step -> do nothing else
         if cancelled_step_names := [
             n for n, s in steps_statuses.items() if s == StepStatus.CANCELLED
         ]:
             message = (
                 f"Operation 'revert' for schedule_id='{schedule_id}' was cancelled for steps: "
-                f"{cancelled_step_names}. This should not happen, please report to developers."
+                f"{cancelled_step_names}. This should not happen, and should be addressed."
             )
             _logger.error(message)
             await set_unexpected_opration_state(

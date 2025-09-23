@@ -84,7 +84,7 @@ class EventScheduler:
         self._queue_schedule_event = _get_global_queue(queue_name="schedule_queue")
 
     @_stop_retry_for_unintended_errors
-    async def _on_schedule_secure_event(  # pylint:disable=method-hidden
+    async def _on_safe_on_schedule_event(  # pylint:disable=method-hidden
         self, schedule_id: ScheduleId
     ) -> None:
         await get_core(self.app).safe_on_schedule_event(schedule_id)
@@ -99,11 +99,11 @@ class EventScheduler:
     def _register_subscribers(self) -> None:
         # pylint:disable=unexpected-keyword-arg
         # pylint:disable=no-value-for-parameter
-        self._on_schedule_secure_event = self._router.subscriber(
+        self._on_safe_on_schedule_event = self._router.subscriber(
             queue=self._queue_schedule_event,
             exchange=self._exchange,
             retry=True,
-        )(self._on_schedule_secure_event)
+        )(self._on_safe_on_schedule_event)
 
     async def setup(self) -> None:
         self._register_subscribers()
