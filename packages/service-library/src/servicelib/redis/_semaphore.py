@@ -40,10 +40,10 @@ from ._errors import (
     SemaphoreNotAcquiredError,
 )
 from ._semaphore_lua import (
-    ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT,
-    REGISTER_FAIR_SEMAPHORE_SCRIPT,
-    RELEASE_FAIR_SEMAPHORE_V2_SCRIPT,
-    RENEW_FAIR_SEMAPHORE_V2_SCRIPT,
+    ACQUIRE_SEMAPHORE_SCRIPT,
+    REGISTER_SEMAPHORE_TOKEN_SCRIPT,
+    RELEASE_SEMAPHORE_SCRIPT,
+    RENEW_SEMAPHORE_SCRIPT,
     SCRIPT_BAD_EXIT_CODE,
     SCRIPT_OK_EXIT_CODE,
 )
@@ -121,16 +121,16 @@ class DistributedSemaphore(BaseModel):
         the script is only registered once."""
         if cls.acquire_script is None:
             cls.register_semaphore = redis_client.redis.register_script(
-                REGISTER_FAIR_SEMAPHORE_SCRIPT
+                REGISTER_SEMAPHORE_TOKEN_SCRIPT
             )
             cls.acquire_script = redis_client.redis.register_script(
-                ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT
+                ACQUIRE_SEMAPHORE_SCRIPT
             )
             cls.release_script = redis_client.redis.register_script(
-                RELEASE_FAIR_SEMAPHORE_V2_SCRIPT
+                RELEASE_SEMAPHORE_SCRIPT
             )
             cls.renew_script = redis_client.redis.register_script(
-                RENEW_FAIR_SEMAPHORE_V2_SCRIPT
+                RENEW_SEMAPHORE_SCRIPT
             )
 
     def __init__(self, **data) -> None:

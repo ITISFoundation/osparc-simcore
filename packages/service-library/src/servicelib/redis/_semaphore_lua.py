@@ -27,11 +27,11 @@ def _load_script(script_name: str) -> str:
 
 
 # fair semaphore scripts (token pool based)
-REGISTER_FAIR_SEMAPHORE_SCRIPT: Final[str] = _load_script("register_semaphore_holder")
-ACQUIRE_FAIR_SEMAPHORE_V2_SCRIPT: Final[str] = _load_script("acquire_fair_semaphore_v2")
-RELEASE_FAIR_SEMAPHORE_V2_SCRIPT: Final[str] = _load_script("release_fair_semaphore_v2")
-CLEANUP_FAIR_SEMAPHORE_V2_SCRIPT: Final[str] = _load_script("cleanup_fair_semaphore_v2")
-RENEW_FAIR_SEMAPHORE_V2_SCRIPT: Final[str] = _load_script("renew_fair_semaphore_v2")
+REGISTER_SEMAPHORE_TOKEN_SCRIPT: Final[str] = _load_script("register_semaphore_tokens")
+ACQUIRE_SEMAPHORE_SCRIPT: Final[str] = _load_script("acquire_semaphore")
+RELEASE_SEMAPHORE_SCRIPT: Final[str] = _load_script("release_semaphore")
+CLEANUP_SEMAPHORE_SCRIPT: Final[str] = _load_script("cleanup_semaphore")
+RENEW_SEMAPHORE_SCRIPT: Final[str] = _load_script("renew_semaphore")
 
 
 SCRIPT_OK_EXIT_CODE: Final[int] = 0
