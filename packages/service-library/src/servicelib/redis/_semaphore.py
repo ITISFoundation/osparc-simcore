@@ -476,6 +476,8 @@ async def distributed_semaphore(
             )
             await auto_reacquisition_started.wait()
             try:
+                # NOTE: this try/finally ensures that cancellation_event is set when we exit the context
+                # even in case of exceptions
                 yield semaphore
             finally:
                 cancellation_event.set()  # NOTE: this ensure cancellation is effective
