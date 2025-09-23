@@ -108,7 +108,7 @@ async def export_data(
 
 async def export_data_as_download_link(
     task: Task,
-    task_id: TaskKey,
+    task_key: TaskKey,
     *,
     user_id: UserID,
     paths_to_export: list[PathToExport],
@@ -117,7 +117,7 @@ async def export_data_as_download_link(
     AccessRightError: in case user can't access project
     """
     s3_object = await export_data(
-        task=task, task_key=task_id, user_id=user_id, paths_to_export=paths_to_export
+        task=task, task_key=task_key, user_id=user_id, paths_to_export=paths_to_export
     )
 
     dsm = get_dsm_provider(get_app_server(task.app).app).get(

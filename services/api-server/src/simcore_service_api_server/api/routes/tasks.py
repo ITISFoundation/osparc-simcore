@@ -86,11 +86,11 @@ async def list_tasks(
             task_id=f"{task.uuid}",
             task_name=task.metadata.name,
             status_href=app_router.url_path_for(
-                "get_task_status", task_id=f"{task.uuid}"
+                "get_task_status", task_uuid=f"{task.uuid}"
             ),
-            abort_href=app_router.url_path_for("cancel_task", task_id=f"{task.uuid}"),
+            abort_href=app_router.url_path_for("cancel_task", task_uuid=f"{task.uuid}"),
             result_href=app_router.url_path_for(
-                "get_task_result", task_id=f"{task.uuid}"
+                "get_task_result", task_uuid=f"{task.uuid}"
             ),
         )
         for task in tasks
