@@ -29,14 +29,6 @@ qx.Class.define("osparc.study.Conversation", {
     this.__studyData = studyData;
     this.__messages = [];
 
-    if (conversationData) {
-      const conversation = new osparc.data.model.Conversation(conversationData, this.__studyData);
-      this.setConversation(conversation);
-      this.setLabel(conversationData["name"]);
-    } else {
-      this.setLabel(this.tr("new"));
-    }
-
     this._setLayout(new qx.ui.layout.VBox(5));
 
     this.set({
@@ -51,7 +43,13 @@ qx.Class.define("osparc.study.Conversation", {
 
     this.__buildLayout();
 
-    this.__reloadMessages();
+    if (conversationData) {
+      const conversation = new osparc.data.model.Conversation(conversationData, this.__studyData);
+      this.setConversation(conversation);
+      this.setLabel(conversationData["name"]);
+    } else {
+      this.setLabel(this.tr("new"));
+    }
   },
 
   properties: {
@@ -74,6 +72,8 @@ qx.Class.define("osparc.study.Conversation", {
     __loadMoreMessages: null,
 
     __applyConversation: function(conversation) {
+      this.__reloadMessages(true);
+
       conversation.addListener("messageAdded", e => {
         const message = e.getData();
         this.addMessage(message);
@@ -196,9 +196,11 @@ qx.Class.define("osparc.study.Conversation", {
 
       const addMessage = new osparc.conversation.AddMessage().set({
         studyData: this.__studyData,
-        conversationId: this.getConversationId(),
         enabled: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]),
         paddingLeft: 10,
+      });
+      this.bind("conversation", addMessage, "conversationId", {
+        converter: conversation => conversation ? conversation.getConversationId() : null
       });
       addMessage.addListener("addMessage", e => {
         const content = e.getData();

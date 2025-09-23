@@ -44,14 +44,6 @@ qx.Class.define("osparc.support.Conversation", {
       event: "changeConversation",
       apply: "__applyConversation",
     },
-
-    studyId: {
-      check: "String",
-      init: null,
-      nullable: true,
-      event: "changeStudyId",
-      apply: "__applyStudyId",
-    },
   },
 
   statics: {
