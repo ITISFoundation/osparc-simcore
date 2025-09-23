@@ -20,7 +20,7 @@ from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
 _logger = logging.getLogger(__name__)
 
-APP_SETUP_COMPLETED_KEY: Final[str] = f"{__name__ }.setup"
+APP_SETUP_COMPLETED_KEY: Final[web.AppKey] = web.AppKey("setup_completed", list[str])
 
 
 class _SetupFunc(Protocol):
