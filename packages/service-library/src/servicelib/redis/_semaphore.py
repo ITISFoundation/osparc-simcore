@@ -456,6 +456,7 @@ async def distributed_semaphore(
             started.set()
         await semaphore.reacquire()
 
+    lock_acquisition_time = None
     try:
         if not await semaphore.acquire():
             raise SemaphoreAcquisitionError(name=key, instance_id=semaphore.instance_id)
@@ -516,15 +517,16 @@ async def distributed_semaphore(
                     "Look for synchronouse code or the loop is very busy and cannot schedule the reacquisition task.",
                 )
             )
-        lock_release_time = arrow.utcnow()
-        locking_time = lock_release_time - lock_acquisition_time
-        if locking_time > expected_lock_overall_time:
-            _logger.warning(
-                "Semaphore '%s' was held for %s by %s which is longer than expected (%s). "
-                "TIP: consider reducing the locking time by optimizing the code inside "
-                "the critical section or increasing the default locking time",
-                semaphore.key,
-                locking_time,
-                semaphore.instance_id,
-                expected_lock_overall_time,
-            )
+        if lock_acquisition_time is not None:
+            lock_release_time = arrow.utcnow()
+            locking_time = lock_release_time - lock_acquisition_time
+            if locking_time > expected_lock_overall_time:
+                _logger.warning(
+                    "Semaphore '%s' was held for %s by %s which is longer than expected (%s). "
+                    "TIP: consider reducing the locking time by optimizing the code inside "
+                    "the critical section or increasing the default locking time",
+                    semaphore.key,
+                    locking_time,
+                    semaphore.instance_id,
+                    expected_lock_overall_time,
+                )
