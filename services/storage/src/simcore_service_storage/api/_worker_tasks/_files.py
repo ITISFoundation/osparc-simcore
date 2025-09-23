@@ -18,13 +18,13 @@ _logger = logging.getLogger(__name__)
 
 async def complete_upload_file(
     task: Task,
-    task_id: TaskKey,
+    task_key: TaskKey,
     user_id: UserID,
     location_id: LocationID,
     file_id: StorageFileID,
     body: FileUploadCompletionBody,
 ) -> FileMetaData:
-    assert task_id  # nosec
+    assert task_key  # nosec
     with log_context(
         _logger,
         logging.INFO,
