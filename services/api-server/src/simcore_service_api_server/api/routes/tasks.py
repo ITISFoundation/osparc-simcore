@@ -87,7 +87,7 @@ async def list_tasks(
 
 
 @router.get(
-    "/{task_id}",
+    "/{task_uuid}",
     response_model=TaskStatus,
     responses=_DEFAULT_TASK_STATUS_CODES,
     description=create_route_description(
@@ -99,7 +99,7 @@ async def list_tasks(
     include_in_schema=True,
 )
 async def get_task_status(
-    task_id: AsyncJobId,
+    task_uuid: AsyncJobId,
     app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
@@ -111,7 +111,7 @@ async def get_task_status(
     )
     task_status = await task_manager.get_task_status(
         owner_metadata=owner_metadata,
-        task_uuid=TaskUUID(f"{task_id}"),
+        task_uuid=TaskUUID(f"{task_uuid}"),
     )
 
     return TaskStatus(
@@ -125,7 +125,7 @@ async def get_task_status(
 
 
 @router.post(
-    "/{task_id}:cancel",
+    "/{task_uuid}:cancel",
     status_code=status.HTTP_204_NO_CONTENT,
     responses=_DEFAULT_TASK_STATUS_CODES,
     description=create_route_description(
@@ -137,7 +137,7 @@ async def get_task_status(
     include_in_schema=True,
 )
 async def cancel_task(
-    task_id: AsyncJobId,
+    task_uuid: AsyncJobId,
     app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
@@ -149,12 +149,12 @@ async def cancel_task(
     )
     await task_manager.cancel_task(
         owner_metadata=owner_metadata,
-        task_uuid=TaskUUID(f"{task_id}"),
+        task_uuid=TaskUUID(f"{task_uuid}"),
     )
 
 
 @router.get(
-    "/{task_id}/result",
+    "/{task_uuid}/result",
     response_model=TaskResult,
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -172,7 +172,7 @@ async def cancel_task(
     include_in_schema=True,
 )
 async def get_task_result(
-    task_id: AsyncJobId,
+    task_uuid: AsyncJobId,
     app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
@@ -185,7 +185,7 @@ async def get_task_result(
 
     task_status = await task_manager.get_task_status(
         owner_metadata=owner_metadata,
-        task_uuid=TaskUUID(f"{task_id}"),
+        task_uuid=TaskUUID(f"{task_uuid}"),
     )
 
     if not task_status.is_done:
@@ -196,12 +196,12 @@ async def get_task_result(
 
     task_result = await task_manager.get_task_result(
         owner_metadata=owner_metadata,
-        task_uuid=TaskUUID(f"{task_id}"),
+        task_uuid=TaskUUID(f"{task_uuid}"),
     )
 
     if task_status.task_state == TaskState.FAILURE:
         assert isinstance(task_result, Exception)
-        user_error_msg = f"The execution of task {task_id} failed"
+        user_error_msg = f"The execution of task {task_uuid} failed"
         support_id = create_error_code(task_result)
         _logger.exception(
             **create_troubleshooting_log_kwargs(
