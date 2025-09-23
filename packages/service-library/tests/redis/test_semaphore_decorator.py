@@ -402,7 +402,6 @@ async def test_long_locking_logs_warning(
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
     caplog: pytest.LogCaptureFixture,
-    mocker: MockerFixture,
 ):
     @with_limited_concurrency(
         redis_client_sdk,
