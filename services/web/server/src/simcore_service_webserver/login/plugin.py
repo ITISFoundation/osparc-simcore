@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Final
 
 import asyncpg
 from aiohttp import web
@@ -48,6 +49,7 @@ from .settings import (
 
 log = logging.getLogger(__name__)
 
+APP_LOGIN_CLIENT_KEY: Final = web.AppKey("APP_LOGIN_CLIENT_KEY", object)
 
 MAX_TIME_TO_CLOSE_POOL_SECS = 5
 

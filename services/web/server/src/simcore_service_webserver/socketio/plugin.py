@@ -1,10 +1,11 @@
-""" plugin socket-io
+"""plugin socket-io
 
 
-    SEE https://github.com/miguelgrinberg/python-socketio
+SEE https://github.com/miguelgrinberg/python-socketio
 """
 
 import logging
+from typing import Final
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
@@ -15,6 +16,10 @@ from ._observer import setup_socketio_observer_events
 from .server import setup_socketio_server
 
 _logger = logging.getLogger(__name__)
+
+APP_SOCKETIO_SERVER_KEY: Final = web.AppKey(
+    "APP_SOCKETIO_SERVER_KEY", object
+)  # socketio.AsyncServer
 
 
 @app_module_setup(

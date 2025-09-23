@@ -8,6 +8,7 @@ Based on https://aiohttp-security.readthedocs.io/en/latest/
 """
 
 import logging
+from typing import Final
 
 import aiohttp_security  # type: ignore[import-untyped]
 from aiohttp import web
@@ -21,6 +22,8 @@ from ._authz_policy import AuthorizationPolicy
 from ._identity_policy import SessionIdentityPolicy
 
 _logger = logging.getLogger(__name__)
+
+APP_SECURITY_CLIENT_KEY: Final = web.AppKey("APP_SECURITY_CLIENT_KEY", object)
 
 
 @app_module_setup(

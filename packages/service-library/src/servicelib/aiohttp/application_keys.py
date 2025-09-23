@@ -1,4 +1,4 @@
-""" Namespace to keep all application storage keys
+"""Namespace to keep all application storage keys
 
 Unique keys to identify stored data
 Naming convention accounts for the storage scope: application, request, response, configuration and/or resources
@@ -8,18 +8,21 @@ All keys are constants with a unique name convention:
 
  See https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 """
+
 from typing import Final
 
-# REQUIREMENTS:
-# - guarantees all keys are unique
-# - one place for all common keys
-# - hierarchical classification
+from aiohttp import web
+
+# APPLICATION's CONTEXT KEYS
+
+# NOTE: use these keys to store/retrieve data from aiohttp.web.Application
+# SEE https://docs.aiohttp.org/en/stable/web_quickstart.html#aiohttp-web-app-key
 
 #
 # web.Application keys, i.e. app[APP_*_KEY]
 #
-APP_CONFIG_KEY: Final[str] = f"{__name__ }.config"
-APP_SETTINGS_KEY: Final[str] = f"{__name__ }.settings"
+APP_CONFIG_KEY = web.AppKey("APP_CONFIG_KEY", dict[str, object])
+APP_SETTINGS_KEY = web.AppKey("APP_SETTINGS_KEY", object)
 
 APP_AIOPG_ENGINE_KEY: Final[str] = f"{__name__ }.aiopg_engine"
 

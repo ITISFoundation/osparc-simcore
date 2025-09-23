@@ -1,6 +1,7 @@
 """database submodule associated to the postgres uservice"""
 
 import logging
+from typing import Final
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
@@ -9,6 +10,10 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from . import _aiopg, _asyncpg
 
 _logger = logging.getLogger(__name__)
+
+APP_DB_ENGINE_KEY: Final = web.AppKey(
+    "APP_DB_ENGINE_KEY", object
+)  # Can be aiopg.Engine or asyncpg engine
 
 
 # API

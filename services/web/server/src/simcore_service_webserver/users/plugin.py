@@ -1,6 +1,7 @@
 """users management subsystem"""
 
 import logging
+from typing import Final
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
@@ -15,6 +16,8 @@ from ..user_tokens.bootstrap import setup_user_tokens_feature
 from ._controller.rest import accounts_rest, users_rest
 
 _logger = logging.getLogger(__name__)
+
+APP_USERS_CLIENT_KEY: Final = web.AppKey("APP_USERS_CLIENT_KEY", object)
 
 
 @app_module_setup(

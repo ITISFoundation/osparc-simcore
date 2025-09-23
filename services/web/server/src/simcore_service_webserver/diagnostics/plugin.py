@@ -1,6 +1,7 @@
 import logging
 import time
 from operator import attrgetter
+from typing import Final
 
 from aiohttp import web
 from servicelib.aiohttp import monitor_slow_callbacks
@@ -21,6 +22,8 @@ from ._monitoring import setup_monitoring
 from .settings import DiagnosticsSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
+APP_DIAGNOSTICS_CLIENT_KEY: Final = web.AppKey("APP_DIAGNOSTICS_CLIENT_KEY", object)
 
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:

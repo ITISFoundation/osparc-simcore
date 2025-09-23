@@ -1,6 +1,7 @@
 """Subsystem to communicate with catalog service"""
 
 import logging
+from typing import Final
 
 from aiohttp import web
 from pint import UnitRegistry
@@ -9,6 +10,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from . import _controller_rest
 
 _logger = logging.getLogger(__name__)
+
+APP_CATALOG_CLIENT_KEY: Final = web.AppKey("APP_CATALOG_CLIENT_KEY", object)
 
 
 @app_module_setup(

@@ -1,6 +1,7 @@
 """user's session plugin"""
 
 import logging
+from typing import Final
 
 import aiohttp_session
 from aiohttp import web
@@ -11,6 +12,8 @@ from ._cookie_storage import SharedCookieEncryptedCookieStorage
 from .settings import SessionSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
+APP_SESSION_KEY: Final = web.AppKey("APP_SESSION_KEY", object)
 
 
 @app_module_setup(
