@@ -6,6 +6,7 @@ from models_library.progress_bar import ProgressReport
 from ..celery.models import (
     Task,
     TaskEvent,
+    TaskEventID,
     TaskFilter,
     TaskID,
     TaskMetadata,
@@ -53,4 +54,4 @@ class TaskManager(Protocol):
         task_filter: TaskFilter,
         task_uuid: TaskUUID,
         last_id: str | None = None,
-    ) -> AsyncIterator[TaskEvent]: ...
+    ) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]: ...

@@ -127,16 +127,15 @@ class TaskMetadata(BaseModel):
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
-class BaseTaskEvent(BaseModel):
-    event_id: str | None = None
+TaskEventID: TypeAlias = str
 
 
-class TaskDataEvent(BaseTaskEvent):
+class TaskDataEvent(BaseModel):
     type: Literal["data"] = "data"
     data: Any
 
 
-class TaskStatusEvent(BaseTaskEvent):
+class TaskStatusEvent(BaseModel):
     type: Literal["status"] = "status"
     data: Literal["done", "error"]
 
@@ -217,7 +216,7 @@ class TaskInfoStore(Protocol):
         self,
         task_id: TaskID,
         last_id: str | None = None,
-    ) -> AsyncIterator[TaskEvent]: ...
+    ) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]: ...
 
 
 class TaskStatus(BaseModel):

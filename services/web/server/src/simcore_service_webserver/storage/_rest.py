@@ -52,7 +52,7 @@ from servicelib.aiohttp.rest_responses import (
     create_data_response,
     create_event_stream_response,
 )
-from servicelib.celery.models import TaskEvent, TaskFilter
+from servicelib.celery.models import TaskFilter
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size as remote_compute_path_size,
@@ -66,6 +66,7 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
 )
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
+from servicelib.sse import SSEEvent
 from simcore_service_webserver.celery import get_task_manager
 from simcore_service_webserver.storage._rest_schemas import StreamHeaders
 from yarl import URL
@@ -583,14 +584,6 @@ async def search(request: web.Request) -> web.Response:
     )
 
 
-def _format_sse(event: TaskEvent, event_name) -> bytes:
-    sse = ""
-    if event_name:
-        sse += f"event: {event_name}\n"
-    sse += f"data: {event.model_dump_json()}\n\n"
-    return sse.encode("utf-8")
-
-
 @routes.get(
     _storage_locations_prefix + "/{location_id}/search/{job_id}/stream",
     name="stream_search",
@@ -614,12 +607,14 @@ async def stream_search(request: web.Request) -> web.Response:
     )
 
     async def event_generator():
-        async for event in task_manager.consume_task_events(
+        async for event_id, event in task_manager.consume_task_events(
             task_filter=TaskFilter.model_validate(task_filter.model_dump()),
             task_uuid=path_params.job_id,
             last_id=header_params.last_event_id,
         ):
-            yield _format_sse(event, event_name=event.type)
+            yield SSEEvent(
+                id=event_id, event=event.type, data=event.model_dump_json()
+            ).serialize()
             if event.type == "status" and getattr(event, "data", None) in (
                 "done",
                 "error",

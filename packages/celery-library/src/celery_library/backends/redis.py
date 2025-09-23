@@ -9,6 +9,7 @@ from pydantic import TypeAdapter, ValidationError
 from servicelib.celery.models import (
     Task,
     TaskEvent,
+    TaskEventID,
     TaskFilter,
     TaskID,
     TaskInfoStore,
@@ -161,7 +162,7 @@ class RedisTaskInfoStore:
 
     async def consume_task_events(
         self, task_id: TaskID, last_id: str | None = None
-    ) -> AsyncIterator[TaskEvent]:
+    ) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]:
         stream_key = _build_stream_key(task_id)
         while True:
             messages = await self._redis_client_sdk.redis.xread(
@@ -183,8 +184,7 @@ class RedisTaskInfoStore:
                         event: TaskEvent = TypeAdapter(TaskEvent).validate_json(
                             raw_event
                         )
-                        event.event_id = msg_id
-                        yield event
+                        yield msg_id, event
                     except ValidationError:
                         continue
 
