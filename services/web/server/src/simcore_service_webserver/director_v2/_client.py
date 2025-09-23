@@ -26,10 +26,6 @@ _logger = logging.getLogger(__name__)
 
 SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)
 
-APP_DIRECTOR_V2_CLIENT_KEY: Final = web.AppKey(
-    "APP_DIRECTOR_V2_CLIENT_KEY", "DirectorV2RestClient"
-)
-
 
 async def is_healthy(app: web.Application) -> bool:
     try:
@@ -102,6 +98,11 @@ class DirectorV2RestClient:
             expected_status=web.HTTPAccepted,
             data={"user_id": user_id},
         )
+
+
+APP_DIRECTOR_V2_CLIENT_KEY: Final = web.AppKey(
+    "APP_DIRECTOR_V2_CLIENT_KEY", DirectorV2RestClient
+)
 
 
 def set_directorv2_client(app: web.Application, obj: DirectorV2RestClient):

@@ -5,8 +5,9 @@ from aiohttp import web
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import ByteSize, Field, HttpUrl, TypeAdapter, field_validator
 from pydantic_settings import SettingsConfigDict
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
+
+from ..constants import APP_SETTINGS_KEY
 
 _DEFAULT_THUMBNAIL: Final[HttpUrl] = TypeAdapter(HttpUrl).validate_python(
     "https://via.placeholder.com/170x120.png"

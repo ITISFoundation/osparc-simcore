@@ -1,17 +1,27 @@
 # pylint:disable=unused-import
 
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
+from aiohttp import web
 from common_library.user_messages import user_message
 from servicelib.aiohttp.application_keys import (
     APP_AIOPG_ENGINE_KEY,
     APP_CONFIG_KEY,
     APP_FIRE_AND_FORGET_TASKS_KEY,
-    APP_SETTINGS_KEY,
 )
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 
 from ._meta import APP_NAME
+
+if TYPE_CHECKING:
+    # Application settings key - defined here to avoid circular imports
+    from .application_settings import ApplicationSettings
+
+
+APP_SETTINGS_KEY: web.AppKey[ApplicationSettings] = web.AppKey(
+    "APP_SETTINGS_KEY", "ApplicationSettings"  # Use string to avoid import
+)
+
 
 # Application storage keys
 APP_PRODUCTS_KEY: Final[str] = f"{__name__ }.APP_PRODUCTS_KEY"

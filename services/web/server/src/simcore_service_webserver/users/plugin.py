@@ -4,10 +4,10 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.observer import setup_observer_registry
 
+from ..constants import APP_SETTINGS_KEY
 from ..user_notifications.bootstrap import (
     setup_user_notification_feature,
 )

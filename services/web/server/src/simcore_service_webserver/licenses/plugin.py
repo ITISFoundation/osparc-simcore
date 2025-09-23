@@ -1,12 +1,11 @@
-""" tags management subsystem
+"""tags management subsystem"""
 
-"""
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ..rest.plugin import setup_rest
 from . import (

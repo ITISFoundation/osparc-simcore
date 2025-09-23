@@ -4,9 +4,9 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..constants import APP_AIOPG_ENGINE_KEY
 from . import _aiopg, _asyncpg
 
 _logger = logging.getLogger(__name__)

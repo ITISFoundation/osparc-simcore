@@ -3,9 +3,9 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..constants import APP_SETTINGS_KEY
 from ..email.plugin import setup_email
 from ..products.plugin import setup_products
 from . import _rest

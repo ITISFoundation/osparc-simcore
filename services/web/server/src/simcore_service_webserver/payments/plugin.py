@@ -1,5 +1,5 @@
 """
-    Plugin to interact with the 'payments' service
+Plugin to interact with the 'payments' service
 """
 
 import logging
@@ -26,6 +26,7 @@ _logger = logging.getLogger(__name__)
 )
 def setup_payments(app: web.Application):
     settings = app[APP_SETTINGS_KEY].WEBSERVER_PAYMENTS
+    assert settings is not None  # nosec
 
     setup_db(app)
     setup_products(app)

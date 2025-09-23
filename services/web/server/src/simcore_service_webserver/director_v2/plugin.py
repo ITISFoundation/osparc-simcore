@@ -1,13 +1,13 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import (
     ModuleCategory,
     app_module_setup,
     is_setup_completed,
 )
 
+from ..constants import APP_SETTINGS_KEY
 from ..rest.plugin import setup_rest
 from . import _controller
 from ._client import DirectorV2RestClient, get_directorv2_client, set_directorv2_client
