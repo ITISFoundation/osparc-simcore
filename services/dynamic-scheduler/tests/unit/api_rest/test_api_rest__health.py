@@ -58,6 +58,7 @@ def mock_docker_api_proxy(mocker: MockerFixture, docker_api_proxy_ok: bool) -> N
 
 @pytest.fixture
 def app_environment(
+    disable_generic_scheduler_lifespan: None,
     mock_docker_api_proxy: None,
     mock_rabbitmq_clients: None,
     mock_redis_client: None,
