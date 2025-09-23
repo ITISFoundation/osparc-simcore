@@ -193,9 +193,8 @@ class DistributedSemaphore(BaseModel):
 
     async def _ensure_semaphore_initialized(self) -> None:
         """Initializes the semaphore in Redis if not already done."""
-        cls = type(self)
-        assert cls.register_semaphore is not None  # nosec
-        await cls.register_semaphore(  # pylint: disable=not-callable
+        assert self.register_semaphore is not None  # nosec
+        await self.register_semaphore(  # pylint: disable=not-callable
             keys=[self.tokens_key, self.holders_set],
             args=[self.capacity, self.holders_set_ttl.total_seconds()],
             client=self.redis_client.redis,
@@ -279,9 +278,8 @@ class DistributedSemaphore(BaseModel):
 
         assert self._token is not None  # nosec
         # set up the semaphore holder with a TTL
-        cls = type(self)
-        assert cls.acquire_script is not None  # nosec
-        result = await cls.acquire_script(  # pylint: disable=not-callable
+        assert self.acquire_script is not None  # nosec
+        result = await self.acquire_script(  # pylint: disable=not-callable
             keys=[self.holders_set, self.holder_key],
             args=[
                 self._token,
@@ -317,12 +315,11 @@ class DistributedSemaphore(BaseModel):
         """
 
         # Execute the release Lua script atomically
-        cls = type(self)
-        assert cls.release_script is not None  # nosec
+        assert self.release_script is not None  # nosec
         release_args = [self.instance_id]
         if self._token is not None:
             release_args.append(self._token)
-        result = await cls.release_script(  # pylint: disable=not-callable
+        result = await self.release_script(  # pylint: disable=not-callable
             keys=[self.tokens_key, self.holders_set, self.holder_key],
             args=release_args,
             client=self.redis_client.redis,
@@ -368,9 +365,8 @@ class DistributedSemaphore(BaseModel):
         ttl_seconds = self.ttl.total_seconds()
 
         # Execute the renewal Lua script atomically
-        cls = type(self)
-        assert cls.renew_script is not None  # nosec
-        result = await cls.renew_script(  # pylint: disable=not-callable
+        assert self.renew_script is not None  # nosec
+        result = await self.renew_script(  # pylint: disable=not-callable
             keys=[self.holders_set, self.holder_key, self.tokens_key],
             args=[
                 self.instance_id,
