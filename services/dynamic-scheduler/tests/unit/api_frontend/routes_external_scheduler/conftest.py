@@ -12,11 +12,6 @@ _MODULE: Final["str"] = (
 
 
 @pytest.fixture
-def use_internal_scheduler() -> bool:
-    return False
-
-
-@pytest.fixture
 def mock_stop_dynamic_service(mocker: MockerFixture) -> AsyncMock:
     async_mock = AsyncMock()
     mocker.patch(f"{_MODULE}.stop_dynamic_service", async_mock)

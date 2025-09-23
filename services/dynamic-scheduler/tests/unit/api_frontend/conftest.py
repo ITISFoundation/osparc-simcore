@@ -6,7 +6,6 @@ import subprocess
 from collections.abc import AsyncIterable
 from contextlib import suppress
 
-import nicegui
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI, status
@@ -37,7 +36,7 @@ def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    use_internal_scheduler: bool,  # defined in conftest inside subdirectiories of this module
+    use_internal_scheduler: bool,  # has to be added to every test
     postgres_db: sa.engine.Engine,
     postgres_host_config: PostgresTestConfig,
     disable_status_monitor_background_task: None,
@@ -45,13 +44,11 @@ def app_environment(
     redis_service: RedisSettings,
     remove_redis_data: None,
 ) -> EnvVarsDict:
-    setenvs_from_dict(
-        monkeypatch,
-        {
-            "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER": f"{use_internal_scheduler}",
-        },
-    )
-    return app_environment
+    to_set = {
+        "DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER": f"{use_internal_scheduler}",
+    }
+    setenvs_from_dict(monkeypatch, to_set)
+    return {**app_environment, **to_set}
 
 
 @pytest.fixture
@@ -62,8 +59,59 @@ def server_host_port() -> str:
 @pytest.fixture
 def not_initialized_app(app_environment: EnvVarsDict) -> FastAPI:
     # forces rebuild of middleware stack on next test
-    nicegui.app.user_middleware.clear()
+    import importlib
+
+    import nicegui
+    from nicegui import Client, binding, core, run
+    from nicegui.page import page
+    from starlette.routing import Route
+
+    for route in list(nicegui.app.routes):
+        if isinstance(route, Route) and route.path.startswith("/_nicegui/auto/static/"):
+            nicegui.app.remove_route(route.path)
+
+    all_page_routes = set(Client.page_routes.values())
+    all_page_routes.add("/")
+    for path in all_page_routes:
+        nicegui.app.remove_route(path)
+
+    for route in list(nicegui.app.routes):
+        if (
+            isinstance(route, Route)
+            and "{" in route.path
+            and "}" in route.path
+            and not route.path.startswith("/_nicegui/")
+        ):
+            nicegui.app.remove_route(route.path)
+
+    nicegui.app.openapi_schema = None
     nicegui.app.middleware_stack = None
+    nicegui.app.user_middleware.clear()
+    nicegui.app.urls.clear()
+    core.air = None
+    # # NOTE favicon routes must be removed separately because they are not "pages"
+    # for route in list(nicegui.app.routes):
+    #     if isinstance(route, Route) and route.path.endswith('/favicon.ico'):
+    #         nicegui.app.routes.remove(route)
+
+    importlib.reload(core)
+    importlib.reload(run)
+
+    Client.instances.clear()
+    Client.page_routes.clear()
+    nicegui.app.reset()
+
+    # Client.auto_index_client = Client(
+    #     page("/"), request=None
+    # ).__enter__()  # pylint: disable=unnecessary-dunder-call
+    # Client.auto_index_client.layout.parent_slot = (
+    #     None  # NOTE: otherwise the layout is nested in the previous client
+    # )
+    # # NOTE we need to re-add the auto index route because we removed all routes above
+    # nicegui.app.get("/")(Client.auto_index_client.build_response)
+
+    binding.reset()
+
     return create_app()
 
 
@@ -118,6 +166,15 @@ def download_playwright_browser() -> None:
 async def async_page(download_playwright_browser: None) -> AsyncIterable[Page]:
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        page = await browser.new_page()
+        # Create a new incognito context (no shared cache/cookies)
+        context = await browser.new_context()
+        page = await context.new_page()
+        # Optional: Intercept requests to forcibly disable cache
+        await page.route(
+            "**/*",
+            lambda route, request: route.continue_(
+                headers={**request.headers, "Cache-Control": "no-store"}
+            ),
+        )
         yield page
         await browser.close()

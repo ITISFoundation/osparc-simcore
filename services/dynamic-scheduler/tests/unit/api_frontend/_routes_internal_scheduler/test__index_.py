@@ -1,8 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-
-from fastapi import FastAPI
+import pytest
 from helpers import assert_contains_text
 from playwright.async_api import Page
 from simcore_service_dynamic_scheduler.api.frontend._utils import get_settings
@@ -18,11 +17,9 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
+@pytest.mark.parametrize("use_internal_scheduler", [True])
 async def test_placeholder_index(
-    app_runner: None,
-    async_page: Page,
-    server_host_port: str,
-    not_initialized_app: FastAPI,
+    app_runner: None, async_page: Page, server_host_port: str
 ):
     await async_page.goto(
         f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
