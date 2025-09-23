@@ -50,6 +50,7 @@ class OwnerMetadata(BaseModel):
 
     """
 
+    model_config = ConfigDict(extra="allow", frozen=True)
     owner: Annotated[
         str,
         StringConstraints(min_length=1, pattern=r"^[a-z_-]+$"),

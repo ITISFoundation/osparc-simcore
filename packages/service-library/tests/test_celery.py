@@ -26,7 +26,7 @@ class _TestOwnerMetadata(OwnerMetadata):
 
 
 @pytest.fixture
-def owner_metadata() -> dict[str, str | int | bool | None | list[str]]:
+def test_owner_metadata() -> dict[str, str | int | bool | None | list[str]]:
     data = {
         "string_": _faker.word(),
         "int_": _faker.random_int(),
@@ -40,10 +40,10 @@ def owner_metadata() -> dict[str, str | int | bool | None | list[str]]:
 
 
 async def test_task_filter_serialization(
-    owner_metadata: dict[str, str | int | bool | None | list[str]],
+    test_owner_metadata: dict[str, str | int | bool | None | list[str]],
 ):
-    task_filter = _TestOwnerMetadata.model_validate(owner_metadata)
-    assert task_filter.model_dump() == owner_metadata
+    task_filter = _TestOwnerMetadata.model_validate(test_owner_metadata)
+    assert task_filter.model_dump() == test_owner_metadata
 
 
 async def test_task_filter_sorting_key_not_serialized():
@@ -66,9 +66,9 @@ async def test_task_filter_sorting_key_not_serialized():
 
 
 async def test_task_filter_task_uuid(
-    owner_metadata: dict[str, str | int | bool | None | list[str]],
+    test_owner_metadata: dict[str, str | int | bool | None | list[str]],
 ):
-    task_filter = _TestOwnerMetadata.model_validate(owner_metadata)
+    task_filter = _TestOwnerMetadata.model_validate(test_owner_metadata)
     task_uuid = TaskUUID(_faker.uuid4())
     task_id = task_filter.model_dump_task_id(task_uuid)
     assert OwnerMetadata.get_task_uuid(task_id=task_id) == task_uuid
@@ -138,3 +138,13 @@ async def test_task_owner():
 
     with pytest.raises(pydantic.ValidationError):
         MyNextFilter(owner="wrong_owner")
+
+
+def test_owner_metadata_serialize_deserialize(test_owner_metadata):
+    test_owner_metadata = _TestOwnerMetadata.model_validate(test_owner_metadata)
+    data = test_owner_metadata.model_dump()
+    deserialized_data = OwnerMetadata.model_validate(data)
+    assert len(_TestOwnerMetadata.model_fields) == len(
+        OwnerMetadata.model_fields
+    )  # ensure extra data is available in _TestOwnerMetadata -> needed for RPC
+    assert deserialized_data.model_dump() == data
