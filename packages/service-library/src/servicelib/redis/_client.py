@@ -48,6 +48,7 @@ class RedisClientSDK:
     _client: aioredis.Redis = field(init=False)
     _task_health_check: Task | None = None
     _started_event_task_health_check: asyncio.Event | None = None
+    _cancelled_event_task_health_check: asyncio.Event | None = None
     _is_healthy: bool = False
 
     @property
