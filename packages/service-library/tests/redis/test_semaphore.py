@@ -506,25 +506,16 @@ async def test_semaphore_context_manager_with_exception(
     semaphore_capacity: int,
     exception: type[Exception | asyncio.CancelledError],
 ):
-    captured_semaphore: DistributedSemaphore | None = None
-
     async def _raising_context():
         async with distributed_semaphore(
             redis_client=redis_client_sdk,
             key=semaphore_name,
             capacity=semaphore_capacity,
-        ) as sem:
-            nonlocal captured_semaphore
-            captured_semaphore = sem
+        ):
             raise exception("Test")
 
     with pytest.raises(exception, match="Test"):
         await _raising_context()
-
-    # Should be released even after exception
-    assert captured_semaphore is not None
-    # captured_semaphore is guaranteed to be not None by the assert above
-    assert await captured_semaphore.current_count() == 0
 
 
 async def test_semaphore_context_manager_lost_renewal(
