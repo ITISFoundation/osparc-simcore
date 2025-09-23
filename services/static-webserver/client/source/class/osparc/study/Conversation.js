@@ -74,18 +74,20 @@ qx.Class.define("osparc.study.Conversation", {
     __applyConversation: function(conversation) {
       this.__reloadMessages(true);
 
-      conversation.addListener("messageAdded", e => {
-        const message = e.getData();
-        this.addMessage(message);
-      }, this);
-      conversation.addListener("messageUpdated", e => {
-        const message = e.getData();
-        this.updateMessage(message);
-      }, this);
-      conversation.addListener("messageDeleted", e => {
-        const message = e.getData();
-        this.deleteMessage(message);
-      }, this);
+      if (conversation) {
+        conversation.addListener("messageAdded", e => {
+          const message = e.getData();
+          this.addMessage(message);
+        }, this);
+        conversation.addListener("messageUpdated", e => {
+          const message = e.getData();
+          this.updateMessage(message);
+        }, this);
+        conversation.addListener("messageDeleted", e => {
+          const message = e.getData();
+          this.deleteMessage(message);
+        }, this);
+      }
     },
 
     getConversationId: function() {
@@ -267,8 +269,7 @@ qx.Class.define("osparc.study.Conversation", {
       }
 
       if (removeMessages) {
-        this.__messages = [];
-        this.__messagesList.removeAll();
+        this.clearAllMessages();
       }
       this.__messagesList.show();
 
@@ -284,6 +285,11 @@ qx.Class.define("osparc.study.Conversation", {
           }
         })
         .finally(() => this.__loadMoreMessages.setFetching(false));
+    },
+
+    clearAllMessages: function() {
+      this.__messages = [];
+      this.__messagesList.removeAll();
     },
 
     __updateMessagesNumber: function() {
