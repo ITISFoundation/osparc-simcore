@@ -316,6 +316,26 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToEvent();
       this.__listenToServiceStatus();
       this.__listenToStatePorts();
+
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      [
+        "connect",
+        "reconnect",
+      ].forEach(evtName => {
+        socket.addListener(evtName, () => {
+          // after a reconnect, re-sync the project document
+          console.log("WebSocket reconnected, re-syncing project document");
+          const studyId = this.getStudy().getUuid();
+          osparc.store.Study.getInstance().getOne(studyId)
+            .then(latestStudyData => {
+              const latestData = {
+                "version": this.__lastSyncedProjectVersion, // do not increase the version
+                "document": latestStudyData,
+              };
+              this.__applyProjectDocument(latestData);
+            });
+        });
+      });
     },
 
     __listenToProjectDocument: function() {
