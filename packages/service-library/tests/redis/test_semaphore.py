@@ -35,7 +35,7 @@ pytest_simcore_ops_services_selection = [
 def with_short_default_semaphore_ttl(
     mocker: MockerFixture,
 ) -> datetime.timedelta:
-    short_ttl = datetime.timedelta(seconds=0.5)
+    short_ttl = datetime.timedelta(seconds=1)
     mocker.patch(
         "servicelib.redis._semaphore.DEFAULT_SEMAPHORE_TTL",
         short_ttl,
@@ -105,6 +105,7 @@ async def test_semaphore_acquire_release_single(
         redis_client=redis_client_sdk,
         key=semaphore_name,
         capacity=semaphore_capacity,
+        ttl=with_short_default_semaphore_ttl,
     )
 
     # Initially not acquired

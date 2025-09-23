@@ -159,7 +159,7 @@ class DistributedSemaphore(BaseModel):
     @field_validator("ttl")
     @classmethod
     def validate_ttl(cls, v: datetime.timedelta) -> datetime.timedelta:
-        if v.total_seconds() <= 0:
+        if v.total_seconds() < 1:
             msg = "TTL must be positive"
             raise ValueError(msg)
         return v
@@ -176,7 +176,7 @@ class DistributedSemaphore(BaseModel):
 
     async def _ensure_semaphore_initialized(self) -> None:
         """Initializes the semaphore in Redis if not already done."""
-        ttl_seconds = int(self.ttl.total_seconds())
+        ttl_seconds = self.ttl.total_seconds()
         cls = type(self)
         assert cls.register_semaphore is not None  # nosec
         await cls.register_semaphore(  # pylint: disable=not-callable
@@ -205,7 +205,7 @@ class DistributedSemaphore(BaseModel):
             )
             return True
 
-        ttl_seconds = int(self.ttl.total_seconds())
+        ttl_seconds = self.ttl.total_seconds()
 
         # Determine retry stop condition based on blocking configuration
         stop_condition: stop_base = stop_after_delay(0)
@@ -338,7 +338,7 @@ class DistributedSemaphore(BaseModel):
             SemaphoreLostError: If the semaphore was lost or expired
         """
 
-        ttl_seconds = int(self.ttl.total_seconds())
+        ttl_seconds = self.ttl.total_seconds()
 
         # Execute the renewal Lua script atomically
         cls = type(self)
