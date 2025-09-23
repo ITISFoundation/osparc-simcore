@@ -450,7 +450,7 @@ async def distributed_semaphore(
         started: asyncio.Event,
         cancellation_event: asyncio.Event,
     ) -> None:
-        if cancellation_event.is_set():
+        if cancellation_event.is_set() or asyncio.current_task().cancelled():
             raise asyncio.CancelledError
         if not started.is_set():
             started.set()
@@ -475,10 +475,11 @@ async def distributed_semaphore(
                 name=f"semaphore/auto_reacquisition_task_{semaphore.key}_{semaphore.instance_id}",
             )
             await auto_reacquisition_started.wait()
-
-            yield semaphore
-            cancellation_event.set()  # NOTE: this ensure cancellation is effective
-            await cancel_wait_task(auto_reacquisition_task)
+            try:
+                yield semaphore
+            finally:
+                cancellation_event.set()  # NOTE: this ensure cancellation is effective
+                await cancel_wait_task(auto_reacquisition_task)
     except BaseExceptionGroup as eg:
         semaphore_errors, other_errors = eg.split(SemaphoreError)
         if other_errors:
