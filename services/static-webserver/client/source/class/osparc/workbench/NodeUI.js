@@ -258,7 +258,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
             maxHeight: 20,
             font: "text-10",
           });
-          const statusLabel = control.getChildControl("label");
+          const statusLabel = control.getChildControl("label").set({
+            maxWidth: 80,
+          });
           const requestOpenLogger = () => this.fireEvent("requestOpenLogger");
           const evaluateLabel = () => {
             const failed = statusLabel.getValue() === "Unsuccessful";
