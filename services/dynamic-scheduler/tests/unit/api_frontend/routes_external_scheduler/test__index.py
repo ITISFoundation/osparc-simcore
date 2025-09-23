@@ -42,7 +42,6 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-@pytest.mark.parametrize("use_internal_scheduler", [False])
 async def test_index_with_elements(
     app_runner: None,
     async_page: Page,
@@ -70,7 +69,6 @@ async def test_index_with_elements(
     await assert_contains_text(async_page, "Details", instances=2)
 
 
-@pytest.mark.parametrize("use_internal_scheduler", [False])
 @pytest.mark.parametrize(
     "service_status",
     [

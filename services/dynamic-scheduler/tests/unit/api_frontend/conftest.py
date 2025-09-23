@@ -36,7 +36,7 @@ def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    use_internal_scheduler: bool,  # has to be added to every test
+    use_internal_scheduler: bool,
     postgres_db: sa.engine.Engine,
     postgres_host_config: PostgresTestConfig,
     disable_status_monitor_background_task: None,

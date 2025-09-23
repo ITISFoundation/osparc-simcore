@@ -38,7 +38,6 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-@pytest.mark.parametrize("use_internal_scheduler", [False])
 async def test_service_details_no_status_present(
     app_runner: None,
     async_page: Page,
@@ -67,7 +66,6 @@ async def test_service_details_no_status_present(
     await assert_contains_text(async_page, "Remove from tracking", instances=1)
 
 
-@pytest.mark.parametrize("use_internal_scheduler", [False])
 async def test_service_details_renders_friendly_404(
     app_runner: None, async_page: Page, server_host_port: str, node_id: NodeID
 ):
@@ -77,7 +75,6 @@ async def test_service_details_renders_friendly_404(
     await assert_contains_text(async_page, "Sorry could not find any details for")
 
 
-@pytest.mark.parametrize("use_internal_scheduler", [False])
 @pytest.mark.parametrize(
     "service_status",
     [
