@@ -417,7 +417,7 @@ class DistributedSemaphore(BaseModel):
 
 
 @contextlib.asynccontextmanager
-async def distributed_semaphore(
+async def distributed_semaphore(  # noqa: C901
     redis_client: RedisClientSDK,
     *,
     key: str,
