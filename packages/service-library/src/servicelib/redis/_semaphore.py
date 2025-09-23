@@ -31,7 +31,6 @@ from ._client import RedisClientSDK
 from ._constants import (
     DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
     DEFAULT_SEMAPHORE_TTL,
-    DEFAULT_SOCKET_TIMEOUT,
     SEMAPHORE_KEY_PREFIX,
 )
 from ._errors import (
@@ -97,7 +96,7 @@ class DistributedSemaphore(BaseModel):
     blocking_timeout: Annotated[
         datetime.timedelta | None,
         Field(description="Maximum time to wait when blocking"),
-    ] = DEFAULT_SOCKET_TIMEOUT
+    ] = None
     instance_id: Annotated[
         str,
         Field(
@@ -208,7 +207,7 @@ class DistributedSemaphore(BaseModel):
             return tokens_key_token
 
         try:
-            # NOTE: redis-py library timeouts when the defined socket timeout triggers (e.g. DEFAULT_SOCKET_TIMEOUT)
+            # NOTE: redis-py library timeouts when the defined socket timeout triggers
             # The BRPOP command itself could timeout but the redis-py socket timeout defeats the purpose
             # so we always block forever on BRPOP, tenacity takes care of retrying when a socket timeout happens
             # and we use asyncio.timeout to enforce the blocking_timeout if defined
@@ -424,7 +423,7 @@ async def distributed_semaphore(  # noqa: C901
     capacity: PositiveInt,
     ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
     blocking: bool = True,
-    blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
+    blocking_timeout: datetime.timedelta | None = None,
     expected_lock_overall_time: datetime.timedelta = DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
 ) -> AsyncIterator[DistributedSemaphore]:
     """

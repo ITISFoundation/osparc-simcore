@@ -361,7 +361,6 @@ async def test_cancelled_error_preserved(
 
 @pytest.mark.heavy_load
 async def test_with_large_capacity(
-    with_slow_redis_socket_timeout: None,
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):
@@ -424,19 +423,7 @@ async def test_long_locking_logs_warning(
         assert "longer than expected" in caplog.messages[-1]
 
 
-@pytest.fixture
-def with_slow_redis_socket_timeout(
-    mock_redis_socket_timeout: None, mocker: MockerFixture
-) -> None:
-    # put back to higher value to allow normal operations
-    mocker.patch(
-        "servicelib.redis._client.DEFAULT_SOCKET_TIMEOUT",
-        datetime.timedelta(seconds=30),
-    )
-
-
 async def test_semaphore_fair_queuing(
-    with_slow_redis_socket_timeout: None,
     redis_client_sdk: RedisClientSDK,
     semaphore_name: str,
 ):

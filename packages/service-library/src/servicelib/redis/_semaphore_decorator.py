@@ -9,7 +9,6 @@ from ._client import RedisClientSDK
 from ._constants import (
     DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
     DEFAULT_SEMAPHORE_TTL,
-    DEFAULT_SOCKET_TIMEOUT,
 )
 from ._semaphore import distributed_semaphore
 
@@ -27,7 +26,7 @@ def with_limited_concurrency(
     capacity: int | Callable[..., int],
     ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
     blocking: bool = True,
-    blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
+    blocking_timeout: datetime.timedelta | None = None,
     expected_lock_overall_time: datetime.timedelta = DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
 ) -> Callable[
     [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
@@ -107,7 +106,7 @@ def with_limited_concurrency_cm(
     capacity: int | Callable[..., int],
     ttl: datetime.timedelta = DEFAULT_SEMAPHORE_TTL,
     blocking: bool = True,
-    blocking_timeout: datetime.timedelta | None = DEFAULT_SOCKET_TIMEOUT,
+    blocking_timeout: datetime.timedelta | None = None,
     expected_lock_overall_time: datetime.timedelta = DEFAULT_EXPECTED_LOCK_OVERALL_TIME,
 ) -> Callable[
     [Callable[P, AbstractAsyncContextManager[R]]],

@@ -20,7 +20,6 @@ from ._constants import (
     DEFAULT_DECODE_RESPONSES,
     DEFAULT_HEALTH_CHECK_INTERVAL,
     DEFAULT_LOCK_TTL,
-    DEFAULT_SOCKET_TIMEOUT,
 )
 
 _logger = logging.getLogger(__name__)
@@ -65,7 +64,7 @@ class RedisClientSDK:
                 redis.exceptions.ConnectionError,
             ],
             retry_on_timeout=True,
-            socket_timeout=DEFAULT_SOCKET_TIMEOUT.total_seconds(),
+            socket_timeout=None,  # NOTE: setting a timeout here can lead to issues with long running commands
             encoding="utf-8",
             decode_responses=self.decode_responses,
             client_name=self.client_name,
