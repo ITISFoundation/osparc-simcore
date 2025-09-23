@@ -7,6 +7,7 @@
 
 import asyncio
 import datetime
+import logging
 
 import pytest
 from faker import Faker
@@ -545,6 +546,61 @@ async def test_semaphore_context_manager_lost_renewal(
                     with_short_default_semaphore_ttl.total_seconds() + 0.5
                 )
             raise asyncio.CancelledError
+
+
+async def test_semaphore_context_manager_auto_renewal(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    with_short_default_semaphore_ttl: datetime.timedelta,
+):
+    async with distributed_semaphore(
+        redis_client=redis_client_sdk,
+        key=semaphore_name,
+        capacity=1,
+        ttl=with_short_default_semaphore_ttl,
+    ) as semaphore:
+        assert await semaphore.is_acquired() is True
+        assert await semaphore.current_count() == 1
+        assert await semaphore.available_tokens() == 0
+        await _assert_semaphore_redis_state(
+            redis_client_sdk,
+            semaphore,
+            expected_count=1,
+            expected_free_tokens=0,
+        )
+
+        # wait for a few TTLs to ensure auto-renewal is working
+        total_wait = with_short_default_semaphore_ttl.total_seconds() * 3
+        await asyncio.sleep(total_wait)
+
+        # should still be acquired
+        assert await semaphore.is_acquired() is True
+        assert await semaphore.current_count() == 1
+        assert await semaphore.available_tokens() == 0
+        await _assert_semaphore_redis_state(
+            redis_client_sdk,
+            semaphore,
+            expected_count=1,
+            expected_free_tokens=0,
+        )
+
+
+async def test_semaphore_context_manager_logs_warning_when_hold_too_long(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Test that a warning is logged when holding the semaphore for too long"""
+    with caplog.at_level(logging.WARNING):
+        async with distributed_semaphore(
+            redis_client=redis_client_sdk,
+            key=semaphore_name,
+            capacity=1,
+            expected_lock_overall_time=datetime.timedelta(milliseconds=200),
+        ):
+            await asyncio.sleep(0.3)
+        assert caplog.records
+        assert "longer than expected" in caplog.messages[-1]
 
 
 async def test_multiple_semaphores_different_keys(
