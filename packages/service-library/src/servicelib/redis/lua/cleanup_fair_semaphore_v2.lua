@@ -4,7 +4,7 @@
 -- KEYS[3]: holder_prefix (prefix for holder keys, e.g. "semaphores:holders:key:")
 -- ARGV[1]: capacity (total semaphore capacity)
 --
--- Returns: {recovered_tokens, current_holders, available_tokens, total_cleaned}
+-- Returns: {recovered_tokens, missing_tokens, excess_tokens}
 -- This script should be run periodically to recover tokens from crashed clients
 
 local tokens_key = KEYS[1]
@@ -52,15 +52,5 @@ for i = 1, excess_tokens do
     redis.call('RPOP', tokens_key)
 end
 
--- Step 4: Refresh expiry on data structures to prevent cleanup
-local final_holders = redis.call('SCARD', holders_key)
-local final_available = redis.call('LLEN', tokens_key)
 
-if final_holders > 0 then
-    redis.call('EXPIRE', holders_key, 3600)  -- 1 hour expiry
-end
-if final_available > 0 then
-    redis.call('EXPIRE', tokens_key, 3600)   -- 1 hour expiry
-end
-
-return {recovered_tokens, final_holders, final_available, #cleaned_holders}
+return {recovered_tokens, missing_tokens, excess_tokens}
