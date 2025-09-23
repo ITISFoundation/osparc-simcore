@@ -22,6 +22,7 @@ from servicelib.redis._semaphore import (
     SemaphoreAcquisitionError,
     SemaphoreNotAcquiredError,
 )
+from servicelib.redis._utils import handle_redis_returns_union_types
 
 pytest_simcore_core_services_selection = [
     "redis",
@@ -111,7 +112,9 @@ async def _assert_semaphore_redis_state(
     expected_expired: bool = False,
 ):
     """Helper to assert the internal Redis state of the semaphore"""
-    holders = await redis_client_sdk.redis.smembers(semaphore.holders_set)
+    holders = await handle_redis_returns_union_types(
+        redis_client_sdk.redis.smembers(semaphore.holders_set)
+    )
     assert len(holders) == expected_count
     if expected_count > 0:
         assert semaphore.instance_id in holders
@@ -120,7 +123,9 @@ async def _assert_semaphore_redis_state(
             assert holder_key_exists == 0
         else:
             assert holder_key_exists == 1
-    tokens = await redis_client_sdk.redis.lrange(semaphore.tokens_key, 0, -1)
+    tokens = await handle_redis_returns_union_types(
+        redis_client_sdk.redis.lrange(semaphore.tokens_key, 0, -1)
+    )
     assert len(tokens) == expected_free_tokens
 
 
