@@ -56,62 +56,39 @@ def server_host_port() -> str:
     return f"127.0.0.1:{DEFAULT_FASTAPI_PORT}"
 
 
-@pytest.fixture
-def not_initialized_app(app_environment: EnvVarsDict) -> FastAPI:
+def _reset_nicegui_app() -> None:
     # forces rebuild of middleware stack on next test
-    import importlib
 
-    import nicegui
-    from nicegui import Client, binding, core, run
-    from nicegui.page import page
+    # below is based on nicegui.testing.general_fixtures.nicegui_reset_globals
+
+    from nicegui import Client, app
     from starlette.routing import Route
 
-    for route in list(nicegui.app.routes):
+    for route in list(app.routes):
         if isinstance(route, Route) and route.path.startswith("/_nicegui/auto/static/"):
-            nicegui.app.remove_route(route.path)
+            app.remove_route(route.path)
 
     all_page_routes = set(Client.page_routes.values())
     all_page_routes.add("/")
     for path in all_page_routes:
-        nicegui.app.remove_route(path)
+        app.remove_route(path)
 
-    for route in list(nicegui.app.routes):
+    for route in list(app.routes):
         if (
             isinstance(route, Route)
             and "{" in route.path
             and "}" in route.path
             and not route.path.startswith("/_nicegui/")
         ):
-            nicegui.app.remove_route(route.path)
+            app.remove_route(route.path)
 
-    nicegui.app.openapi_schema = None
-    nicegui.app.middleware_stack = None
-    nicegui.app.user_middleware.clear()
-    nicegui.app.urls.clear()
-    core.air = None
-    # # NOTE favicon routes must be removed separately because they are not "pages"
-    # for route in list(nicegui.app.routes):
-    #     if isinstance(route, Route) and route.path.endswith('/favicon.ico'):
-    #         nicegui.app.routes.remove(route)
+    app.middleware_stack = None
+    app.user_middleware.clear()
 
-    importlib.reload(core)
-    importlib.reload(run)
 
-    Client.instances.clear()
-    Client.page_routes.clear()
-    nicegui.app.reset()
-
-    # Client.auto_index_client = Client(
-    #     page("/"), request=None
-    # ).__enter__()  # pylint: disable=unnecessary-dunder-call
-    # Client.auto_index_client.layout.parent_slot = (
-    #     None  # NOTE: otherwise the layout is nested in the previous client
-    # )
-    # # NOTE we need to re-add the auto index route because we removed all routes above
-    # nicegui.app.get("/")(Client.auto_index_client.build_response)
-
-    binding.reset()
-
+@pytest.fixture
+def not_initialized_app(app_environment: EnvVarsDict) -> FastAPI:
+    _reset_nicegui_app()
     return create_app()
 
 
