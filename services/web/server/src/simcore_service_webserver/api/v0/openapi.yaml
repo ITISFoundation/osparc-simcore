@@ -17111,12 +17111,12 @@ components:
           title: Namepattern
           description: Name pattern with wildcard support ('*', '?'). Minimum of 3
             non-wildcard characters required.
-        itemsPerPage:
+        maxItemsPerPage:
           type: integer
-          maximum: 1000
+          maximum: 25
           minimum: 1
-          title: Itemsperpage
-          description: Number of items per page
+          title: Maxitemsperpage
+          description: Max number of items per page
           default: 50
       type: object
       required:

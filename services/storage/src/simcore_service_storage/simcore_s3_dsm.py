@@ -1003,7 +1003,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             async for s3_objects in s3_client.list_objects_paginated(
                 bucket=self.simcore_bucket_name,
                 prefix=f"{proj_id}/",
-                items_per_page=items_per_page * 2,
+                items_per_page=items_per_page * 5,  # fetch more to filter locally
             ):
                 for s3_obj in s3_objects:
                     filename = Path(s3_obj.object_key).name
@@ -1030,15 +1030,16 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
                         if len(current_page_results) >= items_per_page:
                             processed_results = await self._process_s3_page_results(
-                                current_page_results
+                                current_page_results[:items_per_page]
                             )
                             yield processed_results
-                            current_page_results = []
+                            current_page_results = current_page_results[items_per_page:]
 
-            if current_page_results:
-                processed_results = await self._process_s3_page_results(
-                    current_page_results
-                )
+            # Handle remaining results, ensuring we don't exceed items_per_page
+            while current_page_results:
+                batch = current_page_results[:items_per_page]
+                current_page_results = current_page_results[items_per_page:]
+                processed_results = await self._process_s3_page_results(batch)
                 yield processed_results
 
         except S3KeyNotFoundError:
