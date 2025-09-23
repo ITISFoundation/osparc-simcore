@@ -514,6 +514,39 @@ async def test_semaphore_context_manager_with_exception(
     assert await captured_semaphore.current_count() == 0
 
 
+async def test_semaphore_context_manager_lost_renewal(
+    redis_client_sdk: RedisClientSDK,
+    semaphore_name: str,
+    with_short_default_semaphore_ttl: datetime.timedelta,
+):
+    with pytest.raises(SemaphoreLostError):  # noqa: PT012
+        async with distributed_semaphore(
+            redis_client=redis_client_sdk,
+            key=semaphore_name,
+            capacity=1,
+            ttl=with_short_default_semaphore_ttl,
+        ) as semaphore:
+            assert await semaphore.is_acquired() is True
+            assert await semaphore.current_count() == 1
+            assert await semaphore.available_tokens() == 0
+            await _assert_semaphore_redis_state(
+                redis_client_sdk,
+                semaphore,
+                expected_count=1,
+                expected_free_tokens=0,
+            )
+
+            # now simulate lost renewal by deleting the holder key
+            await redis_client_sdk.redis.delete(semaphore.holder_key)
+            # wait a bit to let the auto-renewal task detect the lost lock
+            # the sleep will be interrupted by the exception and the context manager will exit
+            with pytest.raises(asyncio.CancelledError):
+                await asyncio.sleep(
+                    with_short_default_semaphore_ttl.total_seconds() + 0.5
+                )
+            raise asyncio.CancelledError
+
+
 async def test_multiple_semaphores_different_keys(
     redis_client_sdk: RedisClientSDK,
     faker: Faker,
