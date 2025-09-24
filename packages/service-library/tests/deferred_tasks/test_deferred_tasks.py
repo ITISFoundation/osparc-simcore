@@ -3,7 +3,6 @@
 
 import asyncio
 import contextlib
-import datetime
 import itertools
 import json
 import random
@@ -19,7 +18,6 @@ from aiohttp.test_utils import unused_port
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from pydantic import NonNegativeFloat, NonNegativeInt
-from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 from servicelib.sequences_utils import partition_gen
@@ -385,19 +383,10 @@ class ServiceManager:
             yield
 
 
-@pytest.fixture
-def mock_default_socket_timeout(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "servicelib.redis._client.DEFAULT_SOCKET_TIMEOUT",
-        datetime.timedelta(seconds=0.25),
-    )
-
-
 @pytest.mark.parametrize("max_workers", [10])
 @pytest.mark.parametrize("deferred_tasks_to_start", [100])
 @pytest.mark.parametrize("service", ["rabbit", "redis"])
 async def test_workflow_with_third_party_services_outages(
-    mock_default_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk_deferred_tasks: RedisClientSDK,
     rabbit_client: RabbitMQClient,
