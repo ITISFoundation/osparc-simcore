@@ -132,6 +132,8 @@ qx.Class.define("osparc.widget.Renamer", {
     },
 
     __applyMaxChars: function(value) {
+      this.getChildControl("text-field").setMaxLength(value);
+
       this.__addSubtitle(this.tr("%1 characters max", value));
     },
 
