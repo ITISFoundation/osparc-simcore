@@ -150,20 +150,17 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_exceptions
 async def cancel_async_job(request: web.Request) -> web.Response:
-
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
-    await async_jobs.cancel(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id=path_params.task_id,
-        job_filter=get_job_filter(
-            user_id=_req_ctx.user_id,
-            product_name=_req_ctx.product_name,
-        ),
+    task_manager = get_task_manager(request.app)
+    task_filter = get_job_filter(
+        user_id=_req_ctx.user_id,
+        product_name=_req_ctx.product_name,
+    )
+    await task_manager.cancel_task(
+        task_filter=TaskFilter.model_validate(task_filter.model_dump()),
+        task_uuid=path_params.task_id,
     )
 
     return web.Response(status=status.HTTP_204_NO_CONTENT)
@@ -178,7 +175,6 @@ async def cancel_async_job(request: web.Request) -> web.Response:
 @handle_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
     task_manager = get_task_manager(request.app)
