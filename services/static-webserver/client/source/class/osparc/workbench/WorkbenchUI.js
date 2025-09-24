@@ -292,6 +292,18 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.openServiceCatalog(nodePos);
     },
 
+    __openServiceCatalogWithContext: function(nodeUI, isNodeInput) {
+      const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), isNodeInput);
+      const srvCat = this.openServiceCatalog(freePos);
+      if (srvCat) {
+        if (isNodeInput) {
+          srvCat.setContext(null, nodeUI.getNodeId());
+        } else {
+          srvCat.setContext(nodeUI.getNodeId(), null);
+        }
+      }
+    },
+
     openServiceCatalog: function(nodePos) {
       if (osparc.workbench.ServiceCatalog.canItBeOpened(this.getStudy())) {
         const srvCat = new osparc.workbench.ServiceCatalog();
@@ -701,6 +713,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           edgeFound.setHighlighted(highlight);
         }
       });
+      nodeUI.addListener("requestOpenServiceCatalog", e => this.__openServiceCatalogWithContext(nodeUI, e.getData()), this);
 
       return nodeUI;
     },
@@ -1393,23 +1406,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         },
         addServiceInput: {
           "text": "\uf090", // in
-          "action": () => {
-            const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), true);
-            const srvCat = this.openServiceCatalog(freePos);
-            if (srvCat) {
-              srvCat.setContext(null, nodeUI.getNodeId());
-            }
-          }
+          "action": () => this.__openServiceCatalogWithContext(nodeUI, true)
         },
         addServiceOutput: {
           "text": "\uf08b", // out
-          "action": () => {
-            const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), false);
-            const srvCat = this.openServiceCatalog(freePos);
-            if (srvCat) {
-              srvCat.setContext(nodeUI.getNodeId(), null);
-            }
-          }
+          "action": () => this.__openServiceCatalogWithContext(nodeUI, false)
         },
         noAction: {
           "text": "\uf05e", // verboten

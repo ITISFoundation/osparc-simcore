@@ -165,6 +165,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     "nodeMovingStop": "qx.event.type.Event",
     "updateNodeDecorator": "qx.event.type.Event",
     "requestOpenLogger": "qx.event.type.Event",
+    "requestOpenServiceCatalog": "qx.event.type.Data",
     "highlightEdge": "qx.event.type.Data",
   },
 
@@ -773,6 +774,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
         return;
       }
       const port = this.__createPort(isInput);
+      port.addListener("tap", () => {
+        this.fireDataEvent("requestOpenServiceCatalog", isInput);
+      }, this);
       port.addListener("mouseover", () => {
         port.setSource(this.self().PORT_CONNECTED);
       }, this);
