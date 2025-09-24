@@ -8,14 +8,12 @@ from typing import Final
 from uuid import UUID
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskResult,
     TaskStatus,
-)
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobId,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from pydantic import BaseModel
@@ -24,13 +22,20 @@ from servicelib.aiohttp.long_running_tasks.server import (
     get_long_running_manager,
 )
 from servicelib.aiohttp.requests_validation import (
+    parse_request_headers_as,
     parse_request_path_parameters_as,
 )
-from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.aiohttp.rest_responses import (
+    create_data_response,
+    create_event_stream_response,
+)
+from servicelib.celery.models import TaskFilter
 from servicelib.long_running_tasks import lrt_api
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
+from servicelib.sse.models import SSEEvent, SSEHeaders
 
 from .._meta import API_VTAG
+from ..celery import get_task_manager
 from ..login.decorators import login_required
 from ..long_running_tasks.plugin import webserver_request_context_decorator
 from ..models import AuthenticatedRequestContext
@@ -45,6 +50,10 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 _task_prefix: Final[str] = f"/{API_VTAG}/tasks"
+
+
+class _PathParams(BaseModel):
+    task_id: UUID
 
 
 @routes.get(
@@ -99,10 +108,6 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     )
 
 
-class _StorageAsyncJobId(BaseModel):
-    task_id: AsyncJobId
-
-
 @routes.get(
     _task_prefix + "/{task_id}",
     name="get_async_job_status",
@@ -114,11 +119,11 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
-    async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
+    path_params = parse_request_path_parameters_as(_PathParams, request)
     async_job_rpc_status = await async_jobs.status(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id=async_job_get.task_id,
+        job_id=path_params.task_id,
         job_filter=get_job_filter(
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
@@ -149,12 +154,12 @@ async def cancel_async_job(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
+    path_params = parse_request_path_parameters_as(_PathParams, request)
 
     await async_jobs.cancel(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id=async_job_get.task_id,
+        job_id=path_params.task_id,
         job_filter=get_job_filter(
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
@@ -172,24 +177,54 @@ async def cancel_async_job(request: web.Request) -> web.Response:
 @permission_required("storage.files.*")
 @handle_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
-    class _PathParams(BaseModel):
-        task_id: UUID
-
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job_get = parse_request_path_parameters_as(_PathParams, request)
-    async_job_rpc_result = await async_jobs.result(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id=async_job_get.task_id,
-        job_filter=get_job_filter(
-            user_id=_req_ctx.user_id,
-            product_name=_req_ctx.product_name,
-        ),
+    path_params = parse_request_path_parameters_as(_PathParams, request)
+
+    task_manager = get_task_manager(request.app)
+    task_filter = get_job_filter(
+        user_id=_req_ctx.user_id,
+        product_name=_req_ctx.product_name,
+    )
+    task_result = await task_manager.get_task_result(
+        task_filter=TaskFilter.model_validate(task_filter.model_dump()),
+        task_uuid=path_params.task_id,
     )
 
     return create_data_response(
-        TaskResult(result=async_job_rpc_result.result, error=None),
+        TaskResult(result=task_result, error=None),
         status=status.HTTP_200_OK,
     )
+
+
+@routes.get(
+    _task_prefix + "/{task_id}/stream",
+    name="get_async_job_stream",
+)
+@login_required
+@permission_required("storage.files.*")
+@handle_exceptions
+async def get_async_job_stream(request: web.Request) -> web.Response:
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(_PathParams, request)
+    header_params = parse_request_headers_as(SSEHeaders, request)
+
+    task_manager = get_task_manager(request.app)
+    task_filter = get_job_filter(
+        user_id=_req_ctx.user_id,
+        product_name=_req_ctx.product_name,
+    )
+
+    async def event_generator():
+        async for event_id, event in task_manager.consume_task_events(
+            task_filter=TaskFilter.model_validate(task_filter.model_dump()),
+            task_uuid=path_params.task_id,
+            last_id=header_params.last_event_id,
+        ):
+            yield SSEEvent(
+                id=event_id, event=event.type, data=[json_dumps(event.data)]
+            ).serialize()
+            if event.type == "status":
+                break
+
+    return create_event_stream_response(event_generator=event_generator)

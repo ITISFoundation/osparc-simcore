@@ -4,6 +4,7 @@ from aiohttp import web
 from celery_library.backends.redis import RedisTaskInfoStore
 from celery_library.common import create_app
 from celery_library.task_manager import CeleryTaskManager
+from celery_library.types import register_celery_types
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
@@ -27,6 +28,7 @@ async def setup_task_manager(app: web.Application):
             celery_settings,
             RedisTaskInfoStore(redis_client_sdk),
         )
+        register_celery_types()
 
     yield
 
