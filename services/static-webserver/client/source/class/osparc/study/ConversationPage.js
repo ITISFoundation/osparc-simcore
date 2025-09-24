@@ -111,7 +111,9 @@ qx.Class.define("osparc.study.ConversationPage", {
         visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       renameButton.addListener("execute", () => {
-        const titleEditor = new osparc.widget.Renamer(tabButton.getLabel());
+        const titleEditor = new osparc.widget.Renamer(tabButton.getLabel()).set({
+          maxChars: osparc.data.model.Conversation.MAX_TITLE_LENGTH,
+        });
         titleEditor.addListener("labelChanged", e => {
           titleEditor.close();
           const newLabel = e.getData()["newLabel"];
