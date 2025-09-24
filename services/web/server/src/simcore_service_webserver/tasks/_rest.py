@@ -114,12 +114,13 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
-    task_filter = get_job_filter(
-        user_id=_req_ctx.user_id,
-        product_name=_req_ctx.product_name,
-    )
     task_status = await get_task_manager(request.app).get_task_status(
-        task_filter=TaskFilter.model_validate(task_filter),
+        task_filter=TaskFilter.model_validate(
+            get_job_filter(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            )
+        ),
         task_uuid=path_params.task_id,
     )
 
@@ -147,13 +148,13 @@ async def cancel_async_job(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
-    task_manager = get_task_manager(request.app)
-    task_filter = get_job_filter(
-        user_id=_req_ctx.user_id,
-        product_name=_req_ctx.product_name,
-    )
-    await task_manager.cancel_task(
-        task_filter=TaskFilter.model_validate(task_filter),
+    await get_task_manager(request.app).cancel_task(
+        task_filter=TaskFilter.model_validate(
+            get_job_filter(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            )
+        ),
         task_uuid=path_params.task_id,
     )
 
@@ -171,12 +172,13 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
-    task_filter = get_job_filter(
-        user_id=_req_ctx.user_id,
-        product_name=_req_ctx.product_name,
-    )
     task_result = await get_task_manager(request.app).get_task_result(
-        task_filter=TaskFilter.model_validate(task_filter),
+        task_filter=TaskFilter.model_validate(
+            get_job_filter(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            )
+        ),
         task_uuid=path_params.task_id,
     )
 
