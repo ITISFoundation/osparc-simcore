@@ -106,15 +106,12 @@ qx.Class.define("osparc.widget.Renamer", {
     },
 
     __populateNodeLabelEditor: function(oldLabel, labelWidth) {
-      // Create a text field in which to edit the data
       const textField = this.getChildControl("text-field").set({
         value: oldLabel,
         minWidth: labelWidth,
       });
 
-      // Create the "Save" button to close the cell editor
       const saveButton = this.getChildControl("save-button");
-
       saveButton.addListener("execute", () => {
         const newLabel = textField.getValue();
         const data = {
@@ -123,7 +120,7 @@ qx.Class.define("osparc.widget.Renamer", {
         this.fireDataEvent("labelChanged", data);
       }, this);
 
-      this.addListener("appear", e => {
+      this.addListener("appear", () => {
         textField.focus();
         if (textField.getValue()) {
           textField.setTextSelection(0, textField.getValue().length);
