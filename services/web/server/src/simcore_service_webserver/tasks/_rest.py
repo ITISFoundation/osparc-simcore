@@ -198,14 +198,14 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParams, request)
     header_params = parse_request_headers_as(SSEHeaders, request)
 
-    task_filter = get_job_filter(
-        user_id=_req_ctx.user_id,
-        product_name=_req_ctx.product_name,
-    )
-
     async def event_generator():
         async for event_id, event in get_task_manager(request.app).consume_task_events(
-            task_filter=TaskFilter.model_validate(task_filter.model_dump()),
+            task_filter=TaskFilter.model_validate(
+                get_job_filter(
+                    user_id=_req_ctx.user_id,
+                    product_name=_req_ctx.product_name,
+                )
+            ),
             task_uuid=path_params.task_id,
             last_id=header_params.last_event_id,
         ):
