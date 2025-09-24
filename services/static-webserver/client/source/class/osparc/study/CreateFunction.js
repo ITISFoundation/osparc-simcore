@@ -56,6 +56,12 @@ qx.Class.define("osparc.study.CreateFunction", {
         dynamics.length === 0
       );
     },
+
+    checkExposedInputsOutputs: function(exposedInputs, exposedOutputs) {
+      console.log("Exposed inputs:", exposedInputs);
+      console.log("Exposed outputs:", exposedOutputs);
+      return true;
+    },
   },
 
   members: {
@@ -264,6 +270,12 @@ qx.Class.define("osparc.study.CreateFunction", {
     },
 
     __createFunction: function(defaultInputs, exposedInputs, exposedOutputs) {
+      if (!osparc.study.CreateFunction.checkExposedInputsOutputs(exposedInputs, exposedOutputs)) {
+        const msg = this.tr("Exposed at least one input or output");
+        osparc.FlashMessenger.logAs(msg, "ERROR");
+        return;
+      }
+
       this.__createFunctionBtn.setFetching(true);
 
       // first publish it as a hidden template
