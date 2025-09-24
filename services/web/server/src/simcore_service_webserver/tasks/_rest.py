@@ -117,25 +117,25 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 async def get_async_job_status(request: web.Request) -> web.Response:
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
     path_params = parse_request_path_parameters_as(_PathParams, request)
-    async_job_rpc_status = await async_jobs.status(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id=path_params.task_id,
-        job_filter=get_job_filter(
-            user_id=_req_ctx.user_id,
-            product_name=_req_ctx.product_name,
-        ),
+    task_manager = get_task_manager(request.app)
+    task_filter = get_job_filter(
+        user_id=_req_ctx.user_id,
+        product_name=_req_ctx.product_name,
     )
-    _task_id = f"{async_job_rpc_status.job_id}"
+    task_status = await task_manager.get_task_status(
+        task_filter=TaskFilter.model_validate(task_filter.model_dump()),
+        task_uuid=path_params.task_id,
+    )
+
+    _task_id = f"{task_status.task_uuid}"
     return create_data_response(
         TaskStatus(
             task_progress=TaskProgress(
-                task_id=_task_id, percent=async_job_rpc_status.progress.percent_value
+                task_id=_task_id, percent=task_status.progress_report.percent_value
             ),
-            done=async_job_rpc_status.done,
+            done=task_status.is_done,
             started=None,
         ),
         status=status.HTTP_200_OK,
