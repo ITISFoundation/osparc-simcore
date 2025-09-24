@@ -1054,8 +1054,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       portLabel.setSource(osparc.workbench.NodeUI.PORT_CONNECTED);
 
       if (!this.__tempEdgeIsInput) {
-        const modified = nodeUI.getNode().getStatus().getModified();
-        const colorHex = osparc.workbench.EdgeUI.getEdgeColor(modified);
+        const output = nodeUI.getNode().getStatus().getOutput();
+        const colorHex = osparc.workbench.EdgeUI.getEdgeColor(output);
         osparc.wrapper.Svg.updateCurveColor(this.__tempEdgeRepr, colorHex);
       }
     },
