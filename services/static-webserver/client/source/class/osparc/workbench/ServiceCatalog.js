@@ -90,13 +90,17 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
           osparc.FlashMessenger.logError("Nodes can't be added to a read-only project");
           return false;
         }
+        if (!osparc.data.model.Study.canIWrite(study.getAccessRights())) {
+          osparc.FlashMessenger.logError("You don't have permissions to add nodes to this project");
+          return false;
+        }
         if (study.isPipelineRunning()) {
           osparc.FlashMessenger.logError(osparc.data.model.Workbench.CANT_ADD_NODE);
           return false;
         }
         return true;
       }
-      return false;
+      return true;
     },
   },
 
