@@ -15,7 +15,6 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
-from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
@@ -31,7 +30,6 @@ from servicelib.aiohttp.rest_responses import (
 )
 from servicelib.celery.models import TaskFilter
 from servicelib.long_running_tasks import lrt_api
-from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.sse.models import SSEEvent, SSEHeaders
 
 from .._meta import API_VTAG
@@ -39,7 +37,6 @@ from ..celery import get_task_manager
 from ..login.decorators import login_required
 from ..long_running_tasks.plugin import webserver_request_context_decorator
 from ..models import AuthenticatedRequestContext
-from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ..utils import get_job_filter
 from ._exception_handlers import handle_exceptions
@@ -74,26 +71,25 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-
-    user_async_jobs = await async_jobs.list_jobs(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_filter=get_job_filter(
-            user_id=_req_ctx.user_id,
-            product_name=_req_ctx.product_name,
-        ),
+    tasks = await get_task_manager(request.app).list_tasks(
+        task_filter=TaskFilter.model_validate(
+            get_job_filter(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            )
+        )
     )
+
     return create_data_response(
         [
             TaskGet(
-                task_id=f"{job.job_id}",
-                task_name=job.job_name,
-                status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=str(job.job_id))))}",
-                abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=str(job.job_id))))}",
-                result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=str(job.job_id))))}",
+                task_id=f"{task.uuid}",
+                task_name=task.metadata.name,
+                status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=str(task.uuid))))}",
+                abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=str(task.uuid))))}",
+                result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=str(task.uuid))))}",
             )
-            for job in user_async_jobs
+            for task in tasks
         ]
         + [
             TaskGet(
@@ -115,17 +111,15 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 @login_required
 @handle_exceptions
 async def get_async_job_status(request: web.Request) -> web.Response:
-
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-
     path_params = parse_request_path_parameters_as(_PathParams, request)
-    task_manager = get_task_manager(request.app)
+
     task_filter = get_job_filter(
         user_id=_req_ctx.user_id,
         product_name=_req_ctx.product_name,
     )
-    task_status = await task_manager.get_task_status(
-        task_filter=TaskFilter.model_validate(task_filter.model_dump()),
+    task_status = await get_task_manager(request.app).get_task_status(
+        task_filter=TaskFilter.model_validate(task_filter),
         task_uuid=path_params.task_id,
     )
 
@@ -159,7 +153,7 @@ async def cancel_async_job(request: web.Request) -> web.Response:
         product_name=_req_ctx.product_name,
     )
     await task_manager.cancel_task(
-        task_filter=TaskFilter.model_validate(task_filter.model_dump()),
+        task_filter=TaskFilter.model_validate(task_filter),
         task_uuid=path_params.task_id,
     )
 
@@ -177,13 +171,12 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
-    task_manager = get_task_manager(request.app)
     task_filter = get_job_filter(
         user_id=_req_ctx.user_id,
         product_name=_req_ctx.product_name,
     )
-    task_result = await task_manager.get_task_result(
-        task_filter=TaskFilter.model_validate(task_filter.model_dump()),
+    task_result = await get_task_manager(request.app).get_task_result(
+        task_filter=TaskFilter.model_validate(task_filter),
         task_uuid=path_params.task_id,
     )
 
@@ -205,14 +198,13 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParams, request)
     header_params = parse_request_headers_as(SSEHeaders, request)
 
-    task_manager = get_task_manager(request.app)
     task_filter = get_job_filter(
         user_id=_req_ctx.user_id,
         product_name=_req_ctx.product_name,
     )
 
     async def event_generator():
-        async for event_id, event in task_manager.consume_task_events(
+        async for event_id, event in get_task_manager(request.app).consume_task_events(
             task_filter=TaskFilter.model_validate(task_filter.model_dump()),
             task_uuid=path_params.task_id,
             last_id=header_params.last_event_id,
