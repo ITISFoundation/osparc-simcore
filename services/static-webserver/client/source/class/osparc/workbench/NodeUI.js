@@ -789,10 +789,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
       if (isInput) {
         this.getNode().getStatus().bind("dependencies", port, "textColor", {
           converter: dependencies => {
-            if (dependencies !== null) {
-              return osparc.service.StatusUI.getColor(dependencies.length ? "modified" : "ready");
+            if (dependencies) {
+              return dependencies.length ? "failed-red" : "ready-green";
             }
-            return osparc.service.StatusUI.getColor();
+            return "workbench-edge";
           }
         });
         this.getNode().bind("inputConnected", port, "source", {
