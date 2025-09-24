@@ -960,7 +960,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       }
 
-      if (!osparc.study.Utils.isPotentialFunction(this.__resourceData["workbench"])) {
+      if (!osparc.study.CreateFunction.isPotentialFunction(this.__resourceData["workbench"])) {
         return;
       }
 

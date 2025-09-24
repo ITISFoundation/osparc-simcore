@@ -32,6 +32,32 @@ qx.Class.define("osparc.study.CreateFunction", {
     this.__buildLayout();
   },
 
+  statics: {
+    isPotentialFunction: function(workbench) {
+      // in order to create a function, the pipeline needs:
+      // - at least one parameter or one probe
+      //   - for now, only float types are allowed
+      // - at least one computational service
+      // - no dynamic services
+
+      // const filePickers = osparc.study.Utils.extractFilePickers(workbench);
+      // const parameters = osparc.study.Utils.extractParameters(workbench);
+      // const probes = osparc.study.Utils.extractProbes(workbench);
+      // return (filePickers.length + parameters.length) && probes.length;
+
+      const parameters = osparc.study.Utils.extractFunctionableParameters(workbench);
+      const probes = osparc.study.Utils.extractFunctionableProbes(workbench);
+      const computationals = osparc.study.Utils.extractComputationalServices(workbench);
+      const dynamics = osparc.study.Utils.extractDynamicServices(workbench);
+
+      return (
+        (parameters.length || probes.length) &&
+        computationals.length > 0 &&
+        dynamics.length === 0
+      );
+    },
+  },
+
   members: {
     __studyData: null,
     __form: null,
