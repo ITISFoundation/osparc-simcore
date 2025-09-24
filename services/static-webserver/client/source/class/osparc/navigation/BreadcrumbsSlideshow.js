@@ -104,12 +104,12 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
         if (node.isFilePicker()) {
           osparc.service.StatusUI.setupFilePickerIcon(node, statusIcon);
         } else {
-          const check = node.isDynamic() ? "interactive" : "output";
-          node.getStatus().bind(check, statusIcon, "source", {
+          const checkProp = node.isDynamic() ? "interactive" : "output";
+          node.getStatus().bind(checkProp, statusIcon, "source", {
             converter: output => osparc.service.StatusUI.getIconSource(output),
             onUpdate: (_, target) => osparc.service.StatusUI.updateCircleAnimation(target)
           });
-          node.getStatus().bind(check, statusIcon, "textColor", {
+          node.getStatus().bind(checkProp, statusIcon, "textColor", {
             converter: output => osparc.service.StatusUI.getColor(output)
           }, this);
         }
