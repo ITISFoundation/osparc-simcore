@@ -24,9 +24,9 @@ qx.Class.define("osparc.data.model.Conversation", {
 
   /**
    * @param conversationData {Object} Object containing the serialized Conversation Data
-   * @param studyData {Object} Object containing the Study Data
+   * @param studyId {String} ID of the Study
    * */
-  construct: function(conversationData, studyData) {
+  construct: function(conversationData, studyId) {
     this.base(arguments);
 
     this.set({
@@ -38,7 +38,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       modified: new Date(conversationData.modified),
       projectId: conversationData.projectUuid || null,
       extraContext: conversationData.extraContext || null,
-      studyData: studyData || null,
+      studyId: studyId || null,
     });
 
     this.__messages = [];
@@ -137,8 +137,8 @@ qx.Class.define("osparc.data.model.Conversation", {
       apply: "__applyLastMessage",
     },
 
-    studyData: {
-      check: "Object",
+    studyId: {
+      check: "String",
       nullable: true,
       init: null,
     },
@@ -229,8 +229,8 @@ qx.Class.define("osparc.data.model.Conversation", {
           limit: 42
         }
       };
-      if (this.getStudyData()) {
-        params.url.studyId = this.getStudyData().uuid;
+      if (this.getStudyId()) {
+        params.url.studyId = this.getStudyId();
       }
 
       const nextRequestParams = this.__nextRequestParams;
@@ -241,7 +241,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       const options = {
         resolveWResponse: true
       };
-      const promise = this.getStudyData() ?
+      const promise = this.getStudyId() ?
         osparc.data.Resources.fetch("conversationsStudies", "getMessagesPage", params, options) :
         osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options);
       return promise

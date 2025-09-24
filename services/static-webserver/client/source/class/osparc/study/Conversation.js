@@ -47,7 +47,7 @@ qx.Class.define("osparc.study.Conversation", {
           // create new conversation first
           osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"])
             .then(data => {
-              const newConversation = new osparc.data.model.Conversation(data, this.__studyData);
+              const newConversation = new osparc.data.model.Conversation(data, this.__studyData["uuid"]);
               this.setConversation(newConversation);
               this.__postMessage(content);
             });
@@ -62,7 +62,7 @@ qx.Class.define("osparc.study.Conversation", {
           // create new conversation first
           osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"])
             .then(data => {
-              const newConversation = new osparc.data.model.Conversation(data, this.__studyData);
+              const newConversation = new osparc.data.model.Conversation(data, this.__studyData["uuid"]);
               this.setConversation(newConversation);
               this.__postNotify(userGid);
             });
