@@ -136,8 +136,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
 
     // OSPARC
-    "workbench-edge-comp-active": "#777777",
-    "workbench-edge-api-active": "#BBBBBB",
     "workbench-start-hint": "#505050",
     "workbench-view-navbar": "c00",
     "workbench-view-splitter": "#000000",
