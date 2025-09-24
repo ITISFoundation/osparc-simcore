@@ -66,6 +66,30 @@ qx.Class.define("osparc.study.ConversationPage", {
   members: {
     __studyData: null,
 
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "n-messages":
+          control = new qx.ui.basic.Label();
+          this._add(control);
+          break;
+        case "conversation":
+          control = new osparc.study.Conversation(this.__studyData);
+          this.bind("conversation", control, "conversation");
+          control.addListener("messagesChanged", () => this.__updateMessagesNumber());
+          this._add(control, {
+            flex: 1,
+          });
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
+    __buildLayout: function() {
+      this.getChildControl("n-messages");
+      this.getChildControl("conversation");
+    },
+
     getConversationId: function() {
       if (this.getConversation()) {
         return this.getConversation().getConversationId();
@@ -119,8 +143,8 @@ qx.Class.define("osparc.study.ConversationPage", {
         visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       closeButton.addListener("execute", () => {
-        // if (this.__messagesList.getChildren().length === 0) {
-        if (this._messages.length === 0) {
+      const messages = this.getChildControl("conversation").getMessages();
+        if (messages.length === 0) {
           osparc.store.ConversationsProject.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
         } else {
           const msg = this.tr("Are you sure you want to delete the conversation?");
@@ -151,28 +175,16 @@ qx.Class.define("osparc.study.ConversationPage", {
       this.getChildControl("button").setLabel(newName);
     },
 
-    __buildLayout: function() {
-      this.__messagesTitle = new qx.ui.basic.Label();
-      this._add(this.__messagesTitle);
-
-      const conversation = new osparc.study.Conversation(this.__studyData);
-      this.bind("conversation", conversation, "conversation");
-      this._add(conversation, {
-        flex: 1,
-      });
-    },
-
     __updateMessagesNumber: function() {
-      if (!this.__messagesTitle) {
-        return;
-      }
-      const nMessages = this._messages.filter(msg => msg["type"] === "MESSAGE").length;
+      const nMessagesLabel = this.getChildControl("n-messages");
+      const messages = this.getChildControl("conversation").getMessages();
+      const nMessages = messages.filter(msg => msg["type"] === "MESSAGE").length;
       if (nMessages === 0) {
-        this.__messagesTitle.setValue(this.tr("No Messages yet"));
+        nMessagesLabel.setValue(this.tr("No Messages yet"));
       } else if (nMessages === 1) {
-        this.__messagesTitle.setValue(this.tr("1 Message"));
+        nMessagesLabel.setValue(this.tr("1 Message"));
       } else if (nMessages > 1) {
-        this.__messagesTitle.setValue(nMessages + this.tr(" Messages"));
+        nMessagesLabel.setValue(nMessages + this.tr(" Messages"));
       }
     },
   }

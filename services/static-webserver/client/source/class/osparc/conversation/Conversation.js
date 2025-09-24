@@ -46,6 +46,10 @@ qx.Class.define("osparc.conversation.Conversation", {
     },
   },
 
+  events: {
+    "messagesChanged": "qx.event.type.Event",
+  },
+
   members: {
     _messages: null,
 
@@ -141,9 +145,15 @@ qx.Class.define("osparc.conversation.Conversation", {
       return new osparc.conversation.MessageUI(message);
     },
 
+    getMessages: function() {
+      return this._messages;
+    },
+
     clearAllMessages: function() {
       this._messages = [];
       this.getChildControl("messages-container").removeAll();
+
+      this.fireEvent("messagesChanged");
     },
 
     addMessage: function(message) {
@@ -187,6 +197,8 @@ qx.Class.define("osparc.conversation.Conversation", {
         const messagesScroll = this.getChildControl("messages-container-scroll");
         messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
       }, 50);
+
+      this.fireEvent("messagesChanged");
     },
 
     deleteMessage: function(message) {
@@ -206,6 +218,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       if (controlIndex > -1) {
         messagesContainer.remove(children[controlIndex]);
       }
+
+      this.fireEvent("messagesChanged");
     },
 
     updateMessage: function(message) {
