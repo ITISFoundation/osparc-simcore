@@ -69,7 +69,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           });
           break;
         }
-        case "thumbnail": {
+        case "avatar": {
           control = osparc.utils.Utils.createThumbnail(32);
           const authStore = osparc.auth.Data.getInstance();
           control.set({
@@ -135,7 +135,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("thumbnail");
+      this.getChildControl("avatar");
       this.getChildControl("comment-field");
       this.getChildControl("add-comment-button");
     },
