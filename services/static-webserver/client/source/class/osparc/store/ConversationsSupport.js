@@ -158,7 +158,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .then(messagesData => {
           if (messagesData && messagesData.length) {
             const lastMessage = messagesData[0];
-            this.__addMessageToCache(conversationId, lastMessage);
+            this.__addMessageToConversation(conversationId, lastMessage);
             return lastMessage;
           }
           return null;
@@ -208,7 +208,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       this.__conversationsCached[conversation.getConversationId()] = conversation;
     },
 
-    __addMessageToCache: function(conversationId, messageData) {
+    __addMessageToConversation: function(conversationId, messageData) {
       if (conversationId in this.__conversationsCached) {
         this.__conversationsCached[conversationId].addMessage(messageData);
       }
