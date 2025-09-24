@@ -138,10 +138,11 @@ qx.Class.define("osparc.workbench.NodeUI", {
     CAPTION_POS: {
       ICON: 0, // from qooxdoo
       TITLE: 1, // from qooxdoo
-      LOCK: 2,
-      MARKER: 3,
-      DEPRECATED: 4,
-      MENU: 5
+      MODIFIED_STAR: 2,
+      LOCK: 3,
+      MARKER: 4,
+      DEPRECATED: 5,
+      MENU: 6,
     },
 
     captionHeight: function() {
@@ -184,6 +185,21 @@ qx.Class.define("osparc.workbench.NodeUI", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "modified-star":
+          control = new qx.ui.basic.Label("*").set({
+            font: "text-14",
+            toolTipText: this.tr("Needs to run to update the outputs"),
+            padding: 4,
+            paddingTop: 0,
+            paddingBottom: 0,
+            visibility: "excluded",
+            alignY: "top",
+          });
+          this.getChildControl("captionbar").add(control, {
+            row: 0,
+            column: this.self().CAPTION_POS.MODIFIED_STAR
+          });
+          break;
         case "lock":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/lock/12",
@@ -419,7 +435,20 @@ qx.Class.define("osparc.workbench.NodeUI", {
         this.__optionsMenu.add(convertToParameter);
       }
 
-      const lockState = node.getStatus().getLockState();
+      const nodeStatus = node.getStatus();
+      const modifiedStar = this.getChildControl("modified-star");
+      const evaluateShowStar = () => {
+        const modified = nodeStatus.getModified();
+        const isRunning = osparc.data.model.NodeStatus.isComputationalRunning(node);
+        modifiedStar.set({
+          visibility: modified && !isRunning ? "visible" : "excluded"
+        });
+      };
+      evaluateShowStar();
+      nodeStatus.addListener("changeModified", evaluateShowStar);
+      nodeStatus.addListener("changeRunning", evaluateShowStar);
+
+      const lockState = nodeStatus.getLockState();
       const lock = this.getChildControl("lock");
       lockState.bind("locked", lock, "visibility", {
         converter: locked => {
