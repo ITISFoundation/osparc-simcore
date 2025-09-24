@@ -40,8 +40,8 @@ qx.Class.define("osparc.widget.Renamer", {
   construct: function(oldLabel = "", subtitle = "", winTitle) {
     this.base(arguments, winTitle || this.tr("Rename"));
 
-    const maxWidth = 350;
-    const minWidth = 200;
+    const maxWidth = 400;
+    const minWidth = 250;
     const labelWidth = oldLabel ? Math.min(Math.max(parseInt(oldLabel.length*4), minWidth), maxWidth) : minWidth;
     this.set({
       layout: new qx.ui.layout.VBox(5),
@@ -93,13 +93,6 @@ qx.Class.define("osparc.widget.Renamer", {
             appearance: "form-button",
             padding: [1, 5]
           });
-          control.addListener("execute", () => {
-            const newLabel = this.getChildControl("text-field").getValue();
-            const data = {
-              newLabel
-            };
-            this.fireDataEvent("labelChanged", data);
-          }, this);
           this.getChildControl("main-layout").add(control);
           break;
         case "subtitle":
@@ -113,13 +106,22 @@ qx.Class.define("osparc.widget.Renamer", {
     },
 
     __populateNodeLabelEditor: function(oldLabel, labelWidth) {
-      const nodeLabelEditor = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
       // Create a text field in which to edit the data
       const textField = this.getChildControl("text-field").set({
         value: oldLabel,
         minWidth: labelWidth,
       });
+
+      // Create the "Save" button to close the cell editor
+      const saveButton = this.getChildControl("save-button");
+
+      saveButton.addListener("execute", () => {
+        const newLabel = textField.getValue();
+        const data = {
+          newLabel
+        };
+        this.fireDataEvent("labelChanged", data);
+      }, this);
 
       this.addListener("appear", e => {
         textField.focus();
@@ -127,9 +129,6 @@ qx.Class.define("osparc.widget.Renamer", {
           textField.setTextSelection(0, textField.getValue().length);
         }
       }, this);
-
-      // Create the "Save" button to close the cell editor
-      this.getChildControl("save-button");
     },
 
     __applyMaxChars: function(value) {
