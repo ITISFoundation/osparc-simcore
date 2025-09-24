@@ -960,14 +960,14 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       }
 
-      if (!osparc.study.CreateFunction.isPotentialFunction(this.__resourceData["workbench"])) {
-        return;
-      }
+      const isPotentialFunction = osparc.study.CreateFunction.isPotentialFunction(this.__resourceData["workbench"]);
 
       const id = "CreateFunction";
       const iconSrc = "@MaterialIcons/functions/24";
       const title = this.tr("Create Function");
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      page.setEnabled(isPotentialFunction);
+      page.getChildControl("button").setToolTipText(osparc.study.CreateFunction.CREATE_FUNCTION_TEXT);
       const createFunction = new osparc.study.CreateFunction(this.__resourceData);
       const createFunctionButton = createFunction.getCreateFunctionButton();
       osparc.utils.Utils.setIdToWidget(createFunctionButton, "create_function_page_btn");

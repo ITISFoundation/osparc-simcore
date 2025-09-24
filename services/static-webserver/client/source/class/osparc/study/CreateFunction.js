@@ -33,13 +33,14 @@ qx.Class.define("osparc.study.CreateFunction", {
   },
 
   statics: {
-    isPotentialFunction: function(workbench) {
-      // in order to create a function, the pipeline needs:
-      // - at least one parameter AND one probe
-      //   - for now, only float types are allowed
-      // - at least one computational service
-      // - no dynamic services
+    CREATE_FUNCTION_TEXT: qx.locale.Manager.tr(`
+      In order to Create a Function, the pipeline needs:
+      <br>- at least one parameter and one probe (numbers)
+      <br>- at least one computational app
+      <br>- no dynamic apps
+    `),
 
+    isPotentialFunction: function(workbench) {
       // const filePickers = osparc.study.Utils.extractFilePickers(workbench);
       // const parameters = osparc.study.Utils.extractParameters(workbench);
       // const probes = osparc.study.Utils.extractProbes(workbench);
@@ -50,7 +51,7 @@ qx.Class.define("osparc.study.CreateFunction", {
       const computationals = osparc.study.Utils.extractComputationalServices(workbench);
       const dynamics = osparc.study.Utils.extractDynamicServices(workbench);
 
-      return (
+      return Boolean(
         (parameters.length && probes.length) &&
         computationals.length > 0 &&
         dynamics.length === 0
@@ -58,7 +59,7 @@ qx.Class.define("osparc.study.CreateFunction", {
     },
 
     checkExposedInputsOutputs: function(exposedInputs, exposedOutputs) {
-      return Object.values(exposedInputs).some(exposedInputValue => exposedInputValue) && Object.values(exposedOutputs).some(exposedOutputValue => exposedOutputValue);
+      return Boolean(Object.values(exposedInputs).some(exposedInputValue => exposedInputValue) && Object.values(exposedOutputs).some(exposedOutputValue => exposedOutputValue));
     },
   },
 
