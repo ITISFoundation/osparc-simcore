@@ -1,3 +1,4 @@
+import arrow
 import httpx
 from common_library.json_serialization import json_dumps, json_loads
 from fastapi import FastAPI
@@ -10,7 +11,7 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from ....services.service_tracker import TrackedServiceModel, get_all_tracked_services
 from ....services.service_tracker._models import SchedulerServiceState
 from .._utils import get_parent_app, get_settings
-from ._render_utils import base_page, get_iso_formatted_date
+from ._render_utils import base_page
 
 router = APIRouter()
 
@@ -21,7 +22,7 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
         "Display State": ("label", service.current_state),
         "Last State Change": (
             "label",
-            get_iso_formatted_date(service.last_state_change),
+            arrow.get(service.last_state_change).isoformat(),
         ),
         "UserID": ("copy", f"{service.user_id}"),
         "ProjectID": ("copy", f"{service.project_id}"),
