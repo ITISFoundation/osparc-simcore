@@ -98,6 +98,5 @@ def get_new_style_service_status(state: str) -> DynamicServiceGet:
 
 def get_legacy_service_status(state: str) -> NodeGet:
     return TypeAdapter(NodeGet).validate_python(
-        NodeGet.model_config["json_schema_extra"]["examples"][0]
-        | {"service_state": state}
+        NodeGet.model_json_schema()["examples"][0] | {"service_state": state}
     )
