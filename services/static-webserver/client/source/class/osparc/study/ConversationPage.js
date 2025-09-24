@@ -58,7 +58,7 @@ qx.Class.define("osparc.study.ConversationPage", {
     conversation: {
       check: "osparc.data.model.Conversation",
       init: null,
-      nullable: false,
+      nullable: true,
       event: "changeConversation",
     },
   },
