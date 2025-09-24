@@ -158,10 +158,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("organizationMembersList");
-          item.getChildControl("thumbnail").getContentElement()
-            .setStyles({
-              "border-radius": "16px"
-            });
+          item.getChildControl("thumbnail").setDecorator("circled");
           item.addListener("promoteToMember", e => {
             const listedMember = e.getData();
             this.__promoteToUser(listedMember);

@@ -69,7 +69,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           });
           break;
         }
-        case "thumbnail": {
+        case "avatar": {
           control = osparc.utils.Utils.createThumbnail(32);
           const authStore = osparc.auth.Data.getInstance();
           control.set({
@@ -95,6 +95,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           break;
         case "add-comment-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/16").set({
+            toolTipText: this.tr("Ctrl+Enter"),
             backgroundColor: "input_background",
             allowGrowX: false,
             alignX: "right",
@@ -135,7 +136,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("thumbnail");
+      this.getChildControl("avatar");
       this.getChildControl("comment-field");
       this.getChildControl("add-comment-button");
     },
