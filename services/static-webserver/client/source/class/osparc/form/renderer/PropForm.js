@@ -939,11 +939,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           converter: label => label + ": " + fromPortLabel
         });
 
-        // Hack: Show tooltip if element is disabled
         const addToolTip = () => {
-          ctrlLink.getContentElement().removeAttribute("title");
           const toolTipText = fromNode.getLabel() + ":\n" + fromPortLabel;
-          ctrlLink.getContentElement().setAttribute("title", toolTipText);
+          osparc.utils.Utils.toolTipTextOnDisabledWidget(ctrlLink, toolTipText);
         };
         fromNode.addListener("changeLabel", () => addToolTip());
         addToolTip();
