@@ -13,6 +13,7 @@ from common_library.logging.logging_base import get_log_record_extra
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -23,7 +24,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from ..groups.api import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
 from ..products import products_web
-from ..resource_manager.user_sessions import managed_resource
+from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_message_to_user
 
@@ -99,6 +100,21 @@ async def _set_user_in_group_rooms(
     await sio.enter_room(socket_id, SocketIORoomStr.from_user_id(user_id))
 
 
+async def _set_user_in_project_rooms(
+    app: web.Application, user_id: UserID, client_session_id: str, socket_id: SocketID
+) -> None:
+    """Adds user in project rooms in case he has any project open"""
+    project_ids = []
+    with managed_resource(user_id, client_session_id, app) as user_session:
+        project_ids = await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
+
+    sio = get_socket_server(app)
+    for project_id in project_ids:
+        await sio.enter_room(
+            socket_id, SocketIORoomStr.from_project_id(ProjectID(project_id))
+        )
+
+
 #
 # socketio event handlers
 #
@@ -135,6 +151,7 @@ async def connect(
         )
 
         await _set_user_in_group_rooms(app, user_id, socket_id)
+        await _set_user_in_project_rooms(app, user_id, client_session_id, socket_id)
 
         _logger.debug("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 

@@ -316,6 +316,29 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToServiceCustomEvents();
       this.__listenToServiceStatus();
       this.__listenToStatePorts();
+
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      [
+        "connect",
+        "reconnect",
+      ].forEach(evtName => {
+        socket.addListener(evtName, () => {
+          // after a reconnect, re-sync the project document
+          console.log("WebSocket reconnected, re-syncing project document");
+          const studyId = this.getStudy().getUuid();
+          osparc.store.Study.getInstance().getOne(studyId)
+            .then(latestStudyData => {
+              const latestData = {
+                "version": this.__lastSyncedProjectVersion, // do not increase the version
+                "document": latestStudyData,
+              };
+              this.__applyProjectDocument(latestData);
+            })
+            .catch(err => {
+              console.error("Failed to re-sync project document after WebSocket reconnect:", err);
+            });
+        });
+      });
     },
 
     __listenToProjectDocument: function() {
@@ -727,13 +750,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       osparc.data.Resources.fetch("runPipeline", "startPipeline", params)
         .then(resp => this.__onPipelineSubmitted(resp))
         .catch(err => {
-          let msg = err.message;
           const errStatus = err.status;
           if (errStatus == "409") {
-            this.getStudyLogger().error(null, "Pipeline is already running");
+            osparc.FlashMessenger.logError(err);
+            const msg = osparc.FlashMessenger.extractMessage(err);
+            this.getStudyLogger().error(null, msg);
           } else if (errStatus == "422") {
             this.getStudyLogger().info(null, "The pipeline is up-to-date");
-            msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
+            const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
             const win = new osparc.ui.window.Confirmation(msg).set({
               caption: this.tr("Re-run"),
               confirmText: this.tr("Run"),
