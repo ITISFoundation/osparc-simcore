@@ -86,7 +86,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control.addListener("textChanged", () => this.__addCommentPressed(), this);
           control.setCompact(true);
           control.getChildControl("text-area").set({
-            maxLength: 4096, // default it to max 4096 chars
+            maxLength: osparc.data.model.Conversation.MAX_CONTENT_LENGTH,
           });
           // make it visually connected to the button
           control.getChildControl("text-area").getContentElement().setStyles({

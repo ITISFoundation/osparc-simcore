@@ -60,6 +60,7 @@ qx.Class.define("osparc.data.model.Conversation", {
     },
 
     MAX_TITLE_LENGTH: 50,
+    MAX_CONTENT_LENGTH: 4096,
   },
 
   properties: {
