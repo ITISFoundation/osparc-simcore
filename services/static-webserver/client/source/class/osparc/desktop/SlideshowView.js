@@ -405,15 +405,17 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     },
 
     __requestServiceBetween: function(leftNodeId, rightNodeId) {
-      const srvCat = new osparc.workbench.ServiceCatalog();
-      srvCat.setContext(leftNodeId, rightNodeId);
-      srvCat.addListener("addService", e => {
-        const data = e.getData();
-        const service = data.service;
-        this.__addServiceBetween(service, leftNodeId, rightNodeId);
-      }, this);
-      srvCat.center();
-      srvCat.open();
+      if (osparc.workbench.ServiceCatalog.canItBeOpened(this.getStudy())) {
+        const srvCat = new osparc.workbench.ServiceCatalog();
+        srvCat.setContext(leftNodeId, rightNodeId);
+        srvCat.addListener("addService", e => {
+          const data = e.getData();
+          const service = data.service;
+          this.__addServiceBetween(service, leftNodeId, rightNodeId);
+        }, this);
+        srvCat.center();
+        srvCat.open();
+      }
     },
 
     __addServiceBetween: async function(service, leftNodeId, rightNodeId) {
