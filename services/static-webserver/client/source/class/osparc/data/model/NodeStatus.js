@@ -230,18 +230,5 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         this.getLockState().stateReceived(state.lock_state);
       }
     },
-
-    serialize: function() {
-      const state = {};
-      state["dependencies"] = this.getDependencies() ? this.getDependencies() : [];
-      if (this.getNode().isComputational()) {
-        state["currentStatus"] = this.getRunning();
-      }
-      state["modified"] = null;
-      // File Picker can't have a modified output
-      if (this.getHasOutputs() && !this.getNode().isFilePicker()) {
-        state["modified"] = this.hasDependencies();
-      }
-    }
   }
 });
