@@ -256,9 +256,8 @@ qx.Class.define("osparc.data.model.Conversation", {
 
     renameConversation: function(newName) {
       osparc.store.ConversationsSupport.getInstance().renameConversation(this.getConversationId(), newName)
-        .then(() => {
-          this.setName(newName);
-        });
+        .then(() => this.setName(newName))
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     patchExtraContext: function(extraContext) {
