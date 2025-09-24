@@ -218,14 +218,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         // currentStatus is only applicable to computational services
         this.setRunning(state.currentStatus);
       }
-      if ("modified" in state) {
-        if (this.getHasOutputs()) {
-          // File Picker can't have a modified output
-          this.setModified((state["modified"] || this.hasDependencies()) && !this.getNode().isFilePicker());
-        } else {
-          this.setModified(null);
-        }
-      }
+      this.setModified("modified" in state ? state.modified : null);
       if ("lock_state" in state) {
         this.getLockState().stateReceived(state.lock_state);
       }
