@@ -58,6 +58,8 @@ qx.Class.define("osparc.data.model.Conversation", {
       CONVERSATION_MESSAGE_UPDATED: "conversation:message:updated",
       CONVERSATION_MESSAGE_DELETED: "conversation:message:deleted",
     },
+
+    MAX_TITLE_LENGTH: 50,
   },
 
   properties: {

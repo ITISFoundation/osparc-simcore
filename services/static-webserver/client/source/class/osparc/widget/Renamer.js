@@ -63,6 +63,14 @@ qx.Class.define("osparc.widget.Renamer", {
     "labelChanged": "qx.event.type.Data"
   },
 
+  properties: {
+    maxChars: {
+      check: "Number",
+      init: 50,
+      apply: "__applyMaxChars",
+    }
+  },
+
   members: {
     __save: null,
 
@@ -102,6 +110,10 @@ qx.Class.define("osparc.widget.Renamer", {
       nodeLabelEditor.add(save);
 
       this.add(nodeLabelEditor);
+    },
+
+    __applyMaxChars: function(value) {
+      this.__addSubtitle(this.tr("%1 characters max", value));
     },
 
     __addSubtitle: function(subtitleLabel) {
