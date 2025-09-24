@@ -193,12 +193,11 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       const compRunning = this.getRunning();
       const hasOutputs = this.getHasOutputs();
       const modified = this.getModified();
-      const hasDependencies = this.hasDependencies();
       if (["PUBLISHED", "PENDING", "WAITING_FOR_RESOURCES", "WAITING_FOR_CLUSTER", "STARTED"].includes(compRunning)) {
         this.setOutput("busy");
       } else if ([null, false].includes(hasOutputs)) {
         this.setOutput("not-available");
-      } else if (hasOutputs && (modified || hasDependencies)) {
+      } else if (hasOutputs && modified) {
         this.setOutput("out-of-date");
       } else if (hasOutputs && !modified) {
         this.setOutput("up-to-date");
