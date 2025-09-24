@@ -76,7 +76,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
             get_job_filter(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
-            )
+            ).model_dump(),
         )
     )
 
@@ -119,7 +119,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
             get_job_filter(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
-            )
+            ).model_dump(),
         ),
         task_uuid=path_params.task_id,
     )
@@ -153,7 +153,7 @@ async def cancel_async_job(request: web.Request) -> web.Response:
             get_job_filter(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
-            )
+            ).model_dump(),
         ),
         task_uuid=path_params.task_id,
     )
@@ -177,7 +177,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
             get_job_filter(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
-            )
+            ).model_dump(),
         ),
         task_uuid=path_params.task_id,
     )
@@ -206,7 +206,7 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
                 get_job_filter(
                     user_id=_req_ctx.user_id,
                     product_name=_req_ctx.product_name,
-                )
+                ).model_dump(),
             ),
             task_uuid=path_params.task_id,
             last_id=header_params.last_event_id,
