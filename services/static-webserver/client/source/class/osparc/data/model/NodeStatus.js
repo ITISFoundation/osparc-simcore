@@ -221,7 +221,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       if ("modified" in state) {
         if (this.getHasOutputs()) {
           // File Picker can't have a modified output
-          this.setModified((state.modified || this.hasDependencies()) && !this.getNode().isFilePicker());
+          this.setModified((state["modified"] || this.hasDependencies()) && !this.getNode().isFilePicker());
         } else {
           this.setModified(null);
         }
