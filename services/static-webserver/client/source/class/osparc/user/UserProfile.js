@@ -237,8 +237,6 @@ qx.Class.define("osparc.user.UserProfile", {
       this.getChildControl("user-id").setValue(String(user.getUserId()));
       this.getChildControl("group-id").setValue(String(user.getGroupId()));
 
-      // this.getChildControl("thumbnail").setSource(user.createThumbnail(this.self().THUMBNAIL_SIZE));
-
       // middle grid
       this.getChildControl("institution").setValue(user.getInstitution() || "-");
       this.getChildControl("address").setValue(user.getAddress() || "-");
