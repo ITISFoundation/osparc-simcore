@@ -102,7 +102,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: "/{productName}/app-summary.json",
+            url: `/{productName}/app-summary.json?no-cache=${new Date().getTime()}`,
             isJsonFile: true
           }
         }
