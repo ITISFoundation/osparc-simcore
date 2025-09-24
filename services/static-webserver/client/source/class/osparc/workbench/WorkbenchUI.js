@@ -293,29 +293,25 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     openServiceCatalog: function(nodePos) {
-      if (this.getStudy().isReadOnly()) {
-        return null;
+      if (osparc.workbench.ServiceCatalog.canItBeOpened(this.getStudy())) {
+        const srvCat = new osparc.workbench.ServiceCatalog();
+        srvCat.addListener("addService", async e => {
+          const {
+            service,
+            nodeLeftId,
+            nodeRightId
+          } = e.getData();
+          const nodeUI = await this.__addNode(service, nodePos);
+          if (nodeUI && nodeLeftId !== null || nodeRightId !== null) {
+            const newNodeId = nodeUI.getNodeId();
+            this._createEdgeBetweenNodes(nodeLeftId ? nodeLeftId : newNodeId, nodeRightId ? nodeRightId : newNodeId, true);
+          }
+        }, this);
+        srvCat.center();
+        srvCat.open();
+        return srvCat;
       }
-      if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.logError(osparc.data.model.Workbench.CANT_ADD_NODE);
-        return null;
-      }
-      const srvCat = new osparc.workbench.ServiceCatalog();
-      srvCat.addListener("addService", async e => {
-        const {
-          service,
-          nodeLeftId,
-          nodeRightId
-        } = e.getData();
-        const nodeUI = await this.__addNode(service, nodePos);
-        if (nodeUI && nodeLeftId !== null || nodeRightId !== null) {
-          const newNodeId = nodeUI.getNodeId();
-          this._createEdgeBetweenNodes(nodeLeftId ? nodeLeftId : newNodeId, nodeRightId ? nodeRightId : newNodeId, true);
-        }
-      }, this);
-      srvCat.center();
-      srvCat.open();
-      return srvCat;
+      return null;
     },
 
     __createTemporaryNodeUI: function(pos) {

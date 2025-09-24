@@ -82,7 +82,22 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
   statics: {
     LATEST: "latest",
     Width: 580,
-    Height: 500
+    Height: 500,
+
+    canItBeOpened: function(study) {
+      if (study) {
+        if (study.isReadOnly()) {
+          osparc.FlashMessenger.logError("Nodes can't be added to a read-only project");
+          return false;
+        }
+        if (study.isPipelineRunning()) {
+          osparc.FlashMessenger.logError(osparc.data.model.Workbench.CANT_ADD_NODE);
+          return false;
+        }
+        return true;
+      }
+      return false;
+    },
   },
 
   members: {
