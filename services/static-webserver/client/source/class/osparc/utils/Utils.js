@@ -91,6 +91,14 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    toolTipTextOnDisabledWidget: function(widget, toolTipText) {
+      if (widget && widget.getContentElement()) {
+        const el = widget.getContentElement();
+        el.removeAttribute("title");
+        el.setAttribute("title", toolTipText);
+      }
+    },
+
     errorsToForm: function(form, errors) {
       const items = form.getItems();
       // reset validity

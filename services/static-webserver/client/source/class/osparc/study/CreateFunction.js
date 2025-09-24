@@ -35,9 +35,9 @@ qx.Class.define("osparc.study.CreateFunction", {
   statics: {
     CREATE_FUNCTION_TEXT: qx.locale.Manager.tr(`
       In order to Create a Function, the pipeline needs:
-      <br>- at least one parameter and one probe (numbers)
-      <br>- at least one computational app
-      <br>- no dynamic apps
+      - at least one parameter and one probe (numbers)
+      - at least one computational app
+      - no dynamic apps
     `),
 
     isPotentialFunction: function(workbench) {
