@@ -187,7 +187,6 @@ def create_application() -> web.Application:
     setup_realtime_collaboration(app)
 
     # celery
-
     setup_celery(app)
 
     # NOTE: *last* events

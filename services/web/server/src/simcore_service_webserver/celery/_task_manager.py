@@ -22,9 +22,10 @@ async def setup_task_manager(app: web.Application):
         celery_settings: CelerySettings = get_plugin_settings(app)
 
         redis_client_sdk = get_redis_celery_tasks_client_sdk(app)
+        celery_app = create_app(celery_settings)
 
         app[_APP_CELERY_TASK_MANAGER] = CeleryTaskManager(
-            create_app(celery_settings),
+            celery_app,
             celery_settings,
             RedisTaskInfoStore(redis_client_sdk),
         )
