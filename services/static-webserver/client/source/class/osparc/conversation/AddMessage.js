@@ -85,6 +85,10 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control = new osparc.editor.MarkdownEditor();
           control.addListener("textChanged", () => this.__addCommentPressed(), this);
           control.setCompact(true);
+          control.getChildControl("text-area").set({
+            maxLength: 4096, // default it to max 4096 chars
+          });
+          // make it visually connected to the button
           control.getChildControl("text-area").getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
           });
