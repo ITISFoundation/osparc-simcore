@@ -68,6 +68,14 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             });
           });
           break;
+        case "study-menu-share":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Share..."),
+            icon: "@FontAwesome5Solid/share-alt/14",
+            ...this.self().BUTTON_OPTIONS
+          });
+          control.addListener("execute", () => this.__openAccessRights());
+          break;
         case "study-menu-reload":
           control = new qx.ui.menu.Button().set({
             label: this.tr("Reload"),
@@ -100,6 +108,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           const optionsMenu = new qx.ui.menu.Menu();
           optionsMenu.setAppearance("menu-wider");
           optionsMenu.add(this.getChildControl("study-menu-info"));
+          optionsMenu.add(this.getChildControl("study-menu-share"));
           optionsMenu.add(this.getChildControl("study-menu-reload"));
           optionsMenu.add(this.getChildControl("study-menu-conversations"));
           if (osparc.product.Utils.showConvertToPipeline()) {
@@ -133,6 +142,17 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
       return control || this.base(arguments, id);
     },
 
+    __openAccessRights: function() {
+      const studyData = this.getStudy().serialize();
+      studyData["resourceType"] = this.getStudy().getTemplateType() ? "template" : "study";
+      const collaboratorsView = osparc.info.StudyUtils.openAccessRights(studyData);
+      collaboratorsView.addListener("updateAccessRights", e => {
+        const updatedData = e.getData();
+        this.getStudy().setAccessRights(updatedData["accessRights"]);
+        this.fireDataEvent("updateStudy", updatedData);
+      }, this);
+    },
+
     __reloadIFrame: function() {
       const nodes = this.getStudy().getWorkbench().getNodes();
       if (Object.keys(nodes).length === 1) {
@@ -144,6 +164,9 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
       if (study) {
         const editTitle = this.getChildControl("edit-title-label");
         study.bind("name", editTitle, "value");
+
+        const shareButton = this.getChildControl("study-menu-share");
+        shareButton.setEnabled(osparc.data.model.Study.canIWrite(study.getAccessRights()));
 
         const reloadButton = this.getChildControl("study-menu-reload");
         study.getUi().bind("mode", reloadButton, "visibility", {
