@@ -140,7 +140,7 @@ class ComputationalAutoscalingProvider:
         list_of_used_resources: list[Resources] = await logged_gather(
             *(self.compute_node_used_resources(app, i) for i in instances)
         )
-        counter = collections.Counter()
+        counter: collections.Counter = collections.Counter()
         for result in list_of_used_resources:
             counter.update(result.as_flat_dict())
 

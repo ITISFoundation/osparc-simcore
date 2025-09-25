@@ -398,7 +398,7 @@ async def compute_cluster_used_resources(
     list_of_used_resources: list[Resources] = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
-    flat_counter = collections.Counter()
+    flat_counter: collections.Counter = collections.Counter()
     for result in list_of_used_resources:
         flat_counter.update(result.as_flat_dict())
     flat_counter.setdefault("cpus", 0)
