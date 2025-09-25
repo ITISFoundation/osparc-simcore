@@ -86,7 +86,6 @@ class SearchBodyParams(InputSchema):
 
     @model_validator(mode="after")
     def _validate_date_range(self) -> Self:
-        """Ensure that last_modified_before is after last_modified_after when both are present."""
         if (
             self.last_modified_before is not None
             and self.last_modified_after is not None
