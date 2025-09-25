@@ -162,8 +162,8 @@ qx.Class.define("osparc.support.ConversationPage", {
           control = new osparc.support.Conversation();
           this.getChildControl("conversation-container").add(control);
           break;
-        case "book-a-call-stack":
-          control = new osparc.support.BookACall();
+        case "book-a-call-topic-selector":
+          control = new osparc.support.CallTopicSelector();
           this.getChildControl("main-stack").add(control);
           break;
         case "book-a-call-iframe":
@@ -189,11 +189,21 @@ qx.Class.define("osparc.support.ConversationPage", {
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           title.setValue(this.tr("Book a Call"));
+          const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
+          bookACallTopicSelector.addListener("callTopicSelected", e => {
+            console.log("callTopicSelected", e.getData());
+            this.getChildControl("main-stack").setSelection([conversationContainer]);
+          });
+          this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL_3RD: {
           title.setValue(this.tr("Book a Call 3rd"));
-          const bookACallStack = this.getChildControl("book-a-call-stack");
-          this.getChildControl("main-stack").setSelection([bookACallStack]);
+          const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
+          bookACallTopicSelector.addListener("callTopicSelected", e => {
+            console.log("callTopicSelected", e.getData());
+            this.getChildControl("main-stack").setSelection([conversationContainer]);
+          });
+          this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);
           break;
         }
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
