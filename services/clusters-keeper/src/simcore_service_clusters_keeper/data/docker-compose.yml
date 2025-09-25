@@ -32,7 +32,6 @@ services:
           - "node.role==manager"
       resources:
         limits:
-          # TODO: should be tuned based on machines where this is deployed
           memory: 2048M
     secrets:
       - source: dask_tls_ca
@@ -166,7 +165,7 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "0.5"
+          cpus: "1.0"
 
   prometheus:
     image: prom/prometheus:v2.51.0@sha256:5ccad477d0057e62a7cd1981ffcc43785ac10c5a35522dc207466ff7e7ec845f
