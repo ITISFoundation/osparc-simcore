@@ -380,8 +380,8 @@ def enabled_computational_mode(
             "AUTOSCALING_DASK": "{}",
             "DASK_MONITORING_URL": faker.url(),
             "DASK_SCHEDULER_AUTH": "{}",
-            "DASK_MONITORING_USER_NAME": faker.user_name(),
-            "DASK_MONITORING_PASSWORD": faker.password(),
+            "DASK_NTHREADS": f"{faker.pyint(min_value=0, max_value=10)}",
+            "DASK_NTHREADS_MULTIPLIER": f"{faker.pyint(min_value=1, max_value=4)}",
         },
     )
 
