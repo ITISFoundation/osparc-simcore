@@ -989,58 +989,60 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
     async def _search_project_s3_files(
         self,
+        user_id: UserID,
         proj_id: ProjectID,
         filename_pattern: str,
-        user_id: UserID,
-        items_per_page: NonNegativeInt,
-    ) -> AsyncGenerator[list[FileMetaData], None]:
-        """Search S3 files in a specific project and yield results page by page."""
+        last_modified_before: datetime.datetime | None = None,
+        last_modified_after: datetime.datetime | None = None,
+    ) -> AsyncGenerator[FileMetaData, None]:
+        """Search S3 files in a specific project and yield individual results."""
         s3_client = get_s3_client(self.app)
         min_parts_for_valid_s3_object = 2
-        current_page_results: list[FileMetaData] = []
 
         try:
             async for s3_objects in s3_client.list_objects_paginated(
                 bucket=self.simcore_bucket_name,
                 prefix=f"{proj_id}/",
-                items_per_page=items_per_page * 5,  # fetch more to filter locally
+                items_per_page=500,  # fetch larger batches for efficiency
             ):
                 for s3_obj in s3_objects:
                     filename = Path(s3_obj.object_key).name
 
-                    if (
+                    if not (
                         fnmatch.fnmatch(filename, filename_pattern)
                         and len(s3_obj.object_key.split("/"))
                         >= min_parts_for_valid_s3_object
                     ):
-                        file_meta = FileMetaData.from_simcore_node(
-                            user_id=user_id,
-                            file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                                s3_obj.object_key
-                            ),
-                            bucket=self.simcore_bucket_name,
-                            location_id=self.get_location_id(),
-                            location_name=self.get_location_name(),
-                            sha256_checksum=None,
-                            file_size=s3_obj.size,
-                            last_modified=s3_obj.last_modified,
-                            entity_tag=s3_obj.e_tag,
-                        )
-                        current_page_results.append(file_meta)
+                        continue
 
-                        if len(current_page_results) >= items_per_page:
-                            processed_results = await self._process_s3_page_results(
-                                current_page_results[:items_per_page]
-                            )
-                            yield processed_results
-                            current_page_results = current_page_results[items_per_page:]
+                    if (
+                        last_modified_before
+                        and s3_obj.last_modified
+                        and s3_obj.last_modified >= last_modified_before
+                    ):
+                        continue
 
-            # Handle remaining results, ensuring we don't exceed items_per_page
-            while current_page_results:
-                batch = current_page_results[:items_per_page]
-                current_page_results = current_page_results[items_per_page:]
-                processed_results = await self._process_s3_page_results(batch)
-                yield processed_results
+                    if (
+                        last_modified_after
+                        and s3_obj.last_modified
+                        and s3_obj.last_modified <= last_modified_after
+                    ):
+                        continue
+
+                    file_meta = FileMetaData.from_simcore_node(
+                        user_id=user_id,
+                        file_id=TypeAdapter(SimcoreS3FileID).validate_python(
+                            s3_obj.object_key
+                        ),
+                        bucket=self.simcore_bucket_name,
+                        location_id=self.get_location_id(),
+                        location_name=self.get_location_name(),
+                        sha256_checksum=None,
+                        file_size=s3_obj.size,
+                        last_modified=s3_obj.last_modified,
+                        entity_tag=s3_obj.e_tag,
+                    )
+                    yield file_meta
 
         except S3KeyNotFoundError:
             with log_context(
@@ -1054,6 +1056,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         *,
         name_pattern: str,
         project_id: ProjectID | None = None,
+        modified_before: datetime.datetime | None = None,
+        modified_after: datetime.datetime | None = None,
         items_per_page: NonNegativeInt = 100,
     ) -> AsyncGenerator[list[FileMetaData], None]:
         """
@@ -1064,22 +1068,42 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             user_id: The user requesting the search
             name_pattern: Wildcard pattern for filename matching (e.g., "*.txt", "test_*.json")
             project_id: Optional project ID to limit search to specific project
+            modified_before: Optional datetime filter - only include files modified before this datetime
+            modified_after: Optional datetime filter - only include files modified after this datetime
             items_per_page: Number of items to return per page
 
         Yields:
-            List of FileMetaData objects for each page
+            List of FileMetaData objects for each page, with exactly items_per_page items
+            (except the last page which may have fewer)
         """
         # Validate access rights
         accessible_projects_ids = await get_accessible_project_ids(
             get_db_engine(self.app), user_id=user_id, project_id=project_id
         )
 
-        # Search each accessible project
+        # Collect all results across projects
+        current_page_results: list[FileMetaData] = []
+
         for proj_id in accessible_projects_ids:
-            async for page_results in self._search_project_s3_files(
-                proj_id, name_pattern, user_id, items_per_page
+            async for file_result in self._search_project_s3_files(
+                user_id, proj_id, name_pattern, modified_before, modified_after
             ):
-                yield page_results
+                current_page_results.append(file_result)
+
+                if len(current_page_results) >= items_per_page:
+                    page_batch = current_page_results[:items_per_page]
+                    remaining_results = current_page_results[items_per_page:]
+
+                    processed_page = await self._process_s3_page_results(page_batch)
+                    yield processed_page
+
+                    # NOTE: keep the remaining results for next page
+                    current_page_results = remaining_results
+
+        # Handle any remaining results (the last page)
+        if current_page_results:
+            processed_page = await self._process_s3_page_results(current_page_results)
+            yield processed_page
 
     async def create_soft_link(
         self, user_id: int, target_file_id: StorageFileID, link_file_id: StorageFileID

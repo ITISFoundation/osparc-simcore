@@ -1,3 +1,4 @@
+import datetime
 from typing import Literal
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -51,15 +52,19 @@ async def start_search(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     job_filter: AsyncJobFilter,
-    name_pattern: str,
-    max_items_per_page: int,
+    items_per_page: int,
+    filename_pattern: str,
+    last_modified_before: datetime.datetime | None = None,
+    last_modified_after: datetime.datetime | None = None,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=TypeAdapter(RPCMethodName).validate_python("start_search"),
+        method_name=TypeAdapter(RPCMethodName).validate_python("start_file_search"),
         job_filter=job_filter,
-        name_pattern=name_pattern,
-        max_items_per_page=max_items_per_page,
+        items_per_page=items_per_page,
+        name_pattern=filename_pattern,
+        last_modified_before=last_modified_before,
+        last_modified_after=last_modified_after,
     )
     return async_job_rpc_get, job_filter

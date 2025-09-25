@@ -72,7 +72,7 @@ async def start_search(
     task_manager: TaskManager,
     job_filter: AsyncJobFilter,
     name_pattern: str,
-    max_items_per_page: int,
+    items_per_page: int,
     project_id: str | None = None,
 ) -> AsyncJobGet:
     task_name = search.__name__
@@ -85,6 +85,6 @@ async def start_search(
         user_id=job_filter.user_id,
         project_id=project_id,
         name_pattern=name_pattern,
-        max_items_per_page=max_items_per_page,
+        items_per_page=items_per_page,
     )
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)

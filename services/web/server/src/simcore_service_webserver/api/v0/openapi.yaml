@@ -17106,21 +17106,37 @@ components:
         \ - Task was aborted before completion"
     SearchBodyParams:
       properties:
-        namePattern:
+        filenamePattern:
           type: string
-          title: Namepattern
-          description: Name pattern with wildcard support ('*', '?'). Minimum of 3
-            non-wildcard characters required.
-        maxItemsPerPage:
+          title: Filenamepattern
+          description: File name pattern with wildcard support ('?', '*'). Minimum
+            of 3 non-wildcard characters required.
+        lastModifiedBefore:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Lastmodifiedbefore
+          description: 'Filter results to files modified before this date (inclusive).
+            Format: YYYY-MM-DDTHH:MM:SS'
+        lastModifiedAfter:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Lastmodifiedafter
+          description: 'Filter results to files modified after this date (inclusive).
+            Format: YYYY-MM-DDTHH:MM:SS'
+        itemsPerPage:
           type: integer
           maximum: 25
           minimum: 1
-          title: Maxitemsperpage
-          description: Max number of items per page
+          title: Itemsperpage
+          description: Number of items per page
           default: 50
       type: object
       required:
-      - namePattern
+      - filenamePattern
       title: SearchBodyParams
     SelectBox:
       properties:

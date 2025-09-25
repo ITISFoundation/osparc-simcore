@@ -569,8 +569,10 @@ async def search(request: web.Request) -> web.Response:
             user_id=_req_ctx.user_id,
             product_name=_req_ctx.product_name,
         ),
-        name_pattern=search_body.name_pattern,
-        max_items_per_page=search_body.max_items_per_page,
+        filename_pattern=search_body.filename_pattern,
+        last_modified_before=search_body.last_modified_before,
+        last_modified_after=search_body.last_modified_after,
+        items_per_page=search_body.items_per_page,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
