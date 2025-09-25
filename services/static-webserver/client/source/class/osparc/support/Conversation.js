@@ -97,14 +97,15 @@ qx.Class.define("osparc.support.Conversation", {
               this.setConversation(newConversation);
               if (isBookACall) {
                 // add a first message
-                const msg = `
-                  Book a Call details:
-                  - Topic: ${this.__bookACallInfo["topic"]}
-                `;
-                if ("extraInfo" in this.__bookACallInfo) {
-                  msg += `\n- Extra Info: ${this.__bookACallInfo["extraInfo"]}`;
+                let msg = "Book a Call";
+                if (this.__bookACallInfo) {
+                  msg += `\n- Topic: ${this.__bookACallInfo["topic"]}`;
+                  if ("extraInfo" in this.__bookACallInfo) {
+                    msg += `\n- Extra Info: ${this.__bookACallInfo["extraInfo"]}`;
+                  }
                 }
                 prePostMessagePromise = this.__postMessage(msg);
+                this.__bookACallInfo = null;
                 // rename the conversation
                 newConversation.renameConversation("Book a Call");
               }

@@ -174,19 +174,19 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
     __nextPressed: function() {
       const topicData = {};
       if (this.getChildControl("generic-intro-button").getValue()) {
-        topicData["topic"] = "specific-topic";
+        topicData["topic"] = "Generic Introduction";
       } else if (this.getChildControl("specific-intro-button").getValue()) {
-        topicData["topic"] = "specific-intro";
+        topicData["topic"] = "Specific Introduction";
         const selectBox = this.getChildControl("specific-intro-select-box");
         const selectedItem = selectBox.getSelection()[0];
         topicData["extraInfo"] = selectedItem ? selectedItem.getModel() : "";
       } else if (this.getChildControl("help-with-project-button").getValue()) {
-        topicData["topic"] = "help-with-project";
+        topicData["topic"] = "Help with Project";
         if (this.getChildControl("share-project-checkbox").getValue()) {
           topicData["share-project"] = true;
         }
       } else if (this.getChildControl("specific-topic-button").getValue()) {
-        topicData["topic"] = "specific-topic";
+        topicData["topic"] = "Specific Topic";
         topicData["extraInfo"] = this.getChildControl("specific-topic-textfield").getValue();
       }
 
