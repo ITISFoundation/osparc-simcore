@@ -80,7 +80,7 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           });
           this._add(control);
           break;
-        case "share-project-checkbox":
+        case "share-project-checkbox": {
           control = new qx.ui.form.CheckBox().set({
             value: true,
             label: this.tr("share current project with support team (optional)"),
@@ -90,7 +90,17 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           this.getChildControl("help-with-project-button").bind("value", control, "visibility", {
             converter: val => val ? "visible" : "excluded"
           });
+          const store = osparc.store.Store.getInstance();
+          store.bind("currentStudy", control, "enabled", {
+            converter: study => {
+              if (!study) {
+                control.setValue(false);
+              }
+              return Boolean(study);
+            }
+          });
           break;
+        }
         case "specific-topic-button":
           control = new qx.ui.form.RadioButton().set({
             label: this.tr("to discuss a specific topic"),
