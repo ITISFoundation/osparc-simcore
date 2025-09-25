@@ -1,6 +1,6 @@
 import collections
 import logging
-from typing import cast
+from typing import Any, cast
 
 from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
@@ -90,8 +90,10 @@ class ComputationalAutoscalingProvider:
         assert self  # nosec
         # NOTE: a dask worker can take a task if it has a free thread, regardless of its resources
         #       so we need to be careful when interpreting the resources, adding the thread here will mimick this
-
-        return utils.resources_from_dask_task(task)
+        task_required_resources = utils.resources_from_dask_task(task)
+        # TODO: should we add a generic resource for threads?
+        # task_required_resources.generic_resources[_DASK_WORKER_THREAD_RESOURCE_NAME] = 1
+        return task_required_resources
 
     async def get_task_defined_instance(
         self, app: FastAPI, task
@@ -138,10 +140,14 @@ class ComputationalAutoscalingProvider:
         list_of_used_resources: list[Resources] = await logged_gather(
             *(self.compute_node_used_resources(app, i) for i in instances)
         )
-        counter = collections.Counter(dict.fromkeys(Resources.model_fields, 0))
+        counter = collections.Counter()
         for result in list_of_used_resources:
-            counter.update(result.model_dump())
-        return Resources.model_validate(dict(counter))
+            counter.update(result.as_flat_dict())
+
+        flat_counter: dict[str, Any] = dict(counter)
+        flat_counter.setdefault("cpus", 0)
+        flat_counter.setdefault("ram", 0)
+        return Resources.from_flat_dict(flat_counter)
 
     async def compute_cluster_total_resources(
         self, app: FastAPI, instances: list[AssociatedInstance]
