@@ -11,7 +11,7 @@ All keys are constants with a unique name convention:
 
 from typing import Final
 
-from aiohttp import web
+from aiohttp import ClientSession, web
 
 # APPLICATION's CONTEXT KEYS
 
@@ -25,7 +25,8 @@ APP_CONFIG_KEY = web.AppKey("APP_CONFIG_KEY", dict[str, object])
 
 APP_AIOPG_ENGINE_KEY: Final[str] = f"{__name__ }.aiopg_engine"
 
-APP_CLIENT_SESSION_KEY: Final[str] = f"{__name__ }.session"
+APP_CLIENT_SESSION_KEY: web.AppKey[ClientSession] = web.AppKey("APP_CLIENT_SESSION_KEY")
+
 
 APP_FIRE_AND_FORGET_TASKS_KEY: Final[str] = f"{__name__}.tasks"
 

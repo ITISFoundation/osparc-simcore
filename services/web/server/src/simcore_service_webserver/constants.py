@@ -6,6 +6,7 @@ from aiohttp import web
 from common_library.user_messages import user_message
 from servicelib.aiohttp.application_keys import (
     APP_AIOPG_ENGINE_KEY,
+    APP_CLIENT_SESSION_KEY,
     APP_CONFIG_KEY,
     APP_FIRE_AND_FORGET_TASKS_KEY,
 )
@@ -23,6 +24,9 @@ if TYPE_CHECKING:
 else:
     APP_SETTINGS_KEY: web.AppKey = web.AppKey("APP_SETTINGS_KEY", None)
 
+
+assert APP_CLIENT_SESSION_KEY  # nosec
+assert APP_CONFIG_KEY  # nosec
 
 # Application storage keys
 APP_PRODUCTS_KEY: Final[str] = f"{__name__ }.APP_PRODUCTS_KEY"
@@ -67,7 +71,7 @@ MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = user_message(
 
 __all__: tuple[str, ...] = (
     "APP_AIOPG_ENGINE_KEY",
-    "APP_CONFIG_KEY",
+    "APP_CLIENT_SESSION_KEY" "APP_CONFIG_KEY",
     "APP_FIRE_AND_FORGET_TASKS_KEY",
     "APP_SETTINGS_KEY",
     "FRONTEND_APPS_AVAILABLE",

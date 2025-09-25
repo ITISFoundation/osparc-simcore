@@ -8,8 +8,7 @@ from ..utils import (
     get_http_client_request_aiohttp_sock_connect_timeout,
     get_http_client_request_total_timeout,
 )
-
-APP_CLIENT_SESSION_KEY: web.AppKey[ClientSession] = web.AppKey("APP_CLIENT_SESSION_KEY")
+from .application_keys import APP_CLIENT_SESSION_KEY
 
 
 async def persistent_client_session(app: web.Application) -> AsyncGenerator[None, None]:
@@ -45,6 +44,7 @@ def get_client_session(app: web.Application) -> ClientSession:
 
 
 __all__: tuple[str, ...] = (
+    "APP_CLIENT_SESSION_KEY",
     "get_client_session",
     "persistent_client_session",
 )
