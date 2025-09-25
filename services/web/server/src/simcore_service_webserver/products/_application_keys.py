@@ -3,8 +3,9 @@
 from typing import Final
 
 from aiohttp import web
+from models_library.products import ProductName
 
-from ._models import Product, ProductName
+from ._models import Product
 
 APP_PRODUCTS_KEY: Final = web.AppKey("APP_PRODUCTS_KEY", dict[ProductName, Product])
 

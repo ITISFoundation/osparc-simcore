@@ -1,6 +1,5 @@
 import logging
 import textwrap
-from collections import OrderedDict
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
@@ -10,7 +9,6 @@ from .._meta import API_VTAG
 from ..constants import RQ_PRODUCT_KEY
 from ..utils_aiohttp import iter_origins
 from ._application_keys import APP_PRODUCTS_KEY, APP_PRODUCTS_KEY_DEFAULT
-from .models import Product
 
 _logger = logging.getLogger(__name__)
 
@@ -21,7 +19,7 @@ def _get_default_product_name(app: web.Application) -> str:
 
 
 def _discover_product_by_hostname(request: web.Request) -> str | None:
-    products: OrderedDict[str, Product] = request.app[APP_PRODUCTS_KEY]
+    products = request.app[APP_PRODUCTS_KEY]
     for product in products.values():
         for _, host in iter_origins(request):
             if product.host_regex.search(host):

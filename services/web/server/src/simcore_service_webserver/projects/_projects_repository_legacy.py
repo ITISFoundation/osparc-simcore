@@ -146,7 +146,7 @@ class ProjectDBAPI(BaseProjectDB):
     @classmethod
     def set_once_in_app_context(cls, app: web.Application) -> Self:
         if app.get(APP_PROJECT_DBAPI) is None:
-            app[APP_PROJECT_DBAPI] = cls(app)
+            app[APP_PROJECT_DBAPI] = ProjectDBAPI(app)
         return cls.get_from_app_context(app)
 
     @property
