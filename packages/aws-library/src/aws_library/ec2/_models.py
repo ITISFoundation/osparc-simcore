@@ -244,8 +244,9 @@ class EC2InstanceBootSpecific(BaseModel):
                 temp_file.flush()
                 # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
                 sh.bash(
-                    "-n", temp_file.name
-                )  # pyright: ignore[reportCallIssue]  # sh is untyped, but this call is safe for bash syntax checking
+                    "-n",
+                    temp_file.name,  # pyright: ignore[reportCallIssue]
+                )  # sh is untyped, but this call is safe for bash syntax checking
         except sh.ErrorReturnCode as exc:
             msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
             raise ValueError(msg) from exc
