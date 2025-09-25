@@ -9,6 +9,7 @@ from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
+from ....exception_handling import create_error_context_from_request
 from ....products import products_web
 from ....products.models import Product
 from ....users import users_service
@@ -258,7 +259,19 @@ async def initiate_change_email(request: web.Request):
             },
         )
     except Exception as err:  # pylint: disable=broad-except
-        _logger.exception("Can not send change_email_email")
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Can not send change_email_email",
+                error=err,
+                error_context={
+                    "user_id": user["id"],
+                    "user_email": user["email"],
+                    "new_email": request_body.email,
+                    "product_name": product.name,
+                    **create_error_context_from_request(request),
+                },
+            )
+        )
         await confirmation_service.delete_confirmation(confirmation)
         raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
 
