@@ -42,9 +42,11 @@ class ConfirmationRepository(BaseRepository):
         data: str | None = None,
     ) -> Confirmation:
         """Create a new confirmation token for a user action."""
+
         async with transaction_context(self.engine, connection) as conn:
-            # Generate unique code
-            while True:
+            # We want the same connection checking uniqueness and inserting
+            while True:  # Generate unique code
+
                 # NOTE: use only numbers since front-end does not handle well url encoding
                 numeric_code: str = generate_passcode(20)
 
