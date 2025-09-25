@@ -12,7 +12,7 @@ class BaseUpdatableDisplayModel(BaseModel):
         return set()
 
     @staticmethod
-    def get_rerender_on_type_change() -> set[type]:
+    def get_rerender_on_type_change() -> set[str]:
         """
         redefine in subclasses to return a set of `attribute` names that
         cause a rerender when their `types` change
