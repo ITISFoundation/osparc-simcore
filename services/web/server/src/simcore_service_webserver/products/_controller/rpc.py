@@ -6,7 +6,7 @@ from models_library.api_schemas_webserver.products import CreditResultRpcGet
 from models_library.products import ProductName
 from servicelib.rabbitmq import RPCRouter
 
-from ...constants import APP_SETTINGS_KEY
+from ...application_keys import APP_SETTINGS_KEY
 from ...rabbitmq import get_rabbitmq_rpc_server, setup_rabbitmq
 from .. import _service
 from .._models import CreditResult

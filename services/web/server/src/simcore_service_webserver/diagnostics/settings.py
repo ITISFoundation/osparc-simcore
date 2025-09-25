@@ -9,7 +9,7 @@ from pydantic import (
 )
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 
 
 class DiagnosticsSettings(BaseCustomSettings):

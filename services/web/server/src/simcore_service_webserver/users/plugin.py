@@ -6,8 +6,8 @@ from typing import Final
 from aiohttp import web
 from servicelib.aiohttp.observer import setup_observer_registry
 
+from ..application_keys import APP_SETTINGS_KEY
 from ..application_setup import ModuleCategory, app_setup_func
-from ..constants import APP_SETTINGS_KEY
 from ..user_notifications.bootstrap import (
     setup_user_notification_feature,
 )

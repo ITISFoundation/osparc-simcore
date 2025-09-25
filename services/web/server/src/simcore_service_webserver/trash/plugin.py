@@ -8,8 +8,8 @@ import logging
 
 from aiohttp import web
 
+from ..application_keys import APP_SETTINGS_KEY
 from ..application_setup import ModuleCategory, app_setup_func
-from ..constants import APP_SETTINGS_KEY
 from ..folders.plugin import setup_folders
 from ..projects.plugin import setup_projects
 from ..workspaces.plugin import setup_workspaces

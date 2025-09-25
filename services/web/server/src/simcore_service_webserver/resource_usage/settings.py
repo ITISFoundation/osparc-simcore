@@ -1,13 +1,13 @@
-""" resource-tracker's subsystem configuration
+"""resource-tracker's subsystem configuration
 
-    - config-file schema
-    - settings
+- config-file schema
+- settings
 """
 
 from aiohttp import web
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 
 
 def get_plugin_settings(app: web.Application) -> ResourceUsageTrackerSettings:

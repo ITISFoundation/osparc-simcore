@@ -9,8 +9,8 @@ from typing import Final
 
 from aiohttp import web
 
+from ..application_keys import APP_SETTINGS_KEY
 from ..application_setup import ModuleCategory, app_setup_func
-from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ._controller import (
     access_rights_rest,

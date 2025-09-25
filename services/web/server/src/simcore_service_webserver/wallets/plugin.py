@@ -4,8 +4,8 @@ import logging
 
 from aiohttp import web
 
+from ..application_keys import APP_SETTINGS_KEY
 from ..application_setup import ModuleCategory, app_setup_func
-from ..constants import APP_SETTINGS_KEY
 from ..payments.plugin import setup_payments
 from . import _groups_handlers, _handlers, _payments_handlers
 from ._events import setup_wallets_events

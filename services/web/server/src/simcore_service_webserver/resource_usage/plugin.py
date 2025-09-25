@@ -4,8 +4,8 @@ import logging
 
 from aiohttp import web
 
+from ..application_keys import APP_SETTINGS_KEY
 from ..application_setup import ModuleCategory, app_setup_func
-from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ..wallets.plugin import setup_wallets
 from . import _pricing_plans_admin_rest, _pricing_plans_rest, _service_runs_rest

@@ -17,7 +17,7 @@ from pydantic import AnyHttpUrl
 from servicelib.aiohttp import status
 from yarl import URL
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 from .errors import (
     InvalidInvitationError,
     InvitationsError,

@@ -7,8 +7,8 @@ from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDB
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._meta import APP_NAME
+from .application_keys import APP_SETTINGS_KEY
 from .application_setup import ModuleCategory, app_setup_func
-from .constants import APP_SETTINGS_KEY
 
 _logger = logging.getLogger(__name__)
 

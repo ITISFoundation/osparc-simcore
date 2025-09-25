@@ -14,8 +14,8 @@ from models_library.user_preferences import (
     PreferenceName,
 )
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from simcore_service_webserver.application_keys import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.constants import APP_SETTINGS_KEY
 from simcore_service_webserver.user_preferences._models import (
     ALL_FRONTEND_PREFERENCES,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,

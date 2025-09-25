@@ -5,7 +5,7 @@ from aiohttp import web
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 from ._itis_vip_settings import ItisVipSettings, SpeagPhantomsSettings
 
 

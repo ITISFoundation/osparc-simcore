@@ -7,7 +7,7 @@ from pydantic import ByteSize, Field, HttpUrl, TypeAdapter, field_validator
 from pydantic_settings import SettingsConfigDict
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 
 _DEFAULT_THUMBNAIL: Final[HttpUrl] = TypeAdapter(HttpUrl).validate_python(
     "https://via.placeholder.com/170x120.png"

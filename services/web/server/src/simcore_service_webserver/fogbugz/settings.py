@@ -2,7 +2,7 @@ from aiohttp import web
 from pydantic import AnyUrl, SecretStr
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 
 
 class FogbugzSettings(BaseCustomSettings):

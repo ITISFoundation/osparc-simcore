@@ -1,4 +1,4 @@
-""" Settings for the invitations plugin
+"""Settings for the invitations plugin
 
 NOTE: do not move them to settings_library since (so far) only the
 webserver should interact with this
@@ -17,7 +17,7 @@ from settings_library.utils_service import (
     URLPart,
 )
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 
 _INVITATION_VTAG_V1: Final[VersionTag] = TypeAdapter(VersionTag).validate_python("v1")
 

@@ -1,14 +1,13 @@
-""" computation subsystem's configuration
+"""computation subsystem's configuration
 
-    - config-file schema
-    - settings
+- config-file schema
+- settings
 """
-
 
 from aiohttp.web import Application
 from settings_library.rabbit import RabbitSettings
 
-from .constants import APP_SETTINGS_KEY
+from .application_keys import APP_SETTINGS_KEY
 
 
 def get_plugin_settings(app: Application) -> RabbitSettings:

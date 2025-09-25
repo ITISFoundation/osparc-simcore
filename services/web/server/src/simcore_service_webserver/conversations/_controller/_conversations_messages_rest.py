@@ -31,7 +31,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..._meta import API_VTAG as VTAG
-from ...constants import APP_SETTINGS_KEY
+from ...application_keys import APP_SETTINGS_KEY
 from ...email import email_service
 from ...fogbugz.settings import FogbugzSettings
 from ...login.decorators import login_required

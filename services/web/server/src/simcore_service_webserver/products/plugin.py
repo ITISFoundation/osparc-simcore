@@ -27,7 +27,7 @@ def setup_products_without_rpc(app: web.Application):
     # NOTE: internal import speeds up booting app
     # specially if this plugin is not set up to be loaded
     #
-    from ..constants import APP_SETTINGS_KEY
+    from ..application_keys import APP_SETTINGS_KEY
     from . import _web_events, _web_middlewares
     from ._controller import rest
 

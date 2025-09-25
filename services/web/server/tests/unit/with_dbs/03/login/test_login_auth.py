@@ -21,7 +21,7 @@ from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.constants import APP_SETTINGS_KEY
+from simcore_service_webserver.application_keys import APP_SETTINGS_KEY
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,

@@ -3,7 +3,7 @@ from typing import TypeAlias
 
 import servicelib.aiohttp.application_setup
 
-from .constants import APP_SETTINGS_KEY
+from .application_keys import APP_SETTINGS_KEY
 
 # models
 ModuleCategory: TypeAlias = servicelib.aiohttp.application_setup.ModuleCategory

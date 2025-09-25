@@ -4,9 +4,9 @@ from aiohttp import web
 from servicelib.aiohttp.tracing import get_tracing_lifespan
 from settings_library.tracing import TracingSettings
 
+from .application_keys import APP_SETTINGS_KEY
 from .application_settings import get_application_settings
 from .application_setup import ModuleCategory, app_setup_func
-from .constants import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 

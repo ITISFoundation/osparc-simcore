@@ -1,7 +1,7 @@
 from aiohttp import web
 from settings_library.prometheus import PrometheusSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 
 
 def get_plugin_settings(app: web.Application) -> PrometheusSettings:

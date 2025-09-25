@@ -9,6 +9,7 @@ from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
 from .._meta import APP_NAME
+from ..application_keys import APP_SETTINGS_KEY
 from ..application_setup import (
     ModuleCategory,
     app_setup_func,
@@ -16,7 +17,6 @@ from ..application_setup import (
 )
 from ..constants import (
     APP_PUBLIC_CONFIG_PER_PRODUCT,
-    APP_SETTINGS_KEY,
     INDEX_RESOURCE_NAME,
 )
 from ..db.plugin import setup_db

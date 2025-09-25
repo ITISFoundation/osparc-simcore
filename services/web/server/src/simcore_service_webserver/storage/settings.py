@@ -6,7 +6,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings
 from yarl import URL
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 
 
 class StorageSettings(BaseCustomSettings, MixinServiceSettings):

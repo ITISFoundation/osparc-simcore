@@ -1,13 +1,13 @@
-""" catalog's subsystem configuration
+"""catalog's subsystem configuration
 
-    - config-file schema
-    - settings
+- config-file schema
+- settings
 """
 
 from aiohttp import web
 from settings_library.catalog import CatalogSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_KEY
 
 
 def get_plugin_settings(app: web.Application) -> CatalogSettings:
