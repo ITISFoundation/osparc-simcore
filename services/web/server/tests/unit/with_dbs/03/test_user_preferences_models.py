@@ -91,7 +91,7 @@ def test_overwrite_user_preferences_defaults(
 
 @pytest.fixture
 def mock_app(app_environment: EnvVarsDict) -> Mock:
-    app = {APP_SETTINGS_APPKEY: Mock()}
+    app = {}
     app[APP_SETTINGS_APPKEY] = ApplicationSettings.create_from_envs()
     return app  # type: ignore
 

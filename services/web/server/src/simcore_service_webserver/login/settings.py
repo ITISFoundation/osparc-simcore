@@ -10,7 +10,7 @@ from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
-from .constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
+from .constants import LOGIN_SETTINGS_PER_PRODUCT_APPKEY
 
 _DAYS: Final[float] = 1.0  # in days
 _MINUTES: Final[float] = 1.0 / 24.0 / 60.0  # in days
@@ -147,7 +147,7 @@ def get_plugin_settings(
     app: web.Application, product_name: str
 ) -> LoginSettingsForProduct:
     """login plugin's settings are customized per product"""
-    settings = app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY][product_name]
+    settings = app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY][product_name]
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, LoginSettingsForProduct)  # nosec
     return settings

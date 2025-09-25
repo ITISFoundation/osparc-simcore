@@ -125,9 +125,7 @@ CODE_2FA_EMAIL_CODE_REQUIRED: Final[str] = "EMAIL_CODE_REQUIRED"
 
 # App keys for login plugin
 # Naming convention: APP_LOGIN_...KEY
-APP_LOGIN_SETTINGS_PER_PRODUCT_KEY: Final[str] = (
-    f"{__name__}.LOGIN_SETTINGS_PER_PRODUCT"
-)
+LOGIN_SETTINGS_PER_PRODUCT_APPKEY: Final[str] = f"{__name__}.LOGIN_SETTINGS_PER_PRODUCT"
 
 
 # maximum amount the user can resend the code via email or phone

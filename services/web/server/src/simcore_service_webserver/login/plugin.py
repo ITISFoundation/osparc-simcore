@@ -39,7 +39,7 @@ from ._controller.rest import (
     twofa,
 )
 from ._login_repository_legacy import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
-from .constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
+from .constants import LOGIN_SETTINGS_PER_PRODUCT_APPKEY
 from .settings import (
     APP_LOGIN_OPTIONS_KEY,
     LoginOptions,
@@ -118,7 +118,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
             raise ValueError(error_msg)
 
     # store in app
-    app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
+    app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY] = login_settings_per_product
 
     # product-based public config: Overrides  ApplicationSettings.public_dict
     public_data_per_product = {}
