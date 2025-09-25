@@ -14,10 +14,12 @@ from playwright.async_api import Locator, Page
 from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
-_HERE: Final[Path] = (
+SCREENSHOTS_PATH: Final[Path] = (
     Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 )
 _DEFAULT_TIMEOUT: Final[NonNegativeFloat] = 10
+
+SCREENSHOT_SUFFIX = ".ignore.screenshot.png"
 
 
 @asynccontextmanager
@@ -28,11 +30,15 @@ async def take_screenshot_on_error(
         yield
     # allows to also capture exceptions form `with pytest.raise(...)``
     except BaseException:
-        path = _HERE / f"{uuid4()}.ignore.png"
+        path = SCREENSHOTS_PATH / f"{uuid4()}{SCREENSHOT_SUFFIX}"
         await async_page.screenshot(path=path)
         print(f"Please check :{path}")
 
         raise
+
+
+async def _get_page_html(async_page: Page) -> str:
+    return await async_page.content()
 
 
 async def _get_locator(
@@ -49,11 +55,13 @@ async def _get_locator(
                 locator = async_page.get_by_text(text)
                 count = await locator.count()
                 if instances is None:
-                    assert count > 0, f"cold not find text='{text}'"
+                    assert (
+                        count > 0
+                    ), f"cold not find text='{text}':\n{await _get_page_html(async_page)}"
                 else:
                     assert (
                         count == instances
-                    ), f"found {count} instances of text='{text}'. Expected {instances}"
+                    ), f"found {count} instances of text='{text}'. Expected {instances}:\n{await _get_page_html(async_page)}"
     return locator
 
 
