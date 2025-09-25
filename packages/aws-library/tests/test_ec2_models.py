@@ -275,7 +275,7 @@ def test_ec2_instance_data_hashable(faker: Faker):
     assert next(iter(second_set_of_ec2s)) in union_of_sets
 
 
-def test_ec2_instance_boot_specific_with_invalid_custome_script(faker: Faker):
+def test_ec2_instance_boot_specific_with_invalid_custom_script(faker: Faker):
     valid_model = EC2InstanceBootSpecific.model_json_schema()["examples"][0]
     invalid_model = {**valid_model, "custom_boot_scripts": ["echo 'missing end quote"]}
 
