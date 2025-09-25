@@ -4,6 +4,7 @@ from aiohttp import web
 from servicelib.logging_utils import set_parent_module_log_level
 
 from ..application_settings import get_application_settings
+from ..application_setup import ModuleCategory, app_setup_func
 from ..products.plugin import setup_products
 from ..projects._projects_repository_legacy import setup_projects_db
 from ..redis import setup_redis
