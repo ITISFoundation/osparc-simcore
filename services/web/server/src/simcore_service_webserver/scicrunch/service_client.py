@@ -173,4 +173,4 @@ class SciCrunch:
         return hits.root
 
 
-_SCICRUNCH_APPKEY: web.AppKey = web.AppKey("SCICRUNCH_APPKEY", SciCrunch)
+_SCICRUNCH_APPKEY: web.AppKey = web.AppKey(SciCrunch.__name__, SciCrunch)

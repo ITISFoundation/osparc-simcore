@@ -7,7 +7,7 @@
 
 import logging
 from contextlib import AsyncExitStack
-from typing import Any, Self, cast
+from typing import Any, Final, Self, cast
 from uuid import uuid1
 
 import sqlalchemy as sa
@@ -1391,7 +1391,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
 
-PROJECT_DBAPI_APPKEY = web.AppKey("ProjectDBAPI", ProjectDBAPI)
+PROJECT_DBAPI_APPKEY: Final = web.AppKey(ProjectDBAPI.__name__, ProjectDBAPI)
 
 
 def setup_projects_db(app: web.Application):
