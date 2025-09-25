@@ -21,6 +21,8 @@ qx.Class.define("osparc.support.BookACall", {
 
   construct: function() {
     this.base(arguments);
+
+    this.__buildLayout();
   },
 
   members: {
@@ -29,14 +31,24 @@ qx.Class.define("osparc.support.BookACall", {
       switch (id) {
         case "call-topic-selector":
           control = new osparc.support.CallTopicSelector();
-          this.getChildControl("main-stack").add(control);
+          this.add(control);
           break;
         case "book-a-call-iframe":
           control = new osparc.wrapper.BookACallIframe();
-          this.getChildControl("main-stack").add(control);
+          this.add(control);
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __buildLayout: function() {
+      const callTopicSelector = this.getChildControl("call-topic-selector");
+      this.setSelection([callTopicSelector]);
+      const bookACallIframe = this.getChildControl("book-a-call-iframe");
+      callTopicSelector.addListener("nextPressed", e => {
+        console.log("Next pressed!", e.getData());
+        this.setSelection([bookACallIframe]);
+      });
     },
   }
 });

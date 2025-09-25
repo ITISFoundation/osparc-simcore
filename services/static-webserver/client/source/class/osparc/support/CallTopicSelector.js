@@ -42,13 +42,15 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           control = new qx.ui.form.RadioButton().set({
             label: this.tr("a generic introduction"),
             value: false,
+            paddingTop: 10,
           });
           this._add(control);
           break;
         case "specific-topic-button":
           control = new qx.ui.form.RadioButton().set({
-            label: this.tr("A specific topic"),
+            label: this.tr("a specific topic"),
             value: false,
+            paddingTop: 10,
           });
           this._add(control);
           break;
@@ -65,6 +67,7 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           control = new qx.ui.form.RadioButton().set({
             label: this.tr("some help with my project"),
             value: false,
+            paddingTop: 10,
           });
           this._add(control);
           break;
@@ -83,6 +86,7 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           control = new qx.ui.form.RadioButton().set({
             label: this.tr("to discuss a specific topic"),
             value: false,
+            paddingTop: 10,
           });
           this._add(control);
           break;
@@ -98,7 +102,7 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           break;
         case "next-button":
           control = new qx.ui.form.Button().set({
-            value: this.tr("Next"),
+            label: this.tr("Next"),
             alignX: "right",
             marginTop: 10,
             appearance: "strong-button",
@@ -111,6 +115,7 @@ qx.Class.define("osparc.support.CallTopicSelector", {
     },
 
     __buildLayout: function() {
+      this.getChildControl("intro-label");
       this.getChildControl("generic-intro-button");
       this.getChildControl("specific-topic-button");
       const selectBox = this.getChildControl("specific-topic-select-box");
@@ -133,7 +138,6 @@ qx.Class.define("osparc.support.CallTopicSelector", {
       this.getChildControl("share-project-checkbox");
       this.getChildControl("specific-topic-button");
       this.getChildControl("specific-topic-textfield");
-      this.getChildControl("intro-label");
       this.getChildControl("next-button");
     },
 
