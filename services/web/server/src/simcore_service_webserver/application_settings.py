@@ -4,7 +4,6 @@ from typing import Annotated, Any, Final, Literal
 
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
-from common_library.exclude import Unset
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import LogLevel, PortInt, VersionTag
@@ -606,9 +605,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
         # Alias in addition MUST be camelcase here
         return {snake_to_camel(k): v for k, v in data.items()}
-
-
-_unset = Unset.VALUE
 
 
 def setup_settings(app: web.Application) -> ApplicationSettings:

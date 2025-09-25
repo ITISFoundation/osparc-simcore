@@ -12,12 +12,12 @@ from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import Field
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import API_VTAG as VTAG
 from ..application_settings_utils import requires_dev_feature_enabled

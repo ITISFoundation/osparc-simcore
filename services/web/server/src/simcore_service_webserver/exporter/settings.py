@@ -1,7 +1,8 @@
 from aiohttp.web import Application
 from pydantic import Field
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
+
+from ..constants import APP_SETTINGS_KEY
 
 
 class ExporterSettings(BaseCustomSettings):

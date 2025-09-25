@@ -1,8 +1,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ensure_single_setup
 
+from ..application_setup import ensure_single_setup
 from ..products.plugin import setup_products_without_rpc
 from ..rest.plugin import setup_rest
 from ..security.plugin import setup_security

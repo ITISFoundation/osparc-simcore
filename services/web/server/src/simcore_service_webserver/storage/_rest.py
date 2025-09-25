@@ -33,6 +33,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, BaseModel, ByteSize, TypeAdapter, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -47,7 +48,6 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     delete_paths as remote_delete_paths,
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 

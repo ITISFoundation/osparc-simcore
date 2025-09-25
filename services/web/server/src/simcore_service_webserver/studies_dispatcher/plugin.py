@@ -1,8 +1,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..login.decorators import login_required
 from ..products.plugin import setup_products
 from ._controller import setup_controller
@@ -31,7 +31,7 @@ def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSetti
     )
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.studies_dispatcher",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_STUDIES_DISPATCHER",
