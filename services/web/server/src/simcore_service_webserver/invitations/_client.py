@@ -157,7 +157,7 @@ _APP_INVITATIONS_SERVICE_API_KEY = f"{__name__}.{InvitationsServiceApi.__name__}
 async def invitations_service_api_cleanup_ctx(app: web.Application):
     settings = app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS
     assert settings  # nosec
-    service_api = await InvitationsServiceApi.create(settings=settings)
+    service_api = await InvitationsServiceApi.create(settings)
 
     app[_APP_INVITATIONS_SERVICE_API_KEY] = service_api
 
