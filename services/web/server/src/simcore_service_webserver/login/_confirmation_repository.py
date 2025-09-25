@@ -42,7 +42,7 @@ class ConfirmationRepository(BaseRepository):
         data: str | None = None,
     ) -> Confirmation:
         """Create a new confirmation token for a user action."""
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with transaction_context(self.engine, connection) as conn:
             # Generate unique code
             while True:
                 # NOTE: use only numbers since front-end does not handle well url encoding
@@ -108,7 +108,7 @@ class ConfirmationRepository(BaseRepository):
             confirmations.c.code == confirmation.code
         )
 
-        async with pass_or_acquire_connection(self.engine, connection) as conn:
+        async with transaction_context(self.engine, connection) as conn:
             await conn.execute(query)
 
     async def delete_confirmation_and_user(
