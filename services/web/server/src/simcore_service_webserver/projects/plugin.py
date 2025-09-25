@@ -8,8 +8,8 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ._controller import (
@@ -45,7 +45,7 @@ def register_projects_long_running_tasks(app: web.Application) -> None:
     register_stop_dynamic_service_task(app)
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.projects",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_PROJECTS",

@@ -1,12 +1,12 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import (
+
+from ..application_setup import (
     ModuleCategory,
-    app_module_setup,
+    app_setup_func,
     is_setup_completed,
 )
-
 from ..constants import APP_SETTINGS_KEY
 from ..rest.plugin import setup_rest
 from . import _controller
@@ -17,7 +17,7 @@ from ._director_v2_abc_service import set_project_run_policy
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_DIRECTOR_V2",

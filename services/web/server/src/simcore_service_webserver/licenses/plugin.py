@@ -3,8 +3,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ..rest.plugin import setup_rest
@@ -20,7 +20,7 @@ from .settings import LicensesSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_LICENSES",

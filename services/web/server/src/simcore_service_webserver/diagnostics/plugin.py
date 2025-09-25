@@ -5,10 +5,10 @@ from typing import Final
 
 from aiohttp import web
 from servicelib.aiohttp import monitor_slow_callbacks
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.profiler_middleware import profiling_middleware
 
 from ..application_settings import get_application_settings
+from ..application_setup import ModuleCategory, app_setup_func
 from ..rest.healthcheck import HealthCheck
 from ..rest.plugin import setup_rest
 from . import _handlers
@@ -30,7 +30,7 @@ async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     assert_healthy_app(app)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_DIAGNOSTICS",
@@ -61,7 +61,7 @@ def setup_diagnostics(app: web.Application):
     app[HEALTH_PLUGIN_START_TIME] = time.time()
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_PROFILING",

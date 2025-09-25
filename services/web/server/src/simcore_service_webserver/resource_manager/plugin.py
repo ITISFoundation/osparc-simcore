@@ -11,8 +11,8 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..redis import setup_redis
 from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY, APP_RESOURCE_MANAGER_TASKS_KEY
 from .registry import RedisResourceRegistry
@@ -24,7 +24,7 @@ APP_RESOURCE_MANAGER_CLIENT_KEY: Final = web.AppKey(
 )
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.resource_manager",
     ModuleCategory.SYSTEM,
     settings_name="WEBSERVER_RESOURCE_MANAGER",

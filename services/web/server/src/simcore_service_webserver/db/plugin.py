@@ -4,8 +4,8 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_AIOPG_ENGINE_KEY
 from . import _aiopg, _asyncpg
 
@@ -27,7 +27,7 @@ is_service_enabled = _aiopg.is_service_enabled
 get_asyncpg_engine = _asyncpg.get_async_engine
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.db",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_DB",

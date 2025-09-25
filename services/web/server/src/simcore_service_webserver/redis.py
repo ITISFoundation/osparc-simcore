@@ -3,11 +3,11 @@ from typing import Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._meta import APP_NAME
+from .application_setup import ModuleCategory, app_setup_func
 from .constants import APP_SETTINGS_KEY
 
 _logger = logging.getLogger(__name__)
@@ -117,7 +117,7 @@ def get_redis_announcements_client(app: web.Application) -> aioredis.Redis:
 # PLUGIN SETUP --------------------------------------------------------------------------
 
 
-@app_module_setup(
+@app_setup_func(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=_logger
 )
 def setup_redis(app: web.Application):

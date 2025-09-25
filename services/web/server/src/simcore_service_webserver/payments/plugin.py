@@ -5,8 +5,8 @@ Plugin to interact with the 'payments' service
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
 from ..products.plugin import setup_products
@@ -18,7 +18,7 @@ from ._tasks import create_background_task_to_fake_payment_completion
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_PAYMENTS",

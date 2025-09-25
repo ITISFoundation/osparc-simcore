@@ -8,8 +8,8 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ._observer import setup_socketio_observer_events
@@ -22,7 +22,7 @@ APP_SOCKETIO_SERVER_KEY: Final = web.AppKey(
 )  # socketio.AsyncServer
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.socketio",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_SOCKETIO",

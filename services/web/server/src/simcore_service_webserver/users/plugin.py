@@ -4,9 +4,9 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.observer import setup_observer_registry
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..user_notifications.bootstrap import (
     setup_user_notification_feature,
@@ -20,7 +20,7 @@ _logger = logging.getLogger(__name__)
 APP_USERS_CLIENT_KEY: Final = web.AppKey("APP_USERS_CLIENT_KEY", object)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_USERS",

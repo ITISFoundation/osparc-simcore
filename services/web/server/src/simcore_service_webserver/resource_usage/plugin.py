@@ -3,8 +3,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ..wallets.plugin import setup_wallets
@@ -14,7 +14,7 @@ from ._observer import setup_resource_usage_observer_events
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_RESOURCE_USAGE_TRACKER",

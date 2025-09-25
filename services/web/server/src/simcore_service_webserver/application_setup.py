@@ -1,16 +1,19 @@
 import functools
+from typing import TypeAlias
 
 import servicelib.aiohttp.application_setup
-from servicelib.aiohttp.application_setup import ModuleCategory, ensure_single_setup
 
 from .constants import APP_SETTINGS_KEY
 
 # models
-assert ModuleCategory  # nosec
+ModuleCategory: TypeAlias = servicelib.aiohttp.application_setup.ModuleCategory
 
+
+# free-functions
+is_setup_completed = servicelib.aiohttp.application_setup.is_setup_completed
 
 # decorators
-assert callable(ensure_single_setup)  # nosec
+ensure_single_setup = servicelib.aiohttp.application_setup.ensure_single_setup
 
 app_setup_func = functools.partial(
     servicelib.aiohttp.application_setup.app_module_setup,
@@ -21,4 +24,5 @@ __all__: tuple[str, ...] = (
     "ModuleCategory",
     "app_setup_func",
     "ensure_single_setup",
+    "is_setup_completed",
 )
