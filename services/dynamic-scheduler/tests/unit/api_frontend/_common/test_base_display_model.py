@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import Any
 
 import pytest
@@ -18,8 +19,8 @@ class Friend(BaseUpdatableDisplayModel):
 
 
 class RemderOnPropertyValueChange(BaseUpdatableDisplayModel):
-    @staticmethod
-    def get_rerender_on_value_change() -> set[str]:
+    @cached_property
+    def rerender_on_value_change(self) -> set[str]:
         return {"companion"}
 
     name: str
@@ -28,8 +29,8 @@ class RemderOnPropertyValueChange(BaseUpdatableDisplayModel):
 
 
 class RenderOnPropertyTypeChange(BaseUpdatableDisplayModel):
-    @staticmethod
-    def get_rerender_on_type_change() -> set[str]:
+    @cached_property
+    def rerender_on_type_change(self) -> set[str]:
         return {"companion"}
 
     name: str

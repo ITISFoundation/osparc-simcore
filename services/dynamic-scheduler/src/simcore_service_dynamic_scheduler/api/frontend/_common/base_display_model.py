@@ -1,18 +1,20 @@
+from functools import cached_property
+
 from pydantic import BaseModel, TypeAdapter
 
 
 class BaseUpdatableDisplayModel(BaseModel):
 
-    @staticmethod
-    def get_rerender_on_value_change() -> set[str]:
+    @cached_property
+    def rerender_on_value_change(self) -> set[str]:
         """
         redefine in subclasses to return a set of `attribute` names that
         cause a rerender when their `values` change
         """
         return set()
 
-    @staticmethod
-    def get_rerender_on_type_change() -> set[str]:
+    @cached_property
+    def rerender_on_type_change(self) -> set[str]:
         """
         redefine in subclasses to return a set of `attribute` names that
         cause a rerender when their `types` change
@@ -26,8 +28,7 @@ class BaseUpdatableDisplayModel(BaseModel):
         """
         requires_rerender: bool = False
 
-        rerender_on_value_change = self.get_rerender_on_value_change()
-        for key in rerender_on_value_change:
+        for key in self.rerender_on_value_change:
             if (
                 key in updates
                 and key in self.__dict__
@@ -40,8 +41,7 @@ class BaseUpdatableDisplayModel(BaseModel):
                 requires_rerender = True
                 break
 
-        rerender_on_type_change = self.get_rerender_on_type_change()
-        for key in rerender_on_type_change:
+        for key in self.rerender_on_type_change:
             if (
                 key in updates
                 and key in self.__dict__
