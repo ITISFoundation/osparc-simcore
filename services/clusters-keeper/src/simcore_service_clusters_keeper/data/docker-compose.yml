@@ -32,6 +32,7 @@ services:
           - "node.role==manager"
       resources:
         limits:
+          # TODO: should be tuned based on machines where this is deployed
           memory: 2048M
     secrets:
       - source: dask_tls_ca
@@ -58,6 +59,7 @@ services:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       DASK_NPROCS: ${DASK_NPROCS}
       DASK_NTHREADS: ${DASK_NTHREADS}
+      DASK_NTHREADS_MULTIPLIER: ${DASK_NTHREADS_MULTIPLIER}
       DASK_SCHEDULER_URL: tls://dask-scheduler:8786
       DASK_SIDECAR_NON_USABLE_RAM: 0
       DASK_SIDECAR_NUM_NON_USABLE_CPUS: 0
