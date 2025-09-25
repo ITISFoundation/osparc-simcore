@@ -451,6 +451,10 @@ qx.Class.define("osparc.product.Utils", {
       return Boolean(osparc.store.Products.getInstance().getGroupedServicesUiConfig());
     },
 
+    isBookACallEnabled: function() {
+      return osparc.utils.Utils.isDevelopmentPlatform();
+    },
+
     S4L_TOPICS: [
       {
         id: "other",
