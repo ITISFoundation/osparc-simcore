@@ -7,18 +7,18 @@ Convert all string-based app key constants to use type-safe web.AppKey.
 
 - Replace patterns like:
   ```python
-  MY_APPKEY: Final[str] = f"{__name__}.my_key"
+  CONSTNAME_APPKEY: Final[str] = f"{__name__}.my_key"
   ```
   with:
   ```python
   from aiohttp import web
-  MY_APPKEY: Final = web.AppKey("MY_APPKEY", MySpecificType)
+  CONSTNAME_APPKEY: Final = web.AppKey("CONSTNAME", ValueType)
   ```
-  (Replace MySpecificType with the actual type stored under this key.)
+  (Replace ValueType with the actual type stored under this key.)
 
 - Update all usages:
-  - `app[MY_APPKEY] = value`
-  - `data = app[MY_APPKEY]` or `data = request.app[MY_APPKEY]`
+  - `app[CONSTNAME_APPKEY] = value`
+  - `data = app[CONSTNAME_APPKEY]` or `data = request.app[CONSTNAME_APPKEY]`
 
 - Key constant MUST be UPPERCASE
 - Key name MUST be suffixed `_APPKEY`

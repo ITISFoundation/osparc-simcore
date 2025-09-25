@@ -2,6 +2,7 @@ import logging
 import tempfile
 from pathlib import Path
 from pprint import pformat
+from typing import Final
 
 from aiohttp import web
 from models_library.products import ProductName
