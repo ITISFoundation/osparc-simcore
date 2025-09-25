@@ -8,18 +8,18 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from .._meta import API_VTAG
 from ..constants import RQ_PRODUCT_KEY
 from ..utils_aiohttp import iter_origins
-from ._application_keys import APP_PRODUCTS_KEY, APP_PRODUCTS_KEY_DEFAULT
+from ._application_keys import DEFAULT_PRODUCT_APPKEY, PRODUCTS_APPKEY
 
 _logger = logging.getLogger(__name__)
 
 
 def _get_default_product_name(app: web.Application) -> str:
-    product_name: str = app[APP_PRODUCTS_KEY_DEFAULT]
+    product_name: str = app[DEFAULT_PRODUCT_APPKEY]
     return product_name
 
 
 def _discover_product_by_hostname(request: web.Request) -> str | None:
-    products = request.app[APP_PRODUCTS_KEY]
+    products = request.app[PRODUCTS_APPKEY]
     for product in products.values():
         for _, host in iter_origins(request):
             if product.host_regex.search(host):
@@ -31,7 +31,7 @@ def _discover_product_by_hostname(request: web.Request) -> str | None:
 def _discover_product_by_request_header(request: web.Request) -> str | None:
     requested_product: str | None = request.headers.get(X_PRODUCT_NAME_HEADER)
     if requested_product:
-        for product_name in request.app[APP_PRODUCTS_KEY]:
+        for product_name in request.app[PRODUCTS_APPKEY]:
             if requested_product == product_name:
                 return requested_product
     return None

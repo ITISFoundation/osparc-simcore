@@ -1,4 +1,4 @@
-from ._application_keys import APP_PRODUCTS_KEY
+from ._application_keys import PRODUCTS_APPKEY
 from ._web_helpers import (
     get_current_product,
     get_current_product_credit_price_info,
@@ -8,7 +8,7 @@ from ._web_helpers import (
 )
 
 __all__: tuple[str, ...] = (
-    "APP_PRODUCTS_KEY",
+    "PRODUCTS_APPKEY",
     "get_current_product",
     "get_current_product_credit_price_info",
     "get_product_name",

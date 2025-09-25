@@ -5,7 +5,6 @@ It contains metadata about the study (e.g. name, description, owner, etc) and a 
 """
 
 import logging
-from typing import Final
 
 from aiohttp import web
 
@@ -36,8 +35,6 @@ from ._projects_repository_legacy import setup_projects_db
 from ._security_service import setup_projects_access
 
 logger = logging.getLogger(__name__)
-
-APP_PROJECTS_CLIENT_KEY: Final = web.AppKey("APP_PROJECTS_CLIENT_KEY", object)
 
 
 def register_projects_long_running_tasks(app: web.Application) -> None:

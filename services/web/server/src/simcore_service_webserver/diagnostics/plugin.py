@@ -23,7 +23,7 @@ from .settings import DiagnosticsSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
-APP_DIAGNOSTICS_CLIENT_KEY: Final = web.AppKey("APP_DIAGNOSTICS_CLIENT_KEY", object)
+DIAGNOSTICS_CLIENT_APPKEY: Final = web.AppKey("DIAGNOSTICS_CLIENT_APPKEY", object)
 
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:

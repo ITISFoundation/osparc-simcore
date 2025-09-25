@@ -12,7 +12,7 @@ from ._application_keys import UNIT_REGISTRY_APPKEY
 
 _logger = logging.getLogger(__name__)
 
-APP_CATALOG_CLIENT_KEY: Final = web.AppKey("APP_CATALOG_CLIENT_KEY", object)
+CATALOG_CLIENT_APPKEY: Final = web.AppKey("APP_CATALOG_CLIENT_KEY", object)
 
 
 @app_setup_func(

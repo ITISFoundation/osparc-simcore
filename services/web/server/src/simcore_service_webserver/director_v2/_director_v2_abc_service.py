@@ -40,15 +40,13 @@ class AbstractProjectRunPolicy(ABC):
     ) -> tuple[list[ProjectID], list[CommitID]]: ...
 
 
-_APP_PROJECT_RUN_POLICY_KEY = web.AppKey(
-    "_APP_PROJECT_RUN_POLICY_KEY", AbstractProjectRunPolicy
-)
+_PROJECT_RUN_POLICY_APPKEY = web.AppKey("PROJECT_RUN_POLICY", AbstractProjectRunPolicy)
 
 
 def get_project_run_policy(app: web.Application) -> AbstractProjectRunPolicy | None:
-    app_: AbstractProjectRunPolicy | None = app.get(_APP_PROJECT_RUN_POLICY_KEY)
+    app_: AbstractProjectRunPolicy | None = app.get(_PROJECT_RUN_POLICY_APPKEY)
     return app_
 
 
 def set_project_run_policy(app: web.Application, policy_obj: AbstractProjectRunPolicy):
-    app[_APP_PROJECT_RUN_POLICY_KEY] = policy_obj
+    app[_PROJECT_RUN_POLICY_APPKEY] = policy_obj

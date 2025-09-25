@@ -7,6 +7,6 @@ from models_library.products import ProductName
 
 from ._models import Product
 
-APP_PRODUCTS_KEY: Final = web.AppKey("APP_PRODUCTS_KEY", dict[ProductName, Product])
+PRODUCTS_APPKEY: Final = web.AppKey("PRODUCTS_APPKEY", dict[ProductName, Product])
 
-APP_PRODUCTS_KEY_DEFAULT: Final = web.AppKey("_APP_PRODUCTS_KEY_DEFAULT", ProductName)
+DEFAULT_PRODUCT_APPKEY: Final = web.AppKey("DEFAULT_PRODUCT_APPKEY", ProductName)

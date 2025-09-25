@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections import defaultdict
-from collections.abc import AsyncIterator, Generator
+from collections.abc import AsyncIterator, Generator, MutableMapping
 from typing import Final
 
 from aiohttp import web
@@ -38,9 +38,15 @@ from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rab
 
 _logger = logging.getLogger(__name__)
 
-_APP_RABBITMQ_CONSUMERS_KEY: Final[str] = f"{__name__}.rabbit_consumers"
-APP_WALLET_SUBSCRIPTIONS_KEY: Final[str] = "wallet_subscriptions"
-APP_WALLET_SUBSCRIPTION_LOCK_KEY: Final[str] = "wallet_subscription_lock"
+_RABBITMQ_CONSUMERS_APPKEY: Final = web.AppKey(
+    "RABBITMQ_CONSUMERS_APPKEY", MutableMapping
+)
+WALLET_SUBSCRIPTIONS_APPKEY: Final = web.AppKey(
+    "WALLET_SUBSCRIPTIONS_APPKEY", defaultdict
+)
+WALLET_SUBSCRIPTION_LOCK_APPKEY: Final = web.AppKey(
+    "WALLET_SUBSCRIPTION_LOCK_APPKEY", asyncio.Lock
+)
 
 
 async def _notify_comp_node_progress(
@@ -209,7 +215,7 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
         await logged_gather(
             *(
                 rabbit_client.unsubscribe(queue_name)
-                for queue_name, _ in app[_APP_RABBITMQ_CONSUMERS_KEY].values()
+                for queue_name, _ in app[_RABBITMQ_CONSUMERS_APPKEY].values()
             ),
         )
 
@@ -217,14 +223,12 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
 async def on_cleanup_ctx_rabbitmq_consumers(
     app: web.Application,
 ) -> AsyncIterator[None]:
-    app[_APP_RABBITMQ_CONSUMERS_KEY] = await subscribe_to_rabbitmq(
+    app[_RABBITMQ_CONSUMERS_APPKEY] = await subscribe_to_rabbitmq(
         app, _EXCHANGE_TO_PARSER_CONFIG
     )
 
-    app[APP_WALLET_SUBSCRIPTIONS_KEY] = defaultdict(
-        int
-    )  # wallet_id -> subscriber count
-    app[APP_WALLET_SUBSCRIPTION_LOCK_KEY] = asyncio.Lock()  # Ensures exclusive access
+    app[WALLET_SUBSCRIPTIONS_APPKEY] = defaultdict(int)  # wallet_id -> subscriber count
+    app[WALLET_SUBSCRIPTION_LOCK_APPKEY] = asyncio.Lock()  # Ensures exclusive access
 
     yield
 

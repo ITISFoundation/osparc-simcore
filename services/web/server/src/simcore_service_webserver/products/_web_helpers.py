@@ -11,7 +11,7 @@ from .._resources import webserver_resources
 from ..constants import RQ_PRODUCT_KEY
 from ..groups import api as groups_service
 from . import _service
-from ._web_events import APP_PRODUCTS_TEMPLATES_DIR_KEY
+from ._web_events import PRODUCTS_TEMPLATES_DIR_APPKEY
 from .errors import (
     FileTemplateNotFoundError,
     ProductNotFoundError,
@@ -110,7 +110,7 @@ async def _get_product_specific_template_path(
     request: web.Request, product: Product, filename: str
 ) -> Path | None:
     if template_name := product.get_template_name_for(filename):
-        template_dir: Path = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
+        template_dir: Path = request.app[PRODUCTS_TEMPLATES_DIR_APPKEY]
         template_path = template_dir / template_name
         if not template_path.exists():
             await _cache_template_content(request, template_path, template_name)

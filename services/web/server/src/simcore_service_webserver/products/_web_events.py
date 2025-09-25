@@ -7,12 +7,12 @@ from aiohttp import web
 from models_library.products import ProductName
 
 from . import _service
-from ._application_keys import APP_PRODUCTS_KEY, APP_PRODUCTS_KEY_DEFAULT
+from ._application_keys import DEFAULT_PRODUCT_APPKEY, PRODUCTS_APPKEY
 from ._models import Product
 
 _logger = logging.getLogger(__name__)
 
-APP_PRODUCTS_TEMPLATES_DIR_KEY = web.AppKey("template_dir", Path)
+PRODUCTS_TEMPLATES_DIR_APPKEY = web.AppKey("template_dir", Path)
 
 
 async def _auto_create_products_groups(app: web.Application) -> None:
@@ -34,9 +34,9 @@ def _set_app_state(
 ):
     # NOTE: products are checked on every request, therefore we
     # cache them in the `app` upon startup
-    app[APP_PRODUCTS_KEY] = app_products
+    app[PRODUCTS_APPKEY] = app_products
     assert default_product_name in app_products  # nosec
-    app[APP_PRODUCTS_KEY_DEFAULT] = default_product_name
+    app[DEFAULT_PRODUCT_APPKEY] = default_product_name
 
 
 async def _load_products_on_startup(app: web.Application):
@@ -50,7 +50,7 @@ async def _load_products_on_startup(app: web.Application):
     default_product_name = await _service.get_default_product_name(app)
 
     _set_app_state(app, app_products, default_product_name)
-    assert APP_PRODUCTS_KEY in app  # nosec
+    assert PRODUCTS_APPKEY in app  # nosec
 
     _logger.debug("Product loaded: %s", list(app_products))
 
@@ -60,7 +60,7 @@ async def _setup_product_templates(app: web.Application):
     builds a directory and download product templates
     """
     with tempfile.TemporaryDirectory(suffix="product_template_") as templates_dir:
-        app[APP_PRODUCTS_TEMPLATES_DIR_KEY] = Path(templates_dir)
+        app[PRODUCTS_TEMPLATES_DIR_APPKEY] = Path(templates_dir)
 
         yield
 

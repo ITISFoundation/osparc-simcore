@@ -20,7 +20,7 @@ def create_task_name(coro: Callable) -> str:
     return f"{coro.__module__}.{coro.__name__}"
 
 
-_GC_PERIODIC_TASKS_KEY: Final = web.AppKey("gc-tasks", dict[str, asyncio.Task])
+_GC_PERIODIC_TASKS_APPKEY: Final = web.AppKey("gc-tasks", dict[str, asyncio.Task])
 
 
 async def periodic_task_lifespan(
@@ -47,16 +47,16 @@ async def periodic_task_lifespan(
     )
 
     # Keeping a reference in app's state to prevent premature garbage collection of the task
-    app.setdefault(_GC_PERIODIC_TASKS_KEY, {})
-    if task_name in app[_GC_PERIODIC_TASKS_KEY]:
+    app.setdefault(_GC_PERIODIC_TASKS_APPKEY, {})
+    if task_name in app[_GC_PERIODIC_TASKS_APPKEY]:
         msg = f"Task {task_name} is already registered in the app state"
         raise ValueError(msg)
 
-    app[_GC_PERIODIC_TASKS_KEY][task_name] = task
+    app[_GC_PERIODIC_TASKS_APPKEY][task_name] = task
 
     yield
 
     # tear-down
     await cancel_wait_task(task)
-    if _GC_PERIODIC_TASKS_KEY in app:
-        app[_GC_PERIODIC_TASKS_KEY].pop(task_name, None)
+    if _GC_PERIODIC_TASKS_APPKEY in app:
+        app[_GC_PERIODIC_TASKS_APPKEY].pop(task_name, None)
