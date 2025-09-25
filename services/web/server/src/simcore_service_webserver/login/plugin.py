@@ -1,11 +1,9 @@
 import logging
-from typing import Final
 
 from aiohttp import web
 from pydantic import ValidationError
 from settings_library.email import SMTPSettings
 
-from .._meta import APP_NAME
 from ..application_setup import (
     ModuleCategory,
     app_setup_func,
@@ -42,14 +40,10 @@ from .settings import (
     LoginSettingsForProduct,
 )
 
-log = logging.getLogger(__name__)
-
-APP_LOGIN_CLIENT_KEY: Final = web.AppKey("APP_LOGIN_CLIENT_KEY", object)
-
-MAX_TIME_TO_CLOSE_POOL_SECS = 5
+_logger = logging.getLogger(__name__)
 
 
-@ensure_single_setup(f"{__name__}.login_options", logger=log)
+@ensure_single_setup(f"{__name__}.login_options", logger=_logger)
 def _setup_login_options(app: web.Application):
     settings: SMTPSettings = get_email_plugin_settings(app)
 
@@ -108,7 +102,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     "simcore_service_webserver.login",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_LOGIN",
-    logger=log,
+    logger=_logger,
 )
 def setup_login(app: web.Application):
     """Setting up login subsystem in application"""
