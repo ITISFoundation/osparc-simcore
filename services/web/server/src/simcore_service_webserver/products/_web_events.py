@@ -7,8 +7,8 @@ from aiohttp import web
 from models_library.products import ProductName
 
 from . import _service
+from ._application_keys import APP_PRODUCTS_KEY, APP_PRODUCTS_KEY_DEFAULT
 from ._models import Product
-from ._web_appkeys import APP_PRODUCTS_KEY, APP_PRODUCTS_KEY_DEFAULT
 
 _logger = logging.getLogger(__name__)
 

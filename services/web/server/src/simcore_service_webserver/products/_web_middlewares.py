@@ -9,7 +9,7 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from .._meta import API_VTAG
 from ..constants import RQ_PRODUCT_KEY
 from ..utils_aiohttp import iter_origins
-from ._web_appkeys import APP_PRODUCTS_KEY, APP_PRODUCTS_KEY_DEFAULT
+from ._application_keys import APP_PRODUCTS_KEY, APP_PRODUCTS_KEY_DEFAULT
 from .models import Product
 
 _logger = logging.getLogger(__name__)

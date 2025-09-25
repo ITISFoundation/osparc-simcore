@@ -1,4 +1,4 @@
-from ._web_appkeys import APP_PRODUCTS_KEY
+from ._application_keys import APP_PRODUCTS_KEY
 from ._web_helpers import (
     get_current_product,
     get_current_product_credit_price_info,

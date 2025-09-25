@@ -8,7 +8,7 @@ from pint import UnitRegistry
 
 from ..application_setup import ModuleCategory, app_setup_func
 from . import _controller_rest
-from ._web_appkeys import UNIT_REGISTRY_APPKEY
+from ._application_keys import UNIT_REGISTRY_APPKEY
 
 _logger = logging.getLogger(__name__)
 
