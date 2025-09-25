@@ -209,12 +209,15 @@ def test_resources_sub(a: Resources, b: Resources, result: Resources):
     assert a == result
 
 
-def test_resources_model_dump_flat():
+def test_resources_flat_dict():
     r = Resources(
         cpus=0.1, ram=ByteSize(1024), generic_resources={"GPU": 2, "SSE": "yes"}
     )
-    flat = r.model_dump_flat()
+    flat = r.as_flat_dict()
     assert flat == {"cpus": 0.1, "ram": 1024, "GPU": 2, "SSE": "yes"}
+
+    reconstructed = Resources.from_flat_dict(flat)
+    assert reconstructed == r
 
 
 @pytest.mark.parametrize("ec2_tag_key", ["", "/", " ", ".", "..", "_index"])

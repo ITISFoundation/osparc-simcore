@@ -125,11 +125,21 @@ class Resources(BaseModel, frozen=True):
         )
         return hash((self.cpus, self.ram, generic_items))
 
-    def model_dump_flat(self) -> dict[str, float | int]:
-        """Like model_dump, but flattens ram to bytes and generic_resources to top level keys"""
+    def as_flat_dict(self) -> dict[str, int | float | str]:
+        """Like model_dump, but flattens generic_resources to top level keys"""
         base = self.model_dump()
         base.update(base.pop("generic_resources"))
         return base
+
+    @classmethod
+    def from_flat_dict(cls, data: dict[str, int | float | str]) -> "Resources":
+        """Inverse of as_flat_dict"""
+        generic_resources = {k: v for k, v in data.items() if k not in {"cpus", "ram"}}
+        return cls(
+            cpus=data.get("cpus", 0),
+            ram=ByteSize(data.get("ram", 0)),
+            generic_resources=generic_resources,
+        )
 
     @field_validator("cpus", mode="before")
     @classmethod
