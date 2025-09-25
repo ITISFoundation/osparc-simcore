@@ -178,7 +178,7 @@ async def search(
             await app_server.task_manager.publish_task_event(
                 task_id,
                 TaskDataEvent(
-                    data=TypeAdapter(list[SearchResult]).validate_python(data)
+                    data=[r.model_dump(mode="json", by_alias=True) for r in data]
                 ),
             )
 

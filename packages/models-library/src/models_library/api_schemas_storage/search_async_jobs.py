@@ -2,7 +2,8 @@ import datetime
 from typing import Literal
 
 from models_library.projects import ProjectID
-from pydantic import BaseModel, ByteSize
+from pydantic import BaseModel, ByteSize, ConfigDict
+from pydantic.alias_generators import to_camel
 
 
 class SearchResult(BaseModel):
@@ -13,3 +14,9 @@ class SearchResult(BaseModel):
     path: str
     is_directory: bool
     project_id: ProjectID | None
+
+    model_config = ConfigDict(
+        frozen=True,
+        alias_generator=to_camel,
+        validate_by_name=True,
+    )
