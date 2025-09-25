@@ -4,7 +4,13 @@
 
 
 import pytest
-from aws_library.ec2._models import AWSTagKey, AWSTagValue, EC2InstanceData, Resources
+from aws_library.ec2._models import (
+    AWSTagKey,
+    AWSTagValue,
+    EC2InstanceBootSpecific,
+    EC2InstanceData,
+    Resources,
+)
 from faker import Faker
 from pydantic import ByteSize, TypeAdapter, ValidationError
 
@@ -256,3 +262,11 @@ def test_ec2_instance_data_hashable(faker: Faker):
     union_of_sets = first_set_of_ec2s.union(second_set_of_ec2s)
     assert next(iter(first_set_of_ec2s)) in union_of_sets
     assert next(iter(second_set_of_ec2s)) in union_of_sets
+
+
+def test_ec2_instance_boot_specific_with_invalid_custome_script(faker: Faker):
+    valid_model = EC2InstanceBootSpecific.model_json_schema()["examples"][0]
+    invalid_model = {**valid_model, "custom_boot_scripts": ["echo 'missing end quote"]}
+
+    with pytest.raises(ValueError, match="Invalid bash call"):
+        EC2InstanceBootSpecific(**invalid_model)
