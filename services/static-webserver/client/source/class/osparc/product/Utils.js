@@ -450,5 +450,51 @@ qx.Class.define("osparc.product.Utils", {
     groupServices: function() {
       return Boolean(osparc.store.Products.getInstance().getGroupedServicesUiConfig());
     },
+
+    S4L_TOPICS: [
+      {
+        id: "other",
+        label: "Other"
+      }, {
+        id: "Antenna_Design_for_Wireless_Communication",
+        label: "Antenna Design for Wireless Communication"
+      }, {
+        id: "Bioelectronics,_Electroceuticals_and_Neuroprosthetics",
+        label: "Bioelectronics, Electroceuticals & Neuroprosthetics"
+      }, {
+        id: "Safety_and_Efficacy_Assessment",
+        label: "Safety & Efficacy Assessment"
+      }, {
+        id: "Exposure_and_Compliance",
+        label: "Exposure & Compliance"
+      }, {
+        id: "Focused_Ultrasound",
+        label: "Focused Ultrasound"
+      }, {
+        id: "In_Silico_Trials",
+        label: "In <i>Silico</i> Trials"
+      }, {
+        id: "Implant_Design",
+        label: "Implant Design"
+      }, {
+        id: "Magnetic_Resonance_Imaging",
+        label: "Magnetic Resonance Imaging"
+      }, {
+        id: "Neurostimulation",
+        label: "Neurostimulation"
+      }, {
+        id: "Personalized_Medicine",
+        label: "Personalized Medicine"
+      }, {
+        id: "Thermal_Therapies",
+        label: "Thermal Therapies"
+      }, {
+        id: "Wireless_Power_Transfer_Systems",
+        label: "Wireless Power Transfer Systems"
+      }, {
+        id: "Vascular_Flow_and_Perfusion",
+        label: "Vascular Flow & Perfusion"
+      }
+    ],
   }
 });

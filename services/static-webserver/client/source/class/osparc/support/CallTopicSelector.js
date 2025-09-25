@@ -24,7 +24,10 @@ qx.Class.define("osparc.support.CallTopicSelector", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.setPadding(10);
+    this.set({
+      padding: 10,
+      font: "text-14",
+    });
 
     this.__buildLayout();
   },
@@ -58,7 +61,7 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           break;
         case "specific-intro-select-box":
           control = new qx.ui.form.SelectBox().set({
-            paddingLeft: 20,
+            marginLeft: 20,
           });
           this._add(control);
           this.getChildControl("specific-intro-button").bind("value", control, "visibility", {
@@ -77,7 +80,7 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           control = new qx.ui.form.CheckBox().set({
             value: true,
             label: this.tr("share current project with support team (optional)"),
-            paddingLeft: 20,
+            marginLeft: 20,
           });
           this._add(control);
           this.getChildControl("help-with-project-button").bind("value", control, "visibility", {
@@ -93,9 +96,9 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           this._add(control);
           break;
         case "specific-topic-textfield":
-          control = new qx.ui.form.TextField().set({
+          control = new qx.ui.form.TextArea().set({
             placeholder: this.tr("please provide any background information that could help us make this meeting more productive"),
-            paddingLeft: 20,
+            marginLeft: 20,
           });
           this._add(control);
           this.getChildControl("specific-topic-button").bind("value", control, "visibility", {
@@ -105,11 +108,11 @@ qx.Class.define("osparc.support.CallTopicSelector", {
         case "next-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Next"),
-            alignX: "right",
-            marginTop: 10,
             appearance: "strong-button",
-            allowGrowX: false,
             center: true,
+            allowGrowX: false,
+            alignX: "right",
+            marginTop: 20,
           });
           control.addListener("execute", () => this.__nextPressed());
           this._add(control);
@@ -120,40 +123,49 @@ qx.Class.define("osparc.support.CallTopicSelector", {
 
     __buildLayout: function() {
       this.getChildControl("intro-label");
-      this.getChildControl("generic-intro-button");
-      this.getChildControl("specific-intro-button");
+      const genericIntroButton = this.getChildControl("generic-intro-button");
+      const specificIntroButton = this.getChildControl("specific-intro-button");
       const selectBox = this.getChildControl("specific-intro-select-box");
-      const topics = [
-        this.tr("How to use osparc"),
-        this.tr("How to create and manage projects"),
-        this.tr("How to use the Workbench"),
-        this.tr("How to use the Data Manager"),
-        this.tr("How to use the App Store"),
-        this.tr("How to use the Dashboard"),
-        this.tr("How to use Teams"),
-        this.tr("Billing and Subscription"),
-        this.tr("Other"),
-      ];
-      topics.forEach(topic => {
-        const item = new qx.ui.form.ListItem(topic);
-        selectBox.add(item);
+      osparc.product.Utils.S4L_TOPICS.forEach(topic => {
+        const lItem = new qx.ui.form.ListItem(topic.label, null, topic.id).set({
+          rich: true
+        });
+        selectBox.add(lItem);
       });
-      this.getChildControl("help-with-project-button");
+      const helpWithProjectButton = this.getChildControl("help-with-project-button");
       this.getChildControl("share-project-checkbox");
-      this.getChildControl("specific-topic-button");
+      const specificTopicButton = this.getChildControl("specific-topic-button");
       this.getChildControl("specific-topic-textfield");
       this.getChildControl("next-button");
+
+      // make them act as radio buttons
+      [
+        genericIntroButton,
+        specificIntroButton,
+        helpWithProjectButton,
+        specificTopicButton,
+      ].forEach(rb => {
+        rb.addListener("changeValue", () => {
+          if (rb.getValue()) {
+            [genericIntroButton, specificIntroButton, helpWithProjectButton, specificTopicButton].forEach(otherRb => {
+              if (otherRb !== rb) {
+                otherRb.setValue(false);
+              }
+            });
+          }
+        });
+      });
     },
 
     __nextPressed: function() {
       const topicData = {};
       if (this.getChildControl("generic-intro-button").getValue()) {
         topicData["topic"] = "specific-topic";
-      } else if (this.getChildControl("specific-topic-button").getValue()) {
-        topicData["topic"] = "specific-topic";
-        const selectBox = this.getChildControl("specific-topic-select-box");
+      } else if (this.getChildControl("specific-intro-button").getValue()) {
+        topicData["topic"] = "specific-intro";
+        const selectBox = this.getChildControl("specific-intro-select-box");
         const selectedItem = selectBox.getSelection()[0];
-        topicData["extraInfo"] = selectedItem ? selectedItem.getLabel() : "";
+        topicData["extraInfo"] = selectedItem ? selectedItem.getModel() : "";
       } else if (this.getChildControl("help-with-project-button").getValue()) {
         topicData["topic"] = "help-with-project";
         if (this.getChildControl("share-project-checkbox").getValue()) {
