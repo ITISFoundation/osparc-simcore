@@ -333,14 +333,12 @@ async def try_retire_nodes(
 async def add_instance_generic_resources(
     settings: DaskMonitoringSettings, instance: EC2InstanceData
 ) -> None:
-    instance_threads = round(instance.available_resources.cpus)
-    if settings.AUTOSCALING_DASK.DASK_NTHREADS > 0:
+    instance_threads = round(instance.resources.cpus)
+    if settings.DASK_NTHREADS > 0:
         # this overrides everything
-        instance_threads = settings.AUTOSCALING_DASK.DASK_NTHREADS
-    if settings.AUTOSCALING_DASK.DASK_NTHREADS_MULTIPLIER > 1:
-        instance_threads = (
-            instance_threads * settings.AUTOSCALING_DASK.DASK_NTHREADS_MULTIPLIER
-        )
-    instance.available_resources.generic_resources[
-        _DASK_WORKER_THREAD_RESOURCE_NAME
-    ] = instance_threads
+        instance_threads = settings.DASK_NTHREADS
+    if settings.DASK_NTHREADS_MULTIPLIER > 1:
+        instance_threads = instance_threads * settings.DASK_NTHREADS_MULTIPLIER
+    instance.resources.generic_resources[_DASK_WORKER_THREAD_RESOURCE_NAME] = (
+        instance_threads
+    )
