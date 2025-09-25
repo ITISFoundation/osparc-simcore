@@ -55,7 +55,7 @@ HEALTH_LATENCY_PROBE: Final = web.AppKey("HEALTH_LATENCY_PROBE", DelayWindowProb
 HEALTH_LAST_REQUESTS_AVG_LATENCY: Final = f"{__name__}.last_requests_avg_latency"
 HEALTH_MAX_AVG_RESP_LATENCY: Final = f"{__name__}.max_avg_response_latency"
 HEALTH_MAX_TASK_DELAY: Final = f"{__name__}.max_task_delay"
-HEALTH_PLUGIN_START_TIME: Final = web.AppKey("HEALTH_PLUGIN_START_TIME", time.time)
+HEALTH_PLUGIN_START_TIME: Final = web.AppKey("HEALTH_PLUGIN_START_TIME", float)
 HEALTH_START_SENSING_DELAY_SECS: Final = f"{__name__}.start_sensing_delay"
 
 

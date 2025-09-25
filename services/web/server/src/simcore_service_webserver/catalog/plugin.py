@@ -8,6 +8,7 @@ from pint import UnitRegistry
 
 from ..application_setup import ModuleCategory, app_setup_func
 from . import _controller_rest
+from ._web_states import UNIT_REGISTRY_APPKEY
 
 _logger = logging.getLogger(__name__)
 
@@ -31,4 +32,4 @@ def setup_catalog(app: web.Application):
     app.add_routes(_controller_rest.routes)
 
     # prepares units registry
-    app[UnitRegistry.__name__] = UnitRegistry()
+    app[UNIT_REGISTRY_APPKEY] = UnitRegistry()
