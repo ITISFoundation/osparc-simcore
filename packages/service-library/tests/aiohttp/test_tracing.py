@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import importlib
 from collections.abc import Callable
 from functools import partial
@@ -40,11 +41,17 @@ def set_and_clean_settings_env_vars(
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
         )
+    sampling_probability_mocked = False
+    if tracing_settings_in[2]:
+        sampling_probability_mocked = True
+        monkeypatch.setenv("TRACING_SAMPLING_PROBABILITY", tracing_settings_in[2])
     yield
     if endpoint_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
     if port_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
+    if sampling_probability_mocked:
+        monkeypatch.delenv("TRACING_SAMPLING_PROBABILITY")
 
 
 @pytest.mark.parametrize(
@@ -201,3 +208,61 @@ async def test_trace_id_in_response_header(
         assert (
             trace_id == handler_data[_OSPARC_TRACE_ID_HEADER]
         )  # Ensure trace IDs match
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 0.05),
+    ],
+    indirect=True,
+)
+async def test_tracing_sampling_probability_effective(
+    mock_otel_collector: InMemorySpanExporter,
+    aiohttp_client: Callable,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in,
+):
+    """
+    This test checks that the TRACING_SAMPLING_PROBABILITY setting in TracingSettings
+    is effective by sending 1000 requests and verifying that the number of collected traces
+    is close to 0.05 * 1000 (with some tolerance).
+    """
+    n_requests = 1000
+    tolerance_probability = 0.5
+
+    app = web.Application()
+    service_name = "simcore_service_webserver"
+    tracing_settings = TracingSettings()
+
+    async def handler(request: web.Request) -> web.Response:
+        return web.Response(text="ok")
+
+    app.router.add_get("/", handler)
+
+    async for _ in get_tracing_lifespan(
+        app=app,
+        service_name=service_name,
+        tracing_settings=tracing_settings,
+    )(app):
+        client = await aiohttp_client(app)
+
+        async def make_request():
+            await client.get("/")
+
+        await asyncio.gather(*(make_request() for _ in range(n_requests)))
+        spans = mock_otel_collector.get_finished_spans()
+        trace_ids = set()
+        for span in spans:
+            if span.context is not None:
+                trace_ids.add(span.context.trace_id)
+        num_traces = len(trace_ids)
+        expected_num_traces = int(
+            tracing_settings.TRACING_SAMPLING_PROBABILITY * n_requests
+        )
+        tolerance = int(tolerance_probability * expected_num_traces)
+        assert (
+            expected_num_traces - tolerance
+            <= num_traces
+            <= expected_num_traces + tolerance
+        ), f"Expected roughly {expected_num_traces} distinct trace ids, got {num_traces}"

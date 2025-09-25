@@ -17,6 +17,7 @@ from opentelemetry.instrumentation.aiohttp_server import (
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
@@ -95,7 +96,11 @@ def _startup(
         )
         raise RuntimeError(msg)
     resource = Resource(attributes={"service.name": service_name})
-    trace.set_tracer_provider(TracerProvider(resource=resource))
+    sampler = ParentBased(
+        root=TraceIdRatioBased(tracing_settings.TRACING_SAMPLING_PROBABILITY)
+    )
+    tracer_provider = TracerProvider(resource=resource, sampler=sampler)
+    trace.set_tracer_provider(tracer_provider=tracer_provider)
     tracer_provider: trace.TracerProvider = trace.get_tracer_provider()
 
     tracing_destination: str = (
