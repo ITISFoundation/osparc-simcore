@@ -15,6 +15,7 @@ from distributed.core import Status
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 
+from ...core.settings import DaskMonitoringSettings
 from ..core.errors import (
     DaskNoWorkersError,
     DaskSchedulerNotFoundError,
@@ -39,6 +40,7 @@ async def _wrap_client_async_routine(
 
 
 _DASK_SCHEDULER_CONNECT_TIMEOUT_S: Final[int] = 5
+_DASK_WORKER_THREAD_RESOURCE_NAME: Final[str] = "threads"
 
 
 @contextlib.asynccontextmanager
@@ -326,3 +328,19 @@ async def try_retire_nodes(
         await _wrap_client_async_routine(
             client.retire_workers(close_workers=False, remove=False)
         )
+
+
+async def add_instance_generic_resources(
+    settings: DaskMonitoringSettings, instance: EC2InstanceData
+) -> None:
+    instance_threads = round(instance.available_resources.cpus)
+    if settings.AUTOSCALING_DASK.DASK_NTHREADS > 0:
+        # this overrides everything
+        instance_threads = settings.AUTOSCALING_DASK.DASK_NTHREADS
+    if settings.AUTOSCALING_DASK.DASK_NTHREADS_MULTIPLIER > 1:
+        instance_threads = (
+            instance_threads * settings.AUTOSCALING_DASK.DASK_NTHREADS_MULTIPLIER
+        )
+    instance.available_resources.generic_resources[
+        _DASK_WORKER_THREAD_RESOURCE_NAME
+    ] = instance_threads
