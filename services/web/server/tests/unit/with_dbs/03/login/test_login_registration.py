@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 
 import pytest
@@ -520,8 +520,6 @@ async def test_registraton_with_invitation_for_trial_account(
         response = await client.get(url.path)
         data, _ = await assert_status(response, status.HTTP_200_OK)
         profile = MyProfileRestGet.model_validate(data)
-
-        from datetime import UTC, datetime
 
         created_at = invitation.user.get("created_at") or datetime.now(UTC)
         expected = created_at + timedelta(days=TRIAL_DAYS)
