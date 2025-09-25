@@ -163,7 +163,7 @@ qx.Class.define("osparc.support.ConversationPage", {
           this.getChildControl("conversation-container").add(control);
           break;
         case "book-a-call-topic-selector":
-          control = new osparc.support.CallTopicSelector();
+          control = new osparc.support.BookACallTopicSelector();
           this.getChildControl("main-stack").add(control);
           break;
         case "book-a-call-iframe":

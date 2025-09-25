@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.support.CallTopicSelector", {
+qx.Class.define("osparc.support.BookACallTopicSelector", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
