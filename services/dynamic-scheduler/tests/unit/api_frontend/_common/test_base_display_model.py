@@ -1,10 +1,10 @@
 from functools import cached_property
-from typing import Any
 
 import pytest
 from pydantic import TypeAdapter
 from simcore_service_dynamic_scheduler.api.frontend._common.base_display_model import (
     BaseUpdatableDisplayModel,
+    CompleteModelDict,
 )
 
 
@@ -137,10 +137,10 @@ class RenderOnPropertyTypeChange(BaseUpdatableDisplayModel):
 )
 def test_base_updatable_display_model(
     class_: type[BaseUpdatableDisplayModel],
-    initial_dict: dict[str, Any],
-    update_dict: dict[str, Any],
+    initial_dict: CompleteModelDict,
+    update_dict: CompleteModelDict,
     requires_rerender: bool,
-    expected_dict: dict[str, Any],
+    expected_dict: CompleteModelDict,
 ):
     person = TypeAdapter(class_).validate_python(initial_dict)
     assert person.model_dump() == initial_dict

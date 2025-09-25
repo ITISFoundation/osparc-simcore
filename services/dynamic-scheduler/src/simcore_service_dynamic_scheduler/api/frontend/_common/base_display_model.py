@@ -1,6 +1,9 @@
 from functools import cached_property
+from typing import Any, TypeAlias
 
 from pydantic import BaseModel, TypeAdapter
+
+CompleteModelDict: TypeAlias = dict[str, Any]
 
 
 class BaseUpdatableDisplayModel(BaseModel):
@@ -21,7 +24,7 @@ class BaseUpdatableDisplayModel(BaseModel):
         """
         return set()
 
-    def requires_rerender(self, updates: dict) -> bool:
+    def requires_rerender(self, updates: CompleteModelDict) -> bool:
         """True when any changes occur to any of the:
         - `values` of the attribute names declared by `get_rerender_on_value_change`
         - `types` of of the attribute names declared by `get_rerender_on_type_change`
@@ -56,7 +59,7 @@ class BaseUpdatableDisplayModel(BaseModel):
 
         return requires_rerender
 
-    def update(self, updates: dict) -> None:
+    def update(self, updates: CompleteModelDict) -> None:
         """
         updates a the model properties by by reading the keys form a dcitionary
         It can also update nested models if the property is also a BaseUpdatableDisplayModel
