@@ -17109,7 +17109,7 @@ components:
         filenamePattern:
           type: string
           title: Filenamepattern
-          description: File name pattern with wildcard support ('?', '*'). Minimum
+          description: File name pattern with wildcard support ('*', '?'). Minimum
             of 3 non-wildcard characters required.
         lastModifiedBefore:
           anyOf:
@@ -17129,11 +17129,11 @@ components:
             Format: YYYY-MM-DDTHH:MM:SS'
         itemsPerPage:
           type: integer
-          maximum: 25
+          maximum: 50
           minimum: 1
           title: Itemsperpage
           description: Number of items per page
-          default: 50
+          default: 25
       type: object
       required:
       - filenamePattern
