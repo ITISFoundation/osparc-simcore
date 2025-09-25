@@ -2,6 +2,7 @@ import datetime
 from pathlib import Path
 from typing import Annotated, Final, Self
 
+from models_library.projects import ProjectID
 from models_library.utils.common_validators import (
     MIN_NON_WILDCARD_CHARS,
     WILDCARD_CHARS,
@@ -92,8 +93,13 @@ class SearchFilters(InputSchema):
     modified_at: Annotated[
         SearchTimerangeFilter | None,
         Field(
-            default=None,
             description="Filter results based on modification date range",
+        ),
+    ] = None
+    project_id: Annotated[
+        ProjectID | None,
+        Field(
+            description="If provided, only files within this project are searched",
         ),
     ] = None
 

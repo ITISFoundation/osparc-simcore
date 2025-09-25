@@ -564,6 +564,7 @@ async def search(request: web.Request) -> web.Response:
             if search_body.filters.modified_at
             else None
         ),
+        project_id=search_body.filters.project_id,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(

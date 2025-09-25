@@ -8,6 +8,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.projects import ProjectID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter
 
@@ -57,6 +58,7 @@ async def start_search(
     modified_at: (
         tuple[datetime.datetime | None, datetime.datetime | None] | None
     ) = None,
+    project_id: ProjectID | None = None,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
@@ -66,5 +68,6 @@ async def start_search(
         limit=limit,
         name_pattern=name_pattern,
         modified_at=modified_at,
+        project_id=project_id,
     )
     return async_job_rpc_get, job_filter
