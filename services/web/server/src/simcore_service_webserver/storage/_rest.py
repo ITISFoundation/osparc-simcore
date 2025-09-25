@@ -37,7 +37,6 @@ from pydantic import (
     BaseModel,
     ByteSize,
     TypeAdapter,
-    field_validator,
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
@@ -488,6 +487,15 @@ async def delete_file(request: web.Request) -> web.Response:
     return create_data_response(payload, status=resp_status)
 
 
+def _allow_only_simcore(v: int) -> int:
+    if v != 0:
+        msg = (
+            f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
+        )
+        raise ValueError(msg)
+    return v
+
+
 @routes.post(
     _storage_locations_prefix + "/{location_id}/export-data", name="export_data"
 )
@@ -496,15 +504,7 @@ async def delete_file(request: web.Request) -> web.Response:
 @handle_exceptions
 async def export_data(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
-        location_id: LocationID
-
-        @field_validator("location_id")
-        @classmethod
-        def allow_only_simcore(cls, v: int) -> int:
-            if v != 0:
-                msg = f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
-                raise ValueError(msg)
-            return v
+        location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
@@ -531,15 +531,6 @@ async def export_data(request: web.Request) -> web.Response:
         ),
         status=status.HTTP_202_ACCEPTED,
     )
-
-
-def _allow_only_simcore(v: int) -> int:
-    if v != 0:
-        msg = (
-            f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
-        )
-        raise ValueError(msg)
-    return v
 
 
 @routes.post(_storage_locations_prefix + "/{location_id}/search", name="search")
