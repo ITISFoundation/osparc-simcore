@@ -21,9 +21,9 @@ from ..application_settings import ApplicationSettings, get_application_settings
 from ..products.models import Product
 from ..products.products_web import PRODUCTS_APPKEY
 from ._constants import (
-    APP_FRONTEND_CACHED_INDEXES_KEY,
-    APP_FRONTEND_CACHED_STATICS_JSON_KEY,
     FRONTEND_APPS_AVAILABLE,
+    FRONTEND_CACHED_INDEXES_APPKEY,
+    FRONTEND_CACHED_STATICS_JSON_APPKEY,
 )
 from .settings import (
     FrontEndAppSettings,
@@ -92,7 +92,7 @@ async def create_cached_indexes(app: web.Application) -> None:
         _logger.info("Storing index for %s", url)
         cached_indexes[frontend_name] = body
 
-    app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
+    app[FRONTEND_CACHED_INDEXES_APPKEY] = cached_indexes
 
 
 def _get_release_notes_vtag(vtag: str) -> str:
@@ -122,7 +122,7 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
     products = app[PRODUCTS_APPKEY]
     assert products  # nosec
 
-    app[APP_FRONTEND_CACHED_STATICS_JSON_KEY] = {}
+    app[FRONTEND_CACHED_STATICS_JSON_APPKEY] = {}
     for product in products.values():
         data = deepcopy(common)
 
@@ -151,4 +151,4 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
         _logger.debug("Front-end statics.json: %s", data_json)
 
         # cache computed statics.json
-        app[APP_FRONTEND_CACHED_STATICS_JSON_KEY][product.name] = data_json
+        app[FRONTEND_CACHED_STATICS_JSON_APPKEY][product.name] = data_json

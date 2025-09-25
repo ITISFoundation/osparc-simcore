@@ -25,7 +25,7 @@ def setup_app_tracing(app: web.Application):
     """
     Sets up OpenTelemetry tracing for the application.
 
-    NOTE: uses app[APP_SETTINGS_KEY].APP_NAME to set the service name advertised to the
+    NOTE: uses app[APP_SETTINGS_APPKEY].APP_NAME to set the service name advertised to the
     tracing backend. This is used to identify the service in the tracing UI.
     Note that this defaults in _meta.APP_NAME to "simcore-service-webserver" if not set otherwise
     in setup_settings(app, app_name="...") in the application factory.
