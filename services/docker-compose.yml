@@ -1502,6 +1502,7 @@ services:
       - "--tracing.addinternals"
       - "--tracing.otlp=true"
       - "--tracing.otlp.http=true"
+      - "--tracing.sampleRate=${TRACING_SAMPLING_PROBABILITY}"
     healthcheck:
       # NOTE: this healthcheck to check if traefik is up and running must be run on the ping entrypoint defined in command!
       test: traefik healthcheck --ping --ping.entryPoint=ping --entryPoints.ping.address=:9082
