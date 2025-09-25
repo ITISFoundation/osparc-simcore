@@ -190,6 +190,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           title.setValue(this.tr("Book a Call"));
           const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
+          bookACallTopicSelector.getChildControl("next-button").setLabel(this.tr("Next"));
           bookACallTopicSelector.addListener("callTopicSelected", e => {
             console.log("callTopicSelected", e.getData());
             this.getChildControl("main-stack").setSelection([conversationContainer]);
