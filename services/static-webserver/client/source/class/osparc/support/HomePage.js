@@ -135,6 +135,10 @@ qx.Class.define("osparc.support.HomePage", {
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
         const tutorialsBtn = new qx.ui.form.Button(this.tr("Explore Tutorials"), "@FontAwesome5Solid/graduation-cap/14");
+        const store = osparc.store.Store.getInstance();
+        store.bind("currentStudy", tutorialsBtn, "enabled", {
+          converter: study => !Boolean(study)
+        });
         tutorialsBtn.addListener("execute", () => qx.event.message.Bus.getInstance().dispatchByName("showTab", "tutorialsTab"), this);
        learningButtons.push(tutorialsBtn);
       }
