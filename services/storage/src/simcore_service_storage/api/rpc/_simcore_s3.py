@@ -1,3 +1,4 @@
+import datetime
 from typing import Literal
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -73,6 +74,8 @@ async def start_search(
     job_filter: AsyncJobFilter,
     name_pattern: str,
     items_per_page: int,
+    last_modified_before: datetime.datetime | None = None,
+    last_modified_after: datetime.datetime | None = None,
     project_id: str | None = None,
 ) -> AsyncJobGet:
     task_name = search.__name__
@@ -85,6 +88,8 @@ async def start_search(
         user_id=job_filter.user_id,
         project_id=project_id,
         name_pattern=name_pattern,
+        last_modified_before=last_modified_before,
+        last_modified_after=last_modified_after,
         items_per_page=items_per_page,
     )
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)

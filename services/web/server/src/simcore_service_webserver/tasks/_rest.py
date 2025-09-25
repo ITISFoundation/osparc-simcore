@@ -142,7 +142,6 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     name="cancel_async_job",
 )
 @login_required
-@permission_required("storage.files.*")
 @handle_exceptions
 async def cancel_async_job(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
@@ -166,7 +165,6 @@ async def cancel_async_job(request: web.Request) -> web.Response:
     name="get_async_job_result",
 )
 @login_required
-@permission_required("storage.files.*")
 @handle_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
@@ -193,7 +191,6 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     name="get_async_job_stream",
 )
 @login_required
-@permission_required("storage.files.*")
 @handle_exceptions
 async def get_async_job_stream(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)

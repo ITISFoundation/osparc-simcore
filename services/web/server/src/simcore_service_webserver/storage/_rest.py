@@ -9,13 +9,11 @@ from typing import Annotated, Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
-from common_library.json_serialization import json_dumps
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
 )
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
-    AsyncJobId,
 )
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
@@ -45,15 +43,12 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
-    parse_request_headers_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import (
     create_data_response,
-    create_event_stream_response,
 )
-from servicelib.celery.models import TaskFilter
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size as remote_compute_path_size,
@@ -67,11 +62,9 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
 )
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
-from servicelib.sse.models import SSEEvent, SSEHeaders
 from yarl import URL
 
 from .._meta import API_VTAG
-from ..celery import get_task_manager
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -559,10 +552,11 @@ async def search(request: web.Request) -> web.Response:
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_PathParams, request)
+    parse_request_path_parameters_as(_PathParams, request)
     search_body = await parse_request_body_as(
         model_schema_cls=SearchBodyParams, request=request
     )
+
     async_job_rpc_get, _ = await start_search(
         rabbitmq_rpc_client,
         job_filter=get_job_filter(
@@ -580,47 +574,7 @@ async def search(request: web.Request) -> web.Response:
             task_id=_job_id,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_job_id)))}",
-            result_stream_href=f"{request.url.with_path(str(request.app.router['stream_search'].url_for(location_id=str(path_params.location_id), job_id=_job_id)))}",
+            result_stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_job_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )
-
-
-@routes.get(
-    _storage_locations_prefix + "/{location_id}/search/{job_id}/stream",
-    name="stream_search",
-)
-@login_required
-@permission_required("storage.files.*")
-@handle_exceptions
-async def stream_search(request: web.Request) -> web.Response:
-    class _PathParams(BaseModel):
-        location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
-        job_id: AsyncJobId
-
-    _req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_PathParams, request)
-    header_params = parse_request_headers_as(SSEHeaders, request)
-
-    task_manager = get_task_manager(request.app)
-    task_filter = get_job_filter(
-        user_id=_req_ctx.user_id,
-        product_name=_req_ctx.product_name,
-    )
-
-    async def event_generator():
-        async for event_id, event in task_manager.consume_task_events(
-            task_filter=TaskFilter.model_validate(task_filter.model_dump()),
-            task_uuid=path_params.job_id,
-            last_id=header_params.last_event_id,
-        ):
-            yield SSEEvent(
-                id=event_id, event=event.type, data=[json_dumps(event.data)]
-            ).serialize()
-            if event.type == "status" and getattr(event, "data", None) in (
-                "done",
-                "error",
-            ):
-                break
-
-    return create_event_stream_response(event_generator=event_generator)
