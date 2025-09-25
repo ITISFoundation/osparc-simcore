@@ -154,11 +154,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         configureItem: item => {
           item.subscribeToFilterGroup("organizationsList");
           osparc.utils.Utils.setIdToWidget(item, "organizationListItem");
-          const thumbnail = item.getChildControl("thumbnail");
-          thumbnail.getContentElement()
-            .setStyles({
-              "border-radius": "16px"
-            });
+          item.getChildControl("thumbnail").setDecorator("circled");
 
           item.addListener("openEditOrganization", e => {
             const orgKey = e.getData();
