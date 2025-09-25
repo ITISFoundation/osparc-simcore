@@ -14,46 +14,120 @@ from pydantic import (
     Field,
     NonNegativeFloat,
     NonNegativeInt,
+    StrictFloat,
+    StrictInt,
     StringConstraints,
     field_validator,
 )
 from pydantic.config import JsonDict
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
+GenericResourceValue: TypeAlias = StrictInt | StrictFloat | str
+
 
 class Resources(BaseModel, frozen=True):
     cpus: NonNegativeFloat
     ram: ByteSize
+    generic_resources: Annotated[
+        dict[str, GenericResourceValue],
+        Field(
+            default_factory=dict,
+            description=(
+                "Arbitrary additional resources (e.g. {'threads': 8}). "
+                "Numeric values are treated as quantities and participate in add/sub/compare."
+            ),
+        ),
+    ] = DEFAULT_FACTORY
 
     @classmethod
     def create_as_empty(cls) -> "Resources":
         return cls(cpus=0, ram=ByteSize(0))
 
     def __ge__(self, other: "Resources") -> bool:
-        return self.cpus >= other.cpus and self.ram >= other.ram
+        if not (self.cpus >= other.cpus and self.ram >= other.ram):
+            return False
+        # ensure all numeric generic resources in `other` are satisfied by `self`
+        for k, v in other.generic_resources.items():
+            if isinstance(v, int | float):
+                lhs_val = self.generic_resources.get(k, 0)
+                if not isinstance(lhs_val, int | float) or lhs_val < v:
+                    return False
+                continue
+            # non-numeric must be equal and present
+            if k not in self.generic_resources or self.generic_resources[k] != v:
+                return False
+        return True
 
     def __gt__(self, other: "Resources") -> bool:
-        return self.cpus > other.cpus or self.ram > other.ram
+        if self.cpus > other.cpus or self.ram > other.ram:
+            return True
+        for k, v in other.generic_resources.items():
+            lhs_val = self.generic_resources.get(k)
+            if (
+                isinstance(v, int | float)
+                and isinstance(lhs_val, int | float)
+                and lhs_val > v
+            ):
+                return True
+            if not isinstance(v, int | float) and lhs_val is not None and lhs_val != v:
+                return True
+        return False
 
     def __add__(self, other: "Resources") -> "Resources":
+        """operator for adding two Resources
+        Note that only numeric generic resources are added
+        Non-numeric generic resources are ignored
+        """
+        merged: dict[str, GenericResourceValue] = {}
+        keys = set(self.generic_resources) | set(other.generic_resources)
+        for k in keys:
+            a = self.generic_resources.get(k)
+            b = other.generic_resources.get(k)
+            # adding non numeric values does not make sense, so we skip those for the resulting resource
+            if isinstance(a, int | float) and isinstance(b, int | float):
+                merged[k] = a + b
+            elif a is None and isinstance(b, int | float):
+                merged[k] = b
+            elif b is None and isinstance(a, int | float):
+                merged[k] = a
+
         return Resources.model_construct(
-            **{
-                key: a + b
-                for (key, a), b in zip(
-                    self.model_dump().items(), other.model_dump().values(), strict=True
-                )
-            }
+            cpus=self.cpus + other.cpus,
+            ram=self.ram + other.ram,
+            generic_resources=merged,
         )
 
     def __sub__(self, other: "Resources") -> "Resources":
+        """operator for subtracting two Resources
+        Note that only numeric generic resources are subtracted
+        Non-numeric generic resources are ignored
+        """
+        merged: dict[str, GenericResourceValue] = {}
+        keys = set(self.generic_resources) | set(other.generic_resources)
+        for k in keys:
+            a = self.generic_resources.get(k)
+            b = other.generic_resources.get(k)
+            # subtracting non numeric values does not make sense, so we skip those for the resulting resource
+            if isinstance(a, int | float) and isinstance(b, int | float):
+                merged[k] = a - b
+            elif a is None and isinstance(b, int | float):
+                merged[k] = -b
+            elif b is None and isinstance(a, int | float):
+                merged[k] = a
+
         return Resources.model_construct(
-            **{
-                key: a - b
-                for (key, a), b in zip(
-                    self.model_dump().items(), other.model_dump().values(), strict=True
-                )
-            }
+            cpus=self.cpus - other.cpus,
+            ram=self.ram - other.ram,
+            generic_resources=merged,
         )
+
+    def __hash__(self) -> int:
+        """Deterministic hash including cpus, ram (in bytes) and generic_resources."""
+        # sort generic_resources items to ensure order-independent hashing
+        generic_items: tuple[tuple[str, GenericResourceValue], ...] = tuple(
+            sorted(self.generic_resources.items())
+        )
+        return hash((self.cpus, self.ram, generic_items))
 
     @field_validator("cpus", mode="before")
     @classmethod
