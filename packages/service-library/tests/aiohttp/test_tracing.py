@@ -57,7 +57,7 @@ def set_and_clean_settings_env_vars(
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 4318),
+        ("http://opentelemetry-collector", 4318, 1.0),
     ],
     indirect=True,
 )
@@ -79,9 +79,9 @@ async def test_valid_tracing_settings(
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 80),
-        ("opentelemetry-collector", 4318),
-        ("httsdasp://ot@##el-collector", 4318),
+        ("http://opentelemetry-collector", 80, 1.0),
+        ("opentelemetry-collector", 4318, 1.0),
+        ("httsdasp://ot@##el-collector", 4318, 1.0),
     ],
     indirect=True,
 )
@@ -118,14 +118,14 @@ def manage_package(request):
     "tracing_settings_in, manage_package",
     [
         (
-            ("http://opentelemetry-collector", 4318),
+            ("http://opentelemetry-collector", 4318, 1.0),
             (
                 "opentelemetry-instrumentation-botocore",
                 "opentelemetry.instrumentation.botocore",
             ),
         ),
         (
-            ("http://opentelemetry-collector", "4318"),
+            ("http://opentelemetry-collector", "4318", 1.0),
             (
                 "opentelemetry-instrumentation-aiopg",
                 "opentelemetry.instrumentation.aiopg",
@@ -164,7 +164,7 @@ async def test_tracing_setup_package_detection(
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 4318),
+        ("http://opentelemetry-collector", 4318, 1.0),
     ],
     indirect=True,
 )
