@@ -226,7 +226,11 @@ def test_ec2_instance_data_hashable(faker: Faker):
                 cpus=faker.pyfloat(min_value=0.1),
                 ram=ByteSize(faker.pyint(min_value=123)),
             ),
-            {AWSTagKey("mytagkey"): AWSTagValue("mytagvalue")},
+            {
+                TypeAdapter(AWSTagKey)
+                .validate_python("mytagkey"): TypeAdapter(AWSTagValue)
+                .validate_python("mytagvalue")
+            },
         )
     }
     second_set_of_ec2s = {
@@ -241,7 +245,11 @@ def test_ec2_instance_data_hashable(faker: Faker):
                 cpus=faker.pyfloat(min_value=0.1),
                 ram=ByteSize(faker.pyint(min_value=123)),
             ),
-            {AWSTagKey("mytagkey"): AWSTagValue("mytagvalue")},
+            {
+                TypeAdapter(AWSTagKey)
+                .validate_python("mytagkey"): TypeAdapter(AWSTagValue)
+                .validate_python("mytagvalue")
+            },
         )
     }
 
