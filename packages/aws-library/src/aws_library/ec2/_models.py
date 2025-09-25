@@ -44,34 +44,30 @@ class Resources(BaseModel, frozen=True):
         return cls(cpus=0, ram=ByteSize(0))
 
     def __ge__(self, other: "Resources") -> bool:
+        """operator for >= comparison
+        if self has greater or equal resources than other, returns True
+        Note that generic_resources are compared only if they are numeric
+        Non-numeric generic resources must be equal in both or only defined in self
+        to be considered greater or equal
+        """
+
         if not (self.cpus >= other.cpus and self.ram >= other.ram):
             return False
-        # ensure all numeric generic resources in `other` are satisfied by `self`
-        for k, v in other.generic_resources.items():
-            if isinstance(v, int | float):
-                lhs_val = self.generic_resources.get(k, 0)
-                if not isinstance(lhs_val, int | float) or lhs_val < v:
+
+        keys = set(self.generic_resources) | set(other.generic_resources)
+        for k in keys:
+            a = self.generic_resources.get(k)
+            b = other.generic_resources.get(
+                k, a
+            )  # NOTE: get from other, default to a so that non-existing keys are considered equal
+            if isinstance(a, int | float) and isinstance(b, int | float):
+                if not (a >= b):
                     return False
-                continue
-            # non-numeric must be equal and present
-            if k not in self.generic_resources or self.generic_resources[k] != v:
+            elif a != b:
+                assert isinstance(a, str | None)  # nosec
+                assert isinstance(b, int | float | str | None)  # nosec
                 return False
         return True
-
-    def __gt__(self, other: "Resources") -> bool:
-        if self.cpus > other.cpus or self.ram > other.ram:
-            return True
-        for k, v in other.generic_resources.items():
-            lhs_val = self.generic_resources.get(k)
-            if (
-                isinstance(v, int | float)
-                and isinstance(lhs_val, int | float)
-                and lhs_val > v
-            ):
-                return True
-            if not isinstance(v, int | float) and lhs_val is not None and lhs_val != v:
-                return True
-        return False
 
     def __add__(self, other: "Resources") -> "Resources":
         """operator for adding two Resources
