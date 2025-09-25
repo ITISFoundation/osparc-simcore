@@ -24,6 +24,8 @@ qx.Class.define("osparc.support.CallTopicSelector", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.setPadding(10);
+
     this.__buildLayout();
   },
 
@@ -46,20 +48,20 @@ qx.Class.define("osparc.support.CallTopicSelector", {
           });
           this._add(control);
           break;
-        case "specific-topic-button":
+        case "specific-intro-button":
           control = new qx.ui.form.RadioButton().set({
-            label: this.tr("a specific topic"),
+            label: this.tr("a specific introduction for"),
             value: false,
             paddingTop: 10,
           });
           this._add(control);
           break;
-        case "specific-topic-select-box":
+        case "specific-intro-select-box":
           control = new qx.ui.form.SelectBox().set({
             paddingLeft: 20,
           });
           this._add(control);
-          this.getChildControl("specific-topic-button").bind("value", control, "visibility", {
+          this.getChildControl("specific-intro-button").bind("value", control, "visibility", {
             converter: val => val ? "visible" : "excluded"
           });
           break;
@@ -106,6 +108,8 @@ qx.Class.define("osparc.support.CallTopicSelector", {
             alignX: "right",
             marginTop: 10,
             appearance: "strong-button",
+            allowGrowX: false,
+            center: true,
           });
           control.addListener("execute", () => this.__nextPressed());
           this._add(control);
@@ -117,8 +121,8 @@ qx.Class.define("osparc.support.CallTopicSelector", {
     __buildLayout: function() {
       this.getChildControl("intro-label");
       this.getChildControl("generic-intro-button");
-      this.getChildControl("specific-topic-button");
-      const selectBox = this.getChildControl("specific-topic-select-box");
+      this.getChildControl("specific-intro-button");
+      const selectBox = this.getChildControl("specific-intro-select-box");
       const topics = [
         this.tr("How to use osparc"),
         this.tr("How to create and manage projects"),
