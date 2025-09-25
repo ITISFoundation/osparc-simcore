@@ -14,11 +14,11 @@ if TYPE_CHECKING:
     # Application settings key - defined here to avoid circular imports
     from .application_settings import ApplicationSettings
 
-    APP_SETTINGS_KEY: Final[web.AppKey[ApplicationSettings]] = web.AppKey(
-        "APP_SETTINGS_KEY", ApplicationSettings
+    APP_SETTINGS_APPKEY: Final[web.AppKey[ApplicationSettings]] = web.AppKey(
+        "APP_SETTINGS", ApplicationSettings
     )
 else:
-    APP_SETTINGS_KEY: Final[web.AppKey] = web.AppKey("APP_SETTINGS_KEY", None)
+    APP_SETTINGS_APPKEY: Final[web.AppKey] = web.AppKey("APP_SETTINGS", None)
 
 
 __all__: tuple[str, ...] = (
@@ -26,7 +26,7 @@ __all__: tuple[str, ...] = (
     "APP_CLIENT_SESSION_KEY",
     "APP_CONFIG_KEY",
     "APP_FIRE_AND_FORGET_TASKS_KEY",
-    "APP_SETTINGS_KEY",
+    "APP_SETTINGS_APPKEY",
 )
 
 # nopycln: file

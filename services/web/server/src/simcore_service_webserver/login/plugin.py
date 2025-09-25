@@ -9,7 +9,7 @@ from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
 from .._meta import APP_NAME
-from ..application_keys import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import (
     ModuleCategory,
     app_setup_func,
@@ -94,7 +94,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     app_login_settings: LoginSettings | None
     login_settings_per_product: dict[ProductName, LoginSettingsForProduct] = {}
 
-    if app_login_settings := app[APP_SETTINGS_KEY].WEBSERVER_LOGIN:
+    if app_login_settings := app[APP_SETTINGS_APPKEY].WEBSERVER_LOGIN:
         assert app_login_settings, "setup_settings not called?"  # nosec
         assert isinstance(app_login_settings, LoginSettings)  # nosec
 

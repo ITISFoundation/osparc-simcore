@@ -54,7 +54,7 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
     TypedDict,
 )
 
-from ..application_keys import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 _HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
 
@@ -80,7 +80,7 @@ class HealthCheck:
 
         # The docker engine healthcheck: If a single run of the check takes longer than *timeout* seconds
         # then the check is considered to have failed. Therefore there is no need to continue run
-        self._timeout: int | None = app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT
+        self._timeout: int | None = app[APP_SETTINGS_APPKEY].SC_HEALTHCHECK_TIMEOUT
 
     def __repr__(self):
         return f"<HealthCheck timeout={self._timeout}, #on_healthcheck-slots={len(self._on_healthcheck)}>"
@@ -95,7 +95,7 @@ class HealthCheck:
     @staticmethod
     def get_app_info(app: web.Application) -> HealthInfoDict:
         """Minimal (header) health report is information about the app"""
-        settings = app[APP_SETTINGS_KEY]
+        settings = app[APP_SETTINGS_APPKEY]
         return HealthInfoDict(
             name=settings.APP_NAME,
             version=settings.API_VERSION,

@@ -28,7 +28,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._meta import API_VERSION, API_VTAG, APP_NAME
-from .application_keys import APP_SETTINGS_KEY
+from .application_keys import APP_SETTINGS_APPKEY
 from .catalog.settings import CatalogSettings
 from .collaboration.settings import RealTimeCollaborationSettings
 from .diagnostics.settings import DiagnosticsSettings
@@ -609,7 +609,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
 def setup_settings(app: web.Application) -> ApplicationSettings:
     settings: ApplicationSettings = ApplicationSettings.create_from_envs()
-    app[APP_SETTINGS_KEY] = settings
+    app[APP_SETTINGS_APPKEY] = settings
     _logger.debug(
         "Captured app settings:\n%s",
         lambda: settings.model_dump_json(indent=1),
@@ -618,6 +618,6 @@ def setup_settings(app: web.Application) -> ApplicationSettings:
 
 
 def get_application_settings(app: web.Application) -> ApplicationSettings:
-    settings: ApplicationSettings = app[APP_SETTINGS_KEY]
+    settings: ApplicationSettings = app[APP_SETTINGS_APPKEY]
     assert settings, "Forgot to setup plugin?"  # nosec
     return settings

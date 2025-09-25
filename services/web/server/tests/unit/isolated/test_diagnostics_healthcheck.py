@@ -20,7 +20,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.application_keys import APP_SETTINGS_KEY
+from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.diagnostics._healthcheck import (
     HEALTH_LATENCY_PROBE_APPKEY,
@@ -160,7 +160,7 @@ async def client(
 
     setup_diagnostics(app)
 
-    settings: DiagnosticsSettings = app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
+    settings: DiagnosticsSettings = app[APP_SETTINGS_APPKEY].WEBSERVER_DIAGNOSTICS
     assert settings.DIAGNOSTICS_MAX_AVG_LATENCY == 2.0
 
     app.router.add_routes(routes)
@@ -223,7 +223,9 @@ async def test_diagnose_on_failure(client: TestClient):
 
 async def test_diagnose_on_response_delays(client: TestClient):
     assert client.app
-    settings: DiagnosticsSettings = client.app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
+    settings: DiagnosticsSettings = client.app[
+        APP_SETTINGS_APPKEY
+    ].WEBSERVER_DIAGNOSTICS
 
     tmax = settings.DIAGNOSTICS_MAX_AVG_LATENCY
     coros = [client.get(f"/delay/{1.1 * tmax}") for _ in range(10)]

@@ -2,7 +2,7 @@ import logging
 
 from aiohttp import web
 
-from ..application_keys import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import (
     ModuleCategory,
     app_setup_func,
@@ -25,7 +25,7 @@ _logger = logging.getLogger(__name__)
 )
 def setup_director_v2(app: web.Application):
 
-    assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
+    assert app[APP_SETTINGS_APPKEY].WEBSERVER_DIRECTOR_V2  # nosec
 
     # client to communicate with director-v2 service
     client = DirectorV2RestClient(app)

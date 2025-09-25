@@ -2,7 +2,7 @@ from aiohttp import web
 from pydantic import Field, HttpUrl, SecretStr, TypeAdapter
 from settings_library.base import BaseCustomSettings
 
-from ..application_keys import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 # TODO: read https://www.force11.org/group/resource-identification-initiative
 SCICRUNCH_DEFAULT_URL = "https://scicrunch.org"
@@ -28,7 +28,7 @@ class SciCrunchSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: web.Application) -> SciCrunchSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_SCICRUNCH
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_SCICRUNCH
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, SciCrunchSettings)  # nosec
     return settings

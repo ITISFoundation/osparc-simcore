@@ -2,7 +2,7 @@ import logging
 
 from aiohttp import web
 
-from ..application_keys import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import ModuleCategory, app_setup_func
 from ..products.plugin import setup_products
 from . import _classifiers_rest, _groups_rest
@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_groups(app: web.Application):
-    assert app[APP_SETTINGS_KEY].WEBSERVER_GROUPS  # nosec
+    assert app[APP_SETTINGS_APPKEY].WEBSERVER_GROUPS  # nosec
 
     # plugin dependencies
     setup_products(app)

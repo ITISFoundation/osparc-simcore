@@ -7,11 +7,11 @@
 from aiohttp.web import Application
 from settings_library.rabbit import RabbitSettings
 
-from .application_keys import APP_SETTINGS_KEY
+from .application_keys import APP_SETTINGS_APPKEY
 
 
 def get_plugin_settings(app: Application) -> RabbitSettings:
-    settings: RabbitSettings | None = app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ
+    settings: RabbitSettings | None = app[APP_SETTINGS_APPKEY].WEBSERVER_RABBITMQ
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, RabbitSettings)  # nosec
     return settings

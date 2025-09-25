@@ -6,7 +6,7 @@ from models_library.api_schemas_webserver.products import CreditResultRpcGet
 from models_library.products import ProductName
 from servicelib.rabbitmq import RPCRouter
 
-from ...application_keys import APP_SETTINGS_KEY
+from ...application_keys import APP_SETTINGS_APPKEY
 from ...rabbitmq import get_rabbitmq_rpc_server, setup_rabbitmq
 from .. import _service
 from .._models import CreditResult
@@ -34,5 +34,5 @@ async def _register_rpc_routes_on_startup(app: web.Application):
 
 def setup_rpc(app: web.Application):
     setup_rabbitmq(app)
-    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+    if app[APP_SETTINGS_APPKEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(_register_rpc_routes_on_startup)

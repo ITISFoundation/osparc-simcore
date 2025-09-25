@@ -3,7 +3,7 @@ from typing import TypeAlias
 
 import servicelib.aiohttp.application_setup
 
-from .application_keys import APP_SETTINGS_KEY
+from .application_keys import APP_SETTINGS_APPKEY
 
 # models
 ModuleCategory: TypeAlias = servicelib.aiohttp.application_setup.ModuleCategory
@@ -17,7 +17,7 @@ ensure_single_setup = servicelib.aiohttp.application_setup.ensure_single_setup
 
 app_setup_func = functools.partial(
     servicelib.aiohttp.application_setup.app_module_setup,
-    app_settings_key=APP_SETTINGS_KEY,
+    app_settings_key=APP_SETTINGS_APPKEY,
 )
 
 __all__: tuple[str, ...] = (

@@ -31,7 +31,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..._meta import API_VTAG as VTAG
-from ...application_keys import APP_SETTINGS_KEY
+from ...application_keys import APP_SETTINGS_APPKEY
 from ...email import email_service
 from ...fogbugz.settings import FogbugzSettings
 from ...login.decorators import login_required
@@ -111,7 +111,7 @@ async def create_conversation_message(request: web.Request):
     # NOTE: This is done here in the Controller layer, as the interface around email currently needs request
     product = products_web.get_current_product(request)
     fogbugz_settings_or_none: FogbugzSettings | None = request.app[
-        APP_SETTINGS_KEY
+        APP_SETTINGS_APPKEY
     ].WEBSERVER_FOGBUGZ
     if (
         product.support_standard_group_id

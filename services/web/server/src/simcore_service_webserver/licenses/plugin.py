@@ -4,7 +4,7 @@ import logging
 
 from aiohttp import web
 
-from ..application_keys import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import ModuleCategory, app_setup_func
 from ..rabbitmq import setup_rabbitmq
 from ..rest.plugin import setup_rest
@@ -36,7 +36,7 @@ def setup_licenses(app: web.Application):
     app.router.add_routes(_licensed_items_checkouts_rest.routes)
 
     setup_rabbitmq(app)
-    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+    if app[APP_SETTINGS_APPKEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(_rpc.register_rpc_routes_on_startup)
 
     if settings.LICENSES_ITIS_VIP_SYNCER_ENABLED and settings.LICENSES_ITIS_VIP:

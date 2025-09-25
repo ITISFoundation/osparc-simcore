@@ -6,7 +6,7 @@ import logging
 
 from aiohttp import web
 
-from ..application_keys import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import ModuleCategory, app_setup_func
 from ..db.plugin import setup_db
 from ..products.plugin import setup_products
@@ -25,7 +25,7 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_payments(app: web.Application):
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_PAYMENTS
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_PAYMENTS
     assert settings is not None  # nosec
 
     setup_db(app)
@@ -37,7 +37,7 @@ def setup_payments(app: web.Application):
 
     # rpc api
     setup_rabbitmq(app)
-    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+    if app[APP_SETTINGS_APPKEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(_rpc_invoice.register_rpc_routes_on_startup)
 
     if settings.PAYMENTS_FAKE_COMPLETION:

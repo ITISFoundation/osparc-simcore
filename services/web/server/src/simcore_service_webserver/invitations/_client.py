@@ -17,7 +17,7 @@ from pydantic import AnyHttpUrl
 from servicelib.aiohttp import status
 from yarl import URL
 
-from ..application_keys import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 from .errors import (
     InvalidInvitationError,
     InvitationsError,
@@ -156,7 +156,7 @@ _APPKEY: Final = web.AppKey(InvitationsServiceApi.__name__, InvitationsServiceAp
 
 
 async def invitations_service_api_cleanup_ctx(app: web.Application):
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_INVITATIONS
     assert settings  # nosec
     service_api = await InvitationsServiceApi.create(settings)
 

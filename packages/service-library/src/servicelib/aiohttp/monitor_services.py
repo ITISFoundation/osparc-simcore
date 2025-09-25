@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Final
 
 from aiohttp import web
 from prometheus_client import Counter
@@ -22,8 +23,8 @@ from prometheus_client.registry import CollectorRegistry
 #
 
 
-MONITOR_SERVICE_STARTED_APPKEY = web.AppKey("MONITOR_SERVICE_STARTED", Counter)
-MONITOR_SERVICE_STOPPED_APPKEY = web.AppKey("MONITOR_SERVICE_STOPPED", Counter)
+MONITOR_SERVICE_STARTED_APPKEY: Final = web.AppKey("MONITOR_SERVICE_STARTED", Counter)
+MONITOR_SERVICE_STOPPED_APPKEY: Final = web.AppKey("MONITOR_SERVICE_STOPPED", Counter)
 
 MONITOR_SERVICE_STARTED_LABELS: list[str] = [
     "service_key",
