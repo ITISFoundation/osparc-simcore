@@ -1,3 +1,4 @@
+from ._web_appkeys import APP_PRODUCTS_KEY
 from ._web_helpers import (
     get_current_product,
     get_current_product_credit_price_info,
@@ -5,7 +6,6 @@ from ._web_helpers import (
     get_product_template_path,
     is_user_in_product_support_group,
 )
-from ._web_states import APP_PRODUCTS_KEY
 
 __all__: tuple[str, ...] = (
     "APP_PRODUCTS_KEY",

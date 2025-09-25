@@ -10,7 +10,7 @@ from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from ._models import CreditResult, Product, ProductStripeInfo
 from ._repository import ProductRepository
-from ._web_states import APP_PRODUCTS_KEY
+from ._web_appkeys import APP_PRODUCTS_KEY
 from .errors import (
     BelowMinimumPaymentError,
     MissingStripeConfigError,

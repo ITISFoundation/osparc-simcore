@@ -27,7 +27,7 @@ from pydantic import (
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 
 from ..constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
-from ._web_states import UNIT_REGISTRY_APPKEY
+from ._web_appkeys import UNIT_REGISTRY_APPKEY
 
 _logger = logging.getLogger(__name__)
 
