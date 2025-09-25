@@ -1,5 +1,6 @@
 ---
 mode: edit
+description: Converts string-based aiohttp app key constants to type-safe web.AppKey
 model: GPT-4.1
 ---
 
