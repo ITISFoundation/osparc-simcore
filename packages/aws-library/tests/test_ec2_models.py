@@ -103,6 +103,36 @@ def test_resources_ge_operator(
             Resources(cpus=1, ram=ByteSize(34)),
             Resources(cpus=1.1, ram=ByteSize(35)),
         ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            Resources(cpus=1, ram=ByteSize(34)),
+            Resources(cpus=1.1, ram=ByteSize(35), generic_resources={"GPU": 1}),
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1)),
+            Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
+            Resources(cpus=1.1, ram=ByteSize(35), generic_resources={"GPU": 1}),
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
+            Resources(cpus=1.1, ram=ByteSize(35), generic_resources={"GPU": 2}),
+        ),
+        (
+            Resources(
+                cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1, "SSE": "yes"}
+            ),
+            Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
+            Resources(cpus=1.1, ram=ByteSize(35), generic_resources={"GPU": 2}),
+        ),  # string resources are not summed
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "1"}),
+            Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
+            Resources(
+                cpus=1.1,
+                ram=ByteSize(35),
+            ),
+        ),  # string resources are ignored in summation
     ],
 )
 def test_resources_add(a: Resources, b: Resources, result: Resources):
@@ -112,7 +142,9 @@ def test_resources_add(a: Resources, b: Resources, result: Resources):
 
 
 def test_resources_create_as_empty():
-    assert Resources.create_as_empty() == Resources(cpus=0, ram=ByteSize(0))
+    assert Resources.create_as_empty() == Resources(
+        cpus=0, ram=ByteSize(0), generic_resources={}
+    )
 
 
 @pytest.mark.parametrize(
@@ -128,6 +160,41 @@ def test_resources_create_as_empty():
             Resources(cpus=1, ram=ByteSize(1)),
             Resources.model_construct(cpus=-0.9, ram=ByteSize(33)),
         ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            Resources(cpus=1, ram=ByteSize(34)),
+            Resources.model_construct(
+                cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": 1}
+            ),
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1)),
+            Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
+            Resources.model_construct(
+                cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": -1}
+            ),
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
+            Resources.model_construct(
+                cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": 0}
+            ),
+        ),
+        (
+            Resources(
+                cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1, "SSE": "yes"}
+            ),
+            Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
+            Resources.model_construct(
+                cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": 0}
+            ),
+        ),  # string resources are not summed
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "1"}),
+            Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
+            Resources.model_construct(cpus=-0.9, ram=ByteSize(-33)),
+        ),  # string resources are ignored in summation
     ],
 )
 def test_resources_sub(a: Resources, b: Resources, result: Resources):
