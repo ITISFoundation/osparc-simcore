@@ -125,6 +125,12 @@ class Resources(BaseModel, frozen=True):
         )
         return hash((self.cpus, self.ram, generic_items))
 
+    def model_dump_flat(self) -> dict[str, float | int]:
+        """Like model_dump, but flattens ram to bytes and generic_resources to top level keys"""
+        base = self.model_dump()
+        base.update(base.pop("generic_resources"))
+        return base
+
     @field_validator("cpus", mode="before")
     @classmethod
     def _floor_cpus_to_0(cls, v: float) -> float:

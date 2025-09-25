@@ -209,6 +209,14 @@ def test_resources_sub(a: Resources, b: Resources, result: Resources):
     assert a == result
 
 
+def test_resources_model_dump_flat():
+    r = Resources(
+        cpus=0.1, ram=ByteSize(1024), generic_resources={"GPU": 2, "SSE": "yes"}
+    )
+    flat = r.model_dump_flat()
+    assert flat == {"cpus": 0.1, "ram": 1024, "GPU": 2, "SSE": "yes"}
+
+
 @pytest.mark.parametrize("ec2_tag_key", ["", "/", " ", ".", "..", "_index"])
 def test_aws_tag_key_invalid(ec2_tag_key: str):
     # for a key it raises
