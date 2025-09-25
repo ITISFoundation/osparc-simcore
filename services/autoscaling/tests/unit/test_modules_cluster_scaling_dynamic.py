@@ -713,11 +713,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         cluster_total_resources={
             "cpus": fake_attached_node.description.resources.nano_cp_us / 1e9,
             "ram": fake_attached_node.description.resources.memory_bytes,
+            "generic_resources": {},
         },
-        cluster_used_resources={
-            "cpus": float(0),
-            "ram": 0,
-        },
+        cluster_used_resources={"cpus": float(0), "ram": 0, "generic_resources": {}},
         instances_running=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
