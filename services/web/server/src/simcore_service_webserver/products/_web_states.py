@@ -1,3 +1,5 @@
+"""Keys to access web.Application's state"""
+
 from typing import Final
 
 from aiohttp import web
