@@ -95,6 +95,9 @@ class WebApiUser(OsparcWebUserBase):
         job_collection_uuid = response.json().get("uid")
 
         # wait for the job to complete
+        query_params = dict(
+            include_status=True, function_job_collection_id=job_collection_uuid
+        )
         for attempt in Retrying(
             stop=stop_after_delay(max_delay=max_poll_time),
             wait=wait_exponential(multiplier=1, min=1, max=10),
@@ -103,9 +106,6 @@ class WebApiUser(OsparcWebUserBase):
         ):
             with attempt:
                 # list all jobs in the collection with status
-                query_params = dict(
-                    include_status=True, function_job_collection_id=job_collection_uuid
-                )
                 next_page_url = "/v0/function_jobs?" + urlencode(query_params)
                 all_job_statuses = []
                 while next_page_url is not None:
