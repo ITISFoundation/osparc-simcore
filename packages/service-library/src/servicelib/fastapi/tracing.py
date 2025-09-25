@@ -15,6 +15,7 @@ from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 from settings_library.tracing import TracingSettings
 from starlette.middleware.base import BaseHTTPMiddleware
 from yarl import URL
@@ -87,7 +88,11 @@ def _startup(tracing_settings: TracingSettings, service_name: str) -> None:
         return
     # Set up the tracer provider
     resource = Resource(attributes={"service.name": service_name})
-    trace.set_tracer_provider(TracerProvider(resource=resource))
+    sampler = ParentBased(
+        root=TraceIdRatioBased(tracing_settings.TRACING_SAMPLING_PROBABILITY)
+    )
+    trace_provider = TracerProvider(resource=resource, sampler=sampler)
+    trace.set_tracer_provider(trace_provider)
     global_tracer_provider = trace.get_tracer_provider()
     assert isinstance(global_tracer_provider, TracerProvider)  # nosec
 
