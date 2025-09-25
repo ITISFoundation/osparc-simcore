@@ -192,7 +192,8 @@ qx.Class.define("osparc.support.ConversationPage", {
           const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
           bookACallTopicSelector.getChildControl("next-button").setLabel(this.tr("Next"));
           bookACallTopicSelector.addListener("callTopicSelected", e => {
-            console.log("callTopicSelected", e.getData());
+            const data = e.getData();
+            conversationContent.addBookACallInfo(data);
             this.getChildControl("main-stack").setSelection([conversationContainer]);
           });
           this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);
@@ -202,7 +203,8 @@ qx.Class.define("osparc.support.ConversationPage", {
           const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
           bookACallTopicSelector.getChildControl("next-button").setLabel(this.tr("Select date & time"));
           bookACallTopicSelector.addListener("callTopicSelected", e => {
-            console.log("callTopicSelected", e.getData());
+            const data = e.getData();
+            conversationContent.addBookACallInfo(data);
             this.getChildControl("main-stack").setSelection([conversationContainer]);
           });
           this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);

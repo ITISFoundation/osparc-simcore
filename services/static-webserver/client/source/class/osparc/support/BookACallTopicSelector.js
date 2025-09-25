@@ -183,7 +183,7 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
       } else if (this.getChildControl("help-with-project-button").getValue()) {
         topicData["topic"] = "help-with-project";
         if (this.getChildControl("share-project-checkbox").getValue()) {
-          topicData["extraInfo"] = "share-project";
+          topicData["share-project"] = true;
         }
       } else if (this.getChildControl("specific-topic-button").getValue()) {
         topicData["topic"] = "specific-topic";

@@ -38,6 +38,8 @@ qx.Class.define("osparc.support.Conversation", {
   },
 
   members: {
+    __bookACallInfo: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -95,7 +97,14 @@ qx.Class.define("osparc.support.Conversation", {
               this.setConversation(newConversation);
               if (isBookACall) {
                 // add a first message
-                prePostMessagePromise = this.__postMessage("Book a Call");
+                const msg = `
+                  Book a Call details:
+                  - Topic: ${this.__bookACallInfo["topic"]}
+                `;
+                if ("extraInfo" in this.__bookACallInfo) {
+                  msg += `\n- Extra Info: ${this.__bookACallInfo["extraInfo"]}`;
+                }
+                prePostMessagePromise = this.__postMessage(msg);
                 // rename the conversation
                 newConversation.renameConversation("Book a Call");
               }
@@ -216,6 +225,10 @@ qx.Class.define("osparc.support.Conversation", {
         systemMessage["systemMessageType"] = type;
         this.addMessage(systemMessage);
       }
+    },
+
+    addBookACallInfo: function(bookACallInfo) {
+      this.__bookACallInfo = bookACallInfo;
     },
   }
 });
