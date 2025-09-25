@@ -37,7 +37,6 @@ from ..celery import get_task_manager
 from ..login.decorators import login_required
 from ..long_running_tasks.plugin import webserver_request_context_decorator
 from ..models import AuthenticatedRequestContext
-from ..security.decorators import permission_required
 from ..utils import get_job_filter
 from ._exception_handlers import handle_exceptions
 
@@ -58,7 +57,6 @@ class _PathParams(BaseModel):
     name="get_async_jobs",
 )
 @login_required
-@permission_required("storage.files.*")
 @handle_exceptions
 @webserver_request_context_decorator
 async def get_async_jobs(request: web.Request) -> web.Response:
