@@ -22,7 +22,6 @@ from aiohttp import web
 # web.Application keys, i.e. app[APP_*_KEY]
 #
 APP_CONFIG_KEY = web.AppKey("APP_CONFIG_KEY", dict[str, object])
-APP_SETTINGS_KEY = web.AppKey("APP_SETTINGS_KEY", object)
 
 APP_AIOPG_ENGINE_KEY: Final[str] = f"{__name__ }.aiopg_engine"
 
