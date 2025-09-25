@@ -8,8 +8,8 @@ from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
-from ..constants import APP_PRODUCTS_KEY
-from ._models import CreditResult, ProductStripeInfo
+from ._app_state import APP_PRODUCTS_KEY
+from ._models import CreditResult, Product, ProductStripeInfo
 from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
@@ -18,7 +18,6 @@ from .errors import (
     ProductPriceNotDefinedError,
     ProductTemplateNotFoundError,
 )
-from .models import Product
 
 
 async def load_products(app: web.Application) -> list[Product]:

@@ -7,15 +7,16 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from .._meta import API_VTAG
-from ..constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
+from ..constants import RQ_PRODUCT_KEY
 from ..utils_aiohttp import iter_origins
+from ._web_app_states import APP_PRODUCTS_KEY, APP_PRODUCTS_KEY_DEFAULT
 from .models import Product
 
 _logger = logging.getLogger(__name__)
 
 
 def _get_default_product_name(app: web.Application) -> str:
-    product_name: str = app[f"{APP_PRODUCTS_KEY}_default"]
+    product_name: str = app[APP_PRODUCTS_KEY_DEFAULT]
     return product_name
 
 

@@ -28,8 +28,6 @@ else:
 assert APP_CLIENT_SESSION_KEY  # nosec
 assert APP_CONFIG_KEY  # nosec
 
-# Application storage keys
-APP_PRODUCTS_KEY: Final[str] = f"{__name__ }.APP_PRODUCTS_KEY"
 
 # Public config per product returned in /config
 APP_PUBLIC_CONFIG_PER_PRODUCT: Final[str] = f"{__name__}.APP_PUBLIC_CONFIG_PER_PRODUCT"

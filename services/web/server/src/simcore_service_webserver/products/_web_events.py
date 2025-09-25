@@ -6,9 +6,9 @@ from pprint import pformat
 from aiohttp import web
 from models_library.products import ProductName
 
-from ..constants import APP_PRODUCTS_KEY
 from . import _service
 from ._models import Product
+from ._web_app_states import APP_PRODUCTS_KEY, APP_PRODUCTS_KEY_DEFAULT
 
 _logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def _set_app_state(
     # cache them in the `app` upon startup
     app[APP_PRODUCTS_KEY] = app_products
     assert default_product_name in app_products  # nosec
-    app[f"{APP_PRODUCTS_KEY}_default"] = default_product_name
+    app[APP_PRODUCTS_KEY_DEFAULT] = default_product_name
 
 
 async def _load_products_on_startup(app: web.Application):

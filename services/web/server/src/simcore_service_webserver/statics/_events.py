@@ -18,8 +18,8 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 from ..application_settings import ApplicationSettings, get_application_settings
-from ..constants import APP_PRODUCTS_KEY
 from ..products.models import Product
+from ..products.products_web import APP_PRODUCTS_KEY
 from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
     APP_FRONTEND_CACHED_STATICS_JSON_KEY,
@@ -119,7 +119,7 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
         common.update(frontend_settings.to_statics())
 
     # Adds products defined in db
-    products: dict[str, Product] = app[APP_PRODUCTS_KEY]
+    products = app[APP_PRODUCTS_KEY]
     assert products  # nosec
 
     app[APP_FRONTEND_CACHED_STATICS_JSON_KEY] = {}
