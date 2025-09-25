@@ -3,6 +3,7 @@ import functools
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Final
 
 from aiohttp import BasicAuth, ClientResponseError, ClientSession, web
 from aiohttp.client_exceptions import ClientError
@@ -151,7 +152,7 @@ class InvitationsServiceApi:
 # EVENTS
 #
 
-_APP_INVITATIONS_SERVICE_API_KEY = f"{__name__}.{InvitationsServiceApi.__name__}"
+_APPKEY: Final = web.AppKey(InvitationsServiceApi.__name__, InvitationsServiceApi)
 
 
 async def invitations_service_api_cleanup_ctx(app: web.Application):
@@ -159,7 +160,7 @@ async def invitations_service_api_cleanup_ctx(app: web.Application):
     assert settings  # nosec
     service_api = await InvitationsServiceApi.create(settings)
 
-    app[_APP_INVITATIONS_SERVICE_API_KEY] = service_api
+    app[_APPKEY] = service_api
 
     yield
 
@@ -170,6 +171,5 @@ async def invitations_service_api_cleanup_ctx(app: web.Application):
 
 
 def get_invitations_service_api(app: web.Application) -> InvitationsServiceApi:
-    assert app[_APP_INVITATIONS_SERVICE_API_KEY]  # nosec
-    service_api: InvitationsServiceApi = app[_APP_INVITATIONS_SERVICE_API_KEY]
-    return service_api
+    assert app[_APPKEY]  # nosec
+    return app[_APPKEY]

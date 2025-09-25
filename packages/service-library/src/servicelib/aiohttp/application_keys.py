@@ -9,6 +9,7 @@ All keys are constants with a unique name convention:
  See https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 """
 
+import asyncio
 from typing import Final
 
 from aiohttp import ClientSession, web
@@ -28,7 +29,9 @@ APP_AIOPG_ENGINE_KEY: Final[str] = f"{__name__ }.aiopg_engine"
 APP_CLIENT_SESSION_KEY: Final = web.AppKey("APP_CLIENT_SESSION_KEY", ClientSession)
 
 
-APP_FIRE_AND_FORGET_TASKS_KEY: Final[str] = f"{__name__}.tasks"
+APP_FIRE_AND_FORGET_TASKS_KEY: Final = web.AppKey(
+    "APP_FIRE_AND_FORGET_TASKS_KEY", set[asyncio.Task]
+)
 
 APP_RABBITMQ_CLIENT_KEY: Final[str] = f"{__name__}.rabbit_client"
 APP_RABBITMQ_RPC_SERVER_KEY: Final[str] = f"{__name__}.rabbit_rpc_server"
