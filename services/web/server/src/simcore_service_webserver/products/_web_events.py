@@ -12,7 +12,7 @@ from ._models import Product
 
 _logger = logging.getLogger(__name__)
 
-PRODUCTS_TEMPLATES_DIR_APPKEY = web.AppKey("PRODUCTS_TEMPLATES_DIR", Path)
+PRODUCTS_TEMPLATES_DIR_APPKEY: Final = web.AppKey("PRODUCTS_TEMPLATES_DIR", Path)
 
 
 async def _auto_create_products_groups(app: web.Application) -> None:

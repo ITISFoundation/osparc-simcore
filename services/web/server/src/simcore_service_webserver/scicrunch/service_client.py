@@ -5,6 +5,7 @@ Client to interact with scicrunch service (https://scicrunch.org)
 """
 
 import logging
+from typing import Final
 
 from aiohttp import ClientSession, client_exceptions, web
 from pydantic import HttpUrl, TypeAdapter, ValidationError
@@ -173,4 +174,4 @@ class SciCrunch:
         return hits.root
 
 
-_SCICRUNCH_APPKEY: web.AppKey = web.AppKey(SciCrunch.__name__, SciCrunch)
+_SCICRUNCH_APPKEY: Final = web.AppKey(SciCrunch.__name__, SciCrunch)

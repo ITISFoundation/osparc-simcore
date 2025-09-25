@@ -1,6 +1,6 @@
 """web.AppKey definitions for simcore_service_webserver"""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import (
@@ -14,11 +14,11 @@ if TYPE_CHECKING:
     # Application settings key - defined here to avoid circular imports
     from .application_settings import ApplicationSettings
 
-    APP_SETTINGS_KEY: web.AppKey[ApplicationSettings] = web.AppKey(
+    APP_SETTINGS_KEY: Final[web.AppKey[ApplicationSettings]] = web.AppKey(
         "APP_SETTINGS_KEY", ApplicationSettings
     )
 else:
-    APP_SETTINGS_KEY: web.AppKey = web.AppKey("APP_SETTINGS_KEY", None)
+    APP_SETTINGS_KEY: Final[web.AppKey] = web.AppKey("APP_SETTINGS_KEY", None)
 
 
 __all__: tuple[str, ...] = (
