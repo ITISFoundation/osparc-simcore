@@ -21,7 +21,9 @@ from .rest.healthcheck import HEALTHCHECK_APPKEY, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
-_RPC_CLIENT_KEY: Final[str] = f"{__name__}.RabbitMQRPCClient"
+_RABBITMQ_RPC_CLIENT_APPKEY: Final = web.AppKey(
+    "_RABBITMQ_RPC_CLIENT_APPKEY", RabbitMQRPCClient
+)
 
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
@@ -65,7 +67,7 @@ async def _rabbitmq_rpc_client_lifespan(app: web.Application):
 
     assert rpc_client  # nosec
 
-    app[_RPC_CLIENT_KEY] = rpc_client
+    app[_RABBITMQ_RPC_CLIENT_APPKEY] = rpc_client
 
     yield
 
@@ -85,7 +87,7 @@ def setup_rabbitmq(app: web.Application) -> None:
 
 
 def get_rabbitmq_rpc_client(app: web.Application) -> RabbitMQRPCClient:
-    return cast(RabbitMQRPCClient, app[_RPC_CLIENT_KEY])
+    return cast(RabbitMQRPCClient, app[_RABBITMQ_RPC_CLIENT_APPKEY])
 
 
 def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:

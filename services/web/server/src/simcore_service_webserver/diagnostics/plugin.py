@@ -13,8 +13,8 @@ from ..rest.healthcheck import HEALTHCHECK_APPKEY
 from ..rest.plugin import setup_rest
 from . import _handlers
 from ._healthcheck import (
-    HEALTH_INCIDENTS_REGISTRY,
-    HEALTH_PLUGIN_START_TIME,
+    HEALTH_INCIDENTS_REGISTRY_APPKEY,
+    HEALTH_PLUGIN_START_TIME_APPKEY,
     IncidentsRegistry,
     assert_healthy_app,
 )
@@ -42,7 +42,7 @@ def setup_diagnostics(app: web.Application):
     settings: DiagnosticsSettings = get_plugin_settings(app)
 
     incidents_registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
-    app[HEALTH_INCIDENTS_REGISTRY] = incidents_registry
+    app[HEALTH_INCIDENTS_REGISTRY_APPKEY] = incidents_registry
 
     monitor_slow_callbacks.enable(
         settings.DIAGNOSTICS_SLOW_DURATION_SECS, incidents_registry
@@ -58,7 +58,7 @@ def setup_diagnostics(app: web.Application):
     # adds other diagnostic routes: healthcheck, etc
     app.router.add_routes(_handlers.routes)
 
-    app[HEALTH_PLUGIN_START_TIME] = time.time()
+    app[HEALTH_PLUGIN_START_TIME_APPKEY] = time.time()
 
 
 @app_setup_func(
