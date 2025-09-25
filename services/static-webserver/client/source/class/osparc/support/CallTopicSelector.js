@@ -32,6 +32,10 @@ qx.Class.define("osparc.support.CallTopicSelector", {
     this.__buildLayout();
   },
 
+  events: {
+    "callTopicSelected": "qx.event.type.Data",
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;

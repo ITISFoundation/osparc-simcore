@@ -44,8 +44,8 @@ qx.Class.define("osparc.support.BookACall", {
     __buildLayout: function() {
       const callTopicSelector = this.getChildControl("call-topic-selector");
       this.setSelection([callTopicSelector]);
-      callTopicSelector.addListener("nextPressed", e => {
-        console.log("Next pressed!", e.getData());
+      callTopicSelector.addListener("callTopicSelected", e => {
+        console.log("callTopicSelected", e.getData());
         const bookACallIframe = this.getChildControl("book-a-call-iframe");
         this.setSelection([bookACallIframe]);
       });
