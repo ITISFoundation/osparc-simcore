@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from aiohttp import web
 from models_library.projects import CommitID, ProjectID
 
-_APP_PROJECT_RUN_POLICY_KEY = f"{__name__}.ProjectRunPolicy"
-
 
 class AbstractProjectRunPolicy(ABC):
     """
@@ -40,6 +38,11 @@ class AbstractProjectRunPolicy(ABC):
         request: web.Request,
         project_uuid: ProjectID,
     ) -> tuple[list[ProjectID], list[CommitID]]: ...
+
+
+_APP_PROJECT_RUN_POLICY_KEY = web.AppKey(
+    "_APP_PROJECT_RUN_POLICY_KEY", AbstractProjectRunPolicy
+)
 
 
 def get_project_run_policy(app: web.Application) -> AbstractProjectRunPolicy | None:

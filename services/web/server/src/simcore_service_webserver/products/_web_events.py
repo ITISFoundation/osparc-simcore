@@ -12,7 +12,7 @@ from ._models import Product
 
 _logger = logging.getLogger(__name__)
 
-APP_PRODUCTS_TEMPLATES_DIR_KEY = f"{__name__}.template_dir"
+APP_PRODUCTS_TEMPLATES_DIR_KEY = web.AppKey("template_dir", Path)
 
 
 async def _auto_create_products_groups(app: web.Application) -> None:
@@ -59,9 +59,7 @@ async def _setup_product_templates(app: web.Application):
     """
     builds a directory and download product templates
     """
-    with tempfile.TemporaryDirectory(
-        suffix=APP_PRODUCTS_TEMPLATES_DIR_KEY
-    ) as templates_dir:
+    with tempfile.TemporaryDirectory(suffix="product_template_") as templates_dir:
         app[APP_PRODUCTS_TEMPLATES_DIR_KEY] = Path(templates_dir)
 
         yield

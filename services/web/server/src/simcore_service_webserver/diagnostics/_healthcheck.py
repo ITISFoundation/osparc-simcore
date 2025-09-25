@@ -2,6 +2,7 @@ import logging
 import statistics
 import time
 from dataclasses import dataclass, field
+from typing import Final
 
 from aiohttp import web
 from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
@@ -10,17 +11,6 @@ from ..rest.healthcheck import HealthCheckError
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
-
-# APP KEYS ---
-HEALTH_INCIDENTS_REGISTRY = f"{__name__}.incidents_registry"
-HEALTH_LAST_REQUESTS_AVG_LATENCY = f"{__name__}.last_requests_avg_latency"
-HEALTH_MAX_AVG_RESP_LATENCY = f"{__name__}.max_avg_response_latency"
-HEALTH_MAX_TASK_DELAY = f"{__name__}.max_task_delay"
-
-HEALTH_LATENCY_PROBE = f"{__name__}.latency_probe"
-HEALTH_PLUGIN_START_TIME = f"{__name__}.plugin_start_time"
-
-HEALTH_START_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
 
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
@@ -55,6 +45,18 @@ class DelayWindowProbe:
         if self.last_delays:
             delay = statistics.mean(self.last_delays)
         return delay
+
+
+HEALTH_INCIDENTS_REGISTRY: Final = web.AppKey(
+    "HEALTH_INCIDENTS_REGISTRY", IncidentsRegistry
+)
+HEALTH_LATENCY_PROBE: Final = web.AppKey("HEALTH_LATENCY_PROBE", DelayWindowProbe)
+
+HEALTH_LAST_REQUESTS_AVG_LATENCY: Final = f"{__name__}.last_requests_avg_latency"
+HEALTH_MAX_AVG_RESP_LATENCY: Final = f"{__name__}.max_avg_response_latency"
+HEALTH_MAX_TASK_DELAY: Final = f"{__name__}.max_task_delay"
+HEALTH_PLUGIN_START_TIME: Final = f"{__name__}.plugin_start_time"
+HEALTH_START_SENSING_DELAY_SECS: Final = f"{__name__}.start_sensing_delay"
 
 
 _logged_once = False

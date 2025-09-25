@@ -114,7 +114,6 @@ from .models import (
 
 _logger = logging.getLogger(__name__)
 
-APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 ANY_USER = ANY_USER_ID_SENTINEL
 
 DEFAULT_ORDER_BY = OrderBy(
@@ -1390,6 +1389,9 @@ class ProjectDBAPI(BaseProjectDB):
                 project_uuid=project_uuid,
                 details="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
             )
+
+
+APP_PROJECT_DBAPI = web.AppKey("ProjectDBAPI", ProjectDBAPI)
 
 
 def setup_projects_db(app: web.Application):
