@@ -437,6 +437,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
             / 1e9,
             "ram": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             * fake_node.description.resources.memory_bytes,
+            "generic_resources": {},
         },
     )
 
