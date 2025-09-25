@@ -1,5 +1,6 @@
 from typing import Final
 
+from aiohttp import web
 from common_library.user_messages import user_message
 
 MSG_2FA_CODE_SENT: Final[str] = user_message(
@@ -125,7 +126,9 @@ CODE_2FA_EMAIL_CODE_REQUIRED: Final[str] = "EMAIL_CODE_REQUIRED"
 
 # App keys for login plugin
 # Naming convention: APP_LOGIN_...KEY
-LOGIN_SETTINGS_PER_PRODUCT_APPKEY: Final[str] = f"{__name__}.LOGIN_SETTINGS_PER_PRODUCT"
+LOGIN_SETTINGS_PER_PRODUCT_APPKEY: Final = web.AppKey(
+    "LOGIN_SETTINGS_PER_PRODUCT_APPKEY", dict
+)
 
 
 # maximum amount the user can resend the code via email or phone
