@@ -103,6 +103,7 @@ qx.Class.define("osparc.support.CallTopicSelector", {
             marginTop: 10,
             appearance: "strong-button",
           });
+          control.addListener("execute", () => this.__nextPressed());
           this._add(control);
           break;
       }
@@ -134,6 +135,28 @@ qx.Class.define("osparc.support.CallTopicSelector", {
       this.getChildControl("specific-topic-textfield");
       this.getChildControl("intro-label");
       this.getChildControl("next-button");
+    },
+
+    __nextPressed: function() {
+      const topicData = {};
+      if (this.getChildControl("generic-intro-button").getValue()) {
+        topicData["topic"] = "specific-topic";
+      } else if (this.getChildControl("specific-topic-button").getValue()) {
+        topicData["topic"] = "specific-topic";
+        const selectBox = this.getChildControl("specific-topic-select-box");
+        const selectedItem = selectBox.getSelection()[0];
+        topicData["extraInfo"] = selectedItem ? selectedItem.getLabel() : "";
+      } else if (this.getChildControl("help-with-project-button").getValue()) {
+        topicData["topic"] = "help-with-project";
+        if (this.getChildControl("share-project-checkbox").getValue()) {
+          topicData["extraInfo"] = "share-project";
+        }
+      } else if (this.getChildControl("specific-topic-button").getValue()) {
+        topicData["topic"] = "specific-topic";
+        topicData["extraInfo"] = this.getChildControl("specific-topic-textfield").getValue();
+      }
+
+      this.fireDataEvent("callTopicSelected", topicData);
     },
   }
 });
