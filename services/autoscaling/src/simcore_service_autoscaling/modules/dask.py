@@ -15,12 +15,12 @@ from distributed.core import Status
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 
-from ...core.settings import DaskMonitoringSettings
 from ..core.errors import (
     DaskNoWorkersError,
     DaskSchedulerNotFoundError,
     DaskWorkerNotFoundError,
 )
+from ..core.settings import DaskMonitoringSettings
 from ..models import AssociatedInstance, DaskTask, DaskTaskId
 from ..utils.utils_ec2 import (
     node_host_name_from_ec2_private_dns,
