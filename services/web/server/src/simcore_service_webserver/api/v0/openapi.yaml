@@ -17106,38 +17106,53 @@ components:
         \ - Task was aborted before completion"
     SearchBodyParams:
       properties:
-        filenamePattern:
-          type: string
-          title: Filenamepattern
-          description: File name pattern with wildcard support ('*', '?'). Minimum
-            of 3 non-wildcard characters required.
-        lastModifiedBefore:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Lastmodifiedbefore
-          description: 'Filter results to files modified before this date (inclusive).
-            Format: YYYY-MM-DDTHH:MM:SS'
-        lastModifiedAfter:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Lastmodifiedafter
-          description: 'Filter results to files modified after this date (inclusive).
-            Format: YYYY-MM-DDTHH:MM:SS'
-        itemsPerPage:
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        limit:
           type: integer
           maximum: 50
           minimum: 1
-          title: Itemsperpage
-          description: Number of items per page
+          title: Limit
+          description: Limits the number of returned items per page
           default: 25
       type: object
       required:
-      - filenamePattern
+      - filters
       title: SearchBodyParams
+    SearchFilters:
+      properties:
+        namePattern:
+          type: string
+          title: Namepattern
+          description: Name pattern with wildcard support ('*', '?'). Minimum of 3
+            non-wildcard characters required.
+        modifiedAt:
+          anyOf:
+          - $ref: '#/components/schemas/SearchTimerangeFilter'
+          - type: 'null'
+          description: Filter results based on modification date range
+      type: object
+      required:
+      - namePattern
+      title: SearchFilters
+    SearchTimerangeFilter:
+      properties:
+        from:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: From
+          description: Filter results before this date
+        until:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Until
+          description: Filter results after this date
+      type: object
+      title: SearchTimerangeFilter
     SelectBox:
       properties:
         structure:

@@ -53,44 +53,58 @@ class DataExportPost(InputSchema):
     paths: list[PathToExport]
 
 
-class SearchBodyParams(InputSchema):
-    filename_pattern: Annotated[
-        str,
-        ensure_pattern_has_enough_characters(),
-        Field(
-            description=f"File name pattern with wildcard support {tuple(WILDCARD_CHARS)}. Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
-        ),
-    ]
-    last_modified_before: Annotated[
+class SearchTimerangeFilter(InputSchema):
+    from_: Annotated[
         datetime.datetime | None,
         Field(
-            default=None,
-            description="Filter results to files modified before this date (inclusive). Format: YYYY-MM-DDTHH:MM:SS",
+            alias="from",
+            description="Filter results before this date",
         ),
-    ]
-    last_modified_after: Annotated[
+    ] = None
+    until: Annotated[
         datetime.datetime | None,
         Field(
-            default=None,
-            description="Filter results to files modified after this date (inclusive). Format: YYYY-MM-DDTHH:MM:SS",
+            description="Filter results after this date",
         ),
-    ]
-    items_per_page: Annotated[
-        int,
-        Field(
-            description="Number of items per page",
-            ge=1,
-            le=MAX_SEARCH_ITEMS_PER_PAGE,
-        ),
-    ] = DEFAULT_MAX_SEARCH_ITEMS_PER_PAGE
+    ] = None
 
     @model_validator(mode="after")
     def _validate_date_range(self) -> Self:
         if (
-            self.last_modified_before is not None
-            and self.last_modified_after is not None
-            and self.last_modified_before <= self.last_modified_after
+            self.from_ is not None
+            and self.until is not None
+            and self.from_ > self.until
         ):
-            msg = "last_modified_before must be after last_modified_after"
+            msg = f"Invalid date range: '{self.from_}' must be before '{self.until}'"
             raise ValueError(msg)
         return self
+
+
+class SearchFilters(InputSchema):
+    name_pattern: Annotated[
+        str,
+        ensure_pattern_has_enough_characters(),
+        Field(
+            description=f"Name pattern with wildcard support {tuple(WILDCARD_CHARS)}. "
+            f"Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
+        ),
+    ]
+    modified_at: Annotated[
+        SearchTimerangeFilter | None,
+        Field(
+            default=None,
+            description="Filter results based on modification date range",
+        ),
+    ] = None
+
+
+class SearchBodyParams(InputSchema):
+    filters: SearchFilters
+    limit: Annotated[
+        int,
+        Field(
+            description="Limits the number of returned items per page",
+            ge=1,
+            le=MAX_SEARCH_ITEMS_PER_PAGE,
+        ),
+    ] = DEFAULT_MAX_SEARCH_ITEMS_PER_PAGE

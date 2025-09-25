@@ -139,10 +139,9 @@ async def search(
     *,
     user_id: UserID,
     project_id: ProjectID | None,
+    limit: int,
     name_pattern: str,
-    last_modified_before: datetime.datetime | None,
-    last_modified_after: datetime.datetime | None,
-    items_per_page: int,
+    modified_at: tuple[datetime.datetime | None, datetime.datetime | None] | None,
 ) -> None:
     with log_context(
         _logger,
@@ -160,9 +159,8 @@ async def search(
             user_id=user_id,
             project_id=project_id,
             name_pattern=name_pattern,
-            modified_before=last_modified_before,
-            modified_after=last_modified_after,
-            items_per_page=items_per_page,
+            limit=limit,
+            modified_at=modified_at,
         ):
             data = [
                 SearchResult(

@@ -991,9 +991,10 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         self,
         user_id: UserID,
         proj_id: ProjectID,
-        filename_pattern: str,
-        last_modified_before: datetime.datetime | None = None,
-        last_modified_after: datetime.datetime | None = None,
+        name_pattern: str,
+        modified_at: (
+            tuple[datetime.datetime | None, datetime.datetime | None] | None
+        ) = None,
     ) -> AsyncGenerator[FileMetaData, None]:
         """Search S3 files in a specific project and yield individual results."""
         s3_client = get_s3_client(self.app)
@@ -1009,23 +1010,27 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     filename = Path(s3_obj.object_key).name
 
                     if not (
-                        fnmatch.fnmatch(filename, filename_pattern)
+                        fnmatch.fnmatch(filename, name_pattern)
                         and len(s3_obj.object_key.split("/"))
                         >= min_parts_for_valid_s3_object
                     ):
                         continue
 
+                    last_modified_from, last_modified_until = modified_at or (
+                        None,
+                        None,
+                    )
                     if (
-                        last_modified_before
+                        last_modified_from
                         and s3_obj.last_modified
-                        and s3_obj.last_modified >= last_modified_before
+                        and s3_obj.last_modified >= last_modified_from
                     ):
                         continue
 
                     if (
-                        last_modified_after
+                        last_modified_until
                         and s3_obj.last_modified
-                        and s3_obj.last_modified <= last_modified_after
+                        and s3_obj.last_modified <= last_modified_until
                     ):
                         continue
 
@@ -1056,9 +1061,10 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         *,
         name_pattern: str,
         project_id: ProjectID | None = None,
-        modified_before: datetime.datetime | None = None,
-        modified_after: datetime.datetime | None = None,
-        items_per_page: NonNegativeInt = 100,
+        modified_at: (
+            tuple[datetime.datetime | None, datetime.datetime | None] | None
+        ) = None,
+        limit: NonNegativeInt = 100,
     ) -> AsyncGenerator[list[FileMetaData], None]:
         """
         Search for files in S3 using a wildcard pattern for filenames.
@@ -1086,13 +1092,13 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         for proj_id in accessible_projects_ids:
             async for file_result in self._search_project_s3_files(
-                user_id, proj_id, name_pattern, modified_before, modified_after
+                user_id, proj_id, name_pattern, modified_at
             ):
                 current_page_results.append(file_result)
 
-                if len(current_page_results) >= items_per_page:
-                    page_batch = current_page_results[:items_per_page]
-                    remaining_results = current_page_results[items_per_page:]
+                if len(current_page_results) >= limit:
+                    page_batch = current_page_results[:limit]
+                    remaining_results = current_page_results[limit:]
 
                     processed_page = await self._process_s3_page_results(page_batch)
                     yield processed_page

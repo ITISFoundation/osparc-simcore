@@ -72,10 +72,11 @@ async def start_export_data(
 async def start_search(
     task_manager: TaskManager,
     job_filter: AsyncJobFilter,
+    limit: int,
     name_pattern: str,
-    items_per_page: int,
-    last_modified_before: datetime.datetime | None = None,
-    last_modified_after: datetime.datetime | None = None,
+    modified_at: (
+        tuple[datetime.datetime | None, datetime.datetime | None] | None
+    ) = None,
     project_id: str | None = None,
 ) -> AsyncJobGet:
     task_name = search.__name__
@@ -87,9 +88,8 @@ async def start_search(
         task_filter=task_filter,
         user_id=job_filter.user_id,
         project_id=project_id,
+        limit=limit,
         name_pattern=name_pattern,
-        last_modified_before=last_modified_before,
-        last_modified_after=last_modified_after,
-        items_per_page=items_per_page,
+        modified_at=modified_at,
     )
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)

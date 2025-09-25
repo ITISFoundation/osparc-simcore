@@ -52,19 +52,19 @@ async def start_search(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     job_filter: AsyncJobFilter,
-    items_per_page: int,
-    filename_pattern: str,
-    last_modified_before: datetime.datetime | None = None,
-    last_modified_after: datetime.datetime | None = None,
+    limit: int,
+    name_pattern: str,
+    modified_at: (
+        tuple[datetime.datetime | None, datetime.datetime | None] | None
+    ) = None,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=TypeAdapter(RPCMethodName).validate_python("start_search"),
         job_filter=job_filter,
-        items_per_page=items_per_page,
-        name_pattern=filename_pattern,
-        last_modified_before=last_modified_before,
-        last_modified_after=last_modified_after,
+        limit=limit,
+        name_pattern=name_pattern,
+        modified_at=modified_at,
     )
     return async_job_rpc_get, job_filter
