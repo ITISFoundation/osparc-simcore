@@ -60,7 +60,7 @@ async def start_search(
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=TypeAdapter(RPCMethodName).validate_python("start_file_search"),
+        method_name=TypeAdapter(RPCMethodName).validate_python("start_search"),
         job_filter=job_filter,
         items_per_page=items_per_page,
         name_pattern=filename_pattern,
