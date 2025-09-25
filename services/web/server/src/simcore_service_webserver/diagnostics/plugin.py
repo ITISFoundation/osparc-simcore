@@ -9,7 +9,7 @@ from servicelib.aiohttp.profiler_middleware import profiling_middleware
 
 from ..application_settings import get_application_settings
 from ..application_setup import ModuleCategory, app_setup_func
-from ..rest.healthcheck import HealthCheck
+from ..rest.healthcheck import HEALTHCHECK_APPKEY
 from ..rest.plugin import setup_rest
 from . import _handlers
 from ._healthcheck import (
@@ -52,7 +52,7 @@ def setup_diagnostics(app: web.Application):
     setup_monitoring(app)
 
     if settings.DIAGNOSTICS_HEALTHCHECK_ENABLED:
-        healthcheck: HealthCheck = app[HealthCheck.__name__]
+        healthcheck = app[HEALTHCHECK_APPKEY]
         healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
 
     # adds other diagnostic routes: healthcheck, etc

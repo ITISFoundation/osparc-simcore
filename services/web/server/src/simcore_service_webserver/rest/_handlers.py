@@ -14,7 +14,7 @@ from ..login.decorators import login_required
 from ..products import products_web
 from ..redis import get_redis_scheduled_maintenance_client
 from ..utils_aiohttp import envelope_json_response
-from .healthcheck import HealthCheck, HealthCheckError
+from .healthcheck import HEALTHCHECK_APPKEY, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ async def healthcheck_liveness_probe(request: web.Request):
 
     SEE doc in healthcheck.py
     """
-    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
+    healthcheck = request.app[HEALTHCHECK_APPKEY]
 
     try:
         # if slots append get too delayed, just timeout
@@ -53,7 +53,7 @@ async def healthcheck_readiness_probe(request: web.Request):
     SEE doc in healthcheck.py
     """
 
-    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
+    healthcheck = request.app[HEALTHCHECK_APPKEY]
     app_info = healthcheck.get_app_info(request.app)
     # NOTE: do NOT run healthcheck here, just return info fast.
     return envelope_json_response(app_info)

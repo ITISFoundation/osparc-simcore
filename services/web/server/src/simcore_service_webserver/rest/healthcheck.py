@@ -1,4 +1,4 @@
-""" Service healthcheck
+"""Service healthcheck
 
 
 ## Types of health checks
@@ -43,11 +43,10 @@ Taken from https://medium.com/polarsquad/how-should-i-answer-a-health-check-aa1f
 Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 """
 
-
 import asyncio
 import inspect
 from collections.abc import Awaitable, Callable
-from typing import TypeAlias
+from typing import Final, TypeAlias
 
 from aiohttp import web
 from aiosignal import Signal
@@ -122,6 +121,9 @@ class HealthCheck:
             heath_report: HealthInfoDict = self.get_app_info(app)
             return heath_report
 
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             msg = "Service is slowing down"
             raise HealthCheckError(msg) from err
+
+
+HEALTHCHECK_APPKEY: Final = web.AppKey("HEALTHCHECK_APPKEY", HealthCheck)

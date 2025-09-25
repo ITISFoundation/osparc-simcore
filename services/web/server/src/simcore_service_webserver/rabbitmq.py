@@ -17,7 +17,7 @@ from servicelib.rabbitmq import (
 
 from .application_setup import ModuleCategory, app_setup_func
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
-from .rest.healthcheck import HealthCheck, HealthCheckError
+from .rest.healthcheck import HEALTHCHECK_APPKEY, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
         )
 
     # injects healthcheck
-    healthcheck: HealthCheck = app[HealthCheck.__name__]
+    healthcheck = app[HEALTHCHECK_APPKEY]
     healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
 
     yield
