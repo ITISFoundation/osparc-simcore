@@ -2,7 +2,6 @@ import logging
 from contextlib import contextmanager
 from typing import Annotated, Any
 
-from celery_library import task
 from celery_library.errors import TaskNotFoundError
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
