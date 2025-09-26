@@ -37,10 +37,6 @@ async def take_screenshot_on_error(
         raise
 
 
-async def _get_page_html(async_page: Page) -> str:
-    return await async_page.content()
-
-
 async def _get_locator(
     async_page: Page,
     text: str,
@@ -55,13 +51,11 @@ async def _get_locator(
                 locator = async_page.get_by_text(text)
                 count = await locator.count()
                 if instances is None:
-                    assert (
-                        count > 0
-                    ), f"cold not find text='{text}':\n{await _get_page_html(async_page)}"
+                    assert count > 0, f"cold not find text='{text}'"
                 else:
                     assert (
                         count == instances
-                    ), f"found {count} instances of text='{text}'. Expected {instances}:\n{await _get_page_html(async_page)}"
+                    ), f"found {count} instances of text='{text}'. Expected {instances}"
     return locator
 
 
