@@ -7,7 +7,7 @@ def _get_data_without_task_name(task_id: str) -> dict:
     return {
         "task_id": task_id,
         "status_href": "",
-        "result_href": "",
+        "result_href": "http://result",
         "abort_href": "",
     }
 
