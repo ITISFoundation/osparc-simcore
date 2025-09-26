@@ -23,8 +23,8 @@ from pydantic import (
     field_validator,
 )
 
-from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.errors import ScicrunchError
+from ..scicrunch.repository import ResearchResourceRepository
 from ..scicrunch.service_client import SciCrunch
 from ._classifiers_repository import GroupClassifierRepository
 

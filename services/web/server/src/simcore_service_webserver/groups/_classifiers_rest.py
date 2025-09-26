@@ -8,8 +8,8 @@ from servicelib.aiohttp.requests_validation import (
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.models import ResearchResource, ResourceHit
+from ..scicrunch.repository import ResearchResourceRepository
 from ..scicrunch.service_client import SciCrunch
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
