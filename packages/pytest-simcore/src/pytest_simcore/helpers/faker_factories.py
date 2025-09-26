@@ -629,3 +629,65 @@ def random_service_consume_filetype(
 
     data.update(overrides)
     return data
+
+
+def random_group_classifier(
+    *,
+    gid: int,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.classifiers import group_classifiers
+
+    data = {
+        "gid": gid,
+        "bundle": {
+            "vcs_ref": "asdfasdf",
+            "vcs_url": "https://foo.classifiers.git",
+            "build_date": "2021-01-20T15:19:30Z",
+            "classifiers": {
+                "project::dak": {
+                    "url": None,
+                    "logo": None,
+                    "aliases": [],
+                    "related": [],
+                    "markdown": "",
+                    "released": None,
+                    "classifier": "project::dak",
+                    "created_by": "Nicolas Chavannes",
+                    "github_url": None,
+                    "display_name": "DAK",
+                    "wikipedia_url": None,
+                    "short_description": None,
+                },
+                "organization::zmt": {
+                    "url": "https://zmt.swiss/",
+                    "logo": None,
+                    "aliases": ["Zurich MedTech AG"],
+                    "related": [],
+                    "markdown": "Zurich MedTech AG (ZMT) offers tools and best practices for targeted life sciences applications to simulate, analyze, and predict complex and dynamic biological processes and interactions. ZMT is a member of Zurich43",
+                    "released": None,
+                    "classifier": "organization::zmt",
+                    "created_by": "crespo",
+                    "github_url": None,
+                    "display_name": "ZMT",
+                    "wikipedia_url": None,
+                    "short_description": "ZMT is a member of Zurich43",
+                },
+            },
+            "collections": {
+                "jupyterlab-math": {
+                    "items": ["crespo/osparc-demo"],
+                    "markdown": "Curated collection of repositories with examples of notebooks to run in jupyter-python-octave-math service",
+                    "created_by": "crespo",
+                    "display_name": "jupyterlab-math",
+                }
+            },
+        },
+        "uses_scicrunch": False,
+    }
+
+    assert set(data.keys()).issubset({c.name for c in group_classifiers.columns})
+
+    data.update(overrides)
+    return data
