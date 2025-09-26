@@ -2,6 +2,7 @@ from datetime import timedelta
 from typing import Annotated, Final, Literal
 
 from aiohttp import web
+from models_library.products import ProductName
 from pydantic import BaseModel, ValidationInfo, field_validator
 from pydantic.fields import Field
 from pydantic.types import PositiveFloat, PositiveInt, SecretStr
@@ -17,7 +18,8 @@ _MINUTES: Final[float] = 1.0 / 24.0 / 60.0  # in days
 _YEARS: Final[float] = 365 * _DAYS
 _UNLIMITED: Final[float] = 99 * _YEARS
 
-APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
+
+APP_LOGIN_OPTIONS_APPKEY: Final = web.AppKey("APP_LOGIN_OPTIONS_APPKEY", "LoginOptions")
 
 
 class LoginSettings(BaseCustomSettings):
@@ -143,18 +145,22 @@ class LoginOptions(BaseModel):
         return timedelta(days=value)
 
 
+LOGIN_SETTINGS_PER_PRODUCT_APPKEY: Final = web.AppKey(
+    "LOGIN_SETTINGS_PER_PRODUCT_APPKEY", dict[ProductName, LoginSettingsForProduct]
+)
+
+
 def get_plugin_settings(
     app: web.Application, product_name: str
 ) -> LoginSettingsForProduct:
     """login plugin's settings are customized per product"""
     settings = app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY][product_name]
     assert settings, "setup_settings not called?"  # nosec
-    assert isinstance(settings, LoginSettingsForProduct)  # nosec
     return settings
 
 
 def get_plugin_options(app: web.Application) -> LoginOptions:
-    options = app.get(APP_LOGIN_OPTIONS_KEY)
+    options = app.get(APP_LOGIN_OPTIONS_APPKEY)
     assert options, "login plugin was not initialized"  # nosec
     assert isinstance(options, LoginOptions)  # nosec
     return options

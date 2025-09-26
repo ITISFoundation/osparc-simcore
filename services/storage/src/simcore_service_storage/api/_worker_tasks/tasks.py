@@ -9,6 +9,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
     PresignedLink,
 )
+from servicelib.celery.models import OwnerMetadata
 from servicelib.logging_utils import log_context
 
 from ...models import FileMetaData
@@ -26,7 +27,11 @@ _logger = logging.getLogger(__name__)
 def setup_worker_tasks(app: Celery) -> None:
     register_celery_types()
     register_pydantic_types(
-        FileUploadCompletionBody, FileMetaData, FoldersBody, PresignedLink
+        FileUploadCompletionBody,
+        FileMetaData,
+        FoldersBody,
+        PresignedLink,
+        OwnerMetadata,
     )
 
     with log_context(_logger, logging.INFO, msg="worker task registration"):

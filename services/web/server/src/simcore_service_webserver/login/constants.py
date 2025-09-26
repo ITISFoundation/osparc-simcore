@@ -1,6 +1,5 @@
 from typing import Final
 
-from aiohttp import web
 from common_library.user_messages import user_message
 
 MSG_2FA_CODE_SENT: Final[str] = user_message(
@@ -122,13 +121,6 @@ MSG_INVITATIONS_CONTACT_SUFFIX: Final[str] = user_message(
 CODE_PHONE_NUMBER_REQUIRED: Final[str] = "PHONE_NUMBER_REQUIRED"
 CODE_2FA_SMS_CODE_REQUIRED: Final[str] = "SMS_CODE_REQUIRED"
 CODE_2FA_EMAIL_CODE_REQUIRED: Final[str] = "EMAIL_CODE_REQUIRED"
-
-
-# App keys for login plugin
-# Naming convention: APP_LOGIN_...KEY
-LOGIN_SETTINGS_PER_PRODUCT_APPKEY: Final = web.AppKey(
-    "LOGIN_SETTINGS_PER_PRODUCT_APPKEY", dict
-)
 
 
 # maximum amount the user can resend the code via email or phone
