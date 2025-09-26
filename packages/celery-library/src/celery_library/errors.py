@@ -1,6 +1,7 @@
 import base64
 import pickle
 
+from celery.exceptions import CeleryError
 from common_library.errors_classes import OsparcErrorMixin
 
 
@@ -34,3 +35,17 @@ class TaskSubmissionError(OsparcErrorMixin, Exception):
 
 class TaskNotFoundError(OsparcErrorMixin, Exception):
     msg_template = "Task with id '{task_id}' was not found"
+
+
+class InternalError(OsparcErrorMixin, Exception):
+    msg_template = "An internal error occurred"
+
+
+def handle_celery_errors(func):
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except CeleryError as exc:
+            raise InternalError from exc
+
+    return wrapper

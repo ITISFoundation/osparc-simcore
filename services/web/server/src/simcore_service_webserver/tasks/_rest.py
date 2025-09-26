@@ -38,6 +38,7 @@ from ..login.decorators import login_required
 from ..long_running_tasks.plugin import webserver_request_context_decorator
 from ..models import AuthenticatedRequestContext
 from ..utils import get_job_filter
+from . import _service
 from ._exception_handlers import handle_exceptions
 
 log = logging.getLogger(__name__)
@@ -69,23 +70,24 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
-    tasks = await get_task_manager(request.app).list_tasks(
+    tasks = await _service.list_tasks(
+        task_manager=get_task_manager(request.app),
         task_filter=TaskFilter.model_validate(
             get_job_filter(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
             ).model_dump(),
-        )
+        ),
     )
 
     return create_data_response(
         [
             TaskGet(
-                task_id=f"{task.uuid}",
-                task_name=task.metadata.name,
-                status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=str(task.uuid))))}",
-                abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=str(task.uuid))))}",
-                result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=str(task.uuid))))}",
+                task_id=f"{task.job_id}",
+                task_name=task.job_name,
+                status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=str(task.job_id))))}",
+                abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=str(task.job_id))))}",
+                result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=str(task.job_id))))}",
             )
             for task in tasks
         ]
@@ -112,7 +114,8 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
-    task_status = await get_task_manager(request.app).get_task_status(
+    task_status = await _service.get_task_status(
+        task_manager=get_task_manager(request.app),
         task_filter=TaskFilter.model_validate(
             get_job_filter(
                 user_id=_req_ctx.user_id,
@@ -122,13 +125,13 @@ async def get_async_job_status(request: web.Request) -> web.Response:
         task_uuid=path_params.task_id,
     )
 
-    _task_id = f"{task_status.task_uuid}"
+    _task_id = f"{task_status.job_id}"
     return create_data_response(
         TaskStatus(
             task_progress=TaskProgress(
-                task_id=_task_id, percent=task_status.progress_report.percent_value
+                task_id=_task_id, percent=task_status.progress.percent_value
             ),
-            done=task_status.is_done,
+            done=task_status.done,
             started=None,
         ),
         status=status.HTTP_200_OK,
@@ -145,7 +148,8 @@ async def cancel_async_job(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
-    await get_task_manager(request.app).cancel_task(
+    await _service.cancel_task(
+        task_manager=get_task_manager(request.app),
         task_filter=TaskFilter.model_validate(
             get_job_filter(
                 user_id=_req_ctx.user_id,
