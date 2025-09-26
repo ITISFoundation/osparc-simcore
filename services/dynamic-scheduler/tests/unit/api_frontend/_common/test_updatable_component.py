@@ -281,14 +281,11 @@ async def test_updatable_component(
     await _ensure_index_page(async_page, person_update)
 
     # REMOVE only the companion form UI
-    person.companion.on_remove_from_ui()
+    person.companion.remove_from_ui()
     await _ensure_companion_not_present(async_page)
 
-    # TODO: remove below check screenshto margins
-    await _ensure_index_page(async_page, person_update)
-
     # REMOVE the person form UI
-    person.on_remove_from_ui()
+    person.remove_from_ui()
     await _ensure_person_not_present(async_page)
 
     await _ensure_before_label(async_page)
