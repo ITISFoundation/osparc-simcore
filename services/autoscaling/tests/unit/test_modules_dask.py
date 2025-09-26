@@ -39,10 +39,11 @@ from simcore_service_autoscaling.modules.dask import (
     get_worker_still_has_results_in_memory,
     get_worker_used_resources,
     is_worker_connected,
+    is_worker_retired,
     list_processing_tasks_per_worker,
     list_unrunnable_tasks,
 )
-from tenacity import retry, stop_after_delay, wait_fixed
+from tenacity import AsyncRetrying, retry, stop_after_delay, wait_fixed
 
 _authentication_types = [
     NoAuthentication(),
@@ -406,7 +407,7 @@ def test_add_instance_generic_resources(
         in ec2_instance_data.resources.generic_resources
     )
     if expected_threads_resource < 0:
-        expected_threads_resource = (
+        expected_threads_resource = int(
             ec2_instance_data.resources.cpus * dask_nthreads_multiplier
         )
     assert (
@@ -419,6 +420,7 @@ async def test_is_worker_connected(
     scheduler_url: AnyUrl,
     scheduler_authentication: ClusterAuthentication,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    fake_localhost_ec2_instance_data: EC2InstanceData,
 ):
     ec2_instance_data = fake_ec2_instance_data()
     assert (
@@ -427,3 +429,53 @@ async def test_is_worker_connected(
         )
         is False
     )
+
+    assert (
+        await is_worker_connected(
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
+        )
+        is True
+    )
+
+
+async def test_is_worker_retired(
+    dask_spec_local_cluster: distributed.SpecCluster,
+    scheduler_url: AnyUrl,
+    scheduler_authentication: ClusterAuthentication,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    fake_localhost_ec2_instance_data: EC2InstanceData,
+):
+    ec2_instance_data = fake_ec2_instance_data()
+    # fake instance is not connected, so it cannot be retired
+    assert (
+        await is_worker_retired(
+            scheduler_url, scheduler_authentication, ec2_instance_data
+        )
+        is False
+    )
+
+    # localhost is connected, but not retired
+    assert (
+        await is_worker_retired(
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
+        )
+        is False
+    )
+
+    # retire localhost worker
+    assert isinstance(dask_spec_local_cluster.scheduler, distributed.Scheduler)
+    await dask_spec_local_cluster.scheduler.retire_workers(
+        close_workers=True, remove=False
+    )
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True
+    ):
+        with attempt:
+            assert (
+                await is_worker_retired(
+                    scheduler_url,
+                    scheduler_authentication,
+                    fake_localhost_ec2_instance_data,
+                )
+                is True
+            )
