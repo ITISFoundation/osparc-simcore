@@ -8,7 +8,8 @@ DASK_WORKER_THREAD_RESOURCE_NAME: Final[str] = "threads"
 class DaskTaskResources(TypedDict, total=False):
     CPU: float
     RAM: int  # in bytes
-    # threads is a constant of 1 (enforced by static type checkers via Literal)
+    # NOTE: threads is a constant of 1 (enforced by static type checkers via Literal)
+    # a dask worker can only run as many jobs as it has threads
     threads: Literal[1]
 
 
