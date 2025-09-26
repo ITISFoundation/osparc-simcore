@@ -16,6 +16,9 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_scheduler.api.frontend._common.base_display_model import (
     BaseUpdatableDisplayModel,
 )
+from simcore_service_dynamic_scheduler.api.frontend._common.some_renderer import (
+    SomeRenderer,
+)
 from simcore_service_dynamic_scheduler.api.frontend._common.updatable_component import (
     BaseUpdatableComponent,
 )
@@ -197,14 +200,6 @@ async def _ensure_before_corpus(async_page: Page) -> None:
     await assert_contains_text(async_page, "BEFORE_CORPUS")
 
 
-async def _ensure_person_name(async_page: Page, name: str) -> None:
-    await assert_contains_text(async_page, f"Name: {name}")
-
-
-async def _ensure_person_age(async_page: Page, age: int) -> None:
-    await assert_contains_text(async_page, f"Age: {age}")
-
-
 async def _esnure_person_companion(async_page: Page, companion: Pet | Friend) -> None:
     if isinstance(companion, Pet):
         await assert_contains_text(async_page, f"Pet Name: {companion.name}")
@@ -218,30 +213,37 @@ async def _ensure_after_corpus(async_page: Page) -> None:
     await assert_contains_text(async_page, "AFTER_CORPUS")
 
 
-async def _ensure_index_page(async_page: Page, person: Person) -> None:
+async def _ensure_person_is_present(async_page: Page, person: Person) -> None:
     await _ensure_before_corpus(async_page)
 
-    await _ensure_person_name(async_page, person.name)
-    await _ensure_person_age(async_page, person.age)
+    await assert_contains_text(async_page, f"Name: {person.name}")
+    await assert_contains_text(async_page, f"Age: {person.age}")
 
     await _esnure_person_companion(async_page, person.companion)
 
     await _ensure_after_corpus(async_page)
 
 
-async def _ensure_companion_not_present(async_page: Page) -> None:
-    await assert_not_contains_text(async_page, "Pet Name: ")
-    await assert_not_contains_text(async_page, "Pet Species: ")
+async def _ensure_companion_not_present(
+    async_page: Page, companion: Pet | Friend
+) -> None:
+    if isinstance(companion, Pet):
+        await assert_not_contains_text(async_page, f"Pet Name: {companion.name}")
+        await assert_not_contains_text(async_page, f"Pet Species: {companion.species}")
+    elif isinstance(companion, Friend):
+        await assert_not_contains_text(async_page, f"Friend Name: {companion.name}")
+        await assert_not_contains_text(async_page, f"Friend Age: {companion.age}")
 
-    await assert_not_contains_text(async_page, "Friend Name: ")
-    await assert_not_contains_text(async_page, "Friend Age: ")
 
+async def _ensure_person_not_present(async_page: Page, person: Person) -> None:
+    await _ensure_before_corpus(async_page)
 
-async def _ensure_person_not_present(async_page: Page) -> None:
-    await assert_not_contains_text(async_page, "Name: ")
-    await assert_not_contains_text(async_page, "Age: ")
+    await assert_not_contains_text(async_page, f"Name: {person.name}")
+    await assert_not_contains_text(async_page, f"Age: {person.age}")
 
-    await _ensure_companion_not_present(async_page)
+    await _ensure_companion_not_present(async_page, person.companion)
+
+    await _ensure_after_corpus(async_page)
 
 
 def _get_updatable_display_model_ids(obj: BaseUpdatableDisplayModel) -> dict[int, str]:
@@ -300,7 +302,7 @@ async def test_updatable_component(
     await ensure_page_loaded(_index_corpus)
 
     # check initial page layout
-    await _ensure_index_page(async_page, person)
+    await _ensure_person_is_present(async_page, person)
 
     before_update = _get_updatable_display_model_ids(person)
     callbacks_count = person.update(person_update)
@@ -310,15 +312,15 @@ async def test_updatable_component(
     assert callbacks_count == expected_callbacks_count
 
     # change layout after update
-    await _ensure_index_page(async_page, person_update)
+    await _ensure_person_is_present(async_page, person_update)
 
     # REMOVE only the companion form UI
     person.companion.remove_from_ui()
-    await _ensure_companion_not_present(async_page)
+    await _ensure_companion_not_present(async_page, person.companion)
 
     # REMOVE the person form UI
     person.remove_from_ui()
-    await _ensure_person_not_present(async_page)
+    await _ensure_person_not_present(async_page, person)
 
     await _ensure_before_corpus(async_page)
     await _ensure_after_corpus(async_page)
@@ -327,18 +329,31 @@ async def test_updatable_component(
 async def test_multiple_componenets_management(
     app_runner: None,
     ensure_page_loaded: Callable[[Callable[[], None]], Awaitable[None]],
+    async_page: Page,
 ):
-    def _index_corpus() -> None:
-        # TODO: crate something that updates a dict[str, BaseUpdatableDisplayModel]
-        # this should add and remove elements to the UI with the keys
-        # This should be a component
+    renderer = SomeRenderer[Person](PersonComponent)
 
-        # PersonComponent(person).display()
-        pass
+    def _index_corpus() -> None:
+        renderer.display()
 
     await ensure_page_loaded(_index_corpus)
 
+    person_1 = Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat"))
+    person_2 = Person(name="Bob", age=25, companion=Friend(name="Marta", age=28))
 
-# TODO: add a test where I have 10 Persons Rendered on the page
-# Add add a way to remove and add them to the page based on a model to which we add or remove stuff
-# might require some special facilities in the BaseUpdatableComponent
+    await _ensure_person_not_present(async_page, person_1)
+    await _ensure_person_not_present(async_page, person_2)
+
+    renderer.add_or_update_model("person_1", person_1)
+    renderer.add_or_update_model("person_2", person_2)
+
+    await _ensure_person_is_present(async_page, person_1)
+    await _ensure_person_is_present(async_page, person_2)
+
+    renderer.remove_model("person_1")
+    await _ensure_person_not_present(async_page, person_1)
+    await _ensure_person_is_present(async_page, person_2)
+
+    renderer.remove_model("person_2")
+    await _ensure_person_not_present(async_page, person_2)
+    await _ensure_person_not_present(async_page, person_1)
