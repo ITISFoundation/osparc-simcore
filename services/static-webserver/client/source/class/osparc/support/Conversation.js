@@ -60,7 +60,7 @@ qx.Class.define("osparc.support.Conversation", {
           this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
           this.getChildControl("share-project-layout").add(control);
           this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
-          control.addListener("changeValue", e => this.__shareProjectWithSupport(e.getData()), this);
+          control.addListener("tap", () => this.__shareProjectWithSupport(control.getValue()), this);
           break;
       }
       return control || this.base(arguments, id);
