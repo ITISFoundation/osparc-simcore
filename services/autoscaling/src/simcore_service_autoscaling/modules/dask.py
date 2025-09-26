@@ -149,8 +149,8 @@ async def _list_cluster_known_tasks(
                 ) | {DASK_WORKER_THREAD_RESOURCE_NAME: 1}
 
         return DaskClusterTasks(
-            processing=dict(worker_to_processing_tasks),
-            unrunnable=unrunnable_tasks,
+            processing=worker_to_processing_tasks,  # type: ignore[typeddict-item]
+            unrunnable=unrunnable_tasks,  # type: ignore[typeddict-item]
         )
 
     list_of_tasks: DaskClusterTasks = await client.run_on_scheduler(_list_on_scheduler)
