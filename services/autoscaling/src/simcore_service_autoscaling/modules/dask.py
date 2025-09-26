@@ -202,7 +202,11 @@ async def _list_cluster_processing_tasks(
         for task_key, task_state in dask_scheduler.tasks.items():
             if task_state.processing_on:
                 worker_to_processing_tasks[task_state.processing_on.address].append(
-                    (task_key, task_state.resource_restrictions or {})
+                    (
+                        task_key,
+                        (task_state.resource_restrictions or {})
+                        | {DASK_WORKER_THREAD_RESOURCE_NAME: 1},
+                    )
                 )
         return worker_to_processing_tasks
 
@@ -269,19 +273,6 @@ async def get_worker_used_resources(
         DaskWorkerNotFoundError
         DaskNoWorkersError
     """
-
-    def _list_processing_tasks_on_worker(
-        dask_scheduler: distributed.Scheduler, *, worker_url: str
-    ) -> list[tuple[dask.typing.Key, DaskTaskResources]]:
-        processing_tasks = []
-        for task_key, task_state in dask_scheduler.tasks.items():
-            if task_state.processing_on and (
-                task_state.processing_on.address == worker_url
-            ):
-                processing_tasks.append(
-                    (task_key, task_state.resource_restrictions or {})
-                )
-        return processing_tasks
 
     async with _scheduler_client(scheduler_url, authentication) as client:
         worker_url, _ = _dask_worker_from_ec2_instance(client, ec2_instance)
