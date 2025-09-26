@@ -38,6 +38,8 @@ qx.Class.define("osparc.support.Conversation", {
   },
 
   members: {
+    __bookACallInfo: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -58,6 +60,7 @@ qx.Class.define("osparc.support.Conversation", {
           this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
           this.getChildControl("share-project-layout").add(control);
           this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
+          control.addListener("tap", () => this.__shareProjectWithSupport(control.getValue()), this);
           break;
       }
       return control || this.base(arguments, id);
@@ -81,23 +84,27 @@ qx.Class.define("osparc.support.Conversation", {
           }
           osparc.store.ConversationsSupport.getInstance().postConversation(extraContext)
             .then(data => {
-              let prePostMessagePromise = new Promise((resolve) => resolve());
-              let isBookACall = false;
-              // make these checks first, setConversation will reload messages
-              if (
-                this._messages.length === 1 &&
-                this._messages[0]["systemMessageType"] &&
-                this._messages[0]["systemMessageType"] === osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL
-              ) {
-                isBookACall = true;
-              }
+              // clone first, it will be reset when setting the conversation
+              const bookACallInfo = this.__bookACallInfo ? Object.assign({}, this.__bookACallInfo) : null;
               const newConversation = new osparc.data.model.Conversation(data);
               this.setConversation(newConversation);
-              if (isBookACall) {
+              let prePostMessagePromise = new Promise((resolve) => resolve());
+              if (bookACallInfo) {
                 // add a first message
-                prePostMessagePromise = this.__postMessage("Book a Call");
+                let msg = "Book a Call";
+                if (bookACallInfo) {
+                  msg += `\n- Topic: ${bookACallInfo["topic"]}`;
+                  if ("extraInfo" in bookACallInfo) {
+                    msg += `\n- Extra Info: ${bookACallInfo["extraInfo"]}`;
+                  }
+                }
+                prePostMessagePromise = this.__postMessage(msg);
                 // rename the conversation
                 newConversation.renameConversation("Book a Call");
+                // share project if needed
+                if (bookACallInfo["share-project"] && currentStudy) {
+                  this.__shareProjectWithSupport(true);
+                }
               }
               prePostMessagePromise
                 .then(() => {
@@ -112,10 +119,18 @@ qx.Class.define("osparc.support.Conversation", {
       });
     },
 
+    // overridden
+    clearAllMessages: function() {
+      this.base(arguments);
+
+      this.__bookACallInfo = null;
+    },
+
     _applyConversation: function(conversation) {
       this.base(arguments, conversation);
 
-      this.__populateShareProjectCheckbox();
+      this.__bookACallInfo = null;
+      this.__evaluateShareProject();
     },
 
     __postMessage: function(content) {
@@ -123,28 +138,29 @@ qx.Class.define("osparc.support.Conversation", {
       return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
     },
 
-    __populateShareProjectCheckbox: function() {
-      const conversation = this.getConversation();
-
-      const shareProjectCB = this.getChildControl("share-project-checkbox");
+    __evaluateShareProject: function() {
       const shareProjectLayout = this.getChildControl("share-project-layout");
-      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
-      let showCB = false;
-      let enabledCB = false;
-      if (conversation === null && currentStudy) {
-        // initiating conversation
-        showCB = true;
-        enabledCB = true;
-      } else if (conversation) {
-        // it was already set
-        showCB = conversation.getContextProjectId();
-        enabledCB = conversation.amIOwner();
+      let showLayout = false;
+      let enabledLayout = false;
+      const conversation = this.getConversation();
+      if (conversation) {
+        showLayout = Boolean(conversation.getContextProjectId());
+        enabledLayout = conversation.amIOwner();
       }
       shareProjectLayout.set({
-        visibility: showCB ? "visible" : "excluded",
-        enabled: enabledCB,
+        visibility: showLayout ? "visible" : "excluded",
+        enabled: enabledLayout,
       });
 
+      if (showLayout) {
+        this.__populateShareProjectCB();
+        const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+        currentStudy.addListener("changeAccessRights", () => this.__populateShareProjectCB(), this);
+      }
+    },
+
+    __populateShareProjectCB: function() {
+      const conversation = this.getConversation();
       if (conversation && conversation.getContextProjectId()) {
         const projectId = conversation.getContextProjectId();
         osparc.store.Study.getInstance().getOne(projectId)
@@ -157,17 +173,13 @@ qx.Class.define("osparc.support.Conversation", {
             } else {
               isAlreadyShared = false;
             }
+            const shareProjectCB = this.getChildControl("share-project-checkbox");
             shareProjectCB.setValue(isAlreadyShared);
-            shareProjectCB.removeListener("changeValue", this.__shareProjectWithSupport, this);
-            if (showCB) {
-              shareProjectCB.addListener("changeValue", this.__shareProjectWithSupport, this);
-            }
           });
       }
     },
 
-    __shareProjectWithSupport: function(e) {
-      const share = e.getData();
+    __shareProjectWithSupport: function(share) {
       const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
       const projectId = this.getConversation().getContextProjectId();
       osparc.store.Study.getInstance().getOne(projectId)
@@ -186,15 +198,6 @@ qx.Class.define("osparc.support.Conversation", {
     addSystemMessage: function(type) {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
 
-      const now = new Date();
-      const systemMessage = {
-        "conversationId": null,
-        "created": now.toISOString(),
-        "messageId": `system-${now.getTime()}`,
-        "modified": now.toISOString(),
-        "type": "MESSAGE",
-        "userGroupId": "system",
-      };
       let msg = null;
       const greet = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",\n";
       switch (type) {
@@ -212,10 +215,22 @@ qx.Class.define("osparc.support.Conversation", {
           break;
       }
       if (msg) {
-        systemMessage["content"] = msg;
-        systemMessage["systemMessageType"] = type;
+        const now = new Date();
+        const systemMessage = {
+          "conversationId": null,
+          "content": msg,
+          "created": now.toISOString(),
+          "messageId": `system-${now.getTime()}`,
+          "modified": now.toISOString(),
+          "type": "MESSAGE",
+          "userGroupId": "system",
+        };
         this.addMessage(systemMessage);
       }
+    },
+
+    addBookACallInfo: function(bookACallInfo) {
+      this.__bookACallInfo = bookACallInfo;
     },
   }
 });
