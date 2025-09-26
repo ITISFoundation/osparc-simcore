@@ -279,10 +279,10 @@ async def test_updatable_component(
     expected_callbacks_count: NonNegativeInt,
     layout_manager: LayoutManager,
 ):
-    def _index_layout() -> None:
+    def _index_corpus() -> None:
         PersonComponent(person).display()
 
-    layout_manager.set(_index_layout)
+    layout_manager.set(_index_corpus)
 
     await async_page.goto(f"{server_host_port}{mount_path}")
     print("✅ index page loaded")
