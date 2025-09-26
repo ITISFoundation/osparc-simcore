@@ -49,7 +49,11 @@ class RenderOnPropertyTypeChange(BaseUpdatableDisplayModel):
                 "age": 30,
                 "companion": {"name": "Fluffy", "species": "cat"},
             },
-            {"age": 30, "companion": {"name": "Fido", "species": "dog"}},
+            {
+                "name": "Alice",
+                "age": 30,
+                "companion": {"name": "Fido", "species": "dog"},
+            },
             {
                 "name": "Alice",
                 "age": 30,
@@ -87,7 +91,11 @@ class RenderOnPropertyTypeChange(BaseUpdatableDisplayModel):
                 "age": 30,
                 "companion": {"name": "Fluffy", "species": "cat"},
             },
-            {"age": 31, "companion": {"name": "Fido", "species": "dog"}},
+            {
+                "name": "Alice",
+                "age": 31,
+                "companion": {"name": "Fido", "species": "dog"},
+            },
             {
                 "name": "Alice",
                 "age": 31,
@@ -125,7 +133,7 @@ class RenderOnPropertyTypeChange(BaseUpdatableDisplayModel):
                 "age": 30,
                 "companion": {"name": "Fluffy", "species": "cat"},
             },
-            {"age": 31, "companion": {"name": "Charlie", "age": 25}},
+            {"name": "Alice", "age": 31, "companion": {"name": "Charlie", "age": 25}},
             {"name": "Alice", "age": 31, "companion": {"name": "Charlie", "age": 25}},
             {"companion": 1},
             {},
@@ -147,16 +155,16 @@ def test_base_updatable_display_model(
     subscribed_on_type_changed: dict[str, Mock] = {}
     for attribute in on_type_change:
         mock = Mock()
-        person.on_type_change("companion", mock)
+        person.on_type_change(attribute, mock)
         subscribed_on_type_changed[attribute] = mock
 
     subscribed_on_value_change: dict[str, Mock] = {}
     for attribute in on_value_change:
         mock = Mock()
-        person.on_value_change("companion", mock)
+        person.on_value_change(attribute, mock)
         subscribed_on_value_change[attribute] = mock
 
-    person.update(update_dict)
+    person.update(TypeAdapter(class_).validate_python(update_dict))
     assert person.model_dump() == expected_dict
 
     for attribute, mock in subscribed_on_type_changed.items():
