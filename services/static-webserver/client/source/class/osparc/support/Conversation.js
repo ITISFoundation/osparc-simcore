@@ -100,6 +100,10 @@ qx.Class.define("osparc.support.Conversation", {
                 prePostMessagePromise = this.__postMessage(msg);
                 // rename the conversation
                 newConversation.renameConversation("Book a Call");
+                // share project if needed
+                if (bookACallInfo["share-project"] && currentStudy) {
+                  this.__shareProjectWithSupport(true);
+                }
               }
               prePostMessagePromise
                 .then(() => {
@@ -168,16 +172,15 @@ qx.Class.define("osparc.support.Conversation", {
               isAlreadyShared = false;
             }
             shareProjectCB.setValue(isAlreadyShared);
-            shareProjectCB.removeListener("changeValue", this.__shareProjectWithSupport, this);
+            shareProjectCB.removeListener("changeValue", e => this.__shareProjectWithSupport(e.getData()), this);
             if (showCB) {
-              shareProjectCB.addListener("changeValue", this.__shareProjectWithSupport, this);
+              shareProjectCB.addListener("changeValue", e => this.__shareProjectWithSupport(e.getData()), this);
             }
           });
       }
     },
 
-    __shareProjectWithSupport: function(e) {
-      const share = e.getData();
+    __shareProjectWithSupport: function(share) {
       const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
       const projectId = this.getConversation().getContextProjectId();
       osparc.store.Study.getInstance().getOne(projectId)
