@@ -36,8 +36,8 @@ async def get_project_wallet(app, project_id: ProjectID) -> WalletGet | None:
     return wallet
 
 
-async def check_project_financial_status(
-    app, *, project_id: ProjectID, product_name: ProductName
+async def check_project_financial_status_and_wallet_access(
+    app, *, project_id: ProjectID, user_id: UserID, product_name: ProductName
 ):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
@@ -45,6 +45,14 @@ async def check_project_financial_status(
     rpc_client = get_rabbitmq_rpc_client(app)
 
     if current_project_wallet:
+        # ensure the wallet can be used by the user
+        await wallets_service.get_wallet_by_user(
+            app,
+            user_id=user_id,
+            wallet_id=current_project_wallet.wallet_id,
+            product_name=product_name,
+        )
+
         # Do not allow to open project if the project connected wallet is in DEBT!
         project_wallet_credits_in_debt = (
             await credit_transactions.get_project_wallet_total_credits(

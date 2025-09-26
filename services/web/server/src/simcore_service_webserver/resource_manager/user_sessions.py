@@ -2,7 +2,6 @@ import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from functools import cached_property
 from typing import Final
 
 from aiohttp import web
@@ -64,7 +63,7 @@ class UserSessionResourcesRegistry:
     def _registry(self) -> RedisResourceRegistry:
         return get_registry(self.app)
 
-    @cached_property
+    @property
     def resource_key(self) -> UserSession:
         return UserSession(
             user_id=self.user_id,
@@ -148,8 +147,11 @@ class UserSessionResourcesRegistry:
             msg=f"{self.user_id=} finding all {key} from registry",
             extra=get_log_record_extra(user_id=self.user_id),
         ):
-            return await get_registry(self.app).find_resources(
-                UserSession(user_id=self.user_id, client_session_id="*"), key
+            return await self._registry.find_resources(
+                UserSession(
+                    user_id=self.user_id, client_session_id="*"
+                ),  #  <-- this one checks for all user tabs
+                key,
             )
 
     async def find(self, resource_name: str) -> list[str]:
@@ -161,7 +163,10 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        return await self._registry.find_resources(self.resource_key, resource_name)
+        return await self._registry.find_resources(
+            self.resource_key,
+            resource_name,  # <-- when initialized with specific tab (client_session_id), checks only that tab otherwise all tabs
+        )
 
     async def add(self, key: str, value: str) -> None:
         _logger.debug(
