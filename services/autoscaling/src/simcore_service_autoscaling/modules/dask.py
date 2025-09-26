@@ -40,7 +40,7 @@ async def _wrap_client_async_routine(
 
 
 _DASK_SCHEDULER_CONNECT_TIMEOUT_S: Final[int] = 5
-_DASK_WORKER_THREAD_RESOURCE_NAME: Final[str] = "threads"
+DASK_WORKER_THREAD_RESOURCE_NAME: Final[str] = "threads"
 
 
 @contextlib.asynccontextmanager
@@ -330,7 +330,7 @@ async def try_retire_nodes(
         )
 
 
-async def add_instance_generic_resources(
+def add_instance_generic_resources(
     settings: DaskMonitoringSettings, instance: EC2InstanceData
 ) -> None:
     instance_threads = round(instance.resources.cpus)
@@ -339,6 +339,6 @@ async def add_instance_generic_resources(
         instance_threads = settings.DASK_NTHREADS
     if settings.DASK_NTHREADS_MULTIPLIER > 1:
         instance_threads = instance_threads * settings.DASK_NTHREADS_MULTIPLIER
-    instance.resources.generic_resources[_DASK_WORKER_THREAD_RESOURCE_NAME] = (
+    instance.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] = (
         instance_threads
     )
