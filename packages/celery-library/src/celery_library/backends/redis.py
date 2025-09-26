@@ -24,8 +24,8 @@ _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 _logger = logging.getLogger(__name__)
 
 
-def _build_key(task_id: TaskKey) -> str:
-    return _CELERY_TASK_INFO_PREFIX + task_id
+def _build_key(task_key: TaskKey) -> str:
+    return _CELERY_TASK_INFO_PREFIX + task_key
 
 
 class RedisTaskInfoStore:
@@ -34,20 +34,20 @@ class RedisTaskInfoStore:
 
     async def create_task(
         self,
-        task_id: TaskKey,
+        task_key: TaskKey,
         execution_metadata: ExecutionMetadata,
         expiry: timedelta,
     ) -> None:
-        task_key = _build_key(task_id)
+        redis_key = _build_key(task_key)
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hset(
-                name=task_key,
+                name=redis_key,
                 key=_CELERY_TASK_METADATA_KEY,
                 value=execution_metadata.model_dump_json(),
             )
         )
         await self._redis_client_sdk.redis.expire(
-            task_key,
+            redis_key,
             expiry,
         )
 

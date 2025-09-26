@@ -184,7 +184,7 @@ class Task(BaseModel):
 class TaskInfoStore(Protocol):
     async def create_task(
         self,
-        task_id: TaskKey,
+        task_key: TaskKey,
         execution_metadata: ExecutionMetadata,
         expiry: datetime.timedelta,
     ) -> None: ...
