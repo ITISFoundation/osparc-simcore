@@ -91,7 +91,6 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
 
-        # Check if projects wallet is not in debt
         await projects_wallets_service.check_project_financial_status_and_wallet_access(
             request.app,
             project_id=path_params.project_id,
