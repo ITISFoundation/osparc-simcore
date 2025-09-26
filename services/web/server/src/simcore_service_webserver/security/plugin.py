@@ -8,11 +8,12 @@ Based on https://aiohttp-security.readthedocs.io/en/latest/
 """
 
 import logging
+from typing import Final
 
 import aiohttp_security  # type: ignore[import-untyped]
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..db.plugin import setup_db
 from ..session.plugin import setup_session
 from ._authz_access_model import RoleBasedAccessModel
@@ -22,8 +23,10 @@ from ._identity_policy import SessionIdentityPolicy
 
 _logger = logging.getLogger(__name__)
 
+APP_SECURITY_CLIENT_KEY: Final = web.AppKey("APP_SECURITY_CLIENT_KEY", object)
 
-@app_module_setup(
+
+@app_setup_func(
     __name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=_logger
 )
 def setup_security(app: web.Application):

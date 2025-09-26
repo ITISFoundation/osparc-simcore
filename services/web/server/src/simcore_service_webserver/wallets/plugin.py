@@ -1,12 +1,11 @@
-""" tags management subsystem
+"""tags management subsystem"""
 
-"""
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
+from ..constants import APP_SETTINGS_KEY
 from ..payments.plugin import setup_payments
 from . import _groups_handlers, _handlers, _payments_handlers
 from ._events import setup_wallets_events
@@ -14,7 +13,7 @@ from ._events import setup_wallets_events
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_WALLETS",

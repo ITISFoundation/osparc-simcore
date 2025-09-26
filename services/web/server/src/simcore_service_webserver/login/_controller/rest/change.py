@@ -3,8 +3,8 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG

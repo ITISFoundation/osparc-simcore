@@ -58,6 +58,7 @@ services:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       DASK_NPROCS: ${DASK_NPROCS}
       DASK_NTHREADS: ${DASK_NTHREADS}
+      DASK_NTHREADS_MULTIPLIER: ${DASK_NTHREADS_MULTIPLIER}
       DASK_SCHEDULER_URL: tls://dask-scheduler:8786
       DASK_SIDECAR_NON_USABLE_RAM: 0
       DASK_SIDECAR_NUM_NON_USABLE_CPUS: 0
@@ -164,7 +165,7 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "0.5"
+          cpus: "1.0"
 
   prometheus:
     image: prom/prometheus:v2.51.0@sha256:5ccad477d0057e62a7cd1981ffcc43785ac10c5a35522dc207466ff7e7ec845f
