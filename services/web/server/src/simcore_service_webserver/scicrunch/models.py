@@ -6,7 +6,7 @@ import logging
 import re
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,6 @@ class ResearchResource(BaseModel):
     )
     name: str
     description: str
-    url: HttpUrl | None = None
 
     @field_validator("rrid", mode="before")
     @classmethod

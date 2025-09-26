@@ -122,13 +122,13 @@ class GroupClassifiersService:
         service = ScicrunchResourcesService(self.app)
 
         flat_tree_view: dict[TreePath, ClassifierItem] = {}
-        for resource in await service.list_resources(include_url=True):
+        for resource in await service.list_resources():
             try:
                 validated_item = ClassifierItem(
                     classifier=resource.rrid,
                     display_name=resource.name.title(),
                     short_description=resource.description,
-                    url=resource.url,
+                    url=service.get_resolver_web_url(resource.rrid),
                 )
 
                 node = TypeAdapter(TreePath).validate_python(

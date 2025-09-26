@@ -6,7 +6,7 @@ import logging
 
 from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
-from pydantic import ValidationError
+from pydantic import HttpUrl, ValidationError
 
 from ._repository import ScicrunchResourcesRepository
 from .models import ResearchResource, ResearchResourceAtdB, ResourceHit
@@ -23,7 +23,7 @@ class ScicrunchResourcesService:
         self._repo = ScicrunchResourcesRepository.create_from_app(app)
         self._scicrunch = SciCrunch.get_instance(self.app)
 
-    async def list_resources(self, include_url: bool = False) -> list[ResearchResource]:
+    async def list_resources(self) -> list[ResearchResource]:
         """List all research resources as domain models."""
         rows = await self._repo.list_all_resources()
         if not rows:
@@ -33,13 +33,6 @@ class ScicrunchResourcesService:
         for row in rows:
             try:
                 resource_data = dict(row)
-
-                # Add resolver URL if requested
-                if include_url:
-                    resource_data["url"] = self._scicrunch.get_resolver_web_url(
-                        row.rrid
-                    )
-
                 resource = ResearchResource.model_validate(resource_data)
                 resources.append(resource)
             except ValidationError as err:
@@ -53,6 +46,10 @@ class ScicrunchResourcesService:
                 continue
 
         return resources
+
+    def get_resolver_web_url(self, rrid: str) -> HttpUrl:
+        """Get the resolver web URL for a given RRID."""
+        return self._scicrunch.get_resolver_web_url(rrid)
 
     async def get_resource_atdb(self, rrid: str) -> ResearchResourceAtdB | None:
         """Get resource with all database fields."""
