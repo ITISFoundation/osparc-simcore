@@ -33,9 +33,9 @@ def _get_data_with_task_name(task_id: str, task_name: str) -> dict:
     return {
         "task_id": task_id,
         "task_name": task_name,
-        "status_href": "",
-        "result_href": "",
-        "abort_href": "",
+        "status_href": "http://status",
+        "result_href": "http://result",
+        "abort_href": "http://abort",
     }
 
 
