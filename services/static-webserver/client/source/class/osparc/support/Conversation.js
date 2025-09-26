@@ -83,29 +83,21 @@ qx.Class.define("osparc.support.Conversation", {
           }
           osparc.store.ConversationsSupport.getInstance().postConversation(extraContext)
             .then(data => {
-              let prePostMessagePromise = new Promise((resolve) => resolve());
-              let isBookACall = false;
-              // make these checks first, setConversation will reload messages
-              if (
-                this._messages.length === 1 &&
-                this._messages[0]["systemMessageType"] &&
-                this._messages[0]["systemMessageType"] === osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL
-              ) {
-                isBookACall = true;
-              }
+              // clone first, it will be reset when setting the conversation
+              const bookACallInfo = this.__bookACallInfo ? Object.assign({}, this.__bookACallInfo) : null;
               const newConversation = new osparc.data.model.Conversation(data);
               this.setConversation(newConversation);
-              if (isBookACall) {
+              let prePostMessagePromise = new Promise((resolve) => resolve());
+              if (bookACallInfo) {
                 // add a first message
                 let msg = "Book a Call";
-                if (this.__bookACallInfo) {
-                  msg += `\n- Topic: ${this.__bookACallInfo["topic"]}`;
-                  if ("extraInfo" in this.__bookACallInfo) {
-                    msg += `\n- Extra Info: ${this.__bookACallInfo["extraInfo"]}`;
+                if (bookACallInfo) {
+                  msg += `\n- Topic: ${bookACallInfo["topic"]}`;
+                  if ("extraInfo" in bookACallInfo) {
+                    msg += `\n- Extra Info: ${bookACallInfo["extraInfo"]}`;
                   }
                 }
                 prePostMessagePromise = this.__postMessage(msg);
-                this.__bookACallInfo = null;
                 // rename the conversation
                 newConversation.renameConversation("Book a Call");
               }
@@ -125,6 +117,7 @@ qx.Class.define("osparc.support.Conversation", {
     _applyConversation: function(conversation) {
       this.base(arguments, conversation);
 
+      this.__bookACallInfo = null;
       this.__populateShareProjectCheckbox();
     },
 
@@ -196,15 +189,6 @@ qx.Class.define("osparc.support.Conversation", {
     addSystemMessage: function(type) {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
 
-      const now = new Date();
-      const systemMessage = {
-        "conversationId": null,
-        "created": now.toISOString(),
-        "messageId": `system-${now.getTime()}`,
-        "modified": now.toISOString(),
-        "type": "MESSAGE",
-        "userGroupId": "system",
-      };
       let msg = null;
       const greet = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",\n";
       switch (type) {
@@ -222,8 +206,16 @@ qx.Class.define("osparc.support.Conversation", {
           break;
       }
       if (msg) {
-        systemMessage["content"] = msg;
-        systemMessage["systemMessageType"] = type;
+        const now = new Date();
+        const systemMessage = {
+          "conversationId": null,
+          "content": msg,
+          "created": now.toISOString(),
+          "messageId": `system-${now.getTime()}`,
+          "modified": now.toISOString(),
+          "type": "MESSAGE",
+          "userGroupId": "system",
+        };
         this.addMessage(systemMessage);
       }
     },
