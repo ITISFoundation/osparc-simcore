@@ -90,9 +90,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     __createWalletsList: function(widgetId) {
       const walletsUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 3,
-        backgroundColor: "transparent",
+        appearance: "listing",
         height: null,
         focusable: false
       });

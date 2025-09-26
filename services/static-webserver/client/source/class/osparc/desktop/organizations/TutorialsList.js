@@ -63,8 +63,7 @@ qx.Class.define("osparc.desktop.organizations.TutorialsList", {
 
     __getTutorialsList: function() {
       const templatesUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 3
+        appearance: "listing",
       });
 
       const templatesModel = this.__tutorialsModel = new qx.data.Array();
