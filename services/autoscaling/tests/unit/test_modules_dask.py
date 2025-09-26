@@ -36,6 +36,7 @@ from simcore_service_autoscaling.modules.dask import (
     DaskTask,
     _scheduler_client,
     add_instance_generic_resources,
+    compute_cluster_total_resources,
     get_worker_still_has_results_in_memory,
     get_worker_used_resources,
     is_worker_connected,
@@ -373,6 +374,19 @@ async def test_worker_used_resources(
     assert (
         await get_worker_used_resources(
             scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
+        )
+        == Resources.create_as_empty()
+    )
+
+
+async def test_compute_cluster_total_resources(
+    scheduler_url: AnyUrl,
+    scheduler_authentication: ClusterAuthentication,
+):
+    # asking for resources of empty cluster returns empty resources
+    assert (
+        await compute_cluster_total_resources(
+            scheduler_url, scheduler_authentication, []
         )
         == Resources.create_as_empty()
     )
