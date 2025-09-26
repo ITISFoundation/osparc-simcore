@@ -29,6 +29,7 @@ _CELERY_TASK_STREAM_DEFAULT_ID: Final[str] = "0-0"
 _CELERY_TASK_STREAM_BLOCK_TIMEOUT: Final[int] = 3 * 1000  # milliseconds
 _CELERY_TASK_STREAM_COUNT: Final[int] = 10
 _CELERY_TASK_STREAM_EXPIRE_DEFAULT: Final[timedelta] = timedelta(minutes=5)
+_CELERY_TASK_STREAM_MAXLEN: Final[int] = 1000
 
 _logger = logging.getLogger(__name__)
 
@@ -158,6 +159,8 @@ class RedisTaskInfoStore:
         await self._redis_client_sdk.redis.xadd(
             stream_key,
             {"event": event.model_dump_json()},
+            maxlen=_CELERY_TASK_STREAM_MAXLEN,
+            approximate=True,
         )
 
     async def consume_task_events(
