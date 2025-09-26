@@ -152,7 +152,7 @@ def to_camel_recursive(data: dict[str, Any]) -> dict[str, Any]:
 
 def ensure_pattern_has_enough_characters(
     min_non_wildcard_chars: int = MIN_NON_WILDCARD_CHARS,
-    wildcard_chars: set[str] | None = None,
+    wildcard_chars: list[str] | None = None,
 ) -> BeforeValidator:
     if wildcard_chars is None:
         wildcard_chars = WILDCARD_CHARS
