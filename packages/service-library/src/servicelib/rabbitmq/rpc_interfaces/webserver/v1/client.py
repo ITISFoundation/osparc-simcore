@@ -4,6 +4,7 @@ from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.rpc.webserver import WEBSERVER_RPC_NAMESPACE
 from servicelib.rabbitmq import RabbitMQRPCClient
 
+from .api_keys import ApiKeysRpcApi
 from .functions import FunctionsRpcApi
 from .licenses import LicensesRpcApi
 from .projects import ProjectsRpcApi
@@ -24,6 +25,7 @@ class WebServerRpcClient:
         self.projects = ProjectsRpcApi(rpc_client, namespace)
         self.licenses = LicensesRpcApi(rpc_client, namespace)
         self.functions = FunctionsRpcApi(rpc_client, namespace)
+        self.api_keys = ApiKeysRpcApi(rpc_client, namespace)
 
     @property
     def namespace(self) -> RPCNamespace:

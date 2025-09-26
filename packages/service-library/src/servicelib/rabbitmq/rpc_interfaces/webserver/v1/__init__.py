@@ -3,6 +3,7 @@
 Provides a class-based, modular RPC client for webserver services.
 """
 
+from .api_keys import ApiKeysRpcApi
 from .client import WebServerRpcClient
 from .functions import FunctionsRpcApi
 from .licenses import LicensesRpcApi
@@ -13,4 +14,5 @@ __all__: tuple[str, ...] = (
     "ProjectsRpcApi",
     "LicensesRpcApi",
     "FunctionsRpcApi",
+    "ApiKeysRpcApi",
 )
