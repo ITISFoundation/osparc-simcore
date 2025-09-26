@@ -28,7 +28,7 @@ from ...login.decorators import login_required
 from ...notifications import project_logs
 from ...products import products_web
 from ...products.models import Product
-from ...resource_manager.user_sessions import managed_resource
+from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ...security.decorators import permission_required
 from ...socketio.server import get_socket_server
 from ...users import users_service
@@ -91,10 +91,16 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
 
+        # Check if projects wallet is not in debt
         await projects_wallets_service.check_project_financial_status(
             request.app,
             project_id=path_params.project_id,
             product_name=req_ctx.product_name,
+        )
+        # Check if user has access to a project wallet (Useful for simultaneous access to project by different users)
+        project_wallet = await projects_wallets_service.get_project_wallet(
+            request.app,
+            project_id=path_params.project_id,
         )
 
         product: Product = products_web.get_current_product(request)
@@ -220,7 +226,17 @@ async def close_project(request: web.Request) -> web.Response:
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
     )
-    await project_logs.unsubscribe(request.app, path_params.project_id)
+
+    with managed_resource(
+        req_ctx.user_id, client_session_id, request.app
+    ) as user_session:
+        all_user_sessions_with_project = await user_session.find_users_of_resource(
+            request.app, key=PROJECT_ID_KEY, value=f"{path_params.project_id}"
+        )
+        # Only unsubscribe from logs if there is no other occurrence of the open project
+        if len(all_user_sessions_with_project) == 0:
+            await project_logs.unsubscribe(request.app, path_params.project_id)
+
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
