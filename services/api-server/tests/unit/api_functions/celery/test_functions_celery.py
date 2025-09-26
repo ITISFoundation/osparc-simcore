@@ -109,7 +109,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
 
     async def run_function(
         task: Task,
-        task_id: TaskKey,
+        task_key: TaskKey,
         *,
         user_identity: Identity,
         function: RegisteredFunction,
