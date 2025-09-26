@@ -136,7 +136,7 @@ class Resources(BaseModel, frozen=True):
         """Inverse of as_flat_dict"""
         generic_resources = {k: v for k, v in data.items() if k not in {"cpus", "ram"}}
         return cls(
-            cpus=data.get("cpus", 0),
+            cpus=float(data.get("cpus", 0)),
             ram=ByteSize(data.get("ram", 0)),
             generic_resources=generic_resources,
         )
