@@ -92,15 +92,11 @@ async def open_project(request: web.Request) -> web.Response:
         )
 
         # Check if projects wallet is not in debt
-        await projects_wallets_service.check_project_financial_status(
+        await projects_wallets_service.check_project_financial_status_and_wallet_access(
             request.app,
             project_id=path_params.project_id,
+            user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
-        )
-        # Check if user has access to a project wallet (Useful for simultaneous access to project by different users)
-        project_wallet = await projects_wallets_service.get_project_wallet(
-            request.app,
-            project_id=path_params.project_id,
         )
 
         product: Product = products_web.get_current_product(request)
