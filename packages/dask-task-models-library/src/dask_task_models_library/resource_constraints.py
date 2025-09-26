@@ -1,9 +1,11 @@
-from typing import Literal, TypedDict
+from typing import Final, Literal, TypedDict
 
 from .constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 
+DASK_WORKER_THREAD_RESOURCE_NAME: Final[str] = "threads"
 
-class DaskTaskResources(TypedDict):
+
+class DaskTaskResources(TypedDict, total=False):
     CPU: float
     RAM: int  # in bytes
     # threads is a constant of 1 (enforced by static type checkers via Literal)
