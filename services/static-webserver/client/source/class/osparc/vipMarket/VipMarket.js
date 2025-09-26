@@ -112,10 +112,8 @@ qx.Class.define("osparc.vipMarket.VipMarket", {
           break;
         case "models-list":
           control = new qx.ui.form.List().set({
-            decorator: "no-border",
-            spacing: 5,
+            appearance: "listing",
             width: 250,
-            backgroundColor: "transparent",
           });
           this.getChildControl("left-side").add(control, {
             flex: 1
