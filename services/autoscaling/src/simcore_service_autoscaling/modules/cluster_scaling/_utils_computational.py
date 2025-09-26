@@ -3,7 +3,7 @@ from typing import Final
 
 from aws_library.ec2 import Resources
 from dask_task_models_library.resource_constraints import (
-    DASK_WORKER_THREAD_RESOURCE_NAME,
+    DaskTaskResources,
     get_ec2_instance_type_from_resources,
 )
 from pydantic import ByteSize
@@ -15,13 +15,32 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_MAX_CPU: Final[float] = 1
 _DEFAULT_MAX_RAM: Final[int] = 1024
 
+_DASK_TO_RESOURCE_NAME_MAPPING: Final[dict[str, str]] = {
+    "CPU": "cpus",
+    "RAM": "ram",
+}
+_DEFAULT_DASK_RESOURCES: Final[DaskTaskResources] = DaskTaskResources(
+    CPU=_DEFAULT_MAX_CPU, RAM=ByteSize(_DEFAULT_MAX_RAM), threads=1
+)
+
 
 def resources_from_dask_task(task: DaskTask) -> Resources:
-    return Resources(
-        cpus=task.required_resources.get("CPU", _DEFAULT_MAX_CPU),
-        ram=ByteSize(task.required_resources.get("RAM", _DEFAULT_MAX_RAM)),
-        generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
+    task_resources = (
+        _DEFAULT_DASK_RESOURCES | task.required_resources
+    )  # merge with defaults
+
+    return Resources.from_flat_dict(
+        {_DASK_TO_RESOURCE_NAME_MAPPING.get(k, k): v for k, v in task_resources.items()}
     )
+    #     ({
+    #         "cpus": task.required_resources.get("CPU", _DEFAULT_MAX_CPU),
+    #         "ram": task.required_resources.get("RAM", _DEFAULT_MAX_RAM),
+    #     }
+    # )
+    # return Resources(
+    #     cpus=task.required_resources.get("CPU", _DEFAULT_MAX_CPU),
+    #     ram=ByteSize(task.required_resources.get("RAM", _DEFAULT_MAX_RAM)),
+    # )
 
 
 def get_task_instance_restriction(task: DaskTask) -> str | None:
