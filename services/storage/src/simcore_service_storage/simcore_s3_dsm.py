@@ -1023,14 +1023,14 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     if (
                         last_modified_from
                         and s3_obj.last_modified
-                        and s3_obj.last_modified >= last_modified_from
+                        and s3_obj.last_modified < last_modified_from
                     ):
                         continue
 
                     if (
                         last_modified_until
                         and s3_obj.last_modified
-                        and s3_obj.last_modified <= last_modified_until
+                        and s3_obj.last_modified > last_modified_until
                     ):
                         continue
 
