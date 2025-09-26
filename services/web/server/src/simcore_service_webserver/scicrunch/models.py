@@ -1,12 +1,12 @@
 """
-   Domain models at every interface: scicrunch API, pg database and webserver API
+Domain models at every interface: scicrunch API, pg database and webserver API
 """
 
 import logging
 import re
 from datetime import datetime
 
-from pydantic import field_validator, ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -62,11 +62,13 @@ class ResearchResource(BaseModel):
     )
     name: str
     description: str
+    url: HttpUrl | None = None
 
     @field_validator("rrid", mode="before")
     @classmethod
-    def format_rrid(cls, v):
+    def _format_rrid(cls, v):
         return normalize_rrid_tags(v, with_prefix=True)
+
     model_config = ConfigDict(from_attributes=True, str_strip_whitespace=True)
 
 
