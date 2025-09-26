@@ -3,54 +3,91 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 import pytest
-import sqlalchemy as sa
-from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
-from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
-from simcore_service_webserver.groups._classifiers_service import (
+from pytest_simcore.helpers.faker_factories import random_group_classifier
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
+from simcore_postgres_database.models.classifiers import group_classifiers
+from simcore_service_webserver.groups._classifiers_repository import (
     GroupClassifierRepository,
 )
-from sqlalchemy.sql import text
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
-def inject_tables(postgres_db: sa.engine.Engine):
-    stmt = text(
-        """\
-    INSERT INTO "group_classifiers" ("id", "bundle", "created", "modified", "gid", "uses_scicrunch") VALUES
-    (2,	'{"vcs_ref": "asdfasdf", "vcs_url": "https://foo.classifiers.git", "build_date": "2021-01-20T15:19:30Z", "classifiers": {"project::dak": {"url": null, "logo": null, "aliases": [], "related": [], "markdown": "", "released": null, "classifier": "project::dak", "created_by": "Nicolas Chavannes", "github_url": null, "display_name": "DAK", "wikipedia_url": null, "short_description": null}, "organization::zmt": {"url": "https://zmt.swiss/", "logo": null, "aliases": ["Zurich MedTech AG"], "related": [], "markdown": "Zurich MedTech AG (ZMT) offers tools and best practices for targeted life sciences applications to simulate, analyze, and predict complex and dynamic biological processes and interactions. ZMT is a member of Zurich43", "released": null, "classifier": "organization::zmt", "created_by": "crespo", "github_url": null, "display_name": "ZMT", "wikipedia_url": null, "short_description": "ZMT is a member of Zurich43"}}, "collections": {"jupyterlab-math": {"items": ["crespo/osparc-demo"], "markdown": "Curated collection of repositories with examples of notebooks to run in jupyter-python-octave-math service", "created_by": "crespo", "display_name": "jupyterlab-math"}}}',	'2021-03-04 23:17:43.373258',	'2021-03-04 23:17:43.373258',	1,	'0');
-    """
+async def group_classifier_in_db(asyncpg_engine: AsyncEngine):
+    """Pre-populate group_classifiers table with test data."""
+    data = random_group_classifier(
+        gid=1,
     )
-    with postgres_db.connect() as conn:
-        conn.execute(stmt)
+
+    async with insert_and_get_row_lifespan(
+        asyncpg_engine,
+        table=group_classifiers,
+        values=data,
+        pk_col=group_classifiers.c.id,
+        pk_value=data.get("id"),
+    ) as row:
+        yield row
 
 
 @pytest.fixture
-async def app(postgres_dsn: dict, inject_tables):
-    dsn = DataSourceName(
-        user=postgres_dsn["user"],
-        password=postgres_dsn["password"],
-        database=postgres_dsn["database"],
-        host=postgres_dsn["host"],
-        port=postgres_dsn["port"],
+def group_classifier_repository(
+    asyncpg_engine: AsyncEngine,
+) -> GroupClassifierRepository:
+    """Create GroupClassifierRepository instance."""
+    return GroupClassifierRepository(engine=asyncpg_engine)
+
+
+async def test_get_classifiers_from_bundle_returns_bundle(
+    group_classifier_repository: GroupClassifierRepository,
+    group_classifier_in_db: dict,
+):
+    """Test get_classifiers_from_bundle returns the stored bundle."""
+    # Act
+    bundle = await group_classifier_repository.get_classifiers_from_bundle(
+        gid=group_classifier_in_db["gid"]
     )
 
-    async with create_pg_engine(dsn) as engine:
-        fake_app = {APP_AIOPG_ENGINE_KEY: engine}
-        yield fake_app
+    # Assert
+    assert bundle is not None
+    assert bundle["vcs_ref"] == "asdfasdf"
+    assert bundle["vcs_url"] == "https://foo.classifiers.git"
+    assert "classifiers" in bundle
+    assert "project::dak" in bundle["classifiers"]
+    assert bundle["classifiers"]["project::dak"]["display_name"] == "DAK"
 
 
-async def test_classfiers_from_bundle(app):
-    repo = GroupClassifierRepository.create_from_app(app)
+async def test_group_uses_scicrunch_returns_false(
+    group_classifier_repository: GroupClassifierRepository,
+    group_classifier_in_db: dict,
+):
+    """Test group_uses_scicrunch returns False for non-scicrunch group."""
+    # Act
+    uses_scicrunch = await group_classifier_repository.group_uses_scicrunch(
+        gid=group_classifier_in_db["gid"]
+    )
 
-    assert not await repo.group_uses_scicrunch(gid=1)
+    # Assert
+    assert uses_scicrunch is False
 
-    bundle = await repo.get_classifiers_from_bundle(gid=1)
-    assert bundle
 
-    # Prunes extras and excludes unset and nones
-    assert bundle["classifiers"]["project::dak"] == {
-        "classifier": "project::dak",
-        "display_name": "DAK",
-    }
+async def test_get_classifiers_from_bundle_returns_none_for_missing_gid(
+    group_classifier_repository: GroupClassifierRepository,
+):
+    """Test get_classifiers_from_bundle returns None for non-existent gid."""
+    # Act
+    bundle = await group_classifier_repository.get_classifiers_from_bundle(gid=999999)
+
+    # Assert
+    assert bundle is None
+
+
+async def test_group_uses_scicrunch_returns_false_for_missing_gid(
+    group_classifier_repository: GroupClassifierRepository,
+):
+    """Test group_uses_scicrunch returns False for non-existent gid."""
+    # Act
+    uses_scicrunch = await group_classifier_repository.group_uses_scicrunch(gid=999999)
+
+    # Assert
+    assert uses_scicrunch is False
