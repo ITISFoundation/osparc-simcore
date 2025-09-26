@@ -26,9 +26,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
     layout.setSpacingY(0);
 
     // decorate
-    this.getChildControl("thumbnail").getContentElement().setStyles({
-      "border-radius": "16px"
-    });
+    this.getChildControl("thumbnail").setDecorator("circled");
     this.getChildControl("subtitle").set({
       textColor: "text-disabled",
     });

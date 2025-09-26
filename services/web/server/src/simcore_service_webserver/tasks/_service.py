@@ -17,7 +17,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from servicelib.celery.models import TaskFilter, TaskState, TaskUUID
+from servicelib.celery.models import OwnerMetadata, TaskState, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_catch
 
@@ -26,12 +26,12 @@ _logger = logging.getLogger(__name__)
 
 async def cancel_task(
     task_manager: TaskManager,
-    task_filter: TaskFilter,
+    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ):
     try:
         await task_manager.cancel_task(
-            task_filter=task_filter,
+            owner_metadata=owner_metadata,
             task_uuid=task_uuid,
         )
     except TaskNotFoundError as exc:
@@ -42,18 +42,18 @@ async def cancel_task(
 
 async def get_task_result(
     task_manager: TaskManager,
-    task_filter: TaskFilter,
+    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> AsyncJobResult:
     try:
         _status = await task_manager.get_task_status(
-            task_filter=task_filter,
+            owner_metadata=owner_metadata,
             task_uuid=task_uuid,
         )
         if not _status.is_done:
             raise JobNotDoneError(job_id=task_uuid)
         _result = await task_manager.get_task_result(
-            task_filter=task_filter,
+            owner_metadata=owner_metadata,
             task_uuid=task_uuid,
         )
     except TaskNotFoundError as exc:
@@ -84,12 +84,12 @@ async def get_task_result(
 
 async def get_task_status(
     task_manager: TaskManager,
-    task_filter: TaskFilter,
+    owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> AsyncJobStatus:
     try:
         task_status = await task_manager.get_task_status(
-            task_filter=task_filter,
+            owner_metadata=owner_metadata,
             task_uuid=task_uuid,
         )
     except TaskNotFoundError as exc:
@@ -106,11 +106,11 @@ async def get_task_status(
 
 async def list_tasks(
     task_manager: TaskManager,
-    task_filter: TaskFilter,
+    owner_metadata: OwnerMetadata,
 ) -> list[AsyncJobGet]:
     try:
         tasks = await task_manager.list_tasks(
-            task_filter=task_filter,
+            owner_metadata=owner_metadata,
         )
     except InternalError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc

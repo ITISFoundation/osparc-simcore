@@ -40,14 +40,14 @@ from pydantic import (
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.rest_responses import (
-    create_data_response,
-)
+from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.celery.models import OwnerMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size as remote_compute_path_size,
@@ -59,17 +59,15 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     start_export_data,
     start_search,
 )
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
-from ..models import AuthenticatedRequestContext
+from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ..tasks._exception_handlers import handle_exceptions
-from ..utils import get_job_filter
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
@@ -223,10 +221,13 @@ async def compute_path_size(request: web.Request) -> web.Response:
         rabbitmq_rpc_client,
         location_id=path_params.location_id,
         path=path_params.path,
-        job_filter=get_job_filter(
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
         ),
+        user_id=req_ctx.user_id,
     )
 
     return _create_data_response_from_async_job(request, async_job)
@@ -248,10 +249,13 @@ async def batch_delete_paths(request: web.Request):
         rabbitmq_rpc_client,
         location_id=path_params.location_id,
         paths=body.paths,
-        job_filter=get_job_filter(
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
         ),
+        user_id=req_ctx.user_id,
     )
     return _create_data_response_from_async_job(request, async_job)
 
@@ -516,10 +520,13 @@ async def export_data(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         paths_to_export=export_data_post.paths,
         export_as="path",
-        job_filter=get_job_filter(
-            user_id=_req_ctx.user_id,
-            product_name=_req_ctx.product_name,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            ).model_dump()
         ),
+        user_id=_req_ctx.user_id,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
@@ -551,9 +558,11 @@ async def search(request: web.Request) -> web.Response:
 
     async_job_rpc_get, _ = await start_search(
         rabbitmq_rpc_client,
-        job_filter=get_job_filter(
-            user_id=_req_ctx.user_id,
-            product_name=_req_ctx.product_name,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            ).model_dump()
         ),
         limit=search_body.limit,
         name_pattern=search_body.filters.name_pattern,

@@ -1,12 +1,13 @@
 """
-    computation module is the main entry-point for computational backend
+computation module is the main entry-point for computational backend
 
 """
+
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..diagnostics.plugin import setup_diagnostics
 from ..rabbitmq import setup_rabbitmq
 from ..socketio.plugin import setup_socketio
@@ -19,7 +20,7 @@ from . import (
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_NOTIFICATIONS",

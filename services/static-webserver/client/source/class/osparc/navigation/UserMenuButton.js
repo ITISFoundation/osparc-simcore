@@ -39,9 +39,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     this.getContentElement().setStyles({
       "border-radius": "20px"
     });
-    this.getChildControl("icon").getContentElement().setStyles({
-      "border-radius": "16px"
-    });
+    this.getChildControl("icon").setDecorator("circled");
     osparc.utils.Utils.setIdToWidget(this, "userMenuBtn");
 
     const store = osparc.store.Store.getInstance();

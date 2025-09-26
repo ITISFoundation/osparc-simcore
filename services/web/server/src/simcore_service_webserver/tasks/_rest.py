@@ -28,7 +28,7 @@ from servicelib.aiohttp.rest_responses import (
     create_data_response,
     create_event_stream_response,
 )
-from servicelib.celery.models import TaskEventType, TaskFilter
+from servicelib.celery.models import OwnerMetadata, TaskEventType
 from servicelib.long_running_tasks import lrt_api
 from servicelib.sse.models import SSEEvent, SSEHeaders
 
@@ -36,8 +36,7 @@ from .._meta import API_VTAG
 from ..celery import get_task_manager
 from ..login.decorators import login_required
 from ..long_running_tasks.plugin import webserver_request_context_decorator
-from ..models import AuthenticatedRequestContext
-from ..utils import get_job_filter
+from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from . import _service
 from ._exception_handlers import handle_exceptions
 
@@ -72,11 +71,11 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 
     tasks = await _service.list_tasks(
         task_manager=get_task_manager(request.app),
-        task_filter=TaskFilter.model_validate(
-            get_job_filter(
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
-            ).model_dump(),
+            ).model_dump()
         ),
     )
 
@@ -114,13 +113,14 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
+    task_manager = get_task_manager(request.app)
     task_status = await _service.get_task_status(
-        task_manager=get_task_manager(request.app),
-        task_filter=TaskFilter.model_validate(
-            get_job_filter(
+        task_manager=task_manager,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
-            ).model_dump(),
+            ).model_dump()
         ),
         task_uuid=path_params.task_id,
     )
@@ -148,10 +148,11 @@ async def cancel_async_job(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
+    task_manager = get_task_manager(request.app)
     await _service.cancel_task(
-        task_manager=get_task_manager(request.app),
-        task_filter=TaskFilter.model_validate(
-            get_job_filter(
+        task_manager=task_manager,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
             ).model_dump(),
@@ -172,12 +173,14 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_PathParams, request)
 
-    task_result = await get_task_manager(request.app).get_task_result(
-        task_filter=TaskFilter.model_validate(
-            get_job_filter(
+    task_manager = get_task_manager(request.app)
+    task_result = await _service.get_task_result(
+        task_manager=task_manager,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
-            ).model_dump(),
+            ).model_dump()
         ),
         task_uuid=path_params.task_id,
     )
@@ -201,11 +204,11 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
 
     async def event_generator():
         async for event_id, event in get_task_manager(request.app).consume_task_events(
-            task_filter=TaskFilter.model_validate(
-                get_job_filter(
+            owner_metadata=OwnerMetadata.model_validate(
+                WebServerOwnerMetadata(
                     user_id=_req_ctx.user_id,
                     product_name=_req_ctx.product_name,
-                ).model_dump(),
+                ).model_dump()
             ),
             task_uuid=path_params.task_id,
             last_id=header_params.last_event_id,

@@ -4,7 +4,7 @@
 import logging
 from collections.abc import Callable
 from pprint import pformat
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
@@ -69,6 +69,9 @@ from .wallets.plugin import setup_wallets
 from .workspaces.plugin import setup_workspaces
 
 _logger = logging.getLogger(__name__)
+
+# Define common app keys used across the webserver
+APP_WEBSERVER_SETTINGS_KEY: Final = web.AppKey("APP_WEBSERVER_SETTINGS_KEY", object)
 
 
 def _create_welcome_banner(banner_msg: str) -> Callable:

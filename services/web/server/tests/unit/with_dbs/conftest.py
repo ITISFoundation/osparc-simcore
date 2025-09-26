@@ -53,7 +53,6 @@ from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsy
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
-from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     AsyncJobComposedResult,
@@ -71,7 +70,10 @@ from simcore_postgres_database.utils_products import (
 )
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings_utils import AppConfigDict
-from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
+from simcore_service_webserver.constants import (
+    APP_AIOPG_ENGINE_KEY,
+    INDEX_RESOURCE_NAME,
+)
 from simcore_service_webserver.db.plugin import get_database_engine_legacy
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap

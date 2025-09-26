@@ -1,16 +1,17 @@
-""" Serves client's code
+"""Serves client's code
 
-    - The client-side runs a RIA (Rich Interface Application) so the server does not
-    need to render pages upon request but only serve once the code to the client.
-    - The client application then interacts with the server via a http and/or socket API
-    - The client application is under ``services/static-webserver/client`` and the ``webclient`` service
-    is used to build it.
+- The client-side runs a RIA (Rich Interface Application) so the server does not
+need to render pages upon request but only serve once the code to the client.
+- The client application then interacts with the server via a http and/or socket API
+- The client application is under ``services/static-webserver/client`` and the ``webclient`` service
+is used to build it.
 """
+
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import INDEX_RESOURCE_NAME
 from ..products.plugin import setup_products
 from ._events import create_and_cache_statics_json, create_cached_indexes
@@ -20,7 +21,7 @@ from .settings import StaticWebserverModuleSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STATICWEB", logger=_logger
 )
 def setup_statics(app: web.Application) -> None:

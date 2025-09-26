@@ -4,7 +4,6 @@
 
 import logging
 from collections.abc import AsyncIterator
-from datetime import timedelta
 
 import pytest
 import tenacity
@@ -114,14 +113,6 @@ async def wait_till_redis_responsive(redis_url: URL | str) -> None:
             raise ConnectionError(msg)
     finally:
         await client.aclose(close_connection_pool=True)
-
-
-@pytest.fixture
-def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
-    # lowered to allow CI to properly shutdown RedisClientSDK instances
-    mocker.patch(
-        "servicelib.redis._client.DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=0.25)
-    )
 
 
 @pytest.fixture

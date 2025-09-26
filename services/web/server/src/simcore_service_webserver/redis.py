@@ -1,19 +1,19 @@
 import logging
+from typing import Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._meta import APP_NAME
+from .application_setup import ModuleCategory, app_setup_func
 from .constants import APP_SETTINGS_KEY
 
 _logger = logging.getLogger(__name__)
 
 
-_APP_REDIS_CLIENTS_MANAGER = f"{__name__}.redis_clients_manager"
-
+APP_REDIS_CLIENT_KEY: Final = web.AppKey("APP_REDIS_CLIENT_KEY", RedisClientsManager)
 
 # SETTINGS --------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ async def setup_redis_client(app: web.Application):
     raises builtin ConnectionError
     """
     redis_settings: RedisSettings = get_plugin_settings(app)
-    app[_APP_REDIS_CLIENTS_MANAGER] = manager = RedisClientsManager(
+    app[APP_REDIS_CLIENT_KEY] = manager = RedisClientsManager(
         databases_configs={
             RedisManagerDBConfig(database=db)
             for db in (
@@ -63,7 +63,7 @@ async def setup_redis_client(app: web.Application):
 def _get_redis_client_sdk(
     app: web.Application, database: RedisDatabase
 ) -> RedisClientSDK:
-    redis_client: RedisClientsManager = app[_APP_REDIS_CLIENTS_MANAGER]
+    redis_client: RedisClientsManager = app[APP_REDIS_CLIENT_KEY]
     return redis_client.client(database)
 
 
@@ -122,7 +122,7 @@ def get_redis_celery_tasks_client_sdk(app: web.Application) -> RedisClientSDK:
 # PLUGIN SETUP --------------------------------------------------------------------------
 
 
-@app_module_setup(
+@app_setup_func(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=_logger
 )
 def setup_redis(app: web.Application):

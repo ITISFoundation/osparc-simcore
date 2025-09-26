@@ -9,7 +9,6 @@ from models_library.api_schemas_webserver.auth import (
     UnregisterCheck,
 )
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     handle_validation_as_http_error,
     parse_request_body_as,
@@ -18,6 +17,7 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..login import login_service
 from ..login._controller.rest._rest_exceptions import handle_rest_requests_exceptions
 from ..login.constants import (

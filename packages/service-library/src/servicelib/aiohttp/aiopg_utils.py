@@ -1,20 +1,21 @@
-""" Holderplace for random helpers using aiopg
+"""Holderplace for random helpers using aiopg
 
-    - Drop here functions/constants that at that time does
-    not fit in any of the setups. Then, they can be moved and
-    refactor when new abstractions are used in place.
+- Drop here functions/constants that at that time does
+not fit in any of the setups. Then, they can be moved and
+refactor when new abstractions are used in place.
 
-    - aiopg is used as a client sdk to interact asynchronously with postgres service
+- aiopg is used as a client sdk to interact asynchronously with postgres service
 
-    SEE for aiopg: https://aiopg.readthedocs.io/en/stable/sa.html
-    SEE for underlying psycopg: http://initd.org/psycopg/docs/module.html
-    SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+SEE for aiopg: https://aiopg.readthedocs.io/en/stable/sa.html
+SEE for underlying psycopg: http://initd.org/psycopg/docs/module.html
+SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 """
 
 # TODO: Towards implementing https://github.com/ITISFoundation/osparc-simcore/issues/1195
 # TODO: deprecate this module. Move utils into retry_policies, simcore_postgres_database.utils_aiopg
 
 import logging
+from typing import Final
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -30,6 +31,8 @@ from tenacity.wait import wait_fixed
 from ..common_aiopg_utils import DataSourceName
 
 log = logging.getLogger(__name__)
+
+APP_AIOPG_ENGINE_KEY: Final = web.AppKey("APP_AIOPG_ENGINE_KEY", Engine)
 
 
 async def raise_if_not_responsive(engine: Engine):

@@ -3,9 +3,9 @@ from typing import Annotated
 
 from aiohttp import web
 from pydantic import Field
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 
+from ..constants import APP_SETTINGS_KEY
 from ._itis_vip_settings import ItisVipSettings, SpeagPhantomsSettings
 
 

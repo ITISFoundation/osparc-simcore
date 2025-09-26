@@ -41,7 +41,6 @@ from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceQuery, WorkspaceScope
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
-from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
@@ -68,6 +67,7 @@ from simcore_postgres_database.webserver_models import (
     projects,
     users,
 )
+from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
 from sqlalchemy import func, literal_column, sql
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
