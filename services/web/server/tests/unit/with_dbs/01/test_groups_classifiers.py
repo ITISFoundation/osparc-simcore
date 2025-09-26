@@ -42,7 +42,7 @@ async def app(postgres_dsn: dict, inject_tables):
 
 
 async def test_classfiers_from_bundle(app):
-    repo = GroupClassifierRepository(app)
+    repo = GroupClassifierRepository.create_from_app(app)
 
     assert not await repo.group_uses_scicrunch(gid=1)
 
