@@ -1,7 +1,7 @@
 import base64
 import pickle
 
-from celery.exceptions import CeleryError
+from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from common_library.errors_classes import OsparcErrorMixin
 
 
