@@ -380,8 +380,11 @@ async def test_worker_used_resources(
 
 
 async def test_compute_cluster_total_resources(
+    dask_spec_local_cluster: distributed.SpecCluster,
     scheduler_url: AnyUrl,
     scheduler_authentication: ClusterAuthentication,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    fake_localhost_ec2_instance_data: EC2InstanceData,
 ):
     # asking for resources of empty cluster returns empty resources
     assert (
@@ -389,6 +392,26 @@ async def test_compute_cluster_total_resources(
             scheduler_url, scheduler_authentication, []
         )
         == Resources.create_as_empty()
+    )
+    ec2_instance_data = fake_ec2_instance_data()
+    assert ec2_instance_data.resources.cpus > 0
+    assert ec2_instance_data.resources.ram > 0
+    assert ec2_instance_data.resources.generic_resources == {}
+    assert (
+        await compute_cluster_total_resources(
+            scheduler_url, scheduler_authentication, [ec2_instance_data]
+        )
+        == Resources.create_as_empty()
+    ), "this instance is not connected and should not be accounted for"
+
+    cluster_total_resources = await compute_cluster_total_resources(
+        scheduler_url, scheduler_authentication, [fake_localhost_ec2_instance_data]
+    )
+    assert cluster_total_resources.cpus > 0
+    assert cluster_total_resources.ram > 0
+    assert DASK_WORKER_THREAD_RESOURCE_NAME in cluster_total_resources.generic_resources
+    assert (
+        cluster_total_resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] == 2
     )
 
 
@@ -454,7 +477,6 @@ async def test_is_worker_connected(
 
 
 async def test_is_worker_retired(
-    dask_spec_local_cluster: distributed.SpecCluster,
     scheduler_url: AnyUrl,
     scheduler_authentication: ClusterAuthentication,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],

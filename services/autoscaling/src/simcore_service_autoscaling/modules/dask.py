@@ -21,7 +21,7 @@ from ..core.errors import (
     DaskWorkerNotFoundError,
 )
 from ..core.settings import DaskMonitoringSettings
-from ..models import AssociatedInstance, DaskTask, DaskTaskId
+from ..models import DaskTask, DaskTaskId
 from ..utils.utils_ec2 import (
     node_host_name_from_ec2_private_dns,
     node_ip_from_ec2_private_dns,
@@ -306,23 +306,31 @@ async def get_worker_used_resources(
 async def compute_cluster_total_resources(
     scheduler_url: AnyUrl,
     authentication: ClusterAuthentication,
-    instances: list[AssociatedInstance],
+    instances: list[EC2InstanceData],
 ) -> Resources:
     if not instances:
         return Resources.create_as_empty()
     async with _scheduler_client(scheduler_url, authentication) as client:
-        instance_hosts = (
-            node_ip_from_ec2_private_dns(i.ec2_instance) for i in instances
-        )
+        instance_host_resources_map = {
+            node_ip_from_ec2_private_dns(i): i.resources for i in instances
+        }
         scheduler_info = client.scheduler_info()
         if "workers" not in scheduler_info or not scheduler_info["workers"]:
             raise DaskNoWorkersError(url=scheduler_url)
         workers: dict[str, Any] = scheduler_info["workers"]
+        cluster_resources = Resources.create_as_empty()
         for worker_details in workers.values():
-            if worker_details["host"] not in instance_hosts:
+            if worker_details["host"] not in instance_host_resources_map:
                 continue
+            worker_ram = worker_details["memory_limit"]
+            worker_threads = worker_details["nthreads"]
+            cluster_resources += Resources(
+                cpus=instance_host_resources_map[worker_details["host"]].cpus,
+                ram=TypeAdapter(ByteSize).validate_python(worker_ram),
+                generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: worker_threads},
+            )
 
-        return Resources.create_as_empty()
+        return cluster_resources
 
 
 async def try_retire_nodes(
