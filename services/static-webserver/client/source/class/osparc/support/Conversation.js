@@ -114,6 +114,13 @@ qx.Class.define("osparc.support.Conversation", {
       });
     },
 
+    // overridden
+    clearAllMessages: function() {
+      this.base(arguments);
+
+      this.__bookACallInfo = null;
+    },
+
     _applyConversation: function(conversation) {
       this.base(arguments, conversation);
 
