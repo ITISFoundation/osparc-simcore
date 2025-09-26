@@ -4,6 +4,7 @@ from aiohttp import web
 from pydantic import ValidationError
 from settings_library.email import SMTPSettings
 
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import (
     ModuleCategory,
     app_setup_func,
@@ -24,7 +25,6 @@ from ..products.models import ProductName
 from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
-from ._application_keys import APP_SETTINGS_APPKEY
 from ._confirmation_web import setup_confirmation
 from ._controller.rest import (
     auth,
@@ -34,7 +34,7 @@ from ._controller.rest import (
     twofa,
 )
 from .settings import (
-    APP_LOGIN_OPTIONS_KEY,
+    LOGIN_OPTIONS_APPKEY,
     LOGIN_SETTINGS_PER_PRODUCT_APPKEY,
     LoginOptions,
     LoginSettings,
@@ -52,7 +52,7 @@ def _setup_login_options(app: web.Application):
     if INDEX_RESOURCE_NAME in app.router:
         cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
 
-    app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
+    app[LOGIN_OPTIONS_APPKEY] = LoginOptions(**cfg)
 
 
 async def _resolve_login_settings_per_product(app: web.Application):

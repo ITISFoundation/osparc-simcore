@@ -11,15 +11,10 @@ from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
 
-from .constants import LOGIN_SETTINGS_PER_PRODUCT_APPKEY
-
 _DAYS: Final[float] = 1.0  # in days
 _MINUTES: Final[float] = 1.0 / 24.0 / 60.0  # in days
 _YEARS: Final[float] = 365 * _DAYS
 _UNLIMITED: Final[float] = 99 * _YEARS
-
-
-APP_LOGIN_OPTIONS_APPKEY: Final = web.AppKey("APP_LOGIN_OPTIONS_APPKEY", "LoginOptions")
 
 
 class LoginSettings(BaseCustomSettings):
@@ -145,8 +140,10 @@ class LoginOptions(BaseModel):
         return timedelta(days=value)
 
 
+LOGIN_OPTIONS_APPKEY: Final = web.AppKey("LOGIN_OPTIONS_APPKEY", LoginOptions)
+
 LOGIN_SETTINGS_PER_PRODUCT_APPKEY: Final = web.AppKey(
-    "LOGIN_SETTINGS_PER_PRODUCT_APPKEY", dict[ProductName, LoginSettingsForProduct]
+    "LOGIN_SETTINGS_PER_PRODUCT", dict[ProductName, LoginSettingsForProduct]
 )
 
 
@@ -160,7 +157,7 @@ def get_plugin_settings(
 
 
 def get_plugin_options(app: web.Application) -> LoginOptions:
-    options = app.get(APP_LOGIN_OPTIONS_APPKEY)
+    options = app.get(LOGIN_OPTIONS_APPKEY)
     assert options, "login plugin was not initialized"  # nosec
     assert isinstance(options, LoginOptions)  # nosec
     return options
