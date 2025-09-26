@@ -56,12 +56,12 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
-from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     submit,
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.tasks import _service
 from yarl import URL
 
 API_VERSION = "v0"
@@ -523,7 +523,7 @@ async def test_get_async_jobs_status(
     _job_id = AsyncJobId(_faker.uuid4())
     create_storage_rpc_client_mock(
         "simcore_service_webserver.tasks._rest",
-        f"async_jobs.{async_jobs.status.__name__}",
+        f"_service.{_service.get_task_status.__name__}",
         backend_result_or_exception,
     )
 
@@ -561,7 +561,7 @@ async def test_cancel_async_jobs(
     _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(
         "simcore_service_webserver.tasks._rest",
-        f"async_jobs.{async_jobs.cancel.__name__}",
+        f"_service.{_service.cancel_task.__name__}",
         backend_result_or_exception,
     )
 
@@ -594,7 +594,7 @@ async def test_get_async_job_result(
     _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(
         "simcore_service_webserver.tasks._rest",
-        f"async_jobs.{async_jobs.result.__name__}",
+        f"_service.{_service.get_task_result.__name__}",
         backend_result_or_exception,
     )
 
@@ -629,7 +629,7 @@ async def test_get_user_async_jobs(
 ):
     create_storage_rpc_client_mock(
         "simcore_service_webserver.tasks._rest",
-        f"async_jobs.{async_jobs.list_jobs.__name__}",
+        f"_service.{_service.list_tasks.__name__}",
         backend_result_or_exception,
     )
 
@@ -646,7 +646,7 @@ async def test_get_user_async_jobs(
         (
             "GET",
             "status_href",
-            async_jobs.status.__name__,
+            _service.get_task_status.__name__,
             AsyncJobStatus(
                 job_id=AsyncJobId(_faker.uuid4()),
                 progress=ProgressReport(actual_value=0.5, total=1.0),
@@ -658,7 +658,7 @@ async def test_get_user_async_jobs(
         (
             "DELETE",
             "abort_href",
-            async_jobs.cancel.__name__,
+            _service.cancel_task.__name__,
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
             status.HTTP_204_NO_CONTENT,
             None,
@@ -666,7 +666,7 @@ async def test_get_user_async_jobs(
         (
             "GET",
             "result_href",
-            async_jobs.result.__name__,
+            _service.get_task_result.__name__,
             AsyncJobResult(result=None),
             status.HTTP_200_OK,
             TaskResult,
@@ -711,7 +711,7 @@ async def test_get_async_job_links(
     # Call the different links and check the correct model and return status
     create_storage_rpc_client_mock(
         "simcore_service_webserver.tasks._rest",
-        f"async_jobs.{backend_method}",
+        f"_service.{backend_method}",
         backend_object,
     )
     response = await client.request(
