@@ -163,4 +163,5 @@ async def release_licensed_item_for_wallet(
 
 async def register_rpc_routes_on_startup(app: web.Application):
     rpc_server = get_rabbitmq_rpc_server(app)
+    # FIXME: should depend on the webserver instance!
     await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)

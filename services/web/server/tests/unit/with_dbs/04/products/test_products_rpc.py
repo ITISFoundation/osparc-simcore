@@ -69,6 +69,7 @@ async def test_get_credit_amount(
     osparc_product_name: ProductName,
     logged_user: UserInfoDict,
 ):
+    # FIXME: use client instead here!
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
