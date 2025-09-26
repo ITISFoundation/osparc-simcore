@@ -1,4 +1,5 @@
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
@@ -12,6 +13,8 @@ from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
+    TaskEvent,
+    TaskEventID,
     TaskID,
     TaskInfoStore,
     TaskState,
@@ -22,7 +25,7 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
-from .errors import TaskNotFoundError, TaskSubmissionError
+from .errors import TaskNotFoundError, TaskSubmissionError, handle_celery_errors
 
 _logger = logging.getLogger(__name__)
 
@@ -37,6 +40,7 @@ class CeleryTaskManager:
     _celery_settings: CelerySettings
     _task_info_store: TaskInfoStore
 
+    @handle_celery_errors
     async def submit_task(
         self,
         execution_metadata: ExecutionMetadata,
@@ -85,6 +89,7 @@ class CeleryTaskManager:
 
             return task_uuid
 
+    @handle_celery_errors
     async def cancel_task(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> None:
@@ -107,6 +112,7 @@ class CeleryTaskManager:
     def _forget_task(self, task_id: TaskID) -> None:
         self._celery_app.AsyncResult(task_id).forget()
 
+    @handle_celery_errors
     async def get_task_result(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> Any:
@@ -150,6 +156,7 @@ class CeleryTaskManager:
     def _get_task_celery_state(self, task_id: TaskID) -> TaskState:
         return TaskState(self._celery_app.AsyncResult(task_id).state)
 
+    @handle_celery_errors
     async def get_task_status(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> TaskStatus:
@@ -171,6 +178,7 @@ class CeleryTaskManager:
                 ),
             )
 
+    @handle_celery_errors
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
         with log_context(
             _logger,
@@ -179,11 +187,29 @@ class CeleryTaskManager:
         ):
             return await self._task_info_store.list_tasks(owner_metadata)
 
+    @handle_celery_errors
     async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
         await self._task_info_store.set_task_progress(
             task_id=task_id,
             report=report,
         )
+
+    @handle_celery_errors
+    async def publish_task_event(self, task_id: TaskID, event: TaskEvent) -> None:
+        await self._task_info_store.publish_task_event(task_id, event)
+
+    @handle_celery_errors
+    async def consume_task_events(
+        self,
+        owner_metadata: OwnerMetadata,
+        task_uuid: TaskUUID,
+        last_id: str | None = None,
+    ) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]:
+        task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+        async for event in self._task_info_store.consume_task_events(
+            task_id=task_id, last_id=last_id
+        ):
+            yield event
 
 
 if TYPE_CHECKING:

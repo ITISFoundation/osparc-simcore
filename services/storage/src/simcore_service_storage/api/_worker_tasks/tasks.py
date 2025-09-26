@@ -9,7 +9,6 @@ from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
     PresignedLink,
 )
-from servicelib.celery.models import OwnerMetadata
 from servicelib.logging_utils import log_context
 
 from ...models import FileMetaData
@@ -19,6 +18,7 @@ from ._simcore_s3 import (
     deep_copy_files_from_project,
     export_data,
     export_data_as_download_link,
+    search,
 )
 
 _logger = logging.getLogger(__name__)
@@ -31,10 +31,8 @@ def setup_worker_tasks(app: Celery) -> None:
         FileMetaData,
         FoldersBody,
         PresignedLink,
-        OwnerMetadata,
     )
-
-    with log_context(_logger, logging.INFO, msg="worker task registration"):
+    with log_context(_logger, logging.INFO, msg="worker tasks registration"):
         register_task(app, export_data, dont_autoretry_for=(AccessRightError,))
         register_task(
             app, export_data_as_download_link, dont_autoretry_for=(AccessRightError,)
@@ -43,3 +41,4 @@ def setup_worker_tasks(app: Celery) -> None:
         register_task(app, complete_upload_file)
         register_task(app, delete_paths)
         register_task(app, deep_copy_files_from_project)
+        register_task(app, search)

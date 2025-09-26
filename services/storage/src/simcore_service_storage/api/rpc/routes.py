@@ -1,6 +1,5 @@
 import logging
 
-from celery_library.rpc import _async_jobs
 from fastapi import FastAPI
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from servicelib.logging_utils import log_context
@@ -14,7 +13,6 @@ _logger = logging.getLogger(__name__)
 
 
 ROUTERS: list[RPCRouter] = [
-    _async_jobs.router,
     _paths.router,
     _simcore_s3.router,
 ]
