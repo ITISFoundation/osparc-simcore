@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+from collections.abc import Callable
 from functools import cached_property
 from unittest.mock import Mock
 
@@ -36,13 +37,32 @@ def use_internal_scheduler() -> bool:
     return True
 
 
+class LayoutManager:
+    def __init__(self) -> None:
+        self._draw_ui: Callable[[], None] | None = None
+
+    def set(self, draw_ui: Callable[[], None]) -> None:
+        self._draw_ui = draw_ui
+
+    def draw(self) -> None:
+        if self._draw_ui is not None:
+            self._draw_ui()
+
+
 @pytest.fixture
-def router(person: "Person") -> APIRouter:
+def layout_manager() -> LayoutManager:
+    return LayoutManager()
+
+
+@pytest.fixture
+def router(layout_manager: LayoutManager) -> APIRouter:
     router = APIRouter()
 
     @ui.page("/", api_router=router)
     async def index():
-        _index_page_ui(person)
+        ui.label("BEFORE_LABEL")
+        layout_manager.draw()
+        ui.label("AFTER_LABEL")
 
     return router
 
@@ -156,12 +176,6 @@ class PersonComponent(BaseUpdatableComponent[Person]):
         self.display_model.on_type_change("companion", _friend_or_pet_ui.refresh)
 
 
-def _index_page_ui(person: Person) -> None:
-    ui.label("BEFORE_LABEL")
-    PersonComponent(person).display()
-    ui.label("AFTER_LABEL")
-
-
 async def _ensure_before_label(async_page: Page) -> None:
     await assert_contains_text(async_page, "BEFORE_LABEL")
 
@@ -263,7 +277,13 @@ async def test_updatable_component(
     person_update: Person,
     expect_same_companion_object: bool,
     expected_callbacks_count: NonNegativeInt,
+    layout_manager: LayoutManager,
 ):
+    def _index_layout() -> None:
+        PersonComponent(person).display()
+
+    layout_manager.set(_index_layout)
+
     await async_page.goto(f"{server_host_port}{mount_path}")
     print("✅ index page loaded")
 
@@ -290,3 +310,8 @@ async def test_updatable_component(
 
     await _ensure_before_label(async_page)
     await _ensure_after_label(async_page)
+
+
+# TODO: add a test where I have 10 Persons Rendered on the page
+# Add add a way to remove and add them to the page based on a model to which we add or remove stuff
+# might require some special facilities in the BaseUpdatableComponent
