@@ -24,7 +24,7 @@ from pydantic import (
 )
 
 from ..scicrunch.errors import ScicrunchError
-from ..scicrunch.repository import ResearchResourceRepository
+from ..scicrunch.scicrunch_service import ScicrunchResourcesService
 from ..scicrunch.service_client import SciCrunch
 from ._classifiers_repository import GroupClassifierRepository
 
@@ -126,10 +126,10 @@ async def build_rrids_tree_view(
         )
 
     scicrunch = SciCrunch.get_instance(app)
-    repo = ResearchResourceRepository(app)
+    service = ScicrunchResourcesService(app)
 
     flat_tree_view: dict[TreePath, ClassifierItem] = {}
-    for resource in await repo.list_resources():
+    for resource in await service.list_resources():
         try:
             validated_item = ClassifierItem(
                 classifier=resource.rrid,
