@@ -329,13 +329,17 @@ async def get_function_job_logs_task(
         async_job_get = await job_service.start_log_export(
             job_id=function_job.project_job_id,
         )
-        _task_id = f"{async_job_get.job_id}"
+        _task_uuid = f"{async_job_get.job_id}"
         return TaskGet(
-            task_id=_task_id,
+            task_id=_task_uuid,
             task_name=async_job_get.job_name,
-            status_href=app_router.url_path_for("get_task_status", task_id=_task_id),
-            abort_href=app_router.url_path_for("cancel_task", task_id=_task_id),
-            result_href=app_router.url_path_for("get_task_result", task_id=_task_id),
+            status_href=app_router.url_path_for(
+                "get_task_status", task_uuid=_task_uuid
+            ),
+            abort_href=app_router.url_path_for("cancel_task", task_uuid=_task_uuid),
+            result_href=app_router.url_path_for(
+                "get_task_result", task_uuid=_task_uuid
+            ),
         )
 
     if (
@@ -350,12 +354,16 @@ async def get_function_job_logs_task(
         async_job_get = await job_service.start_log_export(
             job_id=function_job.solver_job_id,
         )
-        _task_id = f"{async_job_get.job_id}"
+        _task_uuid = f"{async_job_get.job_id}"
         return TaskGet(
-            task_id=_task_id,
+            task_id=_task_uuid,
             task_name=async_job_get.job_name,
-            status_href=app_router.url_path_for("get_task_status", task_id=_task_id),
-            abort_href=app_router.url_path_for("cancel_task", task_id=_task_id),
-            result_href=app_router.url_path_for("get_task_result", task_id=_task_id),
+            status_href=app_router.url_path_for(
+                "get_task_status", task_uuid=_task_uuid
+            ),
+            abort_href=app_router.url_path_for("cancel_task", task_uuid=_task_uuid),
+            result_href=app_router.url_path_for(
+                "get_task_result", task_uuid=_task_uuid
+            ),
         )
     raise UnsupportedFunctionClassError(function_class=function.function_class)

@@ -32,7 +32,7 @@ from models_library.functions_errors import (
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.webserver_users import UserInfoDict
-from servicelib.celery.models import TaskID
+from servicelib.celery.models import TaskKey
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface as functions_rpc,
@@ -517,7 +517,7 @@ async def test_find_cached_function_jobs(
                 title=_faker.word(),
                 description=_faker.sentence(),
                 project_job_id=ProjectID(_faker.uuid4()),
-                job_creation_task_id=TaskID(_faker.uuid4()),
+                job_creation_task_id=TaskKey(_faker.uuid4()),
                 inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
                 outputs={"output1": _faker.word()},
             ),
@@ -535,7 +535,7 @@ async def test_find_cached_function_jobs(
             RegisteredSolverFunctionJobPatch(
                 title=_faker.word(),
                 description=_faker.sentence(),
-                job_creation_task_id=TaskID(_faker.uuid4()),
+                job_creation_task_id=TaskKey(_faker.uuid4()),
                 inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
                 outputs={"output1": _faker.word()},
                 solver_job_id=_faker.uuid4(),
@@ -614,7 +614,7 @@ async def test_patch_registered_function_jobs(
             RegisteredSolverFunctionJobPatch(
                 title=_faker.word(),
                 description=_faker.sentence(),
-                job_creation_task_id=TaskID(_faker.uuid4()),
+                job_creation_task_id=TaskKey(_faker.uuid4()),
                 inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
                 outputs={"output1": _faker.word()},
                 solver_job_id=_faker.uuid4(),

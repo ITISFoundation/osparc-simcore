@@ -46,16 +46,6 @@ def setup(app: FastAPI, *, is_debug: bool = False):
     )
 
     app.add_exception_handler(
-        TaskNotFoundError,
-        make_handler_for_exception(
-            TaskNotFoundError,
-            status.HTTP_404_NOT_FOUND,
-            error_message=MSG_CLIENT_ERROR_USER_FRIENDLY_TEMPLATE,
-            add_exception_to_message=True,
-        ),
-    )
-
-    app.add_exception_handler(
         CeleryError,
         make_handler_for_exception(
             CeleryError,

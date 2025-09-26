@@ -11,20 +11,22 @@ from pydantic.config import JsonDict
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 
-TaskID: TypeAlias = str
+TaskKey: TypeAlias = str
 TaskName: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1)
 ]
 TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
-_FORBIDDEN_KEYS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
-_FORBIDDEN_VALUES = (_TASK_ID_KEY_DELIMITATOR, "=")
+_FORBIDDEN_KEY_CHARS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
+_FORBIDDEN_VALUE_CHARS = (_TASK_ID_KEY_DELIMITATOR, "=")
 AllowedTypes = (
     int | float | bool | str | None | list[str] | list[int] | list[float] | list[bool]
 )
 
 Wildcard: TypeAlias = Literal["*"]
 WILDCARD: Final[Wildcard] = "*"
+
+_TASK_UUID_KEY: Final[str] = "task_uuid"
 
 
 class OwnerMetadata(BaseModel):
@@ -62,12 +64,15 @@ class OwnerMetadata(BaseModel):
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:
         for key, value in self.model_dump().items():
-            # forbidden keys
-            if any(x in key for x in _FORBIDDEN_KEYS):
+            # forbidden key chars
+            if any(x in key for x in _FORBIDDEN_KEY_CHARS):
                 raise ValueError(f"Invalid filter key: '{key}'")
-            # forbidden values
-            if any(x in f"{value}" for x in _FORBIDDEN_VALUES):
+            # forbidden value chars
+            if any(x in json_dumps(value) for x in _FORBIDDEN_VALUE_CHARS):
                 raise ValueError(f"Invalid filter value for key '{key}': '{value}'")
+
+        if _TASK_UUID_KEY in self.model_dump():
+            raise ValueError(f"'{_TASK_UUID_KEY}' is a reserved key")
 
         class _TypeValidationModel(BaseModel):
             filters: dict[str, AllowedTypes]
@@ -75,39 +80,39 @@ class OwnerMetadata(BaseModel):
         _TypeValidationModel.model_validate({"filters": self.model_dump()})
         return self
 
-    def model_dump_task_id(self, task_uuid: TaskUUID | Wildcard) -> TaskID:
+    def model_dump_task_key(self, task_uuid: TaskUUID | Wildcard) -> TaskKey:
         data = self.model_dump(mode="json")
-        data.update({"task_uuid": f"{task_uuid}"})
+        data.update({_TASK_UUID_KEY: f"{task_uuid}"})
         return _TASK_ID_KEY_DELIMITATOR.join(
             [f"{k}={json_dumps(v)}" for k, v in sorted(data.items())]
         )
 
     @classmethod
-    def model_validate_task_id(cls, task_id: TaskID) -> Self:
-        data = cls._deserialize_task_id(task_id)
-        data.pop("task_uuid", None)
+    def model_validate_task_key(cls, task_key: TaskKey) -> Self:
+        data = cls._deserialize_task_key(task_key)
+        data.pop(_TASK_UUID_KEY, None)
         return cls.model_validate(data)
 
     @classmethod
-    def _deserialize_task_id(cls, task_id: TaskID) -> dict[str, AllowedTypes]:
+    def _deserialize_task_key(cls, task_key: TaskKey) -> dict[str, AllowedTypes]:
         key_value_pairs = [
-            item.split("=") for item in task_id.split(_TASK_ID_KEY_DELIMITATOR)
+            item.split("=") for item in task_key.split(_TASK_ID_KEY_DELIMITATOR)
         ]
         try:
             return {key: json_loads(value) for key, value in key_value_pairs}
         except orjson.JSONDecodeError as err:
-            raise ValueError(f"Invalid task_id format: {task_id}") from err
+            raise ValueError(f"Invalid task_id format: {task_key}") from err
 
     @classmethod
-    def get_task_uuid(cls, task_id: TaskID) -> TaskUUID:
-        data = cls._deserialize_task_id(task_id)
+    def get_task_uuid(cls, task_key: TaskKey) -> TaskUUID:
+        data = cls._deserialize_task_key(task_key)
         try:
-            uuid_string = data["task_uuid"]
+            uuid_string = data.get(_TASK_UUID_KEY)
             if not isinstance(uuid_string, str):
-                raise ValueError(f"Invalid task_id format: {task_id}")
+                raise ValueError(f"Invalid task_id format: {task_key}")
             return TaskUUID(uuid_string)
         except ValueError as err:
-            raise ValueError(f"Invalid task_id format: {task_id}") from err
+            raise ValueError(f"Invalid task_id format: {task_key}") from err
 
 
 class TaskState(StrEnum):
@@ -179,23 +184,25 @@ class Task(BaseModel):
 class TaskInfoStore(Protocol):
     async def create_task(
         self,
-        task_id: TaskID,
+        task_key: TaskKey,
         execution_metadata: ExecutionMetadata,
         expiry: datetime.timedelta,
     ) -> None: ...
 
-    async def task_exists(self, task_id: TaskID) -> bool: ...
+    async def task_exists(self, task_key: TaskKey) -> bool: ...
 
-    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None: ...
+    async def get_task_metadata(
+        self, task_key: TaskKey
+    ) -> ExecutionMetadata | None: ...
 
-    async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
+    async def get_task_progress(self, task_key: TaskKey) -> ProgressReport | None: ...
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
-    async def remove_task(self, task_id: TaskID) -> None: ...
+    async def remove_task(self, task_key: TaskKey) -> None: ...
 
     async def set_task_progress(
-        self, task_id: TaskID, report: ProgressReport
+        self, task_key: TaskKey, report: ProgressReport
     ) -> None: ...
 
 
