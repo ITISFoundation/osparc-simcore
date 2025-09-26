@@ -1,12 +1,12 @@
 """
-    Plugin to broadcast announcements to all front-end users
+Plugin to broadcast announcements to all front-end users
 """
 
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..products.plugin import setup_products
 from ..redis import setup_redis
@@ -15,7 +15,7 @@ from . import _handlers
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_ANNOUNCEMENTS",

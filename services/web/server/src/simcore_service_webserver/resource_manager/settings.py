@@ -1,7 +1,8 @@
 from aiohttp import web
 from pydantic import Field, PositiveInt
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
+
+from ..constants import APP_SETTINGS_KEY
 
 
 class ResourceManagerSettings(BaseCustomSettings):

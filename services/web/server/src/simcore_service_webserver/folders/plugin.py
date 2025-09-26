@@ -1,18 +1,17 @@
-""" tags management subsystem
+"""tags management subsystem"""
 
-"""
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
+from ..constants import APP_SETTINGS_KEY
 from . import _folders_rest, _trash_rest, _workspaces_rest
 
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_FOLDERS",

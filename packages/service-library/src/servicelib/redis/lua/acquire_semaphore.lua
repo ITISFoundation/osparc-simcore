@@ -1,40 +1,33 @@
--- Atomically acquire a distributed semaphore
--- KEYS[1]: semaphore_key (ZSET storing holders with timestamps)
--- KEYS[2]: holder_key (individual holder TTL key)
--- ARGV[1]: instance_id
--- ARGV[2]: capacity (max concurrent holders)
--- ARGV[3]: ttl_seconds
+-- Fair distributed semaphore using token pool (BRPOP-based)
+-- KEYS[1]: holders_key (SET of current holder instance IDs)
+-- KEYS[2]: holder_key (individual holder TTL key for this instance)
+
+-- ARGV[1]: token (the token received from BRPOP)
+-- ARGV[2]: instance_id (the instance trying to acquire the semaphore)
+-- ARGV[3]: ttl_seconds (for the holder_key)
+-- ARGV[4]: holders_set_ttl_seconds (to set expiry on holders set)
 --
--- Returns: {exit_code, status, current_count, expired_count}
---   exit_code: 0 if acquired, 255 if failed
---   status: 'acquired' or 'capacity_full'
---   current_count: number of holders after operation
---   expired_count: number of expired entries cleaned up
+-- Returns: {exit_code, status, token, current_count}
+-- exit_code: 0 if acquired
+-- status: 'acquired'
 
-local semaphore_key = KEYS[1]
+local holders_key = KEYS[1]
 local holder_key = KEYS[2]
-local instance_id = ARGV[1]
-local capacity = tonumber(ARGV[2])
+
+local token = ARGV[1]
+local instance_id = ARGV[2]
 local ttl_seconds = tonumber(ARGV[3])
+local holders_set_ttl_seconds = tonumber(ARGV[4])
 
--- Get current Redis server time
-local time_result = redis.call('TIME')
-local current_time = tonumber(time_result[1]) + (tonumber(time_result[2]) / 1000000)
 
--- Step 1: Clean up expired entries
-local expiry_threshold = current_time - ttl_seconds
-local expired_count = redis.call('ZREMRANGEBYSCORE', semaphore_key, '-inf', expiry_threshold)
 
--- Step 2: Check current capacity after cleanup
-local current_count = redis.call('ZCARD', semaphore_key)
+-- Step 1: Register as holder
+redis.call('SADD', holders_key, instance_id)
+redis.call('SETEX', holder_key, ttl_seconds, token)
 
--- Step 3: Try to acquire if under capacity
-if current_count < capacity then
-    -- Atomically add to semaphore and set holder key
-    redis.call('ZADD', semaphore_key, current_time, instance_id)
-    redis.call('SETEX', holder_key, ttl_seconds, '1')
+-- Step 2: Set expiry on holders set to prevent infinite growth
+redis.call('EXPIRE', holders_key, holders_set_ttl_seconds)
 
-    return {0, 'acquired', current_count + 1, expired_count}
-else
-    return {255, 'capacity_full', current_count, expired_count}
-end
+local current_count = redis.call('SCARD', holders_key)
+
+return {0, 'acquired', token, current_count}

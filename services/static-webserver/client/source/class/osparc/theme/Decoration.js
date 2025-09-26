@@ -26,6 +26,12 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "circled": {
+      style: {
+        radius: 16
+      }
+    },
+
     "chat-bubble": {
       style: {
         radius: 4,

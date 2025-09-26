@@ -4,10 +4,10 @@ import logging
 from aiohttp import web
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG as VTAG
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,

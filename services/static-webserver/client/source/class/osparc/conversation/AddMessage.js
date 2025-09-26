@@ -69,7 +69,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           });
           break;
         }
-        case "thumbnail": {
+        case "avatar": {
           control = osparc.utils.Utils.createThumbnail(32);
           const authStore = osparc.auth.Data.getInstance();
           control.set({
@@ -85,6 +85,10 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control = new osparc.editor.MarkdownEditor();
           control.addListener("textChanged", () => this.__addCommentPressed(), this);
           control.setCompact(true);
+          control.getChildControl("text-area").set({
+            maxLength: osparc.data.model.Conversation.MAX_CONTENT_LENGTH,
+          });
+          // make it visually connected to the button
           control.getChildControl("text-area").getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
           });
@@ -95,6 +99,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           break;
         case "add-comment-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/16").set({
+            toolTipText: this.tr("Ctrl+Enter"),
             backgroundColor: "input_background",
             allowGrowX: false,
             alignX: "right",
@@ -135,7 +140,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("thumbnail");
+      this.getChildControl("avatar");
       this.getChildControl("comment-field");
       this.getChildControl("add-comment-button");
     },
