@@ -9,7 +9,10 @@ from typing import Any, Final, TypeAlias, TypedDict
 import dask.typing
 import distributed
 from aws_library.ec2 import EC2InstanceData, Resources
-from dask_task_models_library.resource_constraints import DaskTaskResources
+from dask_task_models_library.resource_constraints import (
+    DASK_WORKER_THREAD_RESOURCE_NAME,
+    DaskTaskResources,
+)
 from distributed.core import Status
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -39,7 +42,6 @@ async def _wrap_client_async_routine(
 
 
 _DASK_SCHEDULER_CONNECT_TIMEOUT_S: Final[int] = 5
-DASK_WORKER_THREAD_RESOURCE_NAME: Final[str] = "threads"
 
 
 @contextlib.asynccontextmanager

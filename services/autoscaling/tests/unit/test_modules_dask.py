@@ -11,6 +11,9 @@ import distributed
 import pytest
 from arrow import utcnow
 from aws_library.ec2 import Resources
+from dask_task_models_library.resource_constraints import (
+    DASK_WORKER_THREAD_RESOURCE_NAME,
+)
 from faker import Faker
 from models_library.clusters import (
     ClusterAuthentication,
@@ -31,7 +34,6 @@ from simcore_service_autoscaling.models import (
     EC2InstanceData,
 )
 from simcore_service_autoscaling.modules.dask import (
-    DASK_WORKER_THREAD_RESOURCE_NAME,
     DaskMonitoringSettings,
     DaskTask,
     _scheduler_client,
@@ -122,15 +124,13 @@ async def test_list_unrunnable_tasks(
     # we have nothing running now
     assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == []
     # start a task that cannot run
-    dask_task_impossible_resources = {"XRAM": 213}
+    dask_task_impossible_resources = DaskTaskResources(XRAM=213, threads=1)
     future = create_dask_task(dask_task_impossible_resources)
     assert future
     assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == [
         DaskTask(
             task_id=future.key,
-            required_resources=(
-                dask_task_impossible_resources | {DASK_WORKER_THREAD_RESOURCE_NAME: 1}
-            ),
+            required_resources=(dask_task_impossible_resources),
         )
     ]
     # remove that future, will remove the task
@@ -168,7 +168,7 @@ async def test_list_processing_tasks(
         next(iter(dask_spec_cluster_client.scheduler_info()["workers"])): [
             DaskTask(
                 task_id=DaskTaskId(future_queued_task.key),
-                required_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
+                required_resources=DaskTaskResources(threads=1),
             )
         ]
     }
