@@ -1,8 +1,13 @@
-from typing import Any, TypeAlias
+from typing import Literal, TypedDict
 
 from .constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 
-DaskTaskResources: TypeAlias = dict[str, Any]
+
+class DaskTaskResources(TypedDict):
+    CPU: float
+    RAM: int  # in bytes
+    # threads is a constant of 1 (enforced by static type checkers via Literal)
+    threads: Literal[1]
 
 
 def create_ec2_resource_constraint_key(ec2_instance_type: str) -> str:
