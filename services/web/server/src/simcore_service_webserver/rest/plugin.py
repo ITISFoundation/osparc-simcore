@@ -1,15 +1,14 @@
-""" Restful API
+"""Restful API
 
-    - Loads and validates openapi specifications (oas)
-    - Adds check and diagnostic routes
-    - Activates middlewares
+- Loads and validates openapi specifications (oas)
+- Adds check and diagnostic routes
+- Activates middlewares
 
 """
 
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
     error_middleware_factory,
@@ -17,6 +16,7 @@ from servicelib.aiohttp.rest_middlewares import (
 from swagger_ui import api_doc  # type: ignore
 
 from .._meta import API_VTAG
+from ..application_setup import ModuleCategory, app_setup_func
 from ..security.plugin import setup_security
 from . import _handlers
 from ._utils import get_openapi_specs_path
@@ -26,7 +26,7 @@ from .settings import RestSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.rest",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_REST",

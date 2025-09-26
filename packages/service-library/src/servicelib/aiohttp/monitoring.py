@@ -28,6 +28,7 @@ from .typing_extension import Handler
 _logger = logging.getLogger(__name__)
 
 _PROMETHEUS_METRICS: Final[str] = f"{__name__}.prometheus_metrics"  # noqa: N816
+APP_MONITORING_NAMESPACE_KEY: Final = web.AppKey("APP_MONITORING_NAMESPACE_KEY", str)
 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:

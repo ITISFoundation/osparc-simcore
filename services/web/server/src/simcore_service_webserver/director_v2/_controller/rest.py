@@ -13,6 +13,7 @@ from models_library.api_schemas_webserver.computations import (
 )
 from models_library.projects import CommitID, ProjectID
 from servicelib.aiohttp import status
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -21,7 +22,6 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.request_keys import RQT_USERID_KEY
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required

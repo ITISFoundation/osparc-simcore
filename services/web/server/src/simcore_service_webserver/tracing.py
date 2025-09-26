@@ -1,11 +1,11 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.tracing import get_tracing_lifespan
 from settings_library.tracing import TracingSettings
 
 from .application_settings import get_application_settings
+from .application_setup import ModuleCategory, app_setup_func
 from .constants import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ def get_plugin_settings(app: web.Application) -> TracingSettings:
     return settings
 
 
-@app_module_setup(
+@app_setup_func(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_TRACING", logger=log
 )
 def setup_app_tracing(app: web.Application):

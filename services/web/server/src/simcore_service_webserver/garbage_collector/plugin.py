@@ -1,10 +1,10 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import set_parent_module_log_level
 
 from ..application_settings import get_application_settings
+from ..application_setup import ModuleCategory, app_setup_func
 from ..login.plugin import setup_login_storage
 from ..products.plugin import setup_products
 from ..projects._projects_repository_legacy import setup_projects_db
@@ -16,7 +16,7 @@ from .settings import get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.garbage_collector",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_GARBAGE_COLLECTOR",

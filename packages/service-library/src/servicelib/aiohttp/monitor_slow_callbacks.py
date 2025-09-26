@@ -1,10 +1,16 @@
 import asyncio.events
 import sys
 import time
+from typing import Final
 
+from aiohttp import web
 from pyinstrument import Profiler
 
 from .incidents import LimitedOrderedStack, SlowCallback
+
+APP_SLOW_CALLBACKS_MONITOR_KEY: Final = web.AppKey(
+    "APP_SLOW_CALLBACKS_MONITOR_KEY", LimitedOrderedStack[SlowCallback]
+)
 
 
 def enable(

@@ -2,8 +2,9 @@ from typing import Annotated
 
 from aiohttp import web
 from pydantic import Field, PositiveInt
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
+
+from ..constants import APP_SETTINGS_KEY
 
 # lock names and format strings
 GUEST_USER_RC_LOCK_FORMAT = f"{__name__}:redlock:garbage_collect_user:{{user_id}}"

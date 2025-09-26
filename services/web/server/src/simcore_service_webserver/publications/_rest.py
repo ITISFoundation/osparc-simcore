@@ -3,11 +3,11 @@ import logging
 from aiohttp import MultipartReader, hdrs, web
 from common_library.json_serialization import json_dumps
 from servicelib.aiohttp import status
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.mimetype_constants import (
     MIMETYPE_APPLICATION_JSON,
     MIMETYPE_APPLICATION_ZIP,
 )
-from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import API_VTAG as VTAG
 from ..login._emails_service import AttachmentTuple, send_email_from_template, themed
