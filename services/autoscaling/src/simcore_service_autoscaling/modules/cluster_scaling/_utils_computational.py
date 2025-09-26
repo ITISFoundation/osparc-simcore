@@ -32,15 +32,6 @@ def resources_from_dask_task(task: DaskTask) -> Resources:
     return Resources.from_flat_dict(
         {_DASK_TO_RESOURCE_NAME_MAPPING.get(k, k): v for k, v in task_resources.items()}
     )
-    #     ({
-    #         "cpus": task.required_resources.get("CPU", _DEFAULT_MAX_CPU),
-    #         "ram": task.required_resources.get("RAM", _DEFAULT_MAX_RAM),
-    #     }
-    # )
-    # return Resources(
-    #     cpus=task.required_resources.get("CPU", _DEFAULT_MAX_CPU),
-    #     ram=ByteSize(task.required_resources.get("RAM", _DEFAULT_MAX_RAM)),
-    # )
 
 
 def get_task_instance_restriction(task: DaskTask) -> str | None:
