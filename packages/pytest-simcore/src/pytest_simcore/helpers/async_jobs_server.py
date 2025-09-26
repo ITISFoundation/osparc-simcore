@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
     AsyncJobId,
     AsyncJobResult,
@@ -14,6 +13,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import validate_call
 from pytest_mock import MockType
+from servicelib.celery.models import OwnerMetadata
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
@@ -28,7 +28,7 @@ class AsyncJobSideEffects:
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
-        job_filter: AsyncJobFilter,
+        owner_metadata: OwnerMetadata,
     ) -> None:
         if self.exception is not None:
             raise self.exception
@@ -41,7 +41,7 @@ class AsyncJobSideEffects:
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
-        job_filter: AsyncJobFilter,
+        owner_metadata: OwnerMetadata,
     ) -> AsyncJobStatus:
         if self.exception is not None:
             raise self.exception
@@ -63,7 +63,7 @@ class AsyncJobSideEffects:
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
-        job_filter: AsyncJobFilter,
+        owner_metadata: OwnerMetadata,
     ) -> AsyncJobResult:
         if self.exception is not None:
             raise self.exception
@@ -75,7 +75,7 @@ class AsyncJobSideEffects:
         rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
         *,
         rpc_namespace: RPCNamespace,
-        job_filter: AsyncJobFilter,
+        owner_metadata: OwnerMetadata,
         filter_: str = "",
     ) -> list[AsyncJobGet]:
         if self.exception is not None:

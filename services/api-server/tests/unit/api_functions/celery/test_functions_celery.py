@@ -41,7 +41,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
-from servicelib.celery.models import TaskID, TaskMetadata, TasksQueue
+from servicelib.celery.models import ExecutionMetadata, TaskID, TasksQueue
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
@@ -56,7 +56,9 @@ from simcore_service_api_server.celery_worker.worker_tasks.functions_tasks impor
 )
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
-from simcore_service_api_server.models.domain.celery_models import ApiWorkerTaskFilter
+from simcore_service_api_server.models.domain.celery_models import (
+    ApiServerOwnerMetadata,
+)
 from simcore_service_api_server.models.domain.functions import (
     PreRegisteredFunctionJobData,
 )
@@ -280,16 +282,16 @@ async def test_celery_error_propagation(
     with_api_server_celery_worker: TestWorkController,
 ):
 
-    task_filter = ApiWorkerTaskFilter(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
     )
     task_manager = get_task_manager(app=app)
     task_uuid = await task_manager.submit_task(
-        task_metadata=TaskMetadata(
+        execution_metadata=ExecutionMetadata(
             name="exception_task", queue=TasksQueue.API_WORKER_QUEUE
         ),
-        task_filter=task_filter,
+        owner_metadata=owner_metadata,
     )
 
     with pytest.raises(HTTPStatusError) as exc_info:

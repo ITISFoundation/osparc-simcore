@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING, Final
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 from servicelib.celery.models import (
+    WILDCARD,
+    ExecutionMetadata,
+    OwnerMetadata,
     Task,
-    TaskFilter,
     TaskID,
     TaskInfoStore,
-    TaskMetadata,
-    Wildcard,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
@@ -35,7 +35,7 @@ class RedisTaskInfoStore:
     async def create_task(
         self,
         task_id: TaskID,
-        task_metadata: TaskMetadata,
+        execution_metadata: ExecutionMetadata,
         expiry: timedelta,
     ) -> None:
         task_key = _build_key(task_id)
@@ -43,7 +43,7 @@ class RedisTaskInfoStore:
             self._redis_client_sdk.redis.hset(
                 name=task_key,
                 key=_CELERY_TASK_METADATA_KEY,
-                value=task_metadata.model_dump_json(),
+                value=execution_metadata.model_dump_json(),
             )
         )
         await self._redis_client_sdk.redis.expire(
@@ -51,7 +51,7 @@ class RedisTaskInfoStore:
             expiry,
         )
 
-    async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None:
+    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None:
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
                 _build_key(task_id), _CELERY_TASK_METADATA_KEY
@@ -61,7 +61,7 @@ class RedisTaskInfoStore:
             return None
 
         try:
-            return TaskMetadata.model_validate_json(raw_result)
+            return ExecutionMetadata.model_validate_json(raw_result)
         except ValidationError as exc:
             _logger.debug(
                 "Failed to deserialize task metadata for task %s: %s", task_id, f"{exc}"
@@ -85,9 +85,9 @@ class RedisTaskInfoStore:
             )
             return None
 
-    async def list_tasks(self, task_filter: TaskFilter) -> list[Task]:
-        search_key = _CELERY_TASK_INFO_PREFIX + task_filter.create_task_id(
-            task_uuid=Wildcard()
+    async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
+        search_key = _CELERY_TASK_INFO_PREFIX + owner_metadata.model_dump_task_id(
+            task_uuid=WILDCARD
         )
 
         keys: list[str] = []
@@ -112,11 +112,11 @@ class RedisTaskInfoStore:
                 continue
 
             with contextlib.suppress(ValidationError):
-                task_metadata = TaskMetadata.model_validate_json(raw_metadata)
+                execution_metadata = ExecutionMetadata.model_validate_json(raw_metadata)
                 tasks.append(
                     Task(
-                        uuid=TaskFilter.get_task_uuid(key),
-                        metadata=task_metadata,
+                        uuid=OwnerMetadata.get_task_uuid(key),
+                        metadata=execution_metadata,
                     )
                 )
 
