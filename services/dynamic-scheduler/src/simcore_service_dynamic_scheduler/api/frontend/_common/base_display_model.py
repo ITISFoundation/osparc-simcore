@@ -54,7 +54,7 @@ class BaseUpdatableDisplayModel(BaseModel):
     def _raise_if_attribute_not_declared_in_model(self, attribute: str) -> None:
         if attribute not in self.__class__.model_fields:
             msg = f"Attribute '{attribute}' is not part of the model fields"
-            raise RuntimeError(msg)
+            raise ValueError(msg)
 
     def on_type_change(self, attribute: str, callback: Callable) -> None:
         """subscribe callback to an attribute TYPE change"""

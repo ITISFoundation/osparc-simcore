@@ -119,9 +119,31 @@ class PetComponent(BaseUpdatableComponent[Pet]):
 
 class PersonComponent(BaseUpdatableComponent[Person]):
     def add_to_ui(self) -> None:
-        ui.label(f"Name: {self.display_model.name}")
-        ui.label(f"Age: {self.display_model.age}")
+        # NOTE:
+        # There are 3 ways to bind the UI to the model changes:
+        # 1. using nicegui builting facilties
+        # 2. via model attribute VALE change
+        # 3. via model attribute TYPE change
+        # The model attribute changes allow to trigger re-rendering of subcomponents.
+        # This should be mainly used for chainging the UI layout based on
+        # the attribute's value or type.
 
+        # 1. bind the label directly to the model's attribute
+        ui.label().bind_text_from(
+            self.display_model,
+            "name",
+            backward=lambda name: f"Name: {name}",
+        )
+
+        # 2. use refreshable and bind to the attribute's VALUE change
+        @ui.refreshable
+        def _person_age_ui() -> None:
+            ui.label(f"Age: {self.display_model.age}")
+
+        _person_age_ui()
+        self.display_model.on_value_change("age", _person_age_ui.refresh)
+
+        # 3. use refreshable and bind to the attribute's TYPE change
         @ui.refreshable
         def _friend_or_pet_ui() -> None:
             if isinstance(self.display_model.companion, Friend):
@@ -131,8 +153,6 @@ class PersonComponent(BaseUpdatableComponent[Person]):
                 PetComponent(self.display_model.companion).add_to_ui()
 
         _friend_or_pet_ui()
-
-        # self.display_model.on_value_change("companion", _friend_or_pet_ui.refresh)
         self.display_model.on_type_change("companion", _friend_or_pet_ui.refresh)
 
 
@@ -191,7 +211,19 @@ async def _ensure_index_page(async_page: Page, person: Person) -> None:
             Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
             Person(name="Alice", age=30, companion=Friend(name="Marta", age=30)),
             1,
-            id="update-pet-ui-rerednder",
+            id="update-pet-ui-via-rerednder-due-to-type-change",
+        ),
+        pytest.param(
+            Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
+            Person(name="Bob", age=30, companion=Pet(name="Fluffy", species="cat")),
+            0,
+            id="change-person-name-via-bindings",
+        ),
+        pytest.param(
+            Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
+            Person(name="Alice", age=31, companion=Pet(name="Fluffy", species="cat")),
+            1,
+            id="change-person-age-via-rerender-due-to-value-change",
         ),
     ],
 )
