@@ -1076,10 +1076,10 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             project_id: Optional project ID to limit search to specific project
             modified_before: Optional datetime filter - only include files modified before this datetime
             modified_after: Optional datetime filter - only include files modified after this datetime
-            items_per_page: Number of items to return per page
+            limit: Number of items to return per page
 
         Yields:
-            List of FileMetaData objects for each page, with exactly items_per_page items
+            List of FileMetaData objects for each page, with exactly limit items
             (except the last page which may have fewer)
         """
         # Validate access rights
