@@ -38,6 +38,7 @@ from simcore_service_autoscaling.modules.dask import (
     add_instance_generic_resources,
     get_worker_still_has_results_in_memory,
     get_worker_used_resources,
+    is_worker_connected,
     list_processing_tasks_per_worker,
     list_unrunnable_tasks,
 )
@@ -380,15 +381,16 @@ async def test_worker_used_resources(
     [(4, 1, 4), (4, 2, 8), (0, 2.0, -1)],
 )
 def test_add_instance_generic_resources(
+    scheduler_url: AnyUrl,
+    scheduler_authentication: ClusterAuthentication,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    faker: Faker,
     dask_nthreads: int,
     dask_nthreads_multiplier: int,
     expected_threads_resource: int,
 ):
     settings = DaskMonitoringSettings(
-        DASK_MONITORING_URL=faker.url(),
-        DASK_SCHEDULER_AUTH=NoAuthentication(),
+        DASK_MONITORING_URL=scheduler_url,
+        DASK_SCHEDULER_AUTH=scheduler_authentication,
         DASK_NTHREADS=dask_nthreads,
         DASK_NTHREADS_MULTIPLIER=dask_nthreads_multiplier,
     )
@@ -410,4 +412,18 @@ def test_add_instance_generic_resources(
     assert (
         ec2_instance_data.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME]
         == expected_threads_resource
+    )
+
+
+async def test_is_worker_connected(
+    scheduler_url: AnyUrl,
+    scheduler_authentication: ClusterAuthentication,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    ec2_instance_data = fake_ec2_instance_data()
+    assert (
+        await is_worker_connected(
+            scheduler_url, scheduler_authentication, ec2_instance_data
+        )
+        is False
     )
