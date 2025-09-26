@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import datetime
 import json
 import re
 from collections.abc import Callable
@@ -145,9 +144,6 @@ async def test_ec2_startup_script_just_ami(
         )
     )
     assert not instance_boot_specific.pre_pull_images
-    assert instance_boot_specific.pre_pull_images_cron_interval == datetime.timedelta(
-        minutes=30
-    )
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 1
     assert re.fullmatch(
@@ -200,6 +196,27 @@ def ec2_instances_boot_ami_pre_pull(
 
 
 @pytest.fixture
+def ec2_instances_cold_start_docker_images_pre_pulling(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+) -> EnvVarsDict:
+    images = TypeAdapter(list[DockerGenericTag]).validate_python(
+        [
+            "nginx:latest",
+            "itisfoundation/my-very-nice-service:latest",
+            "simcore/services/dynamic/another-nice-one:2.4.5",
+            "asd",
+        ]
+    )
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING": json.dumps(images),
+        },
+    )
+    return app_environment | envs
+
+
+@pytest.fixture
 def disabled_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("REGISTRY_AUTH")
 
@@ -207,6 +224,7 @@ def disabled_registry(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_ec2_startup_script_with_pre_pulling(
     minimal_configuration: None,
     ec2_instances_boot_ami_pre_pull: EnvVarsDict,
+    ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
     app_settings: ApplicationSettings,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -216,11 +234,10 @@ async def test_ec2_startup_script_with_pre_pulling(
         )
     )
     assert instance_boot_specific.pre_pull_images
-    assert instance_boot_specific.pre_pull_images_cron_interval
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-    assert len(startup_script.split("&&")) == 7
+    assert len(startup_script.split("&&")) == 6
     assert re.fullmatch(
-        r"^(docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh) && (echo .+)$",
+        r"^(docker swarm join [^&&]+) && (echo [^\s]+ \| docker login [^&&]+) && (echo [^&&]+) && (echo [^&&]+) && (chmod \+x [^&&]+) && (./docker-pull-script.sh)$",
         startup_script,
     ), f"{startup_script=}"
 
@@ -238,7 +255,6 @@ async def test_ec2_startup_script_with_custom_scripts(
             )
         )
         assert not instance_boot_specific.pre_pull_images
-        assert instance_boot_specific.pre_pull_images_cron_interval
         startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
         assert len(startup_script.split("&&")) == 1 + len(
             ec2_instances_boot_ami_scripts
@@ -262,7 +278,6 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
         )
     )
     assert instance_boot_specific.pre_pull_images
-    assert instance_boot_specific.pre_pull_images_cron_interval
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 1
     assert re.fullmatch(
@@ -299,6 +314,7 @@ def test_sort_drained_nodes(
     create_fake_node: Callable[..., DockerNode],
     create_associated_instance: Callable[..., AssociatedInstance],
 ):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
     machine_buffer_type = get_hot_buffer_type(random_fake_available_instances)
     _NUM_DRAINED_NODES = 20
     _NUM_NODE_WITH_TYPE_BUFFER = (

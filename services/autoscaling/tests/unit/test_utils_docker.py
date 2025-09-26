@@ -54,7 +54,6 @@ from simcore_service_autoscaling.utils.utils_docker import (
     compute_tasks_needed_resources,
     find_node_with_name,
     get_docker_login_on_start_bash_command,
-    get_docker_pull_images_crontab,
     get_docker_pull_images_on_start_bash_command,
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
@@ -1076,34 +1075,6 @@ def test_get_docker_pull_images_on_start_bash_command(
     images: list[DockerGenericTag], expected_cmd: str
 ):
     assert get_docker_pull_images_on_start_bash_command(images) == expected_cmd
-
-
-@pytest.mark.parametrize(
-    "interval, expected_cmd",
-    [
-        (
-            datetime.timedelta(minutes=20),
-            'echo "*/20 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
-        ),
-        (
-            datetime.timedelta(seconds=20),
-            'echo "*/1 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
-        ),
-        (
-            datetime.timedelta(seconds=200),
-            'echo "*/3 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
-        ),
-        (
-            datetime.timedelta(days=3),
-            'echo "*/4320 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
-        ),
-    ],
-    ids=str,
-)
-def test_get_docker_pull_images_crontab(
-    interval: datetime.timedelta, expected_cmd: str
-):
-    assert get_docker_pull_images_crontab(interval) == expected_cmd
 
 
 def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
