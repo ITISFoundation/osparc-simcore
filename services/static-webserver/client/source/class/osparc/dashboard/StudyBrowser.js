@@ -192,6 +192,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
 
+      let filterEnabled = false;
       let request = null;
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES:
@@ -203,6 +204,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS: {
           const filterData = this._searchBarFilter.getFilterData();
           const text = filterData.text ? encodeURIComponent(filterData.text) : "";
+          filterEnabled = filterData.tags.length || filterData.sharedWith;
           request = osparc.store.Workspaces.getInstance().searchWorkspaces(text, this.getOrderBy());
           break;
         }
@@ -212,6 +214,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__setWorkspacesToList([]);
       request
         .then(workspaces => {
+          if (filterEnabled) {
+            return;
+          }
           this.__setWorkspacesToList(workspaces);
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
             if (workspaces.length) {
@@ -239,6 +244,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
 
+      let filterEnabled = false;
       let request = null;
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS: {
@@ -253,6 +259,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS: {
           const filterData = this._searchBarFilter.getFilterData();
           const text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
+          filterEnabled = filterData.tags.length || filterData.sharedWith;
           request = osparc.store.Folders.getInstance().searchFolders(text, this.getOrderBy());
           break;
         }
@@ -262,6 +269,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__setFoldersToList([]);
       return request
         .then(folders => {
+          if (filterEnabled) {
+            return;
+          }
           this.__setFoldersToList(folders);
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
             if (folders.length) {
