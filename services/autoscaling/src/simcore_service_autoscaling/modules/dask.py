@@ -8,7 +8,6 @@ from typing import Any, Final, TypeAlias
 
 import dask.typing
 import distributed
-import distributed.scheduler
 from aws_library.ec2 import EC2InstanceData, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
 from distributed.core import Status
