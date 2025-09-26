@@ -9,6 +9,7 @@ from contextlib import suppress
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI, status
+from helpers import SCREENSHOT_SUFFIX, SCREENSHOTS_PATH
 from httpx import AsyncClient
 from hypercorn.asyncio import serve
 from hypercorn.config import Config
@@ -61,7 +62,8 @@ def server_host_port() -> str:
     return f"127.0.0.1:{DEFAULT_FASTAPI_PORT}"
 
 
-def _reset_nicegui_app() -> None:
+@pytest.fixture
+def reset_nicegui_app() -> None:
     # forces rebuild of middleware stack on next test
 
     # below is based on nicegui.testing.general_fixtures.nicegui_reset_globals
@@ -92,14 +94,21 @@ def _reset_nicegui_app() -> None:
 
 
 @pytest.fixture
-def not_initialized_app(app_environment: EnvVarsDict) -> FastAPI:
-    _reset_nicegui_app()
+def not_initialized_app(
+    reset_nicegui_app: None, app_environment: EnvVarsDict
+) -> FastAPI:
     return create_app()
 
 
 @pytest.fixture
+def remove_old_screenshots() -> None:
+    for old_screenshot in SCREENSHOTS_PATH.glob(f"*{SCREENSHOT_SUFFIX}"):
+        old_screenshot.unlink()
+
+
+@pytest.fixture
 async def app_runner(
-    not_initialized_app: FastAPI, server_host_port: str
+    remove_old_screenshots: None, not_initialized_app: FastAPI, server_host_port: str
 ) -> AsyncIterable[None]:
 
     shutdown_event = asyncio.Event()
