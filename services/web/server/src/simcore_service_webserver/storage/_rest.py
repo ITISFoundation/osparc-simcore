@@ -525,6 +525,7 @@ async def export_data(request: web.Request) -> web.Response:
     return create_data_response(
         TaskGet(
             task_id=_job_id,
+            task_name=async_job_rpc_get.job_name,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_job_id)))}",
             result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=_job_id)))}",
@@ -570,6 +571,7 @@ async def search(request: web.Request) -> web.Response:
     return create_data_response(
         TaskGet(
             task_id=_job_id,
+            task_name=async_job_rpc_get.job_name,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_job_id)))}",
             result_stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_job_id)))}",

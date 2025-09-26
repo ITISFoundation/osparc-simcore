@@ -124,20 +124,35 @@ class TasksQueue(StrEnum):
 class TaskMetadata(BaseModel):
     name: TaskName
     ephemeral: bool = True
+    streamed_result: bool = False
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
 TaskEventID: TypeAlias = str
 
 
+class TaskEventType(StrEnum):
+    DATA = "data"
+    STATUS = "status"
+
+
+class TaskStatusValue(StrEnum):
+    CREATED = "created"
+    SUCCESS = "success"
+    ERROR = "error"
+
+
 class TaskDataEvent(BaseModel):
-    type: Literal["data"] = "data"
+    type: Literal[TaskEventType.DATA] = TaskEventType.DATA
     data: Any
 
 
 class TaskStatusEvent(BaseModel):
-    type: Literal["status"] = "status"
-    data: Literal["done", "error"]
+    type: Literal[TaskEventType.STATUS] = TaskEventType.STATUS
+    data: TaskStatusValue
+
+    def is_done(self):
+        return self.data in (TaskStatusValue.SUCCESS, TaskStatusValue.ERROR)
 
 
 TaskEvent = Annotated[

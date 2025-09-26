@@ -1,7 +1,8 @@
 import contextlib
+import datetime
 import logging
 from collections.abc import AsyncIterator
-from datetime import timedelta
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
 from models_library.progress_bar import ProgressReport
@@ -14,6 +15,8 @@ from servicelib.celery.models import (
     TaskID,
     TaskInfoStore,
     TaskMetadata,
+    TaskStatusEvent,
+    TaskStatusValue,
     Wildcard,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
@@ -28,8 +31,11 @@ _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 _CELERY_TASK_STREAM_DEFAULT_ID: Final[str] = "0-0"
 _CELERY_TASK_STREAM_BLOCK_TIMEOUT: Final[int] = 3 * 1000  # milliseconds
 _CELERY_TASK_STREAM_COUNT: Final[int] = 10
-_CELERY_TASK_STREAM_EXPIRE_DEFAULT: Final[timedelta] = timedelta(minutes=5)
+_CELERY_TASK_STREAM_EXPIRE_DEFAULT: Final[datetime.timedelta] = datetime.timedelta(
+    minutes=5
+)
 _CELERY_TASK_STREAM_MAXLEN: Final[int] = 1000
+
 
 _logger = logging.getLogger(__name__)
 
@@ -42,15 +48,15 @@ def _build_stream_key(task_id: TaskID) -> str:
     return _CELERY_TASK_STREAM_PREFIX + task_id
 
 
+@dataclass
 class RedisTaskInfoStore:
-    def __init__(self, redis_client_sdk: RedisClientSDK) -> None:
-        self._redis_client_sdk = redis_client_sdk
+    _redis_client_sdk: RedisClientSDK
 
     async def create_task(
         self,
         task_id: TaskID,
         task_metadata: TaskMetadata,
-        expiry: timedelta,
+        expiry: datetime.timedelta,
     ) -> None:
         task_key = _build_info_key(task_id)
         await handle_redis_returns_union_types(
@@ -64,6 +70,22 @@ class RedisTaskInfoStore:
             task_key,
             expiry,
         )
+
+        if task_metadata.streamed_result:
+            stream_key = _build_stream_key(task_id)
+            await self._redis_client_sdk.redis.xadd(
+                stream_key,
+                {
+                    "event": TaskStatusEvent(
+                        data=TaskStatusValue.CREATED
+                    ).model_dump_json()
+                },
+                maxlen=_CELERY_TASK_STREAM_MAXLEN,
+                approximate=True,
+            )
+            await self._redis_client_sdk.redis.expire(
+                stream_key, _CELERY_TASK_STREAM_EXPIRE_DEFAULT
+            )
 
     async def get_task_metadata(self, task_id: TaskID) -> TaskMetadata | None:
         raw_result = await handle_redis_returns_union_types(
@@ -159,8 +181,6 @@ class RedisTaskInfoStore:
         await self._redis_client_sdk.redis.xadd(
             stream_key,
             {"event": event.model_dump_json()},
-            maxlen=_CELERY_TASK_STREAM_MAXLEN,
-            approximate=True,
         )
 
     async def consume_task_events(

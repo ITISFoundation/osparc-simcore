@@ -18,7 +18,12 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskDataEvent, TaskID, TaskStatusEvent
+from servicelib.celery.models import (
+    TaskDataEvent,
+    TaskID,
+    TaskStatusEvent,
+    TaskStatusValue,
+)
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
@@ -183,5 +188,5 @@ async def search(
             )
 
         await app_server.task_manager.publish_task_event(
-            task_id, TaskStatusEvent(data="done")
+            task_id, TaskStatusEvent(data=TaskStatusValue.SUCCESS)
         )

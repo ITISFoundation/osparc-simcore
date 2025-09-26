@@ -28,7 +28,7 @@ from servicelib.aiohttp.rest_responses import (
     create_data_response,
     create_event_stream_response,
 )
-from servicelib.celery.models import TaskFilter
+from servicelib.celery.models import TaskEventType, TaskFilter
 from servicelib.long_running_tasks import lrt_api
 from servicelib.sse.models import SSEEvent, SSEHeaders
 
@@ -209,7 +209,8 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
             yield SSEEvent(
                 id=event_id, event=event.type, data=[json_dumps(event.data)]
             ).serialize()
-            if event.type == "status":
+
+            if event.type == TaskEventType.STATUS and event.is_done():
                 break
 
     return create_event_stream_response(event_generator=event_generator)
