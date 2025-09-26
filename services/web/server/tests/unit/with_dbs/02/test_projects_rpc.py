@@ -12,12 +12,18 @@ from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageLimitInt,
+    PageOffsetInt,
+)
 from models_library.rpc.webserver.projects import (
     ListProjectsMarkedAsJobRpcFilters,
     MetadataFilterItem,
     PageRpcProjectJobRpcGet,
     ProjectJobRpcGet,
 )
+from models_library.users import UserID
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -28,6 +34,7 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectForbiddenRpcError,
     ProjectNotFoundRpcError,
 )
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.projects.models import ProjectDict
@@ -94,18 +101,148 @@ async def test_rpc_client_mark_project_as_job(
     )
 
 
-async def test_rpc_client_list_my_projects_marked_as_jobs(
+@pytest.fixture(params=["free_functions", "v1_client"])
+async def projects_interface(
+    request: pytest.FixtureRequest,
     rpc_client: RabbitMQRPCClient,
+):
+    """Fixture that provides both free function and v1 client interfaces for projects."""
+    if request.param == "free_functions":
+        # Return a namespace object that mimics the free function interface
+        class FreeFunction:
+            @staticmethod
+            async def list_projects_marked_as_jobs(
+                rpc_client: RabbitMQRPCClient,
+                *,
+                product_name: ProductName,
+                user_id: UserID,
+                offset: PageOffsetInt = 0,
+                limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+                filters: ListProjectsMarkedAsJobRpcFilters | None = None,
+            ) -> PageRpcProjectJobRpcGet:
+                return await projects_rpc.list_projects_marked_as_jobs(
+                    rpc_client=rpc_client,
+                    product_name=product_name,
+                    user_id=user_id,
+                    offset=offset,
+                    limit=limit,
+                    filters=filters,
+                )
+
+            @staticmethod
+            async def mark_project_as_job(
+                rpc_client: RabbitMQRPCClient,
+                *,
+                product_name: ProductName,
+                user_id: UserID,
+                project_uuid: ProjectID,
+                job_parent_resource_name: str,
+                storage_assets_deleted: bool,
+            ) -> None:
+                return await projects_rpc.mark_project_as_job(
+                    rpc_client=rpc_client,
+                    product_name=product_name,
+                    user_id=user_id,
+                    project_uuid=project_uuid,
+                    job_parent_resource_name=job_parent_resource_name,
+                    storage_assets_deleted=storage_assets_deleted,
+                )
+
+            @staticmethod
+            async def get_project_marked_as_job(
+                rpc_client: RabbitMQRPCClient,
+                *,
+                product_name: ProductName,
+                user_id: UserID,
+                project_uuid: ProjectID,
+                job_parent_resource_name: str,
+            ) -> ProjectJobRpcGet:
+                return await projects_rpc.get_project_marked_as_job(
+                    rpc_client=rpc_client,
+                    product_name=product_name,
+                    user_id=user_id,
+                    project_uuid=project_uuid,
+                    job_parent_resource_name=job_parent_resource_name,
+                )
+
+        return FreeFunction(), rpc_client
+
+    assert request.param == "v1_client"
+    # Return the v1 client interface
+    v1_client = WebServerRpcClient(rpc_client)
+
+    class V1ClientAdapter:
+        def __init__(self, client: WebServerRpcClient):
+            self._client = client
+
+        async def list_projects_marked_as_jobs(
+            self,
+            rpc_client: RabbitMQRPCClient,  # Not used in v1, kept for compatibility
+            *,
+            product_name: ProductName,
+            user_id: UserID,
+            offset: PageOffsetInt = 0,
+            limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+            filters: ListProjectsMarkedAsJobRpcFilters | None = None,
+        ) -> PageRpcProjectJobRpcGet:
+            return await self._client.projects.list_projects_marked_as_jobs(
+                product_name=product_name,
+                user_id=user_id,
+                offset=offset,
+                limit=limit,
+                filters=filters,
+            )
+
+        async def mark_project_as_job(
+            self,
+            rpc_client: RabbitMQRPCClient,  # Not used in v1, kept for compatibility
+            *,
+            product_name: ProductName,
+            user_id: UserID,
+            project_uuid: ProjectID,
+            job_parent_resource_name: str,
+            storage_assets_deleted: bool,
+        ) -> None:
+            return await self._client.projects.mark_project_as_job(
+                product_name=product_name,
+                user_id=user_id,
+                project_uuid=project_uuid,
+                job_parent_resource_name=job_parent_resource_name,
+                storage_assets_deleted=storage_assets_deleted,
+            )
+
+        async def get_project_marked_as_job(
+            self,
+            rpc_client: RabbitMQRPCClient,  # Not used in v1, kept for compatibility
+            *,
+            product_name: ProductName,
+            user_id: UserID,
+            project_uuid: ProjectID,
+            job_parent_resource_name: str,
+        ) -> ProjectJobRpcGet:
+            return await self._client.projects.get_project_marked_as_job(
+                product_name=product_name,
+                user_id=user_id,
+                project_uuid=project_uuid,
+                job_parent_resource_name=job_parent_resource_name,
+            )
+
+    return V1ClientAdapter(v1_client), rpc_client
+
+
+async def test_rpc_client_list_my_projects_marked_as_jobs(
+    projects_interface: tuple,
     product_name: ProductName,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
 ):
+    interface, rpc_client = projects_interface
     project_uuid = ProjectID(user_project["uuid"])
     user_id = logged_user["id"]
 
     # Mark the project as a job first
-    await projects_rpc.mark_project_as_job(
-        rpc_client=rpc_client,
+    await interface.mark_project_as_job(
+        rpc_client,
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
@@ -114,8 +251,8 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
     )
 
     # List projects marked as jobs
-    page: PageRpcProjectJobRpcGet = await projects_rpc.list_projects_marked_as_jobs(
-        rpc_client=rpc_client,
+    page: PageRpcProjectJobRpcGet = await interface.list_projects_marked_as_jobs(
+        rpc_client,
         product_name=product_name,
         user_id=user_id,
         filters=ListProjectsMarkedAsJobRpcFilters(
