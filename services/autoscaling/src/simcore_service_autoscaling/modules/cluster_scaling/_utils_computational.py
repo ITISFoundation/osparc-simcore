@@ -6,7 +6,6 @@ from dask_task_models_library.resource_constraints import (
     DaskTaskResources,
     get_ec2_instance_type_from_resources,
 )
-from pydantic import ByteSize
 
 from ...models import DaskTask
 
@@ -20,7 +19,7 @@ _DASK_TO_RESOURCE_NAME_MAPPING: Final[dict[str, str]] = {
     "RAM": "ram",
 }
 _DEFAULT_DASK_RESOURCES: Final[DaskTaskResources] = DaskTaskResources(
-    CPU=_DEFAULT_MAX_CPU, RAM=ByteSize(_DEFAULT_MAX_RAM), threads=1
+    CPU=_DEFAULT_MAX_CPU, RAM=_DEFAULT_MAX_RAM, threads=1
 )
 
 
@@ -30,7 +29,11 @@ def resources_from_dask_task(task: DaskTask) -> Resources:
     )  # merge with defaults
 
     return Resources.from_flat_dict(
-        {_DASK_TO_RESOURCE_NAME_MAPPING.get(k, k): v for k, v in task_resources.items()}
+        {
+            _DASK_TO_RESOURCE_NAME_MAPPING.get(k, k): v
+            for k, v in task_resources.items()
+            if isinstance(v, int | float | str)
+        }
     )
 
 
