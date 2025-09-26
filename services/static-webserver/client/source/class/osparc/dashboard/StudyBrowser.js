@@ -215,7 +215,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       request
         .then(workspaces => {
           if (filterEnabled) {
-            return;
+            return Promise.resolve();
           }
           this.__setWorkspacesToList(workspaces);
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
@@ -270,7 +270,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return request
         .then(folders => {
           if (filterEnabled) {
-            return;
+            return Promise.resolve();
           }
           this.__setFoldersToList(folders);
           if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
