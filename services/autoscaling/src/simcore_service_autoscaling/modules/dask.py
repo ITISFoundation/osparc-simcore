@@ -208,15 +208,6 @@ async def list_unrunnable_tasks(
         DaskSchedulerNotFoundError
     """
 
-    def _list_tasks(
-        dask_scheduler: distributed.Scheduler,
-    ) -> dict[dask.typing.Key, dict[str, float]]:
-        # NOTE: task.key can be a byte, str, or a tuple
-        return {
-            task.key: task.resource_restrictions or {}
-            for task in dask_scheduler.unrunnable
-        }
-
     async with _scheduler_client(scheduler_url, authentication) as client:
         known_tasks = await _list_cluster_known_tasks(client)
         list_of_tasks = known_tasks["unrunnable"]
@@ -224,8 +215,7 @@ async def list_unrunnable_tasks(
         return [
             DaskTask(
                 task_id=_dask_key_to_dask_task_id(task_id),
-                required_resources=task_resources
-                | {DASK_WORKER_THREAD_RESOURCE_NAME: 1},
+                required_resources=task_resources,
             )
             for task_id, task_resources in list_of_tasks.items()
         ]
@@ -291,24 +281,23 @@ async def get_worker_used_resources(
         worker_url, _ = _dask_worker_from_ec2_instance(client, ec2_instance)
         known_tasks = await _list_cluster_known_tasks(client)
         worker_processing_tasks = known_tasks["processing"].get(worker_url, [])
+        if not worker_processing_tasks:
+            return Resources.create_as_empty()
 
         total_resources_used: collections.Counter[str] = collections.Counter()
         for _, task_resources in worker_processing_tasks:
             total_resources_used.update(task_resources)
 
         _logger.debug("found %s for %s", f"{total_resources_used=}", f"{worker_url=}")
-        worker_used_resources = Resources(
+        return Resources(
             cpus=total_resources_used.get("CPU", 0),
             ram=TypeAdapter(ByteSize).validate_python(
                 total_resources_used.get("RAM", 0)
             ),
+            generic_resources={
+                k: v for k, v in total_resources_used.items() if k not in {"CPU", "RAM"}
+            },
         )
-        if worker_processing_tasks:
-            worker_used_resources.generic_resources[
-                DASK_WORKER_THREAD_RESOURCE_NAME
-            ] = len(worker_processing_tasks)
-
-        return worker_used_resources
 
 
 async def compute_cluster_total_resources(
