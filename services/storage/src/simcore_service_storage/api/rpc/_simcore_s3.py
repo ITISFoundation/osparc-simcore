@@ -49,9 +49,9 @@ async def copy_folders_from_project(
 async def start_export_data(
     task_manager: TaskManager,
     owner_metadata: OwnerMetadata,
+    user_id: UserID,
     paths_to_export: list[PathToExport],
     export_as: Literal["path", "download_link"],
-    user_id: UserID,
 ) -> AsyncJobGet:
     if export_as == "path":
         task_name = export_data.__name__
@@ -75,7 +75,8 @@ async def start_export_data(
 @router.expose()
 async def start_search(
     task_manager: TaskManager,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
+    user_id: UserID,
     limit: int,
     name_pattern: str,
     modified_at: (
@@ -84,14 +85,13 @@ async def start_search(
     project_id: str | None = None,
 ) -> AsyncJobGet:
     task_name = search.__name__
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        task_metadata=TaskMetadata(
+        execution_metadata=ExecutionMetadata(
             name=task_name,
             streamed_result=True,
         ),
-        task_filter=task_filter,
-        user_id=job_filter.user_id,
+        owner_metadata=owner_metadata,
+        user_id=user_id,
         project_id=project_id,
         limit=limit,
         name_pattern=name_pattern,

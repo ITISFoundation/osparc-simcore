@@ -564,6 +564,7 @@ async def search(request: web.Request) -> web.Response:
                 product_name=_req_ctx.product_name,
             ).model_dump()
         ),
+        user_id=_req_ctx.user_id,
         limit=search_body.limit,
         name_pattern=search_body.filters.name_pattern,
         modified_at=(

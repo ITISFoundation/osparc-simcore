@@ -61,6 +61,7 @@ async def start_search(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     owner_metadata: OwnerMetadata,
+    user_id: UserID,
     limit: int,
     name_pattern: str,
     modified_at: (
@@ -73,6 +74,7 @@ async def start_search(
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=TypeAdapter(RPCMethodName).validate_python("start_search"),
         owner_metadata=owner_metadata,
+        user_id=user_id,
         limit=limit,
         name_pattern=name_pattern,
         modified_at=modified_at,

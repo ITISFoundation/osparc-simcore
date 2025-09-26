@@ -186,7 +186,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     )
 
     return create_data_response(
-        TaskResult(result=task_result, error=None),
+        TaskResult(result=task_result.result, error=None),
         status=status.HTTP_200_OK,
     )
 
