@@ -1,7 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from functools import cached_property
 from unittest.mock import Mock
 
@@ -65,6 +65,23 @@ def router(layout_manager: LayoutManager) -> APIRouter:
         ui.label("AFTER_CORPUS")
 
     return router
+
+
+@pytest.fixture
+def ensure_page_loaded(
+    async_page: Page,
+    server_host_port: str,
+    mount_path: str,
+    layout_manager: LayoutManager,
+) -> Callable[[Callable[[], None]], Awaitable[None]]:
+    async def _(draw_ui: Callable[[], None]) -> None:
+        layout_manager.set(draw_ui)
+        await async_page.goto(f"{server_host_port}{mount_path}")
+        await _ensure_before_corpus(async_page)
+        await _ensure_after_corpus(async_page)
+        print("✅ index page loaded")
+
+    return _
 
 
 @pytest.fixture
@@ -270,10 +287,8 @@ def _get_updatable_display_model_ids(obj: BaseUpdatableDisplayModel) -> dict[int
 )
 async def test_updatable_component(
     app_runner: None,
+    ensure_page_loaded: Callable[[Callable[[], None]], Awaitable[None]],
     async_page: Page,
-    layout_manager: LayoutManager,
-    mount_path: str,
-    server_host_port: str,
     person: Person,
     person_update: Person,
     expect_same_companion_object: bool,
@@ -282,12 +297,7 @@ async def test_updatable_component(
     def _index_corpus() -> None:
         PersonComponent(person).display()
 
-    layout_manager.set(_index_corpus)
-
-    await async_page.goto(f"{server_host_port}{mount_path}")
-    await _ensure_before_corpus(async_page)
-    await _ensure_after_corpus(async_page)
-    print("✅ index page loaded")
+    await ensure_page_loaded(_index_corpus)
 
     # check initial page layout
     await _ensure_index_page(async_page, person)
@@ -314,17 +324,9 @@ async def test_updatable_component(
     await _ensure_after_corpus(async_page)
 
 
-# TODO: add a test where I have 10 Persons Rendered on the page
-# Add add a way to remove and add them to the page based on a model to which we add or remove stuff
-# might require some special facilities in the BaseUpdatableComponent
-
-
 async def test_multiple_componenets_management(
     app_runner: None,
-    async_page: Page,
-    layout_manager: LayoutManager,
-    mount_path: str,
-    server_host_port: str,
+    ensure_page_loaded: Callable[[Callable[[], None]], Awaitable[None]],
 ):
     def _index_corpus() -> None:
         # TODO: crate something that updates a dict[str, BaseUpdatableDisplayModel]
@@ -334,9 +336,9 @@ async def test_multiple_componenets_management(
         # PersonComponent(person).display()
         pass
 
-    layout_manager.set(_index_corpus)
+    await ensure_page_loaded(_index_corpus)
 
-    await async_page.goto(f"{server_host_port}{mount_path}")
-    await _ensure_before_corpus(async_page)
-    await _ensure_after_corpus(async_page)
-    print("✅ index page loaded")
+
+# TODO: add a test where I have 10 Persons Rendered on the page
+# Add add a way to remove and add them to the page based on a model to which we add or remove stuff
+# might require some special facilities in the BaseUpdatableComponent
