@@ -300,6 +300,11 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(description="Namespace to connect to correct webserver's RPC interface"),
     ]
 
+    DIRECTOR_V2_WEBSERVER_RPC_NAMESPACE: Annotated[
+        RPCNamespace,
+        Field(description="Namespace to connect to correct webserver's RPC interface"),
+    ]
+
     @field_validator("LOG_LEVEL", mode="before")
     @classmethod
     def _validate_loglevel(cls, value: str) -> str:

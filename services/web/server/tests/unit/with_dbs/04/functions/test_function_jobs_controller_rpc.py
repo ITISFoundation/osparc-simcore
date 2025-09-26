@@ -266,7 +266,7 @@ async def test_list_function_jobs_with_status(
 
     # List function jobs
     jobs, _ = await functions_rpc.list_function_jobs_with_status(
-        rabbitmq_rpc_client=rpc_client,
+        rpc_client=rpc_client,
         pagination_limit=10,
         pagination_offset=0,
         user_id=logged_user["id"],
@@ -574,7 +574,7 @@ async def test_patch_registered_function_jobs(
     )
 
     registered_job = await functions_rpc.patch_registered_function_job(
-        rabbitmq_rpc_client=rpc_client,
+        rpc_client=rpc_client,
         user_id=logged_user["id"],
         function_job_uuid=registered_job.uid,
         product_name=osparc_product_name,
@@ -651,7 +651,7 @@ async def test_incompatible_patch_model_error(
     )
     with pytest.raises(FunctionJobPatchModelIncompatibleError):
         registered_job = await functions_rpc.patch_registered_function_job(
-            rabbitmq_rpc_client=rpc_client,
+            rpc_client=rpc_client,
             user_id=logged_user["id"],
             function_job_uuid=registered_job.uid,
             product_name=osparc_product_name,

@@ -148,13 +148,14 @@ class ApplicationSettings(BasicSettings):
         ),
     ]
 
-    API_SERVER_WORKER_MODE: Annotated[
-        bool, Field(description="If True, the API server runs in worker mode")
-    ] = False
     API_SERVER_WEBSERVER_RPC_NAMESPACE: Annotated[
         RPCNamespace,
         Field(description="Namespace to connect to correct webserver's RPC interface"),
     ]
+
+    API_SERVER_WORKER_MODE: Annotated[
+        bool, Field(description="If True, the API server runs in worker mode")
+    ] = False
 
     @cached_property
     def debug(self) -> bool:

@@ -9,8 +9,8 @@ from servicelib.rabbitmq import RPCRouter
 
 from ..products import products_service
 from ..products.models import CreditResult
-from ..users import users_service
 from ..rabbitmq import create_register_rpc_routes_on_startup
+from ..users import users_service
 
 router = RPCRouter()
 

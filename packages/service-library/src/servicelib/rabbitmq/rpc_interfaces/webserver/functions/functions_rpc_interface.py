@@ -28,9 +28,8 @@ from models_library.functions import (
     RegisteredFunctionJobWithStatus,
 )
 from models_library.products import ProductName
-from models_library.rest_ordering import OrderBy
-
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -201,7 +200,7 @@ async def list_function_jobs(
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def list_function_jobs_with_status(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
+    rpc_client: RabbitMQRPCClient,
     *,
     user_id: UserID,
     product_name: ProductName,
@@ -214,7 +213,7 @@ async def list_function_jobs_with_status(
     list[RegisteredFunctionJobWithStatus],
     PageMetaInfoLimitOffset,
 ]:
-    result = await rabbitmq_rpc_client.request(
+    result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("list_function_jobs_with_status"),
         user_id=user_id,
@@ -341,14 +340,14 @@ async def register_function_job(
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def patch_registered_function_job(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
+    rpc_client: RabbitMQRPCClient,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_job_uuid: FunctionJobID,
     registered_function_job_patch: RegisteredFunctionJobPatch,
 ) -> RegisteredFunctionJob:
-    result = await rabbitmq_rpc_client.request(
+    result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("patch_registered_function_job"),
         user_id=user_id,
