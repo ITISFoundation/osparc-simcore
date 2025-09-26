@@ -82,6 +82,9 @@ qx.Class.define("osparc.desktop.organizations.TutorialsList", {
           }, item, id);
         },
         configureItem: item => {
+          item.set({
+            cursor: "default",
+          });
           item.subscribeToFilterGroup("organizationTutorialsList");
           item.addListener("openMoreInfo", e => {
             const templateId = e.getData()["key"];

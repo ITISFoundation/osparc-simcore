@@ -144,6 +144,9 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
+          item.set({
+            cursor: "default",
+          });
           item.subscribeToFilterGroup("walletMembersList");
           item.getChildControl("thumbnail").setDecorator("circled");
           item.addListener("promoteToAccountant", e => {

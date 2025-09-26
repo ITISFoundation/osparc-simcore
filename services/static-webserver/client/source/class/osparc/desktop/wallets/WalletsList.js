@@ -115,8 +115,10 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           ctrl.bindProperty("autoRecharge", "autoRecharge", null, item, id);
         },
         configureItem: item => {
+          item.set({
+            cursor: "default",
+          });
           item.subscribeToFilterGroup("walletsList");
-
           item.addListener("openEditWallet", e => this.__openEditWallet(e.getData()));
           item.addListener("openShareWallet", e => this.__walletSelected(e.getData()));
           item.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
