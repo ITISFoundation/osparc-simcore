@@ -56,7 +56,9 @@ class TaskGet(TaskBase):
 
     @model_validator(mode="after")
     def _validate_result_hrefs(self) -> Self:
-        if not (self.result_href or self.result_stream_href):
-            msg = "Either result_href or result_stream_href must be set"
+        if self.result_href and self.result_stream_href:
+            msg = (
+                "Either result_href or result_stream_href must be set, or none of them"
+            )
             raise ValueError(msg)
         return self
