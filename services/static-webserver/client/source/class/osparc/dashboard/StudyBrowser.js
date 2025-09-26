@@ -792,9 +792,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       delete reqParams["limit"];
       delete reqParams["offset"];
       delete reqParams["filters"];
-      if (reqParams["text"]) {
-        // decodeURIComponent the text to compare it with the currentParams
-        reqParams["text"] = decodeURIComponent(reqParams["text"]);
+      if ("text" in reqParams) {
+        if (reqParams["text"] === "") {
+          delete reqParams["text"];
+        } else {
+          // decodeURIComponent the text to compare it with the currentParams
+          reqParams["text"] = decodeURIComponent(reqParams["text"]);
+        }
       }
 
       const cParams = this.__getRequestParams();
