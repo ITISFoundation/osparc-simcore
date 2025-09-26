@@ -296,6 +296,7 @@ def test_sort_drained_nodes(
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     machine_buffer_type = get_hot_buffer_type(random_fake_available_instances)
     _NUM_DRAINED_NODES = 20
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
     _NUM_NODE_WITH_TYPE_BUFFER = (
         3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
