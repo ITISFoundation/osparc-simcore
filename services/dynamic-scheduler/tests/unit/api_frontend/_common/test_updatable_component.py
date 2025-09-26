@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import nicegui
 import pytest
 from fastapi import FastAPI
-from helpers import assert_contains_text
+from helpers import assert_contains_text, assert_not_contains_text
 from nicegui import APIRouter, ui
 from playwright.async_api import Page
 from pydantic import NonNegativeInt
@@ -90,7 +90,7 @@ class Person(BaseUpdatableDisplayModel):
 
 
 class FriendComponent(BaseUpdatableComponent[Friend]):
-    def add_to_ui(self) -> None:
+    def _draw_ui(self) -> None:
         ui.label().bind_text_from(
             self.display_model,
             "name",
@@ -104,7 +104,7 @@ class FriendComponent(BaseUpdatableComponent[Friend]):
 
 
 class PetComponent(BaseUpdatableComponent[Pet]):
-    def add_to_ui(self) -> None:
+    def _draw_ui(self) -> None:
         ui.label().bind_text_from(
             self.display_model,
             "name",
@@ -118,7 +118,7 @@ class PetComponent(BaseUpdatableComponent[Pet]):
 
 
 class PersonComponent(BaseUpdatableComponent[Person]):
-    def add_to_ui(self) -> None:
+    def _draw_ui(self) -> None:
         # NOTE:
         # There are 3 ways to bind the UI to the model changes:
         # 1. using nicegui builting facilties
@@ -147,10 +147,10 @@ class PersonComponent(BaseUpdatableComponent[Person]):
         @ui.refreshable
         def _friend_or_pet_ui() -> None:
             if isinstance(self.display_model.companion, Friend):
-                FriendComponent(self.display_model.companion).add_to_ui()
+                FriendComponent(self.display_model.companion).display()
 
             elif isinstance(self.display_model.companion, Pet):
-                PetComponent(self.display_model.companion).add_to_ui()
+                PetComponent(self.display_model.companion).display()
 
         _friend_or_pet_ui()
         self.display_model.on_type_change("companion", _friend_or_pet_ui.refresh)
@@ -158,7 +158,7 @@ class PersonComponent(BaseUpdatableComponent[Person]):
 
 def _index_page_ui(person: Person) -> None:
     ui.label("BEFORE_LABEL")
-    PersonComponent(person).add_to_ui()
+    PersonComponent(person).display()
     ui.label("AFTER_LABEL")
 
 
@@ -198,30 +198,57 @@ async def _ensure_index_page(async_page: Page, person: Person) -> None:
     await _ensure_after_label(async_page)
 
 
+async def _ensure_companion_not_present(async_page: Page) -> None:
+    await assert_not_contains_text(async_page, "Pet Name: ")
+    await assert_not_contains_text(async_page, "Pet Species: ")
+
+    await assert_not_contains_text(async_page, "Friend Name: ")
+    await assert_not_contains_text(async_page, "Friend Age: ")
+
+
+async def _ensure_person_not_present(async_page: Page) -> None:
+    await assert_not_contains_text(async_page, "Name: ")
+    await assert_not_contains_text(async_page, "Age: ")
+
+    await _ensure_companion_not_present(async_page)
+
+
+def _get_updatable_display_model_ids(obj: BaseUpdatableDisplayModel) -> dict[int, str]:
+    result: dict[int, str] = {id(obj): obj.__class__.__name__}
+    for value in obj.__dict__.values():
+        if isinstance(value, BaseUpdatableDisplayModel):
+            result[id(value)] = value.__class__.__name__
+    return result
+
+
 @pytest.mark.parametrize(
-    "person, person_update, expected_callbacks_count",
+    "person, person_update, expect_same_companion_object, expected_callbacks_count",
     [
         pytest.param(
             Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
             Person(name="Alice", age=30, companion=Pet(name="Buddy", species="dog")),
+            True,
             0,
             id="update-pet-via-attribute-biding-no-rerender",
         ),
         pytest.param(
             Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
             Person(name="Alice", age=30, companion=Friend(name="Marta", age=30)),
+            False,
             1,
             id="update-pet-ui-via-rerednder-due-to-type-change",
         ),
         pytest.param(
             Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
             Person(name="Bob", age=30, companion=Pet(name="Fluffy", species="cat")),
+            True,
             0,
             id="change-person-name-via-bindings",
         ),
         pytest.param(
             Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
             Person(name="Alice", age=31, companion=Pet(name="Fluffy", species="cat")),
+            True,
             1,
             id="change-person-age-via-rerender-due-to-value-change",
         ),
@@ -234,15 +261,35 @@ async def test_updatable_component(
     server_host_port: str,
     person: Person,
     person_update: Person,
+    expect_same_companion_object: bool,
     expected_callbacks_count: NonNegativeInt,
 ):
     await async_page.goto(f"{server_host_port}{mount_path}")
+    print("✅ index page loaded")
 
     # check initial page layout
     await _ensure_index_page(async_page, person)
 
+    before_update = _get_updatable_display_model_ids(person)
     callbacks_count = person.update(person_update)
+    after_update = _get_updatable_display_model_ids(person)
+    assert (before_update == after_update) is expect_same_companion_object
+
     assert callbacks_count == expected_callbacks_count
 
     # change layout after update
     await _ensure_index_page(async_page, person_update)
+
+    # REMOVE only the companion form UI
+    person.companion.on_remove_from_ui()
+    await _ensure_companion_not_present(async_page)
+
+    # TODO: remove below check screenshto margins
+    await _ensure_index_page(async_page, person_update)
+
+    # REMOVE the person form UI
+    person.on_remove_from_ui()
+    await _ensure_person_not_present(async_page)
+
+    await _ensure_before_label(async_page)
+    await _ensure_after_label(async_page)

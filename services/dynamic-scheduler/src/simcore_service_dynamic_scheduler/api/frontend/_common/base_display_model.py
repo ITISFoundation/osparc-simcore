@@ -11,6 +11,7 @@ class BaseUpdatableDisplayModel(BaseModel):
     _on_value_change_subscribers: dict[str, Callable] = PrivateAttr(
         default_factory=dict
     )
+    _on_remove_from_ui_callback: Callable | None = PrivateAttr(default=None)
 
     def _get_on_change_callbacks_to_run(self, update_obj: Self) -> list[Callable]:
         callbaks_to_run: list[Callable] = []
@@ -39,17 +40,21 @@ class BaseUpdatableDisplayModel(BaseModel):
             if current_value != update_value:
                 if isinstance(update_value, BaseUpdatableDisplayModel):
                     if type(current_value) is type(update_value):
-                        # when the same type update the existing object
                         current_value.update(update_value)
                     else:
                         setattr(self, attribute_name, update_value)
-
-                setattr(self, attribute_name, update_value)
+                else:
+                    setattr(self, attribute_name, update_value)
 
         for callback in callbacks_to_run:
             callback()
 
         return len(callbacks_to_run)
+
+    def remove_from_ui(self) -> None:
+        """the UI will remove the component associated with this model"""
+        if self._on_remove_from_ui_callback:
+            self._on_remove_from_ui_callback()
 
     def _raise_if_attribute_not_declared_in_model(self, attribute: str) -> None:
         if attribute not in self.__class__.model_fields:
@@ -67,3 +72,10 @@ class BaseUpdatableDisplayModel(BaseModel):
         self._raise_if_attribute_not_declared_in_model(attribute)
 
         self._on_value_change_subscribers[attribute] = callback
+
+    def on_remove_from_ui(self, callback: Callable) -> None:
+        """
+        invokes callback when object is no longer required,
+        allows the UI to have a clear hook to remove the component
+        """
+        self._on_remove_from_ui_callback = callback
