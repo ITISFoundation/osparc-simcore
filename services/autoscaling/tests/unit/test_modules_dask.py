@@ -166,7 +166,10 @@ async def test_list_processing_tasks(
         scheduler_url, scheduler_authentication
     ) == {
         next(iter(dask_spec_cluster_client.scheduler_info()["workers"])): [
-            DaskTask(task_id=DaskTaskId(future_queued_task.key), required_resources={})
+            DaskTask(
+                task_id=DaskTaskId(future_queued_task.key),
+                required_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
+            )
         ]
     }
 
