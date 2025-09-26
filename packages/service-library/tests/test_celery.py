@@ -70,11 +70,11 @@ async def test_task_filter_task_uuid(
 ):
     task_filter = _TestOwnerMetadata.model_validate(test_owner_metadata)
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = task_filter.model_dump_task_key(task_uuid)
-    assert OwnerMetadata.get_task_uuid(task_key=task_id) == task_uuid
+    task_key = task_filter.model_dump_task_key(task_uuid)
+    assert OwnerMetadata.get_task_uuid(task_key=task_key) == task_uuid
 
 
-async def test_owner_metadata_task_id_dump_and_validate():
+async def test_owner_metadata_task_key_dump_and_validate():
 
     class MyModel(OwnerMetadata):
         int_: int
@@ -100,8 +100,8 @@ async def test_owner_metadata_task_id_dump_and_validate():
         list_s=["a", "b"],
     )
     task_uuid = TaskUUID(_faker.uuid4())
-    task_id = mymodel.model_dump_task_key(task_uuid)
-    mymodel_recreated = MyModel.model_validate_task_key(task_key=task_id)
+    task_key = mymodel.model_dump_task_key(task_uuid)
+    mymodel_recreated = MyModel.model_validate_task_key(task_key=task_key)
     assert mymodel_recreated == mymodel
 
 
