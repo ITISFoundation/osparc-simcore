@@ -38,14 +38,12 @@ from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rab
 
 _logger = logging.getLogger(__name__)
 
-_RABBITMQ_CONSUMERS_APPKEY: Final = web.AppKey(
-    "RABBITMQ_CONSUMERS_APPKEY", MutableMapping
-)
-WALLET_SUBSCRIPTIONS_APPKEY: Final = web.AppKey(
-    "WALLET_SUBSCRIPTIONS_APPKEY", defaultdict
+_RABBITMQ_CONSUMERS_APPKEY: Final = web.AppKey("RABBITMQ_CONSUMERS", MutableMapping)
+WALLET_SUBSCRIPTIONS_COUNT_APPKEY: Final = web.AppKey(
+    "WALLET_SUBSCRIPTIONS_COUNT", defaultdict  # wallet_id -> subscriber count
 )
 WALLET_SUBSCRIPTION_LOCK_APPKEY: Final = web.AppKey(
-    "WALLET_SUBSCRIPTION_LOCK_APPKEY", asyncio.Lock
+    "WALLET_SUBSCRIPTION_LOCK", asyncio.Lock
 )
 
 
@@ -227,8 +225,13 @@ async def on_cleanup_ctx_rabbitmq_consumers(
         app, _EXCHANGE_TO_PARSER_CONFIG
     )
 
-    app[WALLET_SUBSCRIPTIONS_APPKEY] = defaultdict(int)  # wallet_id -> subscriber count
-    app[WALLET_SUBSCRIPTION_LOCK_APPKEY] = asyncio.Lock()  # Ensures exclusive access
+    app[WALLET_SUBSCRIPTIONS_COUNT_APPKEY] = defaultdict(
+        int
+        # wallet_id -> subscriber count
+    )
+    app[WALLET_SUBSCRIPTION_LOCK_APPKEY] = asyncio.Lock(
+        # Ensures exclusive access to wallet subscription changes
+    )
 
     yield
 
