@@ -60,9 +60,9 @@ def router(layout_manager: LayoutManager) -> APIRouter:
 
     @ui.page("/", api_router=router)
     async def index():
-        ui.label("BEFORE_LABEL")
+        ui.label("BEFORE_CORPUS")
         layout_manager.draw()
-        ui.label("AFTER_LABEL")
+        ui.label("AFTER_CORPUS")
 
     return router
 
@@ -176,8 +176,8 @@ class PersonComponent(BaseUpdatableComponent[Person]):
         self.display_model.on_type_change("companion", _friend_or_pet_ui.refresh)
 
 
-async def _ensure_before_label(async_page: Page) -> None:
-    await assert_contains_text(async_page, "BEFORE_LABEL")
+async def _ensure_before_corpus(async_page: Page) -> None:
+    await assert_contains_text(async_page, "BEFORE_CORPUS")
 
 
 async def _ensure_person_name(async_page: Page, name: str) -> None:
@@ -197,19 +197,19 @@ async def _esnure_person_companion(async_page: Page, companion: Pet | Friend) ->
         await assert_contains_text(async_page, f"Friend Age: {companion.age}")
 
 
-async def _ensure_after_label(async_page: Page) -> None:
-    await assert_contains_text(async_page, "AFTER_LABEL")
+async def _ensure_after_corpus(async_page: Page) -> None:
+    await assert_contains_text(async_page, "AFTER_CORPUS")
 
 
 async def _ensure_index_page(async_page: Page, person: Person) -> None:
-    await _ensure_before_label(async_page)
+    await _ensure_before_corpus(async_page)
 
     await _ensure_person_name(async_page, person.name)
     await _ensure_person_age(async_page, person.age)
 
     await _esnure_person_companion(async_page, person.companion)
 
-    await _ensure_after_label(async_page)
+    await _ensure_after_corpus(async_page)
 
 
 async def _ensure_companion_not_present(async_page: Page) -> None:
@@ -271,13 +271,13 @@ def _get_updatable_display_model_ids(obj: BaseUpdatableDisplayModel) -> dict[int
 async def test_updatable_component(
     app_runner: None,
     async_page: Page,
+    layout_manager: LayoutManager,
     mount_path: str,
     server_host_port: str,
     person: Person,
     person_update: Person,
     expect_same_companion_object: bool,
     expected_callbacks_count: NonNegativeInt,
-    layout_manager: LayoutManager,
 ):
     def _index_corpus() -> None:
         PersonComponent(person).display()
@@ -285,6 +285,8 @@ async def test_updatable_component(
     layout_manager.set(_index_corpus)
 
     await async_page.goto(f"{server_host_port}{mount_path}")
+    await _ensure_before_corpus(async_page)
+    await _ensure_after_corpus(async_page)
     print("✅ index page loaded")
 
     # check initial page layout
@@ -308,10 +310,33 @@ async def test_updatable_component(
     person.remove_from_ui()
     await _ensure_person_not_present(async_page)
 
-    await _ensure_before_label(async_page)
-    await _ensure_after_label(async_page)
+    await _ensure_before_corpus(async_page)
+    await _ensure_after_corpus(async_page)
 
 
 # TODO: add a test where I have 10 Persons Rendered on the page
 # Add add a way to remove and add them to the page based on a model to which we add or remove stuff
 # might require some special facilities in the BaseUpdatableComponent
+
+
+async def test_multiple_componenets_management(
+    app_runner: None,
+    async_page: Page,
+    layout_manager: LayoutManager,
+    mount_path: str,
+    server_host_port: str,
+):
+    def _index_corpus() -> None:
+        # TODO: crate something that updates a dict[str, BaseUpdatableDisplayModel]
+        # this should add and remove elements to the UI with the keys
+        # This should be a component
+
+        # PersonComponent(person).display()
+        pass
+
+    layout_manager.set(_index_corpus)
+
+    await async_page.goto(f"{server_host_port}{mount_path}")
+    await _ensure_before_corpus(async_page)
+    await _ensure_after_corpus(async_page)
+    print("✅ index page loaded")
