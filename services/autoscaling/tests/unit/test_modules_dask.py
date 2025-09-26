@@ -126,7 +126,12 @@ async def test_list_unrunnable_tasks(
     future = create_dask_task(dask_task_impossible_resources)
     assert future
     assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == [
-        DaskTask(task_id=future.key, required_resources=dask_task_impossible_resources)
+        DaskTask(
+            task_id=future.key,
+            required_resources=(
+                dask_task_impossible_resources | {DASK_WORKER_THREAD_RESOURCE_NAME: 1}
+            ),
+        )
     ]
     # remove that future, will remove the task
     del future
