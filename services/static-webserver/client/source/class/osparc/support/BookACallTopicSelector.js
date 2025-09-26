@@ -22,7 +22,7 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.set({
       padding: 10,
@@ -40,12 +40,20 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "content-box":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            decorator: "rounded",
+            backgroundColor: "background-main-2",
+            padding: 10,
+          });
+          this._add(control);
+          break;
         case "intro-label":
           control = new qx.ui.basic.Label().set({
             value: this.tr("I would like..."),
             font: "text-14",
           });
-          this._add(control);
+          this.getChildControl("content-box").add(control);
           break;
         case "generic-intro-button":
           control = new qx.ui.form.RadioButton().set({
@@ -53,7 +61,7 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
             value: false,
             paddingTop: 10,
           });
-          this._add(control);
+          this.getChildControl("content-box").add(control);
           break;
         case "specific-intro-button":
           control = new qx.ui.form.RadioButton().set({
@@ -61,13 +69,13 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
             value: false,
             paddingTop: 10,
           });
-          this._add(control);
+          this.getChildControl("content-box").add(control);
           break;
         case "specific-intro-select-box":
           control = new qx.ui.form.SelectBox().set({
             marginLeft: 20,
           });
-          this._add(control);
+          this.getChildControl("content-box").add(control);
           this.getChildControl("specific-intro-button").bind("value", control, "visibility", {
             converter: val => val ? "visible" : "excluded"
           });
@@ -78,7 +86,7 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
             value: false,
             paddingTop: 10,
           });
-          this._add(control);
+          this.getChildControl("content-box").add(control);
           break;
         case "share-project-checkbox": {
           control = new qx.ui.form.CheckBox().set({
@@ -86,7 +94,7 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
             label: this.tr("share current project with support team (optional)"),
             marginLeft: 20,
           });
-          this._add(control);
+          this.getChildControl("content-box").add(control);
           this.getChildControl("help-with-project-button").bind("value", control, "visibility", {
             converter: val => val ? "visible" : "excluded"
           });
@@ -107,14 +115,14 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
             value: false,
             paddingTop: 10,
           });
-          this._add(control);
+          this.getChildControl("content-box").add(control);
           break;
         case "specific-topic-textfield":
           control = new qx.ui.form.TextArea().set({
             placeholder: this.tr("please provide any background information that could help us make this meeting more productive"),
             marginLeft: 20,
           });
-          this._add(control);
+          this.getChildControl("content-box").add(control);
           this.getChildControl("specific-topic-button").bind("value", control, "visibility", {
             converter: val => val ? "visible" : "excluded"
           });
