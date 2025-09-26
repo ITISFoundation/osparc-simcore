@@ -86,7 +86,7 @@ class SearchFilters(InputSchema):
         str,
         ensure_pattern_has_enough_characters(),
         Field(
-            description=f"Name pattern with wildcard support {tuple(WILDCARD_CHARS)}. "
+            description=f"Name pattern with wildcard support ({', '.join(WILDCARD_CHARS)}). "
             f"Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
         ),
     ]

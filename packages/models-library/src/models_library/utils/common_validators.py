@@ -25,7 +25,7 @@ from orjson import JSONDecodeError
 from pydantic import BaseModel, BeforeValidator
 from pydantic.alias_generators import to_camel
 
-WILDCARD_CHARS: Final[set[str]] = {"*", "?"}
+WILDCARD_CHARS: Final[list[str]] = ["*", "?"]
 MIN_NON_WILDCARD_CHARS: Final[int] = 3
 
 
