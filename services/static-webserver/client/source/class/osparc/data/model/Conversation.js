@@ -24,8 +24,9 @@ qx.Class.define("osparc.data.model.Conversation", {
 
   /**
    * @param conversationData {Object} Object containing the serialized Conversation Data
+   * @param studyId {String} ID of the Study
    * */
-  construct: function(conversationData) {
+  construct: function(conversationData, studyId) {
     this.base(arguments);
 
     this.set({
@@ -37,6 +38,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       modified: new Date(conversationData.modified),
       projectId: conversationData.projectUuid || null,
       extraContext: conversationData.extraContext || null,
+      studyId: studyId || null,
     });
 
     this.__messages = [];
@@ -56,6 +58,9 @@ qx.Class.define("osparc.data.model.Conversation", {
       CONVERSATION_MESSAGE_UPDATED: "conversation:message:updated",
       CONVERSATION_MESSAGE_DELETED: "conversation:message:deleted",
     },
+
+    MAX_TITLE_LENGTH: 50,
+    MAX_CONTENT_LENGTH: 4096,
   },
 
   properties: {
@@ -133,6 +138,12 @@ qx.Class.define("osparc.data.model.Conversation", {
       init: null,
       event: "changeLastMessage",
       apply: "__applyLastMessage",
+    },
+
+    studyId: {
+      check: "String",
+      nullable: true,
+      init: null,
     },
   },
 
@@ -221,6 +232,10 @@ qx.Class.define("osparc.data.model.Conversation", {
           limit: 42
         }
       };
+      if (this.getStudyId()) {
+        params.url.studyId = this.getStudyId();
+      }
+
       const nextRequestParams = this.__nextRequestParams;
       if (nextRequestParams) {
         params.url.offset = nextRequestParams.offset;
@@ -229,7 +244,10 @@ qx.Class.define("osparc.data.model.Conversation", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options)
+      const promise = this.getStudyId() ?
+        osparc.data.Resources.fetch("conversationsStudies", "getMessagesPage", params, options) :
+        osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options);
+      return promise
         .then(resp => {
           const messages = resp["data"];
           messages.forEach(message => this.addMessage(message));
@@ -241,9 +259,8 @@ qx.Class.define("osparc.data.model.Conversation", {
 
     renameConversation: function(newName) {
       osparc.store.ConversationsSupport.getInstance().renameConversation(this.getConversationId(), newName)
-        .then(() => {
-          this.setName(newName);
-        });
+        .then(() => this.setName(newName))
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     patchExtraContext: function(extraContext) {

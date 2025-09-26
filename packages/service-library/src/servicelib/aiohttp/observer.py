@@ -6,6 +6,7 @@ Allows loose coupling subject and an observer.
 import logging
 from collections import defaultdict
 from collections.abc import Callable
+from typing import Final
 
 from aiohttp import web
 
@@ -16,6 +17,9 @@ log = logging.getLogger(__name__)
 
 
 _APP_OBSERVER_EVENTS_REGISTRY_KEY = "{__name__}.event_registry"
+APP_FIRE_AND_FORGET_TASKS_KEY: Final = web.AppKey(
+    "APP_FIRE_AND_FORGET_TASKS_KEY", set[object]
+)
 
 
 class ObserverRegistryNotFoundError(RuntimeError): ...

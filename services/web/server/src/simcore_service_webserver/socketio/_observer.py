@@ -8,11 +8,11 @@ import logging
 
 from aiohttp import web
 from common_library.logging.logging_base import get_log_record_extra
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer  # type: ignore[import-untyped]
 
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..resource_manager.user_sessions import managed_resource
 from ._utils import get_socket_server
 

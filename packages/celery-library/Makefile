@@ -27,6 +27,7 @@ tests: ## runs unit tests
 		--durations=10 \
 		--exitfirst \
 		--failed-first \
+		--keep-docker-up \
 		--pdb \
 		-vv \
 		$(CURDIR)/tests
@@ -41,6 +42,7 @@ tests-ci: ## runs unit tests
 		--cov-report=term-missing \
 		--cov-report=xml \
 		--junitxml=junit.xml -o junit_family=legacy \
+		--keep-docker-up \
 		--cov=celery_library \
 		--durations=10 \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \

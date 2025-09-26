@@ -16,7 +16,6 @@ pytest_simcore_ops_services_selection = [
 
 
 async def test_redis_client_sdks_manager(
-    mock_redis_socket_timeout: None,
     redis_service: RedisSettings,
 ):
     all_redis_configs: set[RedisManagerDBConfig] = {
