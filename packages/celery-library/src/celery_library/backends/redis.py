@@ -34,7 +34,7 @@ _CELERY_TASK_STREAM_COUNT: Final[int] = 10
 _CELERY_TASK_STREAM_EXPIRE_DEFAULT: Final[datetime.timedelta] = datetime.timedelta(
     minutes=5
 )
-_CELERY_TASK_STREAM_MAXLEN: Final[int] = 1000
+_CELERY_TASK_STREAM_MAXLEN: Final[int] = 100_000
 
 
 _logger = logging.getLogger(__name__)
