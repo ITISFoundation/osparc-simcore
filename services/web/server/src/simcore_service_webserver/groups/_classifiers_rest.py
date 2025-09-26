@@ -9,7 +9,7 @@ from servicelib.aiohttp.requests_validation import (
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..scicrunch.models import ResearchResource, ResourceHit
-from ..scicrunch.repository import ResearchResourceRepository
+from ..scicrunch.scicrunch_service import ScicrunchResourcesService
 from ..scicrunch.service_client import SciCrunch
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -53,8 +53,8 @@ async def get_scicrunch_resource(request: web.Request):
     rrid = SciCrunch.validate_identifier(rrid)
 
     # check if in database first
-    repo = ResearchResourceRepository(request.app)
-    resource: ResearchResource | None = await repo.get_resource(rrid)
+    service = ScicrunchResourcesService(request.app)
+    resource: ResearchResource | None = await service.get_resource(rrid)
     if not resource:
         # otherwise, request to scicrunch service
         scicrunch = SciCrunch.get_instance(request.app)
@@ -74,15 +74,15 @@ async def add_scicrunch_resource(request: web.Request):
     rrid = request.match_info["rrid"]
 
     # check if exists
-    repo = ResearchResourceRepository(request.app)
-    resource: ResearchResource | None = await repo.get_resource(rrid)
+    service = ScicrunchResourcesService(request.app)
+    resource: ResearchResource | None = await service.get_resource(rrid)
     if not resource:
         # then request scicrunch service
         scicrunch = SciCrunch.get_instance(request.app)
         resource = await scicrunch.get_resource_fields(rrid)
 
         # insert new or if exists, then update
-        await repo.upsert(resource)
+        await service.upsert_resource(resource)
 
     return envelope_json_response(resource.model_dump())
 
