@@ -5,7 +5,7 @@ SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
 
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError
@@ -298,3 +298,8 @@ def append_rest_middlewares(
     """Helper that appends rest-middlewares in the correct order"""
     app.middlewares.append(error_middleware_factory(api_version))
     app.middlewares.append(envelope_middleware_factory(api_version))
+
+
+APP_JSONSCHEMA_SPECS_KEY: Final = web.AppKey(
+    "APP_JSONSCHEMA_SPECS_KEY", dict[str, object]
+)

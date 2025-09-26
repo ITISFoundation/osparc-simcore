@@ -79,7 +79,6 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import ByteSize, PositiveInt, TypeAdapter
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
@@ -112,6 +111,7 @@ from simcore_postgres_database.webserver_models import ProjectType
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID

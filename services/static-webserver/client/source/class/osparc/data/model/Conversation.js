@@ -58,6 +58,9 @@ qx.Class.define("osparc.data.model.Conversation", {
       CONVERSATION_MESSAGE_UPDATED: "conversation:message:updated",
       CONVERSATION_MESSAGE_DELETED: "conversation:message:deleted",
     },
+
+    MAX_TITLE_LENGTH: 50,
+    MAX_CONTENT_LENGTH: 4096,
   },
 
   properties: {
@@ -256,9 +259,8 @@ qx.Class.define("osparc.data.model.Conversation", {
 
     renameConversation: function(newName) {
       osparc.store.ConversationsSupport.getInstance().renameConversation(this.getConversationId(), newName)
-        .then(() => {
-          this.setName(newName);
-        });
+        .then(() => this.setName(newName))
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     patchExtraContext: function(extraContext) {

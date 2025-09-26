@@ -193,12 +193,11 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       const compRunning = this.getRunning();
       const hasOutputs = this.getHasOutputs();
       const modified = this.getModified();
-      const hasDependencies = this.hasDependencies();
       if (["PUBLISHED", "PENDING", "WAITING_FOR_RESOURCES", "WAITING_FOR_CLUSTER", "STARTED"].includes(compRunning)) {
         this.setOutput("busy");
       } else if ([null, false].includes(hasOutputs)) {
         this.setOutput("not-available");
-      } else if (hasOutputs && (modified || hasDependencies)) {
+      } else if (hasOutputs && modified) {
         this.setOutput("out-of-date");
       } else if (hasOutputs && !modified) {
         this.setOutput("up-to-date");
@@ -218,30 +217,10 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         // currentStatus is only applicable to computational services
         this.setRunning(state.currentStatus);
       }
-      if ("modified" in state) {
-        if (this.getHasOutputs()) {
-          // File Picker can't have a modified output
-          this.setModified((state.modified || this.hasDependencies()) && !this.getNode().isFilePicker());
-        } else {
-          this.setModified(null);
-        }
-      }
+      this.setModified("modified" in state ? state.modified : null);
       if ("lock_state" in state) {
         this.getLockState().stateReceived(state.lock_state);
       }
     },
-
-    serialize: function() {
-      const state = {};
-      state["dependencies"] = this.getDependencies() ? this.getDependencies() : [];
-      if (this.getNode().isComputational()) {
-        state["currentStatus"] = this.getRunning();
-      }
-      state["modified"] = null;
-      // File Picker can't have a modified output
-      if (this.getHasOutputs() && !this.getNode().isFilePicker()) {
-        state["modified"] = this.hasDependencies();
-      }
-    }
   }
 });

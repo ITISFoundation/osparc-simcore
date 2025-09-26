@@ -5,7 +5,7 @@ from models_library.rest_base import RequestParameters
 from models_library.users import UserID
 from pydantic import ConfigDict, Field, StringConstraints
 from pydantic_extra_types.phone_numbers import PhoneNumberValidator
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
 
 from .constants import RQ_PRODUCT_KEY

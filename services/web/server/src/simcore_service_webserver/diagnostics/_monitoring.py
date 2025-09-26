@@ -5,11 +5,11 @@ import time
 
 from aiohttp import web
 from servicelib.aiohttp import monitor_services
-from servicelib.aiohttp.application_setup import ensure_single_setup
 from servicelib.aiohttp.monitoring import get_collector_registry
 from servicelib.aiohttp.monitoring import setup_monitoring as service_lib_setup
 
 from ..application_settings import get_application_settings
+from ..application_setup import ensure_single_setup
 from ._healthcheck import HEALTH_LATENCY_PROBE, DelayWindowProbe, is_sensing_enabled
 
 _logger = logging.getLogger(__name__)

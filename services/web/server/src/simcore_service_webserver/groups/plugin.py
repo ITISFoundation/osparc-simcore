@@ -1,8 +1,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..products.plugin import setup_products
 from . import _classifiers_rest, _groups_rest
@@ -10,7 +10,7 @@ from . import _classifiers_rest, _groups_rest
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_GROUPS",

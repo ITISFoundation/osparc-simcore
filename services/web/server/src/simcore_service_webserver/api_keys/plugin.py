@@ -1,8 +1,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
 from ..products.plugin import setup_products
@@ -13,7 +13,7 @@ from ._controller import rest, rpc
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.api_keys",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_API_KEYS",

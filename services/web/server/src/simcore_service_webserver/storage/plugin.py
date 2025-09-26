@@ -1,20 +1,21 @@
-""" storage subsystem - manages the interaction with the storage service
-
-"""
+"""storage subsystem - manages the interaction with the storage service"""
 
 import logging
+from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..rest.plugin import setup_rest
 from . import _rest
 
 _logger = logging.getLogger(__name__)
 
+APP_STORAGE_CLIENT_KEY: Final = web.AppKey("APP_STORAGE_CLIENT_KEY", object)
 
-@app_module_setup(
+
+@app_setup_func(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STORAGE", logger=_logger
 )
 def setup_storage(app: web.Application):

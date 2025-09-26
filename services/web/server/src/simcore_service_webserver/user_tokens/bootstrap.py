@@ -1,8 +1,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ensure_single_setup
 
+from ..application_setup import ensure_single_setup
 from ._controller.rest import user_tokens_rest
 
 _logger = logging.getLogger(__name__)
