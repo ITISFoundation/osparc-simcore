@@ -5,12 +5,11 @@ It contains metadata about the study (e.g. name, description, owner, etc) and a 
 """
 
 import logging
-from typing import Final
 
 from aiohttp import web
 
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import ModuleCategory, app_setup_func
-from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ._controller import (
     access_rights_rest,
@@ -37,8 +36,6 @@ from ._security_service import setup_projects_access
 
 logger = logging.getLogger(__name__)
 
-APP_PROJECTS_CLIENT_KEY: Final = web.AppKey("APP_PROJECTS_CLIENT_KEY", object)
-
 
 def register_projects_long_running_tasks(app: web.Application) -> None:
     register_create_project_task(app)
@@ -53,7 +50,7 @@ def register_projects_long_running_tasks(app: web.Application) -> None:
     logger=logger,
 )
 def setup_projects(app: web.Application) -> bool:
-    assert app[APP_SETTINGS_KEY].WEBSERVER_PROJECTS  # nosec
+    assert app[APP_SETTINGS_APPKEY].WEBSERVER_PROJECTS  # nosec
 
     # security access : Inject permissions to rest API resources
     setup_projects_access(app)
@@ -66,7 +63,7 @@ def setup_projects(app: web.Application) -> bool:
 
     # setup RPC-controllers
     setup_rabbitmq(app)
-    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+    if app[APP_SETTINGS_APPKEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(projects_rpc.register_rpc_routes_on_startup)
 
     # setup REST-controllers

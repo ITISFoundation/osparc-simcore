@@ -4,6 +4,7 @@ from aiohttp import web
 from pydantic import ValidationError
 from settings_library.email import SMTPSettings
 
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import (
     ModuleCategory,
     app_setup_func,
@@ -11,7 +12,6 @@ from ..application_setup import (
 )
 from ..constants import (
     APP_PUBLIC_CONFIG_PER_PRODUCT,
-    APP_SETTINGS_KEY,
     INDEX_RESOURCE_NAME,
 )
 from ..db.plugin import setup_db
@@ -33,9 +33,9 @@ from ._controller.rest import (
     registration,
     twofa,
 )
-from .constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from .settings import (
-    APP_LOGIN_OPTIONS_KEY,
+    LOGIN_OPTIONS_APPKEY,
+    LOGIN_SETTINGS_PER_PRODUCT_APPKEY,
     LoginOptions,
     LoginSettings,
     LoginSettingsForProduct,
@@ -52,7 +52,7 @@ def _setup_login_options(app: web.Application):
     if INDEX_RESOURCE_NAME in app.router:
         cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
 
-    app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
+    app[LOGIN_OPTIONS_APPKEY] = LoginOptions(**cfg)
 
 
 async def _resolve_login_settings_per_product(app: web.Application):
@@ -63,7 +63,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     app_login_settings: LoginSettings | None
     login_settings_per_product: dict[ProductName, LoginSettingsForProduct] = {}
 
-    if app_login_settings := app[APP_SETTINGS_KEY].WEBSERVER_LOGIN:
+    if app_login_settings := app[APP_SETTINGS_APPKEY].WEBSERVER_LOGIN:
         assert app_login_settings, "setup_settings not called?"  # nosec
         assert isinstance(app_login_settings, LoginSettings)  # nosec
 
@@ -87,7 +87,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
             raise ValueError(error_msg)
 
     # store in app
-    app[APP_LOGIN_SETTINGS_PER_PRODUCT_KEY] = login_settings_per_product
+    app[LOGIN_SETTINGS_PER_PRODUCT_APPKEY] = login_settings_per_product
 
     # product-based public config: Overrides  ApplicationSettings.public_dict
     public_data_per_product = {}

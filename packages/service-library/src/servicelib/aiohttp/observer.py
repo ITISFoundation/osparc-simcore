@@ -16,9 +16,8 @@ from ..utils import logged_gather
 log = logging.getLogger(__name__)
 
 
-_APP_OBSERVER_EVENTS_REGISTRY_KEY = "{__name__}.event_registry"
-APP_FIRE_AND_FORGET_TASKS_KEY: Final = web.AppKey(
-    "APP_FIRE_AND_FORGET_TASKS_KEY", set[object]
+_APP_OBSERVER_EVENTS_REGISTRY_APPKEY: Final = web.AppKey(
+    "APP_OBSERVER_EVENTS_REGISTRY", defaultdict
 )
 
 
@@ -28,12 +27,12 @@ class ObserverRegistryNotFoundError(RuntimeError): ...
 @ensure_single_setup(__name__, logger=log)
 def setup_observer_registry(app: web.Application):
     # only once
-    app.setdefault(_APP_OBSERVER_EVENTS_REGISTRY_KEY, defaultdict(list))
+    app.setdefault(_APP_OBSERVER_EVENTS_REGISTRY_APPKEY, defaultdict(list))
 
 
 def _get_registry(app: web.Application) -> defaultdict:
     try:
-        registry: defaultdict = app[_APP_OBSERVER_EVENTS_REGISTRY_KEY]
+        registry: defaultdict = app[_APP_OBSERVER_EVENTS_REGISTRY_APPKEY]
         return registry
     except KeyError as err:
         msg = "Could not find observer registry. TIP: initialize app with setup_observer_registry"
@@ -49,7 +48,7 @@ def register_observer(app: web.Application, func: Callable, event: str):
 
 
 def registed_observers_report(app: web.Application) -> str:
-    if _event_registry := app.get(_APP_OBSERVER_EVENTS_REGISTRY_KEY):
+    if _event_registry := app.get(_APP_OBSERVER_EVENTS_REGISTRY_APPKEY):
         return "\n".join(
             f" {event}->{len(funcs)} handles"
             for event, funcs in _event_registry.items()

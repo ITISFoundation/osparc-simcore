@@ -6,8 +6,8 @@ from typing import Final
 from aiohttp import web
 from servicelib.aiohttp.observer import setup_observer_registry
 
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import ModuleCategory, app_setup_func
-from ..constants import APP_SETTINGS_KEY
 from ..user_notifications.bootstrap import (
     setup_user_notification_feature,
 )
@@ -28,7 +28,7 @@ APP_USERS_CLIENT_KEY: Final = web.AppKey("APP_USERS_CLIENT_KEY", object)
     logger=_logger,
 )
 def setup_users(app: web.Application):
-    assert app[APP_SETTINGS_KEY].WEBSERVER_USERS  # nosec
+    assert app[APP_SETTINGS_APPKEY].WEBSERVER_USERS  # nosec
     setup_observer_registry(app)
 
     app.router.add_routes(users_rest.routes)
