@@ -354,6 +354,9 @@ qx.Class.define("osparc.share.Collaborators", {
           }, item, id);
         },
         configureItem: item => {
+          item.set({
+            cursor: "default",
+          });
           item.getChildControl("thumbnail").setDecorator("circled");
           item.addListener("promoteToEditor", e => {
             const orgMember = e.getData();
