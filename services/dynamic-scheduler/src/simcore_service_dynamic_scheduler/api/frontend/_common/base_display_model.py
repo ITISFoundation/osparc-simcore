@@ -31,7 +31,11 @@ class BaseUpdatableDisplayModel(BaseModel):
         callbacks_to_run = self._get_on_change_callbacks_to_run(update_obj)
 
         for attribute_name, update_value in update_obj.__dict__.items():
-            if getattr(self, attribute_name) != update_value:
+            current_value = getattr(self, attribute_name)
+            if current_value != update_value:
+                if isinstance(update_value, BaseUpdatableDisplayModel):
+                    # do not replace existing object, update it's content
+                    current_value.update(update_value)
                 setattr(self, attribute_name, update_value)
 
         for callback in callbacks_to_run:

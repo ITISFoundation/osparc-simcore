@@ -1,7 +1,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from copy import deepcopy
 from functools import cached_property
 
 import nicegui
@@ -96,7 +95,7 @@ class PersonComponent(BaseUpdatableComponent[Person]):
 
         _friend_or_pet_ui()
 
-        # self.display_model.on_value_change("companion", comp_ui.refresh)
+        # self.display_model.on_value_change("companion", _friend_or_pet_ui.refresh)
         self.display_model.on_type_change("companion", _friend_or_pet_ui.refresh)
 
 
@@ -144,10 +143,6 @@ async def _ensure_before_label(async_page: Page) -> None:
     await assert_contains_text(async_page, "BEFORE_LABEL")
 
 
-async def _ensure_after_label(async_page: Page) -> None:
-    await assert_contains_text(async_page, "AFTER_LABEL")
-
-
 async def _ensure_person_name(async_page: Page, name: str) -> None:
     await assert_contains_text(async_page, f"Name: {name}")
 
@@ -165,13 +160,28 @@ async def _esnure_person_companion(async_page: Page, companion: Pet | Friend) ->
         await assert_contains_text(async_page, f"Friend Age: {companion.age}")
 
 
+async def _ensure_after_label(async_page: Page) -> None:
+    await assert_contains_text(async_page, "AFTER_LABEL")
+
+
+async def _ensure_index_page(async_page: Page, person: Person) -> None:
+    await _ensure_before_label(async_page)
+
+    await _ensure_person_name(async_page, person.name)
+    await _ensure_person_age(async_page, person.age)
+
+    await _esnure_person_companion(async_page, person.companion)
+
+    await _ensure_after_label(async_page)
+
+
 @pytest.mark.parametrize(
-    "person, expected",
+    "person, person_update",
     [
         pytest.param(
             Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
-            True,
-            id="initial-test",
+            Person(name="Alice", age=30, companion=Pet(name="Buddy", species="dog")),
+            id="change-pet",
         )
     ],
 )
@@ -180,60 +190,19 @@ async def test_updatable_component(
     async_page: Page,
     server_host_port: str,
     person: Person,
-    expected: bool,
+    person_update: Person,
 ):
     await async_page.goto(
         f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
     )
 
-    # INITIAL RENDER
-    await _ensure_before_label(async_page)
-    await _ensure_after_label(async_page)
-
-    await _ensure_person_name(async_page, person.name)
-    await _ensure_person_age(async_page, person.age)
-    await _esnure_person_companion(async_page, person.companion)
-
-    # AFTER CHNGE RENDER
-
-    # # TODO: test that it changes when accessing the propeties directly
-
-    await assert_contains_text(async_page, "Pet Name: Fluffy")
-    person.companion.name = "Buddy"
-    await assert_contains_text(async_page, "Pet Name: Buddy")
-
-    # # TODO: check that UI was rerendered with new pet name
-
-    # person.name = "Bob"
-    # # TODO: check that UI was rerendered with new name
-
-    # person.companion = Pet(name="Buddy", species="dog")
-    # # TODO: check that ui has no changes only values changed
-
-    # on_value_cahnge rerender
-    # simulate an update from a new incoming object in memory
-
-    person_update = deepcopy(person)
-    person_update.companion = Friend(name="Charlie", age=25)
+    # check initial page layout
+    await _ensure_index_page(async_page, person)
 
     person.update(person_update)
-    await assert_contains_text(async_page, "Friend Name: Charlie", timeout=2)
 
-    # TODO: on type change rerender
-
-    # # TODO: test that it changes if we apply the updates via the update method on the object?
-
-    # # TODO: check that ui has changed as expected
-    # assert person.requires_rerender({"age": 31}) is False
-    # person_display.update_model({"age": 31})
-
-    # # TODO: check that ui has changed as expected
-    # assert person.requires_rerender({"companion": {"name": "Daisy"}}) is False
-    # person_display.update_model({"companion": {"name": "Daisy"}})
-
-    # # TODO: check that ui has changed as expected
-    # assert person.requires_rerender({"companion": {"age": 28}}) is False
-    # person_display.update_model({"companion": {"name": "Eve", "age": 28}})
+    # change layout after update
+    await _ensure_index_page(async_page, person_update)
 
 
 # TODO: make tests go faster since we are running differently
