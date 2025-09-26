@@ -25,7 +25,6 @@ from pydantic import (
 
 from ..scicrunch.errors import ScicrunchError
 from ..scicrunch.scicrunch_service import ScicrunchResourcesService
-from ..scicrunch.service_client import SciCrunch
 from ._classifiers_repository import GroupClassifierRepository
 
 _logger = logging.getLogger(__name__)
@@ -108,46 +107,41 @@ class GroupClassifiersService:
 
         # otherwise, build dynamic tree with RRIDs
         try:
-            return await build_rrids_tree_view(self.app, tree_view_mode=tree_view_mode)
+            return await self._build_rrids_tree_view(tree_view_mode=tree_view_mode)
         except ScicrunchError:
             # Return empty view on any error (including ScicrunchError)
             return {}
 
+    async def _build_rrids_tree_view(
+        self, tree_view_mode: Literal["std"] = "std"
+    ) -> dict[str, Any]:
+        if tree_view_mode != "std":
+            msg = "Currently only 'std' option for the classifiers tree view is implemented"
+            raise NotImplementedError(msg)
 
-# HELPERS FOR API HANDLERS --------------
+        service = ScicrunchResourcesService(self.app)
 
+        flat_tree_view: dict[TreePath, ClassifierItem] = {}
+        for resource in await service.list_resources(include_url=True):
+            try:
+                validated_item = ClassifierItem(
+                    classifier=resource.rrid,
+                    display_name=resource.name.title(),
+                    short_description=resource.description,
+                    url=resource.url,
+                )
 
-async def build_rrids_tree_view(
-    app: web.Application, tree_view_mode: Literal["std"] = "std"
-) -> dict[str, Any]:
-    if tree_view_mode != "std":
-        raise web.HTTPNotImplemented(
-            text="Currently only 'std' option for the classifiers tree view is implemented"
+                node = TypeAdapter(TreePath).validate_python(
+                    validated_item.display_name.replace(":", " ")
+                )
+                flat_tree_view[node] = validated_item
+
+            except ValidationError as err:
+                _logger.warning(
+                    "Cannot convert RRID into a classifier item. Skipping. Details: %s",
+                    err,
+                )
+
+        return Classifiers.model_construct(classifiers=flat_tree_view).model_dump(
+            exclude_unset=True
         )
-
-    scicrunch = SciCrunch.get_instance(app)
-    service = ScicrunchResourcesService(app)
-
-    flat_tree_view: dict[TreePath, ClassifierItem] = {}
-    for resource in await service.list_resources():
-        try:
-            validated_item = ClassifierItem(
-                classifier=resource.rrid,
-                display_name=resource.name.title(),
-                short_description=resource.description,
-                url=scicrunch.get_resolver_web_url(resource.rrid),
-            )
-
-            node = TypeAdapter(TreePath).validate_python(
-                validated_item.display_name.replace(":", " ")
-            )
-            flat_tree_view[node] = validated_item
-
-        except ValidationError as err:
-            _logger.warning(
-                "Cannot convert RRID into a classifier item. Skipping. Details: %s", err
-            )
-
-    return Classifiers.model_construct(classifiers=flat_tree_view).model_dump(
-        exclude_unset=True
-    )

@@ -9,7 +9,8 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from pydantic import ValidationError
 
 from ._repository import ScicrunchResourcesRepository
-from .models import ResearchResource, ResearchResourceAtdB
+from .models import ResearchResource, ResearchResourceAtdB, ResourceHit
+from .service_client import SciCrunch
 
 _logger = logging.getLogger(__name__)
 
@@ -20,8 +21,9 @@ class ScicrunchResourcesService:
     def __init__(self, app: web.Application):
         self.app = app
         self._repo = ScicrunchResourcesRepository.create_from_app(app)
+        self._scicrunch = SciCrunch.get_instance(self.app)
 
-    async def list_resources(self) -> list[ResearchResource]:
+    async def list_resources(self, include_url: bool = False) -> list[ResearchResource]:
         """List all research resources as domain models."""
         rows = await self._repo.list_all_resources()
         if not rows:
@@ -30,7 +32,15 @@ class ScicrunchResourcesService:
         resources = []
         for row in rows:
             try:
-                resource = ResearchResource.model_validate(dict(row))
+                resource_data = dict(row)
+
+                # Add resolver URL if requested
+                if include_url:
+                    resource_data["url"] = self._scicrunch.get_resolver_web_url(
+                        row.rrid
+                    )
+
+                resource = ResearchResource.model_validate(resource_data)
                 resources.append(resource)
             except ValidationError as err:
                 _logger.warning(
@@ -88,3 +98,37 @@ class ScicrunchResourcesService:
         values = resource.model_dump(exclude_unset=True)
         row = await self._repo.upsert_resource(values)
         return ResearchResource.model_validate(dict(row))
+
+    async def search_resources(self, guess_name: str) -> list[ResourceHit]:
+        """Search for research resources using SciCrunch API."""
+        guess_name = guess_name.strip()
+        if not guess_name:
+            return []
+
+        return await self._scicrunch.search_resource(guess_name)
+
+    async def add_resource(self, rrid: str) -> ResearchResource:
+        """Add a research resource by RRID, fetching from SciCrunch if not in database."""
+        # Check if exists in database first
+        resource = await self.get_resource(rrid)
+        if resource:
+            return resource
+
+        # If not found, request from scicrunch service
+        resource = await self._scicrunch.get_resource_fields(rrid)
+
+        # Insert new or update if exists
+        return await self.upsert_resource(resource)
+
+    async def get_or_fetch_resource(self, rrid: str) -> ResearchResource:
+        """Get resource from database first, fetch from SciCrunch API if not found."""
+        # Validate the RRID format first
+        validated_rrid = SciCrunch.validate_identifier(rrid)
+
+        # Check if in database first
+        resource = await self.get_resource(validated_rrid)
+        if resource:
+            return resource
+
+        # Otherwise, request from scicrunch service
+        return await self._scicrunch.get_resource_fields(validated_rrid)
