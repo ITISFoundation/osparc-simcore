@@ -489,7 +489,7 @@ async def test_run_project_function(
 
     job = await functions_tasks.run_function(
         task=MagicMock(spec=Task),
-        task_id=TaskKey(_faker.uuid4()),
+        task_key=TaskKey(_faker.uuid4()),
         user_identity=user_identity,
         function=mock_registered_project_function,
         pre_registered_function_job_data=pre_registered_function_job_data,
