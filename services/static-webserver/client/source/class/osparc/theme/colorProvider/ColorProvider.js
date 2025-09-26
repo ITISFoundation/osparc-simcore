@@ -81,6 +81,12 @@ qx.Class.define("osparc.theme.colorProvider.ColorProvider", {
                 228,
                 1
               ],
+              "17": [
+                215,
+                221,
+                224,
+                1
+              ],
               "20": [
                 210,
                 216,
@@ -163,6 +169,12 @@ qx.Class.define("osparc.theme.colorProvider.ColorProvider", {
                 72,
                 79,
                 84,
+                1
+              ],
+              "88": [
+                65,
+                72,
+                77,
                 1
               ],
               "90": [
