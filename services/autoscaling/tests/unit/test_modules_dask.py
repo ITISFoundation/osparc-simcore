@@ -42,6 +42,7 @@ from simcore_service_autoscaling.modules.dask import (
     is_worker_retired,
     list_processing_tasks_per_worker,
     list_unrunnable_tasks,
+    try_retire_nodes,
 )
 from tenacity import AsyncRetrying, retry, stop_after_delay, wait_fixed
 
@@ -463,10 +464,7 @@ async def test_is_worker_retired(
     )
 
     # retire localhost worker
-    assert isinstance(dask_spec_local_cluster.scheduler, distributed.Scheduler)
-    await dask_spec_local_cluster.scheduler.retire_workers(
-        close_workers=True, remove=False
-    )
+    await try_retire_nodes(scheduler_url, scheduler_authentication)
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True
     ):
