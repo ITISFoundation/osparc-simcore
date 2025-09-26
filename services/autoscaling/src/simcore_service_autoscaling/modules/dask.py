@@ -295,12 +295,18 @@ async def get_worker_used_resources(
             total_resources_used.update(task_resources)
 
         _logger.debug("found %s for %s", f"{total_resources_used=}", f"{worker_url=}")
-        return Resources(
+        worker_used_resources = Resources(
             cpus=total_resources_used.get("CPU", 0),
             ram=TypeAdapter(ByteSize).validate_python(
                 total_resources_used.get("RAM", 0)
             ),
         )
+        if worker_processing_tasks:
+            worker_used_resources.generic_resources[
+                DASK_WORKER_THREAD_RESOURCE_NAME
+            ] = len(worker_processing_tasks)
+
+        return worker_used_resources
 
 
 async def compute_cluster_total_resources(
@@ -322,11 +328,17 @@ async def compute_cluster_total_resources(
         for worker_details in workers.values():
             if worker_details["host"] not in instance_host_resources_map:
                 continue
-            worker_ram = worker_details["memory_limit"]
+            worker_dask_resources = worker_details["resources"]
             worker_threads = worker_details["nthreads"]
             cluster_resources += Resources(
-                cpus=instance_host_resources_map[worker_details["host"]].cpus,
-                ram=TypeAdapter(ByteSize).validate_python(worker_ram),
+                cpus=worker_dask_resources.get(
+                    "CPU", instance_host_resources_map[worker_details["host"]].cpus
+                ),
+                ram=TypeAdapter(ByteSize).validate_python(
+                    worker_dask_resources.get(
+                        "RAM", instance_host_resources_map[worker_details["host"]].ram
+                    )
+                ),
                 generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: worker_threads},
             )
 

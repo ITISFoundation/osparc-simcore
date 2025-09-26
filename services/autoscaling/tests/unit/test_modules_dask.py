@@ -365,7 +365,11 @@ async def test_worker_used_resources(
     await _wait_for_dask_scheduler_to_change_state()
     assert await get_worker_used_resources(
         scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-    ) == Resources(cpus=num_cpus, ram=ByteSize(0))
+    ) == Resources(
+        cpus=num_cpus,
+        ram=ByteSize(0),
+        generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
+    )
 
     result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
     assert result == 7
