@@ -42,7 +42,7 @@ from ..invitations.errors import (
 from ..products.models import Product
 from ..users import users_service
 from . import _auth_service
-from ._controller.rest._rest_dependencies import get_confirmation_service
+from ._application_keys import CONFIRMATION_SERVICE_APPKEY
 from ._models import (
     BaseConfirmationTokenDict,
     ConfirmationTokenDict,
@@ -128,7 +128,7 @@ async def check_other_registrations(
                 #  w/ an expired confirmation will get deleted and its account (i.e. email)
                 #  can be overtaken by this new registration
                 #
-                confirmation_service = get_confirmation_service(app)
+                confirmation_service = app[CONFIRMATION_SERVICE_APPKEY]
                 _confirmation = await confirmation_service.get_confirmation(
                     filter_dict={
                         "user_id": user["id"],
@@ -194,7 +194,7 @@ async def create_invitation_token(
         trial_account_days=trial_days,
         extra_credits_in_usd=extra_credits_in_usd,
     )
-    confirmation_service = get_confirmation_service(app)
+    confirmation_service = app[CONFIRMATION_SERVICE_APPKEY]
     confirmation = await confirmation_service.create_confirmation(
         user_id=user_id,
         action=ConfirmationAction.INVITATION.name,
@@ -307,7 +307,7 @@ async def check_and_consume_invitation(
             )
 
     # database-type invitations
-    confirmation_service = get_confirmation_service(app)
+    confirmation_service = app[CONFIRMATION_SERVICE_APPKEY]
     if confirmation := await confirmation_service.validate_confirmation_code(
         invitation_code
     ):

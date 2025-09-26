@@ -25,6 +25,7 @@ from ..products.models import ProductName
 from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
+from ._confirmation_web import setup_confirmation
 from ._controller.rest import (
     auth,
     change,
@@ -113,6 +114,7 @@ def setup_login(app: web.Application):
     setup_rest(app)
     setup_email(app)
     setup_invitations(app)
+    setup_confirmation(app)
 
     # routes
 
