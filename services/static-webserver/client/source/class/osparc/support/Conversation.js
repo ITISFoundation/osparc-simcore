@@ -60,6 +60,7 @@ qx.Class.define("osparc.support.Conversation", {
           this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
           this.getChildControl("share-project-layout").add(control);
           this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
+          control.addListener("changeValue", e => this.__shareProjectWithSupport(e.getData()), this);
           break;
       }
       return control || this.base(arguments, id);
@@ -129,7 +130,7 @@ qx.Class.define("osparc.support.Conversation", {
       this.base(arguments, conversation);
 
       this.__bookACallInfo = null;
-      this.__populateShareProjectCheckbox();
+      this.__evaluateShareProject();
     },
 
     __postMessage: function(content) {
@@ -137,47 +138,47 @@ qx.Class.define("osparc.support.Conversation", {
       return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
     },
 
-    __populateShareProjectCheckbox: function() {
+    __evaluateShareProject: function() {
       const conversation = this.getConversation();
 
-      const shareProjectCB = this.getChildControl("share-project-checkbox");
       const shareProjectLayout = this.getChildControl("share-project-layout");
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
-      let showCB = false;
-      let enabledCB = false;
-      if (conversation === null && currentStudy) {
-        // initiating conversation
-        showCB = true;
-        enabledCB = true;
-      } else if (conversation) {
+      let showLayout = false;
+      let enabledLayout = false;
+      if (conversation && currentStudy) {
         // it was already set
-        showCB = conversation.getContextProjectId();
-        enabledCB = conversation.amIOwner();
+        showLayout = conversation.getContextProjectId();
+        enabledLayout = conversation.amIOwner() && osparc.data.model.Study.canIWrite(currentStudy.getAccessRights());
       }
       shareProjectLayout.set({
-        visibility: showCB ? "visible" : "excluded",
-        enabled: enabledCB,
+        visibility: showLayout ? "visible" : "excluded",
+        enabled: enabledLayout,
       });
 
-      if (conversation && conversation.getContextProjectId()) {
+      if (showLayout) {
         const projectId = conversation.getContextProjectId();
-        osparc.store.Study.getInstance().getOne(projectId)
-          .then(studyData => {
-            let isAlreadyShared = false;
-            const accessRights = studyData["accessRights"];
-            const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
-            if (supportGroupId && supportGroupId in accessRights) {
-              isAlreadyShared = true;
-            } else {
-              isAlreadyShared = false;
-            }
-            shareProjectCB.setValue(isAlreadyShared);
-            shareProjectCB.removeListener("changeValue", e => this.__shareProjectWithSupport(e.getData()), this);
-            if (showCB) {
-              shareProjectCB.addListener("changeValue", e => this.__shareProjectWithSupport(e.getData()), this);
-            }
-          });
+        if (currentStudy && projectId === currentStudy.getUuid()) {
+          this.__populateShareProjectCB();
+          currentStudy.addListener("changeAccessRights", () => this.__populateShareProjectCB(), this);
+        }
       }
+    },
+
+    __populateShareProjectCB: function() {
+      const projectId = conversation.getContextProjectId();
+      osparc.store.Study.getInstance().getOne(projectId)
+        .then(studyData => {
+          let isAlreadyShared = false;
+          const accessRights = studyData["accessRights"];
+          const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
+          if (supportGroupId && supportGroupId in accessRights) {
+            isAlreadyShared = true;
+          } else {
+            isAlreadyShared = false;
+          }
+          const shareProjectCB = this.getChildControl("share-project-checkbox");
+          shareProjectCB.setValue(isAlreadyShared);
+        });
     },
 
     __shareProjectWithSupport: function(share) {
