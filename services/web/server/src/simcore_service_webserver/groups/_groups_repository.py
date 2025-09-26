@@ -27,7 +27,7 @@ from simcore_postgres_database.utils_users import is_public, visible_user_profil
 from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.row import Row
-from sqlalchemy.exc import UniqueViolationError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.models import groups, user_to_groups, users
@@ -789,7 +789,7 @@ async def add_new_user_in_group(
                     uid=new_user_id, gid=group_id, access_rights=user_access_rights
                 )
             )
-        except UniqueViolationError as exc:
+        except IntegrityError as exc:
             raise UserAlreadyInGroupError(
                 uid=new_user_id,
                 gid=group_id,
