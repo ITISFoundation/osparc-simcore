@@ -31,8 +31,11 @@ from simcore_service_autoscaling.models import (
     EC2InstanceData,
 )
 from simcore_service_autoscaling.modules.dask import (
+    DASK_WORKER_THREAD_RESOURCE_NAME,
+    DaskMonitoringSettings,
     DaskTask,
     _scheduler_client,
+    add_instance_generic_resources,
     get_worker_still_has_results_in_memory,
     get_worker_used_resources,
     list_processing_tasks_per_worker,
@@ -369,4 +372,42 @@ async def test_worker_used_resources(
             scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
         )
         == Resources.create_as_empty()
+    )
+
+
+@pytest.mark.parametrize(
+    "dask_nthreads, dask_nthreads_multiplier, expected_threads_resource",
+    [(4, 1, 4), (4, 2, 8), (0, 2.0, -1)],
+)
+def test_add_instance_generic_resources(
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    faker: Faker,
+    dask_nthreads: int,
+    dask_nthreads_multiplier: int,
+    expected_threads_resource: int,
+):
+    settings = DaskMonitoringSettings(
+        DASK_MONITORING_URL=faker.url(),
+        DASK_SCHEDULER_AUTH=NoAuthentication(),
+        DASK_NTHREADS=dask_nthreads,
+        DASK_NTHREADS_MULTIPLIER=dask_nthreads_multiplier,
+    )
+    ec2_instance_data = fake_ec2_instance_data()
+    assert ec2_instance_data.resources.cpus > 0
+    assert ec2_instance_data.resources.ram > 0
+    assert ec2_instance_data.resources.generic_resources == {}
+
+    add_instance_generic_resources(settings, ec2_instance_data)
+    assert ec2_instance_data.resources.generic_resources != {}
+    assert (
+        DASK_WORKER_THREAD_RESOURCE_NAME
+        in ec2_instance_data.resources.generic_resources
+    )
+    if expected_threads_resource < 0:
+        expected_threads_resource = (
+            ec2_instance_data.resources.cpus * dask_nthreads_multiplier
+        )
+    assert (
+        ec2_instance_data.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME]
+        == expected_threads_resource
     )
