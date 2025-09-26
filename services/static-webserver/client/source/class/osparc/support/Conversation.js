@@ -139,16 +139,13 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     __evaluateShareProject: function() {
-      const conversation = this.getConversation();
-
       const shareProjectLayout = this.getChildControl("share-project-layout");
-      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let showLayout = false;
       let enabledLayout = false;
-      if (conversation && currentStudy) {
-        // it was already set
-        showLayout = conversation.getContextProjectId();
-        enabledLayout = conversation.amIOwner() && osparc.data.model.Study.canIWrite(currentStudy.getAccessRights());
+      const conversation = this.getConversation();
+      if (conversation) {
+        showLayout = Boolean(conversation.getContextProjectId());
+        enabledLayout = conversation.amIOwner();
       }
       shareProjectLayout.set({
         visibility: showLayout ? "visible" : "excluded",
@@ -156,29 +153,30 @@ qx.Class.define("osparc.support.Conversation", {
       });
 
       if (showLayout) {
-        const projectId = conversation.getContextProjectId();
-        if (currentStudy && projectId === currentStudy.getUuid()) {
-          this.__populateShareProjectCB();
-          currentStudy.addListener("changeAccessRights", () => this.__populateShareProjectCB(), this);
-        }
+        this.__populateShareProjectCB();
+        const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+        currentStudy.addListener("changeAccessRights", () => this.__populateShareProjectCB(), this);
       }
     },
 
     __populateShareProjectCB: function() {
-      const projectId = conversation.getContextProjectId();
-      osparc.store.Study.getInstance().getOne(projectId)
-        .then(studyData => {
-          let isAlreadyShared = false;
-          const accessRights = studyData["accessRights"];
-          const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
-          if (supportGroupId && supportGroupId in accessRights) {
-            isAlreadyShared = true;
-          } else {
-            isAlreadyShared = false;
-          }
-          const shareProjectCB = this.getChildControl("share-project-checkbox");
-          shareProjectCB.setValue(isAlreadyShared);
-        });
+      const conversation = this.getConversation();
+      if (conversation && conversation.getContextProjectId()) {
+        const projectId = conversation.getContextProjectId();
+        osparc.store.Study.getInstance().getOne(projectId)
+          .then(studyData => {
+            let isAlreadyShared = false;
+            const accessRights = studyData["accessRights"];
+            const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
+            if (supportGroupId && supportGroupId in accessRights) {
+              isAlreadyShared = true;
+            } else {
+              isAlreadyShared = false;
+            }
+            const shareProjectCB = this.getChildControl("share-project-checkbox");
+            shareProjectCB.setValue(isAlreadyShared);
+          });
+      }
     },
 
     __shareProjectWithSupport: function(share) {
