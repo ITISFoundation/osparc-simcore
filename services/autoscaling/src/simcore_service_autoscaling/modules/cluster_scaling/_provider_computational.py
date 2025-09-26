@@ -155,7 +155,9 @@ class ComputationalAutoscalingProvider:
         assert self  # nosec
         try:
             return await dask.compute_cluster_total_resources(
-                _scheduler_url(app), _scheduler_auth(app), instances
+                _scheduler_url(app),
+                _scheduler_auth(app),
+                [i.ec2_instance for i in instances],
             )
         except DaskNoWorkersError:
             return Resources.create_as_empty()
