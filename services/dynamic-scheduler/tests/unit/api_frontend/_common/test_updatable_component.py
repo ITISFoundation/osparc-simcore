@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 
 from functools import cached_property
+from unittest.mock import Mock
 
 import nicegui
 import pytest
@@ -9,27 +10,63 @@ from fastapi import FastAPI
 from helpers import assert_contains_text
 from nicegui import APIRouter, ui
 from playwright.async_api import Page
+from pydantic import NonNegativeInt
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_scheduler.api.frontend._common.base_display_model import (
     BaseUpdatableDisplayModel,
 )
 from simcore_service_dynamic_scheduler.api.frontend._common.updatable_component import (
     BaseUpdatableComponent,
 )
-from simcore_service_dynamic_scheduler.api.frontend._utils import (
-    get_settings,
-    set_parent_app,
-)
-from simcore_service_dynamic_scheduler.core.settings import ApplicationSettings
+from simcore_service_dynamic_scheduler.api.frontend._utils import set_parent_app
 
-pytest_simcore_core_services_selection = [
-    "postgres",
-    "rabbit",
-    "redis",
-]
 
-pytest_simcore_ops_services_selection = [
-    "redis-commander",
-]
+@pytest.fixture
+def app_environment() -> EnvVarsDict:
+    return {}
+
+
+@pytest.fixture
+def mount_path() -> str:
+    return "/dynamic-scheduler/"
+
+
+@pytest.fixture
+def use_internal_scheduler() -> bool:
+    return True
+
+
+@pytest.fixture
+def router(person: "Person") -> APIRouter:
+    router = APIRouter()
+
+    @ui.page("/", api_router=router)
+    async def index():
+        _index_page_ui(person)
+
+    return router
+
+
+@pytest.fixture
+def not_initialized_app(
+    reset_nicegui_app: None,
+    app_environment: EnvVarsDict,
+    router: APIRouter,
+    mount_path: str,
+) -> FastAPI:
+    minimal_app = FastAPI()
+
+    mock_settings = Mock()
+    mock_settings.DYNAMIC_SCHEDULER_UI_MOUNT_PATH = mount_path
+    minimal_app.state.settings = mock_settings
+
+    nicegui.app.include_router(router)
+
+    nicegui.ui.run_with(
+        minimal_app, mount_path=mount_path, storage_secret="test-secret"
+    )
+    set_parent_app(minimal_app)
+    return minimal_app
 
 
 class Pet(BaseUpdatableDisplayModel):
@@ -105,40 +142,6 @@ def _index_page_ui(person: Person) -> None:
     ui.label("AFTER_LABEL")
 
 
-@pytest.fixture
-def use_internal_scheduler() -> bool:
-    return True
-
-
-@pytest.fixture
-def router(person: Person) -> APIRouter:
-    router = APIRouter()
-
-    @ui.page("/", api_router=router)
-    async def index():
-        _index_page_ui(person)
-
-    return router
-
-
-@pytest.fixture
-def not_initialized_app(not_initialized_app: FastAPI, router: APIRouter) -> FastAPI:
-    minimal_app = FastAPI()
-
-    settings = ApplicationSettings.create_from_envs()
-    minimal_app.state.settings = settings
-
-    nicegui.app.include_router(router)
-
-    nicegui.ui.run_with(
-        minimal_app,
-        mount_path=settings.DYNAMIC_SCHEDULER_UI_MOUNT_PATH,
-        storage_secret=settings.DYNAMIC_SCHEDULER_UI_STORAGE_SECRET.get_secret_value(),
-    )
-    set_parent_app(minimal_app)
-    return minimal_app
-
-
 async def _ensure_before_label(async_page: Page) -> None:
     await assert_contains_text(async_page, "BEFORE_LABEL")
 
@@ -176,33 +179,38 @@ async def _ensure_index_page(async_page: Page, person: Person) -> None:
 
 
 @pytest.mark.parametrize(
-    "person, person_update",
+    "person, person_update, expected_callbacks_count",
     [
         pytest.param(
             Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
             Person(name="Alice", age=30, companion=Pet(name="Buddy", species="dog")),
-            id="change-pet",
-        )
+            0,
+            id="update-pet-via-attribute-biding-no-rerender",
+        ),
+        pytest.param(
+            Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat")),
+            Person(name="Alice", age=30, companion=Friend(name="Marta", age=30)),
+            1,
+            id="update-pet-ui-rerednder",
+        ),
     ],
 )
 async def test_updatable_component(
     app_runner: None,
     async_page: Page,
+    mount_path: str,
     server_host_port: str,
     person: Person,
     person_update: Person,
+    expected_callbacks_count: NonNegativeInt,
 ):
-    await async_page.goto(
-        f"{server_host_port}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}"
-    )
+    await async_page.goto(f"{server_host_port}{mount_path}")
 
     # check initial page layout
     await _ensure_index_page(async_page, person)
 
-    person.update(person_update)
+    callbacks_count = person.update(person_update)
+    assert callbacks_count == expected_callbacks_count
 
     # change layout after update
     await _ensure_index_page(async_page, person_update)
-
-
-# TODO: make tests go faster since we are running differently

@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any, Self, TypeAlias
 
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, NonNegativeInt, PrivateAttr
 
 CompleteModelDict: TypeAlias = dict[str, Any]
 
@@ -27,19 +27,29 @@ class BaseUpdatableDisplayModel(BaseModel):
 
         return callbaks_to_run
 
-    def update(self, update_obj: Self) -> None:
+    def update(self, update_obj: Self) -> NonNegativeInt:
+        """
+        updates the model with the values from update_obj
+        returns the number of callbacks that were run
+        """
         callbacks_to_run = self._get_on_change_callbacks_to_run(update_obj)
 
         for attribute_name, update_value in update_obj.__dict__.items():
             current_value = getattr(self, attribute_name)
             if current_value != update_value:
                 if isinstance(update_value, BaseUpdatableDisplayModel):
-                    # do not replace existing object, update it's content
-                    current_value.update(update_value)
+                    if type(current_value) is type(update_value):
+                        # when the same type update the existing object
+                        current_value.update(update_value)
+                    else:
+                        setattr(self, attribute_name, update_value)
+
                 setattr(self, attribute_name, update_value)
 
         for callback in callbacks_to_run:
             callback()
+
+        return len(callbacks_to_run)
 
     def _raise_if_attribute_not_declared_in_model(self, attribute: str) -> None:
         if attribute not in self.__class__.model_fields:
