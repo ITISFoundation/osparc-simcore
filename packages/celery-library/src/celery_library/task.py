@@ -47,7 +47,7 @@ def _async_task_wrapper(
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
 
-            async def _run_task(task_id: TaskKey) -> R:
+            async def _run_task(task_key: TaskKey) -> R:
                 try:
                     async with asyncio.TaskGroup() as tg:
                         async_io_task = tg.create_task(
@@ -57,7 +57,7 @@ def _async_task_wrapper(
                         async def _abort_monitor():
                             while not async_io_task.done():
                                 if not await app_server.task_manager.task_exists(
-                                    task_id
+                                    task_key
                                 ):
                                     await cancel_wait_task(
                                         async_io_task,
