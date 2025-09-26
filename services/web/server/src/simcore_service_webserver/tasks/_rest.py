@@ -155,7 +155,7 @@ async def cancel_async_job(request: web.Request) -> web.Response:
             WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
                 product_name=_req_ctx.product_name,
-            ).model_dump(),
+            ).model_dump()
         ),
         task_uuid=path_params.task_id,
     )
