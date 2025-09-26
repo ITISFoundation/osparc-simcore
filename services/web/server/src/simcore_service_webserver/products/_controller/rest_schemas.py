@@ -7,7 +7,7 @@ from models_library.products import ProductName
 from models_library.rest_base import RequestParameters, StrictRequestParameters
 from models_library.users import UserID
 from pydantic import Field
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 
 from ...constants import RQ_PRODUCT_KEY
 

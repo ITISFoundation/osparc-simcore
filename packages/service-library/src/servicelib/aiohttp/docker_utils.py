@@ -1,6 +1,9 @@
 import logging
+from typing import Final
 
+import aiodocker
 import aiohttp
+from aiohttp import web
 from models_library.docker import DockerGenericTag
 from pydantic import TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings
@@ -17,6 +20,8 @@ from ..docker_utils import (
 from ..logging_utils import log_catch
 
 _logger = logging.getLogger(__name__)
+
+APP_DOCKER_ENGINE_KEY: Final = web.AppKey("APP_DOCKER_ENGINE_KEY", aiodocker.Docker)
 
 
 async def retrieve_image_layer_information(

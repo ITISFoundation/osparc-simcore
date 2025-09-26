@@ -441,6 +441,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
+    CLUSTERS_KEEPER_DASK_NTHREADS_MULTIPLIER: Annotated[
+        PositiveInt,
+        Field(
+            description="multiplier for the default number of threads per process in the dask-sidecars, (see description in dask-sidecar)",
+            le=10,
+        ),
+    ] = 1
+
     CLUSTERS_KEEPER_DASK_WORKER_SATURATION: Annotated[
         NonNegativeFloat | Literal["inf"],
         Field(

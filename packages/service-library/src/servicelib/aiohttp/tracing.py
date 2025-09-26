@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import AsyncIterator, Callable
+from typing import Final
 
 from aiohttp import web
 from opentelemetry import trace
@@ -59,6 +60,10 @@ try:
     HAS_AIO_PIKA = True
 except ImportError:
     HAS_AIO_PIKA = False
+
+APP_OPENTELEMETRY_INSTRUMENTOR_KEY: Final = web.AppKey(
+    "APP_OPENTELEMETRY_INSTRUMENTOR_KEY", dict[str, object]
+)
 
 
 def _create_span_processor(tracing_destination: str) -> SpanProcessor:

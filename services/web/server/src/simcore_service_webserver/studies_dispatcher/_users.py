@@ -22,12 +22,12 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.users import UserID
 from pydantic import BaseModel, TypeAdapter
 from redis.exceptions import LockNotOwnedError
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task
 from servicelib.utils_secrets import generate_password
 from simcore_postgres_database.utils_users import UsersRepo
 
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..db.plugin import get_asyncpg_engine
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups import api as groups_service
