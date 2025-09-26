@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, TypeAlias
+from typing import Any, Self, TypeAlias
 
 from pydantic import BaseModel, PrivateAttr, TypeAdapter
 
@@ -43,23 +43,15 @@ class BaseUpdatableDisplayModel(BaseModel):
 
         return callbaks_to_run
 
-    def update(self, updates: CompleteModelDict) -> None:
-        """
-        updates a the model properties by by reading the keys form a dcitionary
-        It can also update nested models if the property is also a BaseUpdatableDisplayModel
-        """
-
-        callbacks = self._get_on_change_callbacks_to_run(updates)
+    def update(self, update_obj: Self) -> None:
+        callbacks_to_run = self._get_on_change_callbacks_to_run(update_obj.__dict__)
 
         current = self.__dict__
-        for key, value in updates.items():
-            if key in current and current[key] != value:
-                if isinstance(key, BaseUpdatableDisplayModel):
-                    key.update(value)
-                else:
-                    setattr(self, key, value)
+        for attribute_name, value in update_obj.__dict__.items():
+            if attribute_name in current and current[attribute_name] != value:
+                setattr(self, attribute_name, value)
 
-        for callback in callbacks:
+        for callback in callbacks_to_run:
             callback()
 
     def _raise_if_attribute_not_declared_in_model(self, attribute: str) -> None:
@@ -68,11 +60,13 @@ class BaseUpdatableDisplayModel(BaseModel):
             raise RuntimeError(msg)
 
     def on_type_change(self, attribute: str, callback: Callable) -> None:
+        """subscribe callback to an attribute TYPE change"""
         self._raise_if_attribute_not_declared_in_model(attribute)
 
         self._on_type_change_subscribers[attribute] = callback
 
     def on_value_change(self, attribute: str, callback: Callable) -> None:
+        """subscribe callback to an attribute VALUE change"""
         self._raise_if_attribute_not_declared_in_model(attribute)
 
         self._on_value_change_subscribers[attribute] = callback

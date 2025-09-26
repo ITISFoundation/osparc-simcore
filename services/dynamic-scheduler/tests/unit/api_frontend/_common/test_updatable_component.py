@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+from copy import deepcopy
 from functools import cached_property
 
 import nicegui
@@ -8,7 +9,6 @@ import pytest
 from fastapi import FastAPI
 from helpers import assert_contains_text
 from nicegui import APIRouter, ui
-from nicegui.element import Element
 from playwright.async_api import Page
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_scheduler.api.frontend._common.base_display_model import (
@@ -54,37 +54,51 @@ class Person(BaseUpdatableDisplayModel):
     companion: Pet | Friend
 
 
-class PersonDisplay(BaseUpdatableComponent[Person]):
-    def _get_parent(self) -> Element:
-        return ui.column()
+class FriendComponent(BaseUpdatableComponent[Friend]):
+    def add_to_ui(self) -> None:
+        ui.label().bind_text_from(
+            self.display_model,
+            "name",
+            backward=lambda name: f"Friend Name: {name}",
+        )
+        ui.label().bind_text_from(
+            self.display_model,
+            "age",
+            backward=lambda age: f"Friend Age: {age}",
+        )
 
-    def _draw(self) -> None:
-        print("calling _draw")
+
+class PetComponent(BaseUpdatableComponent[Pet]):
+    def add_to_ui(self) -> None:
+        ui.label().bind_text_from(
+            self.display_model,
+            "name",
+            backward=lambda name: f"Pet Name: {name}",
+        )
+        ui.label().bind_text_from(
+            self.display_model,
+            "species",
+            backward=lambda species: f"Pet Species: {species}",
+        )
+
+
+class PersonComponent(BaseUpdatableComponent[Person]):
+    def add_to_ui(self) -> None:
         ui.label(f"Name: {self.display_model.name}")
         ui.label(f"Age: {self.display_model.age}")
 
         @ui.refreshable
-        def comp_ui() -> None:
+        def _ui_friend_or_pret() -> None:
             if isinstance(self.display_model.companion, Friend):
-                ui.label().bind_text_from(
-                    self.display_model.companion,
-                    "name",
-                    backward=lambda name: f"Friend Name: {name}",
-                )
-                ui.label(f"Friend Age: {self.display_model.companion.age}")
+                FriendComponent(self.display_model.companion).add_to_ui()
 
-            if isinstance(self.display_model.companion, Pet):
-                ui.label().bind_text_from(
-                    self.display_model.companion,
-                    "name",
-                    backward=lambda name: f"Pet Name: {name}",
-                )
-                ui.label(f"Pet Species: {self.display_model.companion.species}")
+            elif isinstance(self.display_model.companion, Pet):
+                PetComponent(self.display_model.companion).add_to_ui()
 
-        comp_ui()
+        _ui_friend_or_pret()
 
         # self.display_model.on_value_change("companion", comp_ui.refresh)
-        self.display_model.on_type_change("companion", comp_ui.refresh)
+        self.display_model.on_type_change("companion", _ui_friend_or_pret.refresh)
 
 
 @pytest.fixture
@@ -104,10 +118,8 @@ def router(person: Person) -> APIRouter:
 
     @ui.page("/", api_router=router)
     async def index():
-        person_display = PersonDisplay(person)
-
         ui.label("BEFORE_LABEL")
-        person_display.add_to_ui()
+        PersonComponent(person).add_to_ui()
         ui.label("AFTER_LABEL")
 
     return router
@@ -157,7 +169,6 @@ async def test_updatable_component(
 
     await assert_contains_text(async_page, "Pet Name: Fluffy")
     person.companion.name = "Buddy"
-    # : TODO: bidn property
     await assert_contains_text(async_page, "Pet Name: Buddy", timeout=2)
 
     # # TODO: check that UI was rerendered with new pet name
@@ -168,8 +179,16 @@ async def test_updatable_component(
     # person.companion = Pet(name="Buddy", species="dog")
     # # TODO: check that ui has no changes only values changed
 
-    person.companion = Friend(name="Charlie", age=25)
-    await assert_contains_text(async_page, "Friend Name: Charlie2", timeout=2)
+    # on_value_cahnge rerender
+    # simulate an update from a new incoming object in memory
+
+    person_update = deepcopy(person)
+    person_update.companion = Friend(name="Charlie", age=25)
+
+    person.update(person_update)
+    await assert_contains_text(async_page, "Friend Name: Charlie", timeout=2)
+
+    # TODO: on type change rerender
 
     # # TODO: test that it changes if we apply the updates via the update method on the object?
 
