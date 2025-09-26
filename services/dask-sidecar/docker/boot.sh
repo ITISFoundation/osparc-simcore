@@ -167,6 +167,19 @@ else
   DASK_NTHREADS=${DASK_NTHREADS:="$num_cpus"}
   DASK_MEMORY_LIMIT=${DASK_MEMORY_LIMIT:="$ram"}
   DASK_WORKER_NAME=${DASK_WORKER_NAME:="dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"}
+  # If DASK_NTHREADS_MULTIPLIER is defined, multiply DASK_NTHREADS (round to nearest int, min 1)
+  if [ -n "${DASK_NTHREADS_MULTIPLIER:-}" ]; then
+    # check DASK_NTHREADS_MULTIPLIER is a number
+    if awk -v m="$DASK_NTHREADS_MULTIPLIER" 'BEGIN{ if (m+0==m) exit 0; else exit 1 }'; then
+      # multiply and round to nearest int, min 1
+      new_nthreads=$(awk -v n="$DASK_NTHREADS" -v m="$DASK_NTHREADS_MULTIPLIER" 'BEGIN{ r=n*m; if(r<1) r=1; printf("%d", (r==int(r)?int(r):int(r+0.5))) }')
+      DASK_NTHREADS="$new_nthreads"
+      print_info "DASK_NTHREADS multiplied by ${DASK_NTHREADS_MULTIPLIER} -> ${DASK_NTHREADS}"
+    else
+      print_info "DASK_NTHREADS_MULTIPLIER is not numeric: ${DASK_NTHREADS_MULTIPLIER}"
+    fi
+  fi
+
   #
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
   # because multi-processing library is used by the sidecar and the nanny does not like it

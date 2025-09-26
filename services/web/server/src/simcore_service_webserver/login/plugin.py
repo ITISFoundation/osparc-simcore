@@ -1,18 +1,19 @@
 import asyncio
 import logging
+from typing import Final
 
 import asyncpg
 from aiohttp import web
 from pydantic import ValidationError
-from servicelib.aiohttp.application_setup import (
-    ModuleCategory,
-    app_module_setup,
-    ensure_single_setup,
-)
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
 from .._meta import APP_NAME
+from ..application_setup import (
+    ModuleCategory,
+    app_setup_func,
+    ensure_single_setup,
+)
 from ..constants import (
     APP_PUBLIC_CONFIG_PER_PRODUCT,
     APP_SETTINGS_KEY,
@@ -48,6 +49,7 @@ from .settings import (
 
 log = logging.getLogger(__name__)
 
+APP_LOGIN_CLIENT_KEY: Final = web.AppKey("APP_LOGIN_CLIENT_KEY", object)
 
 MAX_TIME_TO_CLOSE_POOL_SECS = 5
 
@@ -128,7 +130,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     app.setdefault(APP_PUBLIC_CONFIG_PER_PRODUCT, public_data_per_product)
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.login",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_LOGIN",

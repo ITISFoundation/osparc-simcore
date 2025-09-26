@@ -5,10 +5,11 @@ It contains metadata about the study (e.g. name, description, owner, etc) and a 
 """
 
 import logging
+from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..constants import APP_SETTINGS_KEY
 from ..rabbitmq import setup_rabbitmq
 from ._controller import (
@@ -36,13 +37,15 @@ from ._security_service import setup_projects_access
 
 logger = logging.getLogger(__name__)
 
+APP_PROJECTS_CLIENT_KEY: Final = web.AppKey("APP_PROJECTS_CLIENT_KEY", object)
+
 
 def register_projects_long_running_tasks(app: web.Application) -> None:
     register_create_project_task(app)
     register_stop_dynamic_service_task(app)
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.projects",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_PROJECTS",

@@ -1,24 +1,30 @@
-""" resource manager subsystem
+"""resource manager subsystem
 
-    Takes care of managing user generated resources such as:
+Takes care of managing user generated resources such as:
 
-    - interactive services
-        - generated data
+- interactive services
+    - generated data
 
 """
+
 import logging
+from typing import Final
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..redis import setup_redis
 from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY, APP_RESOURCE_MANAGER_TASKS_KEY
 from .registry import RedisResourceRegistry
 
 _logger = logging.getLogger(__name__)
 
+APP_RESOURCE_MANAGER_CLIENT_KEY: Final = web.AppKey(
+    "APP_RESOURCE_MANAGER_CLIENT_KEY", object
+)
 
-@app_module_setup(
+
+@app_setup_func(
     "simcore_service_webserver.resource_manager",
     ModuleCategory.SYSTEM,
     settings_name="WEBSERVER_RESOURCE_MANAGER",

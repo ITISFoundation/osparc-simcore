@@ -8,7 +8,6 @@ from servicelib.aiohttp.application_keys import (
     APP_RABBITMQ_CLIENT_KEY,
     APP_RABBITMQ_RPC_SERVER_KEY,
 )
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import (
     RabbitMQClient,
@@ -16,6 +15,7 @@ from servicelib.rabbitmq import (
     wait_till_rabbitmq_responsive,
 )
 
+from .application_setup import ModuleCategory, app_setup_func
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
 from .rest.healthcheck import HealthCheck, HealthCheckError
 
@@ -72,7 +72,7 @@ async def _rabbitmq_rpc_client_lifespan(app: web.Application):
     await rpc_client.close()
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_RABBITMQ",
