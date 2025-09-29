@@ -7,6 +7,7 @@ from collections.abc import AsyncGenerator
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
+from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
@@ -22,17 +23,18 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.celery.models import OwnerMetadata
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     AsyncJobComposedResult,
     submit_and_wait,
 )
 from yarl import URL
 
+from ..models import WebServerOwnerMetadata
 from ..projects.models import ProjectDict
 from ..projects.utils import NodesMap
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..utils import get_job_filter
 from .settings import StorageSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -118,9 +120,11 @@ async def copy_data_folders_from_project(
             rabbitmq_client,
             method_name="copy_folders_from_project",
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_filter=get_job_filter(
-                user_id=user_id,
-                product_name=product_name,
+            owner_metadata=OwnerMetadata.model_validate(
+                WebServerOwnerMetadata(
+                    user_id=user_id,
+                    product_name=product_name,
+                ).model_dump()
             ),
             body=TypeAdapter(FoldersBody).validate_python(
                 {
@@ -130,6 +134,7 @@ async def copy_data_folders_from_project(
                 },
             ),
             client_timeout=datetime.timedelta(seconds=_TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
+            user_id=user_id,
         ):
             yield job_composed_result
 

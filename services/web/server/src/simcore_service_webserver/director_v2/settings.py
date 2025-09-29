@@ -1,19 +1,16 @@
-""" director v2 susystem configuration
-"""
+"""director v2 susystem configuration"""
 
 from functools import cached_property
-from typing import cast
 
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.basic_types import VersionTag
 from pydantic import AliasChoices, Field, PositiveInt
-from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT, MixinServiceSettings
 from yarl import URL
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_CLIENT_SESSION_KEY, APP_SETTINGS_APPKEY
 
 _MINUTE = 60
 _HOUR = 60 * _MINUTE
@@ -55,11 +52,11 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
 
 
 def get_plugin_settings(app: web.Application) -> DirectorV2Settings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_DIRECTOR_V2
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, DirectorV2Settings)  # nosec
     return settings
 
 
 def get_client_session(app: web.Application) -> ClientSession:
-    return cast(ClientSession, app[APP_CLIENT_SESSION_KEY])
+    return app[APP_CLIENT_SESSION_KEY]

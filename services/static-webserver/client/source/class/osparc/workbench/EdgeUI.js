@@ -48,7 +48,7 @@ qx.Class.define("osparc.workbench.EdgeUI", {
     representation.hint = hint;
 
     if (edge.getInputNode()) {
-      edge.getInputNode().getStatus().addListener("changeModified", () => this.__updateEdgeState());
+      edge.getInputNode().getStatus().addListener("changeOutput", () => this.__updateEdgeState());
     }
     edge.addListener("changePortConnected", () => this.__updateEdgeState());
 
@@ -69,13 +69,8 @@ qx.Class.define("osparc.workbench.EdgeUI", {
   },
 
   statics: {
-    getEdgeColor: function(modified) {
-      let newColor = null;
-      if (modified === null) {
-        newColor = qx.theme.manager.Color.getInstance().resolve("workbench-edge-comp-active");
-      } else {
-        newColor = osparc.service.StatusUI.getColor(modified ? "failed" : "ready");
-      }
+    getEdgeColor: function(outputState) {
+      const newColor = osparc.service.StatusUI.getColor(outputState);
       const colorHex = qx.theme.manager.Color.getInstance().resolve(newColor);
       return colorHex;
     },
@@ -89,10 +84,10 @@ qx.Class.define("osparc.workbench.EdgeUI", {
     __updateEdgeState: function() {
       const inputNode = this.getEdge().getInputNode();
       const portConnected = this.getEdge().isPortConnected();
-      const modified = inputNode ? inputNode.getStatus().getModified() : false;
+      const output = inputNode ? inputNode.getStatus().getOutput() : null;
 
       // color
-      const colorHex = this.self().getEdgeColor(modified);
+      const colorHex = this.self().getEdgeColor(output);
       osparc.wrapper.Svg.updateCurveColor(this.getRepresentation(), colorHex);
 
       // shape
@@ -102,7 +97,7 @@ qx.Class.define("osparc.workbench.EdgeUI", {
       const hint = this.getHint();
       if (this.getEdge().isPortConnected() === false) {
         hint.setText(this.self().noPortsConnectedText(this.getEdge()));
-      } else if (modified) {
+      } else if (output === "out-of-date") {
         hint.setText("Out-of-date");
       } else {
         hint.setText(null);

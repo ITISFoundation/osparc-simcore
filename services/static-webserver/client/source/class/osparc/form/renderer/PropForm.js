@@ -909,6 +909,11 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
+      const fromNode = study.getWorkbench().getNode(fromNodeId);
+      if (!fromNode) {
+        console.error("Node not found while creating link", fromNodeId);
+        return false;
+      }
 
       const ctrlLink = this.getControlLink(toPortId);
       ctrlLink.setEnabled(false);
@@ -927,8 +932,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       };
       ctrlLink.addListener("mouseover", () => highlightEdgeUI(true));
       ctrlLink.addListener("mouseout", () => highlightEdgeUI(false));
-
-      const fromNode = study.getWorkbench().getNode(fromNodeId);
       const prettifyLinkString = () => {
         const port = fromNode.getOutput(fromPortId);
         const fromPortLabel = port ? port.label : null;
@@ -936,11 +939,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           converter: label => label + ": " + fromPortLabel
         });
 
-        // Hack: Show tooltip if element is disabled
         const addToolTip = () => {
-          ctrlLink.getContentElement().removeAttribute("title");
           const toolTipText = fromNode.getLabel() + ":\n" + fromPortLabel;
-          ctrlLink.getContentElement().setAttribute("title", toolTipText);
+          osparc.utils.Utils.toolTipTextOnDisabledWidget(ctrlLink, toolTipText);
         };
         fromNode.addListener("changeLabel", () => addToolTip());
         addToolTip();

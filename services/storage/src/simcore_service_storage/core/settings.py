@@ -1,8 +1,8 @@
 from typing import Annotated, Self
 
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from pydantic import AliasChoices, Field, PositiveInt, field_validator, model_validator
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.celery import CelerySettings

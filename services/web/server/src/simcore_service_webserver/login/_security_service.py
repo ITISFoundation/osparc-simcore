@@ -3,7 +3,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.logging_utils import get_log_record_extra, log_context
+from common_library.logging.logging_base import get_log_record_extra
+from servicelib.logging_utils import log_context
 
 from ..security import security_web
 from ..web_utils import flash_response

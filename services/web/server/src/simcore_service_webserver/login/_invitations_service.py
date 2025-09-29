@@ -11,6 +11,7 @@ from datetime import datetime
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
@@ -23,7 +24,6 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from simcore_postgres_database.models.users import UserStatus
@@ -41,9 +41,9 @@ from ..invitations.errors import (
 )
 from ..products.models import Product
 from ..users import users_service
-from . import _auth_service, _confirmation_service
-from ._login_repository_legacy import (
-    AsyncpgStorage,
+from . import _auth_service
+from ._application_keys import CONFIRMATION_SERVICE_APPKEY
+from ._models import (
     BaseConfirmationTokenDict,
     ConfirmationTokenDict,
 )
@@ -52,7 +52,6 @@ from .constants import (
     MSG_INVITATIONS_CONTACT_SUFFIX,
     MSG_USER_DISABLED,
 )
-from .settings import LoginOptions
 
 _logger = logging.getLogger(__name__)
 
@@ -112,15 +111,11 @@ async def check_other_registrations(
     app: web.Application,
     email: str,
     current_product: Product,
-    db: AsyncpgStorage,
-    cfg: LoginOptions,
 ) -> None:
-
     # An account is already registered with this email
     if user := await _auth_service.get_user_or_none(app, email=email):
         user_status = UserStatus(user["status"])
         match user_status:
-
             case UserStatus.ACTIVE:
                 await _raise_if_registered_in_product(
                     app, user_email=user["email"], product=current_product
@@ -133,15 +128,16 @@ async def check_other_registrations(
                 #  w/ an expired confirmation will get deleted and its account (i.e. email)
                 #  can be overtaken by this new registration
                 #
-                _confirmation = await db.get_confirmation(
+                confirmation_service = app[CONFIRMATION_SERVICE_APPKEY]
+                _confirmation = await confirmation_service.get_confirmation(
                     filter_dict={
-                        "user": user,
+                        "user_id": user["id"],
                         "action": ConfirmationAction.REGISTRATION.value,
                     }
                 )
                 drop_previous_registration = (
                     not _confirmation
-                    or _confirmation_service.is_confirmation_expired(cfg, _confirmation)
+                    or confirmation_service.is_confirmation_expired(_confirmation)
                 )
                 if drop_previous_registration:
                     if not _confirmation:
@@ -149,7 +145,7 @@ async def check_other_registrations(
                             app, user_id=user["id"], clean_cache=False
                         )
                     else:
-                        await db.delete_confirmation_and_user(
+                        await confirmation_service.delete_confirmation_and_user(
                             user_id=user["id"], confirmation=_confirmation
                         )
 
@@ -175,7 +171,7 @@ async def check_other_registrations(
 
 
 async def create_invitation_token(
-    db: AsyncpgStorage,
+    app: web.Application,
     *,
     user_id: IdInt,
     user_email: LowerCaseEmailStr | None = None,
@@ -198,11 +194,19 @@ async def create_invitation_token(
         trial_account_days=trial_days,
         extra_credits_in_usd=extra_credits_in_usd,
     )
-    return await db.create_confirmation(
+    confirmation_service = app[CONFIRMATION_SERVICE_APPKEY]
+    confirmation = await confirmation_service.create_confirmation(
         user_id=user_id,
         action=ConfirmationAction.INVITATION.name,
         data=data_model.model_dump_json(),
     )
+    return {
+        "code": confirmation.code,
+        "user_id": confirmation.user_id,
+        "action": confirmation.action,
+        "data": confirmation.data,
+        "created_at": confirmation.created_at,
+    }
 
 
 @contextmanager
@@ -226,7 +230,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
         user_error_msg = f"Invalid invitation. {MSG_INVITATIONS_CONTACT_SUFFIX}"
 
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_code=error_code,
@@ -243,7 +247,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
         user_error_msg = "Unable to process your invitation since the invitations service is currently unavailable"
 
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_code=error_code,
@@ -270,8 +274,6 @@ async def check_and_consume_invitation(
     invitation_code: str,
     guest_email: str,
     product: Product,
-    db: AsyncpgStorage,
-    cfg: LoginOptions,
     app: web.Application,
 ) -> ConfirmedInvitationData:
     """Consumes invitation: the code is validated, the invitation retrieives and then deleted
@@ -305,12 +307,20 @@ async def check_and_consume_invitation(
             )
 
     # database-type invitations
-    if confirmation_token := await _confirmation_service.validate_confirmation_code(
-        invitation_code, db, cfg
+    confirmation_service = app[CONFIRMATION_SERVICE_APPKEY]
+    if confirmation := await confirmation_service.validate_confirmation_code(
+        invitation_code
     ):
         try:
+            confirmation_token_dict = {
+                "code": confirmation.code,
+                "user_id": confirmation.user_id,
+                "action": confirmation.action,
+                "data": confirmation.data,
+                "created_at": confirmation.created_at,
+            }
             invitation_data: ConfirmedInvitationData = (
-                _InvitationValidator.model_validate(confirmation_token).data
+                _InvitationValidator.model_validate(confirmation_token_dict).data
             )
             return invitation_data
 
@@ -318,13 +328,13 @@ async def check_and_consume_invitation(
             _logger.warning(
                 "%s is associated with an invalid %s.\nDetails: %s",
                 f"{invitation_code=}",
-                f"{confirmation_token=}",
+                f"{confirmation=}",
                 f"{err=}",
             )
 
         finally:
-            await db.delete_confirmation(confirmation_token)
-            _logger.info("Invitation with %s was consumed", f"{confirmation_token=}")
+            await confirmation_service.delete_confirmation(confirmation)
+            _logger.info("Invitation with %s was consumed", f"{confirmation=}")
 
     raise web.HTTPForbidden(
         text=(

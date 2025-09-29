@@ -1,9 +1,11 @@
 # pylint: disable=too-many-instance-attributes
 import contextlib
+import logging
 from dataclasses import dataclass
-from typing import Final
 
+from celery_library.errors import TaskNotFoundError
 from common_library.exclude import as_dict_exclude_none
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -30,8 +32,11 @@ from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from servicelib.celery.models import TaskMetadata, TasksQueue, TaskUUID
+from servicelib.celery.models import ExecutionMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
+from simcore_service_api_server.models.schemas.functions import (
+    FunctionJobCreationTaskStatus,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_function_jobs import FunctionJobService
@@ -42,16 +47,14 @@ from .exceptions.function_errors import (
     FunctionJobCacheNotFoundError,
 )
 from .models.api_resources import JobLinks
-from .models.domain.celery_models import ApiWorkerTaskFilter
+from .models.domain.celery_models import ApiServerOwnerMetadata
+from .models.schemas.functions import FunctionJobCreationTaskStatus
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.storage import StorageService
 from .services_rpc.wb_api_server import WbApiRpcClient
 
-_JOB_CREATION_TASK_STATUS_PREFIX: Final[str] = "JOB_CREATION_TASK_STATUS_"
-_JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS: Final[str] = (
-    f"{_JOB_CREATION_TASK_STATUS_PREFIX}NOT_YET_SCHEDULED"
-)
+_logger = logging.getLogger(__name__)
 
 
 def join_inputs(
@@ -73,17 +76,34 @@ async def _celery_task_status(
     task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
-) -> str:
+) -> FunctionJobCreationTaskStatus:
     if job_creation_task_id is None:
-        return _JOB_CREATION_TASK_NOT_YET_SCHEDULED_STATUS
-    task_filter = ApiWorkerTaskFilter(
+        return FunctionJobCreationTaskStatus.NOT_YET_SCHEDULED
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
-    task_status = await task_manager.get_task_status(
-        task_uuid=TaskUUID(job_creation_task_id), task_filter=task_filter
-    )
-    return f"{_JOB_CREATION_TASK_STATUS_PREFIX}{task_status.task_state}"
+    try:
+        task_status = await task_manager.get_task_status(
+            task_uuid=TaskUUID(job_creation_task_id), owner_metadata=owner_metadata
+        )
+        return FunctionJobCreationTaskStatus[task_status.task_state]
+    except TaskNotFoundError as err:
+        user_msg = f"Job creation task not found for task_uuid={TaskUUID(job_creation_task_id)}"
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                user_msg,
+                error=err,
+                error_context={
+                    "task_uuid": TaskUUID(job_creation_task_id),
+                    "owner_metadata": owner_metadata,
+                    "user_id": user_id,
+                    "product_name": product_name,
+                },
+                tip="This probably means the celery task failed, because the task should have created the project_id.",
+            )
+        )
+        return FunctionJobCreationTaskStatus.ERROR
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -117,15 +137,16 @@ class FunctionJobTaskClientService:
             pagination_offset=pagination_offset, pagination_limit=pagination_limit
         )
 
-        function_jobs_list_ws, meta = (
-            await self._web_rpc_client.list_function_jobs_with_status(
-                user_id=self.user_id,
-                product_name=self.product_name,
-                filter_by_function_id=filter_by_function_id,
-                filter_by_function_job_ids=filter_by_function_job_ids,
-                filter_by_function_job_collection_id=filter_by_function_job_collection_id,
-                **pagination_kwargs,
-            )
+        (
+            function_jobs_list_ws,
+            meta,
+        ) = await self._web_rpc_client.list_function_jobs_with_status(
+            user_id=self.user_id,
+            product_name=self.product_name,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+            **pagination_kwargs,
         )
 
         for function_job_wso in function_jobs_list_ws:
@@ -277,7 +298,6 @@ class FunctionJobTaskClientService:
         function_job: RegisteredFunctionJob,
         stored_job_outputs: FunctionOutputs | None,
     ) -> FunctionOutputs:
-
         if stored_job_outputs is not None:
             return stored_job_outputs
 
@@ -340,7 +360,6 @@ class FunctionJobTaskClientService:
         parent_project_uuid: ProjectID | None = None,
         parent_node_id: NodeID | None = None,
     ) -> RegisteredFunctionJob:
-
         job_inputs = await self._function_job_service.create_function_job_inputs(
             function=function, function_inputs=function_inputs
         )
@@ -360,17 +379,18 @@ class FunctionJobTaskClientService:
         )
 
         # run function in celery task
-        task_filter = ApiWorkerTaskFilter(
+
+        owner_metadata = ApiServerOwnerMetadata(
             user_id=user_identity.user_id, product_name=user_identity.product_name
         )
 
         task_uuid = await self._celery_task_manager.submit_task(
-            TaskMetadata(
+            ExecutionMetadata(
                 name="run_function",
-                ephemeral=True,
+                ephemeral=False,
                 queue=TasksQueue.API_WORKER_QUEUE,
             ),
-            task_filter=task_filter,
+            owner_metadata=owner_metadata,
             user_identity=user_identity,
             function=function,
             pre_registered_function_job_data=pre_registered_function_job_data,

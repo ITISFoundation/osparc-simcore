@@ -23,6 +23,7 @@ from tenacity import (
 )
 
 _MAX_NJOBS: Final[int] = 50
+_REQUEST_TIMEOUT: Final[int] = 10 * 60  # 10 minutes request timeout for map endpoint
 
 
 # Register the custom argument with Locust's parser
@@ -55,6 +56,9 @@ def _(parser: LocustArgumentParser) -> None:
 
 
 class WebApiUser(OsparcWebUserBase):
+    network_timeout = _REQUEST_TIMEOUT
+    connection_timeout = _REQUEST_TIMEOUT
+
     @task
     def map_function(self) -> None:
 

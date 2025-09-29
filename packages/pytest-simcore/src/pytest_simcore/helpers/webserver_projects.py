@@ -20,7 +20,7 @@ from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
 from simcore_service_webserver.projects._projects_repository_legacy import (
-    APP_PROJECT_DBAPI,
+    PROJECT_DBAPI_APPKEY,
     ProjectDBAPI,
 )
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
@@ -74,7 +74,7 @@ async def create_project(
 
     project_data.update(params_override)
 
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
 
     raw_workbench: dict[str, Any] = project_data.pop("workbench", {})
     for raw_node in raw_workbench.values():  # back-compatibility with old format
@@ -159,7 +159,7 @@ async def create_project(
 async def delete_all_projects(app: web.Application):
     from simcore_postgres_database.webserver_models import projects
 
-    db = app[APP_PROJECT_DBAPI]
+    db = app[PROJECT_DBAPI_APPKEY]
     async with db.engine.acquire() as conn:
         query = projects.delete()
         await conn.execute(query)

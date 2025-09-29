@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import (
@@ -13,7 +14,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from yarl import URL
 
@@ -26,15 +26,9 @@ from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
 from ... import (
     _auth_service,
-    _confirmation_service,
     _registration_service,
     _security_service,
     _twofa_service,
-)
-from ..._login_repository_legacy import (
-    AsyncpgStorage,
-    ConfirmationTokenDict,
-    get_plugin_storage,
 )
 from ..._login_service import (
     ACTIVE,
@@ -42,6 +36,10 @@ from ..._login_service import (
     REGISTRATION,
     RESET_PASSWORD,
     notify_user_confirmation,
+)
+from ..._models import (
+    Confirmation,
+    ConfirmationTokenDict,
 )
 from ...constants import (
     MSG_PASSWORD_CHANGE_NOT_ALLOWED,
@@ -54,6 +52,7 @@ from ...settings import (
     get_plugin_options,
     get_plugin_settings,
 )
+from ._rest_dependencies import get_confirmation_service
 from .confirmation_schemas import (
     CodePathParam,
     PhoneConfirmationBody,
@@ -64,47 +63,58 @@ from .confirmation_schemas import (
 _logger = logging.getLogger(__name__)
 
 
+def _confirmation_to_legacy_dict(confirmation: Confirmation) -> ConfirmationTokenDict:
+    """Convert new Confirmation model to legacy ConfirmationTokenDict format."""
+    return {
+        "code": confirmation.code,
+        "user_id": confirmation.user_id,
+        "action": confirmation.action,
+        "data": confirmation.data,
+        "created_at": confirmation.created_at,
+    }
+
+
 routes = RouteTableDef()
 
 
 async def _handle_confirm_registration(
     app: web.Application,
     product_name: ProductName,
-    confirmation: ConfirmationTokenDict,
+    confirmation: Confirmation,
 ):
-    db: AsyncpgStorage = get_plugin_storage(app)
-    user_id = confirmation["user_id"]
+    confirmation_service = get_confirmation_service(app)
+    user_id = confirmation.user_id
 
     # activate user and consume confirmation token
-    await db.delete_confirmation_and_update_user(
+    await confirmation_service.delete_confirmation_and_update_user(
+        confirmation=confirmation,
         user_id=user_id,
         updates={"status": ACTIVE},
-        confirmation=confirmation,
     )
 
     await notify_user_confirmation(
         app,
         user_id=user_id,
         product_name=product_name,
-        extra_credits_in_usd=parse_extra_credits_in_usd_or_none(confirmation),
+        extra_credits_in_usd=parse_extra_credits_in_usd_or_none(
+            _confirmation_to_legacy_dict(confirmation)
+        ),
     )
 
 
 async def _handle_confirm_change_email(
-    app: web.Application, confirmation: ConfirmationTokenDict
+    app: web.Application, confirmation: Confirmation
 ):
-    db: AsyncpgStorage = get_plugin_storage(app)
-    user_id = confirmation["user_id"]
+    confirmation_service = get_confirmation_service(app)
+    user_id = confirmation.user_id
 
     # update and consume confirmation token
-    await db.delete_confirmation_and_update_user(
+    await confirmation_service.delete_confirmation_and_update_user(
+        confirmation=confirmation,
         user_id=user_id,
         updates={
-            "email": TypeAdapter(LowerCaseEmailStr).validate_python(
-                confirmation["data"]
-            )
+            "email": TypeAdapter(LowerCaseEmailStr).validate_python(confirmation.data)
         },
-        confirmation=confirmation,
     )
 
 
@@ -125,22 +135,20 @@ async def validate_confirmation_and_redirect(request: web.Request):
             - show the reset-password page
             - use the token to submit a POST /v0/auth/confirmation/{code} and finalize reset action
     """
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = products_web.get_current_product(request)
+    confirmation_service = get_confirmation_service(request.app)
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
 
-    confirmation: ConfirmationTokenDict | None = (
-        await _confirmation_service.validate_confirmation_code(
-            path_params.code.get_secret_value(),
-            db=db,
-            cfg=cfg,
+    confirmation: Confirmation | None = (
+        await confirmation_service.validate_confirmation_code(
+            path_params.code.get_secret_value()
         )
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)
-    if confirmation and (action := confirmation["action"]):
+    if confirmation and (action := confirmation.action):
         try:
             if action == REGISTRATION:
                 await _handle_confirm_registration(
@@ -181,7 +189,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
             )
 
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     user_error_msg,
                     error=err,
                     error_code=error_code,
@@ -249,20 +257,19 @@ async def complete_reset_password(request: web.Request):
     - Changes password using a token code without login
     - Code is provided via email by calling first initiate_reset_password
     """
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = products_web.get_current_product(request)
+    confirmation_service = get_confirmation_service(request.app)
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
-    confirmation = await _confirmation_service.validate_confirmation_code(
-        code=path_params.code.get_secret_value(), db=db, cfg=cfg
+    confirmation = await confirmation_service.validate_confirmation_code(
+        code=path_params.code.get_secret_value()
     )
 
     if confirmation:
         user = await _auth_service.get_user_or_none(
-            request.app, user_id=confirmation["user_id"]
+            request.app, user_id=confirmation.user_id
         )
         assert user  # nosec
 
@@ -274,7 +281,7 @@ async def complete_reset_password(request: web.Request):
             verify_current_password=False,  # confirmed by code
         )
 
-        await db.delete_confirmation(confirmation)
+        await confirmation_service.delete_confirmation(confirmation)
 
         return flash_response(MSG_PASSWORD_CHANGED)
 

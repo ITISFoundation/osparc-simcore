@@ -40,7 +40,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
   construct: function(node) {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(4, 1);
+    const grid = new qx.ui.layout.Grid(2, 1);
     grid.setColumnFlex(1, 1);
 
     this.set({
@@ -53,10 +53,6 @@ qx.Class.define("osparc.workbench.NodeUI", {
       resizable: false,
       allowMaximize: false,
       contentPadding: this.self().CONTENT_PADDING
-    });
-
-    this.getContentElement().setStyles({
-      "border-radius": "4px"
     });
 
     const captionBar = this.getChildControl("captionbar");
@@ -142,10 +138,11 @@ qx.Class.define("osparc.workbench.NodeUI", {
     CAPTION_POS: {
       ICON: 0, // from qooxdoo
       TITLE: 1, // from qooxdoo
-      LOCK: 2,
-      MARKER: 3,
-      DEPRECATED: 4,
-      MENU: 5
+      MODIFIED_STAR: 2,
+      LOCK: 3,
+      MARKER: 4,
+      DEPRECATED: 5,
+      MENU: 6,
     },
 
     captionHeight: function() {
@@ -168,6 +165,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     "nodeMovingStop": "qx.event.type.Event",
     "updateNodeDecorator": "qx.event.type.Event",
     "requestOpenLogger": "qx.event.type.Event",
+    "requestOpenServiceCatalog": "qx.event.type.Data",
     "highlightEdge": "qx.event.type.Data",
   },
 
@@ -188,6 +186,21 @@ qx.Class.define("osparc.workbench.NodeUI", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "modified-star":
+          control = new qx.ui.basic.Label("*").set({
+            font: "text-14",
+            toolTipText: this.tr("Needs to run to update the outputs"),
+            padding: 4,
+            paddingTop: 0,
+            paddingBottom: 0,
+            visibility: "excluded",
+            alignY: "top",
+          });
+          this.getChildControl("captionbar").add(control, {
+            row: 0,
+            column: this.self().CAPTION_POS.MODIFIED_STAR
+          });
+          break;
         case "lock":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/lock/12",
@@ -222,10 +235,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
           break;
         case "middle-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
             alignY: "middle"
           })).set({
-            padding: [3, 4]
+            padding: 4
           });
           this.add(control, {
             row: 0,
@@ -245,7 +258,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           const type = osparc.service.Utils.getType(nodeType);
           if (type) {
             control.set({
-              icon: type.icon + "14",
+              icon: type.icon + "13",
               toolTipText: type.label
             });
           } else if (this.getNode().isUnknown()) {
@@ -262,7 +275,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
             maxHeight: 20,
             font: "text-10",
           });
-          const statusLabel = control.getChildControl("label");
+          const statusLabel = control.getChildControl("label").set({
+            maxWidth: 80,
+          });
           const requestOpenLogger = () => this.fireEvent("requestOpenLogger");
           const evaluateLabel = () => {
             const failed = statusLabel.getValue() === "Unsuccessful";
@@ -282,7 +297,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
         case "progress":
           control = new qx.ui.indicator.ProgressBar().set({
             height: 10,
-            margin: 4
+            margin: 4,
+            decorator: "rounded",
           });
           this.add(control, {
             row: 1,
@@ -420,7 +436,20 @@ qx.Class.define("osparc.workbench.NodeUI", {
         this.__optionsMenu.add(convertToParameter);
       }
 
-      const lockState = node.getStatus().getLockState();
+      const nodeStatus = node.getStatus();
+      const modifiedStar = this.getChildControl("modified-star");
+      const evaluateShowStar = () => {
+        const modified = nodeStatus.getModified();
+        const isRunning = osparc.data.model.NodeStatus.isComputationalRunning(node);
+        modifiedStar.set({
+          visibility: modified && !isRunning ? "visible" : "excluded"
+        });
+      };
+      evaluateShowStar();
+      nodeStatus.addListener("changeModified", evaluateShowStar);
+      nodeStatus.addListener("changeRunning", evaluateShowStar);
+
+      const lockState = nodeStatus.getLockState();
       const lock = this.getChildControl("lock");
       lockState.bind("locked", lock, "visibility", {
         converter: locked => {
@@ -595,14 +624,11 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const width = 120;
       this.__setNodeUIWidth(width);
 
-      const label = new qx.ui.basic.Label().set({
-        font: "text-18"
+      const valueLabel = new qx.ui.basic.Label().set({
+        paddingLeft: 4,
+        font: "text-14"
       });
-      const middleContainer = this.getChildControl("middle-container");
-      middleContainer.add(label);
-
-      this.getNode().bind("outputs", label, "value", {
-        converter: outputs => {
+      const outputToValue = outputs => {
           if ("out_1" in outputs && "value" in outputs["out_1"]) {
             const val = outputs["out_1"]["value"];
             if (Array.isArray(val)) {
@@ -611,8 +637,18 @@ qx.Class.define("osparc.workbench.NodeUI", {
             return String(val);
           }
           return "";
-        }
+      }
+      this.getNode().bind("outputs", valueLabel, "value", {
+        converter: outputs => outputToValue(outputs)
       });
+      this.getNode().bind("outputs", valueLabel, "toolTipText", {
+        converter: outputs => outputToValue(outputs)
+      });
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.add(valueLabel, {
+        flex: 1
+      });
+
       this.fireEvent("updateNodeDecorator");
     },
 
@@ -642,15 +678,18 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoProbeUI: function() {
-      const width = 150;
+      const width = 120;
       this.__setNodeUIWidth(width);
 
       const linkLabel = new osparc.ui.basic.LinkLabel().set({
-        paddingLeft: 5,
-        font: "text-12"
+        paddingLeft: 4,
+        font: "text-14",
+        rich: false, // this will make the ellipsis work
       });
       const middleContainer = this.getChildControl("middle-container");
-      middleContainer.add(linkLabel);
+      middleContainer.add(linkLabel, {
+        flex: 1
+      });
 
       this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(linkLabel), this);
       this.__setProbeValue(linkLabel);
@@ -735,6 +774,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
         return;
       }
       const port = this.__createPort(isInput);
+      port.addListener("tap", () => {
+        this.fireDataEvent("requestOpenServiceCatalog", isInput);
+      }, this);
       port.addListener("mouseover", () => {
         port.setSource(this.self().PORT_CONNECTED);
       }, this);
@@ -747,10 +789,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
       if (isInput) {
         this.getNode().getStatus().bind("dependencies", port, "textColor", {
           converter: dependencies => {
-            if (dependencies !== null) {
-              return osparc.service.StatusUI.getColor(dependencies.length ? "modified" : "ready");
+            if (dependencies) {
+              return dependencies.length ? "failed-red" : "ready-green";
             }
-            return osparc.service.StatusUI.getColor();
+            return "workbench-edge";
           }
         });
         this.getNode().bind("inputConnected", port, "source", {

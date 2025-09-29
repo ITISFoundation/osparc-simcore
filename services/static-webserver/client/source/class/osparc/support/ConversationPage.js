@@ -148,37 +148,80 @@ qx.Class.define("osparc.support.ConversationPage", {
           this.getChildControl("buttons-layout").addAt(control, 4);
           break;
         }
+        case "main-stack":
+          control = new qx.ui.container.Stack();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "conversation-container":
+          control = new qx.ui.container.Scroll();
+          this.getChildControl("main-stack").add(control);
+          break;
         case "conversation-content":
           control = new osparc.support.Conversation();
-          const scroll = new qx.ui.container.Scroll();
-          scroll.add(control);
-          this._add(scroll, {
-            flex: 1,
-          });
+          this.getChildControl("conversation-container").add(control);
+          break;
+        case "book-a-call-topic-selector":
+          control = new osparc.support.BookACallTopicSelector();
+          this.getChildControl("main-stack").add(control);
+          break;
+        case "book-a-call-iframe":
+          control = new osparc.wrapper.BookACallIframe();
+          this.getChildControl("main-stack").add(control);
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    proposeConversation: function(type) {
+    proposeConversation: function(type, prefillText) {
       type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
       this.setConversation(null);
 
       const title = this.getChildControl("conversation-title");
       const conversationContent = this.getChildControl("conversation-content");
       conversationContent.clearAllMessages();
+      const conversationContainer = this.getChildControl("conversation-container");
+      this.getChildControl("main-stack").setSelection([conversationContainer]);
       switch (type) {
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
           title.setValue(this.tr("Ask a Question"));
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           title.setValue(this.tr("Book a Call"));
+          const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
+          bookACallTopicSelector.getChildControl("next-button").setLabel(this.tr("Next"));
+          bookACallTopicSelector.addListener("callTopicSelected", e => {
+            const data = e.getData();
+            conversationContent.addBookACallInfo(data);
+            this.getChildControl("main-stack").setSelection([conversationContainer]);
+          });
+          this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);
+          break;
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL_3RD: {
+          title.setValue(this.tr("Book a Call 3rd"));
+          const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
+          bookACallTopicSelector.getChildControl("next-button").setLabel(this.tr("Select date & time"));
+          bookACallTopicSelector.addListener("callTopicSelected", e => {
+            const data = e.getData();
+            conversationContent.addBookACallInfo(data);
+            this.getChildControl("main-stack").setSelection([conversationContainer]);
+          });
+          this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);
+          break;
+        }
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
+          title.setValue(this.tr("Ask a Question"));
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.REPORT_OEC:
           title.setValue(this.tr("Report an Error"));
           break;
       }
       conversationContent.addSystemMessage(type);
+
+      if (prefillText) {
+        this.getChildControl("conversation-content").getChildControl("add-message").getChildControl("comment-field").setText(prefillText);
+      }
     },
 
     __applyConversation: function(conversation) {
@@ -276,7 +319,9 @@ qx.Class.define("osparc.support.ConversationPage", {
       if (oldName === "null") {
         oldName = "";
       }
-      const renamer = new osparc.widget.Renamer(oldName);
+      const renamer = new osparc.widget.Renamer(oldName).set({
+        maxChars: osparc.data.model.Conversation.MAX_TITLE_LENGTH,
+      });
       renamer.addListener("labelChanged", e => {
         renamer.close();
         const newLabel = e.getData()["newLabel"];

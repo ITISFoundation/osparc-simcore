@@ -11,9 +11,10 @@ At every request to this service API, a middleware discovers which product is th
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import (
+
+from ..application_setup import (
     ModuleCategory,
-    app_module_setup,
+    app_setup_func,
     ensure_single_setup,
 )
 
@@ -26,11 +27,11 @@ def setup_products_without_rpc(app: web.Application):
     # NOTE: internal import speeds up booting app
     # specially if this plugin is not set up to be loaded
     #
-    from ..constants import APP_SETTINGS_KEY
+    from ..application_keys import APP_SETTINGS_APPKEY
     from . import _web_events, _web_middlewares
     from ._controller import rest
 
-    assert app[APP_SETTINGS_KEY].WEBSERVER_PRODUCTS is True  # nosec
+    assert app[APP_SETTINGS_APPKEY].WEBSERVER_PRODUCTS is True  # nosec
 
     # rest API
     app.middlewares.append(_web_middlewares.discover_product_middleware)
@@ -39,7 +40,7 @@ def setup_products_without_rpc(app: web.Application):
     _web_events.setup_web_events(app)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     depends=["simcore_service_webserver.db"],

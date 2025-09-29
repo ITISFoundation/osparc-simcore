@@ -31,6 +31,9 @@ qx.Class.define("osparc.support.HomePage", {
     if (osparc.store.Groups.getInstance().isSupportEnabled()) {
       this.getChildControl("ask-a-question-button");
       this.getChildControl("book-a-call-button");
+      if (osparc.product.Utils.isBookACallEnabled()) {
+        this.getChildControl("book-a-call-button-3rd");
+      }
     }
     this.__populateButtons();
   },
@@ -82,7 +85,7 @@ qx.Class.define("osparc.support.HomePage", {
             center: true,
             width: 183,
           });
-          control.addListener("execute", () => this.fireDataEvent("createConversation", "askAQuestion"));
+          control.addListener("execute", () => this.fireDataEvent("createConversation", osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION));
           this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
         case "book-a-call-button":
@@ -92,7 +95,17 @@ qx.Class.define("osparc.support.HomePage", {
             center: true,
             width: 183,
           });
-          control.addListener("execute", () => this.fireDataEvent("createConversation", "bookACall"));
+          control.addListener("execute", () => this.fireDataEvent("createConversation", osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL));
+          this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
+          break;
+        case "book-a-call-button-3rd":
+          control = new qx.ui.form.Button(this.tr("Book a Call"), "@FontAwesome5Solid/flask/16").set({
+            gap: 8,
+            appearance: "strong-button",
+            center: true,
+            width: 183,
+          });
+          control.addListener("execute", () => this.fireDataEvent("createConversation", osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL_3RD));
           this.getChildControl("conversation-buttons-layout").add(control, { flex: 1 });
           break;
         case "learning-box":
@@ -114,39 +127,44 @@ qx.Class.define("osparc.support.HomePage", {
     },
 
     __populateButtons: function() {
-      const learningBox = this.getChildControl("learning-box");
+      const learningButtons = [];
       const quickStartButton = osparc.store.Support.getQuickStartButton();
       if (quickStartButton) {
-        learningBox.add(quickStartButton);
-        this.self().decorateButton(quickStartButton);
+        learningButtons.push(quickStartButton);
       }
-
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
         const tutorialsBtn = new qx.ui.form.Button(this.tr("Explore Tutorials"), "@FontAwesome5Solid/graduation-cap/14");
+        const store = osparc.store.Store.getInstance();
+        store.bind("currentStudy", tutorialsBtn, "enabled", {
+          converter: study => !Boolean(study)
+        });
         tutorialsBtn.addListener("execute", () => qx.event.message.Bus.getInstance().dispatchByName("showTab", "tutorialsTab"), this);
-        learningBox.add(tutorialsBtn);
-        this.self().decorateButton(tutorialsBtn);
+       learningButtons.push(tutorialsBtn);
+      }
+      const guidedToursButton = osparc.store.Support.getGuidedToursButton();
+      if (guidedToursButton) {
+        learningButtons.push(guidedToursButton);
+      }
+      if (learningButtons.length) {
+        const learningBox = this.getChildControl("learning-box");
+        learningButtons.forEach(learningButton => {
+          learningBox.add(learningButton);
+          this.self().decorateButton(learningButton);
+        });
       }
 
-      const guidedToursButton = osparc.store.Support.getGuidedToursButton();
-      learningBox.add(guidedToursButton);
-      this.self().decorateButton(guidedToursButton);
-
-      const referencesBox = this.getChildControl("references-box");
       const manualButtons = osparc.store.Support.getManualButtons();
-      manualButtons.forEach(manualButton => {
-        referencesBox.add(manualButton);
-        this.self().decorateButton(manualButton);
-        this.self().addExternalLinkIcon(manualButton);
-      });
-
       const supportButtons = osparc.store.Support.getSupportButtons();
-      supportButtons.forEach(supportButton => {
-        referencesBox.add(supportButton);
-        this.self().decorateButton(supportButton);
-        this.self().addExternalLinkIcon(supportButton);
-      });
+      const referenceButtons = manualButtons.concat(supportButtons);
+      if (referenceButtons.length) {
+        const referencesBox = this.getChildControl("references-box");
+        referenceButtons.forEach(referenceButton => {
+          referencesBox.add(referenceButton);
+          this.self().decorateButton(referenceButton);
+          this.self().addExternalLinkIcon(referenceButton);
+        });
+      }
 
       const releaseNotesButton = osparc.store.Support.getReleaseNotesButton();
       this._add(releaseNotesButton);

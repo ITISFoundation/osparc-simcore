@@ -19,7 +19,7 @@ from simcore_service_webserver.db.plugin import setup_db
 from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.statics._constants import (
-    APP_FRONTEND_CACHED_STATICS_JSON_KEY,
+    FRONTEND_CACHED_STATICS_JSON_APPKEY,
 )
 from simcore_service_webserver.statics._events import (
     _get_release_notes_vtag,
@@ -90,7 +90,7 @@ async def test_create_and_cache_statics_json_legacy_vcs_implementation(
 ):
     assert client.app
     await create_and_cache_statics_json(client.app)
-    for product_data in client.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY].values():
+    for product_data in client.app[FRONTEND_CACHED_STATICS_JSON_APPKEY].values():
         product_dict = json.loads(product_data)
         assert product_dict.get("vcsReleaseTag") == vcs_release_tag
         assert product_dict.get("vcsReleaseUrl") == expected_vcs_url
@@ -149,7 +149,7 @@ async def test_create_and_cache_statics_json_vendor_vcs_overwrite(
 ):
     assert client.app
     await create_and_cache_statics_json(client.app)
-    for product_data in client.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY].values():
+    for product_data in client.app[FRONTEND_CACHED_STATICS_JSON_APPKEY].values():
         product_dict = json.loads(product_data)
         assert product_dict.get("vcsReleaseTag") == vcs_release_tag
         assert product_dict.get("vcsReleaseUrl") == expected_vcs_url

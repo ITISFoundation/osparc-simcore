@@ -47,7 +47,7 @@ qx.Class.define("osparc.support.SupportCenter", {
       this.getChildControl("conversations-button");
     }
 
-    this.__showHome();
+    this.__selectHomeStackPage();
   },
 
   statics: {
@@ -100,7 +100,9 @@ qx.Class.define("osparc.support.SupportCenter", {
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignX: "center",
-          }));
+          })).set({
+            visibility: osparc.store.Groups.getInstance().isSupportEnabled() ? "visible" : "excluded",
+          });
           this.add(control);
           break;
         case "home-button":
@@ -112,7 +114,7 @@ qx.Class.define("osparc.support.SupportCenter", {
             allowGrowX: true,
             center: true,
           });
-          control.addListener("execute", () => this.__showHome(), this);
+          control.addListener("execute", () => this.__selectHomeStackPage(), this);
           this.getChildControl("buttons-layout").add(control, { flex: 1 });
           break;
         case "conversations-button":
@@ -151,37 +153,35 @@ qx.Class.define("osparc.support.SupportCenter", {
       return control || this.base(arguments, id);
     },
 
-    __showHome: function() {
+    __selectHomeStackPage: function() {
       this.setCaption(this.tr("Help & Support"));
       this.getChildControl("main-stack").setSelection([this.getChildControl("home-page")]);
-      this.getChildControl("home-button").set({
+      this.getChildControl("home-button").getChildControl("icon").set({
         textColor: "strong-main",
       });
-      this.getChildControl("conversations-button").set({
+      this.getChildControl("conversations-button").getChildControl("icon").set({
         textColor: "text",
+      });
+    },
+
+    __selectConversationsStackPage: function() {
+      this.setCaption(this.tr("Conversations"));
+      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
+      this.getChildControl("home-button").getChildControl("icon").set({
+        textColor: "text",
+      });
+      this.getChildControl("conversations-button").getChildControl("icon").set({
+        textColor: "strong-main",
       });
     },
 
     showConversations: function() {
-      this.setCaption(this.tr("Conversations"));
-      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
-      this.getChildControl("home-button").set({
-        textColor: "text",
-      });
-      this.getChildControl("conversations-button").set({
-        textColor: "strong-main",
-      });
+      this.__selectConversationsStackPage();
       this.getChildControl("conversations-stack").setSelection([this.getChildControl("conversations-page")]);
     },
 
     __showConversation: function() {
-      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-stack")]);
-      this.getChildControl("home-button").set({
-        textColor: "text",
-      });
-      this.getChildControl("conversations-button").set({
-        textColor: "strong-main",
-      });
+      this.__selectConversationsStackPage();
       this.getChildControl("conversations-stack").setSelection([this.getChildControl("conversation-page")]);
     },
 
@@ -196,9 +196,9 @@ qx.Class.define("osparc.support.SupportCenter", {
       }
     },
 
-    createConversation: function(type) {
+    createConversation: function(type, prefillText) {
       const conversationPage = this.getChildControl("conversation-page");
-      conversationPage.proposeConversation(type);
+      conversationPage.proposeConversation(type, prefillText);
       this.__showConversation();
     },
   }

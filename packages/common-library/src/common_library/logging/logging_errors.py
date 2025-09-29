@@ -1,16 +1,18 @@
 import logging
-from typing import Any, TypedDict
+from typing import Any, Final, TypedDict
 
 from common_library.error_codes import ErrorCodeStr
 from common_library.errors_classes import OsparcErrorMixin
 from common_library.json_serialization import json_dumps, representation_encoder
 
-from .logging_utils import LogExtra, get_log_record_extra
+from .logging_base import LogExtra, get_log_record_extra
 
 _logger = logging.getLogger(__name__)
 
+_MAX_LOGGED_CAUSES: Final[int] = 10
 
-def create_troubleshootting_log_message(
+
+def create_troubleshooting_log_message(
     user_error_msg: str,
     *,
     error: BaseException,
@@ -31,9 +33,14 @@ def create_troubleshootting_log_message(
     def _collect_causes(exc: BaseException) -> str:
         causes = []
         current = exc.__cause__
-        while current is not None:
+        seen = set()  # Prevent infinite loops
+        while current is not None and id(current) not in seen:
+            seen.add(id(current))
             causes.append(f"[{type(current).__name__}]'{current}'")
             current = getattr(current, "__cause__", None)
+            if len(causes) > _MAX_LOGGED_CAUSES:  # Prevent excessive chains
+                causes.append("[... truncated]")
+                break
         return " <- ".join(causes)
 
     debug_data = json_dumps(
@@ -57,7 +64,7 @@ class LogKwargs(TypedDict):
     extra: LogExtra | None
 
 
-def create_troubleshootting_log_kwargs(
+def create_troubleshooting_log_kwargs(
     user_error_msg: str,
     *,
     error: BaseException,
@@ -74,7 +81,7 @@ def create_troubleshootting_log_kwargs(
             ...
         except MyException as exc
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     user_error_msg=frontend_msg,
                     error=exc,
                     error_context={
@@ -92,7 +99,7 @@ def create_troubleshootting_log_kwargs(
         context.update(error.error_context())
 
     # compose as log message
-    log_msg = create_troubleshootting_log_message(
+    log_msg = create_troubleshooting_log_message(
         user_error_msg,
         error=error,
         error_code=error_code,

@@ -2,6 +2,7 @@ import logging
 from typing import Annotated, Any
 
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
@@ -16,9 +17,10 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
-from simcore_service_api_server.models.domain.celery_models import ApiWorkerTaskFilter
 
+from ...models.domain.celery_models import (
+    ApiServerOwnerMetadata,
+)
 from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
 from ..dependencies.authentication import get_current_user_id, get_product_name
@@ -57,14 +59,13 @@ async def list_tasks(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
-
     task_manager = get_task_manager(app)
-    task_filter = ApiWorkerTaskFilter(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
     tasks = await task_manager.list_tasks(
-        task_filter=task_filter,
+        owner_metadata=owner_metadata,
     )
 
     app_router = app.router
@@ -104,12 +105,12 @@ async def get_task_status(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiWorkerTaskFilter(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
     task_status = await task_manager.get_task_status(
-        task_filter=task_filter,
+        owner_metadata=owner_metadata,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -142,12 +143,12 @@ async def cancel_task(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiWorkerTaskFilter(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
     await task_manager.cancel_task(
-        task_filter=task_filter,
+        owner_metadata=owner_metadata,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -177,13 +178,13 @@ async def get_task_result(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
     task_manager = get_task_manager(app)
-    task_filter = ApiWorkerTaskFilter(
+    owner_metadata = ApiServerOwnerMetadata(
         user_id=user_id,
         product_name=product_name,
     )
 
     task_status = await task_manager.get_task_status(
-        task_filter=task_filter,
+        owner_metadata=owner_metadata,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -194,7 +195,7 @@ async def get_task_result(
         )
 
     task_result = await task_manager.get_task_result(
-        task_filter=task_filter,
+        owner_metadata=owner_metadata,
         task_uuid=TaskUUID(f"{task_id}"),
     )
 
@@ -203,7 +204,7 @@ async def get_task_result(
         user_error_msg = f"The execution of task {task_id} failed"
         support_id = create_error_code(task_result)
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=task_result,
                 error_code=support_id,

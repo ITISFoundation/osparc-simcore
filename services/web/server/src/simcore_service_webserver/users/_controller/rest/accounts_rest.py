@@ -14,7 +14,6 @@ from models_library.api_schemas_webserver.users import (
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_query_parameters_as,
@@ -24,6 +23,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task
 
 from ...._meta import API_VTAG
+from ....constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
 from ....security.decorators import (

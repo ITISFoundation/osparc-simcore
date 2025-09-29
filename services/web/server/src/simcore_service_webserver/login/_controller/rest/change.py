@@ -2,22 +2,22 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
-from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
+from ....exception_handling import create_error_context_from_request
 from ....products import products_web
 from ....products.models import Product
 from ....users import users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
-from ... import _auth_service, _confirmation_service, _confirmation_web
+from ... import _auth_service, _confirmation_web
 from ..._emails_service import get_template_path, send_email_from_template
-from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
@@ -33,7 +33,7 @@ from ...constants import (
 )
 from ...decorators import login_required
 from ...errors import WrongPasswordError
-from ...settings import LoginOptions, get_plugin_options
+from ._rest_dependencies import get_confirmation_service
 from .change_schemas import ChangeEmailBody, ChangePasswordBody, ResetPasswordBody
 
 _logger = logging.getLogger(__name__)
@@ -82,8 +82,6 @@ async def initiate_reset_password(request: web.Request):
      - 4. Who requested the reset?
     """
 
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = products_web.get_current_product(request)
 
     request_body = await parse_request_body_as(ResetPasswordBody, request)
@@ -122,7 +120,7 @@ async def initiate_reset_password(request: web.Request):
     user = await _auth_service.get_user_or_none(request.app, email=request_body.email)
     if not user:
         _logger.warning(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 f"{_error_msg_prefix} for non-existent email. {_error_msg_suffix}",
                 error=Exception("No user found with this email"),
                 error_context=_get_error_context(),
@@ -145,7 +143,7 @@ async def initiate_reset_password(request: web.Request):
             # NOTE: we abuse here (untiby reusing `validate_user_status` and catching http errors that we
             # do not want to forward but rather log due to the special rules in this entrypoint
             _logger.warning(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     f"{_error_msg_prefix} for invalid user. {err.text}. {_error_msg_suffix}",
                     error=err,
                     error_context={**_get_error_context(user), "error.text": err.text},
@@ -163,7 +161,7 @@ async def initiate_reset_password(request: web.Request):
             request.app, user_id=user["id"], product_name=product.name
         ):
             _logger.warning(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     f"{_error_msg_prefix} for a user with NO access to this product. {_error_msg_suffix}",
                     error=Exception("User cannot access this product"),
                     error_context=_get_error_context(user),
@@ -177,16 +175,15 @@ async def initiate_reset_password(request: web.Request):
         try:
             # Confirmation token that includes code to `complete_reset_password`.
             # Recreated if non-existent or expired  (Guideline #2)
+            confirmation_service = get_confirmation_service(request.app)
             confirmation = (
-                await _confirmation_service.get_or_create_confirmation_without_data(
-                    cfg, db, user_id=user["id"], action="RESET_PASSWORD"
+                await confirmation_service.get_or_create_confirmation_without_data(
+                    user_id=user["id"], action="RESET_PASSWORD"
                 )
             )
 
             # Produce a link so that the front-end can hit `complete_reset_password`
-            link = _confirmation_web.make_confirmation_link(
-                request, confirmation["code"]
-            )
+            link = _confirmation_web.make_confirmation_link(request, confirmation.code)
 
             # primary reset email with a URL and the normal instructions.
             await send_email_from_template(
@@ -206,7 +203,7 @@ async def initiate_reset_password(request: web.Request):
             )
         except Exception as err:  # pylint: disable=broad-except
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     "Unable to send email",
                     error=err,
                     error_context=_get_error_context(user),
@@ -220,8 +217,8 @@ async def initiate_reset_password(request: web.Request):
 
 async def initiate_change_email(request: web.Request):
     # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = products_web.get_current_product(request)
+    confirmation_service = get_confirmation_service(request.app)
 
     request_body = await parse_request_body_as(ChangeEmailBody, request)
 
@@ -238,15 +235,17 @@ async def initiate_change_email(request: web.Request):
         raise web.HTTPUnprocessableEntity(text="This email cannot be used")
 
     # Reset if previously requested
-    confirmation = await db.get_confirmation({"user": user, "action": CHANGE_EMAIL})
-    if confirmation:
-        await db.delete_confirmation(confirmation)
+    existing_confirmation = await confirmation_service.get_confirmation(
+        filter_dict={"user_id": user["id"], "action": CHANGE_EMAIL}
+    )
+    if existing_confirmation:
+        await confirmation_service.delete_confirmation(existing_confirmation)
 
     # create new confirmation to ensure email is actually valid
-    confirmation = await db.create_confirmation(
+    confirmation = await confirmation_service.create_confirmation(
         user_id=user["id"], action="CHANGE_EMAIL", data=request_body.email
     )
-    link = _confirmation_web.make_confirmation_link(request, confirmation["code"])
+    link = _confirmation_web.make_confirmation_link(request, confirmation.code)
     try:
         await send_email_from_template(
             request,
@@ -260,8 +259,20 @@ async def initiate_change_email(request: web.Request):
             },
         )
     except Exception as err:  # pylint: disable=broad-except
-        _logger.exception("Can not send change_email_email")
-        await db.delete_confirmation(confirmation)
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Can not send change_email_email",
+                error=err,
+                error_context={
+                    "user_id": user["id"],
+                    "user_email": user["email"],
+                    "new_email": request_body.email,
+                    "product_name": product.name,
+                    **create_error_context_from_request(request),
+                },
+            )
+        )
+        await confirmation_service.delete_confirmation(confirmation)
         raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
 
     return flash_response(MSG_CHANGE_EMAIL_REQUESTED)
@@ -270,7 +281,6 @@ async def initiate_change_email(request: web.Request):
 @routes.post(f"/{API_VTAG}/auth/change-password", name="auth_change_password")
 @login_required
 async def change_password(request: web.Request):
-
     passwords = await parse_request_body_as(ChangePasswordBody, request)
     user_id = request[RQT_USERID_KEY]
     user = await _auth_service.get_user_or_none(request.app, user_id=user_id)

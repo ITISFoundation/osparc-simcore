@@ -9,6 +9,7 @@ from typing import Any, ClassVar, Final, Protocol, TypeAlias
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeFloat, PositiveFloat
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -20,7 +21,6 @@ from tenacity import (
 )
 
 from ..background_task import create_periodic_task
-from ..logging_errors import create_troubleshootting_log_kwargs
 from ..logging_utils import log_catch, log_context
 from ..redis import RedisClientSDK, exclusive
 from ..utils import limited_gather
@@ -353,7 +353,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     )
                     if type(e) not in allowed_errors:
                         _logger.exception(
-                            **create_troubleshootting_log_kwargs(
+                            **create_troubleshooting_log_kwargs(
                                 (
                                     f"Execution of {task_id=} finished with unexpected error, "
                                     f"only the following {allowed_errors=} are permitted"
@@ -372,7 +372,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                         Exception  # pylint:disable=broad-except
                     ) as serialization_error:
                         _logger.exception(
-                            **create_troubleshootting_log_kwargs(
+                            **create_troubleshooting_log_kwargs(
                                 (
                                     f"Execution of {task_id=} finished with an error "
                                     f"which could not be serialized"

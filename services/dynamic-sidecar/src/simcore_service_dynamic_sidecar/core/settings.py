@@ -4,6 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import cast
 
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
@@ -21,7 +22,6 @@ from pydantic import (
     TypeAdapter,
     field_validator,
 )
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.docker_registry import RegistrySettings
@@ -55,7 +55,6 @@ class SystemMonitorSettings(BaseApplicationSettings):
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
-
     DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR: Path = Field(
         ...,
         description="Base directory where dynamic-sidecar stores creates "

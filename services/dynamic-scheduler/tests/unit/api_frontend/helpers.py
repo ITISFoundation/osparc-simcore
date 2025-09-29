@@ -14,10 +14,18 @@ from playwright.async_api import Locator, Page
 from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
-_HERE: Final[Path] = (
+SCREENSHOTS_PATH: Final[Path] = (
     Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 )
 _DEFAULT_TIMEOUT: Final[NonNegativeFloat] = 10
+
+SCREENSHOT_SUFFIX = ".ignore.screenshot.png"
+
+
+async def take_screenshot(async_page: Page, prefix: str = "") -> None:
+    path = SCREENSHOTS_PATH / f"{prefix}{uuid4()}{SCREENSHOT_SUFFIX}"
+    await async_page.screenshot(path=path)
+    print(f"Please check :{path}")
 
 
 @asynccontextmanager
@@ -28,10 +36,7 @@ async def take_screenshot_on_error(
         yield
     # allows to also capture exceptions form `with pytest.raise(...)``
     except BaseException:
-        path = _HERE / f"{uuid4()}.ignore.png"
-        await async_page.screenshot(path=path)
-        print(f"Please check :{path}")
-
+        await take_screenshot(async_page)
         raise
 
 
@@ -98,6 +103,5 @@ def get_new_style_service_status(state: str) -> DynamicServiceGet:
 
 def get_legacy_service_status(state: str) -> NodeGet:
     return TypeAdapter(NodeGet).validate_python(
-        NodeGet.model_config["json_schema_extra"]["examples"][0]
-        | {"service_state": state}
+        NodeGet.model_json_schema()["examples"][0] | {"service_state": state}
     )

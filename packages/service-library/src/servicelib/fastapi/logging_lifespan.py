@@ -2,6 +2,7 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack
 
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from settings_library.tracing import TracingSettings
 
@@ -10,7 +11,6 @@ from ..logging_utils import (
     async_loggers,
     log_context,
 )
-from ..logging_utils_filtering import LoggerName, MessageSubstring
 from .lifespan_utils import Lifespan
 
 _logger = logging.getLogger(__name__)

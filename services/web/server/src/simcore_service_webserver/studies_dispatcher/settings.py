@@ -5,8 +5,9 @@ from aiohttp import web
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import ByteSize, Field, HttpUrl, TypeAdapter, field_validator
 from pydantic_settings import SettingsConfigDict
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
+
+from ..application_keys import APP_SETTINGS_APPKEY
 
 _DEFAULT_THUMBNAIL: Final[HttpUrl] = TypeAdapter(HttpUrl).validate_python(
     "https://via.placeholder.com/170x120.png"
@@ -79,7 +80,7 @@ class StudiesDispatcherSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: web.Application) -> StudiesDispatcherSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_STUDIES_DISPATCHER
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_STUDIES_DISPATCHER
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, StudiesDispatcherSettings)  # nosec
     return settings

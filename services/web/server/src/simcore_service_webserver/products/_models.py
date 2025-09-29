@@ -70,20 +70,21 @@ class Product(BaseModel):
         Field(pattern=PUBLIC_VARIABLE_NAME_RE, validate_default=True),
     ]
 
-    display_name: Annotated[str, Field(..., description="Long display name")]
+    display_name: Annotated[str, Field(description="Long display name")]
     short_name: Annotated[
         str | None,
         Field(
-            None,
             pattern=re.compile(TWILIO_ALPHANUMERIC_SENDER_ID_RE),
             min_length=2,
             max_length=11,
             description="Short display name for SMS",
         ),
-    ]
+    ] = None
 
     host_regex: Annotated[
-        re.Pattern, BeforeValidator(str.strip), Field(..., description="Host regex")
+        re.Pattern,
+        BeforeValidator(lambda s: s.strip() if isinstance(s, str) else s),
+        Field(description="Host regex"),
     ]
 
     support_email: Annotated[
@@ -115,7 +116,7 @@ class Product(BaseModel):
 
     manuals: list[Manual] | None = None
 
-    support: list[Forum | EmailFeedback | WebFeedback] | None = Field(None)
+    support: list[Forum | EmailFeedback | WebFeedback] | None = None
 
     login_settings: Annotated[
         ProductLoginSettingsDict,
@@ -153,9 +154,7 @@ class Product(BaseModel):
 
     is_payment_enabled: Annotated[
         bool,
-        Field(
-            description="True if this product offers credits",
-        ),
+        Field(description="True if this product offers credits"),
     ] = False
 
     credits_per_usd: Annotated[

@@ -169,7 +169,9 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       // highlight me
       const email = osparc.auth.Data.getInstance().getEmail();
       if (value && value.includes(email)) {
-        this.addState("selected");
+        this.setBackgroundColor("background-selected");
+      } else {
+        this.setBackgroundColor("background-main-2");
       }
     },
 

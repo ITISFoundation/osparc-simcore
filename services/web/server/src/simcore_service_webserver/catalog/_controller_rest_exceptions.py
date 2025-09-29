@@ -4,10 +4,10 @@ import logging
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
@@ -42,7 +42,6 @@ _logger = logging.getLogger(__name__)
 async def _handler_catalog_client_errors(
     request: web.Request, exception: Exception
 ) -> web.Response:
-
     assert isinstance(  # nosec
         exception, CatalogResponseError | CatalogConnectionError
     ), f"check mapping, got {exception=}"
@@ -64,7 +63,7 @@ async def _handler_catalog_client_errors(
         # Log for further investigation
         oec = create_error_code(exception)
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_msg,
                 error=exception,
                 error_code=oec,
