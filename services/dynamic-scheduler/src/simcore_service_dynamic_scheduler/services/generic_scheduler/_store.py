@@ -203,16 +203,18 @@ class ScheduleDataStoreProxy:
         return _get_scheduler_data_hash_key(schedule_id=self._schedule_id)
 
     @overload
-    async def get(self, key: Literal["operation_name"]) -> OperationName: ...
+    async def read(self, key: Literal["operation_name"]) -> OperationName: ...
     @overload
-    async def get(self, key: Literal["group_index"]) -> NonNegativeInt: ...
+    async def read(self, key: Literal["group_index"]) -> NonNegativeInt: ...
     @overload
-    async def get(self, key: Literal["is_creating"]) -> bool: ...
+    async def read(self, key: Literal["is_creating"]) -> bool: ...
     @overload
-    async def get(self, key: Literal["operation_error_type"]) -> OperationErrorType: ...
+    async def read(
+        self, key: Literal["operation_error_type"]
+    ) -> OperationErrorType: ...
     @overload
-    async def get(self, key: Literal["operation_error_message"]) -> str: ...
-    async def get(self, key: str) -> Any:
+    async def read(self, key: Literal["operation_error_message"]) -> str: ...
+    async def read(self, key: str) -> Any:
         """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
         (result,) = await self._store.get_key_from_hash(hash_key, key)
@@ -221,25 +223,29 @@ class ScheduleDataStoreProxy:
         return result
 
     @overload
-    async def set(
+    async def create_or_update(
         self, key: Literal["operation_name"], value: OperationName
     ) -> None: ...
     @overload
-    async def set(self, key: Literal["group_index"], value: NonNegativeInt) -> None: ...
+    async def create_or_update(
+        self, key: Literal["group_index"], value: NonNegativeInt
+    ) -> None: ...
     @overload
-    async def set(self, key: Literal["is_creating"], *, value: bool) -> None: ...
+    async def create_or_update(
+        self, key: Literal["is_creating"], *, value: bool
+    ) -> None: ...
     @overload
-    async def set(
+    async def create_or_update(
         self, key: Literal["operation_error_type"], value: OperationErrorType
     ) -> None: ...
     @overload
-    async def set(
+    async def create_or_update(
         self, key: Literal["operation_error_message"], value: str
     ) -> None: ...
-    async def set(self, key: str, value: Any) -> None:
+    async def create_or_update(self, key: str, value: Any) -> None:
         await self._store.set_key_in_hash(self._get_hash_key(), key, value)
 
-    async def set_multiple(self, updates: _UpdateScheduleDataDict) -> None:
+    async def create_or_update_multiple(self, updates: _UpdateScheduleDataDict) -> None:
         await self._store.set_keys_in_hash(self._get_hash_key(), updates=updates)  # type: ignore[arg-type]
 
     async def delete_keys(self, *keys: _DeleteScheduleDataKeys) -> None:
@@ -329,16 +335,16 @@ class StepStoreProxy:
         )
 
     @overload
-    async def get(self, key: Literal["status"]) -> StepStatus: ...
+    async def read(self, key: Literal["status"]) -> StepStatus: ...
     @overload
-    async def get(self, key: Literal["deferred_task_uid"]) -> TaskUID: ...
+    async def read(self, key: Literal["deferred_task_uid"]) -> TaskUID: ...
     @overload
-    async def get(self, key: Literal["error_traceback"]) -> str: ...
+    async def read(self, key: Literal["error_traceback"]) -> str: ...
     @overload
-    async def get(self, key: Literal["requires_manual_intervention"]) -> bool: ...
+    async def read(self, key: Literal["requires_manual_intervention"]) -> bool: ...
     @overload
-    async def get(self, key: Literal["deferred_created"]) -> bool: ...
-    async def get(self, key: str) -> Any:
+    async def read(self, key: Literal["deferred_created"]) -> bool: ...
+    async def read(self, key: str) -> Any:
         """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
         (result,) = await self._store.get_key_from_hash(hash_key, key)
@@ -347,21 +353,29 @@ class StepStoreProxy:
         return result
 
     @overload
-    async def set(self, key: Literal["status"], value: StepStatus) -> None: ...
+    async def create_or_update(
+        self, key: Literal["status"], value: StepStatus
+    ) -> None: ...
     @overload
-    async def set(self, key: Literal["deferred_task_uid"], value: TaskUID) -> None: ...
+    async def create_or_update(
+        self, key: Literal["deferred_task_uid"], value: TaskUID
+    ) -> None: ...
     @overload
-    async def set(self, key: Literal["error_traceback"], value: str) -> None: ...
+    async def create_or_update(
+        self, key: Literal["error_traceback"], value: str
+    ) -> None: ...
     @overload
-    async def set(
+    async def create_or_update(
         self, key: Literal["requires_manual_intervention"], *, value: bool
     ) -> None: ...
     @overload
-    async def set(self, key: Literal["deferred_created"], *, value: bool) -> None: ...
-    async def set(self, key: str, value: Any) -> None:
+    async def create_or_update(
+        self, key: Literal["deferred_created"], *, value: bool
+    ) -> None: ...
+    async def create_or_update(self, key: str, value: Any) -> None:
         await self._store.set_key_in_hash(self._get_hash_key(), key, value)
 
-    async def set_multiple(self, updates: _StepDict) -> None:
+    async def create_or_update_multiple(self, updates: _StepDict) -> None:
         await self._store.set_keys_in_hash(self._get_hash_key(), updates=updates)  # type: ignore[arg-type]
 
     async def delete_keys(self, *keys: DeleteStepKeys) -> None:
@@ -388,15 +402,13 @@ class OperationContextProxy:
             schedule_id=self.schedule_id, operation_name=self.operation_name
         )
 
-    async def set_provided_context(
-        self, updates: ProvidedOperationContext | None
-    ) -> None:
+    async def create_or_update(self, updates: ProvidedOperationContext | None) -> None:
         if not updates:
             return
 
         await self._store.set_keys_in_hash(self._get_hash_key(), updates)
 
-    async def get_required_context(self, *keys: str) -> RequiredOperationContext:
+    async def read(self, *keys: str) -> RequiredOperationContext:
         if len(keys) == 0:
             return {}
 

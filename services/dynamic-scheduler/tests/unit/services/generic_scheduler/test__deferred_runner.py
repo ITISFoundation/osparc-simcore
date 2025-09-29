@@ -115,7 +115,7 @@ async def _assert_finshed_with_status(
         retry=retry_if_exception_type((AssertionError, NoDataFoundError)),
     ):
         with attempt:
-            assert await step_proxy.get("status") == expected_status
+            assert await step_proxy.read("status") == expected_status
 
 
 class _StepResultStore:
@@ -262,7 +262,7 @@ async def test_something(
 
     # setup
     schedule_data_proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
-    await schedule_data_proxy.set_multiple(
+    await schedule_data_proxy.create_or_update_multiple(
         {"operation_name": operation_name, "group_index": 0, "is_creating": is_creating}
     )
 
@@ -299,7 +299,7 @@ async def test_something(
     if action == _Action.CANCEL:
         await asyncio.sleep(0.2)  # give it some time to start
 
-        task_uid = await step_proxy.get("deferred_task_uid")
+        task_uid = await step_proxy.read("deferred_task_uid")
         await DeferredRunner.cancel(task_uid)
 
     await _assert_finshed_with_status(step_proxy, expected_step_status)
@@ -309,7 +309,7 @@ async def test_something(
     )
 
     if expected_step_status == StepStatus.FAILED:
-        error_traceback = await step_proxy.get("error_traceback")
+        error_traceback = await step_proxy.read("error_traceback")
         assert "I failed" in error_traceback
 
     # ensure called once with arguments

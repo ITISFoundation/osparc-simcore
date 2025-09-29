@@ -55,7 +55,7 @@ def are_any_steps_in_a_progress_status(
 
 async def _get_step_status(step_proxy: StepStoreProxy) -> tuple[StepName, StepStatus]:
     try:
-        status = await step_proxy.get("status")
+        status = await step_proxy.read("status")
     except NoDataFoundError:
         status = StepStatus.UNKNOWN
 
@@ -86,7 +86,7 @@ async def start_and_mark_as_started(
         is_creating=is_creating,
         expected_steps_count=expected_steps_count,
     )
-    await step_proxy.set_multiple(
+    await step_proxy.create_or_update_multiple(
         {"deferred_created": True, "status": StepStatus.SCHEDULED}
     )
 
@@ -119,7 +119,7 @@ async def get_step_error_traceback(
         step_name=step_name,
         is_creating=False,
     )
-    return step_name, await step_proxy.get("error_traceback")
+    return step_name, await step_proxy.read("error_traceback")
 
 
 def get_group_step_proxies(
@@ -148,7 +148,7 @@ async def _get_was_step_started(
     step_proxy: StepStoreProxy,
 ) -> tuple[bool, StepStoreProxy]:
     try:
-        was_stated = (await step_proxy.get("deferred_created")) is True
+        was_stated = (await step_proxy.read("deferred_created")) is True
     except NoDataFoundError:
         was_stated = False
 
@@ -208,7 +208,7 @@ async def cleanup_after_finishing(
 
 async def get_requires_manual_intervention(step_proxy: StepStoreProxy) -> bool:
     try:
-        return await step_proxy.get("requires_manual_intervention")
+        return await step_proxy.read("requires_manual_intervention")
     except NoDataFoundError:
         return False
 
@@ -220,7 +220,7 @@ async def set_unexpected_opration_state(
     message: str,
 ) -> None:
     schedule_data_proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
-    await schedule_data_proxy.set_multiple(
+    await schedule_data_proxy.create_or_update_multiple(
         {
             "operation_error_type": operation_error_type,
             "operation_error_message": message,

@@ -137,18 +137,18 @@ async def test_schedule_data_store_proxy_workflow(
     hash_key = f"SCH:{schedule_id}"
 
     # set
-    await proxy.set("operation_name", "op1")
-    await proxy.set("group_index", 1)
-    await proxy.set("is_creating", value=True)
+    await proxy.create_or_update("operation_name", "op1")
+    await proxy.create_or_update("group_index", 1)
+    await proxy.create_or_update("is_creating", value=True)
     await _assert_keys(store, {hash_key})
     await _assert_keys_in_hash(
         store, hash_key, {"operation_name", "group_index", "is_creating"}
     )
 
     # get
-    assert await proxy.get("operation_name") == "op1"
-    assert await proxy.get("group_index") == 1
-    assert await proxy.get("is_creating") is True
+    assert await proxy.read("operation_name") == "op1"
+    assert await proxy.read("group_index") == 1
+    assert await proxy.read("is_creating") is True
 
     # remove
     await proxy.delete_keys("operation_name", "is_creating", "group_index")
@@ -156,7 +156,7 @@ async def test_schedule_data_store_proxy_workflow(
     await _assert_keys_in_hash(store, hash_key, set())
 
     # set multiple
-    await proxy.set_multiple(
+    await proxy.create_or_update_multiple(
         {
             "group_index": 2,
             "is_creating": False,
@@ -205,12 +205,12 @@ async def test_step_store_proxy_workflow(
     hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{is_creating_str}:step"
 
     # set
-    await proxy.set("status", StepStatus.RUNNING)
+    await proxy.create_or_update("status", StepStatus.RUNNING)
     await _assert_keys(store, {hash_key})
     await _assert_keys_in_hash(store, hash_key, {"status"})
 
     # get
-    assert await proxy.get("status") == StepStatus.RUNNING
+    assert await proxy.read("status") == StepStatus.RUNNING
 
     # remove
     await proxy.delete_keys("status")
@@ -218,7 +218,7 @@ async def test_step_store_proxy_workflow(
     await _assert_keys_in_hash(store, hash_key, set())
 
     # set multiple
-    await proxy.set_multiple(
+    await proxy.create_or_update_multiple(
         {
             "status": StepStatus.SUCCESS,
             "deferred_task_uid": TaskUID("mytask"),
@@ -313,21 +313,19 @@ async def test_operation_context_proxy(
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
 
-    await proxy.set_provided_context(provided_context)
+    await proxy.create_or_update(provided_context)
 
     await _assert_keys(store, set() if len(provided_context) == 0 else {hash_key})
     await _assert_keys_in_hash(store, hash_key, set(provided_context.keys()))
 
-    assert (
-        await proxy.get_required_context(*provided_context.keys()) == provided_context
-    )
+    assert await proxy.read(*provided_context.keys()) == provided_context
 
 
 async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
     await _assert_keys(store, set())
 
     proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
-    await proxy.set_multiple(
+    await proxy.create_or_update_multiple(
         {
             "group_index": 1,
             "is_creating": True,
@@ -345,7 +343,7 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
         step_name="step",
         is_creating=True,
     )
-    await proxy.set_multiple(
+    await proxy.create_or_update_multiple(
         {
             "deferred_created": True,
             "status": StepStatus.SUCCESS,
@@ -367,7 +365,7 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
     proxy = OperationContextProxy(
         store=store, schedule_id=schedule_id, operation_name="op1"
     )
-    await proxy.set_provided_context({"k1": "v1", "k2": 2})
+    await proxy.create_or_update({"k1": "v1", "k2": 2})
 
     await _assert_keys(
         store,

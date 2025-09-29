@@ -97,7 +97,7 @@ class Core(SingletonInAppStateMixin):
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
         )
-        await schedule_data_proxy.set_multiple(
+        await schedule_data_proxy.create_or_update_multiple(
             {
                 "operation_name": operation_name,
                 "group_index": 0,
@@ -110,7 +110,7 @@ class Core(SingletonInAppStateMixin):
             schedule_id=schedule_id,
             operation_name=operation_name,
         )
-        await operation_content_proxy.set_provided_context(initial_operation_context)
+        await operation_content_proxy.create_or_update(initial_operation_context)
 
         await enqueue_schedule_event(self.app, schedule_id)
         return schedule_id
@@ -127,7 +127,7 @@ class Core(SingletonInAppStateMixin):
             store=self._store, schedule_id=schedule_id
         )
 
-        is_creating = await schedule_data_proxy.get("is_creating")
+        is_creating = await schedule_data_proxy.read("is_creating")
 
         if is_creating is False:
             _logger.warning(
@@ -136,8 +136,8 @@ class Core(SingletonInAppStateMixin):
             )
             return
 
-        operation_name = await schedule_data_proxy.get("operation_name")
-        group_index = await schedule_data_proxy.get("group_index")
+        operation_name = await schedule_data_proxy.read("operation_name")
+        group_index = await schedule_data_proxy.read("group_index")
 
         operation = OperationRegistry.get_operation(operation_name)
         group = operation[group_index]
@@ -172,9 +172,9 @@ class Core(SingletonInAppStateMixin):
                 f"Cancelling step {step_name=} of {operation_name=} for {schedule_id=}",
             ):
                 with suppress(NoDataFoundError):
-                    deferred_task_uid = await step_proxy.get("deferred_task_uid")
+                    deferred_task_uid = await step_proxy.read("deferred_task_uid")
                     await DeferredRunner.cancel(deferred_task_uid)
-                    await step_proxy.set("status", StepStatus.CANCELLED)
+                    await step_proxy.create_or_update("status", StepStatus.CANCELLED)
 
         await limited_gather(
             *(
@@ -198,9 +198,9 @@ class Core(SingletonInAppStateMixin):
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
         )
-        is_creating = await schedule_data_proxy.get("is_creating")
-        operation_name = await schedule_data_proxy.get("operation_name")
-        group_index = await schedule_data_proxy.get("group_index")
+        is_creating = await schedule_data_proxy.read("is_creating")
+        operation_name = await schedule_data_proxy.read("operation_name")
+        group_index = await schedule_data_proxy.read("group_index")
 
         operation = OperationRegistry.get_operation(operation_name)
         step_group = operation[group_index]
@@ -225,7 +225,7 @@ class Core(SingletonInAppStateMixin):
         )
 
         try:
-            await step_proxy.get("error_traceback")
+            await step_proxy.read("error_traceback")
         except NoDataFoundError as exc:
             raise StepNotInErrorStateError(step_name=step_name) from exc
 
@@ -237,7 +237,7 @@ class Core(SingletonInAppStateMixin):
         if in_manual_intervention:
             requires_manual_intervention: bool = False
             with suppress(NoDataFoundError):
-                requires_manual_intervention = await step_proxy.get(
+                requires_manual_intervention = await step_proxy.read(
                     "requires_manual_intervention"
                 )
 
@@ -330,9 +330,9 @@ class Core(SingletonInAppStateMixin):
             store=self._store, schedule_id=schedule_id
         )
 
-        operation_name = await schedule_data_proxy.get("operation_name")
-        is_creating = await schedule_data_proxy.get("is_creating")
-        group_index = await schedule_data_proxy.get("group_index")
+        operation_name = await schedule_data_proxy.read("operation_name")
+        is_creating = await schedule_data_proxy.read("is_creating")
+        group_index = await schedule_data_proxy.read("group_index")
 
         operation = OperationRegistry.get_operation(operation_name)
         step_group = operation[group_index]
@@ -434,7 +434,7 @@ class Core(SingletonInAppStateMixin):
         steps_stauses = await get_steps_statuses(step_proxies)
         if any(status == StepStatus.CANCELLED for status in steps_stauses.values()):
             # NOTE:
-            await schedule_data_proxy.set("is_creating", value=False)
+            await schedule_data_proxy.create_or_update("is_creating", value=False)
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
@@ -477,7 +477,9 @@ class Core(SingletonInAppStateMixin):
                 next_group_index = group_index + 1
                 # does a next group exist?
                 _ = operation[next_group_index]
-                await schedule_data_proxy.set("group_index", value=next_group_index)
+                await schedule_data_proxy.create_or_update(
+                    "group_index", value=next_group_index
+                )
                 await enqueue_schedule_event(self.app, schedule_id)
             except IndexError:
 
@@ -504,7 +506,9 @@ class Core(SingletonInAppStateMixin):
                     step_name=step.get_step_name(),
                     is_creating=True,
                 )
-                await step_proxy.set("requires_manual_intervention", value=True)
+                await step_proxy.create_or_update(
+                    "requires_manual_intervention", value=True
+                )
                 manual_intervention_step_names.add(step.get_step_name())
 
         if manual_intervention_step_names:
@@ -528,7 +532,7 @@ class Core(SingletonInAppStateMixin):
                 logging.DEBUG,
                 f"{operation_name=} was not successfull: {steps_statuses=}, moving to revert",
             ):
-                await schedule_data_proxy.set("is_creating", value=False)
+                await schedule_data_proxy.create_or_update("is_creating", value=False)
                 await enqueue_schedule_event(self.app, schedule_id)
             return
 
@@ -564,7 +568,9 @@ class Core(SingletonInAppStateMixin):
                 return
 
             # 1b) -> move to previous group
-            await schedule_data_proxy.set("group_index", value=previous_group_index)
+            await schedule_data_proxy.create_or_update(
+                "group_index", value=previous_group_index
+            )
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
