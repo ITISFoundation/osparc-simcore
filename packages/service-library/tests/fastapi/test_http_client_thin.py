@@ -72,7 +72,7 @@ def request_timeout() -> int:
 @pytest.fixture
 async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
     async with FakeThickClient(
-        total_retry_interval=request_timeout, tracing_settings=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
     ) as client:
         yield client
 
