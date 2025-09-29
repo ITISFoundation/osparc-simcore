@@ -14,7 +14,6 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectForbiddenRpcError,
     ProjectNotFoundRpcError,
 )
-from simcore_service_storage.core.settings import get_application_settings
 
 from ...application_settings import get_application_settings
 from ...rabbitmq import get_rabbitmq_rpc_server

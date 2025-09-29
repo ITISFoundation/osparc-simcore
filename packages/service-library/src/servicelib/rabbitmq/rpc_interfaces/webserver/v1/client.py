@@ -1,7 +1,6 @@
 """Main WebServer RPC Client."""
 
 from models_library.rabbitmq_basic_types import RPCNamespace
-from models_library.rpc.webserver import WEBSERVER_RPC_NAMESPACE
 from servicelib.rabbitmq import RabbitMQRPCClient
 
 from .api_keys import ApiKeysRpcApi
@@ -16,7 +15,7 @@ class WebServerRpcClient:
     def __init__(
         self,
         rpc_client: RabbitMQRPCClient,
-        namespace: RPCNamespace = WEBSERVER_RPC_NAMESPACE,
+        namespace: RPCNamespace,
     ):
         self._rpc_client = rpc_client
         self._namespace = namespace

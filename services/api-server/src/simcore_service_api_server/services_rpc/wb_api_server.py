@@ -65,7 +65,6 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
-from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
 from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectForbiddenRpcError,
     ProjectNotFoundRpcError,
@@ -85,10 +84,13 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
 from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
     release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from simcore_service_api_server.models.basic_types import NameValueTuple
 
+from ..core.settings import WebServerSettings
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
+    ConfigurationError,
     InsufficientNumberOfSeatsError,
     JobForbiddenAccessError,
     JobNotFoundError,
@@ -138,6 +140,7 @@ def _create_licensed_items_get_page(
 class WbApiRpcClient(SingletonInAppStateMixin):
     app_state_name = "wb_api_rpc_client"
     _client: RabbitMQRPCClient
+    _rpc_client: WebServerRpcClient
 
     @_exception_mapper(rpc_exception_map={})
     async def get_licensed_items(
@@ -253,8 +256,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         job_parent_resource_name: RelativeResourceName,
         storage_assets_deleted: bool,  # noqa: FBT001
     ):
-        await projects_rpc.mark_project_as_job(
-            rpc_client=self._client,
+        await self._rpc_client.projects.mark_project_as_job(
             product_name=product_name,
             user_id=user_id,
             project_uuid=project_uuid,
@@ -276,8 +278,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         project_id: ProjectID,
         job_parent_resource_name: RelativeResourceName,
     ) -> ProjectJobRpcGet:
-        return await projects_rpc.get_project_marked_as_job(
-            rpc_client=self._client,
+        return await self._rpc_client.projects.get_project_marked_as_job(
             product_name=product_name,
             user_id=user_id,
             project_uuid=project_id,
@@ -310,8 +311,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             ),
         )
 
-        return await projects_rpc.list_projects_marked_as_jobs(
-            rpc_client=self._client,
+        return await self._rpc_client.projects.list_projects_marked_as_jobs(
             product_name=product_name,
             user_id=user_id,
             filters=filters,
@@ -702,5 +702,14 @@ class WbApiRpcClient(SingletonInAppStateMixin):
 
 
 def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
-    wb_api_rpc_client = WbApiRpcClient(_client=rabbitmq_rmp_client)
+    webserver_settings: WebServerSettings = app.state.settings.API_SERVER_WEBSERVER
+    if not webserver_settings:
+        raise ConfigurationError(tip="Webserver settings are not configured")
+
+    wb_api_rpc_client = WbApiRpcClient(
+        _client=rabbitmq_rmp_client,
+        _rpc_client=WebServerRpcClient(
+            rabbitmq_rmp_client, webserver_settings.WEBSERVER_RPC_NAMESPACE
+        ),
+    )
     wb_api_rpc_client.set_to_app_state(app=app)

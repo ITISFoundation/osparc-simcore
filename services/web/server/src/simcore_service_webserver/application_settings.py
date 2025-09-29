@@ -157,7 +157,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     WEBSERVER_RPC_NAMESPACE: Annotated[
         RPCNamespace | None,
-        Field(description="Namespace for the RPC service, if any, otherwise None"),
+        Field(description="Namespace for the RPC server (if any) otherwise None"),
     ]
 
     WEBSERVER_SERVER_HOST: Annotated[
