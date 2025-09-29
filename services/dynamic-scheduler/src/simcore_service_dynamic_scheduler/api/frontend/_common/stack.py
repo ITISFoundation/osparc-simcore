@@ -10,6 +10,11 @@ Reference: TypeAlias = str
 
 
 class UpdatableComponentStack(DisplayaMixin, ParentMixin, Generic[M]):
+    """
+    Renders `BaseUpdatableComponent` models via the provided `BaseUpdatableDisplayModel`
+    Appends new elements to the parent container.
+    """
+
     def __init__(self, component: type[BaseUpdatableComponent]) -> None:
         super().__init__()
         self.component = component
