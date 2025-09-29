@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import nicegui
 import pytest
 from fastapi import FastAPI
-from helpers import assert_contains_text, assert_not_contains_text, take_screenshot
+from helpers import assert_contains_text, assert_not_contains_text
 from nicegui import APIRouter, ui
 from playwright.async_api import Page
 from pydantic import NonNegativeInt
@@ -339,47 +339,41 @@ async def test_multiple_componenets_management(
 
     await ensure_page_loaded(_index_corpus)
 
-    await take_screenshot(async_page, prefix="1.before")
-
     person_1 = Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat"))
     person_2 = Person(name="Bob", age=25, companion=Friend(name="Marta", age=28))
 
+    # nothing is displayed
     await _ensure_person_not_present(async_page, person_1)
     await _ensure_person_not_present(async_page, person_2)
 
     stack.add_or_update_model("person_1", person_1)
     stack.add_or_update_model("person_2", person_2)
 
+    # both persons are displayed
     await _ensure_person_is_present(async_page, person_1)
     await _ensure_person_is_present(async_page, person_2)
 
-    await take_screenshot(async_page, prefix="2.persons-added")
-
+    # only person_2 is displayed
     stack.remove_model("person_1")
     await _ensure_person_not_present(async_page, person_1)
     await _ensure_person_is_present(async_page, person_2)
 
-    await take_screenshot(async_page, prefix="3.person-1-removed")
-
+    # no person is displayed
     stack.remove_model("person_2")
     await _ensure_person_not_present(async_page, person_2)
     await _ensure_person_not_present(async_page, person_1)
 
-    await take_screenshot(async_page, prefix="4.person-2-removed")
-
+    # add both persons again together
     stack.update_from_dict({"person_1": person_1, "person_2": person_2})
     await _ensure_person_is_present(async_page, person_1)
     await _ensure_person_is_present(async_page, person_2)
 
-    await take_screenshot(async_page, prefix="5.persons-added")
-
+    # only person_1 is displayed
     stack.update_from_dict({"person_1": person_1})
     await _ensure_person_is_present(async_page, person_1)
     await _ensure_person_not_present(async_page, person_2)
 
-    await take_screenshot(async_page, prefix="6.person-2-removed")
-
+    # no person is displayed
     stack.update_from_dict({})
     await _ensure_person_not_present(async_page, person_1)
     await _ensure_person_not_present(async_page, person_2)
-    await take_screenshot(async_page, prefix="7.person-1-removed")
