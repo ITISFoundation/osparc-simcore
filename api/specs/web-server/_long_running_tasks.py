@@ -7,7 +7,6 @@
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
-from fastapi.responses import StreamingResponse
 from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError
 from servicelib.aiohttp.long_running_tasks._routes import _PathParam
@@ -52,8 +51,6 @@ def get_async_job_status(
 
 @router.get(
     "/tasks/{task_id}/stream",
-    response_model=StreamingResponse,
-    responses=_export_data_responses,
 )
 def get_async_job_stream(
     _path_params: Annotated[_PathParam, Depends()],
