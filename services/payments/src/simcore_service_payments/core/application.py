@@ -78,9 +78,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if app.state.settings.PAYMENTS_TRACING:
+    if app_settings.PAYMENTS_TRACING:
         initialize_fastapi_app_tracing(
-            app, tracing_data=get_tracing_data(app, settings.PAYMENTS_TRACING)
+            app, tracing_data=get_tracing_data(app, app_settings.PAYMENTS_TRACING)
         )
 
     # ERROR HANDLERS

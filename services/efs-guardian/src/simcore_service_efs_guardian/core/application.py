@@ -61,9 +61,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     setup_fire_and_forget(app)
 
-    if app.state.settings.EFS_GUARDIAN_TRACING:
+    if app_settings.EFS_GUARDIAN_TRACING:
         initialize_fastapi_app_tracing(
-            app, tracing_data=get_tracing_data(app, settings.EFS_GUARDIAN_TRACING)
+            app, tracing_data=get_tracing_data(app, app_settings.EFS_GUARDIAN_TRACING)
         )
 
     # EVENTS

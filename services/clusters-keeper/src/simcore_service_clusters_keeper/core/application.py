@@ -64,7 +64,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_redis(app)
     setup_clusters_management(app)
 
-    if app.state.settings.CLUSTERS_KEEPER_TRACING:
+    if settings.CLUSTERS_KEEPER_TRACING:
         initialize_fastapi_app_tracing(
             app, tracing_data=get_tracing_data(app, settings.CLUSTERS_KEEPER_TRACING)
         )
