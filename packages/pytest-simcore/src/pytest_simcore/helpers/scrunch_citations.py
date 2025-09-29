@@ -1,10 +1,10 @@
 # Citations according to https://scicrunch.org/resources
 """
-    NOTES:
+NOTES:
 
-    - scicrunch API ONLY recognizes RRIDs from SciCrunch registry of tools (i.e. with prefix "SCR")
-    - scicrunch web search handles ALL RRIDs (see below example of citations from other)
-    - scicrunch API does NOT uses 'RRID:' prefix in rrid request parameters
+- scicrunch API ONLY recognizes RRIDs from SciCrunch registry of tools (i.e. with prefix "SCR")
+- scicrunch web search handles ALL RRIDs (see below example of citations from other)
+- scicrunch API does NOT uses 'RRID:' prefix in rrid request parameters
 
 """
 
@@ -15,14 +15,16 @@ def split_citations(citations: list[str]) -> list[tuple[str, str]]:
     def _split(citation: str) -> tuple[str, str]:
         if "," not in citation:
             citation = citation.replace("(", "(,")
-        name, rrid = re.match(r"^\((.*),\s*RRID:(.+)\)$", citation).groups()
+        name, rrid = re.match(
+            r"^[\(]{0,1}(.*),\s*RRID:(.+)[\)]{0,1}$", citation
+        ).groups()
         return name, rrid
 
     return list(map(_split, citations))
 
 
 # http://antibodyregistry.org/AB_90755
-ANTIBODY_CITATIONS = split_citations(["(Millipore Cat# AB1542, RRID:AB_90755)"])
+ANTIBODY_CITATIONS = split_citations(["Millipore Cat# AB1542, RRID:AB_90755)"])
 
 # https://www.addgene.org/44362/
 PLAMID_CITATIONS = split_citations(["(RRID:Addgene_44362)"])
