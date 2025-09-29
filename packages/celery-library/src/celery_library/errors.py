@@ -1,5 +1,7 @@
 import base64
 import pickle
+from functools import wraps
+from inspect import isasyncgenfunction
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from common_library.errors_classes import OsparcErrorMixin
@@ -42,6 +44,19 @@ class InternalError(OsparcErrorMixin, Exception):
 
 
 def handle_celery_errors(func):
+    if isasyncgenfunction(func):
+
+        @wraps(func)
+        async def async_generator_wrapper(*args, **kwargs):
+            try:
+                async for item in func(*args, **kwargs):
+                    yield item
+            except CeleryError as exc:
+                raise InternalError from exc
+
+        return async_generator_wrapper
+
+    @wraps(func)
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
