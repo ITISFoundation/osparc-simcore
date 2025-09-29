@@ -1,7 +1,7 @@
 import functools
 import logging
 from collections.abc import AsyncIterator
-from typing import Final, NotRequired, TypedDict
+from typing import Final
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
@@ -20,11 +20,6 @@ from ._core import get_core
 from ._models import ScheduleId
 
 _logger = logging.getLogger(__name__)
-
-
-class QueuConfiguration(TypedDict):
-    queue_name: str
-    arguments: NotRequired[ClassicQueueArgs | None]
 
 
 _EXCHANGE_NAME: Final[str] = __name__
