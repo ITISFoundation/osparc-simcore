@@ -30,8 +30,8 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     ScheduleId,
     SingleStepGroup,
     cancel_operation,
-    restart_operation_stuck_in_error_during_revert,
-    restart_operation_stuck_in_manual_intervention_during_create,
+    restart_operation_step_stuck_during_revert,
+    restart_operation_step_stuck_in_manual_intervention_during_create,
     start_operation,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._core import get_core
@@ -1084,7 +1084,7 @@ async def test_wait_for_manual_intervention(
     _GlobalStepIssueTracker.set_issue_solved()
     await limited_gather(
         *(
-            restart_operation_stuck_in_manual_intervention_during_create(
+            restart_operation_step_stuck_in_manual_intervention_during_create(
                 selected_app, schedule_id, step.get_step_name()
             )
             for step in steps_to_restart
@@ -1223,7 +1223,7 @@ async def test_restart_revert_operation_step_in_error(
     _GlobalStepIssueTracker.set_issue_solved()
     await limited_gather(
         *(
-            restart_operation_stuck_in_error_during_revert(
+            restart_operation_step_stuck_during_revert(
                 selected_app, schedule_id, step.get_step_name()
             )
             for step in steps_to_restart
