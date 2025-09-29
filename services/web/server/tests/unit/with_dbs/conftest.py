@@ -178,7 +178,8 @@ def app_environment(
             {
                 # this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
                 # affects PostgresSettings.POSTGRES_CLIENT_NAME
-                "HOSTNAME": "wb-test_host.0"
+                "HOSTNAME": "wb-test_host.0",
+                "WEBSERVER_RPC_NAMESPACE": "null",
             },
         )
     )
