@@ -63,7 +63,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_rpc_api_routes(app)
 
     if settings.AGENT_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+        initialize_fastapi_app_tracing(
+            app, tracing_data=get_tracing_data(app, settings.AGENT_TRACING)
+        )
 
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201

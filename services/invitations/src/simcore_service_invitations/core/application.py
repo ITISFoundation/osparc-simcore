@@ -49,7 +49,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     if app.state.settings.INVITATIONS_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+        initialize_fastapi_app_tracing(
+            app, tracing_data=get_tracing_data(app, settings.INVITATIONS_TRACING)
+        )
 
     # ERROR HANDLERS
     exceptions_handlers.setup(app)

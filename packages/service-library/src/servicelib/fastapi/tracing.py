@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import AsyncIterator
+from typing import overload
 
 from fastapi import FastAPI, Request
 from fastapi_lifespan_manager import State
@@ -215,8 +216,12 @@ def initialize_fastapi_app_tracing(
     )
 
 
-def setup_httpx_client_tracing(client: AsyncClient | Client):
-    HTTPXClientInstrumentor.instrument_client(client)
+def setup_httpx_client_tracing(
+    client: AsyncClient | Client, tracing_data: TracingData
+) -> None:
+    HTTPXClientInstrumentor.instrument_client(
+        client, tracer_provider=tracing_data.tracer_provider
+    )
 
 
 def setup_tracing(
@@ -228,10 +233,10 @@ def setup_tracing(
         tracing_settings=tracing_settings, service_name=service_name
     )
     app.state.tracing_data = tracing_data
-    _startup(tracing_settings=tracing_settings, tracing_data=get_tracing_data(app))
+    _startup(tracing_settings=tracing_settings, tracing_data=tracing_data)
 
     def _on_shutdown() -> None:
-        _shutdown(tracing_data=get_tracing_data(app))
+        _shutdown(tracing_data=tracing_data)
 
     app.add_event_handler("shutdown", _on_shutdown)
 
@@ -264,6 +269,21 @@ class ResponseTraceIdHeaderMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def get_tracing_data(app: FastAPI) -> TracingData:
+@overload
+def get_tracing_data(
+    app: FastAPI, tracing_settings: TracingSettings
+) -> TracingData: ...
+
+
+@overload
+def get_tracing_data(app: FastAPI, tracing_settings: None) -> None: ...
+
+
+def get_tracing_data(
+    app: FastAPI, tracing_settings: TracingSettings | None
+) -> TracingData | None:
+    if tracing_settings is None:
+        return None
     assert hasattr(app.state, "tracing_data"), "Tracing not setup for this app"  # nosec
+    assert isinstance(app.state.tracing_data, TracingData)
     return app.state.tracing_data

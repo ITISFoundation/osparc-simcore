@@ -63,8 +63,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         )
     app.add_middleware(GZipMiddleware)
 
-    if app.state.settings.DATCORE_ADAPTER_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+    if settings.DATCORE_ADAPTER_TRACING:
+        initialize_fastapi_app_tracing(
+            app, tracing_data=get_tracing_data(app, settings.DATCORE_ADAPTER_TRACING)
+        )
 
     # events
     app.add_event_handler("startup", on_startup)

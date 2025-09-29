@@ -69,7 +69,11 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
 
     setup_db(app)
     setup_s3(app)
-    setup_client_session(app, tracing_settings=settings.STORAGE_TRACING)
+    setup_client_session(
+        app,
+        tracing_settings=settings.STORAGE_TRACING,
+        tracing_data=get_tracing_data(app, settings.STORAGE_TRACING),
+    )
 
     if settings.STORAGE_CELERY:
         setup_task_manager(app, settings=settings.STORAGE_CELERY)
@@ -104,7 +108,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
         setup_prometheus_instrumentation(app)
 
     if settings.STORAGE_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+        initialize_fastapi_app_tracing(
+            app, tracing_data=get_tracing_data(app, settings.STORAGE_TRACING)
+        )
 
     async def _on_startup() -> None:
         if settings.STORAGE_WORKER_MODE:

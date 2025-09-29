@@ -200,7 +200,9 @@ def create_app(  # noqa: C901, PLR0912
     db.setup(app, settings.POSTGRES)
 
     if settings.DIRECTOR_V2_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+        initialize_fastapi_app_tracing(
+            app, tracing_data=get_tracing_data(app, settings.DIRECTOR_V2_TRACING)
+        )
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, tracing_settings=settings.DIRECTOR_V2_TRACING)

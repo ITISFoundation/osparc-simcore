@@ -196,7 +196,9 @@ def create_app() -> FastAPI:
         setup_prometheus_metrics(app)
 
     if application_settings.DYNAMIC_SIDECAR_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+        initialize_fastapi_app_tracing(
+            app, tracing_data=get_tracing_data(app, settings.DYNAMIC_SIDECAR_TRACING)
+        )
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(

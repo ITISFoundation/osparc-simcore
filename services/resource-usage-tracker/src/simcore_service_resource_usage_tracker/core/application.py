@@ -75,7 +75,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_process_message_running_service(app)  # Requires Rabbit
 
     if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+        initialize_fastapi_app_tracing(
+            app,
+            tracing_data=get_tracing_data(app, settings.RESOURCE_USAGE_TRACKER_TRACING),
+        )
 
     # ERROR HANDLERS
     setup_exception_handlers(app)

@@ -66,7 +66,9 @@ def create_app(
         setup_prometheus_instrumentation(app)
 
     if settings.CATALOG_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+        initialize_fastapi_app_tracing(
+            app, tracing_data=get_tracing_data(app, settings.CATALOG_TRACING)
+        )
 
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)

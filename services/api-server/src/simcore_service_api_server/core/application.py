@@ -98,7 +98,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if settings.API_SERVER_TRACING:
         initialize_fastapi_app_tracing(
-            app, tracing_data=get_tracing_data(app), add_response_trace_id_header=True
+            app,
+            tracing_data=get_tracing_data(app, settings.API_SERVER_TRACING),
+            add_response_trace_id_header=True,
         )
 
     if settings.API_SERVER_WEBSERVER:

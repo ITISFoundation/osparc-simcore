@@ -52,11 +52,14 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
         tracing_settings=settings.DIRECTOR_TRACING,
+        tracing_data=get_tracing_data(app, settings.DIRECTOR_TRACING),
     )
     setup_registry(app)
 
-    if app.state.settings.DIRECTOR_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+    if settings.DIRECTOR_TRACING:
+        initialize_fastapi_app_tracing(
+            app, tracing_data=get_tracing_data(app, settings.DIRECTOR_TRACING)
+        )
 
     # ERROR HANDLERS
     set_app_default_http_error_handlers(app)

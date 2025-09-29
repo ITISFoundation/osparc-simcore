@@ -100,7 +100,7 @@ async def test_retry_on_errors(
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
     client = FakeThickClient(
-        total_retry_interval=request_timeout, tracing_settings=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
     )
 
     with pytest.raises(ClientHttpError):
@@ -125,7 +125,9 @@ async def test_retry_on_errors_by_error_type(
                 request=Request(method="GET", url=test_url),
             )
 
-    client = ATestClient(total_retry_interval=request_timeout, tracing_settings=None)
+    client = ATestClient(
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+    )
 
     with pytest.raises(ClientHttpError):
         await client.raises_request_error()
@@ -151,7 +153,9 @@ async def test_retry_on_errors_raises_client_http_error(
             msg = "mock_http_error"
             raise HTTPError(msg)
 
-    client = ATestClient(total_retry_interval=request_timeout, tracing_settings=None)
+    client = ATestClient(
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+    )
 
     with pytest.raises(ClientHttpError):
         await client.raises_http_error()
@@ -165,7 +169,9 @@ async def test_methods_do_not_return_response(
             """this method will be ok even if no code is used"""
 
     # OK
-    OKTestClient(total_retry_interval=request_timeout, tracing_settings=None)
+    OKTestClient(
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+    )
 
     class FailWrongAnnotationTestClient(BaseThinClient):
         async def public_method_wrong_annotation(self) -> None:
@@ -173,7 +179,9 @@ async def test_methods_do_not_return_response(
 
     with pytest.raises(AssertionError, match="should return an instance"):
         FailWrongAnnotationTestClient(
-            total_retry_interval=request_timeout, tracing_settings=None
+            total_retry_interval=request_timeout,
+            tracing_settings=None,
+            tracing_data=None,
         )
 
     class FailNoAnnotationTestClient(BaseThinClient):
@@ -182,7 +190,9 @@ async def test_methods_do_not_return_response(
 
     with pytest.raises(AssertionError, match="should return an instance"):
         FailNoAnnotationTestClient(
-            total_retry_interval=request_timeout, tracing_settings=None
+            total_retry_interval=request_timeout,
+            tracing_settings=None,
+            tracing_data=None,
         )
 
 
@@ -208,7 +218,7 @@ async def test_expect_state_decorator(
     respx_mock.get(get_wrong_state).mock(return_value=Response(codes.OK))
 
     test_client = ATestClient(
-        total_retry_interval=request_timeout, tracing_settings=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
     )
 
     # OK
@@ -231,7 +241,7 @@ async def test_retry_timeout_overwrite(
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
     client = FakeThickClient(
-        total_retry_interval=request_timeout, tracing_settings=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
     )
 
     caplog_info_level.clear()
