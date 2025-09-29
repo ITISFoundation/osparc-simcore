@@ -30,3 +30,10 @@ class BaseRpcApi:
             user_id=user_id,
             **kwargs
         )
+
+    async def _request_without_authentication(
+        self, method_name: RPCMethodName, *, product_name: ProductName, **kwargs: Any
+    ) -> Any:
+        return await self._rpc_client.request(
+            self._namespace, method_name, product_name=product_name, **kwargs
+        )
