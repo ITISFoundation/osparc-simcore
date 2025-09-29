@@ -75,24 +75,24 @@ async def _get_backend_licensed_items(
     )
 
 
-class DummyRpcClient:
-    pass
-
-
 @pytest.fixture
 async def mock_wb_api_server_rcp(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
+    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
     app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _client=DummyRpcClient()
+        _client=mocker.MagicMock(spec=RabbitMQRPCClient),
+        _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
     )
     return mocker
 
 
 @pytest.fixture
 async def mock_rut_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
-    app.dependency_overrides[
-        get_resource_usage_tracker_client
-    ] = lambda: ResourceUsageTrackerClient(_client=DummyRpcClient())
+    app.dependency_overrides[get_resource_usage_tracker_client] = (
+        lambda: ResourceUsageTrackerClient(
+            _client=mocker.MagicMock(spec=RabbitMQRPCClient)
+        )
+    )
     return mocker
 
 

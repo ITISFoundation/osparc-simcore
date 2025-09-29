@@ -71,8 +71,13 @@ def mocked_rpc_client(mocker: MockerFixture) -> MockType:
 @pytest.fixture
 def wb_api_rpc_client(
     mocked_rpc_client: MockType,
+    mocker: MockerFixture,
 ) -> WbApiRpcClient:
-    return WbApiRpcClient(_client=mocked_rpc_client)
+    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+
+    return WbApiRpcClient(
+        _client=mocked_rpc_client, _rpc_client=mocker.MagicMock(spec=WebServerRpcClient)
+    )
 
 
 @pytest.fixture

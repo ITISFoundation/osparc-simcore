@@ -434,7 +434,13 @@ async def test_run_project_function(
     )
 
     async def _get_wb_api_rpc_client(app: FastAPI) -> WbApiRpcClient:
-        return WbApiRpcClient(_client=mocker.MagicMock(spec=RabbitMQRPCClient))
+        from servicelib.rabbitmq import RabbitMQRPCClient
+        from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+
+        return WbApiRpcClient(
+            _client=mocker.MagicMock(spec=RabbitMQRPCClient),
+            _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
+        )
 
     mocker.patch.object(
         functions_tasks, "get_wb_api_rpc_client", _get_wb_api_rpc_client

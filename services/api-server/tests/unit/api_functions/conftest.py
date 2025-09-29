@@ -94,9 +94,11 @@ async def mock_celery_task_manager(app: FastAPI, mocker: MockerFixture) -> MockT
 
 @pytest.fixture
 async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
+    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
     app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _client=DummyRpcClient()
+        _client=DummyRpcClient(),
+        _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
     )
     return mocker
 
