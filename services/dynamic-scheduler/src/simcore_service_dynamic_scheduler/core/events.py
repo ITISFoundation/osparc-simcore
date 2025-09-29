@@ -15,8 +15,9 @@ from servicelib.fastapi.postgres_lifespan import (
     create_postgres_database_input_state,
 )
 from servicelib.fastapi.tracing import get_tracing_instrumentation_lifespan
+from servicelib.tracing import TracingData
 
-from .._meta import APP_FINISHED_BANNER_MSG, APP_NAME, APP_STARTED_BANNER_MSG
+from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..api.rpc.routes import rpc_api_routes_lifespan
 from ..repository.events import repository_lifespan_manager
 from ..services.catalog import catalog_lifespan
@@ -53,7 +54,9 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 def create_app_lifespan(
-    settings: ApplicationSettings, logging_lifespan: Lifespan | None
+    settings: ApplicationSettings,
+    tracing_data: TracingData | None,
+    logging_lifespan: Lifespan | None,
 ) -> LifespanManager:
     app_lifespan = LifespanManager()
     if logging_lifespan:
@@ -61,10 +64,11 @@ def create_app_lifespan(
     app_lifespan.add(_settings_lifespan)
 
     if settings.DYNAMIC_SCHEDULER_TRACING:
+        assert tracing_data  # nosec
         app_lifespan.add(
             get_tracing_instrumentation_lifespan(
                 tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
-                service_name=APP_NAME,
+                tracing_data=tracing_data,
             )
         )
 

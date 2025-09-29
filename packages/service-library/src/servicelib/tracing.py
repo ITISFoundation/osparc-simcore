@@ -1,14 +1,18 @@
 from collections.abc import Callable, Coroutine
 from contextlib import contextmanager
 from contextvars import Token
+from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Final, TypeAlias
+from typing import Any, Final, Self, TypeAlias
 
 import pyinstrument
 import pyinstrument.renderers
 from opentelemetry import context as otcontext
 from opentelemetry import trace
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 from settings_library.tracing import TracingSettings
 
 TracingContext: TypeAlias = otcontext.Context | None
@@ -93,3 +97,21 @@ def with_profiled_span(
                 )
 
     return wrapper
+
+
+@dataclass
+class TracingData:
+    service_name: str
+    tracer_provider: TracerProvider
+
+    @classmethod
+    def create(cls, tracing_settings: TracingSettings, service_name: str) -> Self:
+        resource = Resource(attributes={"service.name": service_name})
+        sampler = ParentBased(
+            root=TraceIdRatioBased(tracing_settings.TRACING_SAMPLING_PROBABILITY)
+        )
+        trace_provider = TracerProvider(resource=resource, sampler=sampler)
+        return cls(
+            service_name=service_name,
+            tracer_provider=trace_provider,
+        )
