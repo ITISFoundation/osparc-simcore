@@ -16,10 +16,9 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_exporter(app: web.Application) -> bool:
+    setup_scicrunch(app)
 
     # Rest-API routes: maps handlers with routes tags with "viewer" based on OAS operation_id
     app.router.add_routes(_handlers.routes)
-
-    setup_scicrunch(app)
 
     return True
