@@ -2,9 +2,9 @@ aio-pika==9.5.5
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-aioboto3==14.3.0
+aioboto3==15.1.0
     # via -r requirements/_test.in
-aiobotocore==2.22.0
+aiobotocore==2.24.0
     # via aioboto3
 aiofiles==24.1.0
     # via
@@ -48,11 +48,11 @@ attrs==25.3.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   pytest-docker
-bokeh==3.7.3
+bokeh==3.8.0
     # via dask
-boto3==1.37.3
+boto3==1.39.11
     # via aiobotocore
-botocore==1.37.3
+botocore==1.39.11
     # via
     #   aiobotocore
     #   boto3
@@ -78,9 +78,9 @@ cloudpickle==3.1.1
     #   -c requirements/_base.txt
     #   dask
     #   distributed
-contourpy==1.3.2
+contourpy==1.3.3
     # via bokeh
-coverage==7.8.0
+coverage==7.10.7
     # via pytest-cov
 dask==2025.5.0
     # via
@@ -99,9 +99,9 @@ exceptiongroup==1.3.0
     #   aio-pika
 execnet==2.1.1
     # via pytest-xdist
-faker==37.3.0
+faker==37.8.0
     # via -r requirements/_test.in
-fakeredis==2.30.3
+fakeredis==2.31.3
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -186,11 +186,11 @@ multidict==6.4.4
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.16.1
+mypy==1.18.2
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-narwhals==1.40.0
+narwhals==2.6.0
     # via bokeh
 numpy==2.2.6
     # via
@@ -210,7 +210,7 @@ pamqp==3.3.0
     # via
     #   -c requirements/_base.txt
     #   aiormq
-pandas==2.2.3
+pandas==2.3.2
     # via bokeh
 partd==1.4.2
     # via
@@ -218,7 +218,7 @@ partd==1.4.2
     #   dask
 pathspec==0.12.1
     # via mypy
-pillow==11.2.1
+pillow==11.3.0
     # via bokeh
 pluggy==1.6.0
     # via
@@ -239,7 +239,7 @@ pygments==2.19.1
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==8.4.1
+pytest==8.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -248,15 +248,15 @@ pytest==8.4.1
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-xdist
-pytest-asyncio==1.0.0
+pytest-asyncio==1.2.0
     # via -r requirements/_test.in
-pytest-cov==6.2.1
+pytest-cov==7.0.0
     # via -r requirements/_test.in
 pytest-docker==3.2.3
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
-pytest-mock==3.14.1
+pytest-mock==3.15.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -289,7 +289,7 @@ requests==2.32.4
     #   docker
 respx==0.22.0
     # via -r requirements/_test.in
-s3transfer==0.11.3
+s3transfer==0.13.1
     # via boto3
 six==1.17.0
     # via
@@ -328,11 +328,11 @@ tornado==6.5
     #   -c requirements/_base.txt
     #   bokeh
     #   distributed
-types-networkx==3.4.2.20250515
+types-networkx==3.5.0.20250918
     # via -r requirements/_test.in
-types-psycopg2==2.9.21.20250516
+types-psycopg2==2.9.21.20250915
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20250516
+types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
 typing-extensions==4.14.1
     # via
@@ -341,6 +341,7 @@ typing-extensions==4.14.1
     #   anyio
     #   exceptiongroup
     #   mypy
+    #   pytest-asyncio
     #   sqlalchemy2-stubs
 tzdata==2025.2
     # via
