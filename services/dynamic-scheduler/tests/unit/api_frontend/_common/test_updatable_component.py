@@ -17,7 +17,7 @@ from simcore_service_dynamic_scheduler.api.frontend._common.base_display_model i
     BaseUpdatableDisplayModel,
 )
 from simcore_service_dynamic_scheduler.api.frontend._common.some_renderer import (
-    SomeRenderer,
+    UpdatableComponentList,
 )
 from simcore_service_dynamic_scheduler.api.frontend._common.updatable_component import (
     BaseUpdatableComponent,
@@ -159,41 +159,42 @@ class PetComponent(BaseUpdatableComponent[Pet]):
 
 class PersonComponent(BaseUpdatableComponent[Person]):
     def _draw_ui(self) -> None:
-        # NOTE:
-        # There are 3 ways to bind the UI to the model changes:
-        # 1. using nicegui builting facilties
-        # 2. via model attribute VALE change
-        # 3. via model attribute TYPE change
-        # The model attribute changes allow to trigger re-rendering of subcomponents.
-        # This should be mainly used for chainging the UI layout based on
-        # the attribute's value or type.
+        with ui.element().classes("border"):
+            # NOTE:
+            # There are 3 ways to bind the UI to the model changes:
+            # 1. using nicegui builting facilties
+            # 2. via model attribute VALE change
+            # 3. via model attribute TYPE change
+            # The model attribute changes allow to trigger re-rendering of subcomponents.
+            # This should be mainly used for chainging the UI layout based on
+            # the attribute's value or type.
 
-        # 1. bind the label directly to the model's attribute
-        ui.label().bind_text_from(
-            self.display_model,
-            "name",
-            backward=lambda name: f"Name: {name}",
-        )
+            # 1. bind the label directly to the model's attribute
+            ui.label().bind_text_from(
+                self.display_model,
+                "name",
+                backward=lambda name: f"Name: {name}",
+            )
 
-        # 2. use refreshable and bind to the attribute's VALUE change
-        @ui.refreshable
-        def _person_age_ui() -> None:
-            ui.label(f"Age: {self.display_model.age}")
+            # 2. use refreshable and bind to the attribute's VALUE change
+            @ui.refreshable
+            def _person_age_ui() -> None:
+                ui.label(f"Age: {self.display_model.age}")
 
-        _person_age_ui()
-        self.display_model.on_value_change("age", _person_age_ui.refresh)
+            _person_age_ui()
+            self.display_model.on_value_change("age", _person_age_ui.refresh)
 
-        # 3. use refreshable and bind to the attribute's TYPE change
-        @ui.refreshable
-        def _friend_or_pet_ui() -> None:
-            if isinstance(self.display_model.companion, Friend):
-                FriendComponent(self.display_model.companion).display()
+            # 3. use refreshable and bind to the attribute's TYPE change
+            @ui.refreshable
+            def _friend_or_pet_ui() -> None:
+                if isinstance(self.display_model.companion, Friend):
+                    FriendComponent(self.display_model.companion).display()
 
-            elif isinstance(self.display_model.companion, Pet):
-                PetComponent(self.display_model.companion).display()
+                elif isinstance(self.display_model.companion, Pet):
+                    PetComponent(self.display_model.companion).display()
 
-        _friend_or_pet_ui()
-        self.display_model.on_type_change("companion", _friend_or_pet_ui.refresh)
+            _friend_or_pet_ui()
+            self.display_model.on_type_change("companion", _friend_or_pet_ui.refresh)
 
 
 async def _ensure_before_corpus(async_page: Page) -> None:
@@ -331,12 +332,16 @@ async def test_multiple_componenets_management(
     ensure_page_loaded: Callable[[Callable[[], None]], Awaitable[None]],
     async_page: Page,
 ):
-    renderer = SomeRenderer[Person](PersonComponent)
+    renderer = UpdatableComponentList[Person](PersonComponent)
 
     def _index_corpus() -> None:
         renderer.display()
 
     await ensure_page_loaded(_index_corpus)
+
+    from helpers import take_screenshot
+
+    await take_screenshot(async_page, prefix="1.before")
 
     person_1 = Person(name="Alice", age=30, companion=Pet(name="Fluffy", species="cat"))
     person_2 = Person(name="Bob", age=25, companion=Friend(name="Marta", age=28))
@@ -350,10 +355,33 @@ async def test_multiple_componenets_management(
     await _ensure_person_is_present(async_page, person_1)
     await _ensure_person_is_present(async_page, person_2)
 
+    await take_screenshot(async_page, prefix="2.persons-added")
+
     renderer.remove_model("person_1")
     await _ensure_person_not_present(async_page, person_1)
     await _ensure_person_is_present(async_page, person_2)
 
+    await take_screenshot(async_page, prefix="3.person-1-removed")
+
     renderer.remove_model("person_2")
     await _ensure_person_not_present(async_page, person_2)
     await _ensure_person_not_present(async_page, person_1)
+
+    await take_screenshot(async_page, prefix="4.person-2-removed")
+
+    renderer.update_from_dict({"person_1": person_1, "person_2": person_2})
+    await _ensure_person_is_present(async_page, person_1)
+    await _ensure_person_is_present(async_page, person_2)
+
+    await take_screenshot(async_page, prefix="5.persons-added")
+
+    renderer.update_from_dict({"person_1": person_1})
+    await _ensure_person_is_present(async_page, person_1)
+    await _ensure_person_not_present(async_page, person_2)
+
+    await take_screenshot(async_page, prefix="6.person-2-removed")
+
+    renderer.update_from_dict({})
+    await _ensure_person_not_present(async_page, person_1)
+    await _ensure_person_not_present(async_page, person_2)
+    await take_screenshot(async_page, prefix="7.person-1-removed")

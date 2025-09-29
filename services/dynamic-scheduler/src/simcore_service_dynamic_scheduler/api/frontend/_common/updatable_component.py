@@ -1,30 +1,21 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Generic, TypeVar
 
-from nicegui import ui
-from nicegui.element import Element
-
+from ._mixins import DisplayaMixin, ParentMixin
 from .base_display_model import BaseUpdatableDisplayModel
 
-T = TypeVar("T", bound=BaseUpdatableDisplayModel)
+M = TypeVar("M", bound=BaseUpdatableDisplayModel)
 
 
-class BaseUpdatableComponent(ABC, Generic[T]):
-    def __init__(self, display_model: T):
+class BaseUpdatableComponent(DisplayaMixin, ParentMixin, Generic[M]):
+    def __init__(self, display_model: M):
+        super().__init__()
+
         self.display_model = display_model
-
-        self._parent: Element | None = None
-        self.display_model.on_remove_from_ui(self._remove_from_ui)
-
-    def _remove_from_ui(self) -> None:
-        if self._parent is not None:
-            self._parent.delete()
-            self._parent = None
+        self.display_model.on_remove_from_ui(self.remove_parent)
 
     def display(self) -> None:
-        if self._parent is None:
-            self._parent = ui.element()  # this is an empty div as a parent
-        with self._parent:
+        with self.parent:
             self._draw_ui()
 
     @abstractmethod

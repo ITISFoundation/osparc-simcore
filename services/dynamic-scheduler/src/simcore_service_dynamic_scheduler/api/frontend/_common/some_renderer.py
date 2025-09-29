@@ -1,9 +1,6 @@
-from functools import cached_property
 from typing import Generic, TypeAlias, TypeVar
 
-from nicegui import ui
-from nicegui.element import Element
-
+from ._mixins import DisplayaMixin, ParentMixin
 from .base_display_model import BaseUpdatableDisplayModel
 from .updatable_component import BaseUpdatableComponent
 
@@ -12,35 +9,13 @@ M = TypeVar("M", bound=BaseUpdatableDisplayModel)
 Reference: TypeAlias = str
 
 
-class SomeRenderer(Generic[M]):
+class UpdatableComponentList(DisplayaMixin, ParentMixin, Generic[M]):
     def __init__(self, component: type[BaseUpdatableComponent]) -> None:
+        super().__init__()
         self.component = component
 
         self._added_models: dict[Reference, M] = {}
-        self._rendered_models: dict[Reference, BaseUpdatableComponent] = (
-            {}
-        )  # TODO: might only need a set here
-
-        self._parent: Element | None = None
-
-    @cached_property
-    def parent(self) -> Element:
-        if self._parent is None:
-            self._parent = ui.element()  # this is an empty div as a parent
-        return self._parent
-
-    def add_or_update_model(self, reference: Reference, model: M) -> None:
-        if reference not in self._added_models:
-            self._added_models[reference] = model
-            self._render_component(reference)
-        else:
-            self._added_models[reference].update(model)
-
-    def remove_model(self, reference: Reference) -> None:
-        if reference in self._added_models:
-            self._added_models[reference].remove_from_ui()
-            del self._added_models[reference]
-            del self._rendered_models[reference]
+        self._rendered_models: set[Reference] = set()
 
     def _render_to_parent(self) -> None:
         with self.parent:
@@ -53,7 +28,33 @@ class SomeRenderer(Generic[M]):
             model = self._added_models[reference]
             component = self.component(model)
             component.display()
-            self._rendered_models[reference] = component
+            self._rendered_models.add(reference)
 
     def display(self) -> None:
         self._render_to_parent()
+
+    def add_or_update_model(self, reference: Reference, display_model: M) -> None:
+        """adds or updates and existing ui element form a given model"""
+        if reference not in self._added_models:
+            self._added_models[reference] = display_model
+            self._render_component(reference)
+        else:
+            self._added_models[reference].update(display_model)
+
+    def remove_model(self, reference: Reference) -> None:
+        """removes a model from the ui via it's given reference"""
+        if reference in self._added_models:
+            self._added_models[reference].remove_from_ui()
+            del self._added_models[reference]
+            self._rendered_models.remove(reference)
+
+    def update_from_dict(self, models: dict[Reference, M]) -> None:
+        """updates UI given a new input"""
+        # remove models that are not in the new list
+        for reference in tuple(self._added_models.keys()):
+            if reference not in models:
+                self.remove_model(reference)
+
+        # add or update existing models
+        for reference, model in models.items():
+            self.add_or_update_model(reference, model)
