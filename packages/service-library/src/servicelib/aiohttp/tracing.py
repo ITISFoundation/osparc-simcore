@@ -132,7 +132,7 @@ def _startup(
     # - opentelemetry-instrumentation==0.48b0
 
     # Instrument aiohttp client
-    AioHttpClientInstrumentor().instrument(tracer_provier=tracing_data.tracer_provider)
+    AioHttpClientInstrumentor().instrument(tracer_provider=tracing_data.tracer_provider)
     if HAS_AIOPG:
         with log_context(
             _logger,
