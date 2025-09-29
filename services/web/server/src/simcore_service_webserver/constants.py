@@ -14,22 +14,8 @@ from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 
 from ._meta import APP_NAME
 
-if TYPE_CHECKING:
-    # Application settings key - defined here to avoid circular imports
-    from .application_settings import ApplicationSettings
-
-    APP_SETTINGS_KEY: web.AppKey[ApplicationSettings] = web.AppKey(
-        "APP_SETTINGS_KEY", ApplicationSettings
-    )
-else:
-    APP_SETTINGS_KEY: web.AppKey = web.AppKey("APP_SETTINGS_KEY", None)
-
-
 assert APP_CLIENT_SESSION_KEY  # nosec
 assert APP_CONFIG_KEY  # nosec
-
-# Application storage keys
-APP_PRODUCTS_KEY: Final[str] = f"{__name__ }.APP_PRODUCTS_KEY"
 
 # Public config per product returned in /config
 APP_PUBLIC_CONFIG_PER_PRODUCT: Final[str] = f"{__name__}.APP_PUBLIC_CONFIG_PER_PRODUCT"
@@ -74,7 +60,6 @@ __all__: tuple[str, ...] = (
     "APP_CLIENT_SESSION_KEY",
     "APP_CONFIG_KEY",
     "APP_FIRE_AND_FORGET_TASKS_KEY",
-    "APP_SETTINGS_KEY",
     "FRONTEND_APPS_AVAILABLE",
     "FRONTEND_APP_DEFAULT",
     "RQT_USERID_KEY",

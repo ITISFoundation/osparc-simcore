@@ -1,7 +1,7 @@
 from aiohttp import web
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class RestSettings(BaseCustomSettings):
@@ -9,7 +9,7 @@ class RestSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: web.Application) -> RestSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_REST
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_REST
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, RestSettings)  # nosec
     return settings

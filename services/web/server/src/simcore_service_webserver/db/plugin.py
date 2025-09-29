@@ -11,7 +11,7 @@ from . import _aiopg, _asyncpg
 
 _logger = logging.getLogger(__name__)
 
-APP_DB_ENGINE_KEY: Final = web.AppKey(
+DB_ENGINE_APPKEY: Final = web.AppKey(
     "APP_DB_ENGINE_KEY", object
 )  # Can be aiopg.Engine or asyncpg engine
 

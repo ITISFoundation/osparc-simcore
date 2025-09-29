@@ -27,6 +27,7 @@ from pydantic import (
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 
 from ..constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
+from ._application_keys import UNIT_REGISTRY_APPKEY
 
 _logger = logging.getLogger(__name__)
 
@@ -166,7 +167,7 @@ class CatalogRequestContext(BaseModel):
                 app=request.app,
                 user_id=request[RQT_USERID_KEY],
                 product_name=request[RQ_PRODUCT_KEY],
-                unit_registry=request.app[UnitRegistry.__name__],
+                unit_registry=request.app[UNIT_REGISTRY_APPKEY],
             )
 
 
