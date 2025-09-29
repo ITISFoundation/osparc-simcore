@@ -181,7 +181,7 @@ async def _search_files_by_pattern(
         user_id=user_id,
         name_pattern=name_pattern,
         project_id=project_id,
-        items_per_page=items_per_page,
+        limit=items_per_page,
     ):
         results.extend(page)
     return results
