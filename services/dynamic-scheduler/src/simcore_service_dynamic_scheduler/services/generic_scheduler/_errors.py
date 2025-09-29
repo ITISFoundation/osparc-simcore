@@ -21,7 +21,7 @@ class OperationNotFoundError(BaseGenericSchedulerError):
 
 class StepNotFoundInoperationError(BaseGenericSchedulerError):
     msg_template: str = (
-        "Step '{step_name}' not found registerd_steps='{steps_names}' for operation '{operation_name}'"
+        "Step '{step_name}' not found steps_names='{steps_names}' for operation '{operation_name}'"
     )
 
 
