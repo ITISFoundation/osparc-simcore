@@ -5,6 +5,7 @@ from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
 from servicelib.fastapi.tracing import (
+    get_tracing_data,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
@@ -64,7 +65,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_clusters_management(app)
 
     if app.state.settings.CLUSTERS_KEEPER_TRACING:
-        initialize_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
     # ERROR HANDLERS
 
     # EVENTS

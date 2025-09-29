@@ -7,6 +7,7 @@ from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
 )
 from servicelib.fastapi.tracing import (
+    get_tracing_data,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
@@ -62,7 +63,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_rpc_api_routes(app)
 
     if settings.AGENT_TRACING:
-        initialize_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
 
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201

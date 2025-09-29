@@ -18,6 +18,7 @@ from servicelib.fastapi.monitoring import (
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import ProfilerMiddleware
 from servicelib.fastapi.tracing import (
+    get_tracing_data,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
@@ -103,7 +104,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
         setup_prometheus_instrumentation(app)
 
     if settings.STORAGE_TRACING:
-        initialize_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
 
     async def _on_startup() -> None:
         if settings.STORAGE_WORKER_MODE:

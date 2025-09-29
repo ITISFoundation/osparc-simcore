@@ -203,11 +203,16 @@ def _shutdown(tracing_data: TracingData) -> None:
 
 
 def initialize_fastapi_app_tracing(
-    app: FastAPI, *, add_response_trace_id_header: bool = False
+    app: FastAPI,
+    *,
+    tracing_data: TracingData,
+    add_response_trace_id_header: bool = False,
 ):
     if add_response_trace_id_header:
         app.add_middleware(ResponseTraceIdHeaderMiddleware)
-    FastAPIInstrumentor.instrument_app(app)
+    FastAPIInstrumentor.instrument_app(
+        app, tracer_provider=tracing_data.tracer_provider
+    )
 
 
 def setup_httpx_client_tracing(client: AsyncClient | Client):

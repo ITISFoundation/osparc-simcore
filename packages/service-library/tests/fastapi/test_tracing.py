@@ -241,7 +241,9 @@ async def test_trace_id_in_response_header(
         tracing_settings=tracing_settings,
         tracing_data=tracing_data,
     )(app=mocked_app):
-        initialize_fastapi_app_tracing(mocked_app, add_response_trace_id_header=True)
+        initialize_fastapi_app_tracing(
+            mocked_app, tracing_data=tracing_data, add_response_trace_id_header=True
+        )
         client = TestClient(mocked_app)
         response = client.get("/")
         assert _OSPARC_TRACE_ID_HEADER in response.headers
@@ -294,7 +296,9 @@ async def test_with_profile_span(
         tracing_settings=tracing_settings,
         tracing_data=tracing_data,
     )(app=mocked_app):
-        initialize_fastapi_app_tracing(mocked_app, add_response_trace_id_header=True)
+        initialize_fastapi_app_tracing(
+            mocked_app, tracing_data=tracing_data, add_response_trace_id_header=True
+        )
         client = TestClient(mocked_app)
         _ = client.get("/")
         trace_id = handler_data.get(_OSPARC_TRACE_ID_HEADER)
@@ -344,7 +348,9 @@ async def test_tracing_sampling_probability_effective(
         tracing_settings=tracing_settings,
         tracing_data=tracing_data,
     )(app=mocked_app):
-        initialize_fastapi_app_tracing(mocked_app, add_response_trace_id_header=True)
+        initialize_fastapi_app_tracing(
+            mocked_app, tracing_data=tracing_data, add_response_trace_id_header=True
+        )
         client = TestClient(mocked_app)
         for _ in range(n_requests):
             client.get("/")

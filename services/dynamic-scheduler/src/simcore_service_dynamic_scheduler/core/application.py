@@ -61,6 +61,6 @@ def create_app(
 
     if app_settings.DYNAMIC_SCHEDULER_TRACING:
         assert tracing_data  # nosec
-        initialize_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app, tracing_data=tracing_data)
 
     return app

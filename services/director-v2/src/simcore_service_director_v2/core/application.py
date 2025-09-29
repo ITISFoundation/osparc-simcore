@@ -13,6 +13,7 @@ from servicelib.fastapi.openapi import (
 )
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.tracing import (
+    get_tracing_data,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
@@ -199,7 +200,7 @@ def create_app(  # noqa: C901, PLR0912
     db.setup(app, settings.POSTGRES)
 
     if settings.DIRECTOR_V2_TRACING:
-        initialize_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, tracing_settings=settings.DIRECTOR_V2_TRACING)

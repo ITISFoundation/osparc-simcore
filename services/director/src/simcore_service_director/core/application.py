@@ -5,6 +5,7 @@ from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.http_error import set_app_default_http_error_handlers
 from servicelib.fastapi.tracing import (
+    get_tracing_data,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
@@ -55,7 +56,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_registry(app)
 
     if app.state.settings.DIRECTOR_TRACING:
-        initialize_fastapi_app_tracing(app)
+        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
 
     # ERROR HANDLERS
     set_app_default_http_error_handlers(app)
