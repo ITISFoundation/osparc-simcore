@@ -83,7 +83,7 @@ faker==19.6.1
     #   -r requirements/_test.in
 fakeredis==2.31.3
     # via -r requirements/_test.in
-fastapi==0.118.0
+fastapi==0.116.1
     # via
     #   -r requirements/_test.in
     #   fastapi-pagination
@@ -333,7 +333,7 @@ sqlalchemy==1.4.47
     #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-starlette==0.48.0
+starlette==0.47.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   fastapi
