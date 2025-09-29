@@ -48,6 +48,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.celery.models import OwnerMetadata
+from servicelib.celery.tasks.storage import SEARCH_EXECUTION_METADATA, SEARCH_TASK_NAME
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size as remote_compute_path_size,
@@ -55,14 +56,12 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     delete_paths as remote_delete_paths,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
-    start_export_data,
-    start_search,
-)
+from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
 from .._meta import API_VTAG
+from ..celery import get_task_manager
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -549,15 +548,14 @@ async def search(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     parse_request_path_parameters_as(_PathParams, request)
     search_body = await parse_request_body_as(
         model_schema_cls=SearchBodyParams, request=request
     )
 
-    async_job_rpc_get, _ = await start_search(
-        rabbitmq_rpc_client,
+    task_uuid = await get_task_manager(request.app).submit_task(
+        SEARCH_EXECUTION_METADATA,
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
@@ -577,14 +575,15 @@ async def search(request: web.Request) -> web.Response:
         ),
         project_id=search_body.filters.project_id,
     )
-    _job_id = f"{async_job_rpc_get.job_id}"
+
+    _task_id = f"{task_uuid}"
     return create_data_response(
         TaskGet(
-            task_id=_job_id,
-            task_name=async_job_rpc_get.job_name,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_job_id)))}",
-            result_stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_job_id)))}",
+            task_id=_task_id,
+            task_name=SEARCH_TASK_NAME,
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_task_id)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_task_id)))}",
+            result_stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_task_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )

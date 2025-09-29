@@ -9,6 +9,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
     PresignedLink,
 )
+from servicelib.celery.tasks.storage import SEARCH_TASK_NAME
 from servicelib.logging_utils import log_context
 
 from ...models import FileMetaData
@@ -41,4 +42,4 @@ def setup_worker_tasks(app: Celery) -> None:
         register_task(app, complete_upload_file)
         register_task(app, delete_paths)
         register_task(app, deep_copy_files_from_project)
-        register_task(app, search)
+        register_task(app, search, task_name=SEARCH_TASK_NAME)

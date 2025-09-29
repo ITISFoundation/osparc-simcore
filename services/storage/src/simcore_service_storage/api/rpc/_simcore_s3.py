@@ -1,4 +1,3 @@
-import datetime
 from typing import Literal
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -6,7 +5,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
-from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.celery.models import (
     ExecutionMetadata,
@@ -20,7 +18,6 @@ from .._worker_tasks._simcore_s3 import (
     deep_copy_files_from_project,
     export_data,
     export_data_as_download_link,
-    search,
 )
 
 router = RPCRouter()
@@ -69,33 +66,5 @@ async def start_export_data(
         owner_metadata=owner_metadata,
         user_id=user_id,
         paths_to_export=paths_to_export,
-    )
-    return AsyncJobGet(job_id=task_uuid, job_name=task_name)
-
-
-@router.expose()
-async def start_search(
-    task_manager: TaskManager,
-    owner_metadata: OwnerMetadata,
-    user_id: UserID,
-    limit: int,
-    name_pattern: str,
-    modified_at: (
-        tuple[datetime.datetime | None, datetime.datetime | None] | None
-    ) = None,
-    project_id: ProjectID | None = None,
-) -> AsyncJobGet:
-    task_name = search.__name__
-    task_uuid = await task_manager.submit_task(
-        execution_metadata=ExecutionMetadata(
-            name=task_name,
-            streamed_result=True,
-        ),
-        owner_metadata=owner_metadata,
-        user_id=user_id,
-        project_id=project_id,
-        limit=limit,
-        name_pattern=name_pattern,
-        modified_at=modified_at,
     )
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
