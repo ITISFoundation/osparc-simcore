@@ -1,10 +1,7 @@
-from collections.abc import AsyncIterator
 from typing import Any, Final, Literal, NotRequired, TypedDict, overload
 
 import redis.asyncio as aioredis
 from common_library.json_serialization import json_dumps, json_loads
-from fastapi import FastAPI
-from fastapi_lifespan_manager import State
 from pydantic import NonNegativeInt
 from servicelib.deferred_tasks import TaskUID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -12,8 +9,8 @@ from servicelib.redis._client import RedisClientSDK
 from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase, RedisSettings
 
-from ...core.settings import ApplicationSettings
 from ._errors import NoDataFoundError
+from ._lifecycle_protocol import SupportsLifecycle
 from ._models import (
     OperationErrorType,
     OperationName,
@@ -113,7 +110,7 @@ def _loads(obj_str: str) -> Any:
     return json_loads(obj_str)
 
 
-class Store(SingletonInAppStateMixin):
+class Store(SingletonInAppStateMixin, SupportsLifecycle):
     app_state_name: str = "generic_scheduler_store"
 
     def __init__(self, redis_settings: RedisSettings) -> None:
@@ -418,13 +415,3 @@ class OperationRemovalProxy:
         ]
         if found_keys:
             await self._store.remove(*found_keys)
-
-
-async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    settings: ApplicationSettings = app.state.settings
-    store = Store(settings.DYNAMIC_SCHEDULER_REDIS)
-    store.set_to_app_state(app)
-
-    await store.setup()
-    yield {}
-    await store.shutdown()

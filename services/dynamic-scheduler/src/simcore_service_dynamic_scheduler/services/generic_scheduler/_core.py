@@ -1,13 +1,12 @@
 import asyncio
 import logging
-from collections.abc import AsyncIterator, Iterable
+from collections.abc import Iterable
 from contextlib import suppress
 from datetime import timedelta
 from typing import Final
 from uuid import uuid4
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
 from pydantic import NonNegativeInt
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
@@ -623,11 +622,6 @@ class Core(SingletonInAppStateMixin):
         raise UnexpectedStepHandlingError(
             direction="revert", steps_statuses=steps_statuses, schedule_id=schedule_id
         )
-
-
-async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    Core(app).set_to_app_state(app)
-    yield {}
 
 
 async def start_operation(

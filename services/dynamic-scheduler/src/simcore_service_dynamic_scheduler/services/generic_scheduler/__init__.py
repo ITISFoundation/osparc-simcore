@@ -9,7 +9,7 @@ from ._deferred_runner import (
     get_step_group_proxy,
     get_step_store_proxy,
 )
-from ._lifespan import get_generic_scheduler_lifespans
+from ._lifespan import generic_scheduler_lifespan
 from ._models import (
     OperationName,
     ProvidedOperationContext,
@@ -28,7 +28,7 @@ from ._store import OperationContextProxy, StepGroupProxy, StepStoreProxy
 __all__: tuple[str, ...] = (
     "BaseStep",
     "cancel_operation",
-    "get_generic_scheduler_lifespans",
+    "generic_scheduler_lifespan",
     "get_operation_context_proxy",
     "get_step_group_proxy",
     "get_step_store_proxy",

@@ -1,10 +1,8 @@
 import functools
 import logging
-from collections.abc import AsyncIterator
 from typing import Final
 
 from fastapi import FastAPI
-from fastapi_lifespan_manager import State
 from faststream.exceptions import FastStreamException, RejectMessage
 from faststream.rabbit import (
     ExchangeType,
@@ -18,6 +16,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ...core.settings import ApplicationSettings
 from ._core import Core
+from ._lifecycle_protocol import SupportsLifecycle
 from ._models import ScheduleId
 
 _logger = logging.getLogger(__name__)
@@ -62,7 +61,7 @@ def _stop_retry_for_unintended_errors(func):
     return wrapper
 
 
-class EventScheduler(SingletonInAppStateMixin):
+class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
     """Handles scheduling of single events for a given schedule_id"""
 
     app_state_name: str = "generic_scheduler_event_scheduler"
@@ -111,12 +110,3 @@ class EventScheduler(SingletonInAppStateMixin):
 
     async def shutdown(self) -> None:
         await self._broker.close()
-
-
-async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    event_scheduler = EventScheduler(app)
-    event_scheduler.set_to_app_state(app)
-
-    await event_scheduler.setup()
-    yield {}
-    await event_scheduler.shutdown()
