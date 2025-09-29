@@ -158,7 +158,7 @@ from ._access_rights_service import (
 )
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._project_document_service import create_project_document_and_increment_version
-from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
+from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
 from ._socketio_service import notify_project_document_updated
 from .exceptions import (
@@ -354,7 +354,7 @@ async def get_project_for_user(
 async def get_project_type(
     app: web.Application, project_uuid: ProjectID
 ) -> ProjectType:
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     assert db_legacy  # nosec
     return await db_legacy.get_project_type(project_uuid)
 
@@ -362,7 +362,7 @@ async def get_project_type(
 async def get_project_dict_legacy(
     app: web.Application, project_uuid: ProjectID
 ) -> ProjectDict:
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     assert db_legacy  # nosec
     project, _ = await db_legacy.get_project_dict_and_type(
         f"{project_uuid}",
@@ -422,7 +422,7 @@ async def patch_project_for_user(
     # preventing redundant updates in the originating session.
 
     patch_project_data = project_patch.to_domain_model()
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
 
     # 1. Get project
     project_db = await db_legacy.get_project_db(project_uuid=project_uuid)
@@ -1148,7 +1148,7 @@ async def delete_project_node(
     )
 
     # remove the node from the db
-    db_legacy: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = request.app[PROJECT_DBAPI_APPKEY]
     assert db_legacy  # nosec
     await db_legacy.remove_project_node(
         user_id, project_uuid, NodeID(node_uuid), client_session_id=client_session_id
@@ -1169,7 +1169,7 @@ async def update_project_linked_product(
     with log_context(
         _logger, level=logging.DEBUG, msg="updating project linked product"
     ):
-        db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
         await db_legacy.upsert_project_linked_product(project_id, product_name)
 
 
@@ -1223,7 +1223,7 @@ async def update_project_node_state(
 
 
 async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     return await db_legacy.is_hidden(project_id)
 
 
@@ -1392,7 +1392,7 @@ async def list_node_ids_in_project(
     project_uuid: ProjectID,
 ) -> set[NodeID]:
     """Returns a set with all the node_ids from a project's workbench"""
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     return await db_legacy.list_node_ids_in_project(project_uuid)
 
 
@@ -1401,7 +1401,7 @@ async def is_node_id_present_in_any_project_workbench(
     node_id: NodeID,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     return await db_legacy.node_id_exists(node_id)
 
 

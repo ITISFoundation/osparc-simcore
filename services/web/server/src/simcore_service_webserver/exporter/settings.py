@@ -2,7 +2,7 @@ from aiohttp.web import Application
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class ExporterSettings(BaseCustomSettings):
@@ -12,7 +12,7 @@ class ExporterSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: Application) -> ExporterSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_EXPORTER
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_EXPORTER
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, ExporterSettings)  # nosec
     return settings

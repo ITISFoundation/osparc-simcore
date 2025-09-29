@@ -9,12 +9,13 @@ from pydantic import BaseModel
 from servicelib.aiohttp import status
 
 from .._meta import API_VTAG
-from ..constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
+from ..constants import APP_PUBLIC_CONFIG_PER_PRODUCT
 from ..login.decorators import login_required
 from ..products import products_web
 from ..redis import get_redis_scheduled_maintenance_client
 from ..utils_aiohttp import envelope_json_response
-from .healthcheck import HealthCheck, HealthCheckError
+from .healthcheck import HEALTHCHECK_APPKEY, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ async def healthcheck_liveness_probe(request: web.Request):
 
     SEE doc in healthcheck.py
     """
-    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
+    healthcheck = request.app[HEALTHCHECK_APPKEY]
 
     try:
         # if slots append get too delayed, just timeout
@@ -53,7 +54,7 @@ async def healthcheck_readiness_probe(request: web.Request):
     SEE doc in healthcheck.py
     """
 
-    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
+    healthcheck = request.app[HEALTHCHECK_APPKEY]
     app_info = healthcheck.get_app_info(request.app)
     # NOTE: do NOT run healthcheck here, just return info fast.
     return envelope_json_response(app_info)
@@ -71,7 +72,7 @@ async def get_config(request: web.Request):
     register but the server has been setup to require an invitation. This option is setup
     at runtime and the front-end can only get it upon request to /config
     """
-    app_public_config: dict[str, Any] = request.app[APP_SETTINGS_KEY].public_dict()
+    app_public_config: dict[str, Any] = request.app[APP_SETTINGS_APPKEY].public_dict()
 
     product_name = products_web.get_product_name(request=request)
     product_public_config = request.app.get(APP_PUBLIC_CONFIG_PER_PRODUCT, {}).get(

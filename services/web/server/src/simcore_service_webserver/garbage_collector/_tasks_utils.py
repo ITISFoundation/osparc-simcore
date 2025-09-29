@@ -4,6 +4,7 @@ Common utilities for background task management in garbage collector
 
 import asyncio
 from collections.abc import AsyncIterator, Callable, Coroutine
+from typing import Final
 
 from aiohttp import web
 from common_library.async_tools import cancel_wait_task
@@ -17,6 +18,9 @@ def create_task_name(coro: Callable) -> str:
     This is useful for logging and debugging purposes.
     """
     return f"{coro.__module__}.{coro.__name__}"
+
+
+_GC_PERIODIC_TASKS_APPKEY: Final = web.AppKey("gc-tasks", dict[str, asyncio.Task])
 
 
 async def periodic_task_lifespan(
@@ -43,15 +47,16 @@ async def periodic_task_lifespan(
     )
 
     # Keeping a reference in app's state to prevent premature garbage collection of the task
-    app_task_key = f"gc-tasks/{task_name}"
-    if app_task_key in app:
+    app.setdefault(_GC_PERIODIC_TASKS_APPKEY, {})
+    if task_name in app[_GC_PERIODIC_TASKS_APPKEY]:
         msg = f"Task {task_name} is already registered in the app state"
         raise ValueError(msg)
 
-    app[app_task_key] = task
+    app[_GC_PERIODIC_TASKS_APPKEY][task_name] = task
 
     yield
 
     # tear-down
     await cancel_wait_task(task)
-    app.pop(app_task_key, None)
+    if _GC_PERIODIC_TASKS_APPKEY in app:
+        app[_GC_PERIODIC_TASKS_APPKEY].pop(task_name, None)
