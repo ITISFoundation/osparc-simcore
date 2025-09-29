@@ -11,21 +11,24 @@ from ._store import Store
 
 
 async def generic_scheduler_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    # store
     settings: ApplicationSettings = app.state.settings
     store = Store(settings.DYNAMIC_SCHEDULER_REDIS)
     store.set_to_app_state(app)
 
+    # core
     Core(app).set_to_app_state(app)
 
+    # event scheduler
     event_scheduler = EventScheduler(app)
     event_scheduler.set_to_app_state(app)
 
-    with_setup_protocol: list[SupportsLifecycle] = [event_scheduler, store]
+    supports_lifecycle: list[SupportsLifecycle] = [event_scheduler, store]
 
-    for component in with_setup_protocol:
-        await component.setup()
+    for instance in supports_lifecycle:
+        await instance.setup()
 
     yield {}
 
-    for component in with_setup_protocol:
-        await component.shutdown()
+    for instance in supports_lifecycle:
+        await instance.shutdown()
