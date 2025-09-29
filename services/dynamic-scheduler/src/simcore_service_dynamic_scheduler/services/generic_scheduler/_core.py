@@ -86,6 +86,9 @@ class Core:
         # check if operation is registered
         operation = OperationRegistry.get_operation(operation_name)
 
+        # NOTE: to ensure reproducibility of operations, the
+        # operation steps cannot overwrite keys in the
+        # initial context with their results
         raise_if_overwrites_any_operation_provided_key(
             operation, initial_operation_context
         )

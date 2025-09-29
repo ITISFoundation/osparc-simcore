@@ -44,7 +44,8 @@ class ProvidedOperationContextKeysAreMissingError(BaseGenericSchedulerError):
 
 class InitialOperationContextKeyNotAllowedError(BaseGenericSchedulerError):
     msg_template: str = (
-        "Initial operation context cannot contain key '{key}' since it is provided by the operation: {operation}"
+        "Initial operation context cannot contain key '{key}' that would "
+        "be overritted by a step in the operation: {operation}"
     )
 
 
