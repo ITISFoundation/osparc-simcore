@@ -1,6 +1,7 @@
 from aiohttp import web
 from settings_library.celery import CelerySettings
-from simcore_service_webserver.constants import APP_SETTINGS_KEY
+
+from ..constants import APP_SETTINGS_KEY
 
 
 def get_plugin_settings(app: web.Application) -> CelerySettings:
