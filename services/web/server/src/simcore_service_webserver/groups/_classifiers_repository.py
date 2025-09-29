@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, cast
 
 import sqlalchemy as sa
 from simcore_postgres_database.models.classifiers import group_classifiers
@@ -28,8 +28,7 @@ class GroupClassifierRepository(BaseRepository):
     async def get_classifiers_from_bundle(self, gid: int) -> dict[str, Any] | None:
         bundle_row = await self._get_bundle(gid)
         if bundle_row:
-            # pylint: disable=protected-access
-            return dict(bundle_row.bundle._mapping)  # noqa: SLF001
+            return cast(dict[str, Any], bundle_row.bundle)
         return None
 
     async def group_uses_scicrunch(

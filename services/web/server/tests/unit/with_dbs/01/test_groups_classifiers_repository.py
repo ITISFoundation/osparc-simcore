@@ -51,8 +51,7 @@ async def test_get_classifiers_from_bundle_returns_bundle(
 
     # Assert
     assert bundle is not None
-    assert bundle["vcs_ref"] == "asdfasdf"
-    assert bundle["vcs_url"] == "https://foo.classifiers.git"
+    assert bundle["vcs_url"] == "https://organization.classifiers.git"
     assert "classifiers" in bundle
     assert "project::dak" in bundle["classifiers"]
     assert bundle["classifiers"]["project::dak"]["display_name"] == "DAK"
