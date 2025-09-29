@@ -4,9 +4,11 @@
 import asyncio
 from collections.abc import Awaitable, Callable
 from unittest.mock import Mock, call
+from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -98,7 +100,7 @@ async def test_event_scheduling(
 ) -> None:
     mock = get_mock_safe_on_schedule_event(_side_effect_nothing)
 
-    schedule_id = ScheduleId("some-id")
+    schedule_id = TypeAdapter(ScheduleId).validate_python(f"{uuid4()}")
     await event_scheduler.enqueue_schedule_event(schedule_id)
 
     async for attempt in AsyncRetrying(
@@ -121,7 +123,7 @@ async def test_event_scheduling_raises_error(
     caplog.clear()
     get_mock_safe_on_schedule_event(_side_effect_raise_error)
 
-    schedule_id = ScheduleId("some-id")
+    schedule_id = TypeAdapter(ScheduleId).validate_python(f"{uuid4()}")
     await event_scheduler.enqueue_schedule_event(schedule_id)
 
     async for attempt in AsyncRetrying(

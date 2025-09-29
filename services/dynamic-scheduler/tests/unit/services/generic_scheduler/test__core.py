@@ -14,7 +14,7 @@ from typing import Any, Final
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
@@ -673,7 +673,7 @@ async def test_create_revert_order(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(steps_call_order, expected_order)
 
@@ -788,7 +788,7 @@ async def test_fails_during_revert_is_in_error_state(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(steps_call_order, expected_order)
 
@@ -855,7 +855,7 @@ async def test_cancelled_finishes_nicely(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(steps_call_order, expected_before_cancel_order)
 
@@ -950,7 +950,7 @@ async def test_repeating_step(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(
         steps_call_order, expected_before_cancel_order, use_only_first_entries=True
@@ -1062,7 +1062,7 @@ async def test_wait_for_manual_intervention(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
 
@@ -1205,7 +1205,7 @@ async def test_restart_revert_operation_step_in_error(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
 
@@ -1253,7 +1253,7 @@ async def test_errors_with_restart_operation_step_in_error(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(
         steps_call_order,
@@ -1375,7 +1375,7 @@ async def test_operation_context_usage(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, initial_context)
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     # NOTE: might fail because it raised ProvidedOperationContextKeysAreMissingError check logs
     await ensure_expected_order(steps_call_order, expected_order)
@@ -1482,7 +1482,7 @@ async def test_step_does_not_receive_context_key_or_is_none(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, initial_context)
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await _esnure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
 
@@ -1676,7 +1676,7 @@ async def test_step_does_not_provide_declared_key_or_is_none(
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, initial_context)
-    assert isinstance(schedule_id, ScheduleId)
+    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await _esnure_log_mesage(caplog, message=expected_error_str)
 
