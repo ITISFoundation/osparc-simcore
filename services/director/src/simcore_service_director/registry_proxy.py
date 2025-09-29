@@ -374,7 +374,7 @@ async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
     return image_tags
 
 
-_DOCKER_CONTENT_DIGEST_HEADER = "Docker-Content-Digest"
+_DOCKER_CONTENT_DIGEST_HEADER: Final[str] = "Docker-Content-Digest"
 
 
 async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
@@ -388,7 +388,8 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
     _, headers = await registry_request(app, path=path, method="GET", use_cache=True)
 
     headers = headers or {}
-    return headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
+    docker_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
+    return docker_digests
 
 
 async def get_image_labels(
