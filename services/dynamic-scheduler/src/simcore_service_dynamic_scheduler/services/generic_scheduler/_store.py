@@ -428,7 +428,3 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     await store.setup()
     yield {}
     await store.shutdown()
-
-
-def get_store(app: FastAPI) -> Store:
-    return Store.get_from_app_state(app)

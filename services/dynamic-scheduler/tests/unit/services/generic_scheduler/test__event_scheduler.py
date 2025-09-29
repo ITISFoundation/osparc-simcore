@@ -73,7 +73,7 @@ def get_mock_safe_on_schedule_event(
         core_mock = Mock()
         core_mock.safe_on_schedule_event = _mock
         mocker.patch(
-            "simcore_service_dynamic_scheduler.services.generic_scheduler._event_scheduler.get_core",
+            "simcore_service_dynamic_scheduler.services.generic_scheduler._event_scheduler.Core.get_from_app_state",
             return_value=core_mock,
         )
         return another_mock

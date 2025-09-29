@@ -57,7 +57,6 @@ from ._store import (
     StepGroupProxy,
     StepStoreProxy,
     Store,
-    get_store,
 )
 
 _DEFAULT_UNKNOWN_STATUS_MAX_RETRY: Final[NonNegativeInt] = 3
@@ -78,7 +77,7 @@ class Core(SingletonInAppStateMixin):
         self.app = app
         self.unknown_status_max_retry = unknown_status_max_retry
         self.unknown_status_wait_before_retry = unknown_status_wait_before_retry
-        self._store: Store = get_store(app)
+        self._store: Store = Store.get_from_app_state(app)
 
     async def start_operation(
         self, operation_name: OperationName, initial_operation_context: OperationContext
@@ -631,16 +630,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     yield {}
 
 
-def get_core(app: FastAPI) -> Core:
-    return Core.get_from_app_state(app)
-
-
 async def start_operation(
     app: FastAPI,
     operation_name: OperationName,
     initial_operation_context: OperationContext,
 ) -> ScheduleId:
-    return await get_core(app).start_operation(
+    return await Core.get_from_app_state(app).start_operation(
         operation_name, initial_operation_context
     )
 
@@ -653,7 +648,7 @@ async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
     `reverting` refers to the act of undoing the effects of a step
     that has already been completed (eg: remove a created network)
     """
-    await get_core(app).cancel_operation(schedule_id)
+    await Core.get_from_app_state(app).cancel_operation(schedule_id)
 
 
 async def restart_operation_step_stuck_in_manual_intervention_during_create(
@@ -667,7 +662,7 @@ async def restart_operation_step_stuck_in_manual_intervention_during_create(
     all retries and is now waiting for a human to fix the issue (eg: storage service
     is reachable once again)
     """
-    await get_core(app).restart_operation_step_stuck_in_error(
+    await Core.get_from_app_state(app).restart_operation_step_stuck_in_error(
         schedule_id, step_name, in_manual_intervention=True
     )
 
@@ -682,6 +677,6 @@ async def restart_operation_step_stuck_during_revert(
     `reverting` refers to the act of undoing the effects of a step
     that has already been completed (eg: remove a created network)
     """
-    await get_core(app).restart_operation_step_stuck_in_error(
+    await Core.get_from_app_state(app).restart_operation_step_stuck_in_error(
         schedule_id, step_name, in_manual_intervention=False
     )

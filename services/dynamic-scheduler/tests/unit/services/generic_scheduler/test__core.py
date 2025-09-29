@@ -34,7 +34,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     restart_operation_step_stuck_in_manual_intervention_during_create,
     start_operation,
 )
-from simcore_service_dynamic_scheduler.services.generic_scheduler._core import get_core
+from simcore_service_dynamic_scheduler.services.generic_scheduler._core import Core
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     InitialOperationContextKeyNotAllowedError,
@@ -48,7 +48,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._models import
     OperationContext,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
-    get_store,
+    Store,
 )
 from tenacity import (
     AsyncRetrying,
@@ -353,7 +353,7 @@ class _BaseRequiresProvidesRevertContext(_RevertBS, _MixingGetKeNumber):
 
 
 async def _assert_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
-    keys = set(await get_store(app).redis.keys())
+    keys = set(await Store.get_from_app_state(app).redis.keys())
     assert keys == expected_keys
 
 
@@ -1267,14 +1267,18 @@ async def test_errors_with_restart_operation_step_in_error(
     await asyncio.sleep(0.1)
 
     with pytest.raises(StepNameNotInCurrentGroupError):
-        await get_core(selected_app).restart_operation_step_stuck_in_error(
+        await Core.get_from_app_state(
+            selected_app
+        ).restart_operation_step_stuck_in_error(
             schedule_id,
             _S5.get_step_name(),
             in_manual_intervention=in_manual_intervention,
         )
 
     with pytest.raises(StepNotInErrorStateError):
-        await get_core(selected_app).restart_operation_step_stuck_in_error(
+        await Core.get_from_app_state(
+            selected_app
+        ).restart_operation_step_stuck_in_error(
             schedule_id,
             _SF1.get_step_name(),
             in_manual_intervention=in_manual_intervention,
@@ -1284,7 +1288,9 @@ async def test_errors_with_restart_operation_step_in_error(
         # force restart of step as it would be in manual intervention
         # this is not allowed
         with pytest.raises(StepNotWaitingForManualInterventionError):
-            await get_core(selected_app).restart_operation_step_stuck_in_error(
+            await Core.get_from_app_state(
+                selected_app
+            ).restart_operation_step_stuck_in_error(
                 schedule_id,
                 _FCR1.get_step_name(),
                 in_manual_intervention=True,

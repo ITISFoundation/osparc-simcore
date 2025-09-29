@@ -25,7 +25,6 @@ from ._store import (
     StepGroupProxy,
     StepStoreProxy,
     Store,
-    get_store,
 )
 
 
@@ -37,9 +36,8 @@ def get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
     step_name: StepName = context["step_name"]
     is_creating = context["is_creating"]
 
-    store: Store = get_store(app)
     return StepStoreProxy(
-        store=store,
+        store=Store.get_from_app_state(app),
         schedule_id=schedule_id,
         operation_name=operation_name,
         step_group_name=step_group_name,
@@ -55,9 +53,8 @@ def get_step_group_proxy(context: DeferredContext) -> StepGroupProxy:
     step_group_name: StepGroupName = context["step_group_name"]
     is_creating = context["is_creating"]
 
-    store: Store = get_store(app)
     return StepGroupProxy(
-        store=store,
+        store=Store.get_from_app_state(app),
         schedule_id=schedule_id,
         operation_name=operation_name,
         step_group_name=step_group_name,
@@ -70,9 +67,8 @@ def get_operation_context_proxy(context: DeferredContext) -> OperationContextPro
     schedule_id: ScheduleId = context["schedule_id"]
     operation_name: OperationName = context["operation_name"]
 
-    store: Store = get_store(app)
     return OperationContextProxy(
-        store=store,
+        store=Store.get_from_app_state(app),
         schedule_id=schedule_id,
         operation_name=operation_name,
     )

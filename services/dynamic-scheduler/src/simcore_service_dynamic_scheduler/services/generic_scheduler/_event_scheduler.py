@@ -17,7 +17,7 @@ from faststream.rabbit.schemas.queue import ClassicQueueArgs
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ...core.settings import ApplicationSettings
-from ._core import get_core
+from ._core import Core
 from ._models import ScheduleId
 
 _logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ class EventScheduler(SingletonInAppStateMixin):
     async def _on_safe_on_schedule_event(  # pylint:disable=method-hidden
         self, schedule_id: ScheduleId
     ) -> None:
-        await get_core(self.app).safe_on_schedule_event(schedule_id)
+        await Core.get_from_app_state(self.app).safe_on_schedule_event(schedule_id)
 
     async def enqueue_schedule_event(self, schedule_id: ScheduleId) -> None:
         await self._broker.publish(

@@ -40,7 +40,6 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._store import 
     ScheduleDataStoreProxy,
     StepStoreProxy,
     Store,
-    get_store,
 )
 from tenacity import (
     AsyncRetrying,
@@ -74,7 +73,7 @@ def app_environment(
 
 @pytest.fixture
 def store(app: FastAPI) -> Store:
-    return get_store(app)
+    return Store.get_from_app_state(app)
 
 
 @pytest.fixture
