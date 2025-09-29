@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Any, Literal, cast
 
 import sqlalchemy as sa
+from sqlalchemy.ext.asyncio import AsyncConnection
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID, ProjectType
@@ -14,6 +15,10 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNodesRepo,
+    create_workbench_subquery,
+)
 from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
 )
@@ -217,20 +222,27 @@ class BaseProjectDB:
                     ),
                 ).label("access_rights"),
             )
-            .where(project_to_groups.c.project_uuid == f"{project_uuid}")
+            .where(project_to_groups.c.project_uuid == project_uuid)
             .group_by(project_to_groups.c.project_uuid)
         ).subquery("access_rights_subquery")
+
+        workbench_subquery = create_workbench_subquery(project_uuid)
 
         query = (
             sa.select(
                 *PROJECT_DB_COLS,
-                projects.c.workbench,
                 users.c.primary_gid.label("trashed_by_primary_gid"),
                 access_rights_subquery.c.access_rights,
+                sa.func.coalesce(
+                    workbench_subquery.c.workbench, sa.text("'{}'::json")
+                ).label("workbench"),
             )
             .select_from(
-                projects.join(access_rights_subquery, isouter=True).outerjoin(
-                    users, projects.c.trashed_by == users.c.id
+                projects.join(access_rights_subquery, isouter=True)
+                .outerjoin(users, projects.c.trashed_by == users.c.id)
+                .outerjoin(
+                    workbench_subquery,
+                    projects.c.uuid == workbench_subquery.c.project_uuid,
                 )
             )
             .where(
@@ -365,3 +377,20 @@ def patch_workbench(
             # patch
             current_node_data.update(new_node_data)
     return (patched_project, changed_entries)
+
+
+async def get_project_workbench(
+    connection: AsyncConnection,
+    project_uuid: str,
+) -> dict[str, Any]:
+    project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
+    exclude_fields = {"node_id", "required_resources", "created", "modified"}
+    workbench: dict[str, Any] = {}
+
+    project_nodes = await project_nodes_repo.list(connection)
+    for project_node in project_nodes:
+        node_data = project_node.model_dump(
+            exclude=exclude_fields, exclude_none=True, exclude_unset=True
+        )
+        workbench[f"{project_node.node_id}"] = node_data
+    return workbench

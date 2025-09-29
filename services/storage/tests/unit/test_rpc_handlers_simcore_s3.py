@@ -37,7 +37,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
-from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
@@ -81,20 +81,33 @@ async def _request_copy_folders(
     rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
-    source_project: dict[str, Any],
+    src_project: dict[str, Any],
+    src_project_nodes: dict[NodeID, dict[str, Any]],
     dst_project: dict[str, Any],
+    dst_project_nodes: dict[NodeID, dict[str, Any]],
     nodes_map: dict[NodeID, NodeID],
     *,
     client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> dict[str, Any]:
     with log_context(
         logging.INFO,
-        f"Copying folders from {source_project['uuid']} to {dst_project['uuid']}",
+        f"Copying folders from {src_project['uuid']} to {dst_project['uuid']}",
     ) as ctx:
-        async_job_get, owner_metadata = await copy_folders_from_project(
+        source = src_project | {
+            "workbench": {
+                f"{node_id}": node for node_id, node in src_project_nodes.items()
+            }
+        }
+        destination = dst_project | {
+            "workbench": {
+                f"{node_id}": node for node_id, node in dst_project_nodes.items()
+            }
+        }
+
+        async_job_get, async_job_name = await copy_folders_from_project(
             rpc_client,
             body=FoldersBody(
-                source=source_project, destination=dst_project, nodes_map=nodes_map
+                source=source, destination=destination, nodes_map=nodes_map
             ),
             owner_metadata=_TestOwnerMetadata(
                 user_id=user_id,
@@ -116,6 +129,8 @@ async def _request_copy_folders(
             if async_job_result.done:
                 result = await async_job_result.result()
                 assert isinstance(result, AsyncJobResult)
+                assert isinstance(result.result, dict)
+                result.result.pop("workbench", None)  # remove workbench from the data
                 return result.result
 
     pytest.fail(reason="Copy folders failed!")
@@ -145,7 +160,9 @@ async def test_copy_folders_from_non_existing_project(
             user_id,
             product_name,
             incorrect_src_project,
+            {},
             dst_project,
+            {},
             nodes_map={},
         )
 
@@ -157,7 +174,9 @@ async def test_copy_folders_from_non_existing_project(
             user_id,
             product_name,
             src_project,
+            {},
             incorrect_dst_project,
+            {},
             nodes_map={},
         )
 
@@ -180,7 +199,9 @@ async def test_copy_folders_from_empty_project(
         user_id,
         product_name,
         src_project,
+        {},
         dst_project,
+        {},
         nodes_map={},
     )
     assert data == jsonable_encoder(dst_project)
@@ -233,33 +254,41 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with 1 large file
-    src_project, src_projects_list = await random_project_with_files(project_params)
+    src_project, src_project_nodes, src_projects_list = await random_project_with_files(
+        project_params
+    )
     # 2. create a dst project without files
-    dst_project, nodes_map = clone_project_data(src_project)
+    dst_project, dst_project_nodes, nodes_map = clone_project_data(
+        src_project, src_project_nodes
+    )
     dst_project = await create_project(**dst_project)
-    # copy the project files
+
     data = await _request_copy_folders(
         storage_rabbitmq_rpc_client,
         user_id,
         product_name,
         src_project,
+        src_project_nodes,
         dst_project,
-        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+        dst_project_nodes,
+        nodes_map=nodes_map,
     )
     assert data == jsonable_encoder(
         await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
     )
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
-        dst_node_id = nodes_map.get(
-            TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}")
-        )
+        dst_node_id = nodes_map.get(src_node_id)
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
             path: Any = src_file["path"]
@@ -326,15 +355,23 @@ async def test_copy_folders_from_valid_project(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with some files
-    src_project, src_projects_list = await random_project_with_files(project_params)
+    src_project, src_project_nodes, src_projects_list = await random_project_with_files(
+        project_params
+    )
     # 2. create a dst project without files
-    dst_project, nodes_map = clone_project_data(src_project)
+    dst_project, dst_project_nodes, nodes_map = clone_project_data(
+        src_project, src_project_nodes
+    )
     dst_project = await create_project(**dst_project)
     # copy the project files
     data = await _request_copy_folders(
@@ -342,8 +379,10 @@ async def test_copy_folders_from_valid_project(
         user_id,
         product_name,
         src_project,
+        src_project_nodes,
         dst_project,
-        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+        dst_project_nodes,
+        nodes_map=nodes_map,
     )
     assert data == jsonable_encoder(
         await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
@@ -351,9 +390,7 @@ async def test_copy_folders_from_valid_project(
 
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
-        dst_node_id = nodes_map.get(
-            TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}")
-        )
+        dst_node_id = nodes_map.get(src_node_id)
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
             path: Any = src_file["path"]
@@ -383,14 +420,17 @@ async def _create_and_delete_folders_from_project(
     user_id: UserID,
     product_name: ProductName,
     project: dict[str, Any],
+    project_nodes: dict[NodeID, dict[str, Any]],
     initialized_app: FastAPI,
     project_db_creator: Callable,
     check_list_files: bool,
     *,
     client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> None:
-    destination_project, nodes_map = clone_project_data(project)
-    await project_db_creator(**destination_project)
+    dst_project, dst_project_nodes, nodes_map = clone_project_data(
+        project, project_nodes
+    )
+    await project_db_creator(**dst_project)
 
     # creating a copy
     data = await _request_copy_folders(
@@ -398,14 +438,15 @@ async def _create_and_delete_folders_from_project(
         user_id,
         product_name,
         project,
-        destination_project,
-        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+        project_nodes,
+        dst_project,
+        dst_project_nodes,
+        nodes_map=nodes_map,
         client_timeout=client_timeout,
     )
-
     # data should be equal to the destination project, and all store entries should point to simcore.s3
     # NOTE: data is jsonized where destination project is not!
-    assert jsonable_encoder(destination_project) == data
+    assert jsonable_encoder(dst_project) == data
 
     project_id = data["uuid"]
 
@@ -498,13 +539,14 @@ async def test_create_and_delete_folders_from_project(
     product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
     ],
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     mock_datcore_download,
     num_concurrent_calls: int,
 ):
-    project_in_db, _ = with_random_project_with_files
+    project_in_db, project_nodes_in_db, _ = with_random_project_with_files
     # NOTE: here the point is to NOT have a limit on the number of calls!!
     await asyncio.gather(
         *[
@@ -514,6 +556,7 @@ async def test_create_and_delete_folders_from_project(
                 user_id,
                 product_name,
                 project_in_db,
+                project_nodes_in_db,
                 initialized_app,
                 create_project,
                 check_list_files=False,
@@ -609,14 +652,18 @@ async def test_start_export_data(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
     project_params: ProjectWithFilesParams,
     task_progress_spy: Mock,
     export_as: Literal["path", "download_link"],
 ):
-    _, src_projects_list = await random_project_with_files(project_params)
+    _, _, src_projects_list = await random_project_with_files(project_params)
 
     all_available_files: set[SimcoreS3FileID] = set()
     for x in src_projects_list.values():

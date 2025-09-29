@@ -22,7 +22,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
-from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
@@ -74,7 +73,7 @@ async def _assert_compute_path_size(
     path: Path,
     expected_total_size: int,
 ) -> ByteSize:
-    async_job, async_job_name = await compute_path_size(
+    async_job, _ = await compute_path_size(
         storage_rpc_client,
         location_id=location_id,
         path=path,
@@ -86,7 +85,7 @@ async def _assert_compute_path_size(
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=RPCMethodName(compute_path_size.__name__),
+        method_name=compute_path_size.__name__,
         job_id=async_job.job_id,
         owner_metadata=TestOwnerMetadata(
             user_id=user_id, product_name=product_name, owner="pytest_client_name"
@@ -112,7 +111,7 @@ async def _assert_delete_paths(
     *,
     paths: set[Path],
 ) -> None:
-    async_job, async_job_name = await delete_paths(
+    async_job, _ = await delete_paths(
         storage_rpc_client,
         location_id=location_id,
         paths=paths,
@@ -124,7 +123,7 @@ async def _assert_delete_paths(
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=RPCMethodName(compute_path_size.__name__),
+        method_name=compute_path_size.__name__,
         job_id=async_job.job_id,
         owner_metadata=TestOwnerMetadata(
             user_id=user_id, product_name=product_name, owner="pytest_client_name"
@@ -164,6 +163,7 @@ async def test_path_compute_size(
     location_id: LocationID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
     project_params: ProjectWithFilesParams,
@@ -172,7 +172,7 @@ async def test_path_compute_size(
     assert (
         len(project_params.allowed_file_sizes) == 1
     ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
-    project, list_of_files = with_random_project_with_files
+    project, nodes, list_of_files = with_random_project_with_files
 
     total_num_files = sum(
         len(files_in_node) for files_in_node in list_of_files.values()
@@ -191,7 +191,7 @@ async def test_path_compute_size(
     )
 
     # get size of one of the nodes
-    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_id = random.choice(list(nodes))  # noqa: S311
     path = Path(project["uuid"]) / f"{selected_node_id}"
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
@@ -342,6 +342,7 @@ async def test_delete_paths(
     location_id: LocationID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
     project_params: ProjectWithFilesParams,
@@ -351,7 +352,7 @@ async def test_delete_paths(
     assert (
         len(project_params.allowed_file_sizes) == 1
     ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
-    project, list_of_files = with_random_project_with_files
+    project, nodes, list_of_files = with_random_project_with_files
 
     total_num_files = sum(
         len(files_in_node) for files_in_node in list_of_files.values()
@@ -371,11 +372,7 @@ async def test_delete_paths(
 
     # now select multiple random files to delete
     selected_paths = random.sample(
-        list(
-            list_of_files[
-                NodeID(random.choice(list(project["workbench"])))  # noqa: S311
-            ]
-        ),
+        list(list_of_files[random.choice(list(nodes))]),  # noqa: S311
         round(project_params.workspace_files_count / 2),
     )
 
@@ -384,7 +381,7 @@ async def test_delete_paths(
         location_id,
         user_id,
         product_name,
-        paths=set({Path(_) for _ in selected_paths}),
+        paths={Path(_) for _ in selected_paths},
     )
 
     # the size is reduced by the amount of deleted files
