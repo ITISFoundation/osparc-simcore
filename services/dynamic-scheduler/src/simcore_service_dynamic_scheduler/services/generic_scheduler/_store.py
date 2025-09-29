@@ -100,16 +100,6 @@ def _get_operation_context_hash_key(
     )
 
 
-def _dumps(obj: Any) -> str:
-    # NOTE: does not support `sets` and `tuples` they get serialised to lists
-    return json_dumps(obj)
-
-
-def _loads(obj_str: str) -> Any:
-    # NOTE: does not support `sets` and `tuples` they get deserialized as lists
-    return json_loads(obj_str)
-
-
 class Store(SingletonInAppStateMixin, SupportsLifecycle):
     """
     Interface to Redis, shuld not use directly but use the
@@ -145,7 +135,7 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
         """saves multiple key-value pairs in a hash"""
         await handle_redis_returns_union_types(
             self.redis.hset(
-                hash_key, mapping={k: _dumps(v) for k, v in updates.items()}
+                hash_key, mapping={k: json_dumps(v) for k, v in updates.items()}
             )
         )
 
@@ -158,7 +148,7 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
         result: list[str | None] = await handle_redis_returns_union_types(
             self.redis.hmget(hash_key, list(keys))
         )
-        return tuple(_loads(x) if x else None for x in result)
+        return tuple(json_loads(x) if x else None for x in result)
 
     async def delete_key_from_hash(self, hash_key: str, *hash_keys: str) -> None:
         """removes keys form a redis hash"""
