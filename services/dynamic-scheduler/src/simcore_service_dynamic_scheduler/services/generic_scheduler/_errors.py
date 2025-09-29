@@ -15,7 +15,7 @@ class OperationAlreadyRegisteredError(BaseGenericSchedulerError):
 
 class OperationNotFoundError(BaseGenericSchedulerError):
     msg_template: str = (
-        "Operation '{operation_name}' was not found, registerd_operations='{registerd_operations}'"
+        "Operation '{operation_name}' was not found, registered_operations='{registered_operations}'"
     )
 
 

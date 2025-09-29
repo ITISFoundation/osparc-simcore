@@ -337,7 +337,7 @@ class OperationRegistry:
         if operation_name not in cls._OPERATIONS:
             raise OperationNotFoundError(
                 operation_name=operation_name,
-                registerd_operations=list(cls._OPERATIONS.keys()),
+                registered_operations=list(cls._OPERATIONS.keys()),
             )
 
         return cls._OPERATIONS[operation_name]["operation"]
@@ -349,7 +349,7 @@ class OperationRegistry:
         if operation_name not in cls._OPERATIONS:
             raise OperationNotFoundError(
                 operation_name=operation_name,
-                registerd_operations=list(cls._OPERATIONS.keys()),
+                registered_operations=list(cls._OPERATIONS.keys()),
             )
 
         steps_names = set(cls._OPERATIONS[operation_name]["steps"].keys())
@@ -367,7 +367,7 @@ class OperationRegistry:
         if operation_name not in cls._OPERATIONS:
             raise OperationNotFoundError(
                 operation_name=operation_name,
-                registerd_operations=list(cls._OPERATIONS.keys()),
+                registered_operations=list(cls._OPERATIONS.keys()),
             )
 
         del cls._OPERATIONS[operation_name]
