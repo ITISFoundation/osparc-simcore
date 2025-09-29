@@ -26,10 +26,7 @@ from models_library.functions_errors import (
 )
 from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_users import UserInfoDict
-from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
-    functions_rpc_interface as functions_rpc,
-)
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
 pytest_simcore_core_services_selection = ["rabbit"]
 
@@ -42,15 +39,14 @@ async def test_function_job_collection(
     client: TestClient,
     add_user_function_api_access_rights: None,
     mock_function_factory: Callable[[FunctionClass], Function],
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     user_without_function_api_access_rights: UserInfoDict,
     osparc_product_name: ProductName,
 ):
     # Register the function first
-    registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client,
+    registered_function = await webserver_rpc_client.functions.register_function(
         function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
@@ -79,8 +75,7 @@ async def test_function_job_collection(
             job_creation_task_id=None,
         )
         # Register the function job
-        registered_job = await functions_rpc.register_function_job(
-            rabbitmq_rpc_client=rpc_client,
+        registered_job = await webserver_rpc_client.functions.register_function_job(
             function_job=registered_function_job,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -95,11 +90,12 @@ async def test_function_job_collection(
     )
 
     # Register the function job collection
-    registered_collection = await functions_rpc.register_function_job_collection(
-        rabbitmq_rpc_client=rpc_client,
-        function_job_collection=function_job_collection,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    registered_collection = (
+        await webserver_rpc_client.functions.register_function_job_collection(
+            function_job_collection=function_job_collection,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
     )
     assert registered_collection.uid is not None
     assert registered_collection.created_at - datetime.datetime.now(
@@ -107,19 +103,19 @@ async def test_function_job_collection(
     ) < datetime.timedelta(seconds=60)
 
     # Get the function job collection
-    retrieved_collection = await functions_rpc.get_function_job_collection(
-        rabbitmq_rpc_client=rpc_client,
-        function_job_collection_id=registered_collection.uid,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    retrieved_collection = (
+        await webserver_rpc_client.functions.get_function_job_collection(
+            function_job_collection_id=registered_collection.uid,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
     )
     assert retrieved_collection.uid == registered_collection.uid
     assert registered_collection.job_ids == function_job_ids
 
     # Test denied access for another user
     with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
-        await functions_rpc.get_function_job_collection(
-            rabbitmq_rpc_client=rpc_client,
+        await webserver_rpc_client.functions.get_function_job_collection(
             function_job_collection_id=registered_collection.uid,
             user_id=other_logged_user["id"],
             product_name=osparc_product_name,
@@ -127,8 +123,7 @@ async def test_function_job_collection(
 
     # Test denied access for another user
     with pytest.raises(FunctionJobCollectionsReadApiAccessDeniedError):
-        await functions_rpc.get_function_job_collection(
-            rabbitmq_rpc_client=rpc_client,
+        await webserver_rpc_client.functions.get_function_job_collection(
             function_job_collection_id=registered_collection.uid,
             user_id=user_without_function_api_access_rights["id"],
             product_name=osparc_product_name,
@@ -136,8 +131,7 @@ async def test_function_job_collection(
 
     # Test denied access for another product
     with pytest.raises(FunctionJobCollectionsReadApiAccessDeniedError):
-        await functions_rpc.get_function_job_collection(
-            rabbitmq_rpc_client=rpc_client,
+        await webserver_rpc_client.functions.get_function_job_collection(
             function_job_collection_id=registered_collection.uid,
             user_id=other_logged_user["id"],
             product_name="this_is_not_osparc",
@@ -145,23 +139,20 @@ async def test_function_job_collection(
 
     # Attempt to delete the function job collection by another user
     with pytest.raises(FunctionJobCollectionWriteAccessDeniedError):
-        await functions_rpc.delete_function_job_collection(
-            rabbitmq_rpc_client=rpc_client,
+        await webserver_rpc_client.functions.delete_function_job_collection(
             function_job_collection_id=registered_collection.uid,
             user_id=other_logged_user["id"],
             product_name=osparc_product_name,
         )
 
-    await functions_rpc.delete_function_job_collection(
-        rabbitmq_rpc_client=rpc_client,
+    await webserver_rpc_client.functions.delete_function_job_collection(
         function_job_collection_id=registered_collection.uid,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
     # Attempt to retrieve the deleted collection
     with pytest.raises(FunctionJobIDNotFoundError):
-        await functions_rpc.get_function_job(
-            rabbitmq_rpc_client=rpc_client,
+        await webserver_rpc_client.functions.get_function_job(
             function_job_id=registered_collection.uid,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -176,19 +167,20 @@ async def test_list_function_job_collections(
     client: TestClient,
     add_user_function_api_access_rights: None,
     mock_function_factory: Callable[[FunctionClass], Function],
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     clean_functions: None,
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
 ):
     # List function job collections when none are registered
-    collections, page_meta = await functions_rpc.list_function_job_collections(
-        rabbitmq_rpc_client=rpc_client,
-        pagination_limit=10,
-        pagination_offset=0,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    collections, page_meta = (
+        await webserver_rpc_client.functions.list_function_job_collections(
+            pagination_limit=10,
+            pagination_offset=0,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
     )
 
     # Assert the list is empty
@@ -198,8 +190,7 @@ async def test_list_function_job_collections(
     assert len(collections) == 0
 
     # Register the function first
-    registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client,
+    registered_function = await webserver_rpc_client.functions.register_function(
         function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
@@ -219,8 +210,7 @@ async def test_list_function_job_collections(
             job_creation_task_id=None,
         )
         # Register the function job
-        registered_job = await functions_rpc.register_function_job(
-            rabbitmq_rpc_client=rpc_client,
+        registered_job = await webserver_rpc_client.functions.register_function_job(
             function_job=registered_function_job,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -236,8 +226,7 @@ async def test_list_function_job_collections(
 
     # Register the function job collection
     registered_collections = [
-        await functions_rpc.register_function_job_collection(
-            rabbitmq_rpc_client=rpc_client,
+        await webserver_rpc_client.functions.register_function_job_collection(
             function_job_collection=function_job_collection,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -250,12 +239,13 @@ async def test_list_function_job_collections(
     )
 
     # List function job collections
-    collections, page_params = await functions_rpc.list_function_job_collections(
-        rabbitmq_rpc_client=rpc_client,
-        pagination_limit=2,
-        pagination_offset=1,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    collections, page_params = (
+        await webserver_rpc_client.functions.list_function_job_collections(
+            pagination_limit=2,
+            pagination_offset=1,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
     )
 
     # Assert the list contains the registered collection
@@ -278,7 +268,7 @@ async def test_list_function_job_collections(
 async def test_list_function_job_collections_filtered_function_id(
     client: TestClient,
     add_user_function_api_access_rights: None,
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     mock_function_factory: Callable[[FunctionClass], Function],
     clean_functions: None,
     clean_function_job_collections: None,
@@ -286,14 +276,12 @@ async def test_list_function_job_collections_filtered_function_id(
     osparc_product_name: ProductName,
 ):
     # Register the function first
-    registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client,
+    registered_function = await webserver_rpc_client.functions.register_function(
         function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
-    other_registered_function = await functions_rpc.register_function(
-        rabbitmq_rpc_client=rpc_client,
+    other_registered_function = await webserver_rpc_client.functions.register_function(
         function=mock_function_factory(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
@@ -318,8 +306,7 @@ async def test_list_function_job_collections_filtered_function_id(
                 job_creation_task_id=None,
             )
             # Register the function job
-            registered_job = await functions_rpc.register_function_job(
-                rabbitmq_rpc_client=rpc_client,
+            registered_job = await webserver_rpc_client.functions.register_function_job(
                 function_job=registered_function_job,
                 user_id=logged_user["id"],
                 product_name=osparc_product_name,
@@ -334,24 +321,26 @@ async def test_list_function_job_collections_filtered_function_id(
         )
 
         # Register the function job collection
-        registered_collection = await functions_rpc.register_function_job_collection(
-            rabbitmq_rpc_client=rpc_client,
-            function_job_collection=function_job_collection,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
+        registered_collection = (
+            await webserver_rpc_client.functions.register_function_job_collection(
+                function_job_collection=function_job_collection,
+                user_id=logged_user["id"],
+                product_name=osparc_product_name,
+            )
         )
         registered_collections.append(registered_collection)
 
     # List function job collections with a specific function ID
-    collections, page_meta = await functions_rpc.list_function_job_collections(
-        rabbitmq_rpc_client=rpc_client,
-        pagination_limit=10,
-        pagination_offset=1,
-        filters=FunctionJobCollectionsListFilters(
-            has_function_id=FunctionIDString(registered_function.uid)
-        ),
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    collections, page_meta = (
+        await webserver_rpc_client.functions.list_function_job_collections(
+            pagination_limit=10,
+            pagination_offset=1,
+            filters=FunctionJobCollectionsListFilters(
+                has_function_id=FunctionIDString(registered_function.uid)
+            ),
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
     )
 
     # Assert the list contains the registered collection

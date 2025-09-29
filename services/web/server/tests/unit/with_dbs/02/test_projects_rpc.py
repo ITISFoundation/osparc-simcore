@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator
 from uuid import UUID
 
 import pytest
@@ -23,7 +23,6 @@ from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
-from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectForbiddenRpcError,
     ProjectNotFoundRpcError,
@@ -32,7 +31,6 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
-    get_application_settings,
 )
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -44,7 +42,7 @@ pytest_simcore_core_services_selection = [
 @pytest.fixture(scope="session")
 def service_name() -> str:
     # Overrides  service_name fixture needed in docker_compose_service_environment_dict fixture
-    return "webserver"
+    return "wb-api-server"
 
 
 @pytest.fixture
@@ -77,22 +75,6 @@ def app_environment(
     assert settings.WEBSERVER_RABBITMQ
 
     return new_envs
-
-
-@pytest.fixture
-async def webserver_rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    client: TestClient,  # app started
-) -> WebServerRpcClient:
-
-    rpc_client = await rabbitmq_rpc_client("webserver-rpc-client")
-
-    app = client.app
-    assert app
-
-    settings = get_application_settings(app)  # nosec
-    assert settings.WEBSERVER_RPC_NAMESPACE
-    return WebServerRpcClient(rpc_client, settings.WEBSERVER_RPC_NAMESPACE)
 
 
 async def test_rpc_client_mark_project_as_job(

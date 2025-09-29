@@ -43,15 +43,23 @@ from simcore_service_webserver.statics._constants import FRONTEND_APP_DEFAULT
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
+@pytest.fixture(scope="session")
+def service_name() -> str:
+    # Overrides  service_name fixture needed in docker_compose_service_environment_dict fixture
+    return "wb-api-server"
+
+
 @pytest.fixture
 def app_environment(
     rabbit_service: RabbitSettings,
     app_environment: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     new_envs = setenvs_from_dict(
         monkeypatch,
         {
+            **docker_compose_service_environment_dict,
             **app_environment,
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
