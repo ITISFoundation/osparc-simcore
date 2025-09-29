@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import cast
 
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
@@ -22,6 +23,14 @@ from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
+
+
+warnings.warn(
+    "The 'rpc_interfaces.webserver.projects' module is deprecated and will be removed in a future release. "
+    "Please use 'rpc_interfaces.webserver.v1' instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
