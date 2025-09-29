@@ -49,42 +49,62 @@ async def _assert_keys_in_hash(
 
 async def test_store_workflow(store: Store):
     # save single value
-    await store.set("hash1", "key1", "value1")
+    await store.set_key_in_hash("hash1", "key1", "value1")
     await _assert_keys(store, {"hash1"})
     await _assert_keys_in_hash(store, "hash1", {"key1"})
-    assert await store.get("hash1", "key1") == ("value1",)
-    assert await store.get("hash1", "key1", "key1") == ("value1", "value1")
-    assert await store.get("hash1", "missing1", "missing2") == (None, None)
+    assert await store.get_key_from_hash("hash1", "key1") == ("value1",)
+    assert await store.get_key_from_hash("hash1", "key1", "key1") == (
+        "value1",
+        "value1",
+    )
+    assert await store.get_key_from_hash("hash1", "missing1", "missing2") == (
+        None,
+        None,
+    )
 
     # remove last key in hash
-    await store.delete("hash1", "key1")
+    await store.delete_key_from_hash("hash1", "key1")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, "hash1", set())
-    assert await store.get("hash1", "key1") == (None,)
+    assert await store.get_key_from_hash("hash1", "key1") == (None,)
 
     # save multiple values
-    await store.set_multiple("hash2", {"key1": "value1", "key2": 2, "key3": True})
+    await store.set_keys_in_hash("hash2", {"key1": "value1", "key2": 2, "key3": True})
     await _assert_keys(store, {"hash2"})
     await _assert_keys_in_hash(store, "hash2", {"key1", "key2", "key3"})
-    assert await store.get("hash2", "key1", "key2", "key3") == ("value1", 2, True)
+    assert await store.get_key_from_hash("hash2", "key1", "key2", "key3") == (
+        "value1",
+        2,
+        True,
+    )
 
     # delete a few keys form hash
-    await store.delete("hash2", "key1", "key3", "missing1", "missing2", "missing3")
+    await store.delete_key_from_hash(
+        "hash2", "key1", "key3", "missing1", "missing2", "missing3"
+    )
     await _assert_keys(store, {"hash2"})
     await _assert_keys_in_hash(store, "hash2", {"key2"})
-    assert await store.get("hash2", "key1", "key2", "key3") == (None, 2, None)
+    assert await store.get_key_from_hash("hash2", "key1", "key2", "key3") == (
+        None,
+        2,
+        None,
+    )
 
     # increase a key in the hahs
-    assert await store.increase_and_get("hash2", "key4") == 1
-    assert await store.increase_and_get("hash2", "key4") == 2
-    assert await store.increase_and_get("hash2", "key4") == 3
-    assert await store.increase_and_get("hash2", "key4") == 4
+    assert await store.increase_key_in_hash_and_get("hash2", "key4") == 1
+    assert await store.increase_key_in_hash_and_get("hash2", "key4") == 2
+    assert await store.increase_key_in_hash_and_get("hash2", "key4") == 3
+    assert await store.increase_key_in_hash_and_get("hash2", "key4") == 4
 
     # remove hash completely
-    await store.remove("hash2")
+    await store.delete("hash2")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, "hash2", set())
-    assert await store.get("hash2", "key1", "key2", "key3") == (None, None, None)
+    assert await store.get_key_from_hash("hash2", "key1", "key2", "key3") == (
+        None,
+        None,
+        None,
+    )
 
 
 @pytest.mark.parametrize(
@@ -101,8 +121,8 @@ async def test_store_workflow(store: Store):
 )
 async def test_store_supporse_multiple_python_base_types(store: Store, value: Any):
     # values are stored and recovered in their original type
-    await store.set("hash1", "key1", value)
-    assert (await store.get("hash1", "key1")) == (value,)
+    await store.set_key_in_hash("hash1", "key1", value)
+    assert (await store.get_key_from_hash("hash1", "key1")) == (value,)
 
 
 @pytest.fixture
@@ -131,7 +151,7 @@ async def test_schedule_data_store_proxy_workflow(
     assert await proxy.get("is_creating") is True
 
     # remove
-    await proxy.delete("operation_name", "is_creating", "group_index")
+    await proxy.delete_keys("operation_name", "is_creating", "group_index")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
 
@@ -157,7 +177,7 @@ async def test_schedule_data_store_proxy_workflow(
     )
 
     # remove all keys an even missing ones
-    await proxy.delete(
+    await proxy.delete_keys(
         "operation_name",
         "is_creating",
         "group_index",
@@ -193,7 +213,7 @@ async def test_step_store_proxy_workflow(
     assert await proxy.get("status") == StepStatus.RUNNING
 
     # remove
-    await proxy.delete("status")
+    await proxy.delete_keys("status")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
 
@@ -222,9 +242,9 @@ async def test_step_store_proxy_workflow(
 
     # remove all keys an even missing ones
     if use_remove:
-        await proxy.remove()
+        await proxy.delete()
     else:
-        await proxy.delete(
+        await proxy.delete_keys(
             "status",
             "deferred_task_uid",
             "error_traceback",
@@ -250,7 +270,7 @@ async def test_step_group_proxy(
     )
 
     async def _get_steps_count() -> int | None:
-        (response,) = await store.get(
+        (response,) = await store.get_key_from_hash(
             step_group_proxy._get_hash_key(), "done_steps"  # noqa: SLF001
         )
         return response
@@ -263,7 +283,7 @@ async def test_step_group_proxy(
         await step_group_proxy.decrement_and_get_done_steps_count()
         assert await _get_steps_count() == 0
 
-    await step_group_proxy.remove()
+    await step_group_proxy.delete()
     assert await _get_steps_count() is None
 
 
@@ -360,8 +380,8 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
     )
 
     proxy = OperationRemovalProxy(store=store, schedule_id=schedule_id)
-    await proxy.remove()
+    await proxy.delete()
     await _assert_keys(store, set())
 
     # try to call when empty as well
-    await proxy.remove()
+    await proxy.delete()

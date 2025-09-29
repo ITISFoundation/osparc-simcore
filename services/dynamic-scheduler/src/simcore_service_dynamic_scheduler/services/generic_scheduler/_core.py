@@ -259,8 +259,8 @@ class Core(SingletonInAppStateMixin):
         )
 
         # remove previus entries for the step
-        await step_proxy.delete(*step_keys_to_remove)
-        await schedule_data_proxy.delete(
+        await step_proxy.delete_keys(*step_keys_to_remove)
+        await schedule_data_proxy.delete_keys(
             "operation_error_type", "operation_error_message"
         )
         await group_proxy.decrement_and_get_done_steps_count()
@@ -440,7 +440,7 @@ class Core(SingletonInAppStateMixin):
 
         # 3) -> restart all steps in the group
         await limited_gather(
-            *(x.remove() for x in step_proxies), limit=PARALLEL_REQUESTS
+            *(x.delete() for x in step_proxies), limit=PARALLEL_REQUESTS
         )
         group_proxy = StepGroupProxy(
             store=self._store,
@@ -449,7 +449,7 @@ class Core(SingletonInAppStateMixin):
             step_group_name=current_step_group.get_step_group_name(index=group_index),
             is_creating=True,
         )
-        await group_proxy.remove()
+        await group_proxy.delete()
         await enqueue_schedule_event(self.app, schedule_id)
 
     async def _advance_as_creating(

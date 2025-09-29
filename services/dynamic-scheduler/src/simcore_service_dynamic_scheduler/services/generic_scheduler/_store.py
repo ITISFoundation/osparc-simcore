@@ -111,6 +111,11 @@ def _loads(obj_str: str) -> Any:
 
 
 class Store(SingletonInAppStateMixin, SupportsLifecycle):
+    """
+    Interface to Redis, shuld not use directly but use the
+    proxies defined below.
+    """
+
     app_state_name: str = "generic_scheduler_store"
 
     def __init__(self, redis_settings: RedisSettings) -> None:
@@ -134,7 +139,9 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
         assert self._client  # nosec
         return self._client.redis
 
-    async def set_multiple(self, hash_key: str, updates: dict[str, Any]) -> None:
+    # HASH
+
+    async def set_keys_in_hash(self, hash_key: str, updates: dict[str, Any]) -> None:
         """saves multiple key-value pairs in a hash"""
         await handle_redis_returns_union_types(
             self.redis.hset(
@@ -142,36 +149,42 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
             )
         )
 
-    async def set(self, hash_key: str, key: str, value: Any) -> None:
+    async def set_key_in_hash(self, hash_key: str, key: str, value: Any) -> None:
         """saves a single key-value pair in a hash"""
-        await self.set_multiple(hash_key, {key: value})
+        await self.set_keys_in_hash(hash_key, {key: value})
 
-    async def get(self, hash_key: str, *keys: str) -> tuple[Any, ...]:
+    async def get_key_from_hash(self, hash_key: str, *keys: str) -> tuple[Any, ...]:
         """retrieves one or more keys from a hash"""
         result: list[str | None] = await handle_redis_returns_union_types(
             self.redis.hmget(hash_key, list(keys))
         )
         return tuple(_loads(x) if x else None for x in result)
 
-    async def delete(self, hash_key: str, *keys: str) -> None:
-        """removes one or more keys form a hash"""
-        await handle_redis_returns_union_types(self.redis.hdel(hash_key, *keys))
+    async def delete_key_from_hash(self, hash_key: str, *hash_keys: str) -> None:
+        """removes keys form a redis hash"""
+        await handle_redis_returns_union_types(self.redis.hdel(hash_key, *hash_keys))
 
-    async def remove(self, *hash_keys: str) -> None:
-        """removes the entire hash"""
-        await handle_redis_returns_union_types(self.redis.delete(*hash_keys))
-
-    async def increase_and_get(self, hash_key: str, key: str) -> NonNegativeInt:
+    async def increase_key_in_hash_and_get(
+        self, hash_key: str, key: str
+    ) -> NonNegativeInt:
         """increasea a key in a hash by 1 and returns the new value"""
         return await handle_redis_returns_union_types(
             self.redis.hincrby(hash_key, key, amount=1)
         )
 
-    async def decrease_and_get(self, hash_key: str, key: str) -> NonNegativeInt:
+    async def decrease_key_in_hash_and_get(
+        self, hash_key: str, key: str
+    ) -> NonNegativeInt:
         """decrease a key in a hash by 1 and returns the new value"""
         return await handle_redis_returns_union_types(
             self.redis.hincrby(hash_key, key, amount=-1)
         )
+
+    # GENERIC
+
+    async def delete(self, *keys: str) -> None:
+        """removes keys from redis"""
+        await handle_redis_returns_union_types(self.redis.delete(*keys))
 
 
 class _UpdateScheduleDataDict(TypedDict):
@@ -212,7 +225,7 @@ class ScheduleDataStoreProxy:
     async def get(self, key: str) -> Any:
         """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
-        (result,) = await self._store.get(hash_key, key)
+        (result,) = await self._store.get_key_from_hash(hash_key, key)
         if result is None:
             raise NoDataFoundError(key=key, hash_key=hash_key)
         return result
@@ -234,13 +247,13 @@ class ScheduleDataStoreProxy:
         self, key: Literal["operation_error_message"], value: str
     ) -> None: ...
     async def set(self, key: str, value: Any) -> None:
-        await self._store.set(self._get_hash_key(), key, value)
+        await self._store.set_key_in_hash(self._get_hash_key(), key, value)
 
-    async def set_multiple(self, values: _UpdateScheduleDataDict) -> None:
-        await self._store.set_multiple(self._get_hash_key(), updates=values)  # type: ignore[arg-type]
+    async def set_multiple(self, updates: _UpdateScheduleDataDict) -> None:
+        await self._store.set_keys_in_hash(self._get_hash_key(), updates=updates)  # type: ignore[arg-type]
 
-    async def delete(self, *keys: _DeleteScheduleDataKeys) -> None:
-        await self._store.delete(self._get_hash_key(), *keys)
+    async def delete_keys(self, *keys: _DeleteScheduleDataKeys) -> None:
+        await self._store.delete_key_from_hash(self._get_hash_key(), *keys)
 
 
 class StepGroupProxy:
@@ -268,13 +281,17 @@ class StepGroupProxy:
         )
 
     async def increment_and_get_done_steps_count(self) -> NonNegativeInt:
-        return await self._store.increase_and_get(self._get_hash_key(), "done_steps")
+        return await self._store.increase_key_in_hash_and_get(
+            self._get_hash_key(), "done_steps"
+        )
 
     async def decrement_and_get_done_steps_count(self) -> NonNegativeInt:
-        return await self._store.decrease_and_get(self._get_hash_key(), "done_steps")
+        return await self._store.decrease_key_in_hash_and_get(
+            self._get_hash_key(), "done_steps"
+        )
 
-    async def remove(self) -> None:
-        await self._store.remove(self._get_hash_key())
+    async def delete(self) -> None:
+        await self._store.delete(self._get_hash_key())
 
 
 class _StepDict(TypedDict):
@@ -334,7 +351,7 @@ class StepStoreProxy:
     async def get(self, key: str) -> Any:
         """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
-        (result,) = await self._store.get(hash_key, key)
+        (result,) = await self._store.get_key_from_hash(hash_key, key)
         if result is None:
             raise NoDataFoundError(schedule_id=self.schedule_id, hash_key=hash_key)
         return result
@@ -352,16 +369,16 @@ class StepStoreProxy:
     @overload
     async def set(self, key: Literal["deferred_created"], *, value: bool) -> None: ...
     async def set(self, key: str, value: Any) -> None:
-        await self._store.set(self._get_hash_key(), key, value)
+        await self._store.set_key_in_hash(self._get_hash_key(), key, value)
 
-    async def set_multiple(self, values: _StepDict) -> None:
-        await self._store.set_multiple(self._get_hash_key(), updates=values)  # type: ignore[arg-type]
+    async def set_multiple(self, updates: _StepDict) -> None:
+        await self._store.set_keys_in_hash(self._get_hash_key(), updates=updates)  # type: ignore[arg-type]
 
-    async def delete(self, *keys: DeleteStepKeys) -> None:
-        await self._store.delete(self._get_hash_key(), *keys)
+    async def delete_keys(self, *keys: DeleteStepKeys) -> None:
+        await self._store.delete_key_from_hash(self._get_hash_key(), *keys)
 
-    async def remove(self) -> None:
-        await self._store.remove(self._get_hash_key())
+    async def delete(self) -> None:
+        await self._store.delete(self._get_hash_key())
 
 
 class OperationContextProxy:
@@ -387,18 +404,18 @@ class OperationContextProxy:
         if not updates:
             return
 
-        await self._store.set_multiple(self._get_hash_key(), updates)
+        await self._store.set_keys_in_hash(self._get_hash_key(), updates)
 
     async def get_required_context(self, *keys: str) -> RequiredOperationContext:
         if len(keys) == 0:
             return {}
 
         hash_key = self._get_hash_key()
-        result = await self._store.get(hash_key, *keys)
+        result = await self._store.get_key_from_hash(hash_key, *keys)
         return dict(zip(keys, result, strict=True))
 
-    async def remove(self) -> None:
-        await self._store.remove(self._get_hash_key())
+    async def delete(self) -> None:
+        await self._store.delete(self._get_hash_key())
 
 
 class OperationRemovalProxy:
@@ -406,7 +423,7 @@ class OperationRemovalProxy:
         self._store = store
         self._schedule_id = schedule_id
 
-    async def remove(self) -> None:
+    async def delete(self) -> None:
         found_keys = [
             x
             async for x in self._store.redis.scan_iter(
@@ -414,4 +431,4 @@ class OperationRemovalProxy:
             )
         ]
         if found_keys:
-            await self._store.remove(*found_keys)
+            await self._store.delete(*found_keys)

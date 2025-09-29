@@ -201,7 +201,7 @@ async def cleanup_after_finishing(
     store: Store, *, schedule_id: ScheduleId, is_creating: bool
 ) -> None:
     removal_proxy = OperationRemovalProxy(store=store, schedule_id=schedule_id)
-    await removal_proxy.remove()
+    await removal_proxy.delete()
     verb = "COMPLETED" if is_creating else "REVERTED"
     _logger.debug("Operation for schedule_id='%s' %s successfully", verb, schedule_id)
 
