@@ -1,7 +1,8 @@
-""" Configures front-end statics
+"""Configures front-end statics
 
-    Typically dumped in statics.json
+Typically dumped in statics.json
 """
+
 from typing import Any
 
 import pycountry
@@ -13,7 +14,7 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
     TypedDict,
 )
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class ThirdPartyInfoDict(TypedDict):
@@ -134,7 +135,7 @@ class StaticWebserverModuleSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: web.Application) -> StaticWebserverModuleSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_STATICWEB
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_STATICWEB
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, StaticWebserverModuleSettings)  # nosec
     return settings

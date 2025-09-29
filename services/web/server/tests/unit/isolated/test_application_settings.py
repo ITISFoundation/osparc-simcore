@@ -13,7 +13,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import (
     _X_FEATURE_UNDER_DEVELOPMENT,
-    APP_SETTINGS_KEY,
+    APP_SETTINGS_APPKEY,
     ApplicationSettings,
     setup_settings,
 )
@@ -31,8 +31,8 @@ def app_settings(
     settings = setup_settings(app)
     print("settings:\n", settings.model_dump_json(indent=1))
 
-    assert APP_SETTINGS_KEY in app
-    assert app[APP_SETTINGS_KEY] == settings
+    assert APP_SETTINGS_APPKEY in app
+    assert app[APP_SETTINGS_APPKEY] == settings
     return settings
 
 

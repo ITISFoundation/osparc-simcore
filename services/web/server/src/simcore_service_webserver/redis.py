@@ -7,8 +7,8 @@ from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDB
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._meta import APP_NAME
+from .application_keys import APP_SETTINGS_APPKEY
 from .application_setup import ModuleCategory, app_setup_func
-from .constants import APP_SETTINGS_KEY
 
 _logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ APP_REDIS_CLIENT_KEY: Final = web.AppKey("APP_REDIS_CLIENT_KEY", RedisClientsMan
 
 
 def get_plugin_settings(app: web.Application) -> RedisSettings:
-    settings: RedisSettings | None = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
+    settings: RedisSettings | None = app[APP_SETTINGS_APPKEY].WEBSERVER_REDIS
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, RedisSettings)  # nosec
     return settings

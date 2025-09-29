@@ -4,8 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-import contextlib
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
@@ -16,12 +15,8 @@ from pytest_simcore.helpers.webserver_login import NewUser, parse_link, parse_te
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from servicelib.utils_secrets import generate_password
-from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
+from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups import api as groups_service
-from simcore_service_webserver.login._login_repository_legacy import (
-    AsyncpgStorage,
-    ConfirmationTokenDict,
-)
 from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_EMAIL_SENT,
@@ -295,16 +290,3 @@ async def test_unregistered_product(
             message.startswith("Password reset initiated")
             for message in logged_warnings
         ), f"Missing warning in {logged_warnings}"
-
-
-@contextlib.asynccontextmanager
-async def confirmation_ctx(
-    db: AsyncpgStorage, user
-) -> AsyncIterator[ConfirmationTokenDict]:
-    confirmation = await db.create_confirmation(
-        user["id"], ConfirmationAction.RESET_PASSWORD.name
-    )
-
-    yield confirmation
-
-    await db.delete_confirmation(confirmation)

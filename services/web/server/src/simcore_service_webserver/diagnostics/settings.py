@@ -9,7 +9,7 @@ from pydantic import (
 )
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class DiagnosticsSettings(BaseCustomSettings):
@@ -56,7 +56,7 @@ class DiagnosticsSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: Application) -> DiagnosticsSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_DIAGNOSTICS
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, DiagnosticsSettings)  # nosec
     return settings

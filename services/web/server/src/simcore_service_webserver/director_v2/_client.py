@@ -100,15 +100,15 @@ class DirectorV2RestClient:
         )
 
 
-APP_DIRECTOR_V2_CLIENT_KEY: Final = web.AppKey(
-    "APP_DIRECTOR_V2_CLIENT_KEY", DirectorV2RestClient
+DIRECTOR_V2_CLIENT_APPKEY: Final = web.AppKey(
+    "DIRECTOR_V2_CLIENT", DirectorV2RestClient
 )
 
 
 def set_directorv2_client(app: web.Application, obj: DirectorV2RestClient):
-    app[APP_DIRECTOR_V2_CLIENT_KEY] = obj
+    app[DIRECTOR_V2_CLIENT_APPKEY] = obj
 
 
 def get_directorv2_client(app: web.Application) -> DirectorV2RestClient:
-    app_key: DirectorV2RestClient = app[APP_DIRECTOR_V2_CLIENT_KEY]
+    app_key: DirectorV2RestClient = app[DIRECTOR_V2_CLIENT_APPKEY]
     return app_key
