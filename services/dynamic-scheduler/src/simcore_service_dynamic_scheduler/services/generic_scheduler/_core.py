@@ -545,13 +545,13 @@ class Core:
         current_step_group: BaseStepGroup,
     ) -> None:
         # REVERT logic:
-        # 1) if all steps in gorup in SUUCESS
+        # 1) if all steps in group in SUCCESS
         # - 1a) if reached the end of the REVERT operation -> remove all created data
         # - 1b) -> move to previous group
         # 2) it is unexpected to have a FAILED step -> do nothing else
         # 3) it is unexpected to have a CANCELLED step -> do nothing else
 
-        # 1) if all steps in gorup in SUUCESS
+        # 1) if all steps in group in SUCCESS
         if all(s == StepStatus.SUCCESS for s in steps_statuses.values()):
             previous_group_index = group_index - 1
             if previous_group_index < 0:

@@ -84,7 +84,7 @@ def _get_step(context: DeferredContext) -> type[BaseStep]:
     return OperationRegistry.get_step(operation_name, step_name)
 
 
-async def _enqueu_schedule_event_if_group_is_done(context: DeferredContext) -> None:
+async def _enqueue_schedule_event_if_group_is_done(context: DeferredContext) -> None:
     # used to avoid concurrency issues when multiples steps finish "at the same time"
     app: FastAPI = context["app"]
     schedule_id: ScheduleId = context["schedule_id"]
@@ -211,7 +211,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
         _ = result
         await get_step_store_proxy(context).set("status", StepStatus.SUCCESS)
 
-        await _enqueu_schedule_event_if_group_is_done(context)
+        await _enqueue_schedule_event_if_group_is_done(context)
 
     @classmethod
     async def on_finished_with_error(
@@ -221,10 +221,10 @@ class DeferredRunner(BaseDeferredHandler[None]):
             {"status": StepStatus.FAILED, "error_traceback": error.format_error()}
         )
 
-        await _enqueu_schedule_event_if_group_is_done(context)
+        await _enqueue_schedule_event_if_group_is_done(context)
 
     @classmethod
     async def on_cancelled(cls, context: DeferredContext) -> None:
         await get_step_store_proxy(context).set("status", StepStatus.CANCELLED)
 
-        await _enqueu_schedule_event_if_group_is_done(context)
+        await _enqueue_schedule_event_if_group_is_done(context)

@@ -241,7 +241,7 @@ async def safe_event(store: Store, schedule_id: ScheduleId) -> AsyncIterator[Non
     except Exception as err:  # pylint:disable=broad-exception-caught
         error_code = create_error_code(err)
         log_kwargs = create_troubleshooting_log_kwargs(
-            "Unexpected error druing scheduling",
+            "Unexpected error during scheduling",
             error=err,
             error_code=error_code,
             error_context={"schedule_id": schedule_id},
