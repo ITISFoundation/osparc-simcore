@@ -344,7 +344,6 @@ def mock_default_socket_timeout(mocker: MockerFixture) -> None:
 @pytest.mark.parametrize("deferred_tasks_to_start", [100])
 @pytest.mark.parametrize("service", ["rabbit", "redis"])
 async def test_workflow_with_third_party_services_outages(
-    mock_default_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk_deferred_tasks: RedisClientSDK,
     rabbit_client: RabbitMQClient,

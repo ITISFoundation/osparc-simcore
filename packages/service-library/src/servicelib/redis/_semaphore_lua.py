@@ -26,10 +26,13 @@ def _load_script(script_name: str) -> str:
         return script_file.read_text(encoding="utf-8").strip()
 
 
+# fair semaphore scripts (token pool based)
+REGISTER_SEMAPHORE_TOKEN_SCRIPT: Final[str] = _load_script("register_semaphore_tokens")
 ACQUIRE_SEMAPHORE_SCRIPT: Final[str] = _load_script("acquire_semaphore")
 RELEASE_SEMAPHORE_SCRIPT: Final[str] = _load_script("release_semaphore")
+CLEANUP_SEMAPHORE_SCRIPT: Final[str] = _load_script("cleanup_semaphore")
 RENEW_SEMAPHORE_SCRIPT: Final[str] = _load_script("renew_semaphore")
-COUNT_SEMAPHORE_SCRIPT: Final[str] = _load_script("count_semaphore")
 
-SCRIPT_BAD_EXIT_CODE: Final[int] = 255
+
 SCRIPT_OK_EXIT_CODE: Final[int] = 0
+SCRIPT_BAD_EXIT_CODE: Final[int] = 255

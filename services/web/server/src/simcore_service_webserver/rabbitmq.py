@@ -1,14 +1,9 @@
 import logging
 from collections.abc import AsyncIterator
-from typing import Final, cast
+from typing import Final
 
 from aiohttp import web
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
-from servicelib.aiohttp.application_keys import (
-    APP_RABBITMQ_CLIENT_KEY,
-    APP_RABBITMQ_RPC_SERVER_KEY,
-)
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import (
     RabbitMQClient,
@@ -16,12 +11,15 @@ from servicelib.rabbitmq import (
     wait_till_rabbitmq_responsive,
 )
 
+from .application_setup import ModuleCategory, app_setup_func
 from .rabbitmq_settings import RabbitSettings, get_plugin_settings
-from .rest.healthcheck import HealthCheck, HealthCheckError
+from .rest.healthcheck import HEALTHCHECK_APPKEY, HealthCheckError
 
 _logger = logging.getLogger(__name__)
 
-_RPC_CLIENT_KEY: Final[str] = f"{__name__}.RabbitMQRPCClient"
+RABBITMQ_CLIENT_APPKEY: Final = web.AppKey("RABBITMQ_CLIENT", RabbitMQClient)
+RABBITMQ_RPC_SERVER_APPKEY: Final = web.AppKey("RABBITMQ_RPC_SERVER", RabbitMQRPCClient)
+RABBITMQ_RPC_CLIENT_APPKEY: Final = web.AppKey("RABBITMQ_RPC_CLIENT", RabbitMQRPCClient)
 
 
 async def _on_healthcheck_async_adapter(app: web.Application) -> None:
@@ -40,21 +38,21 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
     with log_context(
         _logger, logging.INFO, msg=f"Connect RabbitMQ clients to {settings.dsn}"
     ):
-        app[APP_RABBITMQ_CLIENT_KEY] = RabbitMQClient("webserver", settings)
-        app[APP_RABBITMQ_RPC_SERVER_KEY] = await RabbitMQRPCClient.create(
+        app[RABBITMQ_CLIENT_APPKEY] = RabbitMQClient("webserver", settings)
+        app[RABBITMQ_RPC_SERVER_APPKEY] = await RabbitMQRPCClient.create(
             client_name="webserver_rpc_server", settings=settings
         )
 
     # injects healthcheck
-    healthcheck: HealthCheck = app[HealthCheck.__name__]
+    healthcheck = app[HEALTHCHECK_APPKEY]
     healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
 
     yield
 
     # cleanup
     with log_context(_logger, logging.INFO, msg="Close RabbitMQ client"):
-        await app[APP_RABBITMQ_CLIENT_KEY].close()
-        await app[APP_RABBITMQ_RPC_SERVER_KEY].close()
+        await app[RABBITMQ_CLIENT_APPKEY].close()
+        await app[RABBITMQ_RPC_SERVER_APPKEY].close()
 
 
 async def _rabbitmq_rpc_client_lifespan(app: web.Application):
@@ -65,14 +63,14 @@ async def _rabbitmq_rpc_client_lifespan(app: web.Application):
 
     assert rpc_client  # nosec
 
-    app[_RPC_CLIENT_KEY] = rpc_client
+    app[RABBITMQ_RPC_CLIENT_APPKEY] = rpc_client
 
     yield
 
     await rpc_client.close()
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_RABBITMQ",
@@ -85,12 +83,12 @@ def setup_rabbitmq(app: web.Application) -> None:
 
 
 def get_rabbitmq_rpc_client(app: web.Application) -> RabbitMQRPCClient:
-    return cast(RabbitMQRPCClient, app[_RPC_CLIENT_KEY])
+    return app[RABBITMQ_RPC_CLIENT_APPKEY]
 
 
 def get_rabbitmq_client(app: web.Application) -> RabbitMQClient:
-    return cast(RabbitMQClient, app[APP_RABBITMQ_CLIENT_KEY])
+    return app[RABBITMQ_CLIENT_APPKEY]
 
 
 def get_rabbitmq_rpc_server(app: web.Application) -> RabbitMQRPCClient:
-    return cast(RabbitMQRPCClient, app[APP_RABBITMQ_RPC_SERVER_KEY])
+    return app[RABBITMQ_RPC_SERVER_APPKEY]

@@ -1,11 +1,12 @@
 """
-    Notice that this is used as a submodule of groups'a app module
+Notice that this is used as a submodule of groups'a app module
 """
+
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from .service_client import SciCrunch
 from .settings import get_plugin_settings
 
@@ -18,7 +19,7 @@ async def _on_startup(app: web.Application):
     assert api == SciCrunch.get_instance(app)  # nosec
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.scicrunch",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_SCICRUNCH",

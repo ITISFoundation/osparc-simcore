@@ -329,11 +329,9 @@ qx.Class.define("osparc.share.Collaborators", {
       vBox.add(header);
 
       const collaboratorsUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 3,
+        appearance: "listing",
         width: 150,
         padding: 0,
-        backgroundColor: "transparent",
       });
 
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();
@@ -356,10 +354,10 @@ qx.Class.define("osparc.share.Collaborators", {
           }, item, id);
         },
         configureItem: item => {
-          item.getChildControl("thumbnail").getContentElement()
-            .setStyles({
-              "border-radius": "16px"
-            });
+          item.set({
+            cursor: "default",
+          });
+          item.getChildControl("thumbnail").setDecorator("circled");
           item.addListener("promoteToEditor", e => {
             const orgMember = e.getData();
             this._promoteToEditor(orgMember, item);
@@ -405,6 +403,7 @@ qx.Class.define("osparc.share.Collaborators", {
               item.set({
                 minHeight: 1,
                 maxHeight: 1,
+                backgroundColor: "transparent",
                 decorator: "separator-strong",
               });
             }

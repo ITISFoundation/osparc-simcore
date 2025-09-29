@@ -9,8 +9,8 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectStatus
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.redis import with_project_locked
-from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import API_VTAG
 from ..constants import RQ_PRODUCT_KEY

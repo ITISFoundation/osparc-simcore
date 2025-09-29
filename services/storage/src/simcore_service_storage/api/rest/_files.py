@@ -20,7 +20,7 @@ from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
-from servicelib.celery.models import TaskFilter, TaskMetadata, TaskUUID
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from yarl import URL
@@ -43,12 +43,12 @@ from .._worker_tasks._files import complete_upload_file as remote_complete_uploa
 from .dependencies.celery import get_task_manager
 
 
-def _get_task_filter(*, user_id: UserID) -> TaskFilter:
+def _get_owner_metadata(*, user_id: UserID) -> OwnerMetadata:
     _data = {
+        "owner": APP_NAME,
         "user_id": user_id,
-        "client_name": APP_NAME,
     }
-    return TaskFilter().model_validate(_data)
+    return OwnerMetadata.model_validate(_data)
 
 
 _logger = logging.getLogger(__name__)
@@ -294,12 +294,13 @@ async def complete_upload_file(
     # NOTE: completing a multipart upload on AWS can take up to several minutes
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    task_filter = _get_task_filter(user_id=query_params.user_id)
+
+    owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
     task_uuid = await task_manager.submit_task(
-        TaskMetadata(
+        ExecutionMetadata(
             name=remote_complete_upload_file.__name__,
         ),
-        task_filter=task_filter,
+        owner_metadata=owner_metadata,
         user_id=query_params.user_id,
         location_id=location_id,
         file_id=file_id,
@@ -347,15 +348,15 @@ async def is_completed_upload_file(
     # therefore we wait a bit to see if it completes fast and return a 204
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    task_filter = _get_task_filter(user_id=query_params.user_id)
+    owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
     task_status = await task_manager.get_task_status(
-        task_filter=task_filter, task_uuid=TaskUUID(future_id)
+        owner_metadata=owner_metadata, task_uuid=TaskUUID(future_id)
     )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
             await task_manager.get_task_result(
-                task_filter=task_filter,
+                owner_metadata=owner_metadata,
                 task_uuid=TaskUUID(future_id),
             )
         )

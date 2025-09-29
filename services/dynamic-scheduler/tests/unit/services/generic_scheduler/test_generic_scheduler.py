@@ -331,3 +331,7 @@ async def test_can_recover_from_interruption(
             raise RuntimeError(msg)
 
     await ensure_expected_order(queue_poller.events, expected_order)
+
+
+# TODO: add a test that replaces a running operation with a new one! make sure nothing bad happens and that the old
+# running operation manages to reach the end

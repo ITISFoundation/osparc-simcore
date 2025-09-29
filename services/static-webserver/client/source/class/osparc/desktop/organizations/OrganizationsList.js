@@ -126,10 +126,9 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
 
     __getOrganizationsList: function() {
       const orgsUIList = this.__orgsUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 3,
+        appearance: "listing",
         height: 150,
-        width: 150
+        width: 150,
       });
       osparc.utils.Utils.setIdToWidget(orgsUIList, "organizationsList");
       orgsUIList.addListener("changeSelection", e => this.__organizationSelected(e.getData()), this);
@@ -154,11 +153,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         configureItem: item => {
           item.subscribeToFilterGroup("organizationsList");
           osparc.utils.Utils.setIdToWidget(item, "organizationListItem");
-          const thumbnail = item.getChildControl("thumbnail");
-          thumbnail.getContentElement()
-            .setStyles({
-              "border-radius": "16px"
-            });
+          item.getChildControl("thumbnail").setDecorator("circled");
 
           item.addListener("openEditOrganization", e => {
             const orgKey = e.getData();
@@ -174,6 +169,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
               item.set({
                 minHeight: 1,
                 maxHeight: 1,
+                backgroundColor: "transparent",
                 decorator: "separator-strong",
               });
             }

@@ -406,6 +406,14 @@ class DaskScheduler(BaseCompScheduler):
             elapsed_time
             > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_RETRIEVING_RESULTS
         ):
+            _logger.error(
+                **create_troubleshooting_log_kwargs(
+                    f"Task {task.job_id} failed because results could not be retrieved after {elapsed_time}",
+                    error=result,
+                    error_context=log_error_context,
+                    tip="Please try again later or contact support if the problem persists.",
+                )
+            )
             return RunningState.FAILED, SimcorePlatformStatus.BAD, task_errors, True
         # state is kept as STARTED so it will be retried
         return RunningState.STARTED, SimcorePlatformStatus.BAD, task_errors, False

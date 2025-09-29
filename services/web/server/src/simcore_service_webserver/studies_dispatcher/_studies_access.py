@@ -141,10 +141,10 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
+    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY
     from ..projects.utils import clone_project_document, substitute_parameterized_inputs
 
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.config_dict[PROJECT_DBAPI_APPKEY]
     template_parameters = dict(request.query)
 
     # assign new uuid to copy

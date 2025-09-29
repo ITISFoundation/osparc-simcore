@@ -7,9 +7,9 @@ from common_library.user_messages import user_message
 from models_library.authentification import TwoFactorAuthentificationMethod
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import log_context
-from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 
 from ...._meta import API_VTAG

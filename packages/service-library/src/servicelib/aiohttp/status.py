@@ -17,6 +17,10 @@ informative than those found in http.HTTPStatus or aiohttp status_code
 
 from __future__ import annotations
 
+from typing import Final
+
+from aiohttp import web
+
 __all__ = (
     "HTTP_100_CONTINUE",
     "HTTP_101_SWITCHING_PROTOCOLS",
@@ -146,3 +150,5 @@ HTTP_507_INSUFFICIENT_STORAGE = 507
 HTTP_508_LOOP_DETECTED = 508
 HTTP_510_NOT_EXTENDED = 510
 HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = 511
+
+APP_HEALTH_KEY: Final = web.AppKey("APP_HEALTH_KEY", str)

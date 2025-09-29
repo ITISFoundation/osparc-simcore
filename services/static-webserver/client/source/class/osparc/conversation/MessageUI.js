@@ -64,7 +64,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       const isMyMessage = this.self().isMyMessage(this.getMessage());
       let control;
       switch (id) {
-        case "thumbnail":
+        case "avatar":
           control = new osparc.ui.basic.UserThumbnail(32).set({
             marginTop: 4,
             alignY: "top",
@@ -149,18 +149,18 @@ qx.Class.define("osparc.conversation.MessageUI", {
       const messageContent = this.getChildControl("message-content");
       messageContent.setValue(message["content"]);
 
-      const thumbnail = this.getChildControl("thumbnail");
+      const avatar = this.getChildControl("avatar");
       const userName = this.getChildControl("user-name");
       if (message["userGroupId"] === "system") {
         userName.setValue("Support");
       } else {
         osparc.store.Users.getInstance().getUser(message["userGroupId"])
           .then(user => {
-            thumbnail.setUser(user);
+            avatar.setUser(user);
             userName.setValue(user ? user.getLabel() : "Unknown user");
           })
           .catch(() => {
-            thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());
+            avatar.setSource(osparc.utils.Avatar.emailToThumbnail());
             userName.setValue("Unknown user");
           });
       }
