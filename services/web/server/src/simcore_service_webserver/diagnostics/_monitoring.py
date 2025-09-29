@@ -5,12 +5,16 @@ import time
 
 from aiohttp import web
 from servicelib.aiohttp import monitor_services
-from servicelib.aiohttp.application_setup import ensure_single_setup
 from servicelib.aiohttp.monitoring import get_collector_registry
 from servicelib.aiohttp.monitoring import setup_monitoring as service_lib_setup
 
 from ..application_settings import get_application_settings
-from ._healthcheck import HEALTH_LATENCY_PROBE, DelayWindowProbe, is_sensing_enabled
+from ..application_setup import ensure_single_setup
+from ._healthcheck import (
+    HEALTH_LATENCY_PROBE_APPKEY,
+    DelayWindowProbe,
+    is_sensing_enabled,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -44,7 +48,7 @@ async def exit_middleware_cb(request: web.Request, _response: web.StreamResponse
     if not str(request.path).startswith("/socket.io") and is_sensing_enabled(
         request.app
     ):
-        request.app[HEALTH_LATENCY_PROBE].observe(resp_time_secs)
+        request.app[HEALTH_LATENCY_PROBE_APPKEY].observe(resp_time_secs)
 
 
 @ensure_single_setup(f"{__name__}.setup_monitoring", logger=_logger)
@@ -64,6 +68,6 @@ def setup_monitoring(app: web.Application):
     )
 
     # on-the fly stats
-    app[HEALTH_LATENCY_PROBE] = DelayWindowProbe()
+    app[HEALTH_LATENCY_PROBE_APPKEY] = DelayWindowProbe()
 
     return True

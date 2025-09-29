@@ -1,12 +1,11 @@
-""" tags management subsystem
+"""tags management subsystem"""
 
-"""
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_keys import APP_SETTINGS_APPKEY
+from ..application_setup import ModuleCategory, app_setup_func
 from ..rabbitmq import setup_rabbitmq
 from ..rest.plugin import setup_rest
 from . import (
@@ -21,7 +20,7 @@ from .settings import LicensesSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_LICENSES",
@@ -37,7 +36,7 @@ def setup_licenses(app: web.Application):
     app.router.add_routes(_licensed_items_checkouts_rest.routes)
 
     setup_rabbitmq(app)
-    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+    if app[APP_SETTINGS_APPKEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(_rpc.register_rpc_routes_on_startup)
 
     if settings.LICENSES_ITIS_VIP_SYNCER_ENABLED and settings.LICENSES_ITIS_VIP:

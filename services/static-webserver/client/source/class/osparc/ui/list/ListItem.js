@@ -63,6 +63,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       decorator: "rounded",
     });
 
+    this.setBackgroundColor("background-main-2");
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);
   },
@@ -129,7 +130,6 @@ qx.Class.define("osparc.ui.list.ListItem", {
     _onPointerOver: function() {
       this.addState("hovered");
     },
-
 
     /**
      * Event handler for the pointer out event.

@@ -11,8 +11,8 @@ import logging
 
 import aiohttp_security  # type: ignore[import-untyped]
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ..db.plugin import setup_db
 from ..session.plugin import setup_session
 from ._authz_access_model import RoleBasedAccessModel
@@ -23,7 +23,7 @@ from ._identity_policy import SessionIdentityPolicy
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=_logger
 )
 def setup_security(app: web.Application):

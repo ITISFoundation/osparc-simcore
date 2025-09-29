@@ -27,11 +27,12 @@ from .typing_extension import Handler
 
 _logger = logging.getLogger(__name__)
 
-_PROMETHEUS_METRICS: Final[str] = f"{__name__}.prometheus_metrics"  # noqa: N816
+PROMETHEUS_METRICS_APPKEY: Final = web.AppKey("PROMETHEUS_METRICS", PrometheusMetrics)
+MONITORING_NAMESPACE_APPKEY: Final = web.AppKey("APP_MONITORING_NAMESPACE_KEY", str)
 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
-    metrics = app[_PROMETHEUS_METRICS]
+    metrics = app[PROMETHEUS_METRICS_APPKEY]
     assert isinstance(metrics, PrometheusMetrics)  # nosec
     return metrics.registry
 
@@ -70,7 +71,7 @@ def middleware_factory(
                 with log_catch(logger=_logger, reraise=False):
                     await enter_middleware_cb(request)
 
-            metrics = request.app[_PROMETHEUS_METRICS]
+            metrics = request.app[PROMETHEUS_METRICS_APPKEY]
             assert isinstance(metrics, PrometheusMetrics)  # nosec
 
             user_agent = request.headers.get(
@@ -129,7 +130,7 @@ def setup_monitoring(
     enter_middleware_cb: EnterMiddlewareCB | None = None,
     exit_middleware_cb: ExitMiddlewareCB | None = None,
 ):
-    app[_PROMETHEUS_METRICS] = get_prometheus_metrics()
+    app[PROMETHEUS_METRICS_APPKEY] = get_prometheus_metrics()
 
     # WARNING: ensure ERROR middleware is over this one
     #

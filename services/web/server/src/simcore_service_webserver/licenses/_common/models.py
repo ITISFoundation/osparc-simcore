@@ -14,7 +14,7 @@ from models_library.rest_pagination import PageQueryParameters
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, Field
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 
 from ...constants import RQ_PRODUCT_KEY
 
@@ -28,23 +28,22 @@ class LicensedItemsPathParams(StrictRequestParameters):
     licensed_item_id: LicensedItemID
 
 
-_LicensedItemsListOrderQueryParams: type[
-    RequestParameters
-] = create_ordering_query_model_class(
-    ordering_fields={
-        "display_name",
-        "modified_at",
-    },
-    default=OrderBy(field=IDStr("display_name"), direction=OrderDirection.DESC),
-    ordering_fields_api_to_column_map={"modified_at": "modified"},
+_LicensedItemsListOrderQueryParams: type[RequestParameters] = (
+    create_ordering_query_model_class(
+        ordering_fields={
+            "display_name",
+            "modified_at",
+        },
+        default=OrderBy(field=IDStr("display_name"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={"modified_at": "modified"},
+    )
 )
 
 
 class LicensedItemsListQueryParams(
     PageQueryParameters,
     _LicensedItemsListOrderQueryParams,  # type: ignore[misc, valid-type]
-):
-    ...
+): ...
 
 
 class LicensedItemsBodyParams(BaseModel):
@@ -60,21 +59,20 @@ class LicensedItemsPurchasesPathParams(StrictRequestParameters):
     licensed_item_purchase_id: LicensedItemPurchaseID
 
 
-_LicensedItemsPurchasesListOrderQueryParams: type[
-    RequestParameters
-] = create_ordering_query_model_class(
-    ordering_fields={
-        "purchased_at",
-        "modified_at",
-        "name",
-    },
-    default=OrderBy(field=IDStr("purchased_at"), direction=OrderDirection.DESC),
-    ordering_fields_api_to_column_map={"modified_at": "modified"},
+_LicensedItemsPurchasesListOrderQueryParams: type[RequestParameters] = (
+    create_ordering_query_model_class(
+        ordering_fields={
+            "purchased_at",
+            "modified_at",
+            "name",
+        },
+        default=OrderBy(field=IDStr("purchased_at"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={"modified_at": "modified"},
+    )
 )
 
 
 class LicensedItemsPurchasesListQueryParams(
     PageQueryParameters,
     _LicensedItemsPurchasesListOrderQueryParams,  # type: ignore[misc, valid-type]
-):
-    ...
+): ...

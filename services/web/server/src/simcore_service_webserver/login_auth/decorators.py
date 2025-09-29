@@ -4,8 +4,8 @@ from typing import cast
 
 from aiohttp import web
 from models_library.users import UserID
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.typing_extension import HandlerAnyReturn
-from servicelib.request_keys import RQT_USERID_KEY
 
 from ..products import products_web
 from ..security import security_web

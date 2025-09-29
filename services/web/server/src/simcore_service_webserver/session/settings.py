@@ -7,7 +7,7 @@ from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_session import MixinSessionSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 _MINUTE: Final[int] = 60  # secs
 
@@ -71,7 +71,7 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
 
 
 def get_plugin_settings(app: web.Application) -> SessionSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_SESSION
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_SESSION
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, SessionSettings)  # nosec
     return settings

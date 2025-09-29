@@ -97,6 +97,11 @@ qx.Class.define("osparc.store.Groups", {
           const groupMe = this.__addToGroupsCache(resp["me"], "me");
           const orgs = {};
           resp["organizations"].forEach(organization => {
+            if (supportGroup && supportGroup.getGroupId() === organization["gid"]) {
+              // support group was already added to the cache, but it was missing the accessRights
+              // the accessRights come from the organization, update them
+              supportGroup.setAccessRights(organization["accessRights"]);
+            }
             const org = this.__addToGroupsCache(organization, "organization");
             orgs[org.getGroupId()] = org;
           });

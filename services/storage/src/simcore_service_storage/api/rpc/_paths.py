@@ -2,11 +2,11 @@ import logging
 from pathlib import Path
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
 )
 from models_library.projects_nodes_io import LocationID
-from servicelib.celery.models import TaskFilter, TaskMetadata
+from models_library.users import UserID
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RPCRouter
 
@@ -20,18 +20,18 @@ router = RPCRouter()
 @router.expose(reraise_if_error_type=None)
 async def compute_path_size(
     task_manager: TaskManager,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
     location_id: LocationID,
     path: Path,
+    user_id: UserID,
 ) -> AsyncJobGet:
     task_name = remote_compute_path_size.__name__
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        task_metadata=TaskMetadata(
+        execution_metadata=ExecutionMetadata(
             name=task_name,
         ),
-        task_filter=task_filter,
-        user_id=job_filter.user_id,
+        owner_metadata=owner_metadata,
+        user_id=user_id,
         location_id=location_id,
         path=path,
     )
@@ -42,18 +42,18 @@ async def compute_path_size(
 @router.expose(reraise_if_error_type=None)
 async def delete_paths(
     task_manager: TaskManager,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
     location_id: LocationID,
     paths: set[Path],
+    user_id: UserID,
 ) -> AsyncJobGet:
     task_name = remote_delete_paths.__name__
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        task_metadata=TaskMetadata(
+        execution_metadata=ExecutionMetadata(
             name=task_name,
         ),
-        task_filter=task_filter,
-        user_id=job_filter.user_id,
+        owner_metadata=owner_metadata,
+        user_id=user_id,
         location_id=location_id,
         paths=paths,
     )

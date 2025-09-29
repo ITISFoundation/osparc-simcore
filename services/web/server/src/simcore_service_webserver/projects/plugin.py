@@ -7,9 +7,9 @@ It contains metadata about the study (e.g. name, description, owner, etc) and a 
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
+from ..application_setup import ModuleCategory, app_setup_func
 from ..rabbitmq import setup_rabbitmq
 from ._controller import (
     access_rights_rest,
@@ -42,7 +42,7 @@ def register_projects_long_running_tasks(app: web.Application) -> None:
     register_stop_dynamic_service_task(app)
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.projects",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_PROJECTS",
@@ -50,7 +50,7 @@ def register_projects_long_running_tasks(app: web.Application) -> None:
     logger=logger,
 )
 def setup_projects(app: web.Application) -> bool:
-    assert app[APP_SETTINGS_KEY].WEBSERVER_PROJECTS  # nosec
+    assert app[APP_SETTINGS_APPKEY].WEBSERVER_PROJECTS  # nosec
 
     # security access : Inject permissions to rest API resources
     setup_projects_access(app)
@@ -63,7 +63,7 @@ def setup_projects(app: web.Application) -> bool:
 
     # setup RPC-controllers
     setup_rabbitmq(app)
-    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+    if app[APP_SETTINGS_APPKEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(projects_rpc.register_rpc_routes_on_startup)
 
     # setup REST-controllers
