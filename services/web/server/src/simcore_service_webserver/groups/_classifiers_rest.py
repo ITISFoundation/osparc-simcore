@@ -9,7 +9,7 @@ from servicelib.aiohttp.requests_validation import (
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..scicrunch.models import ResourceHit
-from ..scicrunch.scicrunch_service import ScicrunchResourcesService
+from ..scicrunch.scicrunch_service import SCICRUNCH_SERVICE_APPKEY
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from ._classifiers_service import GroupClassifiersService
@@ -50,7 +50,7 @@ async def get_group_classifiers(request: web.Request):
 async def get_scicrunch_resource(request: web.Request):
     rrid = request.match_info["rrid"]
 
-    service = ScicrunchResourcesService(request.app)
+    service = request.app[SCICRUNCH_SERVICE_APPKEY]
     resource = await service.get_or_fetch_research_resource(rrid)
 
     return envelope_json_response(resource.model_dump())
@@ -66,7 +66,7 @@ async def get_scicrunch_resource(request: web.Request):
 async def add_scicrunch_resource(request: web.Request):
     rrid = request.match_info["rrid"]
 
-    service = ScicrunchResourcesService(request.app)
+    service = request.app[SCICRUNCH_SERVICE_APPKEY]
     resource = await service.create_research_resource(rrid)
 
     return envelope_json_response(resource.model_dump())
@@ -82,7 +82,7 @@ async def add_scicrunch_resource(request: web.Request):
 async def search_scicrunch_resources(request: web.Request):
     guess_name = str(request.query["guess_name"]).strip()
 
-    service = ScicrunchResourcesService(request.app)
+    service = request.app[SCICRUNCH_SERVICE_APPKEY]
     hits: list[ResourceHit] = await service.search_research_resources(guess_name)
 
     return envelope_json_response([hit.model_dump() for hit in hits])

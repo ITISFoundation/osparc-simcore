@@ -4,7 +4,6 @@ Service layer for scicrunch research resources operations
 
 import logging
 
-from aiohttp import web
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import HttpUrl, ValidationError
 
@@ -21,11 +20,10 @@ class ScicrunchResourcesService:
     - Research Resources operations (RRID = Research Resource ID)
     """
 
-    def __init__(self, app: web.Application):
-        self.app = app
-        self._repo = ScicrunchResourcesRepository.create_from_app(app)
+    def __init__(self, repo: ScicrunchResourcesRepository, client: SciCrunch):
+        self._repo = repo
         # client to interact with scicrunch.org service
-        self._client = SciCrunch.get_instance(self.app)
+        self._client = client
 
     async def list_research_resources(self) -> list[ResearchResource]:
         """List all research resources as domain models."""
