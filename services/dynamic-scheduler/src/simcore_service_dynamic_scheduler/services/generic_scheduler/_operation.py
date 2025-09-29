@@ -92,7 +92,7 @@ class BaseStep(ABC):
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         """
-        [optional] handler resposible for celanup of resources created above.
+        [optional] handler responsible for cleanup of resources created above.
         NOTE: Ensure this is successful if:
             - `create` is not executed
             - `create` is executed partially
