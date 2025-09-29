@@ -90,9 +90,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     __createWalletsList: function(widgetId) {
       const walletsUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 3,
-        backgroundColor: "transparent",
+        appearance: "listing",
         height: null,
         focusable: false
       });
@@ -118,7 +116,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");
-
           item.addListener("openEditWallet", e => this.__openEditWallet(e.getData()));
           item.addListener("openShareWallet", e => this.__walletSelected(e.getData()));
           item.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));

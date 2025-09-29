@@ -29,6 +29,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     layout.setColumnAlign(creditsCol, "right", "middle");
 
     this.__buildLayout();
+
+    this.set({
+      backgroundColor: "transparent",
+      cursor: "default",
+    });
   },
 
   properties: {

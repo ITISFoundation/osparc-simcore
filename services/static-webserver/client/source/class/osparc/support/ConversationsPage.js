@@ -27,7 +27,7 @@ qx.Class.define("osparc.support.ConversationsPage", {
     this.getChildControl("conversations-list");
     this.getChildControl("ask-a-question-button");
     this.getChildControl("book-a-call-button");
-    if (osparc.utils.Utils.isDevelopmentPlatform()) {
+    if (osparc.product.Utils.isBookACallEnabled()) {
       this.getChildControl("book-a-call-button-3rd");
     }
   },

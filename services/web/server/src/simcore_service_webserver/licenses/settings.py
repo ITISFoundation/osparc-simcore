@@ -5,7 +5,7 @@ from aiohttp import web
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 from ._itis_vip_settings import ItisVipSettings, SpeagPhantomsSettings
 
 
@@ -36,7 +36,7 @@ class LicensesSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: web.Application) -> LicensesSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_LICENSES
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_LICENSES
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, LicensesSettings)  # nosec
     return settings
