@@ -389,7 +389,7 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
 
     headers = headers or {}
     docker_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
-    return docker_digests
+    return docker_digest
 
 
 async def get_image_labels(
