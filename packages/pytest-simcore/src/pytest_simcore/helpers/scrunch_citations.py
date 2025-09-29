@@ -13,18 +13,20 @@ import re
 
 def split_citations(citations: list[str]) -> list[tuple[str, str]]:
     def _split(citation: str) -> tuple[str, str]:
+        assert citation.startswith("("), f"Got {citation=}"
+        assert citation.endswith(")"), f"Got {citation=}"
+        # make sure there is a comma before RRID: so we can split
         if "," not in citation:
             citation = citation.replace("(", "(,")
-        name, rrid = re.match(
-            r"^[\(]{0,1}(.*),\s*RRID:(.+)[\)]{0,1}$", citation
-        ).groups()
+
+        name, rrid = re.match(r"^\((.*),\s*RRID:(.+)\)$", citation).groups()
         return name, rrid
 
     return list(map(_split, citations))
 
 
 # http://antibodyregistry.org/AB_90755
-ANTIBODY_CITATIONS = split_citations(["Millipore Cat# AB1542, RRID:AB_90755)"])
+ANTIBODY_CITATIONS = split_citations(["(Millipore Cat# AB1542, RRID:AB_90755)"])
 
 # https://www.addgene.org/44362/
 PLAMID_CITATIONS = split_citations(["(RRID:Addgene_44362)"])

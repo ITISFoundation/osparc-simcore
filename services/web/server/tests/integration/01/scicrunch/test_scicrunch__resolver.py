@@ -75,4 +75,4 @@ async def test_scicrunch_resolves_all_valid_rrids(
             assert any(
                 proper_citation in valid_formats
                 for proper_citation in resolved_citations
-            ), f"No proper_citation found with both name and rrid: {resolved_citations=} not in {valid_formats=}"
+            ), f"No proper_citation found with both {name=} and {rrid=}: {resolved_citations=} not in {valid_formats=}"
