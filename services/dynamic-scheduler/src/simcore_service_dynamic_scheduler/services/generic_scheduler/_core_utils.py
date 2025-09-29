@@ -12,7 +12,7 @@ from servicelib.utils import limited_gather
 from ._deferred_runner import DeferredRunner
 from ._errors import (
     InitialOperationContextKeyNotAllowedError,
-    KeyNotFoundInHashError,
+    NoDataFoundError,
 )
 from ._models import (
     OperationContext,
@@ -56,7 +56,7 @@ def are_any_steps_in_a_progress_status(
 async def _get_step_status(step_proxy: StepStoreProxy) -> tuple[StepName, StepStatus]:
     try:
         status = await step_proxy.get("status")
-    except KeyNotFoundInHashError:
+    except NoDataFoundError:
         status = StepStatus.UNKNOWN
 
     return step_proxy.step_name, status
@@ -149,7 +149,7 @@ async def _get_was_step_started(
 ) -> tuple[bool, StepStoreProxy]:
     try:
         was_stated = (await step_proxy.get("deferred_created")) is True
-    except KeyNotFoundInHashError:
+    except NoDataFoundError:
         was_stated = False
 
     return was_stated, step_proxy
@@ -209,7 +209,7 @@ async def cleanup_after_finishing(
 async def get_requires_manual_intervention(step_proxy: StepStoreProxy) -> bool:
     try:
         return await step_proxy.get("requires_manual_intervention")
-    except KeyNotFoundInHashError:
+    except NoDataFoundError:
         return False
 
 
@@ -232,7 +232,7 @@ async def set_unexpected_opration_state(
 async def safe_event(store: Store, schedule_id: ScheduleId) -> AsyncIterator[None]:
     try:
         yield
-    except KeyNotFoundInHashError as err:
+    except NoDataFoundError as err:
         _logger.debug(
             "Cannot process schedule_id='%s' since it's data was not found: %s",
             schedule_id,

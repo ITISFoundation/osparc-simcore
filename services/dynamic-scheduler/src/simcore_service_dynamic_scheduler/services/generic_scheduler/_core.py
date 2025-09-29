@@ -29,7 +29,7 @@ from ._core_utils import (
 from ._deferred_runner import DeferredRunner
 from ._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
-    KeyNotFoundInHashError,
+    NoDataFoundError,
     StepNameNotInCurrentGroupError,
     StepNotInErrorStateError,
     StepNotWaitingForManualInterventionError,
@@ -170,7 +170,7 @@ class Core:
                 logging.DEBUG,
                 f"Cancelling step {step_name=} of {operation_name=} for {schedule_id=}",
             ):
-                with suppress(KeyNotFoundInHashError):
+                with suppress(NoDataFoundError):
                     deferred_task_uid = await step_proxy.get("deferred_task_uid")
                     await DeferredRunner.cancel(deferred_task_uid)
                     await step_proxy.set("status", StepStatus.CANCELLED)
@@ -225,7 +225,7 @@ class Core:
 
         try:
             await step_proxy.get("error_traceback")
-        except KeyNotFoundInHashError as exc:
+        except NoDataFoundError as exc:
             raise StepNotInErrorStateError(step_name=step_name) from exc
 
         step_keys_to_remove: list[DeleteStepKeys] = [
@@ -235,7 +235,7 @@ class Core:
         ]
         if in_manual_intervention:
             requires_manual_intervention: bool = False
-            with suppress(KeyNotFoundInHashError):
+            with suppress(NoDataFoundError):
                 requires_manual_intervention = await step_proxy.get(
                     "requires_manual_intervention"
                 )

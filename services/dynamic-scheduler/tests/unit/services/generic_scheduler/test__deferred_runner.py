@@ -20,7 +20,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._deferred_runn
     DeferredRunner,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
-    KeyNotFoundInHashError,
+    NoDataFoundError,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     OperationName,
@@ -113,7 +113,7 @@ async def _assert_finshed_with_status(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(10),
         reraise=True,
-        retry=retry_if_exception_type((AssertionError, KeyNotFoundInHashError)),
+        retry=retry_if_exception_type((AssertionError, NoDataFoundError)),
     ):
         with attempt:
             assert await step_proxy.get("status") == expected_status

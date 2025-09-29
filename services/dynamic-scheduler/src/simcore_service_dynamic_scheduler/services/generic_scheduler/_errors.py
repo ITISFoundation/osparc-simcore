@@ -5,7 +5,7 @@ class BaseGenericSchedulerError(OsparcErrorMixin, Exception):
     """base exception for this module"""
 
 
-class KeyNotFoundInHashError(BaseGenericSchedulerError):
+class NoDataFoundError(BaseGenericSchedulerError):
     msg_template: str = "Key '{key}' not found in hash '{hash_key}'"
 
 

@@ -12,7 +12,7 @@ from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ...core.settings import ApplicationSettings
-from ._errors import KeyNotFoundInHashError
+from ._errors import NoDataFoundError
 from ._models import (
     OperationErrorType,
     OperationName,
@@ -210,11 +210,11 @@ class ScheduleDataStoreProxy:
     @overload
     async def get(self, key: Literal["operation_error_message"]) -> str: ...
     async def get(self, key: str) -> Any:
-        """raises KeyNotFoundInHashError if the key is not present in the hash"""
+        """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
         (result,) = await self._store.get(hash_key, key)
         if result is None:
-            raise KeyNotFoundInHashError(key=key, hash_key=hash_key)
+            raise NoDataFoundError(key=key, hash_key=hash_key)
         return result
 
     @overload
@@ -332,13 +332,11 @@ class StepStoreProxy:
     @overload
     async def get(self, key: Literal["deferred_created"]) -> bool: ...
     async def get(self, key: str) -> Any:
-        """raises KeyNotFoundInHashError if the key is not present in the hash"""
+        """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
         (result,) = await self._store.get(hash_key, key)
         if result is None:
-            raise KeyNotFoundInHashError(
-                schedule_id=self.schedule_id, hash_key=hash_key
-            )
+            raise NoDataFoundError(schedule_id=self.schedule_id, hash_key=hash_key)
         return result
 
     @overload
