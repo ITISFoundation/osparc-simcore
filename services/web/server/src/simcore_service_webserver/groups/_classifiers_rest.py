@@ -51,7 +51,7 @@ async def get_scicrunch_resource(request: web.Request):
     rrid = request.match_info["rrid"]
 
     service = ScicrunchResourcesService(request.app)
-    resource = await service.get_or_fetch_reseach_resource(rrid)
+    resource = await service.get_or_fetch_research_resource(rrid)
 
     return envelope_json_response(resource.model_dump())
 

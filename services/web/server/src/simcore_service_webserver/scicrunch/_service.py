@@ -72,7 +72,7 @@ class ScicrunchResourcesService:
             )
             return None
 
-    async def get_or_fetch_reseach_resource(self, rrid: str) -> ResearchResource:
+    async def get_or_fetch_research_resource(self, rrid: str) -> ResearchResource:
         """Get resource from database first, fetch from SciCrunch API if not found."""
         # Validate the RRID format first
         validated_rrid = SciCrunch.validate_identifier(rrid)
