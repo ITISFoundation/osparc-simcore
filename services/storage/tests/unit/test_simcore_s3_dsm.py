@@ -303,7 +303,7 @@ async def test_search_files(
         user_id=user_id,
         name_pattern="*",
         project_id=project_id,
-        items_per_page=2,  # Small page size to test pagination
+        limit=2,  # Small page size to test pagination
     ):
         paginated_results.extend(page)
         page_count += 1
