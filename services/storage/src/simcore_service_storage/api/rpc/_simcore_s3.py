@@ -6,6 +6,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.celery.models import (
     ExecutionMetadata,
@@ -82,7 +83,7 @@ async def start_search(
     modified_at: (
         tuple[datetime.datetime | None, datetime.datetime | None] | None
     ) = None,
-    project_id: str | None = None,
+    project_id: ProjectID | None = None,
 ) -> AsyncJobGet:
     task_name = search.__name__
     task_uuid = await task_manager.submit_task(
