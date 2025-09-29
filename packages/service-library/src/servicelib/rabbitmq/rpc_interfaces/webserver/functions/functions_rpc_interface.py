@@ -1,5 +1,7 @@
 import logging
 from typing import Annotated, Literal
+import warnings
+from typing import Literal
 
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.functions import (
@@ -40,6 +42,14 @@ from .... import RabbitMQRPCClient
 _logger = logging.getLogger(__name__)
 
 _FUNCTION_RPC_TIMEOUT_SEC: Annotated[int, PositiveInt] = 30
+
+
+warnings.warn(
+    f"The '{__name__}' module is deprecated and will be removed in a future release. "
+    "Please use 'rpc_interfaces.webserver.v1' instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

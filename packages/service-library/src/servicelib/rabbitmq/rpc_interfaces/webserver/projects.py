@@ -26,7 +26,7 @@ _logger = logging.getLogger(__name__)
 
 
 warnings.warn(
-    "The 'rpc_interfaces.webserver.projects' module is deprecated and will be removed in a future release. "
+    f"The '{__name__}' module is deprecated and will be removed in a future release. "
     "Please use 'rpc_interfaces.webserver.v1' instead.",
     DeprecationWarning,
     stacklevel=2,
