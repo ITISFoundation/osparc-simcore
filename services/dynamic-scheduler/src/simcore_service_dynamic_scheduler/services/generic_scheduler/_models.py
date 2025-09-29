@@ -15,9 +15,9 @@ StepName: TypeAlias = Annotated[str, StringConstraints(pattern=_NAME_PATTERN)]
 
 # contains all inputs and outpus of each step in the operation
 OperationContext: TypeAlias = dict[str, Any]
-# the inputs of `create` or `revert` of a step
+# the inputs of `create` or `undo` of a step
 RequiredOperationContext: TypeAlias = dict[str, Any]
-# the outputs of `create` or `revert` of a step
+# the outputs of `create` or `undo` of a step
 ProvidedOperationContext: TypeAlias = dict[str, Any]
 
 

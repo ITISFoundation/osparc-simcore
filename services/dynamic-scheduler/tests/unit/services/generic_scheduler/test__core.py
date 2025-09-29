@@ -30,7 +30,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     ScheduleId,
     SingleStepGroup,
     cancel_operation,
-    restart_operation_step_stuck_during_revert,
+    restart_operation_step_stuck_during_undo,
     restart_operation_step_stuck_in_manual_intervention_during_create,
     start_operation,
 )
@@ -58,12 +58,12 @@ from tenacity import (
 )
 from utils import (
     CREATED,
-    REVERTED,
+    UNDONE,
     BaseExpectedStepOrder,
     CreateRandom,
     CreateSequence,
-    RevertRandom,
-    RevertSequence,
+    UndoRandom,
+    UndoSequence,
     ensure_expected_order,
 )
 
@@ -163,20 +163,20 @@ class _BS(BaseStep):
         }
 
     @classmethod
-    async def revert(
+    async def undo(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
-        _STEPS_CALL_ORDER.append((cls.__name__, REVERTED))
+        _STEPS_CALL_ORDER.append((cls.__name__, UNDONE))
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_revert_provides_context_keys()},
+            **{k: _CTX_VALUE for k in cls.get_undo_provides_context_keys()},
         }
 
 
-class _RevertBS(_BS):
+class _UndoBS(_BS):
     @classmethod
     async def create(
         cls, app: FastAPI, required_context: RequiredOperationContext
@@ -201,7 +201,7 @@ def reset_step_issue_tracker() -> Iterable[None]:
     _GlobalStepIssueTracker.has_issue = True
 
 
-class _FailOnCreateAndRevertBS(_BS):
+class _FailOnCreateAndUndoBS(_BS):
     @classmethod
     async def create(
         cls, app: FastAPI, required_context: RequiredOperationContext
@@ -211,12 +211,12 @@ class _FailOnCreateAndRevertBS(_BS):
         raise RuntimeError(msg)
 
     @classmethod
-    async def revert(
+    async def undo(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
-        await super().revert(app, required_context)
+        await super().undo(app, required_context)
         if _GlobalStepIssueTracker.has_issue:
-            msg = "sometimes fails only on REVERT"
+            msg = "sometimes fails only on UNDO"
             raise RuntimeError(msg)
 
 
@@ -256,11 +256,11 @@ def _get_steps_matching_class(
 
 
 def _compose_key(
-    key_nuber: int | None, *, with_revert: bool, is_creating: bool, is_providing: bool
+    key_nuber: int | None, *, with_undo: bool, is_creating: bool, is_providing: bool
 ) -> str:
     key_parts = [
         "bs",
-        "revert" if with_revert else "",
+        "undo" if with_undo else "",
         "c" if is_creating else "r",
         "prov" if is_providing else "req",
         f"{key_nuber}",
@@ -288,7 +288,7 @@ class _BaseRequiresProvidesContext(_BS, _MixingGetKeNumber):
         return {
             _compose_key(
                 cls.get_key_number(),
-                with_revert=False,
+                with_undo=False,
                 is_creating=True,
                 is_providing=False,
             )
@@ -299,20 +299,20 @@ class _BaseRequiresProvidesContext(_BS, _MixingGetKeNumber):
         return {
             _compose_key(
                 cls.get_key_number(),
-                with_revert=False,
+                with_undo=False,
                 is_creating=True,
                 is_providing=True,
             )
         }
 
 
-class _BaseRequiresProvidesRevertContext(_RevertBS, _MixingGetKeNumber):
+class _BaseRequiresProvidesUndoContext(_UndoBS, _MixingGetKeNumber):
     @classmethod
     def get_create_requires_context_keys(cls) -> set[str]:
         return {
             _compose_key(
                 cls.get_key_number(),
-                with_revert=True,
+                with_undo=True,
                 is_creating=True,
                 is_providing=False,
             )
@@ -323,29 +323,29 @@ class _BaseRequiresProvidesRevertContext(_RevertBS, _MixingGetKeNumber):
         return {
             _compose_key(
                 cls.get_key_number(),
-                with_revert=True,
+                with_undo=True,
                 is_creating=True,
                 is_providing=True,
             )
         }
 
     @classmethod
-    def get_revert_requires_context_keys(cls) -> set[str]:
+    def get_undo_requires_context_keys(cls) -> set[str]:
         return {
             _compose_key(
                 cls.get_key_number(),
-                with_revert=True,
+                with_undo=True,
                 is_creating=False,
                 is_providing=False,
             )
         }
 
     @classmethod
-    def get_revert_provides_context_keys(cls) -> set[str]:
+    def get_undo_provides_context_keys(cls) -> set[str]:
         return {
             _compose_key(
                 cls.get_key_number(),
-                with_revert=True,
+                with_undo=True,
                 is_creating=False,
                 is_providing=True,
             )
@@ -409,46 +409,46 @@ class _S10(_BS): ...
 # Below fail on create (expected)
 
 
-class _RS1(_RevertBS): ...
+class _RS1(_UndoBS): ...
 
 
-class _RS2(_RevertBS): ...
+class _RS2(_UndoBS): ...
 
 
-class _RS3(_RevertBS): ...
+class _RS3(_UndoBS): ...
 
 
-class _RS4(_RevertBS): ...
+class _RS4(_UndoBS): ...
 
 
-class _RS5(_RevertBS): ...
+class _RS5(_UndoBS): ...
 
 
-class _RS6(_RevertBS): ...
+class _RS6(_UndoBS): ...
 
 
-class _RS7(_RevertBS): ...
+class _RS7(_UndoBS): ...
 
 
-class _RS8(_RevertBS): ...
+class _RS8(_UndoBS): ...
 
 
-class _RS9(_RevertBS): ...
+class _RS9(_UndoBS): ...
 
 
-class _RS10(_RevertBS): ...
+class _RS10(_UndoBS): ...
 
 
-# Below fail both on create and revert (unexpected)
+# Below fail both on create and undo (unexpected)
 
 
-class _FCR1(_FailOnCreateAndRevertBS): ...
+class _FCR1(_FailOnCreateAndUndoBS): ...
 
 
-class _FCR2(_FailOnCreateAndRevertBS): ...
+class _FCR2(_FailOnCreateAndUndoBS): ...
 
 
-class _FCR3(_FailOnCreateAndRevertBS): ...
+class _FCR3(_FailOnCreateAndUndoBS): ...
 
 
 # Below will sleep forever
@@ -481,10 +481,10 @@ class RPCtxS1(_BaseRequiresProvidesContext): ...
 class RPCtxS2(_BaseRequiresProvidesContext): ...
 
 
-class RPCtxR1(_BaseRequiresProvidesRevertContext): ...
+class RPCtxR1(_BaseRequiresProvidesUndoContext): ...
 
 
-class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
+class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -539,7 +539,7 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
             ],
             [
                 CreateSequence(_RS1),
-                RevertSequence(_RS1),
+                UndoSequence(_RS1),
             ],
             id="s1(1r)",
         ),
@@ -549,7 +549,7 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
             ],
             [
                 CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
-                RevertRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
+                UndoRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
             ],
             id="p7(1r)",
         ),
@@ -565,9 +565,9 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4, _S5, _S6),
                 CreateSequence(_RS1),
-                RevertSequence(_RS1),
-                RevertRandom(_S2, _S3, _S4, _S5, _S6),
-                RevertSequence(_S1),
+                UndoSequence(_RS1),
+                UndoRandom(_S2, _S3, _S4, _S5, _S6),
+                UndoSequence(_S1),
             ],
             id="s1-p5-s1(1r)-s1-p2",
         ),
@@ -581,8 +581,8 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
-                RevertRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
-                RevertSequence(_S1),
+                UndoRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
+                UndoSequence(_S1),
             ],
             id="s1-p6(1r)-s1-p2",
         ),
@@ -634,7 +634,7 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
                     _RS9,
                     _RS10,
                 ),
-                RevertRandom(
+                UndoRandom(
                     _S1,
                     _S2,
                     _S3,
@@ -661,7 +661,7 @@ class RPCtxR2(_BaseRequiresProvidesRevertContext): ...
         ),
     ],
 )
-async def test_create_revert_order(
+async def test_create_undo_order(
     preserve_caplog_for_async_logging: None,
     steps_call_order: list[tuple[str, str]],
     selected_app: FastAPI,
@@ -690,7 +690,7 @@ async def test_create_revert_order(
             ],
             [
                 CreateSequence(_FCR1),
-                RevertSequence(_FCR1),
+                UndoSequence(_FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -708,7 +708,7 @@ async def test_create_revert_order(
             ],
             [
                 CreateSequence(_S1, _FCR1),
-                RevertSequence(_FCR1),
+                UndoSequence(_FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -729,7 +729,7 @@ async def test_create_revert_order(
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _FCR1),
-                RevertRandom(_S2, _S3, _FCR1),
+                UndoRandom(_S2, _S3, _FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -754,7 +754,7 @@ async def test_create_revert_order(
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _FCR1, _FCR2),
-                RevertRandom(_S2, _S3, _FCR2, _FCR1),
+                UndoRandom(_S2, _S3, _FCR2, _FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -775,7 +775,7 @@ async def test_create_revert_order(
         ),
     ],
 )
-async def test_fails_during_revert_is_in_error_state(
+async def test_fails_during_undo_is_in_error_state(
     preserve_caplog_for_async_logging: None,
     steps_call_order: list[tuple[str, str]],
     selected_app: FastAPI,
@@ -816,9 +816,9 @@ async def test_fails_during_revert_is_in_error_state(
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
                 CreateSequence(_SF1),
-                RevertSequence(_SF1),
-                RevertRandom(_S2, _S3, _S4),
-                RevertSequence(_S1),
+                UndoSequence(_SF1),
+                UndoRandom(_S2, _S3, _S4),
+                UndoSequence(_S1),
             ],
             id="s1p3s1(1s)",
         ),
@@ -834,8 +834,8 @@ async def test_fails_during_revert_is_in_error_state(
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4, _SF1, _SF2),
-                RevertRandom(_S2, _S3, _S4, _SF2, _SF1),
-                RevertSequence(_S1),
+                UndoRandom(_S2, _S3, _S4, _SF2, _SF1),
+                UndoSequence(_S1),
             ],
             id="s1p4(1s)",
         ),
@@ -886,7 +886,7 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
             [CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
             [
                 *[CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
-                RevertSequence(_S1),
+                UndoSequence(_S1),
             ],
             id="s1(r)",
         ),
@@ -902,7 +902,7 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
             [CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
             [
                 *[CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
-                RevertRandom(_S1, _S2),
+                UndoRandom(_S1, _S2),
             ],
             id="p2(r)",
         ),
@@ -915,7 +915,7 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
             [CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
             [
                 *[CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
-                RevertSequence(_RS1),
+                UndoSequence(_RS1),
             ],
             id="s1(rf)",
         ),
@@ -931,7 +931,7 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
             [CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
             [
                 *[CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
-                RevertRandom(_RS1, _RS2),
+                UndoRandom(_RS1, _RS2),
             ],
             id="p2(rf)",
         ),
@@ -956,7 +956,7 @@ async def test_repeating_step(
         steps_call_order, expected_before_cancel_order, use_only_first_entries=True
     )
 
-    # cancelling stops the loop and causes revert to run
+    # cancelling stops the loop and causes undo to run
     await cancel_operation(selected_app, schedule_id)
 
     await ensure_expected_order(
@@ -1113,7 +1113,7 @@ async def test_wait_for_manual_intervention(
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
                 CreateSequence(_FCR1),
-                RevertSequence(_FCR1),
+                UndoSequence(_FCR1),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1132,10 +1132,10 @@ async def test_wait_for_manual_intervention(
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
                 CreateSequence(_FCR1),
-                RevertSequence(_FCR1),
-                RevertSequence(_FCR1),  # this one is retried
-                RevertRandom(_S2, _S3, _S4),
-                RevertSequence(_S1),
+                UndoSequence(_FCR1),
+                UndoSequence(_FCR1),  # this one is retried
+                UndoRandom(_S2, _S3, _S4),
+                UndoSequence(_S1),
             ],
             id="s1-p3-s1(1r)",
         ),
@@ -1152,7 +1152,7 @@ async def test_wait_for_manual_intervention(
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
                 CreateRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
-                RevertRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
+                UndoRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1181,16 +1181,16 @@ async def test_wait_for_manual_intervention(
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
                 CreateRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
-                RevertRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
-                RevertRandom(_FCR1, _FCR2, _FCR3),  # retried steps
-                RevertRandom(_S2, _S3, _S4),
-                RevertSequence(_S1),
+                UndoRandom(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
+                UndoRandom(_FCR1, _FCR2, _FCR3),  # retried steps
+                UndoRandom(_S2, _S3, _S4),
+                UndoSequence(_S1),
             ],
             id="s1-p3-p6(3r)",
         ),
     ],
 )
-async def test_restart_revert_operation_step_in_error(
+async def test_restart_undo_operation_step_in_error(
     reset_step_issue_tracker: None,
     preserve_caplog_for_async_logging: None,
     steps_call_order: list[tuple[str, str]],
@@ -1218,12 +1218,12 @@ async def test_restart_revert_operation_step_in_error(
 
     # set step to no longer raise and restart the failed steps
     steps_to_restart = _get_steps_matching_class(
-        operation, match=_FailOnCreateAndRevertBS
+        operation, match=_FailOnCreateAndUndoBS
     )
     _GlobalStepIssueTracker.set_issue_solved()
     await limited_gather(
         *(
-            restart_operation_step_stuck_during_revert(
+            restart_operation_step_stuck_during_undo(
                 selected_app, schedule_id, step.get_step_name()
             )
             for step in steps_to_restart
@@ -1331,12 +1331,12 @@ async def test_errors_with_restart_operation_step_in_error(
                 SingleStepGroup(RPCtxR1),
             ],
             {
-                "bs_revert_c_req_1": _CTX_VALUE,  # required by create
-                "bs_revert_r_req_1": _CTX_VALUE,  # not created automatically since crete fails
+                "bs_undo_c_req_1": _CTX_VALUE,  # required by create
+                "bs_undo_r_req_1": _CTX_VALUE,  # not created automatically since crete fails
             },
             [
                 CreateSequence(RPCtxR1),
-                RevertSequence(RPCtxR1),
+                UndoSequence(RPCtxR1),
             ],
             id="s1(1r)",
         ),
@@ -1345,14 +1345,14 @@ async def test_errors_with_restart_operation_step_in_error(
                 ParallelStepGroup(RPCtxR1, RPCtxR2),
             ],
             {
-                "bs_revert_c_req_1": _CTX_VALUE,  # required by create
-                "bs_revert_c_req_2": _CTX_VALUE,  # required by create
-                "bs_revert_r_req_1": _CTX_VALUE,  # not created automatically since crete fails
-                "bs_revert_r_req_2": _CTX_VALUE,  # not created automatically since crete fails
+                "bs_undo_c_req_1": _CTX_VALUE,  # required by create
+                "bs_undo_c_req_2": _CTX_VALUE,  # required by create
+                "bs_undo_r_req_1": _CTX_VALUE,  # not created automatically since crete fails
+                "bs_undo_r_req_2": _CTX_VALUE,  # not created automatically since crete fails
             },
             [
                 CreateRandom(RPCtxR1, RPCtxR2),
-                RevertRandom(RPCtxR1, RPCtxR2),
+                UndoRandom(RPCtxR1, RPCtxR2),
             ],
             id="p2(2r)",
         ),
@@ -1404,7 +1404,7 @@ async def test_operation_context_usage(
                 SingleStepGroup(RPCtxR1),
             ],
             {
-                "bs_revert_c_prov_1": _CTX_VALUE,  # already provied by step creates issue
+                "bs_undo_c_prov_1": _CTX_VALUE,  # already provied by step creates issue
             },
             id="s1",
         ),
@@ -1413,7 +1413,7 @@ async def test_operation_context_usage(
                 SingleStepGroup(RPCtxR1),
             ],
             {
-                "bs_revert_r_prov_1": _CTX_VALUE,  # already provied by step creates issue
+                "bs_undo_r_prov_1": _CTX_VALUE,  # already provied by step creates issue
             },
             id="s1",
         ),
@@ -1447,7 +1447,7 @@ async def test_operation_initial_context_using_key_provided_by_step(
                 # `bs__c_req_1` is missing
             },
             [
-                RevertSequence(RPCtxS1),
+                UndoSequence(RPCtxS1),
             ],
             id="missing_context_key",
         ),
@@ -1459,7 +1459,7 @@ async def test_operation_initial_context_using_key_provided_by_step(
                 "bs__c_req_1": None,
             },
             [
-                RevertSequence(RPCtxS1),
+                UndoSequence(RPCtxS1),
             ],
             id="context_key_is_none",
         ),
@@ -1508,7 +1508,7 @@ class _BadImplementedStep(BaseStep):
 
     @classmethod
     def get_create_requires_context_keys(cls) -> set[str]:
-        return {"to_return", "trigger_revert"}
+        return {"to_return", "trigger_undo"}
 
     @classmethod
     def get_create_provides_context_keys(cls) -> set[str]:
@@ -1522,29 +1522,29 @@ class _BadImplementedStep(BaseStep):
         _ = app
         _STEPS_CALL_ORDER.append((cls.__name__, CREATED))
 
-        if required_context.get("trigger_revert"):
-            msg = "triggering revert"
+        if required_context.get("trigger_undo"):
+            msg = "triggering undo"
             raise RuntimeError(msg)
 
         return cls._get_provided_context(required_context)
 
-    # REVERT
+    # UNDO
 
     @classmethod
-    def get_revert_requires_context_keys(cls) -> set[str]:
-        return {"to_return", "trigger_revert"}
+    def get_undo_requires_context_keys(cls) -> set[str]:
+        return {"to_return", "trigger_undo"}
 
     @classmethod
-    def get_revert_provides_context_keys(cls) -> set[str]:
+    def get_undo_provides_context_keys(cls) -> set[str]:
         return {"a_key"}
 
     @classmethod
-    async def revert(
+    async def undo(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         print("INJECTED_CONTEXT_R", required_context)
         _ = app
-        _STEPS_CALL_ORDER.append((cls.__name__, REVERTED))
+        _STEPS_CALL_ORDER.append((cls.__name__, UNDONE))
 
         return cls._get_provided_context(required_context)
 
@@ -1558,7 +1558,7 @@ class _BadImplementedStep(BaseStep):
                 SingleStepGroup(_BadImplementedStep),
             ],
             {
-                "trigger_revert": False,
+                "trigger_undo": False,
                 "to_return": {
                     "add_to_return": True,
                     "keys": {"a_key": None},
@@ -1567,7 +1567,7 @@ class _BadImplementedStep(BaseStep):
             f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
             [
                 CreateSequence(_BadImplementedStep),
-                RevertSequence(_BadImplementedStep),
+                UndoSequence(_BadImplementedStep),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1584,7 +1584,7 @@ class _BadImplementedStep(BaseStep):
                 SingleStepGroup(_BadImplementedStep),
             ],
             {
-                "trigger_revert": False,
+                "trigger_undo": False,
                 "to_return": {
                     "add_to_return": False,
                 },
@@ -1592,7 +1592,7 @@ class _BadImplementedStep(BaseStep):
             f"{ProvidedOperationContextKeysAreMissingError.__name__}: Provided context {{}} is missing keys {{'a_key'",
             [
                 CreateSequence(_BadImplementedStep),
-                RevertSequence(_BadImplementedStep),
+                UndoSequence(_BadImplementedStep),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1609,7 +1609,7 @@ class _BadImplementedStep(BaseStep):
                 SingleStepGroup(_BadImplementedStep),
             ],
             {
-                "trigger_revert": True,
+                "trigger_undo": True,
                 "to_return": {
                     "add_to_return": True,
                     "keys": {"a_key": None},
@@ -1618,7 +1618,7 @@ class _BadImplementedStep(BaseStep):
             f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
             [
                 CreateSequence(_BadImplementedStep),
-                RevertSequence(_BadImplementedStep),
+                UndoSequence(_BadImplementedStep),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1628,14 +1628,14 @@ class _BadImplementedStep(BaseStep):
                 "SCH:{schedule_id}:STEPS:test_op:0S:C:_BadImplementedStep",
                 "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
             },
-            id="revert-returns-key-set-to-None",
+            id="undo-returns-key-set-to-None",
         ),
         pytest.param(
             [
                 SingleStepGroup(_BadImplementedStep),
             ],
             {
-                "trigger_revert": True,
+                "trigger_undo": True,
                 "to_return": {
                     "add_to_return": False,
                 },
@@ -1643,7 +1643,7 @@ class _BadImplementedStep(BaseStep):
             f"{ProvidedOperationContextKeysAreMissingError.__name__}: Provided context {{}} is missing keys {{'a_key'",
             [
                 CreateSequence(_BadImplementedStep),
-                RevertSequence(_BadImplementedStep),
+                UndoSequence(_BadImplementedStep),
             ],
             {
                 "SCH:{schedule_id}",
@@ -1653,7 +1653,7 @@ class _BadImplementedStep(BaseStep):
                 "SCH:{schedule_id}:STEPS:test_op:0S:C:_BadImplementedStep",
                 "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
             },
-            id="revert-does-not-set-the-key-to-return",
+            id="undo-does-not-set-the-key-to-return",
         ),
     ],
 )

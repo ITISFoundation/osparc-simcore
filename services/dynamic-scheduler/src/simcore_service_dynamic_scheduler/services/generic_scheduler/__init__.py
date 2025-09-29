@@ -1,6 +1,6 @@
 from ._core import (
     cancel_operation,
-    restart_operation_step_stuck_during_revert,
+    restart_operation_step_stuck_during_undo,
     restart_operation_step_stuck_in_manual_intervention_during_create,
     start_operation,
 )
@@ -39,7 +39,7 @@ __all__: tuple[str, ...] = (
     "ParallelStepGroup",
     "ProvidedOperationContext",
     "RequiredOperationContext",
-    "restart_operation_step_stuck_during_revert",
+    "restart_operation_step_stuck_during_undo",
     "restart_operation_step_stuck_in_manual_intervention_during_create",
     "ScheduleId",
     "SingleStepGroup",

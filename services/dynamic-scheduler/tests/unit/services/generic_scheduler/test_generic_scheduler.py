@@ -205,7 +205,7 @@ class _InterruptionType(str, Enum):
 
 
 _CREATED: Final[str] = "create"
-_REVERTED: Final[str] = "revert"
+_UNDONE: Final[str] = "undo"
 
 _CTX_VALUE: Final[str] = "a_value"
 
@@ -238,17 +238,17 @@ class _BS(BaseStep):
         }
 
     @classmethod
-    async def revert(
+    async def undo(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         multiprocessing_queue: _AsyncMultiprocessingQueue = (
             app.state.multiprocessing_queue
         )
-        await multiprocessing_queue.put((cls.__name__, _REVERTED))
+        await multiprocessing_queue.put((cls.__name__, _UNDONE))
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_revert_provides_context_keys()},
+            **{k: _CTX_VALUE for k in cls.get_undo_provides_context_keys()},
         }
 
 
@@ -333,3 +333,6 @@ async def test_can_recover_from_interruption(
 
 # TODO: add a test that replaces a running operation with a new one! make sure nothing bad happens and that the old
 # running operation manages to reach the end
+
+
+# THe only way to do it is by cancelling the existing and waitin for it to finish before running something new.

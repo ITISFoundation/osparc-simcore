@@ -145,7 +145,7 @@ class _StepFinisheWithSuccess(BaseStep):
         return {}
 
     @classmethod
-    async def revert(
+    async def undo(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
@@ -166,7 +166,7 @@ class _StepFinisheError(BaseStep):
         raise RuntimeError(msg)
 
     @classmethod
-    async def revert(
+    async def undo(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
@@ -188,7 +188,7 @@ class _StepLongRunningToCancel(BaseStep):
         return {}
 
     @classmethod
-    async def revert(
+    async def undo(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app

@@ -117,9 +117,9 @@ class Core(SingletonInAppStateMixin):
 
     async def cancel_operation(self, schedule_id: ScheduleId) -> None:
         """
-        Sets the operation to revert form the point in which it arrived in:
-        - when is_creating=True: cancels all steps & moves operation to revert
-        - when is_creating=False: does nothing, since revert is already running
+        Sets the operation to undo form the point in which it arrived in:
+        - when is_creating=True: cancels all steps & moves operation to undo
+        - when is_creating=False: does nothing, since undo is already running
 
         # NOTE: SEE `_on_schedule_event` for more details
         """
@@ -131,7 +131,7 @@ class Core(SingletonInAppStateMixin):
 
         if is_creating is False:
             _logger.warning(
-                "Cannot cancel steps for schedule_id='%s' since REVERT is running",
+                "Cannot cancel steps for schedule_id='%s' since UNDO is running",
                 schedule_id,
             )
             return
@@ -270,7 +270,7 @@ class Core(SingletonInAppStateMixin):
             step_name,
             operation_name,
             schedule_id,
-            "manual intervention" if in_manual_intervention else "error in revert",
+            "manual intervention" if in_manual_intervention else "error in undo",
         )
         # restart only this step
         await start_and_mark_as_started(
@@ -303,8 +303,8 @@ class Core(SingletonInAppStateMixin):
         - `CEREATEING`: default mode when starting an operation
             - runs the `create()` of each step in each group (`first` -> `last` group)
             - when done, it removes all operation data
-        - `REVERTING`: revert the actions of `create()` in reverse order with respect to CREATING
-            - runs the `revert()` of each step in each group (`current` -> `first` group)
+        - `UNDOING`: undo the actions of `create()` in reverse order with respect to CREATING
+            - runs the `undo()` of each step in each group (`current` -> `first` group)
             - when done, it removes all operation data
         - `REPEATING`: repeats the `create()` of all steps in a group
             - waits and runs the `create()` of all the steps in last group in the operation
@@ -312,15 +312,15 @@ class Core(SingletonInAppStateMixin):
 
         NOTE: `REPEATING` is triggered by setting `BaseStepGroup(repeat_steps=True)` during definition
         of an `operation`.
-        NOTE: `REVERTING` is triggered by calling `cancel_operation()` or when a step finishes with
+        NOTE: `UNDOING` is triggered by calling `cancel_operation()` or when a step finishes with
         status `FAILED` or `CANCELLED` (except in manual intervention).
 
         There are 3 reasons why an operation will hang:
         - MANUAL_INTERVENTION: step failed during `create()` and flagged for manual intervention
             -> requires support intervention
-        - STEP_ISSUE: a step failed during `revert()` due to an error in the step's revert code
+        - STEP_ISSUE: a step failed during `undo()` due to an error in the step's undo code
             -> unexpected behviour / requires developer intervention
-        - FRAMEWORK_ISSUE: a step failed during `revert()` because it was cancelled
+        - FRAMEWORK_ISSUE: a step failed during `undo()` because it was cancelled
             -> unexpected behviour / requires developer intervention
 
         NOTE: only MANUAL_INTERVENTION is an allowed to happen all other failuires are to be treated
@@ -398,8 +398,8 @@ class Core(SingletonInAppStateMixin):
                 )
 
         else:
-            with log_context(_logger, logging.DEBUG, f"REVERTING {base_message}"):
-                await self._advance_as_reverting(
+            with log_context(_logger, logging.DEBUG, f"UNDOING {base_message}"):
+                await self._advance_as_undoing(
                     steps_statuses,
                     schedule_data_proxy,
                     schedule_id,
@@ -419,7 +419,7 @@ class Core(SingletonInAppStateMixin):
     ) -> None:
         # REPEATING logic:
         # 1) sleep before repeating
-        # 2) if any of the repeating steps was cancelled -> move to revert
+        # 2) if any of the repeating steps was cancelled -> move to undo
         # 3) -> restart all steps in the group
 
         step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
@@ -427,7 +427,7 @@ class Core(SingletonInAppStateMixin):
         # 1) sleep before repeating
         await asyncio.sleep(current_step_group.wait_before_repeat.total_seconds())
 
-        # 2) if any of the repeating steps was cancelled -> move to revert
+        # 2) if any of the repeating steps was cancelled -> move to undo
 
         # since some time passed, query all steps statuses again,
         # a cancellation request might have been requested
@@ -467,7 +467,7 @@ class Core(SingletonInAppStateMixin):
         # - 1a) -> move to next group
         # - 1b) if reached the end of the CREATE operation -> remove all created data
         # 2) if manual intervention is required -> do nothing else
-        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to revert
+        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to undo
 
         # 1) if all steps in group in SUUCESS
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
@@ -522,7 +522,7 @@ class Core(SingletonInAppStateMixin):
             )
             return
 
-        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to revert
+        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to undo
         if any(
             s in {StepStatus.FAILED, StepStatus.CANCELLED}
             for s in steps_statuses.values()
@@ -530,7 +530,7 @@ class Core(SingletonInAppStateMixin):
             with log_context(
                 _logger,
                 logging.DEBUG,
-                f"{operation_name=} was not successfull: {steps_statuses=}, moving to revert",
+                f"{operation_name=} was not successfull: {steps_statuses=}, moving to undo",
             ):
                 await schedule_data_proxy.create_or_update("is_creating", value=False)
                 await enqueue_schedule_event(self.app, schedule_id)
@@ -540,7 +540,7 @@ class Core(SingletonInAppStateMixin):
             direction="creation", steps_statuses=steps_statuses, schedule_id=schedule_id
         )
 
-    async def _advance_as_reverting(
+    async def _advance_as_undoing(
         self,
         steps_statuses: dict[StepName, StepStatus],
         schedule_data_proxy: ScheduleDataStoreProxy,
@@ -549,9 +549,9 @@ class Core(SingletonInAppStateMixin):
         group_index: NonNegativeInt,
         current_step_group: BaseStepGroup,
     ) -> None:
-        # REVERT logic:
+        # UNDO logic:
         # 1) if all steps in group in SUCCESS
-        # - 1a) if reached the end of the REVERT operation -> remove all created data
+        # - 1a) if reached the end of the UNDO operation -> remove all created data
         # - 1b) -> move to previous group
         # 2) it is unexpected to have a FAILED step -> do nothing else
         # 3) it is unexpected to have a CANCELLED step -> do nothing else
@@ -561,7 +561,7 @@ class Core(SingletonInAppStateMixin):
             previous_group_index = group_index - 1
             if previous_group_index < 0:
 
-                # 1a) if reached the end of the REVERT operation -> remove all created data
+                # 1a) if reached the end of the UNDO operation -> remove all created data
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_creating=False
                 )
@@ -598,7 +598,7 @@ class Core(SingletonInAppStateMixin):
                 for step_name, traceback in error_tracebacks
             )
             message = (
-                f"Operation 'revert' for schedule_id='{schedule_id}' failed for steps: "
+                f"Operation 'undo' for schedule_id='{schedule_id}' failed for steps: "
                 f"'{failed_step_names}'. Step code should never fail during destruction, "
                 f"please report to developers:\n{formatted_tracebacks}"
             )
@@ -613,7 +613,7 @@ class Core(SingletonInAppStateMixin):
             n for n, s in steps_statuses.items() if s == StepStatus.CANCELLED
         ]:
             message = (
-                f"Operation 'revert' for schedule_id='{schedule_id}' was cancelled for steps: "
+                f"Operation 'undo' for schedule_id='{schedule_id}' was cancelled for steps: "
                 f"{cancelled_step_names}. This should not happen, and should be addressed."
             )
             _logger.error(message)
@@ -626,7 +626,7 @@ class Core(SingletonInAppStateMixin):
             return
 
         raise UnexpectedStepHandlingError(
-            direction="revert", steps_statuses=steps_statuses, schedule_id=schedule_id
+            direction="undo", steps_statuses=steps_statuses, schedule_id=schedule_id
         )
 
 
@@ -642,10 +642,10 @@ async def start_operation(
 
 async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
     """
-    Unstruct scheduler to revert all steps completed until
+    Unstruct scheduler to undo all steps completed until
     now for the running operation.
 
-    `reverting` refers to the act of undoing the effects of a step
+    `undoing` refers to the act of undoing the effects of a step
     that has already been completed (eg: remove a created network)
     """
     await Core.get_from_app_state(app).cancel_operation(schedule_id)
@@ -667,14 +667,14 @@ async def restart_operation_step_stuck_in_manual_intervention_during_create(
     )
 
 
-async def restart_operation_step_stuck_during_revert(
+async def restart_operation_step_stuck_during_undo(
     app: FastAPI, schedule_id: ScheduleId, step_name: StepName
 ) -> None:
     """
-    Restarts a `stuck step` while the operation is being reverted
+    Restarts a `stuck step` while the operation is being undone
 
     `stuck step` is a step that has failed and exhausted all retries
-    `reverting` refers to the act of undoing the effects of a step
+    `undoing` refers to the act of undoing the effects of a step
     that has already been completed (eg: remove a created network)
     """
     await Core.get_from_app_state(app).restart_operation_step_stuck_in_error(

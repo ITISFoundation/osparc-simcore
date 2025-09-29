@@ -143,7 +143,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
         return (
             await step.get_create_retries(context)
             if is_creating
-            else await step.get_revert_retries(context)
+            else await step.get_undo_retries(context)
         )
 
     @classmethod
@@ -153,7 +153,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
         return (
             await step.get_create_wait_between_attempts(context)
             if is_creating
-            else await step.get_revert_wait_between_attempts(context)
+            else await step.get_undo_wait_between_attempts(context)
         )
 
     @classmethod
@@ -190,16 +190,16 @@ class DeferredRunner(BaseDeferredHandler[None]):
             )
         else:
             required_context = await operation_context_proxy.read(
-                *step.get_revert_requires_context_keys()
+                *step.get_undo_requires_context_keys()
             )
             _raise_if_any_context_value_is_none(required_context)
 
-            step_provided_operation_context = await step.revert(app, required_context)
+            step_provided_operation_context = await step.undo(app, required_context)
             provided_operation_context = step_provided_operation_context or {}
-            revert_provides_keys = step.get_revert_provides_context_keys()
+            undo_provides_keys = step.get_undo_provides_context_keys()
 
             _raise_if_provided_context_keys_are_missing_or_none(
-                provided_operation_context, revert_provides_keys
+                provided_operation_context, undo_provides_keys
             )
 
         await operation_context_proxy.create_or_update(provided_operation_context)

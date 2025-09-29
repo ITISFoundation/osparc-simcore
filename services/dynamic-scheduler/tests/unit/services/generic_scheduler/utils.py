@@ -17,7 +17,7 @@ _RETRY_PARAMS: Final[dict[str, Any]] = {
 }
 
 CREATED: Final[str] = "create"
-REVERTED: Final[str] = "revert"
+UNDONE: Final[str] = "undo"
 
 
 class BaseExpectedStepOrder:
@@ -39,12 +39,12 @@ class CreateRandom(BaseExpectedStepOrder):
     """steps appear in any given order as CREATE"""
 
 
-class RevertSequence(BaseExpectedStepOrder):
-    """steps appear in a sequence as REVERT"""
+class UndoSequence(BaseExpectedStepOrder):
+    """steps appear in a sequence as UNDO"""
 
 
-class RevertRandom(BaseExpectedStepOrder):
-    """steps appear in any given order as REVERT"""
+class UndoRandom(BaseExpectedStepOrder):
+    """steps appear in any given order as UNDO"""
 
 
 def _assert_order_sequence(
@@ -99,10 +99,10 @@ def _assert_expected_order(
             _assert_order_sequence(call_order, group.steps, expected=CREATED)
         elif isinstance(group, CreateRandom):
             _assert_order_random(call_order, group.steps, expected=CREATED)
-        elif isinstance(group, RevertSequence):
-            _assert_order_sequence(call_order, group.steps, expected=REVERTED)
-        elif isinstance(group, RevertRandom):
-            _assert_order_random(call_order, group.steps, expected=REVERTED)
+        elif isinstance(group, UndoSequence):
+            _assert_order_sequence(call_order, group.steps, expected=UNDONE)
+        elif isinstance(group, UndoRandom):
+            _assert_order_random(call_order, group.steps, expected=UNDONE)
         else:
             msg = f"Unknown {group=}"
             raise NotImplementedError(msg)

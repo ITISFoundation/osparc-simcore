@@ -59,14 +59,14 @@ class WrongBS2C(BaseBS):
 
 class WrongBS1R(BaseBS):
     @classmethod
-    def get_revert_provides_context_keys(cls) -> set[str]:
-        return {"revert_key"}
+    def get_undo_provides_context_keys(cls) -> set[str]:
+        return {"undo_key"}
 
 
 class WrongBS2R(BaseBS):
     @classmethod
-    def get_revert_provides_context_keys(cls) -> set[str]:
-        return {"revert_key"}
+    def get_undo_provides_context_keys(cls) -> set[str]:
+        return {"undo_key"}
 
 
 @pytest.mark.parametrize(
@@ -150,11 +150,11 @@ def test_validate_operation_passes(operation: Operation):
         ),
         (
             [SingleStepGroup(WrongBS1R), SingleStepGroup(WrongBS2R)],
-            f"already provided key='revert_key' in {BaseStep.get_revert_provides_context_keys.__name__}",
+            f"already provided key='undo_key' in {BaseStep.get_undo_provides_context_keys.__name__}",
         ),
         (
             [ParallelStepGroup(WrongBS1R, WrongBS2R)],
-            f"already provided key='revert_key' in {BaseStep.get_revert_provides_context_keys.__name__}",
+            f"already provided key='undo_key' in {BaseStep.get_undo_provides_context_keys.__name__}",
         ),
         (
             [SingleStepGroup(MI1, repeat_steps=True)],

@@ -29,7 +29,7 @@ _OPERATION_CONTEXT_KEY: Final[str] = "OP_CTX"
 
 
 def _get_is_creating_str(*, is_creating: bool) -> str:
-    return "C" if is_creating else "R"
+    return "C" if is_creating else "U"
 
 
 def _get_scheduler_data_hash_key(*, schedule_id: ScheduleId) -> str:
@@ -56,7 +56,7 @@ def _get_step_hash_key(
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_SHORT_NAME
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
-    # - IS_CREATING: "C" (create) or "R" (revert)
+    # - IS_CREATING: "C" (create) or "U" (undo)
     # - STEP_NAME form it's class
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:STEPS:START_SERVICE:0S:C:BS1
@@ -78,7 +78,7 @@ def _get_group_hash_key(
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_SHORT_NAME
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
-    # - IS_CREATING: "C" (create) or "R" (revert)
+    # - IS_CREATING: "C" (create) or "U" (undo)
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:GROUPS:START_SERVICE:0S:C
     is_creating_str = _get_is_creating_str(is_creating=is_creating)

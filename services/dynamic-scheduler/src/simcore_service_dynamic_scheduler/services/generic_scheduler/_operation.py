@@ -85,10 +85,10 @@ class BaseStep(ABC):
         """
         return _DEFAULT_WAIT_FOR_MANUAL_INTERVENTION
 
-    ### REVERT
+    ### UNDO
 
     @classmethod
-    async def revert(
+    async def undo(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         """
@@ -96,28 +96,28 @@ class BaseStep(ABC):
         NOTE: Ensure this is successful if:
             - `create` is not executed
             - `create` is executed partially
-            - `revert` is called multiple times
+            - `undo` is called multiple times
         """
         _ = required_context
         _ = app
         return {}
 
     @classmethod
-    def get_revert_requires_context_keys(cls) -> set[str]:
+    def get_undo_requires_context_keys(cls) -> set[str]:
         """
-        [optional] keys that must be present in the OperationContext when REVERT is called
-        """
-        return set()
-
-    @classmethod
-    def get_revert_provides_context_keys(cls) -> set[str]:
-        """
-        [optional] keys that will be added to the OperationContext when REVERT is successful
+        [optional] keys that must be present in the OperationContext when UNDO is called
         """
         return set()
 
     @classmethod
-    async def get_revert_retries(cls, context: DeferredContext) -> int:
+    def get_undo_provides_context_keys(cls) -> set[str]:
+        """
+        [optional] keys that will be added to the OperationContext when UNDO is successful
+        """
+        return set()
+
+    @classmethod
+    async def get_undo_retries(cls, context: DeferredContext) -> int:
         """
         [optional] amount of retires in case of failure
         HINT: you can use `get_operation_context_proxy()`, `get_step_group_proxy(context)`
@@ -127,7 +127,7 @@ class BaseStep(ABC):
         return _DEFAULT_STEP_RETRIES
 
     @classmethod
-    async def get_revert_wait_between_attempts(
+    async def get_undo_wait_between_attempts(
         cls, context: DeferredContext
     ) -> timedelta:
         """
@@ -240,7 +240,7 @@ def _has_abstract_methods(cls: type[object]) -> bool:
 def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
     detected_steps_names: dict[StepName, type[BaseStep]] = {}
     create_provided_keys: set[str] = set()
-    revert_provided_keys: set[str] = set()
+    undo_provided_keys: set[str] = set()
 
     for k, step_group in enumerate(operation):
         if (
@@ -278,14 +278,14 @@ def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
                     )
                     raise ValueError(msg)
                 create_provided_keys.add(key)
-            for key in step.get_revert_provides_context_keys():
-                if key in revert_provided_keys:
+            for key in step.get_undo_provides_context_keys():
+                if key in undo_provided_keys:
                     msg = (
                         f"Step {step_name=} provides already provided {key=} in "
-                        f"{step.get_revert_provides_context_keys.__name__}()"
+                        f"{step.get_undo_provides_context_keys.__name__}()"
                     )
                     raise ValueError(msg)
-                revert_provided_keys.add(key)
+                undo_provided_keys.add(key)
 
         if (
             step_group.repeat_steps is True
@@ -310,7 +310,7 @@ def get_operation_provided_context_keys(operation: Operation) -> set[str]:
     for step_group in operation:
         for step in step_group.get_step_subgroup_to_run():
             provided_keys.update(step.get_create_provides_context_keys())
-            provided_keys.update(step.get_revert_provides_context_keys())
+            provided_keys.update(step.get_undo_provides_context_keys())
 
     return provided_keys
 
