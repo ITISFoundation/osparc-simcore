@@ -220,7 +220,7 @@ async def conditionally_unsubscribe_from_project_logs(
         # NOTE: With multiple webserver replicas, this ensures we don't unsubscribe until
         # the last socket is closed, though another replica may still maintain an active
         # subscription even if no users are connected to it.
-        if actually_used_sockets_on_project <= 1:
+        if actually_used_sockets_on_project == 0:
             await project_logs.unsubscribe(app, project_id)
 
 
