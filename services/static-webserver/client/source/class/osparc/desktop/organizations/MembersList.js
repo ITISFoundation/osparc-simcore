@@ -137,8 +137,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
     __getMembersList: function() {
       const membersUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 3,
+        appearance: "listing",
         width: 150
       });
 
@@ -157,6 +156,9 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
+          item.set({
+            cursor: "default",
+          });
           item.subscribeToFilterGroup("organizationMembersList");
           item.getChildControl("thumbnail").setDecorator("circled");
           item.addListener("promoteToMember", e => {

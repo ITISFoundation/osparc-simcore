@@ -5,7 +5,7 @@
 
 import json
 import logging
-from typing import Any
+from typing import Any, Final
 from urllib.parse import urljoin
 
 import httpx
@@ -156,7 +156,7 @@ class FogbugzRestClient:
             raise ValueError(msg)
 
 
-_APP_KEY = f"{__name__}.{FogbugzRestClient.__name__}"
+_APPKEY: Final = web.AppKey(FogbugzRestClient.__name__, FogbugzRestClient)
 
 
 async def setup_fogbugz_rest_client(app: web.Application) -> None:
@@ -190,10 +190,10 @@ async def setup_fogbugz_rest_client(app: web.Application) -> None:
         base_url=settings.FOGBUGZ_URL,
     )
 
-    app[_APP_KEY] = client
+    app[_APPKEY] = client
 
 
 def get_fogbugz_rest_client(app: web.Application) -> FogbugzRestClient:
     """Get Fogbugz REST client from app state"""
-    app_key: FogbugzRestClient = app[_APP_KEY]
+    app_key: FogbugzRestClient = app[_APPKEY]
     return app_key

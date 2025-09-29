@@ -5,8 +5,8 @@ from typing import Final
 
 from aiohttp import web
 
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..application_setup import ModuleCategory, app_setup_func
-from ..constants import APP_SETTINGS_KEY
 from ..rest.plugin import setup_rest
 from . import _rest
 
@@ -19,7 +19,7 @@ APP_STORAGE_CLIENT_KEY: Final = web.AppKey("APP_STORAGE_CLIENT_KEY", object)
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STORAGE", logger=_logger
 )
 def setup_storage(app: web.Application):
-    assert app[APP_SETTINGS_KEY].WEBSERVER_STORAGE  # nosec
+    assert app[APP_SETTINGS_APPKEY].WEBSERVER_STORAGE  # nosec
 
     setup_rest(app)
     app.router.add_routes(_rest.routes)

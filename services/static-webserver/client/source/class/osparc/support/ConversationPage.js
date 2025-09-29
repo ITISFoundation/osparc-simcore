@@ -162,6 +162,10 @@ qx.Class.define("osparc.support.ConversationPage", {
           control = new osparc.support.Conversation();
           this.getChildControl("conversation-container").add(control);
           break;
+        case "book-a-call-topic-selector":
+          control = new osparc.support.BookACallTopicSelector();
+          this.getChildControl("main-stack").add(control);
+          break;
         case "book-a-call-iframe":
           control = new osparc.wrapper.BookACallIframe();
           this.getChildControl("main-stack").add(control);
@@ -185,11 +189,25 @@ qx.Class.define("osparc.support.ConversationPage", {
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
           title.setValue(this.tr("Book a Call"));
+          const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
+          bookACallTopicSelector.getChildControl("next-button").setLabel(this.tr("Next"));
+          bookACallTopicSelector.addListener("callTopicSelected", e => {
+            const data = e.getData();
+            conversationContent.addBookACallInfo(data);
+            this.getChildControl("main-stack").setSelection([conversationContainer]);
+          });
+          this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);
           break;
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL_3RD: {
           title.setValue(this.tr("Book a Call 3rd"));
-          const bookACallIframe = this.getChildControl("book-a-call-iframe");
-          this.getChildControl("main-stack").setSelection([bookACallIframe]);
+          const bookACallTopicSelector = this.getChildControl("book-a-call-topic-selector");
+          bookACallTopicSelector.getChildControl("next-button").setLabel(this.tr("Select date & time"));
+          bookACallTopicSelector.addListener("callTopicSelected", e => {
+            const data = e.getData();
+            conversationContent.addBookACallInfo(data);
+            this.getChildControl("main-stack").setSelection([conversationContainer]);
+          });
+          this.getChildControl("main-stack").setSelection([bookACallTopicSelector]);
           break;
         }
         case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:

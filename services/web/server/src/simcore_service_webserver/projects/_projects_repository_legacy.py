@@ -7,7 +7,7 @@
 
 import logging
 from contextlib import AsyncExitStack
-from typing import Any, Self, cast
+from typing import Any, Final, Self, cast
 from uuid import uuid1
 
 import sqlalchemy as sa
@@ -114,7 +114,6 @@ from .models import (
 
 _logger = logging.getLogger(__name__)
 
-APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 ANY_USER = ANY_USER_ID_SENTINEL
 
 DEFAULT_ORDER_BY = OrderBy(
@@ -140,14 +139,14 @@ class ProjectDBAPI(BaseProjectDB):
 
     @classmethod
     def get_from_app_context(cls, app: web.Application) -> Self:
-        db = app[APP_PROJECT_DBAPI]
+        db = app[PROJECT_DBAPI_APPKEY]
         assert isinstance(db, cls)  # nosec
         return db
 
     @classmethod
     def set_once_in_app_context(cls, app: web.Application) -> Self:
-        if app.get(APP_PROJECT_DBAPI) is None:
-            app[APP_PROJECT_DBAPI] = cls(app)
+        if app.get(PROJECT_DBAPI_APPKEY) is None:
+            app[PROJECT_DBAPI_APPKEY] = ProjectDBAPI(app)
         return cls.get_from_app_context(app)
 
     @property
@@ -1390,6 +1389,9 @@ class ProjectDBAPI(BaseProjectDB):
                 project_uuid=project_uuid,
                 details="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
             )
+
+
+PROJECT_DBAPI_APPKEY: Final = web.AppKey(ProjectDBAPI.__name__, ProjectDBAPI)
 
 
 def setup_projects_db(app: web.Application):

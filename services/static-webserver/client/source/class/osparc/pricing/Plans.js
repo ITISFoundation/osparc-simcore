@@ -54,8 +54,7 @@ qx.Class.define("osparc.pricing.Plans", {
           break;
         case "pricing-plans-list":
           control = new qx.ui.form.List().set({
-            decorator: "no-border",
-            spacing: 3
+            appearance: "listing",
           });
           control.addListener("changeSelection", e => {
             const selection = e.getData();

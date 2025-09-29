@@ -9,7 +9,7 @@ from simcore_postgres_database.aiopg_errors import DatabaseError
 
 from ..groups.api import get_group_by_gid
 from ..projects._projects_repository_legacy import (
-    APP_PROJECT_DBAPI,
+    PROJECT_DBAPI_APPKEY,
     ProjectAccessRights,
 )
 from ..projects.api import (
@@ -170,7 +170,9 @@ async def replace_current_owner(
             app, project_id=ProjectID(project_uuid), group_id=user_primary_gid
         )
         # Update project owner in projects table
-        await app[APP_PROJECT_DBAPI].update_project_owner_without_checking_permissions(
+        await app[
+            PROJECT_DBAPI_APPKEY
+        ].update_project_owner_without_checking_permissions(
             new_project_owner=new_project_owner_id,
             new_project_access_rights=project["accessRights"],
             project_uuid=project_uuid,
