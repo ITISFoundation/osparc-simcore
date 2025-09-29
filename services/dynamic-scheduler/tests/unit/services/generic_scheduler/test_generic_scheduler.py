@@ -53,16 +53,16 @@ pytest_simcore_ops_services_selection = [
 
 
 _OPERATION_MIN_RUNTIME: Final[timedelta] = timedelta(seconds=2)
-_OPRATION_STEPS_COUNT: Final[NonNegativeInt] = 10
-_STEP_SLEEP_DURATION: Final[timedelta] = _OPERATION_MIN_RUNTIME / _OPRATION_STEPS_COUNT
+_OPERATION_STEPS_COUNT: Final[NonNegativeInt] = 10
+_STEP_SLEEP_DURATION: Final[timedelta] = _OPERATION_MIN_RUNTIME / _OPERATION_STEPS_COUNT
 
 
 def _get_random_interruption_duration() -> NonNegativeFloat:
-    ranom_duration = secrets.SystemRandom().uniform(
+    random_duration = secrets.SystemRandom().uniform(
         0.1, _OPERATION_MIN_RUNTIME.total_seconds()
     )
-    print(f"⏳ Waiting {ranom_duration:.1f} seconds before interrupting...")
-    return ranom_duration
+    print(f"⏳ Waiting {random_duration:.1f} seconds before interrupting...")
+    return random_duration
 
 
 @pytest.fixture

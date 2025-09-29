@@ -1213,7 +1213,7 @@ async def test_restart_revert_operation_step_in_error(
     await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
     # give some time for the deferred runner to store the errors
-    # avoids flkayness
+    # avoids flakiness
     await asyncio.sleep(0.1)
 
     # set step to no longer raise and restart the failed steps
@@ -1332,7 +1332,7 @@ async def test_errors_with_restart_operation_step_in_error(
             ],
             {
                 "bs_revert_c_req_1": _CTX_VALUE,  # required by create
-                "bs_revert_r_req_1": _CTX_VALUE,  # not created autmatically since crete fails
+                "bs_revert_r_req_1": _CTX_VALUE,  # not created automatically since crete fails
             },
             [
                 CreateSequence(RPCtxR1),
@@ -1347,8 +1347,8 @@ async def test_errors_with_restart_operation_step_in_error(
             {
                 "bs_revert_c_req_1": _CTX_VALUE,  # required by create
                 "bs_revert_c_req_2": _CTX_VALUE,  # required by create
-                "bs_revert_r_req_1": _CTX_VALUE,  # not created autmatically since crete fails
-                "bs_revert_r_req_2": _CTX_VALUE,  # not created autmatically since crete fails
+                "bs_revert_r_req_1": _CTX_VALUE,  # not created automatically since crete fails
+                "bs_revert_r_req_2": _CTX_VALUE,  # not created automatically since crete fails
             },
             [
                 CreateRandom(RPCtxR1, RPCtxR2),
