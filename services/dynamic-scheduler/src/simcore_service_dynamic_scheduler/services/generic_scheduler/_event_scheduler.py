@@ -14,6 +14,7 @@ from faststream.rabbit import (
     RabbitRouter,
 )
 from faststream.rabbit.schemas.queue import ClassicQueueArgs
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ...core.settings import ApplicationSettings
 from ._core import get_core
@@ -61,8 +62,10 @@ def _stop_retry_for_unintended_errors(func):
     return wrapper
 
 
-class EventScheduler:
+class EventScheduler(SingletonInAppStateMixin):
     """Handles scheduling of single events for a given schedule_id"""
+
+    app_state_name: str = "generic_scheduler_event_scheduler"
 
     def __init__(self, app: FastAPI) -> None:
         self.app = app
@@ -111,7 +114,9 @@ class EventScheduler:
 
 
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    app.state.generic_scheduler_event_scheduler = event_scheduler = EventScheduler(app)
+    event_scheduler = EventScheduler(app)
+    event_scheduler.set_to_app_state(app)
+
     await event_scheduler.setup()
     yield {}
     await event_scheduler.shutdown()

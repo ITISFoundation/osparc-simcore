@@ -9,6 +9,7 @@ from uuid import uuid4
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from pydantic import NonNegativeInt
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
 from servicelib.utils import limited_gather
 
@@ -65,7 +66,9 @@ _DEFAULT_UNKNOWN_STATUS_WAIT_BEFORE_RETRY: Final[timedelta] = timedelta(seconds=
 _logger = logging.getLogger(__name__)
 
 
-class Core:
+class Core(SingletonInAppStateMixin):
+    app_state_name: str = "generic_scheduler_core"
+
     def __init__(
         self,
         app: FastAPI,
@@ -624,13 +627,12 @@ class Core:
 
 
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    app.state.generic_scheduler_core = Core(app)
+    Core(app).set_to_app_state(app)
     yield {}
 
 
 def get_core(app: FastAPI) -> Core:
-    core: Core = app.state.generic_scheduler_core
-    return core
+    return Core.get_from_app_state(app)
 
 
 async def start_operation(

@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from pydantic import NonNegativeInt
 from servicelib.deferred_tasks import TaskUID
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.redis._client import RedisClientSDK
 from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -112,7 +113,9 @@ def _loads(obj_str: str) -> Any:
     return json_loads(obj_str)
 
 
-class Store:
+class Store(SingletonInAppStateMixin):
+    app_state_name: str = "generic_scheduler_store"
+
     def __init__(self, redis_settings: RedisSettings) -> None:
         self.redis_settings = redis_settings
 
@@ -419,12 +422,13 @@ class OperationRemovalProxy:
 
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
-    app.state.generic_scheduler_store = store = Store(settings.DYNAMIC_SCHEDULER_REDIS)
+    store = Store(settings.DYNAMIC_SCHEDULER_REDIS)
+    store.set_to_app_state(app)
+
     await store.setup()
     yield {}
     await store.shutdown()
 
 
 def get_store(app: FastAPI) -> Store:
-    assert isinstance(app.state.generic_scheduler_store, Store)  # nosec
-    return app.state.generic_scheduler_store
+    return Store.get_from_app_state(app)
