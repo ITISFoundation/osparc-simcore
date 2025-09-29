@@ -199,7 +199,7 @@ async def test_steps_store_proxy(
         step_name="step",
         is_creating=is_creating,
     )
-    is_creating_str = "C" if is_creating else "R"
+    is_creating_str = "C" if is_creating else "U"
     hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{is_creating_str}:step"
 
     # set
