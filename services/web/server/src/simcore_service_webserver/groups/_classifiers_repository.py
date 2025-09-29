@@ -28,7 +28,8 @@ class GroupClassifierRepository(BaseRepository):
     async def get_classifiers_from_bundle(self, gid: int) -> dict[str, Any] | None:
         bundle_row = await self._get_bundle(gid)
         if bundle_row:
-            return bundle_row.bundle
+            # pylint: disable=protected-access
+            return dict(bundle_row.bundle._mapping)  # noqa: SLF001
         return None
 
     async def group_uses_scicrunch(
