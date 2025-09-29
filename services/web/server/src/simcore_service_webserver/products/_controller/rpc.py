@@ -1,12 +1,12 @@
 from decimal import Decimal
 
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.products import CreditResultRpcGet
 from models_library.products import ProductName
 from servicelib.rabbitmq import RPCRouter
 
 from ...application_keys import APP_SETTINGS_APPKEY
+from ...application_settings import get_application_settings
 from ...rabbitmq import get_rabbitmq_rpc_server, setup_rabbitmq
 from .. import _service
 from .._models import CreditResult
@@ -29,8 +29,12 @@ async def get_credit_amount(
 
 async def _register_rpc_routes_on_startup(app: web.Application):
     rpc_server = get_rabbitmq_rpc_server(app)
-    # FIXME: should depend on the webserver instance!
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+    settings = get_application_settings(app)
+    if not settings.WEBSERVER_RPC_NAMESPACE:
+        msg = "RPC namespace is not configured"
+        raise ValueError(msg)
+
+    await rpc_server.register_router(router, settings.WEBSERVER_RPC_NAMESPACE, app)
 
 
 def setup_rpc(app: web.Application):

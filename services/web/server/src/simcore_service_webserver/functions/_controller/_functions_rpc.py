@@ -1,7 +1,6 @@
 from typing import Literal
 
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.functions import (
     Function,
     FunctionAccessRights,
@@ -53,6 +52,7 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
+from ...application_settings import get_application_settings
 from ...rabbitmq import get_rabbitmq_rpc_server
 from .. import _functions_repository, _functions_service
 
@@ -605,8 +605,12 @@ async def get_functions_user_api_access_rights(
 
 async def register_rpc_routes_on_startup(app: web.Application):
     rpc_server = get_rabbitmq_rpc_server(app)
-    # FIXME: should depend on the webserver instance!
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+    settings = get_application_settings(app)
+    if not settings.WEBSERVER_RPC_NAMESPACE:
+        msg = "RPC namespace is not configured"
+        raise ValueError(msg)
+
+    await rpc_server.register_router(router, settings.WEBSERVER_RPC_NAMESPACE, app)
 
 
 @router.expose(reraise_if_error_type=())
