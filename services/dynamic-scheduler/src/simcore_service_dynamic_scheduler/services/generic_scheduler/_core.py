@@ -83,7 +83,7 @@ class Core:
         """start an operation by it's given name and providing an initial context"""
         schedule_id: ScheduleId = f"{uuid4()}"
 
-        # check if operation is registerd
+        # check if operation is registered
         operation = OperationRegistry.get_operation(operation_name)
 
         raise_if_overwrites_any_operation_provided_key(
