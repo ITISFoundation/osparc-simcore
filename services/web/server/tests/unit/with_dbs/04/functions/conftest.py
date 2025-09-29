@@ -19,6 +19,8 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.functions import FunctionClass, SolverFunction
 from models_library.products import ProductName
+from models_library.rabbitmq_basic_types import RPCNamespace
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -43,14 +45,9 @@ from simcore_service_webserver.statics._constants import FRONTEND_APP_DEFAULT
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-@pytest.fixture(scope="session")
-def service_name() -> str:
-    # Overrides  service_name fixture needed in docker_compose_service_environment_dict fixture
-    return "wb-api-server"
-
-
 @pytest.fixture
 def app_environment(
+    service_name: str,
     rabbit_service: RabbitSettings,
     app_environment: EnvVarsDict,
     docker_compose_service_environment_dict: EnvVarsDict,
@@ -73,6 +70,10 @@ def app_environment(
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.WEBSERVER_RABBITMQ
+    assert (
+        TypeAdapter(RPCNamespace).validate_python(service_name)
+        == settings.WEBSERVER_RPC_NAMESPACE
+    )
 
     return new_envs
 
