@@ -22,6 +22,12 @@ _DEFAULT_TIMEOUT: Final[NonNegativeFloat] = 10
 SCREENSHOT_SUFFIX = ".ignore.screenshot.png"
 
 
+async def take_screenshot(async_page: Page, prefix: str = "") -> None:
+    path = SCREENSHOTS_PATH / f"{prefix}{uuid4()}{SCREENSHOT_SUFFIX}"
+    await async_page.screenshot(path=path)
+    print(f"Please check :{path}")
+
+
 @asynccontextmanager
 async def take_screenshot_on_error(
     async_page: Page,
@@ -30,10 +36,7 @@ async def take_screenshot_on_error(
         yield
     # allows to also capture exceptions form `with pytest.raise(...)``
     except BaseException:
-        path = SCREENSHOTS_PATH / f"{uuid4()}{SCREENSHOT_SUFFIX}"
-        await async_page.screenshot(path=path)
-        print(f"Please check :{path}")
-
+        await take_screenshot(async_page)
         raise
 
 
