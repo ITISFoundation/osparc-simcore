@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import pytest
+from models_library.groups import EVERYONE_GROUP_ID
 from pytest_simcore.helpers.faker_factories import random_group_classifier
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.classifiers import group_classifiers
@@ -16,10 +17,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 @pytest.fixture
 async def group_classifier_in_db(asyncpg_engine: AsyncEngine):
     """Pre-populate group_classifiers table with test data."""
-    data = random_group_classifier(
-        gid=1,
-    )
+    data = random_group_classifier(gid=EVERYONE_GROUP_ID)
 
+    # pylint: disable=contextmanager-generator-missing-cleanup
+    # NOTE: this code is safe since `@asynccontextmanager` takes care of the cleanup
     async with insert_and_get_row_lifespan(
         asyncpg_engine,
         table=group_classifiers,

@@ -122,7 +122,7 @@ class GroupClassifiersService:
         service = ScicrunchResourcesService(self.app)
 
         flat_tree_view: dict[TreePath, ClassifierItem] = {}
-        for resource in await service.list_resources():
+        for resource in await service.list_research_resources():
             try:
                 validated_item = ClassifierItem(
                     classifier=resource.rrid,

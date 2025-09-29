@@ -51,7 +51,7 @@ async def get_scicrunch_resource(request: web.Request):
     rrid = request.match_info["rrid"]
 
     service = ScicrunchResourcesService(request.app)
-    resource = await service.get_or_fetch_resource(rrid)
+    resource = await service.get_or_fetch_reseach_resource(rrid)
 
     return envelope_json_response(resource.model_dump())
 
@@ -67,7 +67,7 @@ async def add_scicrunch_resource(request: web.Request):
     rrid = request.match_info["rrid"]
 
     service = ScicrunchResourcesService(request.app)
-    resource = await service.add_resource(rrid)
+    resource = await service.create_research_resource(rrid)
 
     return envelope_json_response(resource.model_dump())
 
@@ -83,6 +83,6 @@ async def search_scicrunch_resources(request: web.Request):
     guess_name = str(request.query["guess_name"]).strip()
 
     service = ScicrunchResourcesService(request.app)
-    hits: list[ResourceHit] = await service.search_resources(guess_name)
+    hits: list[ResourceHit] = await service.search_research_resources(guess_name)
 
     return envelope_json_response([hit.model_dump() for hit in hits])

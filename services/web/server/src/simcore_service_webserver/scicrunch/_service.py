@@ -16,14 +16,18 @@ _logger = logging.getLogger(__name__)
 
 
 class ScicrunchResourcesService:
-    """Service layer handling business logic for scicrunch resources."""
+    """Service layer handling business logic for scicrunch resources.
+
+    - Research Resources operations (RRID = Research Resource ID)
+    """
 
     def __init__(self, app: web.Application):
         self.app = app
         self._repo = ScicrunchResourcesRepository.create_from_app(app)
-        self._scicrunch = SciCrunch.get_instance(self.app)
+        # client to interact with scicrunch.org service
+        self._client = SciCrunch.get_instance(self.app)
 
-    async def list_resources(self) -> list[ResearchResource]:
+    async def list_research_resources(self) -> list[ResearchResource]:
         """List all research resources as domain models."""
         rows = await self._repo.list_all_resources()
         if not rows:
@@ -47,29 +51,7 @@ class ScicrunchResourcesService:
 
         return resources
 
-    def get_resolver_web_url(self, rrid: str) -> HttpUrl:
-        """Get the resolver web URL for a given RRID."""
-        return self._scicrunch.get_resolver_web_url(rrid)
-
-    async def get_resource_atdb(self, rrid: str) -> ResearchResourceAtdB | None:
-        """Get resource with all database fields."""
-        row = await self._repo.get_resource_by_rrid(rrid)
-        if not row:
-            return None
-
-        try:
-            return ResearchResourceAtdB.model_validate(dict(row))
-        except ValidationError as err:
-            _logger.exception(
-                **create_troubleshooting_log_kwargs(
-                    f"Invalid data for resource {rrid}",
-                    error=err,
-                    error_context={"rrid": rrid, "row_data": dict(row)},
-                )
-            )
-            return None
-
-    async def get_resource(self, rrid: str) -> ResearchResource | None:
+    async def get_research_resource(self, rrid: str) -> ResearchResource | None:
         """Get resource as domain model."""
         resource_atdb = await self.get_resource_atdb(rrid)
         if not resource_atdb:
@@ -90,42 +72,68 @@ class ScicrunchResourcesService:
             )
             return None
 
-    async def upsert_resource(self, resource: ResearchResource) -> ResearchResource:
-        """Create or update a research resource."""
-        values = resource.model_dump(exclude_unset=True)
-        row = await self._repo.upsert_resource(values)
-        return ResearchResource.model_validate(dict(row))
-
-    async def search_resources(self, guess_name: str) -> list[ResourceHit]:
-        """Search for research resources using SciCrunch API."""
-        guess_name = guess_name.strip()
-        if not guess_name:
-            return []
-
-        return await self._scicrunch.search_resource(guess_name)
-
-    async def add_resource(self, rrid: str) -> ResearchResource:
-        """Add a research resource by RRID, fetching from SciCrunch if not in database."""
-        # Check if exists in database first
-        resource = await self.get_resource(rrid)
-        if resource:
-            return resource
-
-        # If not found, request from scicrunch service
-        resource = await self._scicrunch.get_resource_fields(rrid)
-
-        # Insert new or update if exists
-        return await self.upsert_resource(resource)
-
-    async def get_or_fetch_resource(self, rrid: str) -> ResearchResource:
+    async def get_or_fetch_reseach_resource(self, rrid: str) -> ResearchResource:
         """Get resource from database first, fetch from SciCrunch API if not found."""
         # Validate the RRID format first
         validated_rrid = SciCrunch.validate_identifier(rrid)
 
         # Check if in database first
-        resource = await self.get_resource(validated_rrid)
+        resource = await self.get_research_resource(validated_rrid)
         if resource:
             return resource
 
         # Otherwise, request from scicrunch service
-        return await self._scicrunch.get_resource_fields(validated_rrid)
+        return await self._client.get_resource_fields(validated_rrid)
+
+    async def get_resource_atdb(self, rrid: str) -> ResearchResourceAtdB | None:
+        """Get resource with all database fields."""
+        row = await self._repo.get_resource_by_rrid(rrid)
+        if not row:
+            return None
+
+        try:
+            return ResearchResourceAtdB.model_validate(dict(row))
+        except ValidationError as err:
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    f"Invalid data for resource {rrid}",
+                    error=err,
+                    error_context={"rrid": rrid, "row_data": dict(row)},
+                )
+            )
+            return None
+
+    async def search_research_resources(self, guess_name: str) -> list[ResourceHit]:
+        """Search for research resources using SciCrunch API."""
+        guess_name = guess_name.strip()
+        if not guess_name:
+            return []
+
+        return await self._client.search_resource(guess_name)
+
+    async def create_research_resource(self, rrid: str) -> ResearchResource:
+        """Add a research resource by RRID, fetching from SciCrunch if not in database."""
+        # Check if exists in database first
+        resource = await self.get_research_resource(rrid)
+        if resource:
+            return resource
+
+        # If not found, request from scicrunch service
+        resource = await self._client.get_resource_fields(rrid)
+
+        # Insert new or update if exists
+        return await self.upsert_research_resource(resource)
+
+    async def upsert_research_resource(
+        self, resource: ResearchResource
+    ) -> ResearchResource:
+        """Create or update a research resource."""
+        values = resource.model_dump(exclude_unset=True)
+        row = await self._repo.upsert_resource(values)
+        return ResearchResource.model_validate(dict(row))
+
+    # HELPERS --
+
+    def get_resolver_web_url(self, rrid: str) -> HttpUrl:
+        """Get the resolver web URL for a given RRID."""
+        return self._client.get_resolver_web_url(rrid)
