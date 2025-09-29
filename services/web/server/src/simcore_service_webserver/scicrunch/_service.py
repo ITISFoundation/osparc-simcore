@@ -7,9 +7,9 @@ import logging
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import HttpUrl, ValidationError
 
+from ._client import SciCrunch
 from ._repository import ScicrunchResourcesRepository
 from .models import ResearchResource, ResearchResourceAtdB, ResourceHit
-from .service_client import SciCrunch
 
 _logger = logging.getLogger(__name__)
 

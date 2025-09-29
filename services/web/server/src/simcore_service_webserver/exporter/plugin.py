@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
 
 from ..application_setup import ModuleCategory, app_setup_func
 from . import _handlers
@@ -18,5 +19,7 @@ def setup_exporter(app: web.Application) -> bool:
 
     # Rest-API routes: maps handlers with routes tags with "viewer" based on OAS operation_id
     app.router.add_routes(_handlers.routes)
+
+    setup_scicrunch(app)
 
     return True

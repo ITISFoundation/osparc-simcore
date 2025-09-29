@@ -19,12 +19,12 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import get_client_session
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.scicrunch.plugin import (
-    setup_scicrunch,
-)
-from simcore_service_webserver.scicrunch.service_client import (
+from simcore_service_webserver.scicrunch._client import (
     ResearchResource,
     SciCrunch,
+)
+from simcore_service_webserver.scicrunch.plugin import (
+    setup_scicrunch,
 )
 
 

@@ -24,7 +24,7 @@ from pydantic import (
 )
 
 from ..scicrunch.errors import ScicrunchError
-from ..scicrunch.scicrunch_service import ScicrunchResourcesService
+from ..scicrunch.scicrunch_service import SCICRUNCH_SERVICE_APPKEY
 from ._classifiers_repository import GroupClassifierRepository
 
 _logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ class GroupClassifiersService:
             msg = "Currently only 'std' option for the classifiers tree view is implemented"
             raise NotImplementedError(msg)
 
-        service = ScicrunchResourcesService(self.app)
+        service = self.app[SCICRUNCH_SERVICE_APPKEY]
 
         flat_tree_view: dict[TreePath, ClassifierItem] = {}
         for resource in await service.list_research_resources():
