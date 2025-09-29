@@ -40,6 +40,10 @@ async def pause_rabbit(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     rabbit_client: "RabbitMQClient",
 ) -> AsyncIterator[None]:
+    """
+    Pause RabbitMQ container during the context block,
+    ensuring it's fully down before and back up after.
+    """
     async with _paused_container(paused_container, "rabbit", rabbit_client):
         yield
 
@@ -49,7 +53,12 @@ async def pause_redis(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client: "RedisClientSDK",
 ) -> AsyncIterator[None]:
-    # save db for clean restore point
+    """
+    Pause Redis container during the context block,
+    saving a DB snapshot first for a clean restore point.
+    Ensures Redis is down before yielding, and back up after.
+    """
     await redis_client.redis.save()
+
     async with _paused_container(paused_container, "redis", redis_client):
         yield
