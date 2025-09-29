@@ -53,11 +53,11 @@ billiard==4.2.1
     # via
     #   -c requirements/_base.txt
     #   celery
-boto3==1.40.40
+boto3==1.40.41
     # via
     #   aws-sam-translator
     #   moto
-botocore==1.40.40
+botocore==1.40.41
     # via
     #   aws-xray-sdk
     #   boto3
@@ -434,7 +434,7 @@ types-aiofiles==24.1.0.20250822
     # via -r requirements/_test.in
 types-awscrt==0.27.6
     # via botocore-stubs
-types-boto3==1.40.40
+types-boto3==1.40.41
     # via -r requirements/_test.in
 types-jsonschema==4.25.1.20250822
     # via -r requirements/_test.in
