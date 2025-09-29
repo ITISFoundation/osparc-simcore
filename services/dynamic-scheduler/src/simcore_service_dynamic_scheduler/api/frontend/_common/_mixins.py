@@ -29,4 +29,4 @@ class ParentMixin:
 class DisplayaMixin(ABC):
     @abstractmethod
     def display(self) -> None:
-        """creates ui elements inside the parent container"""
+        """create an ui element ad attach it to the current NiceGUI context"""
