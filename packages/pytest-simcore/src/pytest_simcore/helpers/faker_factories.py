@@ -642,8 +642,8 @@ def random_group_classifier(
     data = {
         "gid": gid,
         "bundle": {
-            "vcs_ref": "asdfasdf",
-            "vcs_url": "https://foo.classifiers.git",
+            "vcs_ref": fake.lexify(text="???????"),
+            "vcs_url": "https://organization.classifiers.git",
             "build_date": "2021-01-20T15:19:30Z",
             "classifiers": {
                 "project::dak": {
@@ -654,7 +654,7 @@ def random_group_classifier(
                     "markdown": "",
                     "released": None,
                     "classifier": "project::dak",
-                    "created_by": "Nicolas Chavannes",
+                    "created_by": fake.user_name(),
                     "github_url": None,
                     "display_name": "DAK",
                     "wikipedia_url": None,
@@ -665,10 +665,10 @@ def random_group_classifier(
                     "logo": None,
                     "aliases": ["Zurich MedTech AG"],
                     "related": [],
-                    "markdown": "Zurich MedTech AG (ZMT) offers tools and best practices for targeted life sciences applications to simulate, analyze, and predict complex and dynamic biological processes and interactions. ZMT is a member of Zurich43",
+                    "markdown": fake.text(),
                     "released": None,
                     "classifier": "organization::zmt",
-                    "created_by": "crespo",
+                    "created_by": fake.user_name(),
                     "github_url": None,
                     "display_name": "ZMT",
                     "wikipedia_url": None,
@@ -678,8 +678,8 @@ def random_group_classifier(
             "collections": {
                 "jupyterlab-math": {
                     "items": ["crespo/osparc-demo"],
-                    "markdown": "Curated collection of repositories with examples of notebooks to run in jupyter-python-octave-math service",
-                    "created_by": "crespo",
+                    "markdown": fake.text(),
+                    "created_by": fake.user_name(),
                     "display_name": "jupyterlab-math",
                 }
             },
