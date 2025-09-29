@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Self, TypeAlias
+from typing import Annotated, Any, Self, TypeAlias
 
 from pydantic import BaseModel, NonNegativeInt, PrivateAttr
 
@@ -7,11 +7,13 @@ CompleteModelDict: TypeAlias = dict[str, Any]
 
 
 class BaseUpdatableDisplayModel(BaseModel):
-    _on_type_change_subscribers: dict[str, Callable] = PrivateAttr(default_factory=dict)
-    _on_value_change_subscribers: dict[str, Callable] = PrivateAttr(
-        default_factory=dict
-    )
-    _on_remove_from_ui_callback: Callable | None = PrivateAttr(default=None)
+    _on_type_change_subscribers: Annotated[
+        dict[str, Callable], PrivateAttr(default_factory=dict)
+    ]
+    _on_value_change_subscribers: Annotated[
+        dict[str, Callable], PrivateAttr(default_factory=dict)
+    ]
+    _on_remove_from_ui_callback: Annotated[Callable | None, PrivateAttr(default=None)]
 
     def _get_on_change_callbacks_to_run(self, update_obj: Self) -> list[Callable]:
         callbacks_to_run: list[Callable] = []
