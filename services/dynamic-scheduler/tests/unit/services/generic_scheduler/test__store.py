@@ -130,9 +130,7 @@ def schedule_id(faker: Faker) -> ScheduleId:
     return faker.uuid4()
 
 
-async def test_schedule_data_store_proxy_workflow(
-    store: Store, schedule_id: ScheduleId
-):
+async def test_schedule_data_store_proxy(store: Store, schedule_id: ScheduleId):
     proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
     hash_key = f"SCH:{schedule_id}"
 
@@ -190,7 +188,7 @@ async def test_schedule_data_store_proxy_workflow(
 
 @pytest.mark.parametrize("is_creating", [True, False])
 @pytest.mark.parametrize("use_remove", [True, False])
-async def test_step_store_proxy_workflow(
+async def test_steps_store_proxy(
     store: Store, schedule_id: ScheduleId, is_creating: bool, use_remove: bool
 ):
     proxy = StepStoreProxy(
