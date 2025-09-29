@@ -714,13 +714,11 @@ services:
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: wb
 
       # WEBSERVER_SERVER_HOST
-
       WEBSERVER_HOST: ${WEBSERVER_HOST}
       WEBSERVER_PORT: ${WEBSERVER_PORT}
       WEBSERVER_RPC_NAMESPACE: ${WEBSERVER_HOST}
 
-      # WEBSERVER_SERVER_PORT
-
+      # WEBSERVER / -> index.html
       WEBSERVER_FRONTEND: ${WEBSERVER_FRONTEND}
 
       # WEBSERVER_ACTIVITY
@@ -930,11 +928,12 @@ services:
     hostname: "api-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<: *webserver_environment
+      WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for api-server
       WEBSERVER_HOST: ${WB_API_WEBSERVER_HOST}
       WEBSERVER_PORT: ${WB_API_WEBSERVER_PORT}
       WEBSERVER_RPC_NAMESPACE: ${WB_API_WEBSERVER_HOST}
+      WEBSERVER_SOCKETIO: 0
       WEBSERVER_STATICWEB: "null"
-      WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for api-server
 
       # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: api
