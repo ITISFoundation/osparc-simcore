@@ -201,7 +201,7 @@ async def _ensure_before_corpus(async_page: Page) -> None:
     await assert_contains_text(async_page, "BEFORE_CORPUS")
 
 
-async def _esnure_person_companion(async_page: Page, companion: Pet | Friend) -> None:
+async def _ensure_person_companion(async_page: Page, companion: Pet | Friend) -> None:
     if isinstance(companion, Pet):
         await assert_contains_text(async_page, f"Pet Name: {companion.name}")
         await assert_contains_text(async_page, f"Pet Species: {companion.species}")
@@ -220,7 +220,7 @@ async def _ensure_person_is_present(async_page: Page, person: Person) -> None:
     await assert_contains_text(async_page, f"Name: {person.name}")
     await assert_contains_text(async_page, f"Age: {person.age}")
 
-    await _esnure_person_companion(async_page, person.companion)
+    await _ensure_person_companion(async_page, person.companion)
 
     await _ensure_after_corpus(async_page)
 
