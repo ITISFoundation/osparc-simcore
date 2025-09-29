@@ -5,11 +5,11 @@ from pydantic import NonNegativeInt
 from servicelib.deferred_tasks import BaseDeferredHandler, DeferredContext, TaskUID
 from servicelib.deferred_tasks._models import TaskResultError
 
-from ._dependencies import enqueue_schedule_event
 from ._errors import (
     OperationContextValueIsNoneError,
     ProvidedOperationContextKeysAreMissingError,
 )
+from ._event import enqueue_schedule_event
 from ._models import (
     OperationContext,
     OperationName,

@@ -27,7 +27,6 @@ from ._core_utils import (
     start_steps_which_were_not_started,
 )
 from ._deferred_runner import DeferredRunner
-from ._dependencies import enqueue_schedule_event
 from ._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     KeyNotFoundInHashError,
@@ -36,6 +35,7 @@ from ._errors import (
     StepNotWaitingForManualInterventionError,
     UnexpectedStepHandlingError,
 )
+from ._event import enqueue_schedule_event
 from ._models import (
     OperationContext,
     OperationErrorType,
