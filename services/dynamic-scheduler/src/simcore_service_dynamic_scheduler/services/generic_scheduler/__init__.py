@@ -1,4 +1,4 @@
-from ._api import (
+from ._core import (
     cancel_operation,
     restart_operation_step_stuck_during_revert,
     restart_operation_step_stuck_in_manual_intervention_during_create,
