@@ -57,7 +57,7 @@ _OPRATION_STEPS_COUNT: Final[NonNegativeInt] = 10
 _STEP_SLEEP_DURATION: Final[timedelta] = _OPERATION_MIN_RUNTIME / _OPRATION_STEPS_COUNT
 
 
-def _get_random_duration_before_interrupting() -> NonNegativeFloat:
+def _get_random_interruption_duration() -> NonNegativeFloat:
     ranom_duration = secrets.SystemRandom().uniform(
         0.1, _OPERATION_MIN_RUNTIME.total_seconds()
     )
@@ -306,24 +306,24 @@ async def test_can_recover_from_interruption(
     match interruption_type:
         case _InterruptionType.REDIS:
             print(f"[{interruption_type}]: will pause ⚙️")
-            async with service_manager.pause_rabbit():
+            async with service_manager.pause_redis():
                 print(f"[{interruption_type}]: paused ⏸️")
 
-                await asyncio.sleep(_get_random_duration_before_interrupting())
+                await asyncio.sleep(_get_random_interruption_duration())
             print(f"[{interruption_type}]: unpaused ⏯️")
         case _InterruptionType.RABBIT:
             print(f"[{interruption_type}]: will pause ⚙️")
             async with service_manager.pause_rabbit():
                 print(f"[{interruption_type}]: paused ⏸️")
 
-                await asyncio.sleep(_get_random_duration_before_interrupting())
+                await asyncio.sleep(_get_random_interruption_duration())
             print(f"[{interruption_type}]: unpaused ⏯️")
         case _InterruptionType.DYNAMIC_SCHEDULER:
             print(f"[{interruption_type}]: will pause ⚙️")
             process_manager.kill()
             print(f"[{interruption_type}]: paused ⏸️")
 
-            await asyncio.sleep(_get_random_duration_before_interrupting())
+            await asyncio.sleep(_get_random_interruption_duration())
             process_manager.start(operation_name)
             print(f"[{interruption_type}]: unpaused ⏯️")
         case _:

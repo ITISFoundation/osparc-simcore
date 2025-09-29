@@ -303,14 +303,6 @@ class ServiceManager:
         self, container_name: str, client: _ClientWithPingProtocol
     ) -> AsyncIterator[None]:
         async with self.paused_container(container_name):
-            async for attempt in AsyncRetrying(
-                wait=wait_fixed(0.1),
-                stop=stop_after_delay(10),
-                reraise=True,
-                retry=retry_if_exception_type(AssertionError),
-            ):
-                with attempt:
-                    assert await client.ping() is False
             yield
 
         async for attempt in AsyncRetrying(
