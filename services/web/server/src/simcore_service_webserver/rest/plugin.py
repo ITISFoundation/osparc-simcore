@@ -20,7 +20,7 @@ from ..application_setup import ModuleCategory, app_setup_func
 from ..security.plugin import setup_security
 from . import _handlers
 from ._utils import get_openapi_specs_path
-from .healthcheck import HealthCheck
+from .healthcheck import HEALTHCHECK_APPKEY, HealthCheck
 from .settings import RestSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -39,8 +39,8 @@ def setup_rest(app: web.Application):
 
     spec_path = get_openapi_specs_path(api_version_dir=API_VTAG)
 
-    app[HealthCheck.__name__] = HealthCheck(app)
-    _logger.debug("Setup %s", f"{app[HealthCheck.__name__]=}")
+    app[HEALTHCHECK_APPKEY] = HealthCheck(app)
+    _logger.debug("Setup %s", f"{app[HEALTHCHECK_APPKEY]=}")
 
     # basic routes
     app.add_routes(_handlers.routes)

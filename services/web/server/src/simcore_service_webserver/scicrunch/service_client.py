@@ -5,6 +5,7 @@ Client to interact with scicrunch service (https://scicrunch.org)
 """
 
 import logging
+from typing import Final
 
 from aiohttp import ClientSession, client_exceptions, web
 from pydantic import HttpUrl, TypeAdapter, ValidationError
@@ -60,15 +61,15 @@ class SciCrunch:
         cls, app: web.Application, settings: SciCrunchSettings
     ) -> "SciCrunch":
         """Returns single instance for the application and stores it"""
-        obj: SciCrunch | None = app.get(f"{__name__}.{cls.__name__}")
+        obj: SciCrunch | None = app.get(_SCICRUNCH_APPKEY)
         if obj is None:
             session = get_client_session(app)
-            app[f"{__name__}.{cls.__name__}"] = obj = cls(session, settings)
+            app[_SCICRUNCH_APPKEY] = obj = cls(session, settings)
         return obj
 
     @classmethod
     def get_instance(cls, app: web.Application) -> "SciCrunch":
-        obj: SciCrunch | None = app.get(f"{__name__}.{cls.__name__}")
+        obj: SciCrunch | None = app.get(_SCICRUNCH_APPKEY)
         if obj is None:
             raise ScicrunchConfigError(
                 details="Services on scicrunch.org are currently disabled"
@@ -171,3 +172,6 @@ class SciCrunch:
         # Might be good to know that scicrunch.org is not reachable and cannot perform search now?
         hits = await autocomplete_by_name(name_as, self.client, self.settings)
         return hits.root
+
+
+_SCICRUNCH_APPKEY: Final = web.AppKey(SciCrunch.__name__, SciCrunch)
