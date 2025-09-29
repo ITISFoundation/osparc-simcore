@@ -14,19 +14,19 @@ class BaseUpdatableDisplayModel(BaseModel):
     _on_remove_from_ui_callback: Callable | None = PrivateAttr(default=None)
 
     def _get_on_change_callbacks_to_run(self, update_obj: Self) -> list[Callable]:
-        callbaks_to_run: list[Callable] = []
+        callbacks_to_run: list[Callable] = []
 
         for attribute_name, callback in self._on_value_change_subscribers.items():
             if getattr(self, attribute_name) != getattr(update_obj, attribute_name):
-                callbaks_to_run.append(callback)
+                callbacks_to_run.append(callback)
 
         for attribute_name, callback in self._on_type_change_subscribers.items():
             if type(getattr(self, attribute_name)) is not type(
                 getattr(update_obj, attribute_name)
             ):
-                callbaks_to_run.append(callback)
+                callbacks_to_run.append(callback)
 
-        return callbaks_to_run
+        return callbacks_to_run
 
     def update(self, update_obj: Self) -> NonNegativeInt:
         """

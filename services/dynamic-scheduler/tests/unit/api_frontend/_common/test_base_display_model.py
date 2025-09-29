@@ -18,7 +18,7 @@ class Friend(BaseUpdatableDisplayModel):
     age: int
 
 
-class RemderOnPropertyValueChange(BaseUpdatableDisplayModel):
+class RenderOnPropertyValueChange(BaseUpdatableDisplayModel):
     name: str
     age: int
     companion: Pet | Friend
@@ -43,7 +43,7 @@ class RenderOnPropertyTypeChange(BaseUpdatableDisplayModel):
             id="does-not-require-rerender-without-any-render-on-declared",
         ),
         pytest.param(
-            RemderOnPropertyValueChange,
+            RenderOnPropertyValueChange,
             {
                 "name": "Alice",
                 "age": 30,
@@ -64,7 +64,7 @@ class RenderOnPropertyTypeChange(BaseUpdatableDisplayModel):
             id="requires-rerender-on-property-change",
         ),
         pytest.param(
-            RemderOnPropertyValueChange,
+            RenderOnPropertyValueChange,
             {
                 "name": "Alice",
                 "age": 30,
