@@ -34,8 +34,8 @@ def disable_other_generic_scheduler_modules(mocker: MockerFixture) -> None:
     generic_scheduler_module = (
         "simcore_service_dynamic_scheduler.services.generic_scheduler"
     )
-    mocker.patch(f"{generic_scheduler_module}._store.lifespan")
-    mocker.patch(f"{generic_scheduler_module}._core.lifespan")
+    mocker.patch(f"{generic_scheduler_module}._lifespan.Core", autospec=True)
+    mocker.patch(f"{generic_scheduler_module}._lifespan.Store", autospec=True)
 
 
 @pytest.fixture
