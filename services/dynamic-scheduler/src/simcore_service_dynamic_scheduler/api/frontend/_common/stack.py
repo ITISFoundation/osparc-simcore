@@ -1,15 +1,15 @@
 from typing import Generic, TypeAlias, TypeVar
 
 from ._mixins import DisplayaMixin, ParentMixin
+from .base_component import BaseUpdatableComponent
 from .base_display_model import BaseUpdatableDisplayModel
-from .updatable_component import BaseUpdatableComponent
 
 M = TypeVar("M", bound=BaseUpdatableDisplayModel)
 
 Reference: TypeAlias = str
 
 
-class UpdatableComponentList(DisplayaMixin, ParentMixin, Generic[M]):
+class UpdatableComponentStack(DisplayaMixin, ParentMixin, Generic[M]):
     def __init__(self, component: type[BaseUpdatableComponent]) -> None:
         super().__init__()
         self.component = component

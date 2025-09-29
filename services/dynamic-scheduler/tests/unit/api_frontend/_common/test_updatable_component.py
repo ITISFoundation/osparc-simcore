@@ -8,19 +8,19 @@ from unittest.mock import Mock
 import nicegui
 import pytest
 from fastapi import FastAPI
-from helpers import assert_contains_text, assert_not_contains_text
+from helpers import assert_contains_text, assert_not_contains_text, take_screenshot
 from nicegui import APIRouter, ui
 from playwright.async_api import Page
 from pydantic import NonNegativeInt
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_dynamic_scheduler.api.frontend._common.base_component import (
+    BaseUpdatableComponent,
+)
 from simcore_service_dynamic_scheduler.api.frontend._common.base_display_model import (
     BaseUpdatableDisplayModel,
 )
-from simcore_service_dynamic_scheduler.api.frontend._common.some_renderer import (
-    UpdatableComponentList,
-)
-from simcore_service_dynamic_scheduler.api.frontend._common.updatable_component import (
-    BaseUpdatableComponent,
+from simcore_service_dynamic_scheduler.api.frontend._common.stack import (
+    UpdatableComponentStack,
 )
 from simcore_service_dynamic_scheduler.api.frontend._utils import set_parent_app
 
@@ -103,7 +103,7 @@ def not_initialized_app(
     nicegui.app.include_router(router)
 
     nicegui.ui.run_with(
-        minimal_app, mount_path=mount_path, storage_secret="test-secret"
+        minimal_app, mount_path=mount_path, storage_secret="test-secret"  # noqa: S106
     )
     set_parent_app(minimal_app)
     return minimal_app
@@ -332,14 +332,12 @@ async def test_multiple_componenets_management(
     ensure_page_loaded: Callable[[Callable[[], None]], Awaitable[None]],
     async_page: Page,
 ):
-    renderer = UpdatableComponentList[Person](PersonComponent)
+    stack = UpdatableComponentStack[Person](PersonComponent)
 
     def _index_corpus() -> None:
-        renderer.display()
+        stack.display()
 
     await ensure_page_loaded(_index_corpus)
-
-    from helpers import take_screenshot
 
     await take_screenshot(async_page, prefix="1.before")
 
@@ -349,39 +347,39 @@ async def test_multiple_componenets_management(
     await _ensure_person_not_present(async_page, person_1)
     await _ensure_person_not_present(async_page, person_2)
 
-    renderer.add_or_update_model("person_1", person_1)
-    renderer.add_or_update_model("person_2", person_2)
+    stack.add_or_update_model("person_1", person_1)
+    stack.add_or_update_model("person_2", person_2)
 
     await _ensure_person_is_present(async_page, person_1)
     await _ensure_person_is_present(async_page, person_2)
 
     await take_screenshot(async_page, prefix="2.persons-added")
 
-    renderer.remove_model("person_1")
+    stack.remove_model("person_1")
     await _ensure_person_not_present(async_page, person_1)
     await _ensure_person_is_present(async_page, person_2)
 
     await take_screenshot(async_page, prefix="3.person-1-removed")
 
-    renderer.remove_model("person_2")
+    stack.remove_model("person_2")
     await _ensure_person_not_present(async_page, person_2)
     await _ensure_person_not_present(async_page, person_1)
 
     await take_screenshot(async_page, prefix="4.person-2-removed")
 
-    renderer.update_from_dict({"person_1": person_1, "person_2": person_2})
+    stack.update_from_dict({"person_1": person_1, "person_2": person_2})
     await _ensure_person_is_present(async_page, person_1)
     await _ensure_person_is_present(async_page, person_2)
 
     await take_screenshot(async_page, prefix="5.persons-added")
 
-    renderer.update_from_dict({"person_1": person_1})
+    stack.update_from_dict({"person_1": person_1})
     await _ensure_person_is_present(async_page, person_1)
     await _ensure_person_not_present(async_page, person_2)
 
     await take_screenshot(async_page, prefix="6.person-2-removed")
 
-    renderer.update_from_dict({})
+    stack.update_from_dict({})
     await _ensure_person_not_present(async_page, person_1)
     await _ensure_person_not_present(async_page, person_2)
     await take_screenshot(async_page, prefix="7.person-1-removed")
