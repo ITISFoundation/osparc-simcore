@@ -19,7 +19,7 @@ from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.docker import ServiceManager
+from pytest_simcore.helpers.paused_container import pause_rabbit, pause_redis
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 from servicelib.sequences_utils import partition_gen
@@ -354,9 +354,6 @@ async def test_workflow_with_third_party_services_outages(
     deferred_tasks_to_start: int,
     service: str,
 ):
-    service_manager = ServiceManager(
-        redis_client_sdk_deferred_tasks, rabbit_client, paused_container
-    )
 
     async with _RemoteProcessLifecycleManager(
         await get_remote_process(),
@@ -380,14 +377,16 @@ async def test_workflow_with_third_party_services_outages(
         match service:
             case "rabbit":
                 print("[rabbit]: pausing")
-                async with service_manager.pause_rabbit():
+                async with pause_rabbit(paused_container, rabbit_client):
                     print("[rabbit]: paused")
                     await _sleep_in_interval(0.2, 0.4)
                 print("[rabbit]: resumed")
 
             case "redis":
                 print("[redis]: pausing")
-                async with service_manager.pause_redis():
+                async with pause_redis(
+                    paused_container, redis_client_sdk_deferred_tasks
+                ):
                     print("[redis]: paused")
                     await _sleep_in_interval(0.2, 0.4)
                 print("[redis]: resumed")

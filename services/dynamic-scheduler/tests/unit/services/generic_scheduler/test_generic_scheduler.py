@@ -18,7 +18,7 @@ from asgi_lifespan import LifespanManager
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from pydantic import NonNegativeFloat, NonNegativeInt
-from pytest_simcore.helpers.docker import ServiceManager
+from pytest_simcore.helpers.paused_container import pause_rabbit, pause_redis
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.deferred_tasks import DeferredContext
 from servicelib.rabbitmq import RabbitMQClient
@@ -301,19 +301,17 @@ async def test_can_recover_from_interruption(
     register_operation(operation_name, operation)
     process_manager.start(operation_name)
 
-    service_manager = ServiceManager(redis_client_sdk, rabbit_client, paused_container)
-
     match interruption_type:
         case _InterruptionType.REDIS:
             print(f"[{interruption_type}]: will pause ⚙️")
-            async with service_manager.pause_redis():
+            async with pause_rabbit(paused_container, rabbit_client):
                 print(f"[{interruption_type}]: paused ⏸️")
 
                 await asyncio.sleep(_get_random_interruption_duration())
             print(f"[{interruption_type}]: unpaused ⏯️")
         case _InterruptionType.RABBIT:
             print(f"[{interruption_type}]: will pause ⚙️")
-            async with service_manager.pause_rabbit():
+            async with pause_redis(paused_container, redis_client_sdk):
                 print(f"[{interruption_type}]: paused ⏸️")
 
                 await asyncio.sleep(_get_random_interruption_duration())
