@@ -16,7 +16,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 from servicelib.aiohttp.tracing import get_tracing_lifespan
-from servicelib.tracing import _OSPARC_TRACE_ID_HEADER
+from servicelib.tracing import _OSPARC_TRACE_ID_HEADER, TracingData
 from settings_library.tracing import TracingSettings
 
 
@@ -70,8 +70,11 @@ async def test_valid_tracing_settings(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
+    tracing_data = TracingData.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
     async for _ in get_tracing_lifespan(
-        app=app, service_name=service_name, tracing_settings=tracing_settings
+        app=app, tracing_settings=tracing_settings, tracing_data=tracing_data
     )(app):
         pass
 
@@ -147,16 +150,15 @@ async def test_tracing_setup_package_detection(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
+    tracing_data = TracingData.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
     async for _ in get_tracing_lifespan(
-        app=app,
-        service_name=service_name,
-        tracing_settings=tracing_settings,
+        app=app, tracing_settings=tracing_settings, tracing_data=tracing_data
     )(app):
         # idempotency
         async for _ in get_tracing_lifespan(
-            app=app,
-            service_name=service_name,
-            tracing_settings=tracing_settings,
+            app=app, tracing_settings=tracing_settings, tracing_data=tracing_data
         )(app):
             pass
 
@@ -181,6 +183,9 @@ async def test_trace_id_in_response_header(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
+    tracing_data = TracingData.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
 
     async def handler(handler_data: dict, request: web.Request) -> web.Response:
         current_span = trace.get_current_span()
@@ -196,8 +201,8 @@ async def test_trace_id_in_response_header(
 
     async for _ in get_tracing_lifespan(
         app=app,
-        service_name=service_name,
         tracing_settings=tracing_settings,
+        tracing_data=tracing_data,
         add_response_trace_id_header=True,
     )(app):
         client = await aiohttp_client(app)
@@ -234,6 +239,9 @@ async def test_tracing_sampling_probability_effective(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
+    tracing_data = TracingData.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
 
     async def handler(request: web.Request) -> web.Response:
         return web.Response(text="ok")
@@ -241,9 +249,7 @@ async def test_tracing_sampling_probability_effective(
     app.router.add_get("/", handler)
 
     async for _ in get_tracing_lifespan(
-        app=app,
-        service_name=service_name,
-        tracing_settings=tracing_settings,
+        app=app, tracing_settings=tracing_settings, tracing_data=tracing_data
     )(app):
         client = await aiohttp_client(app)
 
