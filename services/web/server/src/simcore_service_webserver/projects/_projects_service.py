@@ -188,7 +188,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def conditionally_unsubscribe_from_project_logs(
-    app: web.Application, project_id: ProjectID, user_id: UserID | None = None
+    app: web.Application, project_id: ProjectID, user_id: UserID
 ) -> None:
     """
     Unsubscribes from project logs only if no active socket connections remain for the project.
@@ -202,7 +202,7 @@ async def conditionally_unsubscribe_from_project_logs(
         user_id: Optional user ID to use for the resource session (defaults to 0 if None)
     """
     redis_resource_registry = get_registry(app)
-    with managed_resource(user_id or 0, None, app) as user_session:
+    with managed_resource(user_id, None, app) as user_session:
         all_user_sessions_with_project = await user_session.find_users_of_resource(
             app, key=PROJECT_ID_KEY, value=f"{project_id}"
         )
