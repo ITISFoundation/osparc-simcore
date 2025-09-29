@@ -69,7 +69,6 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectForbiddenRpcError,
     ProjectNotFoundRpcError,
 )
-from servicelib.rabbitmq.rpc_interfaces.webserver.licenses import licensed_items
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from simcore_service_api_server.models.basic_types import NameValueTuple
 
@@ -132,8 +131,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def get_licensed_items(
         self, *, product_name: ProductName, page_params: PaginationParams
     ) -> Page[LicensedItemGet]:
-        licensed_items_page = await licensed_items.get_licensed_items(
-            rabbitmq_rpc_client=self._client,
+        licensed_items_page = await self._rpc_client.licenses.get_licensed_items(
             product_name=product_name,
             offset=page_params.offset,
             limit=page_params.limit,
@@ -152,8 +150,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         page_params: PaginationParams,
     ) -> Page[LicensedItemGet]:
         licensed_items_page = (
-            await licensed_items.get_available_licensed_items_for_wallet(
-                rabbitmq_rpc_client=self._client,
+            await self._rpc_client.licenses.get_available_licensed_items_for_wallet(
                 product_name=product_name,
                 wallet_id=wallet_id,
                 user_id=user_id,
@@ -184,8 +181,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         service_run_id: ServiceRunID,
     ) -> LicensedItemCheckoutGet:
         licensed_item_checkout_get = (
-            await licensed_items.checkout_licensed_item_for_wallet(
-                self._client,
+            await self._rpc_client.licenses.checkout_licensed_item_for_wallet(
                 product_name=product_name,
                 user_id=user_id,
                 wallet_id=wallet_id,
@@ -220,8 +216,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutGet:
         licensed_item_checkout_get = (
-            await licensed_items.release_licensed_item_for_wallet(
-                self._client,
+            await self._rpc_client.licenses.release_licensed_item_for_wallet(
                 product_name=product_name,
                 user_id=user_id,
                 licensed_item_checkout_id=licensed_item_checkout_id,
