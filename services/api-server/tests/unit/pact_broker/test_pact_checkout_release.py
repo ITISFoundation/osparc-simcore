@@ -62,11 +62,9 @@ assert EXPECTED_RELEASE.stopped_at is not None
 
 @pytest.fixture
 async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
-    from servicelib.rabbitmq import RabbitMQRPCClient
     from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
     app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _client=mocker.MagicMock(spec=RabbitMQRPCClient),
         _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
     )
 

@@ -124,7 +124,6 @@ def _create_licensed_items_get_page(
 @dataclass
 class WbApiRpcClient(SingletonInAppStateMixin):
     app_state_name = "wb_api_rpc_client"
-    _client: RabbitMQRPCClient
     _rpc_client: WebServerRpcClient
 
     @_exception_mapper(rpc_exception_map={})
@@ -668,7 +667,6 @@ def setup(app: FastAPI, rabbitmq_rpc_client: RabbitMQRPCClient):
         raise ConfigurationError(tip="Webserver settings are not configured")
 
     wb_api_rpc_client = WbApiRpcClient(
-        _client=rabbitmq_rpc_client,
         _rpc_client=WebServerRpcClient(
             rabbitmq_rpc_client, webserver_settings.WEBSERVER_RPC_NAMESPACE
         ),

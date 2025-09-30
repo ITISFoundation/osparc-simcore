@@ -260,25 +260,25 @@ def mocked_app_dependencies(app: FastAPI, mocker: MockerFixture) -> Iterator[Non
     """
     assert app.state.settings.API_SERVER_RABBITMQ is None
     from servicelib.rabbitmq import RabbitMQRPCClient
-    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
     from simcore_service_api_server.api.dependencies.rabbitmq import (
         get_rabbitmq_rpc_client,
     )
     from simcore_service_api_server.api.dependencies.webserver_rpc import (
         get_wb_api_rpc_client,
     )
-    from simcore_service_api_server.core.settings import WebServerSettings
 
     def _get_rabbitmq_rpc_client_override():
         return mocker.MagicMock()
 
     async def _get_wb_api_rpc_client_override():
+        from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+        from simcore_service_api_server.core.settings import WebServerSettings
+
         webserver_settings: WebServerSettings = app.state.settings.API_SERVER_WEBSERVER
         assert webserver_settings.WEBSERVER_RPC_NAMESPACE
 
         rabbitmq_rpc_client = mocker.MagicMock(spec=RabbitMQRPCClient)
         return WbApiRpcClient(
-            _client=rabbitmq_rpc_client,
             _rpc_client=WebServerRpcClient(
                 rabbitmq_rpc_client, webserver_settings.WEBSERVER_RPC_NAMESPACE
             ),
