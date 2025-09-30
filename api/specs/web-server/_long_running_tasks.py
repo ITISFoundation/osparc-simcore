@@ -31,7 +31,7 @@ router = APIRouter(
     "/tasks",
     response_model=Envelope[list[TaskGet]],
 )
-def list_tasks():
+def get_async_jobs():
     """Lists all long running tasks"""
 
 
@@ -39,7 +39,7 @@ def list_tasks():
     "/tasks/{task_id}",
     response_model=Envelope[TaskStatus],
 )
-def get_task_status(
+def get_async_job_status(
     _path_params: Annotated[_PathParam, Depends()],
 ):
     """Retrieves the status of a task"""
@@ -48,7 +48,7 @@ def get_task_status(
 @router.get(
     "/tasks/{task_id}/stream",
 )
-def get_task_stream(
+def get_async_job_stream(
     _path_params: Annotated[_PathParam, Depends()],
 ):
     """Retrieves the stream of a task"""
@@ -58,7 +58,7 @@ def get_task_stream(
     "/tasks/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def cancel_task(
+def cancel_async_job(
     _path_params: Annotated[_PathParam, Depends()],
 ):
     """Cancels and removes a task"""
@@ -68,7 +68,7 @@ def cancel_task(
     "/tasks/{task_id}/result",
     response_model=Any,
 )
-def get_task_result(
+def get_async_job_result(
     _path_params: Annotated[_PathParam, Depends()],
 ):
     """Retrieves the result of a task"""

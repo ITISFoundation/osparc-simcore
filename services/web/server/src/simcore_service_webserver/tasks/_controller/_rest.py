@@ -38,12 +38,12 @@ _task_prefix: Final[str] = f"/{API_VTAG}/tasks"
 
 @routes.get(
     _task_prefix,
-    name="get_tasks",
+    name="get_async_jobs",
 )
 @login_required
 @handle_rest_requests_exceptions
 @webserver_request_context_decorator
-async def get_tasks(request: web.Request) -> web.Response:
+async def get_async_jobs(request: web.Request) -> web.Response:
     inprocess_long_running_manager = get_long_running_manager(request.app)
     inprocess_tracked_tasks = await lrt_api.list_tasks(
         inprocess_long_running_manager.rpc_client,
@@ -89,11 +89,11 @@ async def get_tasks(request: web.Request) -> web.Response:
 
 @routes.get(
     _task_prefix + "/{task_id}",
-    name="get_task_status",
+    name="get_async_job_status",
 )
 @login_required
 @handle_rest_requests_exceptions
-async def get_task_status(request: web.Request) -> web.Response:
+async def get_async_job_status(request: web.Request) -> web.Response:
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
@@ -124,11 +124,11 @@ async def get_task_status(request: web.Request) -> web.Response:
 
 @routes.delete(
     _task_prefix + "/{task_id}",
-    name="cancel_task",
+    name="cancel_async_job",
 )
 @login_required
 @handle_rest_requests_exceptions
-async def cancel_task(request: web.Request) -> web.Response:
+async def cancel_async_job(request: web.Request) -> web.Response:
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
@@ -149,11 +149,11 @@ async def cancel_task(request: web.Request) -> web.Response:
 
 @routes.get(
     _task_prefix + "/{task_id}/result",
-    name="get_task_result",
+    name="get_async_job_result",
 )
 @login_required
 @handle_rest_requests_exceptions
-async def get_task_result(request: web.Request) -> web.Response:
+async def get_async_job_result(request: web.Request) -> web.Response:
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
