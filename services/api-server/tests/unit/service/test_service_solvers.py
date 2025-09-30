@@ -27,7 +27,7 @@ from simcore_service_api_server.services_rpc.wb_api_server import (
 
 
 async def test_get_solver(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     solver_service: SolverService,
     product_name: ProductName,
     user_id: UserID,
@@ -40,12 +40,12 @@ async def test_get_solver(
     assert isinstance(solver, Solver)
     assert solver.id == "simcore/services/comp/solver-1"
 
-    assert mocked_rpc_client.request.called
-    assert mocked_rpc_client.request.call_args.args == ("catalog", "get_service")
+    assert mocked_rabbit_rpc_client.request.called
+    assert mocked_rabbit_rpc_client.request.call_args.args == ("catalog", "get_service")
 
 
 async def test_list_jobs(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     job_service: JobService,
 ):
     # Test default parameters
@@ -54,7 +54,7 @@ async def test_list_jobs(
     assert jobs
     assert len(jobs) == page_meta.count
 
-    assert mocked_rpc_client.request.call_args.args == (
+    assert mocked_rabbit_rpc_client.request.call_args.args == (
         "webserver",
         "list_projects_marked_as_jobs",
     )
@@ -66,7 +66,7 @@ async def test_list_jobs(
 
 
 async def test_solver_service_init_raises_configuration_error(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     job_service: JobService,
     catalog_service: CatalogService,
     user_id: UserID,
@@ -81,11 +81,11 @@ async def test_solver_service_init_raises_configuration_error(
             product_name=invalid_product_name,
         )
     # Verify the RPC call was made to check consistency
-    assert not mocked_rpc_client.request.called
+    assert not mocked_rabbit_rpc_client.request.called
 
 
 async def test_job_service_get_job_success(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     job_service: JobService,
 ):
     job_parent_resource_name = "solver-resource"
@@ -97,16 +97,16 @@ async def test_job_service_get_job_success(
     # Assert
     assert isinstance(result, ProjectJobRpcGet)
     assert result.job_parent_resource_name.startswith(job_parent_resource_name)
-    assert mocked_rpc_client.request.called
-    assert mocked_rpc_client.request.call_args.args == (
+    assert mocked_rabbit_rpc_client.request.called
+    assert mocked_rabbit_rpc_client.request.call_args.args == (
         "webserver",
         "get_project_marked_as_job",
     )
     assert (
-        mocked_rpc_client.request.call_args.kwargs["job_parent_resource_name"]
+        mocked_rabbit_rpc_client.request.call_args.kwargs["job_parent_resource_name"]
         == job_parent_resource_name
     )
-    assert mocked_rpc_client.request.call_args.kwargs["project_uuid"] == job_id
+    assert mocked_rabbit_rpc_client.request.call_args.kwargs["project_uuid"] == job_id
 
 
 @pytest.mark.parametrize(

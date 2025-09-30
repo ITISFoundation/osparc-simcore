@@ -34,7 +34,7 @@ async def catalog_rpc_side_effect():
 
 
 @pytest.fixture
-def mocked_rpc_client(mocker: MockerFixture) -> MockType:
+def mocked_rabbit_rpc_client(mocker: MockerFixture) -> MockType:
     """This fixture mocks the RabbitMQRPCClient.request method which is used
     in all RPC clients in the api-server, regardeless of the namespace.
     """
@@ -62,6 +62,7 @@ def mocked_rpc_client(mocker: MockerFixture) -> MockType:
 
         pytest.fail(f"Unexpected namespace {namespace} and method {method_name}")
 
+    # NOTE: mocks RabbitMQRPCClient.request(...)
     mock = mocker.MagicMock(spec=RabbitMQRPCClient)
     mock.request.side_effect = _request
 
@@ -70,31 +71,34 @@ def mocked_rpc_client(mocker: MockerFixture) -> MockType:
 
 @pytest.fixture
 def wb_api_rpc_client(
-    mocked_rpc_client: MockType,
-    mocker: MockerFixture,
+    mocked_rabbit_rpc_client: MockType,
 ) -> WbApiRpcClient:
     from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
     return WbApiRpcClient(
-        _client=mocked_rpc_client, _rpc_client=mocker.MagicMock(spec=WebServerRpcClient)
+        _rpc_client=WebServerRpcClient(
+            mocked_rabbit_rpc_client, WEBSERVER_RPC_NAMESPACE
+        ),
     )
 
 
 @pytest.fixture
 def director_v2_rpc_client(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
 ) -> DirectorV2Service:
-    return DirectorV2Service(_rpc_client=mocked_rpc_client)
+    return DirectorV2Service(_rpc_client=mocked_rabbit_rpc_client)
 
 
 @pytest.fixture
 def storage_rpc_client(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     user_id: UserID,
     product_name: ProductName,
 ) -> StorageService:
     return StorageService(
-        _rpc_client=mocked_rpc_client, _user_id=user_id, _product_name=product_name
+        _rpc_client=mocked_rabbit_rpc_client,
+        _user_id=user_id,
+        _product_name=product_name,
     )
 
 
@@ -129,12 +133,12 @@ def storage_rest_client(
 
 @pytest.fixture
 def catalog_service(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     product_name: ProductName,
     user_id: UserID,
 ) -> CatalogService:
     return CatalogService(
-        _rpc_client=mocked_rpc_client, user_id=user_id, product_name=product_name
+        _rpc_client=mocked_rabbit_rpc_client, user_id=user_id, product_name=product_name
     )
 
 
