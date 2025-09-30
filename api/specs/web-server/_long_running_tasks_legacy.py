@@ -23,40 +23,40 @@ router = APIRouter(
 @router.get(
     "",
     response_model=Envelope[list[TaskGet]],
-    name="list_legacy_tasks",
-    description="Lists all long running tasks",
+    name="list_tasks_legacy",
+    description="Lists all long running tasks (legacy)",
 )
-async def list_legacy_tasks(): ...
+async def list_tasks_legacy(): ...
 
 
 @router.get(
     "/{task_id}",
     response_model=Envelope[TaskStatus],
-    name="get_legacy_task_status",
-    description="Retrieves the status of a task",
+    name="get_task_status_legacy",
+    description="Retrieves the status of a task (legacy)",
 )
-async def get_legacy_task_status(
+async def get_task_status_legacy(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 
 
 @router.delete(
     "/{task_id}",
-    name="remove_legacy_task",
-    description="Cancels and removes a task",
+    name="remove_task_legacy",
+    description="Cancels and removes a task (legacy)",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def remove_legacy_task(
+async def remove_task_legacy(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 
 
 @router.get(
     "/{task_id}/result",
-    name="get_legacy_task_result",
+    name="get_task_result_legacy",
     response_model=Any,
-    description="Retrieves the result of a task",
+    description="Retrieves the result of a task (legacy)",
 )
-async def get_legacy_task_result(
+async def get_task_result_legacy(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...

@@ -3882,9 +3882,9 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Async Jobs
+      summary: List Tasks
       description: Lists all long running tasks
-      operationId: get_async_jobs
+      operationId: list_tasks
       responses:
         '200':
           description: Successful Response
@@ -3920,9 +3920,9 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Async Job Status
+      summary: Get Task Status
       description: Retrieves the status of a task
-      operationId: get_async_job_status
+      operationId: get_task_status
       parameters:
       - name: task_id
         in: path
@@ -3964,9 +3964,9 @@ paths:
     delete:
       tags:
       - long-running-tasks
-      summary: Cancel Async Job
+      summary: Cancel Task
       description: Cancels and removes a task
-      operationId: cancel_async_job
+      operationId: cancel_task
       parameters:
       - name: task_id
         in: path
@@ -3977,6 +3977,50 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
+  /v0/tasks/{task_id}/stream:
+    get:
+      tags:
+      - long-running-tasks
+      summary: Get Task Stream
+      description: Retrieves the stream of a task
+      operationId: get_task_stream
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
         '404':
           content:
             application/json:
@@ -4005,9 +4049,9 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Async Job Result
+      summary: Get Task Result
       description: Retrieves the result of a task
-      operationId: get_async_job_result
+      operationId: get_task_result
       parameters:
       - name: task_id
         in: path
@@ -4021,7 +4065,7 @@ paths:
           content:
             application/json:
               schema:
-                title: Response Get Async Job Result
+                title: Response Get Task Result
         '404':
           content:
             application/json:
@@ -4050,9 +4094,9 @@ paths:
     get:
       tags:
       - long-running-tasks-legacy
-      summary: List Tasks
-      description: Lists all long running tasks
-      operationId: list_tasks
+      summary: List Tasks Legacy
+      description: Lists all long running tasks (legacy)
+      operationId: list_tasks_legacy
       responses:
         '200':
           description: Successful Response
@@ -4064,9 +4108,9 @@ paths:
     get:
       tags:
       - long-running-tasks-legacy
-      summary: Get Task Status
-      description: Retrieves the status of a task
-      operationId: get_task_status
+      summary: Get Task Status Legacy
+      description: Retrieves the status of a task (legacy)
+      operationId: get_task_status_legacy
       parameters:
       - name: task_id
         in: path
@@ -4084,9 +4128,9 @@ paths:
     delete:
       tags:
       - long-running-tasks-legacy
-      summary: Remove Task
-      description: Cancels and removes a task
-      operationId: remove_task
+      summary: Remove Task Legacy
+      description: Cancels and removes a task (legacy)
+      operationId: remove_task_legacy
       parameters:
       - name: task_id
         in: path
@@ -4101,9 +4145,9 @@ paths:
     get:
       tags:
       - long-running-tasks-legacy
-      summary: Get Task Result
-      description: Retrieves the result of a task
-      operationId: get_task_result
+      summary: Get Task Result Legacy
+      description: Retrieves the result of a task (legacy)
+      operationId: get_task_result_legacy
       parameters:
       - name: task_id
         in: path
@@ -4117,7 +4161,7 @@ paths:
           content:
             application/json:
               schema:
-                title: Response Get Task Result
+                title: Response Get Task Result Legacy
   /v0/catalog/licensed-items:
     get:
       tags:
