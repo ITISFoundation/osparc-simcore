@@ -12,24 +12,24 @@ from models_library.rest_error import EnvelopedError
 from servicelib.aiohttp.long_running_tasks._routes import _PathParam
 from servicelib.long_running_tasks.models import TaskGet, TaskStatus
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.tasks._exception_handlers import _TO_HTTP_ERROR_MAP
+from simcore_service_webserver.tasks._controller._rest_exceptions import (
+    _TO_HTTP_ERROR_MAP,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
     tags=[
         "long-running-tasks",
     ],
+    responses={
+        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
+    },
 )
-
-_responses: dict[int | str, dict[str, Any]] = {
-    i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
-}
 
 
 @router.get(
     "/tasks",
     response_model=Envelope[list[TaskGet]],
-    responses=_responses,
 )
 def list_tasks():
     """Lists all long running tasks"""
@@ -38,7 +38,6 @@ def list_tasks():
 @router.get(
     "/tasks/{task_id}",
     response_model=Envelope[TaskStatus],
-    responses=_responses,
 )
 def get_task_status(
     _path_params: Annotated[_PathParam, Depends()],
@@ -57,7 +56,6 @@ def get_task_stream(
 
 @router.delete(
     "/tasks/{task_id}",
-    responses=_responses,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def cancel_task(
@@ -69,7 +67,6 @@ def cancel_task(
 @router.get(
     "/tasks/{task_id}/result",
     response_model=Any,
-    responses=_responses,
 )
 def get_task_result(
     _path_params: Annotated[_PathParam, Depends()],

@@ -13,7 +13,7 @@ from models_library.api_schemas_storage.export_data_async_jobs import (
 )
 from servicelib.aiohttp import status
 
-from ..exception_handling import (
+from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
