@@ -84,7 +84,7 @@ async def test_listing_tasks_with_list_inprocess_tasks_error(
     mock.tasks_manager = _DummyTaskManager()
 
     mocker.patch(
-        "servicelib.aiohttp.long_running_tasks._routes.get_long_running_manager",
+        "simcore_service_webserver.tasks._controller._rest.get_long_running_manager",
         return_value=mock,
     )
 
