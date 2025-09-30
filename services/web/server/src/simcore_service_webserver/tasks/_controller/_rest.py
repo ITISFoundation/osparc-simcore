@@ -25,7 +25,7 @@ from ...celery import get_task_manager
 from ...login.decorators import login_required
 from ...long_running_tasks.plugin import webserver_request_context_decorator
 from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
-from .. import _service
+from .. import _tasks_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 log = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
 
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
-    tasks = await _service.list_tasks(
+    tasks = await _tasks_service.list_tasks(
         task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
@@ -98,7 +98,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
-    task_status = await _service.get_task_status(
+    task_status = await _tasks_service.get_task_status(
         task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
@@ -133,7 +133,7 @@ async def cancel_async_job(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
-    await _service.cancel_task(
+    await _tasks_service.cancel_task(
         task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
@@ -158,7 +158,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
-    task_result = await _service.get_task_result(
+    task_result = await _tasks_service.get_task_result(
         task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(

@@ -61,7 +61,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.tasks import _service
+from simcore_service_webserver.tasks import _tasks_service
 from simcore_service_webserver.tasks._controller import _rest as tasks_rest
 from yarl import URL
 
@@ -524,7 +524,7 @@ async def test_get_async_jobs_status(
     _job_id = AsyncJobId(_faker.uuid4())
     create_backend_mock(
         tasks_rest.__name__,
-        f"_service.{_service.get_task_status.__name__}",
+        f"_service.{_tasks_service.get_task_status.__name__}",
         backend_result_or_exception,
     )
 
@@ -562,7 +562,7 @@ async def test_cancel_async_jobs(
     _job_id = AsyncJobId(faker.uuid4())
     create_backend_mock(
         tasks_rest.__name__,
-        f"_service.{_service.cancel_task.__name__}",
+        f"_service.{_tasks_service.cancel_task.__name__}",
         backend_result_or_exception,
     )
 
@@ -595,7 +595,7 @@ async def test_get_async_job_result(
     _job_id = AsyncJobId(faker.uuid4())
     create_backend_mock(
         tasks_rest.__name__,
-        f"_service.{_service.get_task_result.__name__}",
+        f"_service.{_tasks_service.get_task_result.__name__}",
         backend_result_or_exception,
     )
 
@@ -630,7 +630,7 @@ async def test_get_user_async_jobs(
 ):
     create_backend_mock(
         tasks_rest.__name__,
-        f"_service.{_service.list_tasks.__name__}",
+        f"_service.{_tasks_service.list_tasks.__name__}",
         backend_result_or_exception,
     )
 
@@ -647,7 +647,7 @@ async def test_get_user_async_jobs(
         (
             "GET",
             "status_href",
-            _service.get_task_status.__name__,
+            _tasks_service.get_task_status.__name__,
             AsyncJobStatus(
                 job_id=AsyncJobId(_faker.uuid4()),
                 progress=ProgressReport(actual_value=0.5, total=1.0),
@@ -659,7 +659,7 @@ async def test_get_user_async_jobs(
         (
             "DELETE",
             "abort_href",
-            _service.cancel_task.__name__,
+            _tasks_service.cancel_task.__name__,
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
             status.HTTP_204_NO_CONTENT,
             None,
@@ -667,7 +667,7 @@ async def test_get_user_async_jobs(
         (
             "GET",
             "result_href",
-            _service.get_task_result.__name__,
+            _tasks_service.get_task_result.__name__,
             AsyncJobResult(result=None),
             status.HTTP_200_OK,
             TaskResult,
