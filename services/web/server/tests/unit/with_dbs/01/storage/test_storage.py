@@ -524,7 +524,7 @@ async def test_get_async_jobs_status(
     _job_id = AsyncJobId(_faker.uuid4())
     create_backend_mock(
         tasks_rest.__name__,
-        f"_service.{_tasks_service.get_task_status.__name__}",
+        f"_tasks_sservice.{_tasks_service.get_task_status.__name__}",
         backend_result_or_exception,
     )
 
@@ -562,7 +562,7 @@ async def test_cancel_async_jobs(
     _job_id = AsyncJobId(faker.uuid4())
     create_backend_mock(
         tasks_rest.__name__,
-        f"_service.{_tasks_service.cancel_task.__name__}",
+        f"_tasks_service.{_tasks_service.cancel_task.__name__}",
         backend_result_or_exception,
     )
 
@@ -595,7 +595,7 @@ async def test_get_async_job_result(
     _job_id = AsyncJobId(faker.uuid4())
     create_backend_mock(
         tasks_rest.__name__,
-        f"_service.{_tasks_service.get_task_result.__name__}",
+        f"_tasks_service.{_tasks_service.get_task_result.__name__}",
         backend_result_or_exception,
     )
 
@@ -630,7 +630,7 @@ async def test_get_user_async_jobs(
 ):
     create_backend_mock(
         tasks_rest.__name__,
-        f"_service.{_tasks_service.list_tasks.__name__}",
+        f"_tasks_service.{_tasks_service.list_tasks.__name__}",
         backend_result_or_exception,
     )
 
@@ -712,7 +712,7 @@ async def test_get_async_job_links(
     # Call the different links and check the correct model and return status
     create_backend_mock(
         tasks_rest.__name__,
-        f"_service.{backend_method}",
+        f"_tasks_service.{backend_method}",
         backend_object,
     )
     response = await client.request(
