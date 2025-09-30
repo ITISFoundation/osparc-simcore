@@ -25,7 +25,7 @@ from servicelib.tracing import (
     _OSPARC_TRACE_ID_HEADER,
     _PROFILE_ATTRIBUTE_NAME,
     TracingData,
-    with_profiled_span,
+    profiled_span,
 )
 from settings_library.tracing import TracingSettings
 
@@ -280,15 +280,15 @@ async def test_with_profile_span(
 
     handler_data = dict()
 
-    @with_profiled_span
     async def handler(handler_data: dict):
-        current_span = trace.get_current_span()
-        handler_data[_OSPARC_TRACE_ID_HEADER] = format(
-            current_span.get_span_context().trace_id, "032x"
-        )
-        if isinstance(server_response, HTTPException):
-            raise server_response
-        return server_response
+        with profiled_span(tracing_data=tracing_data, span_name="my favorite span"):
+            current_span = trace.get_current_span()
+            handler_data[_OSPARC_TRACE_ID_HEADER] = format(
+                current_span.get_span_context().trace_id, "032x"
+            )
+            if isinstance(server_response, HTTPException):
+                raise server_response
+            return server_response
 
     mocked_app.get("/")(partial(handler, handler_data))
 

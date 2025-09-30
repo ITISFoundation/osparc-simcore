@@ -1,9 +1,7 @@
-from collections.abc import Callable, Coroutine
 from contextlib import contextmanager
 from contextvars import Token
 from dataclasses import dataclass
-from functools import wraps
-from typing import Any, Final, Self, TypeAlias
+from typing import Final, Self, TypeAlias
 
 import pyinstrument
 import pyinstrument.renderers
@@ -61,44 +59,6 @@ def get_trace_id_header() -> dict[str, str] | None:
     return None
 
 
-def with_profiled_span(
-    func: Callable[..., Coroutine[Any, Any, Any]],
-) -> Callable[..., Coroutine[Any, Any, Any]]:
-    """Decorator that wraps an async function in an OpenTelemetry span with pyinstrument profiling."""
-
-    @wraps(func)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        if not _is_tracing():
-            return await func(*args, **kwargs)
-
-        tracer = trace.get_tracer(_TRACER_NAME)
-        span_name = f"{func.__module__}.{func.__qualname__}"
-
-        with tracer.start_as_current_span(span_name) as span:
-            profiler = pyinstrument.Profiler(async_mode="enabled")
-            profiler.start()
-
-            try:
-                return await func(*args, **kwargs)
-
-            except Exception as e:
-                span.record_exception(e)
-                span.set_status(trace.Status(trace.StatusCode.ERROR, f"{e}"))
-                raise
-
-            finally:
-                profiler.stop()
-                renderer = pyinstrument.renderers.ConsoleRenderer(
-                    unicode=True, color=False, show_all=True
-                )
-                span.set_attribute(
-                    _PROFILE_ATTRIBUTE_NAME,
-                    profiler.output(renderer=renderer),
-                )
-
-    return wrapper
-
-
 @dataclass
 class TracingData:
     service_name: str
@@ -115,3 +75,33 @@ class TracingData:
             service_name=service_name,
             tracer_provider=trace_provider,
         )
+
+
+@contextmanager
+def profiled_span(*, tracing_data: TracingData, span_name: str):
+    if not _is_tracing():
+        return
+    tracer = trace.get_tracer(
+        _TRACER_NAME, tracer_provider=tracing_data.tracer_provider
+    )
+    with tracer.start_as_current_span(span_name) as span:
+        profiler = pyinstrument.Profiler(async_mode="enabled")
+        profiler.start()
+
+        try:
+            yield
+
+        except Exception as e:
+            span.record_exception(e)
+            span.set_status(trace.Status(trace.StatusCode.ERROR, f"{e}"))
+            raise
+
+        finally:
+            profiler.stop()
+            renderer = pyinstrument.renderers.ConsoleRenderer(
+                unicode=True, color=False, show_all=True
+            )
+            span.set_attribute(
+                _PROFILE_ATTRIBUTE_NAME,
+                profiler.output(renderer=renderer),
+            )
