@@ -1,11 +1,14 @@
+from collections.abc import AsyncIterator
 from typing import Any, Protocol, runtime_checkable
 
 from models_library.progress_bar import ProgressReport
 
-from ..celery.models import (
+from .models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
+    TaskEvent,
+    TaskEventID,
     TaskID,
     TaskStatus,
     TaskUUID,
@@ -26,8 +29,6 @@ class TaskManager(Protocol):
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> None: ...
 
-    async def task_exists(self, task_id: TaskID) -> bool: ...
-
     async def get_task_result(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> Any: ...
@@ -41,3 +42,20 @@ class TaskManager(Protocol):
     async def set_task_progress(
         self, task_id: TaskID, report: ProgressReport
     ) -> None: ...
+
+    async def task_exists(self, task_id: TaskID) -> bool: ...
+
+    # Events
+
+    async def publish_task_event(
+        self,
+        task_id: TaskID,
+        event: TaskEvent,
+    ) -> None: ...
+
+    def consume_task_events(
+        self,
+        owner_metadata: OwnerMetadata,
+        task_uuid: TaskUUID,
+        last_id: str | None = None,
+    ) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]: ...
