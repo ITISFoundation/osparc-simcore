@@ -59,22 +59,24 @@ _faker = Faker()
 
 async def test_register_function(
     client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_function: ProjectFunction,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], MockType],
+    fake_function: ProjectFunction,
     auth: httpx.BasicAuth,
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
 ) -> None:
-    mock_handler_in_functions_rpc_interface(
-        "register_function", mock_registered_project_function
+    mock = mock_handler_in_functions_rpc_interface(
+        "register_function", fake_registered_project_function
     )
     response = await client.post(
-        f"{API_VTAG}/functions", json=mock_function.model_dump(mode="json"), auth=auth
+        f"{API_VTAG}/functions", json=fake_function.model_dump(mode="json"), auth=auth
     )
+
+    assert mock.called
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     returned_function = RegisteredProjectFunction.model_validate(data)
     assert returned_function.uid is not None
-    assert returned_function == mock_registered_project_function
+    assert returned_function == fake_registered_project_function
 
 
 async def test_register_function_invalid(
@@ -100,18 +102,18 @@ async def test_register_function_invalid(
 async def test_get_function(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
     function_id = str(uuid4())
 
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", fake_registered_project_function
     )
     response = await client.get(f"{API_VTAG}/functions/{function_id}", auth=auth)
     assert response.status_code == status.HTTP_200_OK
     returned_function = RegisteredProjectFunction.model_validate(response.json())
-    assert returned_function == mock_registered_project_function
+    assert returned_function == fake_registered_project_function
 
 
 async def test_get_function_not_found(
@@ -139,7 +141,7 @@ async def test_get_function_read_access_denied(
     mock_handler_in_functions_rpc_interface: Callable[
         [str, Any, Exception | None], None
     ],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
     unauthorized_user_id = "unauthorized user"
@@ -147,29 +149,29 @@ async def test_get_function_read_access_denied(
         "get_function",
         None,
         FunctionReadAccessDeniedError(
-            function_id=mock_registered_project_function.uid,
+            function_id=fake_registered_project_function.uid,
             user_id=unauthorized_user_id,
         ),
     )
     response = await client.get(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}", auth=auth
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}", auth=auth
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["errors"][0] == (
-        f"Function {mock_registered_project_function.uid} read access denied for user {unauthorized_user_id}"
+        f"Function {fake_registered_project_function.uid} read access denied for user {unauthorized_user_id}"
     )
 
 
 async def test_list_functions(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
         "list_functions",
         (
-            [mock_registered_project_function for _ in range(5)],
+            [fake_registered_project_function for _ in range(5)],
             PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
         ),
     )
@@ -180,20 +182,20 @@ async def test_list_functions(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()["items"]
     assert len(data) == 5
-    assert data[0]["title"] == mock_registered_project_function.title
+    assert data[0]["title"] == fake_registered_project_function.title
 
 
 async def test_update_function_title(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
         "update_function_title",
         RegisteredProjectFunction(
             **{
-                **mock_registered_project_function.model_dump(),
+                **fake_registered_project_function.model_dump(),
                 "title": "updated_example_function",
             }
         ),
@@ -202,7 +204,7 @@ async def test_update_function_title(
     # Update the function title
     updated_title = {"title": "updated_example_function"}
     response = await client.patch(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}/title",
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}/title",
         params=updated_title,
         auth=auth,
     )
@@ -214,14 +216,14 @@ async def test_update_function_title(
 async def test_update_function_description(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
         "update_function_description",
         RegisteredProjectFunction(
             **{
-                **mock_registered_project_function.model_dump(),
+                **fake_registered_project_function.model_dump(),
                 "description": "updated_example_function",
             }
         ),
@@ -230,7 +232,7 @@ async def test_update_function_description(
     # Update the function description
     updated_description = {"description": "updated_example_function"}
     response = await client.patch(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}/description",
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}/description",
         params=updated_description,
         auth=auth,
     )
@@ -242,15 +244,15 @@ async def test_update_function_description(
 async def test_get_function_input_schema(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", fake_registered_project_function
     )
 
     response = await client.get(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}/input_schema",
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}/input_schema",
         auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK
@@ -258,22 +260,22 @@ async def test_get_function_input_schema(
 
     assert (
         data["schema_content"]
-        == mock_registered_project_function.input_schema.schema_content
+        == fake_registered_project_function.input_schema.schema_content
     )
 
 
 async def test_get_function_output_schema(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", fake_registered_project_function
     )
 
     response = await client.get(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}/output_schema",
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}/output_schema",
         auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK
@@ -281,7 +283,7 @@ async def test_get_function_output_schema(
 
     assert (
         data["schema_content"]
-        == mock_registered_project_function.output_schema.schema_content
+        == fake_registered_project_function.output_schema.schema_content
     )
 
 
@@ -289,17 +291,17 @@ async def test_validate_function_inputs(
     client: AsyncClient,
     mock_rabbitmq_rpc_client: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", fake_registered_project_function
     )
 
     # Validate inputs
     validate_payload = {"input1": 10}
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:validate_inputs",
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}:validate_inputs",
         json=validate_payload,
         auth=auth,
     )
@@ -311,14 +313,14 @@ async def test_validate_function_inputs(
 async def test_delete_function(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
     mock_handler_in_functions_rpc_interface("delete_function", None)
 
     # Delete the function
     response = await client.delete(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}", auth=auth
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}", auth=auth
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -332,7 +334,7 @@ async def test_run_map_function_not_allowed(
     mocker: MockerFixture,
     mock_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
@@ -369,7 +371,7 @@ async def test_run_map_function_not_allowed(
 
     mock_handler_in_functions_rpc_interface(
         "get_function",
-        mock_registered_project_function,
+        fake_registered_project_function,
     )
 
     # Monkeypatching MagicMock because otherwise it refuse to be used in an await statement
@@ -379,7 +381,7 @@ async def test_run_map_function_not_allowed(
     MagicMock.__await__ = lambda _: async_magic().__await__()
 
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:{funcapi_endpoint}",
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}:{funcapi_endpoint}",
         json=endpoint_inputs,
         auth=auth,
         headers={
@@ -390,7 +392,7 @@ async def test_run_map_function_not_allowed(
     if user_has_execute_right:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert response.json()["errors"][0] == (
-            f"Function {mock_registered_project_function.uid} execute access denied for user {user_id}"
+            f"Function {fake_registered_project_function.uid} execute access denied for user {user_id}"
         )
     else:
         assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -406,8 +408,8 @@ async def test_run_project_function(
     app: FastAPI,
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
-    mock_registered_project_function_job: RegisteredFunctionJob,
+    fake_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
     user_identity: Identity,
     user_email: EmailStr,
@@ -434,11 +436,10 @@ async def test_run_project_function(
     )
 
     async def _get_wb_api_rpc_client(app: FastAPI) -> WbApiRpcClient:
-        from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+        from simcore_service_api_server.services_rpc import wb_api_server
 
-        return WbApiRpcClient(
-            _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
-        )
+        wb_api_server.setup(app, mocker.MagicMock(spec=RabbitMQRPCClient))
+        return WbApiRpcClient.get_from_app_state(app)
 
     mocker.patch.object(
         functions_tasks, "get_wb_api_rpc_client", _get_wb_api_rpc_client
@@ -467,11 +468,11 @@ async def test_run_project_function(
         ),
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [])
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", mock_registered_project_function_job
+        "register_function_job", fake_registered_project_function_job
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -483,19 +484,19 @@ async def test_run_project_function(
         ),
     )
     mock_handler_in_functions_rpc_interface(
-        "patch_registered_function_job", mock_registered_project_function_job
+        "patch_registered_function_job", fake_registered_project_function_job
     )
 
     pre_registered_function_job_data = PreRegisteredFunctionJobData(
         job_inputs=JobInputs(values={}),
-        function_job_id=mock_registered_project_function.uid,
+        function_job_id=fake_registered_project_function.uid,
     )
 
     job = await functions_tasks.run_function(
         task=MagicMock(spec=Task),
         task_id=TaskID(_faker.uuid4()),
         user_identity=user_identity,
-        function=mock_registered_project_function,
+        function=fake_registered_project_function,
         pre_registered_function_job_data=pre_registered_function_job_data,
         pricing_spec=None,
         job_links=job_links,
@@ -508,22 +509,22 @@ async def test_run_project_function(
 async def test_export_logs_project_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredFunction,
-    mock_registered_project_function_job: RegisteredFunctionJob,
+    fake_registered_project_function: RegisteredFunction,
+    fake_registered_project_function_job: RegisteredFunctionJob,
     mocked_directorv2_rpc_api: dict[str, MockType],
     mocked_storage_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     user_id: UserID,
 ):
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function_job", mock_registered_project_function_job
+        "get_function_job", fake_registered_project_function_job
     )
 
     response = await client.post(
-        f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}/log",
+        f"{API_VTAG}/function_jobs/{fake_registered_project_function_job.uid}/log",
         auth=auth,
     )
 
@@ -534,22 +535,22 @@ async def test_export_logs_project_function_job(
 async def test_export_logs_solver_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_solver_function: RegisteredFunction,
-    mock_registered_solver_function_job: RegisteredFunctionJob,
+    fake_registered_solver_function: RegisteredFunction,
+    fake_registered_solver_function_job: RegisteredFunctionJob,
     mocked_directorv2_rpc_api: dict[str, MockType],
     mocked_storage_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     user_id: UserID,
 ):
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_solver_function
+        "get_function", fake_registered_solver_function
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function_job", mock_registered_solver_function_job
+        "get_function_job", fake_registered_solver_function_job
     )
 
     response = await client.post(
-        f"{API_VTAG}/function_jobs/{mock_registered_solver_function_job.uid}/log",
+        f"{API_VTAG}/function_jobs/{fake_registered_solver_function_job.uid}/log",
         auth=auth,
     )
 

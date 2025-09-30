@@ -50,14 +50,14 @@ _faker = Faker()
 async def test_delete_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
 
     mock_handler_in_functions_rpc_interface("delete_function_job", None)
 
     response = await client.delete(
-        f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}",
+        f"{API_VTAG}/function_jobs/{fake_registered_project_function_job.uid}",
         auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK
@@ -66,49 +66,49 @@ async def test_delete_function_job(
 async def test_register_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_project_function_job: ProjectFunctionJob,
-    mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    fake_project_function_job: ProjectFunctionJob,
+    fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
     """Test the register_function_job endpoint."""
 
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", mock_registered_project_function_job
+        "register_function_job", fake_registered_project_function_job
     )
 
     response = await client.post(
         f"{API_VTAG}/function_jobs",
-        json=mock_project_function_job.model_dump(mode="json"),
+        json=fake_project_function_job.model_dump(mode="json"),
         auth=auth,
     )
 
     assert response.status_code == status.HTTP_200_OK
     assert (
         RegisteredProjectFunctionJob.model_validate(response.json())
-        == mock_registered_project_function_job
+        == fake_registered_project_function_job
     )
 
 
 async def test_get_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
 
     mock_handler_in_functions_rpc_interface(
-        "get_function_job", mock_registered_project_function_job
+        "get_function_job", fake_registered_project_function_job
     )
 
     # Now, get the function job
     response = await client.get(
-        f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}",
+        f"{API_VTAG}/function_jobs/{fake_registered_project_function_job.uid}",
         auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK
     assert (
         RegisteredProjectFunctionJob.model_validate(response.json())
-        == mock_registered_project_function_job
+        == fake_registered_project_function_job
     )
 
 
@@ -117,14 +117,14 @@ async def test_list_function_jobs(
     mock_rabbitmq_rpc_client: MockerFixture,
     mock_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
 
     mock_handler_in_functions_rpc_interface(
         "list_function_jobs",
         (
-            [mock_registered_project_function_job for _ in range(5)],
+            [fake_registered_project_function_job for _ in range(5)],
             PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
         ),
     )
@@ -134,7 +134,7 @@ async def test_list_function_jobs(
     assert len(data) == 5
     assert (
         RegisteredProjectFunctionJob.model_validate(data[0])
-        == mock_registered_project_function_job
+        == fake_registered_project_function_job
     )
 
 
@@ -144,8 +144,8 @@ async def test_list_function_jobs_with_status(
     mock_rabbitmq_rpc_client: MockerFixture,
     mock_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
-    mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    fake_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
     mocker: MockerFixture,
     status_str: str,
@@ -155,7 +155,7 @@ async def test_list_function_jobs_with_status(
     mock_registered_project_function_job_with_status = (
         RegisteredProjectFunctionJobWithStatus(
             **{
-                **mock_registered_project_function_job.model_dump(),
+                **fake_registered_project_function_job.model_dump(),
                 "status": mock_status,
             }
         )
@@ -168,7 +168,7 @@ async def test_list_function_jobs_with_status(
         ),
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", fake_registered_project_function
     )
 
     mock_function_job_outputs = mocker.patch.object(
@@ -199,7 +199,7 @@ async def test_list_function_jobs_with_job_id_filter(
     mock_celery_task_manager: MockType,
     mock_rabbitmq_rpc_client: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[[str], MockType],
-    mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    fake_registered_project_function_job: RegisteredProjectFunctionJob,
     user_id: UserID,
     product_name: ProductName,
     auth: httpx.BasicAuth,
@@ -212,7 +212,7 @@ async def test_list_function_jobs_with_job_id_filter(
         start = offset
         end = offset + limit
         items = [
-            mock_registered_project_function_job
+            fake_registered_project_function_job
             for _ in range(start, min(end, TOTAL_SIZE))
         ]
         return items, PageMetaInfoLimitOffset(
@@ -234,7 +234,7 @@ async def test_list_function_jobs_with_job_id_filter(
         response = await client.get(
             f"{API_VTAG}/function_jobs",
             params={
-                "function_job_ids": [str(mock_registered_project_function_job.uid)],
+                "function_job_ids": [str(fake_registered_project_function_job.uid)],
                 "limit": PAGE_SIZE,
                 "offset": offset,
             },
@@ -242,7 +242,7 @@ async def test_list_function_jobs_with_job_id_filter(
         )
         mock_list_function_jobs.assert_called_with(
             ANY,  # Dummy rpc client
-            filter_by_function_job_ids=[mock_registered_project_function_job.uid],
+            filter_by_function_job_ids=[fake_registered_project_function_job.uid],
             filter_by_function_job_collection_id=None,
             filter_by_function_id=None,
             pagination_offset=offset,
@@ -255,7 +255,7 @@ async def test_list_function_jobs_with_job_id_filter(
         assert len(data) == min(PAGE_SIZE, TOTAL_SIZE - offset)
         assert (
             RegisteredProjectFunctionJob.model_validate(data[0])
-            == mock_registered_project_function_job
+            == fake_registered_project_function_job
         )
 
 
@@ -280,9 +280,9 @@ async def test_get_function_job_status(
     mock_handler_in_functions_rpc_interface: Callable[
         [str, Any, Exception | None, Callable | None], MockType
     ],
-    mock_registered_project_function_job: RegisteredProjectFunctionJob,
-    mock_registered_project_function: RegisteredProjectFunction,
-    mock_method_in_jobs_service: Callable[[str, Any], None],
+    fake_registered_project_function_job: RegisteredProjectFunctionJob,
+    fake_registered_project_function: RegisteredProjectFunction,
+    mock_method_in_jobs_service: Callable[[str, Any], MockType],
     auth: httpx.BasicAuth,
     job_status: str,
     project_job_id: ProjectID,
@@ -321,7 +321,7 @@ async def test_get_function_job_status(
 
     mock_handler_in_functions_rpc_interface(
         "get_function_job",
-        mock_registered_project_function_job.model_copy(
+        fake_registered_project_function_job.model_copy(
             update={
                 "user_id": ANY,
                 "project_job_id": project_job_id,
@@ -332,7 +332,7 @@ async def test_get_function_job_status(
         None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function, None, None
+        "get_function", fake_registered_project_function, None, None
     )
     mock_handler_in_functions_rpc_interface(
         "get_function_job_status", FunctionJobStatus(status=job_status), None, None
@@ -359,7 +359,7 @@ async def test_get_function_job_status(
     )
 
     response = await client.get(
-        f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}/status",
+        f"{API_VTAG}/function_jobs/{fake_registered_project_function_job.uid}/status",
         auth=auth,
     )
     assert response.status_code == _expected_return_status
@@ -401,8 +401,8 @@ async def test_get_function_job_outputs(
     mock_celery_task_manager: MockType,
     mock_rabbitmq_rpc_client: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function_job: RegisteredProjectFunctionJob,
-    mock_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function_job: RegisteredProjectFunctionJob,
+    fake_registered_project_function: RegisteredProjectFunction,
     mocked_webserver_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     job_outputs: dict[str, Any] | None,
@@ -414,7 +414,7 @@ async def test_get_function_job_outputs(
 
     mock_handler_in_functions_rpc_interface(
         "get_function_job",
-        mock_registered_project_function_job.model_copy(
+        fake_registered_project_function_job.model_copy(
             update={
                 "user_id": ANY,
                 "project_job_id": project_job_id,
@@ -423,7 +423,7 @@ async def test_get_function_job_outputs(
         ),
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function
+        "get_function", fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
         "update_function_job_status", FunctionJobStatus(status="SUCCESS")
@@ -439,7 +439,7 @@ async def test_get_function_job_outputs(
     )
 
     response = await client.get(
-        f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}/outputs",
+        f"{API_VTAG}/function_jobs/{fake_registered_project_function_job.uid}/outputs",
         auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK

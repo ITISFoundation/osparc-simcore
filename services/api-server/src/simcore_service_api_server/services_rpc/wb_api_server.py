@@ -661,14 +661,18 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         )
 
 
-def setup(app: FastAPI, rabbitmq_rpc_client: RabbitMQRPCClient):
+def _create_obj(app: FastAPI, rabbitmq_rpc_client: RabbitMQRPCClient):
     webserver_settings: WebServerSettings = app.state.settings.API_SERVER_WEBSERVER
     if not webserver_settings:
         raise ConfigurationError(tip="Webserver settings are not configured")
 
-    wb_api_rpc_client = WbApiRpcClient(
+    return WbApiRpcClient(
         _rpc_client=WebServerRpcClient(
             rabbitmq_rpc_client, webserver_settings.WEBSERVER_RPC_NAMESPACE
         ),
     )
+
+
+def setup(app: FastAPI, rabbitmq_rpc_client: RabbitMQRPCClient):
+    wb_api_rpc_client = _create_obj(app, rabbitmq_rpc_client)
     wb_api_rpc_client.set_to_app_state(app=app)

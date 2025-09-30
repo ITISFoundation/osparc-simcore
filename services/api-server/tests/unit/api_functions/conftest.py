@@ -41,7 +41,6 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server.api.dependencies import services
 from simcore_service_api_server.api.dependencies.services import get_rabbitmq_rpc_client
 from simcore_service_api_server.api.routes.functions_routes import get_wb_api_rpc_client
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 
 @pytest.fixture
@@ -86,24 +85,30 @@ async def mock_rabbitmq_rpc_client(
 
 @pytest.fixture
 async def mock_celery_task_manager(app: FastAPI, mocker: MockerFixture) -> MockType:
-    def _(app: FastAPI):
+    def _new(app: FastAPI):
         return None
 
-    return mocker.patch.object(services, services.get_task_manager.__name__, _)
+    return mocker.patch.object(services, services.get_task_manager.__name__, _new)
 
 
 @pytest.fixture
-async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
-    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+async def mock_get_wb_api_rpc_client(
+    app: FastAPI, mocker: MockerFixture
+) -> MockerFixture:
+    def _new():
+        from simcore_service_api_server.services_rpc import wb_api_server
 
-    app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
-    )
+        # pylint: disable=protected-access
+        return wb_api_server._create_obj(
+            app, mocker.MagicMock(spec=RabbitMQRPCClient)
+        )  # noqa: SLF001
+
+    app.dependency_overrides[get_wb_api_rpc_client] = _new
     return mocker
 
 
 @pytest.fixture
-def sample_input_schema() -> JSONFunctionInputSchema:
+def fake_sample_input_schema() -> JSONFunctionInputSchema:
     return JSONFunctionInputSchema(
         schema_content={
             "type": "object",
@@ -113,7 +118,7 @@ def sample_input_schema() -> JSONFunctionInputSchema:
 
 
 @pytest.fixture
-def sample_output_schema() -> JSONFunctionOutputSchema:
+def fake_sample_output_schema() -> JSONFunctionOutputSchema:
     return JSONFunctionOutputSchema(
         schema_content={
             "type": "object",
@@ -123,33 +128,33 @@ def sample_output_schema() -> JSONFunctionOutputSchema:
 
 
 @pytest.fixture
-def raise_function_id_not_found() -> FunctionIDNotFoundError:
+def fake_function_id_not_found_exception() -> FunctionIDNotFoundError:
     return FunctionIDNotFoundError(function_id="function_id")
 
 
 @pytest.fixture
-def mock_function(
+def fake_function(
     project_id: ProjectID,
-    sample_input_schema: JSONFunctionInputSchema,
-    sample_output_schema: JSONFunctionOutputSchema,
+    fake_sample_input_schema: JSONFunctionInputSchema,
+    fake_sample_output_schema: JSONFunctionOutputSchema,
 ) -> Function:
     sample_fields = {
         "title": "test_function",
         "function_class": FunctionClass.PROJECT,
         "project_id": str(project_id),
         "description": "A test function",
-        "input_schema": sample_input_schema,
-        "output_schema": sample_output_schema,
+        "input_schema": fake_sample_input_schema,
+        "output_schema": fake_sample_output_schema,
         "default_inputs": None,
     }
     return ProjectFunction(**sample_fields)
 
 
 @pytest.fixture
-def mock_registered_project_function(mock_function: Function) -> RegisteredFunction:
+def fake_registered_project_function(fake_function: Function) -> RegisteredFunction:
     return RegisteredProjectFunction(
         **{
-            **mock_function.model_dump(),
+            **fake_function.model_dump(),
             "uid": f"{uuid4()}",
             "created_at": datetime.datetime.now(datetime.UTC),
             "modified_at": datetime.datetime.now(datetime.UTC),
@@ -158,17 +163,17 @@ def mock_registered_project_function(mock_function: Function) -> RegisteredFunct
 
 
 @pytest.fixture
-def mock_registered_solver_function(
-    mock_function: Function,
-    sample_input_schema: JSONFunctionInputSchema,
-    sample_output_schema: JSONFunctionOutputSchema,
+def fake_registered_solver_function(
+    fake_function: Function,
+    fake_sample_input_schema: JSONFunctionInputSchema,
+    fake_sample_output_schema: JSONFunctionOutputSchema,
 ) -> RegisteredFunction:
     return RegisteredSolverFunction(
         title="test_function",
         function_class=FunctionClass.SOLVER,
         description="A test function",
-        input_schema=sample_input_schema,
-        output_schema=sample_output_schema,
+        input_schema=fake_sample_input_schema,
+        output_schema=fake_sample_output_schema,
         default_inputs=None,
         uid=uuid4(),
         created_at=datetime.datetime.now(datetime.UTC),
@@ -179,11 +184,11 @@ def mock_registered_solver_function(
 
 
 @pytest.fixture
-def mock_project_function_job(
-    mock_registered_project_function: RegisteredFunction,
+def fake_project_function_job(
+    fake_registered_project_function: RegisteredFunction,
 ) -> FunctionJob:
     mock_function_job = {
-        "function_uid": mock_registered_project_function.uid,
+        "function_uid": fake_registered_project_function.uid,
         "title": "Test Function Job",
         "description": "A test function job",
         "inputs": {"key": "value"},
@@ -196,12 +201,12 @@ def mock_project_function_job(
 
 
 @pytest.fixture
-def mock_registered_project_function_job(
-    mock_project_function_job: FunctionJob,
+def fake_registered_project_function_job(
+    fake_project_function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     return RegisteredProjectFunctionJob(
         **{
-            **mock_project_function_job.model_dump(),
+            **fake_project_function_job.model_dump(),
             "uid": f"{uuid4()}",
             "created_at": datetime.datetime.now(datetime.UTC),
         }
@@ -209,13 +214,13 @@ def mock_registered_project_function_job(
 
 
 @pytest.fixture
-def mock_solver_function_job(
-    mock_registered_solver_function: RegisteredFunction,
+def fake_solver_function_job(
+    fake_registered_solver_function: RegisteredFunction,
 ) -> FunctionJob:
     return SolverFunctionJob(
         title="Test Function Job",
         description="A test function job",
-        function_uid=mock_registered_solver_function.uid,
+        function_uid=fake_registered_solver_function.uid,
         inputs={"key": "value"},
         outputs=None,
         function_class=FunctionClass.SOLVER,
@@ -225,12 +230,12 @@ def mock_solver_function_job(
 
 
 @pytest.fixture
-def mock_registered_solver_function_job(
-    mock_solver_function_job: FunctionJob,
+def fake_registered_solver_function_job(
+    fake_solver_function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     return RegisteredSolverFunctionJob(
         **{
-            **mock_solver_function_job.model_dump(),
+            **fake_solver_function_job.model_dump(),
             "uid": f"{uuid4()}",
             "created_at": datetime.datetime.now(datetime.UTC),
         }
@@ -238,29 +243,29 @@ def mock_registered_solver_function_job(
 
 
 @pytest.fixture
-def mock_function_job_collection(
-    mock_registered_project_function_job: RegisteredFunctionJob,
+def fake_function_job_collection(
+    fake_registered_project_function_job: RegisteredFunctionJob,
 ) -> FunctionJobCollection:
     mock_function_job_collection = {
         "title": "Test Function Job Collection",
         "description": "A test function job collection",
-        "function_uid": mock_registered_project_function_job.function_uid,
+        "function_uid": fake_registered_project_function_job.function_uid,
         "function_class": FunctionClass.PROJECT,
         "project_id": f"{uuid4()}",
         "function_job_ids": [
-            mock_registered_project_function_job.uid for _ in range(5)
+            fake_registered_project_function_job.uid for _ in range(5)
         ],
     }
     return FunctionJobCollection(**mock_function_job_collection)
 
 
 @pytest.fixture
-def mock_registered_function_job_collection(
-    mock_function_job_collection: FunctionJobCollection,
+def fake_registered_function_job_collection(
+    fake_function_job_collection: FunctionJobCollection,
 ) -> RegisteredFunctionJobCollection:
     return RegisteredFunctionJobCollection(
         **{
-            **mock_function_job_collection.model_dump(),
+            **fake_function_job_collection.model_dump(),
             "uid": f"{uuid4()}",
             "created_at": datetime.datetime.now(datetime.UTC),
         }
@@ -269,46 +274,48 @@ def mock_registered_function_job_collection(
 
 @pytest.fixture()
 def mock_handler_in_functions_rpc_interface(
-    mock_wb_api_server_rpc: MockerFixture,
+    mock_get_wb_api_rpc_client: MockerFixture,
+    mocker: MockerFixture,
 ) -> Callable[[str, Any, Exception | None, Callable | None], MockType]:
-    def _mock(
+    def _create(
         handler_name: str = "",
         return_value: Any = None,
         exception: Exception | None = None,
         side_effect: Callable | None = None,
     ) -> MockType:
-        from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
-            functions_rpc_interface,
+        from servicelib.rabbitmq.rpc_interfaces.webserver.v1.functions import (
+            FunctionsRpcApi,
         )
 
         assert exception is None or side_effect is None
 
-        return mock_wb_api_server_rpc.patch.object(
-            functions_rpc_interface,
+        return mocker.patch.object(
+            FunctionsRpcApi,
             handler_name,
             return_value=return_value,
             side_effect=exception or side_effect,
         )
 
-    return _mock
+    return _create
 
 
 @pytest.fixture()
 def mock_method_in_jobs_service(
-    mock_wb_api_server_rpc: MockerFixture,
-) -> Callable[[str, Any, Exception | None], None]:
-    def _mock(
+    mock_get_wb_api_rpc_client: MockerFixture,
+    mocker: MockerFixture,
+) -> Callable[[str, Any, Exception | None], MockType]:
+    def _create(
         method_name: str = "",
         return_value: Any = None,
         exception: Exception | None = None,
-    ) -> None:
+    ) -> MockType:
         from simcore_service_api_server._service_jobs import JobService
 
-        mock_wb_api_server_rpc.patch.object(
+        return mocker.patch.object(
             JobService,
             method_name,
             return_value=return_value,
             side_effect=exception,
         )
 
-    return _mock
+    return _create

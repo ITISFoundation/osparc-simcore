@@ -168,8 +168,8 @@ async def test_with_fake_run_function(
     mock_handler_in_functions_rpc_interface: Callable[
         [str, Any, Exception | None, Callable | None], None
     ],
-    mock_registered_project_function: RegisteredProjectFunction,
-    mock_registered_project_function_job: RegisteredFunctionJob,
+    fake_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function_job: RegisteredFunctionJob,
     user_id: UserID,
 ):
 
@@ -214,11 +214,11 @@ async def test_with_fake_run_function(
         None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function, None, None
+        "get_function", fake_registered_project_function, None, None
     )
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", mock_registered_project_function_job, None, None
+        "register_function_job", fake_registered_project_function_job, None, None
     )
 
     mock_handler_in_functions_rpc_interface(
@@ -227,7 +227,7 @@ async def test_with_fake_run_function(
         None,
         partial(
             _patch_registered_function_job_side_effect,
-            mock_registered_project_function_job,
+            fake_registered_project_function_job,
         ),
     )
 
@@ -319,8 +319,8 @@ async def test_run_project_function_parent_info(
     mock_handler_in_functions_rpc_interface: Callable[
         [str, Any, Exception | None, Callable | None], None
     ],
-    mock_registered_project_function: RegisteredProjectFunction,
-    mock_registered_project_function_job: RegisteredFunctionJob,
+    fake_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
@@ -367,11 +367,11 @@ async def test_run_project_function_parent_info(
         None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function, None, None
+        "get_function", fake_registered_project_function, None, None
     )
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", mock_registered_project_function_job, None, None
+        "register_function_job", fake_registered_project_function_job, None, None
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -390,7 +390,7 @@ async def test_run_project_function_parent_info(
         None,
         partial(
             _patch_registered_function_job_side_effect,
-            mock_registered_project_function_job,
+            fake_registered_project_function_job,
         ),
     )
 
@@ -401,7 +401,7 @@ async def test_run_project_function_parent_info(
         headers[X_SIMCORE_PARENT_NODE_ID] = parent_node_uuid
 
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:run",
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}:run",
         json={},
         auth=auth,
         headers=headers,
@@ -435,8 +435,8 @@ async def test_map_function_parent_info(
     mock_handler_in_functions_rpc_interface: Callable[
         [str, Any, Exception | None, Callable | None], MockType
     ],
-    mock_registered_project_function: RegisteredProjectFunction,
-    mock_registered_project_function_job: RegisteredFunctionJob,
+    fake_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
@@ -488,11 +488,11 @@ async def test_map_function_parent_info(
         None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function, None, None
+        "get_function", fake_registered_project_function, None, None
     )
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", mock_registered_project_function_job, None, None
+        "register_function_job", fake_registered_project_function_job, None, None
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -524,7 +524,7 @@ async def test_map_function_parent_info(
         None,
         partial(
             _patch_registered_function_job_side_effect,
-            mock_registered_project_function_job,
+            fake_registered_project_function_job,
         ),
     )
 
@@ -535,7 +535,7 @@ async def test_map_function_parent_info(
         headers[X_SIMCORE_PARENT_NODE_ID] = parent_node_uuid
 
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:map",
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}:map",
         json=[{}, {}],
         auth=auth,
         headers=headers,
@@ -559,8 +559,8 @@ async def test_map_function(
     mock_handler_in_functions_rpc_interface: Callable[
         [str, Any, Exception | None, Callable | None], MockType
     ],
-    mock_registered_project_function: RegisteredProjectFunction,
-    mock_registered_project_function_job: RegisteredFunctionJob,
+    fake_registered_project_function: RegisteredProjectFunction,
+    fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
     user_id: UserID,
     mocked_webserver_rest_api_base: respx.MockRouter,
@@ -598,7 +598,7 @@ async def test_map_function(
         None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", mock_registered_project_function, None, None
+        "get_function", fake_registered_project_function, None, None
     )
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
 
@@ -609,7 +609,7 @@ async def test_map_function(
     ):
         uid = FunctionJobID(_faker.uuid4())
         generated_function_job_ids.append(uid)
-        return mock_registered_project_function_job.model_copy(update={"uid": uid})
+        return fake_registered_project_function_job.model_copy(update={"uid": uid})
 
     mock_handler_in_functions_rpc_interface(
         "register_function_job",
@@ -652,14 +652,14 @@ async def test_map_function(
         None,
         partial(
             _patch_registered_function_job_side_effect,
-            mock_registered_project_function_job,
+            fake_registered_project_function_job,
         ),
     )
 
     # act
     _inputs = [{}, {}]
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:map",
+        f"{API_VTAG}/functions/{fake_registered_project_function.uid}:map",
         json=_inputs,
         auth=auth,
         headers={
