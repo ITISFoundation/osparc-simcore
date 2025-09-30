@@ -9,6 +9,7 @@ import json
 import random
 from datetime import timedelta
 from typing import Final
+from urllib.parse import urlencode
 from uuid import UUID
 
 import jsf
@@ -94,6 +95,9 @@ class WebApiUser(OsparcWebUserBase):
         job_collection_uuid = response.json().get("uid")
 
         # wait for the job to complete
+        query_params = dict(
+            include_status=True, function_job_collection_id=job_collection_uuid
+        )
         for attempt in Retrying(
             stop=stop_after_delay(max_delay=max_poll_time),
             wait=wait_exponential(multiplier=1, min=1, max=10),
@@ -101,13 +105,30 @@ class WebApiUser(OsparcWebUserBase):
             retry=retry_if_exception_type(ValueError),
         ):
             with attempt:
-                job_status_response = self.authenticated_get(
-                    f"/v0/function_job_collections/{job_collection_uuid}/status",
-                    name="/v0/function_job_collections/[job_collection_uuid]/status",
-                )
-                job_status_response.raise_for_status()
-                all_job_statuses = job_status_response.json().get("status")
-                assert isinstance(all_job_statuses, list)
+                # list all jobs in the collection with status
+                next_page_url = "/v0/function_jobs?" + urlencode(query_params)
+                all_job_statuses = []
+                while next_page_url is not None:
+                    response = self.authenticated_get(
+                        next_page_url,
+                        name="/v0/function_jobs",
+                    )
+                    response.raise_for_status()
+                    items = response.json().get("items", [])
+                    statuses = [item.get("status", {}) for item in items]
+                    all_job_statuses.extend(
+                        [status.get("status", None) for status in statuses if status]
+                    )
+                    assert not any(
+                        status is None for status in all_job_statuses
+                    ), f"Test misconfiguration: Function job collection ({job_collection_uuid=}) listed {statuses=} with missing status"
+                    links = response.json().get("links", {})
+                    assert isinstance(links, dict)
+                    next_page_url = links.get("next", None)
+                assert (
+                    len(all_job_statuses) == n_jobs
+                ), f"Expected {n_jobs} jobs, got {len(all_job_statuses)} for {job_collection_uuid=}"
+
                 if any(status != "SUCCESS" for status in all_job_statuses):
                     raise ValueError(
                         f"Function job ({job_collection_uuid=}) for function ({function_uuid=}) returned {all_job_statuses=}"
