@@ -23,7 +23,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=Envelope[list[TaskGet]],
-    name="list_tasks",
+    name="list_legacy_tasks",
     description="Lists all long running tasks",
 )
 async def list_tasks(): ...
@@ -32,7 +32,7 @@ async def list_tasks(): ...
 @router.get(
     "/{task_id}",
     response_model=Envelope[TaskStatus],
-    name="get_task_status",
+    name="get_legacy_task_status",
     description="Retrieves the status of a task",
 )
 async def get_task_status(
@@ -42,7 +42,7 @@ async def get_task_status(
 
 @router.delete(
     "/{task_id}",
-    name="remove_task",
+    name="remove_legacy_task",
     description="Cancels and removes a task",
     status_code=status.HTTP_204_NO_CONTENT,
 )
@@ -53,7 +53,7 @@ async def remove_task(
 
 @router.get(
     "/{task_id}/result",
-    name="get_task_result",
+    name="get_legacy_task_result",
     response_model=Any,
     description="Retrieves the result of a task",
 )
