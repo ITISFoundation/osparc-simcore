@@ -522,7 +522,7 @@ async def test_get_async_jobs_status(
 ):
     _job_id = AsyncJobId(_faker.uuid4())
     create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
+        "simcore_service_webserver.tasks._controller._rest",
         f"async_jobs.{async_jobs.status.__name__}",
         backend_result_or_exception,
     )
@@ -560,7 +560,7 @@ async def test_cancel_async_jobs(
 ):
     _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
+        "simcore_service_webserver.tasks._controller._rest",
         f"async_jobs.{async_jobs.cancel.__name__}",
         backend_result_or_exception,
     )
@@ -593,7 +593,7 @@ async def test_get_async_job_result(
 ):
     _job_id = AsyncJobId(faker.uuid4())
     create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
+        "simcore_service_webserver.tasks._controller._rest",
         f"async_jobs.{async_jobs.result.__name__}",
         backend_result_or_exception,
     )
@@ -628,7 +628,7 @@ async def test_get_user_async_jobs(
     expected_status: int,
 ):
     create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
+        "simcore_service_webserver.tasks._controller._rest",
         f"async_jobs.{async_jobs.list_jobs.__name__}",
         backend_result_or_exception,
     )
