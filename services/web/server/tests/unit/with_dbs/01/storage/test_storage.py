@@ -61,6 +61,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.storage import _rest as storage_rest
 from simcore_service_webserver.tasks import _tasks_service
 from simcore_service_webserver.tasks._controller import _rest as tasks_rest
 from yarl import URL
@@ -524,7 +525,7 @@ async def test_get_async_jobs_status(
     _job_id = AsyncJobId(_faker.uuid4())
     create_backend_mock(
         tasks_rest.__name__,
-        f"_tasks_sservice.{_tasks_service.get_task_status.__name__}",
+        f"_tasks_service.{_tasks_service.get_task_status.__name__}",
         backend_result_or_exception,
     )
 
@@ -688,7 +689,7 @@ async def test_get_async_job_links(
     return_schema: OutputSchema | None,
 ):
     create_backend_mock(
-        tasks_rest.__name__,
+        storage_rest.__name__,
         start_export_data.__name__,
         (
             AsyncJobGet(
