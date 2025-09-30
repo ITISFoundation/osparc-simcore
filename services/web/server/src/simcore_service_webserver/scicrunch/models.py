@@ -1,12 +1,14 @@
 """
-   Domain models at every interface: scicrunch API, pg database and webserver API
+Domain models at every interface: scicrunch API, pg database and webserver API
 """
 
 import logging
 import re
 from datetime import datetime
+from functools import partial
+from typing import Annotated
 
-from pydantic import field_validator, ConfigDict, BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
 logger = logging.getLogger(__name__)
 
@@ -49,25 +51,29 @@ def normalize_rrid_tags(rrid_tag: str, *, with_prefix: bool = True) -> str:
 
 
 class ResourceHit(BaseModel):
-    rrid: str = Field(..., alias="rid")
+    rrid: Annotated[str, Field(alias="rid")]
     name: str
 
 
 # webserver API models -----------------------------------------
 class ResearchResource(BaseModel):
-    rrid: str = Field(
-        ...,
-        description="Unique identifier used as classifier, i.e. to tag studies and services",
-        pattern=STRICT_RRID_PATTERN,
-    )
+    rrid: Annotated[
+        str,
+        BeforeValidator(
+            partial(normalize_rrid_tags, with_prefix=True),
+        ),
+        Field(
+            description="Unique identifier used as classifier, i.e. to tag studies and services",
+            pattern=STRICT_RRID_PATTERN,
+        ),
+    ]
     name: str
     description: str
 
-    @field_validator("rrid", mode="before")
-    @classmethod
-    def format_rrid(cls, v):
-        return normalize_rrid_tags(v, with_prefix=True)
-    model_config = ConfigDict(from_attributes=True, str_strip_whitespace=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        str_strip_whitespace=True,
+    )
 
 
 # postgres_database.scicrunch_resources ORM --------------------
