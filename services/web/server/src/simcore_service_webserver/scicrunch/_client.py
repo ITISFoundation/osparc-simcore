@@ -61,15 +61,15 @@ class SciCrunch:
         cls, app: web.Application, settings: SciCrunchSettings
     ) -> "SciCrunch":
         """Returns single instance for the application and stores it"""
-        obj: SciCrunch | None = app.get(_SCICRUNCH_APPKEY)
+        obj: SciCrunch | None = app.get(SCICRUNCH_CLIENT_APPKEY)
         if obj is None:
             session = get_client_session(app)
-            app[_SCICRUNCH_APPKEY] = obj = cls(session, settings)
+            app[SCICRUNCH_CLIENT_APPKEY] = obj = cls(session, settings)
         return obj
 
     @classmethod
     def get_instance(cls, app: web.Application) -> "SciCrunch":
-        obj: SciCrunch | None = app.get(_SCICRUNCH_APPKEY)
+        obj: SciCrunch | None = app.get(SCICRUNCH_CLIENT_APPKEY)
         if obj is None:
             raise ScicrunchConfigError(
                 details="Services on scicrunch.org are currently disabled"
@@ -174,4 +174,4 @@ class SciCrunch:
         return hits.root
 
 
-_SCICRUNCH_APPKEY: Final = web.AppKey(SciCrunch.__name__, SciCrunch)
+SCICRUNCH_CLIENT_APPKEY: Final = web.AppKey(SciCrunch.__name__, SciCrunch)
