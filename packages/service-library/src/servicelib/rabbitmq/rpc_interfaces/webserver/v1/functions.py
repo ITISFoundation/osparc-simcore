@@ -38,6 +38,8 @@ from ._base import BaseRpcApi
 class FunctionsRpcApi(BaseRpcApi):
     """RPC client for function-related operations."""
 
+    # pylint: disable=too-many-public-methods
+
     async def register_function(
         self,
         *,
