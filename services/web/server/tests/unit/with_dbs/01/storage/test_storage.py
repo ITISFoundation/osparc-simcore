@@ -56,12 +56,13 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
-from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     submit,
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.tasks import _service
+from simcore_service_webserver.tasks._controller import _rest as tasks_rest
 from yarl import URL
 
 API_VERSION = "v0"
@@ -423,7 +424,7 @@ async def test_upload_file(
 
 
 @pytest.fixture
-def create_storage_rpc_client_mock(
+def create_backend_mock(
     mocker: MockerFixture,
 ) -> Callable[[str, str, Any], None]:
     def _(module: str, method: str, result_or_exception: Any):
@@ -473,12 +474,12 @@ async def test_export_data(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
+    create_backend_mock: Callable[[str, str, Any], None],
     faker: Faker,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    create_storage_rpc_client_mock(
+    create_backend_mock(
         "simcore_service_webserver.storage._rest",
         start_export_data.__name__,
         backend_result_or_exception,
@@ -516,14 +517,14 @@ async def test_get_async_jobs_status(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
+    create_backend_mock: Callable[[str, str, Any], None],
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(_faker.uuid4())
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._controller._rest",
-        f"async_jobs.{async_jobs.status.__name__}",
+    create_backend_mock(
+        tasks_rest.__name__,
+        f"_service.{_service.get_task_status.__name__}",
         backend_result_or_exception,
     )
 
@@ -553,15 +554,15 @@ async def test_cancel_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
+    create_backend_mock: Callable[[str, str, Any], None],
     faker: Faker,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(faker.uuid4())
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._controller._rest",
-        f"async_jobs.{async_jobs.cancel.__name__}",
+    create_backend_mock(
+        tasks_rest.__name__,
+        f"_service.{_service.cancel_task.__name__}",
         backend_result_or_exception,
     )
 
@@ -586,15 +587,15 @@ async def test_get_async_job_result(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
+    create_backend_mock: Callable[[str, str, Any], None],
     faker: Faker,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(faker.uuid4())
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._controller._rest",
-        f"async_jobs.{async_jobs.result.__name__}",
+    create_backend_mock(
+        tasks_rest.__name__,
+        f"_service.{_service.get_task_result.__name__}",
         backend_result_or_exception,
     )
 
@@ -623,13 +624,13 @@ async def test_get_user_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
+    create_backend_mock: Callable[[str, str, Any], None],
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._controller._rest",
-        f"async_jobs.{async_jobs.list_jobs.__name__}",
+    create_backend_mock(
+        tasks_rest.__name__,
+        f"_service.{_service.list_tasks.__name__}",
         backend_result_or_exception,
     )
 
@@ -646,7 +647,7 @@ async def test_get_user_async_jobs(
         (
             "GET",
             "status_href",
-            async_jobs.status.__name__,
+            _service.get_task_status.__name__,
             AsyncJobStatus(
                 job_id=AsyncJobId(_faker.uuid4()),
                 progress=ProgressReport(actual_value=0.5, total=1.0),
@@ -658,7 +659,7 @@ async def test_get_user_async_jobs(
         (
             "DELETE",
             "abort_href",
-            async_jobs.cancel.__name__,
+            _service.cancel_task.__name__,
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
             status.HTTP_204_NO_CONTENT,
             None,
@@ -666,7 +667,7 @@ async def test_get_user_async_jobs(
         (
             "GET",
             "result_href",
-            async_jobs.result.__name__,
+            _service.get_task_result.__name__,
             AsyncJobResult(result=None),
             status.HTTP_200_OK,
             TaskResult,
@@ -677,7 +678,7 @@ async def test_get_async_job_links(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
+    create_backend_mock: Callable[[str, str, Any], None],
     faker: Faker,
     http_method: str,
     href: str,
@@ -686,8 +687,8 @@ async def test_get_async_job_links(
     return_status: int,
     return_schema: OutputSchema | None,
 ):
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.storage._rest",
+    create_backend_mock(
+        tasks_rest.__name__,
         start_export_data.__name__,
         (
             AsyncJobGet(
@@ -709,9 +710,9 @@ async def test_get_async_job_links(
     assert response_body_data is not None
 
     # Call the different links and check the correct model and return status
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
-        f"async_jobs.{backend_method}",
+    create_backend_mock(
+        tasks_rest.__name__,
+        f"_service.{backend_method}",
         backend_object,
     )
     response = await client.request(
