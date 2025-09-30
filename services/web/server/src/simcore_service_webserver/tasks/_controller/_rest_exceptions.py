@@ -69,6 +69,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_export_data_exceptions = exception_handling_decorator(
+handle_rest_requests_exceptions = exception_handling_decorator(
     to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
 )
