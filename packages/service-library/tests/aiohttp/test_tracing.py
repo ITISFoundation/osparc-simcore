@@ -257,18 +257,18 @@ async def test_tracing_sampling_probability_effective(
             await client.get("/")
 
         await asyncio.gather(*(make_request() for _ in range(n_requests)))
-        spans = mock_otel_collector.get_finished_spans()
-        trace_ids = set()
-        for span in spans:
-            if span.context is not None:
-                trace_ids.add(span.context.trace_id)
-        num_traces = len(trace_ids)
+        trace_ids = {
+            span.context.trace_id
+            for span in mock_otel_collector.get_finished_spans()
+            if span.context is not None
+        }
+        n_traces = len(trace_ids)
         expected_num_traces = int(
             tracing_settings.TRACING_SAMPLING_PROBABILITY * n_requests
         )
         tolerance = int(tolerance_probability * expected_num_traces)
         assert (
             expected_num_traces - tolerance
-            <= num_traces
+            <= n_traces
             <= expected_num_traces + tolerance
-        ), f"Expected roughly {expected_num_traces} distinct trace ids, got {num_traces}"
+        ), f"Expected roughly {expected_num_traces} distinct trace ids, got {n_traces}"
