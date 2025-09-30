@@ -26,7 +26,7 @@ router = APIRouter(
     name="list_legacy_tasks",
     description="Lists all long running tasks",
 )
-async def list_tasks(): ...
+async def list_legacy_tasks(): ...
 
 
 @router.get(
@@ -35,7 +35,7 @@ async def list_tasks(): ...
     name="get_legacy_task_status",
     description="Retrieves the status of a task",
 )
-async def get_task_status(
+async def get_legacy_task_status(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 
@@ -46,7 +46,7 @@ async def get_task_status(
     description="Cancels and removes a task",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def remove_task(
+async def remove_legacy_task(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 
@@ -57,6 +57,6 @@ async def remove_task(
     response_model=Any,
     description="Retrieves the result of a task",
 )
-async def get_task_result(
+async def get_legacy_task_result(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
