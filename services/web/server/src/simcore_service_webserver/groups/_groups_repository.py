@@ -17,7 +17,6 @@ from models_library.groups import (
     StandardGroupUpdate,
 )
 from models_library.users import UserID, UserNameID
-from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from simcore_postgres_database.utils_repos import (
@@ -28,6 +27,7 @@ from simcore_postgres_database.utils_users import is_public, visible_user_profil
 from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.row import Row
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.models import groups, user_to_groups, users
@@ -789,7 +789,7 @@ async def add_new_user_in_group(
                     uid=new_user_id, gid=group_id, access_rights=user_access_rights
                 )
             )
-        except UniqueViolation as exc:
+        except IntegrityError as exc:
             raise UserAlreadyInGroupError(
                 uid=new_user_id,
                 gid=group_id,
