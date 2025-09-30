@@ -1,7 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel
-from simcore_service_webserver.models import ConfigDict
+from pydantic import BaseModel, ConfigDict
 
 
 class TaskPathParams(BaseModel):
