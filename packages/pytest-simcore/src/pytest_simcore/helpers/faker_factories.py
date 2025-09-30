@@ -629,3 +629,65 @@ def random_service_consume_filetype(
 
     data.update(overrides)
     return data
+
+
+def random_group_classifier(
+    *,
+    gid: int,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.classifiers import group_classifiers
+
+    data = {
+        "gid": gid,
+        "bundle": {
+            "vcs_ref": fake.lexify(text="???????"),
+            "vcs_url": "https://organization.classifiers.git",
+            "build_date": "2021-01-20T15:19:30Z",
+            "classifiers": {
+                "project::dak": {
+                    "url": None,
+                    "logo": None,
+                    "aliases": [],
+                    "related": [],
+                    "markdown": "",
+                    "released": None,
+                    "classifier": "project::dak",
+                    "created_by": fake.user_name(),
+                    "github_url": None,
+                    "display_name": "DAK",
+                    "wikipedia_url": None,
+                    "short_description": None,
+                },
+                "organization::zmt": {
+                    "url": "https://zmt.swiss/",
+                    "logo": None,
+                    "aliases": ["Zurich MedTech AG"],
+                    "related": [],
+                    "markdown": fake.text(),
+                    "released": None,
+                    "classifier": "organization::zmt",
+                    "created_by": fake.user_name(),
+                    "github_url": None,
+                    "display_name": "ZMT",
+                    "wikipedia_url": None,
+                    "short_description": "ZMT is a member of Zurich43",
+                },
+            },
+            "collections": {
+                "jupyterlab-math": {
+                    "items": ["crespo/osparc-demo"],
+                    "markdown": fake.text(),
+                    "created_by": fake.user_name(),
+                    "display_name": "jupyterlab-math",
+                }
+            },
+        },
+        "uses_scicrunch": False,
+    }
+
+    assert set(data.keys()).issubset({c.name for c in group_classifiers.columns})
+
+    data.update(overrides)
+    return data
