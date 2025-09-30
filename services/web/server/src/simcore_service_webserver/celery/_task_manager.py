@@ -2,7 +2,7 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from celery_library.backends.redis import RedisTaskInfoStore
+from celery_library.backends.redis import RedisTaskStore
 from celery_library.common import create_app
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
@@ -30,7 +30,7 @@ async def setup_task_manager(app: web.Application):
         app[_APP_CELERY_TASK_MANAGER_KEY] = CeleryTaskManager(
             celery_app,
             celery_settings,
-            RedisTaskInfoStore(redis_client_sdk),
+            RedisTaskStore(redis_client_sdk),
         )
         register_celery_types()
 

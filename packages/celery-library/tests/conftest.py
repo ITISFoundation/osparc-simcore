@@ -15,7 +15,7 @@ from celery.contrib.testing.worker import (
 )
 from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
-from celery_library.backends.redis import RedisTaskInfoStore
+from celery_library.backends.redis import RedisTaskStore
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
@@ -66,7 +66,7 @@ class FakeAppServer(BaseAppServer):
         self._task_manager = CeleryTaskManager(
             self._app,
             self._settings,
-            RedisTaskInfoStore(redis_client_sdk),
+            RedisTaskStore(redis_client_sdk),
         )
 
         startup_completed_event.set()
@@ -173,7 +173,7 @@ async def celery_task_manager(
         yield CeleryTaskManager(
             mock_celery_app,
             celery_settings,
-            RedisTaskInfoStore(redis_client_sdk),
+            RedisTaskStore(redis_client_sdk),
         )
     finally:
         await redis_client_sdk.shutdown()
