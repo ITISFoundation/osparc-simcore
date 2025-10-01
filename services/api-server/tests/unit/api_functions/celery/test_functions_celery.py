@@ -41,6 +41,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
+from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from servicelib.celery.models import ExecutionMetadata, TaskID, TasksQueue
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
@@ -165,9 +166,7 @@ async def test_with_fake_run_function(
     auth: BasicAuth,
     mocker: MockerFixture,
     with_api_server_celery_worker: TestWorkController,
-    mock_handler_in_functions_rpc_interface: Callable[
-        [str, Any, Exception | None, Callable | None], None
-    ],
+    mock_handler_in_functions_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     user_id: UserID,
@@ -316,9 +315,7 @@ async def test_run_project_function_parent_info(
     app: FastAPI,
     with_api_server_celery_worker: TestWorkController,
     client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[
-        [str, Any, Exception | None, Callable | None], None
-    ],
+    mock_handler_in_functions_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
@@ -432,9 +429,7 @@ async def test_map_function_parent_info(
     app: FastAPI,
     with_api_server_celery_worker: TestWorkController,
     client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[
-        [str, Any, Exception | None, Callable | None], MockType
-    ],
+    mock_handler_in_functions_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
@@ -556,9 +551,7 @@ async def test_map_function(
     app: FastAPI,
     with_api_server_celery_worker: TestWorkController,
     client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[
-        [str, Any, Exception | None, Callable | None], MockType
-    ],
+    mock_handler_in_functions_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,

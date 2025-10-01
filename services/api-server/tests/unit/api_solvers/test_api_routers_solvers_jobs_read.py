@@ -127,7 +127,7 @@ async def test_list_all_solvers_jobs(
     assert mocked_backend.webserver_rpc[
         "mocked_rabbit_rpc_client"
     ].request.call_args.args == (
-        "webserver",
+        "wb-api-server",
         "list_projects_marked_as_jobs",
     )
 
@@ -173,7 +173,7 @@ async def test_list_all_solvers_jobs_with_metadata_filter(
         "mocked_rabbit_rpc_client"
     ].request.call_args
     assert call_args.args == (
-        "webserver",
+        "wb-api-server",
         "list_projects_marked_as_jobs",
     )
 

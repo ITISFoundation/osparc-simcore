@@ -121,12 +121,17 @@ async def test_job_service_get_job_exceptions(
     job_service: JobService,
     client_exception_type: type[Exception],
     api_exception_type: type[Exception],
+    mocked_rabbit_rpc_client: MockType,
 ):
     job_parent_resource_name = "solver-resource"
     job_id = ProjectID("123e4567-e89b-12d3-a456-426614174000")
+
     # Patch the actual RPC interface method
-    patch_path = "servicelib.rabbitmq.rpc_interfaces.webserver.projects.get_project_marked_as_job"
-    mocker.patch(patch_path, side_effect=client_exception_type())
+    async def _request_side_effect(namespace, method_name, **kwargs):
+        if namespace == "webserver" and method_name == "get_project_marked_as_job":
+            raise client_exception_type()
+
+    mocked_rabbit_rpc_client.request.side_effect = _request_side_effect
 
     with pytest.raises(api_exception_type):
         await job_service.get_job(job_parent_resource_name, job_id)
