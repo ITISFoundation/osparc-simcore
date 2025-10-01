@@ -1,3 +1,5 @@
+# pylint: disable=unused-argument
+
 from collections.abc import Callable
 from typing import Any, Final
 
