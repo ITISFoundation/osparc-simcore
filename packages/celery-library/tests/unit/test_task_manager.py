@@ -133,7 +133,6 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     ) == "archive.zip"
 
 
-@pytest.mark.usefixtures("with_celery_worker")
 async def test_submitting_task_with_failure_results_with_error(
     celery_task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
@@ -216,7 +215,8 @@ async def test_listing_task_uuids_contains_submitted_task(
 
 
 async def test_filtering_listing_tasks(
-    celery_task_manager: CeleryTaskManager, with_celery_worker: WorkController
+    celery_task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
     class MyOwnerMetadata(OwnerMetadata):
         user_id: int
