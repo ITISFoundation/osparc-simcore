@@ -1,6 +1,6 @@
 """Functions RPC API subclient."""
 
-from typing import Literal, cast
+from typing import Annotated, Any, Literal, cast
 
 from models_library.api_schemas_webserver.functions import (
     Function,
@@ -28,16 +28,41 @@ from models_library.functions import (
     RegisteredFunctionJobWithStatus,
 )
 from models_library.products import ProductName
+from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 from ._base import BaseRpcApi
+
+_FUNCTION_RPC_TIMEOUT_SEC: Annotated[int, PositiveInt] = 30
 
 
 class FunctionsRpcApi(BaseRpcApi):
     """RPC client for function-related operations."""
+
+    def __init__(
+        self,
+        rpc_client: RabbitMQRPCClient,
+        namespace: RPCNamespace,
+        rpc_request_kwargs: dict[str, Any] | None = None,
+    ):
+        rpc_request_kwargs = rpc_request_kwargs or {}
+        assert "timeout_s" not in rpc_request_kwargs, (
+            "timeout_s should not be set in rpc_request_kwargs, "
+            f"it is set by default to {_FUNCTION_RPC_TIMEOUT_SEC} seconds"
+        )
+
+        super().__init__(
+            rpc_client,
+            namespace,
+            rpc_request_kwargs={
+                **rpc_request_kwargs,
+                "timeout_s": _FUNCTION_RPC_TIMEOUT_SEC,
+            },
+        )
 
     # pylint: disable=too-many-public-methods
 
