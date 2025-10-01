@@ -194,6 +194,14 @@ class RedisTaskStore:
                     count=_CELERY_TASK_STREAM_COUNT,
                 )
             except asyncio.CancelledError:
+                _logger.debug("Task event consumption cancelled for task %s", task_id)
+                break
+            except Exception as exc:  # pylint: disable=broad-except
+                _logger.warning(
+                    "Redis error while consuming task events for task %s: %s. Stopping consumption.",
+                    task_id,
+                    exc,
+                )
                 break
 
             if not messages:
