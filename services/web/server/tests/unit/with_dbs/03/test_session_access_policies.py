@@ -31,7 +31,7 @@ from simcore_service_webserver.session.plugin import setup_session
 @pytest.fixture
 async def client(
     aiohttp_client: Callable,
-    mock_webserver_service_environment: EnvVarsDict,
+    app_environment: EnvVarsDict,
 ) -> TestClient:
     routes = web.RouteTableDef()
 
