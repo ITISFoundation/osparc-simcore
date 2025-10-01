@@ -1,3 +1,9 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
+
 import json
 import os
 import random
@@ -176,10 +182,11 @@ def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 @pytest.fixture
 def mock_webserver_service_environment(
     monkeypatch: pytest.MonkeyPatch,
-    mock_env_makefile: EnvVarsDict,  # pylint: disable=redefined-outer-name
-    mock_env_devel_environment: EnvVarsDict,  # pylint: disable=redefined-outer-name
-    mock_env_dockerfile_build: EnvVarsDict,  # pylint: disable=redefined-outer-name
-    mock_env_deployer_pipeline: EnvVarsDict,  # pylint: disable=redefined-outer-name
+    mock_env_makefile: EnvVarsDict,
+    mock_env_devel_environment: EnvVarsDict,
+    mock_env_dockerfile_build: EnvVarsDict,
+    mock_env_deployer_pipeline: EnvVarsDict,
+    service_name: str,
 ) -> EnvVarsDict:
     """
     Mocks environment produce in the docker compose config with a .env (.env-devel)
@@ -221,6 +228,7 @@ def mock_webserver_service_environment(
             "SWARM_STACK_NAME": os.environ.get("SWARM_STACK_NAME", "simcore"),
             "WEBSERVER_LOGLEVEL": os.environ.get("LOG_LEVEL", "WARNING"),
             "SESSION_COOKIE_MAX_AGE": str(7 * 24 * 60 * 60),
+            "WEBSERVER_RPC_NAMESPACE": service_name,
         },
     )
 

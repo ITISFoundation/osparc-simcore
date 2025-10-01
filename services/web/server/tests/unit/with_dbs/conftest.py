@@ -154,6 +154,7 @@ def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     storage_test_server_port: int,
     monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
+    service_name: str,
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -179,7 +180,7 @@ def app_environment(
                 # this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
                 # affects PostgresSettings.POSTGRES_CLIENT_NAME
                 "HOSTNAME": "wb-test_host.0",
-                "WEBSERVER_RPC_NAMESPACE": "null",  # FIXME: hack!
+                "WEBSERVER_RPC_NAMESPACE": service_name,
             },
         )
     )
