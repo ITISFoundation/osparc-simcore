@@ -3,7 +3,7 @@ from typing import Annotated, Literal
 import warnings
 from typing import Literal
 
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionID,
@@ -61,7 +61,7 @@ async def register_function(
     function: Function,
 ) -> RegisteredFunction:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function"),
         function=function,
         user_id=user_id,
@@ -82,7 +82,7 @@ async def get_function(
     function_id: FunctionID,
 ) -> RegisteredFunction:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function"),
         function_id=function_id,
         user_id=user_id,
@@ -101,7 +101,7 @@ async def get_function_input_schema(
     product_name: ProductName,
 ) -> FunctionInputSchema:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_input_schema"),
         function_id=function_id,
         user_id=user_id,
@@ -120,7 +120,7 @@ async def get_function_output_schema(
     product_name: ProductName,
 ) -> FunctionOutputSchema:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_output_schema"),
         function_id=function_id,
         user_id=user_id,
@@ -139,7 +139,7 @@ async def delete_function(
     product_name: ProductName,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_function"),
         function_id=function_id,
         user_id=user_id,
@@ -165,7 +165,7 @@ async def list_functions(
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
     result: tuple[list[RegisteredFunction], PageMetaInfoLimitOffset] = (
         await rabbitmq_rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
+            DEFAULT_WEBSERVER_RPC_NAMESPACE,
             TypeAdapter(RPCMethodName).validate_python("list_functions"),
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
@@ -197,7 +197,7 @@ async def list_function_jobs(
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     result: tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset] = (
         await rabbitmq_rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
+            DEFAULT_WEBSERVER_RPC_NAMESPACE,
             TypeAdapter(RPCMethodName).validate_python("list_function_jobs"),
             user_id=user_id,
             product_name=product_name,
@@ -230,7 +230,7 @@ async def list_function_jobs_with_status(
     PageMetaInfoLimitOffset,
 ]:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("list_function_jobs_with_status"),
         user_id=user_id,
         product_name=product_name,
@@ -260,7 +260,7 @@ async def list_function_job_collections(
     filters: FunctionJobCollectionsListFilters | None = None,
 ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("list_function_job_collections"),
         pagination_offset=pagination_offset,
         pagination_limit=pagination_limit,
@@ -284,7 +284,7 @@ async def update_function_title(
     title: str,
 ) -> RegisteredFunction:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("update_function_title"),
         function_id=function_id,
         title=title,
@@ -305,7 +305,7 @@ async def update_function_description(
     description: str,
 ) -> RegisteredFunction:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("update_function_description"),
         function_id=function_id,
         description=description,
@@ -326,7 +326,7 @@ async def run_function(
     product_name: ProductName,
 ) -> RegisteredFunctionJob:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("run_function"),
         function_id=function_id,
         inputs=inputs,
@@ -348,7 +348,7 @@ async def register_function_job(
     function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function_job"),
         function_job=function_job,
         user_id=user_id,
@@ -370,7 +370,7 @@ async def patch_registered_function_job(
     registered_function_job_patch: RegisteredFunctionJobPatch,
 ) -> RegisteredFunctionJob:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("patch_registered_function_job"),
         user_id=user_id,
         product_name=product_name,
@@ -392,7 +392,7 @@ async def get_function_job(
     product_name: ProductName,
 ) -> RegisteredFunctionJob:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job"),
         function_job_id=function_job_id,
         user_id=user_id,
@@ -412,7 +412,7 @@ async def get_function_job_status(
     product_name: ProductName,
 ) -> FunctionJobStatus:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job_status"),
         function_job_id=function_job_id,
         user_id=user_id,
@@ -431,7 +431,7 @@ async def get_function_job_outputs(
     product_name: ProductName,
 ) -> FunctionOutputs:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job_outputs"),
         function_job_id=function_job_id,
         user_id=user_id,
@@ -452,7 +452,7 @@ async def update_function_job_status(
     check_write_permissions: bool = True,
 ) -> FunctionJobStatus:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("update_function_job_status"),
         function_job_id=function_job_id,
         job_status=job_status,
@@ -475,7 +475,7 @@ async def update_function_job_outputs(
     check_write_permissions: bool = True,
 ) -> FunctionOutputs:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("update_function_job_outputs"),
         function_job_id=function_job_id,
         outputs=outputs,
@@ -496,7 +496,7 @@ async def delete_function_job(
     function_job_id: FunctionJobID,
 ) -> None:
     result: None = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_function_job"),
         function_job_id=function_job_id,
         user_id=user_id,
@@ -516,7 +516,7 @@ async def find_cached_function_jobs(
     inputs: FunctionInputs,
 ) -> list[RegisteredFunctionJob] | None:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("find_cached_function_jobs"),
         function_id=function_id,
         inputs=inputs,
@@ -538,7 +538,7 @@ async def register_function_job_collection(
     function_job_collection: FunctionJobCollection,
 ) -> RegisteredFunctionJobCollection:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("register_function_job_collection"),
         function_job_collection=function_job_collection,
         user_id=user_id,
@@ -557,7 +557,7 @@ async def get_function_job_collection(
     product_name: ProductName,
 ) -> RegisteredFunctionJobCollection:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_job_collection"),
         function_job_collection_id=function_job_collection_id,
         user_id=user_id,
@@ -576,7 +576,7 @@ async def delete_function_job_collection(
     function_job_collection_id: FunctionJobCollectionID,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_function_job_collection"),
         function_job_collection_id=function_job_collection_id,
         user_id=user_id,
@@ -595,7 +595,7 @@ async def get_function_user_permissions(
     function_id: FunctionID,
 ) -> FunctionUserAccessRights:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_function_user_permissions"),
         function_id=function_id,
         user_id=user_id,
@@ -613,7 +613,7 @@ async def get_functions_user_api_access_rights(
     product_name: ProductName,
 ) -> FunctionUserApiAccessRights:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python(
             "get_functions_user_api_access_rights"
         ),
@@ -642,7 +642,7 @@ async def set_group_permissions(
     ]
 ]:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("set_group_permissions"),
         user_id=user_id,
         product_name=product_name,

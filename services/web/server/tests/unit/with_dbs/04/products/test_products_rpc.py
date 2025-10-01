@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from decimal import Decimal
 
 import pytest
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.products import CreditResultRpcGet
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -71,7 +71,7 @@ async def test_get_credit_amount(
 ):
     # FIXME: use client instead here!
     result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
         dollar_amount=Decimal(900),
         product_name="s4l",
@@ -80,7 +80,7 @@ async def test_get_credit_amount(
     assert credit_result.credit_amount == 100
 
     result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
         dollar_amount=Decimal(900),
         product_name="tis",
@@ -90,7 +90,7 @@ async def test_get_credit_amount(
 
     with pytest.raises(RPCServerError) as exc_info:
         await rpc_client.request(
-            WEBSERVER_RPC_NAMESPACE,
+            DEFAULT_WEBSERVER_RPC_NAMESPACE,
             TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
             dollar_amount=Decimal(900),
             product_name="osparc",
