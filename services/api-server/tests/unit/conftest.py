@@ -326,7 +326,10 @@ def mocked_app_dependencies(
     async def _get_wb_api_rpc_client_override():
         from simcore_service_api_server.services_rpc import wb_api_server
 
-        wb_api_server.setup(app, rabbitmq_rpc_client=mocked_rabbit_rpc_client)
+        try:
+            return WbApiRpcClient.get_from_app_state(app)
+        except AttributeError:
+            wb_api_server.setup(app, rabbitmq_rpc_client=mocked_rabbit_rpc_client)
         return WbApiRpcClient.get_from_app_state(app)
 
     app.dependency_overrides[get_wb_api_rpc_client] = _get_wb_api_rpc_client_override
