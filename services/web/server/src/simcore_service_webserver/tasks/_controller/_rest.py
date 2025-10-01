@@ -21,7 +21,7 @@ from servicelib.aiohttp.rest_responses import (
     create_data_response,
     create_event_stream_response,
 )
-from servicelib.celery.models import OwnerMetadata, TaskEventType, TaskStatusValue
+from servicelib.celery.models import OwnerMetadata
 from servicelib.long_running_tasks import lrt_api
 from servicelib.sse.models import SSEEvent, SSEHeaders
 from simcore_service_webserver.tasks._controller._rest_schemas import TaskPathParams
@@ -60,7 +60,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     tasks = await _tasks_service.list_tasks(
-        task_manager=get_task_manager(request.app),
+        get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
@@ -105,7 +105,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
     task_status = await _tasks_service.get_task_status(
-        task_manager=get_task_manager(request.app),
+        get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
@@ -140,7 +140,7 @@ async def cancel_async_job(request: web.Request) -> web.Response:
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
     await _tasks_service.cancel_task(
-        task_manager=get_task_manager(request.app),
+        get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
@@ -165,7 +165,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
     task_result = await _tasks_service.get_task_result(
-        task_manager=get_task_manager(request.app),
+        get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,
@@ -203,17 +203,8 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
             task_uuid=_path_params.task_id,
             last_id=_header_params.last_event_id,
         ):
-            if (
-                event.type == TaskEventType.STATUS
-                and event.data == TaskStatusValue.CREATED
-            ):
-                continue
-
             yield SSEEvent(
                 id=event_id, event=event.type, data=[json_dumps(event.data)]
             ).serialize()
-
-            if event.type == TaskEventType.STATUS and event.is_done():
-                break
 
     return create_event_stream_response(event_generator=event_generator)

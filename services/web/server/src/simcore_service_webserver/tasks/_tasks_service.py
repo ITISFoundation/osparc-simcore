@@ -1,4 +1,5 @@
 import logging
+from collections.abc import AsyncIterator
 
 from celery_library.errors import (
     TaskManagerError,
@@ -17,7 +18,15 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from servicelib.celery.models import OwnerMetadata, TaskState, TaskUUID
+from servicelib.celery.models import (
+    OwnerMetadata,
+    TaskEvent,
+    TaskEventID,
+    TaskEventType,
+    TaskState,
+    TaskStatusValue,
+    TaskUUID,
+)
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_catch
 
@@ -26,6 +35,7 @@ _logger = logging.getLogger(__name__)
 
 async def cancel_task(
     task_manager: TaskManager,
+    *,
     owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ):
@@ -42,6 +52,7 @@ async def cancel_task(
 
 async def get_task_result(
     task_manager: TaskManager,
+    *,
     owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> AsyncJobResult:
@@ -84,6 +95,7 @@ async def get_task_result(
 
 async def get_task_status(
     task_manager: TaskManager,
+    *,
     owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> AsyncJobStatus:
@@ -106,6 +118,7 @@ async def get_task_status(
 
 async def list_tasks(
     task_manager: TaskManager,
+    *,
     owner_metadata: OwnerMetadata,
 ) -> list[AsyncJobGet]:
     try:
@@ -118,3 +131,24 @@ async def list_tasks(
     return [
         AsyncJobGet(job_id=task.uuid, job_name=task.metadata.name) for task in tasks
     ]
+
+
+async def consume_task_events(
+    task_manager: TaskManager,
+    *,
+    owner_metadata: OwnerMetadata,
+    task_uuid: TaskUUID,
+    last_event_id: TaskEventID | None = None,
+) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]:
+    async for event_id, event in task_manager.consume_task_events(
+        owner_metadata=owner_metadata,
+        task_uuid=task_uuid,
+        last_id=last_event_id,
+    ):
+        if event.type == TaskEventType.STATUS and event.data == TaskStatusValue.CREATED:
+            continue
+
+        yield event_id, event
+
+        if event.type == TaskEventType.STATUS and event.is_done():
+            break
