@@ -26,13 +26,13 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 class WebserverRpcSideEffects:
     # pylint: disable=no-self-use
 
-    def __init__(
-        self,
-        project_job_rpc_get: ProjectJobRpcGet = ProjectJobRpcGet.model_validate(
-            ProjectJobRpcGet.model_json_schema()["examples"][0]
-        ),
-    ):
-        self.project_job_rpc_get = project_job_rpc_get
+    def __init__(self, project_job_rpc_get: ProjectJobRpcGet | None = None):
+        self.project_job_rpc_get = (
+            project_job_rpc_get
+            or ProjectJobRpcGet.model_validate(
+                ProjectJobRpcGet.model_json_schema()["examples"][0]
+            )
+        )
 
     @validate_call(config={"arbitrary_types_allowed": True})
     async def mark_project_as_job(

@@ -3,19 +3,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any
 
 import pytest
-from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.products import ProductName
-from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
+from models_library.rpc.webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
-from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server._service_programs import ProgramService
 from simcore_service_api_server._service_solvers import SolverService
@@ -31,42 +26,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 async def catalog_rpc_side_effect():
     return CatalogRpcSideEffects()
-
-
-@pytest.fixture
-def mocked_rabbit_rpc_client(mocker: MockerFixture) -> MockType:
-    """This fixture mocks the RabbitMQRPCClient.request method which is used
-    in all RPC clients in the api-server, regardeless of the namespace.
-    """
-
-    async def _request(
-        namespace: RPCNamespace,
-        method_name: RPCMethodName,
-        **kwargs,
-    ) -> Any:
-
-        kwargs.pop("timeout_s", None)  # remove timeout from kwargs
-
-        # NOTE: we could switch to different namespaces
-        if namespace == WEBSERVER_RPC_NAMESPACE:
-            webserver_side_effect = WebserverRpcSideEffects()
-            return await getattr(webserver_side_effect, method_name)(
-                mocker.MagicMock(), **kwargs
-            )
-
-        if namespace == CATALOG_RPC_NAMESPACE:
-            catalog_side_effect = CatalogRpcSideEffects()
-            return await getattr(catalog_side_effect, method_name)(
-                mocker.MagicMock(), **kwargs
-            )
-
-        pytest.fail(f"Unexpected namespace {namespace} and method {method_name}")
-
-    # NOTE: mocks RabbitMQRPCClient.request(...)
-    mock = mocker.MagicMock(spec=RabbitMQRPCClient)
-    mock.request.side_effect = _request
-
-    return mock
 
 
 @pytest.fixture

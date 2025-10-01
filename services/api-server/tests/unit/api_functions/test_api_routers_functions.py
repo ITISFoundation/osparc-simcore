@@ -413,7 +413,7 @@ async def test_run_project_function(
     auth: httpx.BasicAuth,
     user_identity: Identity,
     user_email: EmailStr,
-    job_links: JobLinks,
+    fake_job_links: JobLinks,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_directorv2_rest_api_base: respx.MockRouter,
     create_respx_mock_from_capture,
@@ -499,7 +499,7 @@ async def test_run_project_function(
         function=fake_registered_project_function,
         pre_registered_function_job_data=pre_registered_function_job_data,
         pricing_spec=None,
-        job_links=job_links,
+        job_links=fake_job_links,
         x_simcore_parent_project_uuid=None,
         x_simcore_parent_node_id=None,
     )

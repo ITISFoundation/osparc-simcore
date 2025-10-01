@@ -24,6 +24,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from httpx import ASGITransport, Request, Response
+from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskProgress,
@@ -42,6 +43,7 @@ from models_library.generics import Envelope
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
+from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.users import UserID
 from moto.server import ThreadedMotoServer
@@ -57,6 +59,7 @@ from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
@@ -254,12 +257,49 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
 
 
 @pytest.fixture
-def mocked_app_dependencies(app: FastAPI, mocker: MockerFixture) -> Iterator[None]:
+def mocked_rabbit_rpc_client(mocker: MockerFixture) -> MockType:
+    """This fixture mocks the RabbitMQRPCClient.request method which is used
+    in all RPC clients in the api-server, regardeless of the namespace.
+    """
+
+    async def _request(
+        namespace: RPCNamespace,
+        method_name: RPCMethodName,
+        **kwargs,
+    ) -> Any:
+
+        kwargs.pop("timeout_s", None)  # remove timeout from kwargs
+
+        # NOTE: we could switch to different namespaces
+        if namespace == CATALOG_RPC_NAMESPACE:
+            catalog_side_effect = CatalogRpcSideEffects()
+            return await getattr(catalog_side_effect, method_name)(
+                mocker.MagicMock(), **kwargs
+            )
+
+        # if not namespace == WEBSERVER_RPC_NAMESPACE
+        webserver_side_effect = WebserverRpcSideEffects()
+        return await getattr(webserver_side_effect, method_name)(
+            mocker.MagicMock(), **kwargs
+        )
+
+        pytest.fail(f"Unexpected namespace {namespace} and method {method_name}")
+
+    # NOTE: mocks RabbitMQRPCClient.request(...)
+    mock = mocker.MagicMock(spec=RabbitMQRPCClient)
+    mock.request.side_effect = _request
+
+    return mock
+
+
+@pytest.fixture
+def mocked_app_dependencies(
+    app: FastAPI, mocker: MockerFixture, mocked_rabbit_rpc_client: MockType
+) -> Iterator[None]:
     """
     Mocks some dependency overrides for the FastAPI app.
     """
     assert app.state.settings.API_SERVER_RABBITMQ is None
-    from servicelib.rabbitmq import RabbitMQRPCClient
     from simcore_service_api_server.api.dependencies.rabbitmq import (
         get_rabbitmq_rpc_client,
     )
@@ -267,18 +307,21 @@ def mocked_app_dependencies(app: FastAPI, mocker: MockerFixture) -> Iterator[Non
         get_wb_api_rpc_client,
     )
 
+    # Overrides Depends[get_rabbitmq_rpc_client]
     def _get_rabbitmq_rpc_client_override():
-        return mocker.MagicMock()
-
-    async def _get_wb_api_rpc_client_override():
-        from simcore_service_api_server.services_rpc import wb_api_server
-
-        wb_api_server.setup(app, mocker.MagicMock(spec=RabbitMQRPCClient))
-        return WbApiRpcClient.get_from_app_state(app)
+        return mocked_rabbit_rpc_client
 
     app.dependency_overrides[get_rabbitmq_rpc_client] = (
         _get_rabbitmq_rpc_client_override
     )
+
+    # Overrides Depends[get_wb_api_rpc_client]
+    async def _get_wb_api_rpc_client_override():
+        from simcore_service_api_server.services_rpc import wb_api_server
+
+        wb_api_server.setup(app, rabbitmq_rpc_client=mocked_rabbit_rpc_client)
+        return WbApiRpcClient.get_from_app_state(app)
+
     app.dependency_overrides[get_wb_api_rpc_client] = _get_wb_api_rpc_client_override
 
     yield
@@ -562,13 +605,13 @@ def mocked_catalog_rest_api_base(
 
 
 @pytest.fixture
-def project_job_rpc_get() -> ProjectJobRpcGet:
+def fake_project_job_rpc_get() -> ProjectJobRpcGet:
     example = ProjectJobRpcGet.model_json_schema()["examples"][0]
     return ProjectJobRpcGet.model_validate(example)
 
 
 @pytest.fixture
-def job_links() -> JobLinks:
+def fake_job_links() -> JobLinks:
     example = JobLinks.model_json_schema()["examples"][0]
     return JobLinks.model_validate(example)
 
@@ -576,37 +619,16 @@ def job_links() -> JobLinks:
 @pytest.fixture
 def mocked_webserver_rpc_api(
     mocked_app_dependencies: None,
-    mocker: MockerFixture,
-    project_job_rpc_get: ProjectJobRpcGet,
+    mocked_rabbit_rpc_client: MockType,
 ) -> dict[str, MockType]:
     """
-    Mocks the webserver's simcore service RPC API for testing purposes.
+    In reality this fixture will mock the underlying RabbitMQRPCClient.request method
+    used in the webserver's RPC client which fakes the webserver's RPC API response for testing purposes.
+
+    NOTE: the responses are defined in the mocked_rabbit_rpc_client fixture
     """
-    from servicelib.rabbitmq.rpc_interfaces.webserver import (
-        projects as projects_rpc,  # keep import here
-    )
-
-    side_effects = WebserverRpcSideEffects(project_job_rpc_get=project_job_rpc_get)
-
     return {
-        "mark_project_as_job": mocker.patch.object(
-            projects_rpc,
-            "mark_project_as_job",
-            autospec=True,
-            side_effect=side_effects.mark_project_as_job,
-        ),
-        "get_project_marked_as_job": mocker.patch.object(
-            projects_rpc,
-            "get_project_marked_as_job",
-            autospec=True,
-            side_effect=side_effects.get_project_marked_as_job,
-        ),
-        "list_projects_marked_as_jobs": mocker.patch.object(
-            projects_rpc,
-            "list_projects_marked_as_jobs",
-            autospec=True,
-            side_effect=side_effects.list_projects_marked_as_jobs,
-        ),
+        "mocked_rabbit_rpc_client": mocked_rabbit_rpc_client,
     }
 
 
