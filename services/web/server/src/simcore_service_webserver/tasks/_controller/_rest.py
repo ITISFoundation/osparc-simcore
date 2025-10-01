@@ -9,6 +9,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
+from models_library.sse import SSEEvent, SSEHeaders
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     get_long_running_manager,
@@ -23,7 +24,6 @@ from servicelib.aiohttp.rest_responses import (
 )
 from servicelib.celery.models import OwnerMetadata
 from servicelib.long_running_tasks import lrt_api
-from servicelib.sse.models import SSEEvent, SSEHeaders
 from simcore_service_webserver.tasks._controller._rest_schemas import TaskPathParams
 
 from ..._meta import API_VTAG
