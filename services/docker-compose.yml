@@ -932,7 +932,6 @@ services:
       WEBSERVER_HOST: ${WB_API_WEBSERVER_HOST}
       WEBSERVER_PORT: ${WB_API_WEBSERVER_PORT}
       WEBSERVER_RPC_NAMESPACE: ${WB_API_WEBSERVER_HOST}
-      WEBSERVER_SOCKETIO: 0
       WEBSERVER_STATICWEB: "null"
 
       # NOTE: keep in sync with the prefix form the hostname
