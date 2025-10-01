@@ -43,6 +43,8 @@ _FUNCTION_RPC_TIMEOUT_SEC: Annotated[int, PositiveInt] = 30
 class FunctionsRpcApi(BaseRpcApi):
     """RPC client for function-related operations."""
 
+    # pylint: disable=too-many-public-methods
+
     def __init__(
         self,
         rpc_client: RabbitMQRPCClient,
@@ -63,8 +65,6 @@ class FunctionsRpcApi(BaseRpcApi):
                 "timeout_s": _FUNCTION_RPC_TIMEOUT_SEC,
             },
         )
-
-    # pylint: disable=too-many-public-methods
 
     async def register_function(
         self,
