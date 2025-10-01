@@ -50,6 +50,8 @@ async def get_service_status(
 async def run_dynamic_service(
     app: FastAPI, *, dynamic_service_start: DynamicServiceStart
 ) -> NodeGet | DynamicServiceGet:
+    await set_request_as_running(app, dynamic_service_start)
+
     settings: ApplicationSettings = app.state.settings
     if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
         raise NotImplementedError
@@ -59,13 +61,14 @@ async def run_dynamic_service(
         await director_v2_client.run_dynamic_service(dynamic_service_start)
     )
 
-    await set_request_as_running(app, dynamic_service_start)
     return response
 
 
 async def stop_dynamic_service(
     app: FastAPI, *, dynamic_service_stop: DynamicServiceStop
 ) -> None:
+    await set_request_as_stopped(app, dynamic_service_stop)
+
     settings: ApplicationSettings = app.state.settings
     if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
         raise NotImplementedError
@@ -77,8 +80,6 @@ async def stop_dynamic_service(
         save_state=dynamic_service_stop.save_state,
         timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
     )
-
-    await set_request_as_stopped(app, dynamic_service_stop)
 
 
 async def get_project_inactivity(
