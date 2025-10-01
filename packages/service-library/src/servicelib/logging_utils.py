@@ -29,7 +29,7 @@ from common_library.logging.logging_utils_filtering import (
 )
 from settings_library.tracing import TracingSettings
 
-from .tracing import setup_log_tracing
+from .tracing import TracingData, setup_log_tracing
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
@@ -183,6 +183,7 @@ def _configure_common_logging_settings(
     *,
     log_format_local_dev_enabled: bool,
     tracing_settings: TracingSettings | None,
+    tracing_data: TracingData | None,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> logging.Formatter:
@@ -195,7 +196,8 @@ def _configure_common_logging_settings(
     if noisy_loggers is not None:
         _dampen_noisy_loggers(noisy_loggers)
     if tracing_settings is not None:
-        setup_log_tracing(tracing_settings=tracing_settings)
+        assert tracing_data is not None  # nosec
+        setup_log_tracing(tracing_settings=tracing_settings, tracing_data=tracing_data)
 
     return _setup_logging_formatter(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
@@ -221,6 +223,7 @@ def setup_loggers(
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
+    tracing_data: TracingData | None,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> None:
@@ -263,6 +266,7 @@ def setup_loggers(
     formatter = _configure_common_logging_settings(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
         tracing_settings=tracing_settings,
+        tracing_data=tracing_data,
         log_base_level=log_base_level,
         noisy_loggers=noisy_loggers,
     )
@@ -329,6 +333,7 @@ def async_loggers(
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
+    tracing_data: TracingData | None,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> Iterator[None]:
@@ -377,6 +382,7 @@ def async_loggers(
     formatter = _configure_common_logging_settings(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
         tracing_settings=tracing_settings,
+        tracing_data=tracing_data,
         log_base_level=log_base_level,
         noisy_loggers=noisy_loggers,
     )

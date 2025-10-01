@@ -42,11 +42,6 @@ def use_tracing_context(context: TracingContext):
             otcontext.detach(token)
 
 
-def setup_log_tracing(tracing_settings: TracingSettings):
-    _ = tracing_settings
-    LoggingInstrumentor().instrument(set_logging_format=False)
-
-
 @dataclass
 class TracingData:
     service_name: str
@@ -63,6 +58,13 @@ class TracingData:
             service_name=service_name,
             tracer_provider=trace_provider,
         )
+
+
+def setup_log_tracing(tracing_settings: TracingSettings, tracing_data: TracingData):
+    _ = tracing_settings
+    LoggingInstrumentor().instrument(
+        set_logging_format=False, tracer_provider=tracing_data.tracer_provider
+    )
 
 
 def get_trace_id_header() -> dict[str, str] | None:
