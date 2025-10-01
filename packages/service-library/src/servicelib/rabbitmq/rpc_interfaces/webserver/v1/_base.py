@@ -37,7 +37,6 @@ class BaseRpcApi:
             product_name=product_name,
             user_id=user_id,
             **optional_kwargs,
-            **self._rpc_request_kwargs,
         )
 
     async def _request_without_authentication(
