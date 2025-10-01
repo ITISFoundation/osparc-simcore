@@ -1,5 +1,7 @@
 """Projects RPC API subclient."""
 
+from typing import cast
+
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageOffsetInt
@@ -30,7 +32,7 @@ class ProjectsRpcApi(BaseRpcApi):
         storage_assets_deleted: bool,
     ) -> None:
         """Mark a project as a job."""
-        return await self._request(
+        await self._request(
             "mark_project_as_job",
             product_name=product_name,
             user_id=user_id,
@@ -49,13 +51,16 @@ class ProjectsRpcApi(BaseRpcApi):
         filters: ListProjectsMarkedAsJobRpcFilters | None = None,
     ) -> PageRpcProjectJobRpcGet:
         """List projects marked as jobs."""
-        return await self._request(
-            "list_projects_marked_as_jobs",
-            product_name=product_name,
-            user_id=user_id,
-            offset=offset,
-            limit=limit,
-            filters=filters,
+        return cast(
+            PageRpcProjectJobRpcGet,
+            await self._request(
+                "list_projects_marked_as_jobs",
+                product_name=product_name,
+                user_id=user_id,
+                offset=offset,
+                limit=limit,
+                filters=filters,
+            ),
         )
 
     async def get_project_marked_as_job(
@@ -67,10 +72,13 @@ class ProjectsRpcApi(BaseRpcApi):
         job_parent_resource_name: str,
     ) -> ProjectJobRpcGet:
         """Get a project marked as a job."""
-        return await self._request(
-            "get_project_marked_as_job",
-            product_name=product_name,
-            user_id=user_id,
-            project_uuid=project_uuid,
-            job_parent_resource_name=job_parent_resource_name,
+        return cast(
+            ProjectJobRpcGet,
+            await self._request(
+                "get_project_marked_as_job",
+                product_name=product_name,
+                user_id=user_id,
+                project_uuid=project_uuid,
+                job_parent_resource_name=job_parent_resource_name,
+            ),
         )

@@ -2,7 +2,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-positional-arguments
 # pylint: disable=redefined-outer-name
-
+# pylint: disable=no-name-in-module
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -12,7 +12,7 @@ from uuid import uuid4
 import httpx
 import pytest
 import respx
-from celery import Task  # pylint: disable=no-name-in-module
+from celery import Task
 from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI

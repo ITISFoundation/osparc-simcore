@@ -1,6 +1,6 @@
 """Functions RPC API subclient."""
 
-from typing import Literal
+from typing import Literal, cast
 
 from models_library.api_schemas_webserver.functions import (
     Function,
@@ -48,11 +48,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function: Function,
     ) -> RegisteredFunction:
         """Register a function."""
-        return await self._request(
-            "register_function",
-            product_name=product_name,
-            user_id=user_id,
-            function=function,
+        return cast(
+            RegisteredFunction,
+            await self._request(
+                "register_function",
+                product_name=product_name,
+                user_id=user_id,
+                function=function,
+            ),
         )
 
     async def get_function(
@@ -63,11 +66,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
     ) -> RegisteredFunction:
         """Get a function by ID."""
-        return await self._request(
-            "get_function",
-            product_name=product_name,
-            user_id=user_id,
-            function_id=function_id,
+        return cast(
+            RegisteredFunction,
+            await self._request(
+                "get_function",
+                product_name=product_name,
+                user_id=user_id,
+                function_id=function_id,
+            ),
         )
 
     async def get_function_input_schema(
@@ -78,11 +84,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
     ) -> FunctionInputSchema:
         """Get function input schema."""
-        return await self._request(
-            "get_function_input_schema",
-            product_name=product_name,
-            user_id=user_id,
-            function_id=function_id,
+        return cast(
+            FunctionInputSchema,
+            await self._request(
+                "get_function_input_schema",
+                product_name=product_name,
+                user_id=user_id,
+                function_id=function_id,
+            ),
         )
 
     async def get_function_output_schema(
@@ -93,11 +102,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
     ) -> FunctionOutputSchema:
         """Get function output schema."""
-        return await self._request(
-            "get_function_output_schema",
-            product_name=product_name,
-            user_id=user_id,
-            function_id=function_id,
+        return cast(
+            FunctionOutputSchema,
+            await self._request(
+                "get_function_output_schema",
+                product_name=product_name,
+                user_id=user_id,
+                function_id=function_id,
+            ),
         )
 
     async def delete_function(
@@ -108,7 +120,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
     ) -> None:
         """Delete a function."""
-        return await self._request(
+        await self._request(
             "delete_function",
             product_name=product_name,
             user_id=user_id,
@@ -128,16 +140,19 @@ class FunctionsRpcApi(BaseRpcApi):
         search_by_multi_columns: str | None = None,
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
         """List available functions."""
-        return await self._request(
-            "list_functions",
-            product_name=product_name,
-            user_id=user_id,
-            pagination_offset=pagination_offset,
-            pagination_limit=pagination_limit,
-            order_by=order_by,
-            filter_by_function_class=filter_by_function_class,
-            search_by_function_title=search_by_function_title,
-            search_by_multi_columns=search_by_multi_columns,
+        return cast(
+            tuple[list[RegisteredFunction], PageMetaInfoLimitOffset],
+            await self._request(
+                "list_functions",
+                product_name=product_name,
+                user_id=user_id,
+                pagination_offset=pagination_offset,
+                pagination_limit=pagination_limit,
+                order_by=order_by,
+                filter_by_function_class=filter_by_function_class,
+                search_by_function_title=search_by_function_title,
+                search_by_multi_columns=search_by_multi_columns,
+            ),
         )
 
     async def list_function_jobs(
@@ -152,15 +167,18 @@ class FunctionsRpcApi(BaseRpcApi):
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         """List function jobs."""
-        return await self._request(
-            "list_function_jobs",
-            product_name=product_name,
-            user_id=user_id,
-            pagination_offset=pagination_offset,
-            pagination_limit=pagination_limit,
-            filter_by_function_id=filter_by_function_id,
-            filter_by_function_job_ids=filter_by_function_job_ids,
-            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        return cast(
+            tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset],
+            await self._request(
+                "list_function_jobs",
+                product_name=product_name,
+                user_id=user_id,
+                pagination_offset=pagination_offset,
+                pagination_limit=pagination_limit,
+                filter_by_function_id=filter_by_function_id,
+                filter_by_function_job_ids=filter_by_function_job_ids,
+                filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+            ),
         )
 
     async def list_function_jobs_with_status(
@@ -175,15 +193,18 @@ class FunctionsRpcApi(BaseRpcApi):
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJobWithStatus], PageMetaInfoLimitOffset]:
         """List function jobs with status."""
-        return await self._request(
-            "list_function_jobs_with_status",
-            product_name=product_name,
-            user_id=user_id,
-            pagination_offset=pagination_offset,
-            pagination_limit=pagination_limit,
-            filter_by_function_id=filter_by_function_id,
-            filter_by_function_job_ids=filter_by_function_job_ids,
-            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        return cast(
+            tuple[list[RegisteredFunctionJobWithStatus], PageMetaInfoLimitOffset],
+            await self._request(
+                "list_function_jobs_with_status",
+                product_name=product_name,
+                user_id=user_id,
+                pagination_offset=pagination_offset,
+                pagination_limit=pagination_limit,
+                filter_by_function_id=filter_by_function_id,
+                filter_by_function_job_ids=filter_by_function_job_ids,
+                filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+            ),
         )
 
     async def list_function_job_collections(
@@ -196,13 +217,16 @@ class FunctionsRpcApi(BaseRpcApi):
         filters: FunctionJobCollectionsListFilters | None = None,
     ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
         """List function job collections."""
-        return await self._request(
-            "list_function_job_collections",
-            product_name=product_name,
-            user_id=user_id,
-            pagination_offset=pagination_offset,
-            pagination_limit=pagination_limit,
-            filters=filters,
+        return cast(
+            tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset],
+            await self._request(
+                "list_function_job_collections",
+                product_name=product_name,
+                user_id=user_id,
+                pagination_offset=pagination_offset,
+                pagination_limit=pagination_limit,
+                filters=filters,
+            ),
         )
 
     async def update_function_title(
@@ -214,12 +238,15 @@ class FunctionsRpcApi(BaseRpcApi):
         title: str,
     ) -> RegisteredFunction:
         """Update function title."""
-        return await self._request(
-            "update_function_title",
-            product_name=product_name,
-            user_id=user_id,
-            function_id=function_id,
-            title=title,
+        return cast(
+            RegisteredFunction,
+            await self._request(
+                "update_function_title",
+                product_name=product_name,
+                user_id=user_id,
+                function_id=function_id,
+                title=title,
+            ),
         )
 
     async def update_function_description(
@@ -231,12 +258,15 @@ class FunctionsRpcApi(BaseRpcApi):
         description: str,
     ) -> RegisteredFunction:
         """Update function description."""
-        return await self._request(
-            "update_function_description",
-            product_name=product_name,
-            user_id=user_id,
-            function_id=function_id,
-            description=description,
+        return cast(
+            RegisteredFunction,
+            await self._request(
+                "update_function_description",
+                product_name=product_name,
+                user_id=user_id,
+                function_id=function_id,
+                description=description,
+            ),
         )
 
     async def run_function(
@@ -248,12 +278,15 @@ class FunctionsRpcApi(BaseRpcApi):
         inputs: FunctionInputs,
     ) -> RegisteredFunctionJob:
         """Run a function."""
-        return await self._request(
-            "run_function",
-            product_name=product_name,
-            user_id=user_id,
-            function_id=function_id,
-            inputs=inputs,
+        return cast(
+            RegisteredFunctionJob,
+            await self._request(
+                "run_function",
+                product_name=product_name,
+                user_id=user_id,
+                function_id=function_id,
+                inputs=inputs,
+            ),
         )
 
     async def register_function_job(
@@ -264,11 +297,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job: FunctionJob,
     ) -> RegisteredFunctionJob:
         """Register a function job."""
-        return await self._request(
-            "register_function_job",
-            product_name=product_name,
-            user_id=user_id,
-            function_job=function_job,
+        return cast(
+            RegisteredFunctionJob,
+            await self._request(
+                "register_function_job",
+                product_name=product_name,
+                user_id=user_id,
+                function_job=function_job,
+            ),
         )
 
     async def patch_registered_function_job(
@@ -280,12 +316,15 @@ class FunctionsRpcApi(BaseRpcApi):
         registered_function_job_patch: RegisteredFunctionJobPatch,
     ) -> RegisteredFunctionJob:
         """Patch a registered function job."""
-        return await self._request(
-            "patch_registered_function_job",
-            product_name=product_name,
-            user_id=user_id,
-            function_job_uuid=function_job_uuid,
-            registered_function_job_patch=registered_function_job_patch,
+        return cast(
+            RegisteredFunctionJob,
+            await self._request(
+                "patch_registered_function_job",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_uuid=function_job_uuid,
+                registered_function_job_patch=registered_function_job_patch,
+            ),
         )
 
     async def get_function_job(
@@ -296,11 +335,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_id: FunctionJobID,
     ) -> RegisteredFunctionJob:
         """Get a function job."""
-        return await self._request(
-            "get_function_job",
-            product_name=product_name,
-            user_id=user_id,
-            function_job_id=function_job_id,
+        return cast(
+            RegisteredFunctionJob,
+            await self._request(
+                "get_function_job",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_id=function_job_id,
+            ),
         )
 
     async def get_function_job_status(
@@ -311,11 +353,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_id: FunctionJobID,
     ) -> FunctionJobStatus:
         """Get function job status."""
-        return await self._request(
-            "get_function_job_status",
-            product_name=product_name,
-            user_id=user_id,
-            function_job_id=function_job_id,
+        return cast(
+            FunctionJobStatus,
+            await self._request(
+                "get_function_job_status",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_id=function_job_id,
+            ),
         )
 
     async def get_function_job_outputs(
@@ -326,11 +371,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_id: FunctionJobID,
     ) -> FunctionOutputs:
         """Get function job outputs."""
-        return await self._request(
-            "get_function_job_outputs",
-            product_name=product_name,
-            user_id=user_id,
-            function_job_id=function_job_id,
+        return cast(
+            FunctionOutputs,
+            await self._request(
+                "get_function_job_outputs",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_id=function_job_id,
+            ),
         )
 
     async def update_function_job_status(
@@ -343,13 +391,16 @@ class FunctionsRpcApi(BaseRpcApi):
         check_write_permissions: bool = True,
     ) -> FunctionJobStatus:
         """Update function job status."""
-        return await self._request(
-            "update_function_job_status",
-            product_name=product_name,
-            user_id=user_id,
-            function_job_id=function_job_id,
-            job_status=job_status,
-            check_write_permissions=check_write_permissions,
+        return cast(
+            FunctionJobStatus,
+            await self._request(
+                "update_function_job_status",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_id=function_job_id,
+                job_status=job_status,
+                check_write_permissions=check_write_permissions,
+            ),
         )
 
     async def update_function_job_outputs(
@@ -362,13 +413,16 @@ class FunctionsRpcApi(BaseRpcApi):
         check_write_permissions: bool = True,
     ) -> FunctionOutputs:
         """Update function job outputs."""
-        return await self._request(
-            "update_function_job_outputs",
-            product_name=product_name,
-            user_id=user_id,
-            function_job_id=function_job_id,
-            outputs=outputs,
-            check_write_permissions=check_write_permissions,
+        return cast(
+            FunctionOutputs,
+            await self._request(
+                "update_function_job_outputs",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_id=function_job_id,
+                outputs=outputs,
+                check_write_permissions=check_write_permissions,
+            ),
         )
 
     async def delete_function_job(
@@ -379,7 +433,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_id: FunctionJobID,
     ) -> None:
         """Delete a function job."""
-        return await self._request(
+        await self._request(
             "delete_function_job",
             product_name=product_name,
             user_id=user_id,
@@ -395,12 +449,15 @@ class FunctionsRpcApi(BaseRpcApi):
         inputs: FunctionInputs,
     ) -> list[RegisteredFunctionJob] | None:
         """Find cached function jobs."""
-        return await self._request(
-            "find_cached_function_jobs",
-            product_name=product_name,
-            user_id=user_id,
-            function_id=function_id,
-            inputs=inputs,
+        return cast(
+            list[RegisteredFunctionJob] | None,
+            await self._request(
+                "find_cached_function_jobs",
+                product_name=product_name,
+                user_id=user_id,
+                function_id=function_id,
+                inputs=inputs,
+            ),
         )
 
     async def register_function_job_collection(
@@ -411,11 +468,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_collection: FunctionJobCollection,
     ) -> RegisteredFunctionJobCollection:
         """Register a function job collection."""
-        return await self._request(
-            "register_function_job_collection",
-            product_name=product_name,
-            user_id=user_id,
-            function_job_collection=function_job_collection,
+        return cast(
+            RegisteredFunctionJobCollection,
+            await self._request(
+                "register_function_job_collection",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_collection=function_job_collection,
+            ),
         )
 
     async def get_function_job_collection(
@@ -426,11 +486,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_collection_id: FunctionJobCollectionID,
     ) -> RegisteredFunctionJobCollection:
         """Get a function job collection."""
-        return await self._request(
-            "get_function_job_collection",
-            product_name=product_name,
-            user_id=user_id,
-            function_job_collection_id=function_job_collection_id,
+        return cast(
+            RegisteredFunctionJobCollection,
+            await self._request(
+                "get_function_job_collection",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_collection_id=function_job_collection_id,
+            ),
         )
 
     async def delete_function_job_collection(
@@ -441,7 +504,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_collection_id: FunctionJobCollectionID,
     ) -> None:
         """Delete a function job collection."""
-        return await self._request(
+        await self._request(
             "delete_function_job_collection",
             product_name=product_name,
             user_id=user_id,
@@ -456,11 +519,14 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
     ) -> FunctionUserAccessRights:
         """Get function user permissions."""
-        return await self._request(
-            "get_function_user_permissions",
-            product_name=product_name,
-            user_id=user_id,
-            function_id=function_id,
+        return cast(
+            FunctionUserAccessRights,
+            await self._request(
+                "get_function_user_permissions",
+                product_name=product_name,
+                user_id=user_id,
+                function_id=function_id,
+            ),
         )
 
     async def get_functions_user_api_access_rights(
@@ -470,10 +536,13 @@ class FunctionsRpcApi(BaseRpcApi):
         user_id: UserID,
     ) -> FunctionUserApiAccessRights:
         """Get functions user API access rights."""
-        return await self._request(
-            "get_functions_user_api_access_rights",
-            product_name=product_name,
-            user_id=user_id,
+        return cast(
+            FunctionUserApiAccessRights,
+            await self._request(
+                "get_functions_user_api_access_rights",
+                product_name=product_name,
+                user_id=user_id,
+            ),
         )
 
     async def set_group_permissions(
@@ -494,14 +563,22 @@ class FunctionsRpcApi(BaseRpcApi):
         ]
     ]:
         """Set group permissions."""
-        return await self._request(
-            "set_group_permissions",
-            product_name=product_name,
-            user_id=user_id,
-            object_type=object_type,
-            object_ids=object_ids,
-            permission_group_id=permission_group_id,
-            read=read,
-            write=write,
-            execute=execute,
+        return cast(
+            list[
+                tuple[
+                    FunctionID | FunctionJobID | FunctionJobCollectionID,
+                    FunctionGroupAccessRights,
+                ]
+            ],
+            await self._request(
+                "set_group_permissions",
+                product_name=product_name,
+                user_id=user_id,
+                object_type=object_type,
+                object_ids=object_ids,
+                permission_group_id=permission_group_id,
+                read=read,
+                write=write,
+                execute=execute,
+            ),
         )

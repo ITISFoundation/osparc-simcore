@@ -1,6 +1,6 @@
 """Licenses RPC API subclient."""
 
-from typing import Any
+from typing import Any, cast
 
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
@@ -28,11 +28,14 @@ class LicensesRpcApi(BaseRpcApi):
         offset: int = 0,
         limit: int = 20,
     ) -> LicensedItemRpcGetPage:
-        return await self._request_without_authentication(
-            "get_licensed_items",
-            product_name=product_name,
-            offset=offset,
-            limit=limit,
+        return cast(
+            LicensedItemRpcGetPage,
+            await self._request_without_authentication(
+                "get_licensed_items",
+                product_name=product_name,
+                offset=offset,
+                limit=limit,
+            ),
         )
 
     async def get_available_licensed_items_for_wallet(
@@ -45,13 +48,16 @@ class LicensesRpcApi(BaseRpcApi):
         limit: int = 20,
     ) -> LicensedItemRpcGetPage:
         """Get licensed items for a wallet."""
-        return await self._request(
-            "get_available_licensed_items_for_wallet",
-            product_name=product_name,
-            user_id=user_id,
-            wallet_id=wallet_id,
-            offset=offset,
-            limit=limit,
+        return cast(
+            LicensedItemRpcGetPage,
+            await self._request(
+                "get_available_licensed_items_for_wallet",
+                product_name=product_name,
+                user_id=user_id,
+                wallet_id=wallet_id,
+                offset=offset,
+                limit=limit,
+            ),
         )
 
     async def get_licensed_items_checkouts_for_wallet(
@@ -62,11 +68,14 @@ class LicensesRpcApi(BaseRpcApi):
         wallet_id: int | None = None,
     ) -> list[dict[str, Any]]:
         """Get licensed items checkouts for a wallet."""
-        return await self._request(
-            "get_licensed_items_checkouts_for_wallet",
-            product_name=product_name,
-            user_id=user_id,
-            wallet_id=wallet_id,
+        return cast(
+            list[dict[str, Any]],
+            await self._request(
+                "get_licensed_items_checkouts_for_wallet",
+                product_name=product_name,
+                user_id=user_id,
+                wallet_id=wallet_id,
+            ),
         )
 
     async def checkout_licensed_item_for_wallet(
@@ -80,14 +89,17 @@ class LicensesRpcApi(BaseRpcApi):
         service_run_id: ServiceRunID,
     ) -> LicensedItemCheckoutRpcGet:
         """Checkout a licensed item for a wallet."""
-        return await self._request(
-            "checkout_licensed_item_for_wallet",
-            product_name=product_name,
-            user_id=user_id,
-            wallet_id=wallet_id,
-            licensed_item_id=licensed_item_id,
-            num_of_seats=num_of_seats,
-            service_run_id=service_run_id,
+        return cast(
+            LicensedItemCheckoutRpcGet,
+            await self._request(
+                "checkout_licensed_item_for_wallet",
+                product_name=product_name,
+                user_id=user_id,
+                wallet_id=wallet_id,
+                licensed_item_id=licensed_item_id,
+                num_of_seats=num_of_seats,
+                service_run_id=service_run_id,
+            ),
         )
 
     async def release_licensed_item_for_wallet(
@@ -98,9 +110,12 @@ class LicensesRpcApi(BaseRpcApi):
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutRpcGet:
         """Release a licensed item checkout for a wallet."""
-        return await self._request(
-            "release_licensed_item_for_wallet",
-            product_name=product_name,
-            user_id=user_id,
-            licensed_item_checkout_id=licensed_item_checkout_id,
+        return cast(
+            LicensedItemCheckoutRpcGet,
+            await self._request(
+                "release_licensed_item_for_wallet",
+                product_name=product_name,
+                user_id=user_id,
+                licensed_item_checkout_id=licensed_item_checkout_id,
+            ),
         )
