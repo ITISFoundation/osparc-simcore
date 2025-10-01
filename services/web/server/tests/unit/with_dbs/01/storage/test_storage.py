@@ -9,6 +9,7 @@ from typing import Any, Final
 from urllib.parse import quote
 
 import pytest
+import simcore_service_webserver.tasks._controller._rest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_long_running_tasks.tasks import (
@@ -738,8 +739,9 @@ def create_consume_events_mock(
 
         mock_task_manager = mocker.MagicMock()
         mock_task_manager.consume_task_events = mock_consume_events
-        mocker.patch(
-            "simcore_service_webserver.tasks._controller._rest.get_task_manager",
+        mocker.patch.object(
+            simcore_service_webserver.tasks._controller._rest,
+            "get_task_manager",
             return_value=mock_task_manager,
         )
 
