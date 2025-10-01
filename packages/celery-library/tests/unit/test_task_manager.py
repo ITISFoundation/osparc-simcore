@@ -12,7 +12,6 @@ from random import randint
 
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
-from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library.errors import TaskNotFoundError, TransferrableCeleryError
 from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager
@@ -23,8 +22,12 @@ from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
+    TaskDataEvent,
+    TaskEventType,
     TaskID,
     TaskState,
+    TaskStatusEvent,
+    TaskStatusValue,
     TaskUUID,
     Wildcard,
 )
@@ -99,9 +102,9 @@ def register_celery_tasks() -> Callable[[Celery], None]:
     return _
 
 
+@pytest.mark.usefixtures("with_celery_worker")
 async def test_submitting_task_calling_async_function_results_with_success_state(
     celery_task_manager: CeleryTaskManager,
-    with_celery_worker: WorkController,
 ):
 
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
@@ -133,9 +136,9 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     ) == "archive.zip"
 
 
+@pytest.mark.usefixtures("with_celery_worker")
 async def test_submitting_task_with_failure_results_with_error(
     celery_task_manager: CeleryTaskManager,
-    with_celery_worker: WorkController,
 ):
 
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
@@ -163,9 +166,9 @@ async def test_submitting_task_with_failure_results_with_error(
     assert f"{raw_result}" == "Something strange happened: BOOM!"
 
 
+@pytest.mark.usefixtures("with_celery_worker")
 async def test_cancelling_a_running_task_aborts_and_deletes(
     celery_task_manager: CeleryTaskManager,
-    with_celery_worker: WorkController,
 ):
 
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
@@ -187,9 +190,9 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
     assert task_uuid not in await celery_task_manager.list_tasks(owner_metadata)
 
 
+@pytest.mark.usefixtures("with_celery_worker")
 async def test_listing_task_uuids_contains_submitted_task(
     celery_task_manager: CeleryTaskManager,
-    with_celery_worker: WorkController,
 ):
 
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
@@ -214,9 +217,9 @@ async def test_listing_task_uuids_contains_submitted_task(
     assert any(task.uuid == task_uuid for task in tasks)
 
 
+@pytest.mark.usefixtures("with_celery_worker")
 async def test_filtering_listing_tasks(
     celery_task_manager: CeleryTaskManager,
-    with_celery_worker: WorkController,
 ):
     class MyOwnerMetadata(OwnerMetadata):
         user_id: int
@@ -266,3 +269,175 @@ async def test_filtering_listing_tasks(
         # clean up all tasks. this should ideally be done in the fixture
         for task_uuid, owner_metadata in all_tasks:
             await celery_task_manager.cancel_task(owner_metadata, task_uuid)
+
+
+@pytest.mark.usefixtures("with_celery_worker")
+async def test_publish_task_event_creates_data_event(
+    celery_task_manager: CeleryTaskManager,
+):
+    """Test that publishing a data event works correctly."""
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Create a task first
+    task_uuid = await celery_task_manager.submit_task(
+        ExecutionMetadata(
+            name=fake_file_processor.__name__,
+        ),
+        owner_metadata=owner_metadata,
+        files=[f"file{n}" for n in range(2)],
+    )
+
+    # Create and publish a data event
+    task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+    data_event = TaskDataEvent(data={"progress": 0.5, "message": "Processing..."})
+
+    # This should not raise an exception
+    await celery_task_manager.publish_task_event(task_id, data_event)
+
+    # Clean up
+    await celery_task_manager.cancel_task(owner_metadata, task_uuid)
+
+
+@pytest.mark.usefixtures("with_celery_worker")
+async def test_publish_task_event_creates_status_event(
+    celery_task_manager: CeleryTaskManager,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    task_uuid = await celery_task_manager.submit_task(
+        ExecutionMetadata(
+            name=fake_file_processor.__name__,
+        ),
+        owner_metadata=owner_metadata,
+        files=[f"file{n}" for n in range(2)],
+    )
+
+    task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+    status_event = TaskStatusEvent(data=TaskStatusValue.SUCCESS)
+
+    await celery_task_manager.publish_task_event(task_id, status_event)
+
+    await celery_task_manager.cancel_task(owner_metadata, task_uuid)
+
+
+@pytest.mark.usefixtures("with_celery_worker")
+async def test_consume_task_events_reads_published_events(
+    celery_task_manager: CeleryTaskManager,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    task_uuid = await celery_task_manager.submit_task(
+        ExecutionMetadata(
+            name=fake_file_processor.__name__,
+        ),
+        owner_metadata=owner_metadata,
+        files=[f"file{n}" for n in range(2)],
+    )
+
+    task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+
+    data_event = TaskDataEvent(data={"progress": 0.3, "message": "Starting..."})
+    status_event = TaskStatusEvent(data=TaskStatusValue.SUCCESS)
+
+    await celery_task_manager.publish_task_event(task_id, data_event)
+    await celery_task_manager.publish_task_event(task_id, status_event)
+
+    # Consume events
+    events_received = []
+    async for event_id, event in celery_task_manager.consume_task_events(
+        owner_metadata=owner_metadata,
+        task_uuid=task_uuid,
+    ):
+        events_received.append((event_id, event))
+        if len(events_received) >= 2:
+            break
+
+    assert len(events_received) >= 1
+
+    data_events = [
+        event for _, event in events_received if event.type == TaskEventType.DATA
+    ]
+    status_events = [
+        event for _, event in events_received if event.type == TaskEventType.STATUS
+    ]
+
+    assert len(data_events) >= 1
+    assert data_events[0].data == {"progress": 0.3, "message": "Starting..."}
+
+    success_events = [
+        event for event in status_events if event.data == TaskStatusValue.SUCCESS
+    ]
+    assert len(success_events) >= 1
+
+    await celery_task_manager.cancel_task(owner_metadata, task_uuid)
+
+
+@pytest.mark.usefixtures("with_celery_worker")
+async def test_consume_task_events_with_last_id_filters_correctly(
+    celery_task_manager: CeleryTaskManager,
+):
+    """Test that consuming task events with last_id parameter works correctly."""
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    task_uuid = await celery_task_manager.submit_task(
+        ExecutionMetadata(
+            name=fake_file_processor.__name__,
+        ),
+        owner_metadata=owner_metadata,
+        files=[f"file{n}" for n in range(2)],
+    )
+
+    task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+    first_event = TaskDataEvent(data={"progress": 0.1, "message": "First event"})
+    await celery_task_manager.publish_task_event(task_id, first_event)
+
+    first_event_id = None
+    async for event_id, event in celery_task_manager.consume_task_events(
+        owner_metadata=owner_metadata,
+        task_uuid=task_uuid,
+    ):
+        if (
+            event.type == TaskEventType.DATA
+            and event.data.get("message") == "First event"
+        ):
+            first_event_id = event_id
+            break
+
+    assert first_event_id is not None
+
+    second_event = TaskDataEvent(data={"progress": 0.5, "message": "Second event"})
+    await celery_task_manager.publish_task_event(task_id, second_event)
+
+    events_after_first = []
+    async for event_id, event in celery_task_manager.consume_task_events(
+        owner_metadata=owner_metadata,
+        task_uuid=task_uuid,
+        last_id=first_event_id,
+    ):
+        events_after_first.append((event_id, event))
+        if (
+            event.type == TaskEventType.DATA
+            and event.data.get("message") == "Second event"
+        ):
+            break
+
+    assert len(events_after_first) >= 1
+    data_events_after = [
+        event for _, event in events_after_first if event.type == TaskEventType.DATA
+    ]
+
+    first_event_messages = [
+        event.data.get("message")
+        for event in data_events_after
+        if event.data.get("message") == "First event"
+    ]
+    assert len(first_event_messages) == 0
+
+    second_event_messages = [
+        event.data.get("message")
+        for event in data_events_after
+        if event.data.get("message") == "Second event"
+    ]
+    assert len(second_event_messages) >= 1
+
+    await celery_task_manager.cancel_task(owner_metadata, task_uuid)
