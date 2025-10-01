@@ -7,7 +7,7 @@
 import pytest
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.products import ProductName
-from models_library.rpc.webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.rpc.webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
@@ -36,7 +36,7 @@ def wb_api_rpc_client(
 
     return WbApiRpcClient(
         _rpc_client=WebServerRpcClient(
-            mocked_rabbit_rpc_client, WEBSERVER_RPC_NAMESPACE
+            mocked_rabbit_rpc_client, DEFAULT_WEBSERVER_RPC_NAMESPACE
         ),
     )
 

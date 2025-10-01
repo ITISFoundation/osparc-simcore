@@ -354,7 +354,7 @@ async def test_start_solver_job_conflict(
 
 
 @pytest.mark.parametrize(
-    "project_job_rpc_get",
+    "fake_project_job_rpc_get",
     [
         pytest.param(
             ProjectJobRpcGet(
@@ -507,7 +507,7 @@ async def test_get_solver_job_outputs(
 
 
 @pytest.mark.parametrize(
-    "project_job_rpc_get",
+    "fake_project_job_rpc_get",
     [
         ProjectJobRpcGet(
             uuid=UUID("12345678-1234-5678-1234-123456789012"),

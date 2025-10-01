@@ -37,6 +37,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     HealthCheck,
 )
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
@@ -257,10 +258,17 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
 
 
 @pytest.fixture
-def mocked_rabbit_rpc_client(mocker: MockerFixture) -> MockType:
+def mocked_rabbit_rpc_client(
+    mocker: MockerFixture, fake_project_job_rpc_get: ProjectJobRpcGet
+) -> MockType:
     """This fixture mocks the RabbitMQRPCClient.request method which is used
     in all RPC clients in the api-server, regardeless of the namespace.
     """
+    _catalog_rpc_side_effects = CatalogRpcSideEffects()
+
+    _webserver_rpc_side_effects = WebserverRpcSideEffects(
+        fake_project_job_rpc_get=fake_project_job_rpc_get
+    )
 
     async def _request(
         namespace: RPCNamespace,
@@ -272,18 +280,17 @@ def mocked_rabbit_rpc_client(mocker: MockerFixture) -> MockType:
 
         # NOTE: we could switch to different namespaces
         if namespace == CATALOG_RPC_NAMESPACE:
-            catalog_side_effect = CatalogRpcSideEffects()
-            return await getattr(catalog_side_effect, method_name)(
+            return await getattr(_catalog_rpc_side_effects, method_name)(
                 mocker.MagicMock(), **kwargs
             )
 
-        # if not namespace == WEBSERVER_RPC_NAMESPACE
-        webserver_side_effect = WebserverRpcSideEffects()
-        return await getattr(webserver_side_effect, method_name)(
+        assert namespace == DEFAULT_WEBSERVER_RPC_NAMESPACE or namespace.startswith(
+            "wb"
+        ), "expected a webserver namespace!"
+
+        return await getattr(_webserver_rpc_side_effects, method_name)(
             mocker.MagicMock(), **kwargs
         )
-
-        pytest.fail(f"Unexpected namespace {namespace} and method {method_name}")
 
     # NOTE: mocks RabbitMQRPCClient.request(...)
     mock = mocker.MagicMock(spec=RabbitMQRPCClient)
