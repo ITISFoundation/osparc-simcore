@@ -34,6 +34,7 @@ from ...socketio.server import get_socket_server
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
+from .._projects_service import conditionally_unsubscribe_from_project_logs
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
@@ -91,9 +92,10 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
 
-        await projects_wallets_service.check_project_financial_status(
+        await projects_wallets_service.check_project_financial_status_and_wallet_access(
             request.app,
             project_id=path_params.project_id,
+            user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         )
 
@@ -220,7 +222,11 @@ async def close_project(request: web.Request) -> web.Response:
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
     )
-    await project_logs.unsubscribe(request.app, path_params.project_id)
+
+    await conditionally_unsubscribe_from_project_logs(
+        request.app, path_params.project_id, req_ctx.user_id
+    )
+
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
