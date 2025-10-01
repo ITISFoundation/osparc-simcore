@@ -44,7 +44,10 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
 
     WEBSERVER_RPC_NAMESPACE: Annotated[
         RPCNamespace,
-        Field(description="Namespace for the RPC server"),
+        Field(
+            description="Namespace for the RPC server."
+            "IMPORTANT: this is typically `wb-api-server` service variant of the `webserver` image"
+        ),
     ]
 
     @field_validator("WEBSERVER_SESSION_SECRET_KEY")

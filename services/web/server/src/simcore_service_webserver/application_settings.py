@@ -157,7 +157,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     WEBSERVER_RPC_NAMESPACE: Annotated[
         RPCNamespace | None,
-        Field(description="Namespace for the RPC server (if any) otherwise None"),
+        Field(
+            description="Namespace for the RPC server (if any) otherwise None"
+            "NOTE that some webserver variants do NOT expose an RPC server e.g. wg-gargage-collector, wg-auth, etc"
+        ),
     ]
 
     WEBSERVER_SERVER_HOST: Annotated[
