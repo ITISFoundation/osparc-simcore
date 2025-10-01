@@ -47,18 +47,6 @@ def setup_log_tracing(tracing_settings: TracingSettings):
     LoggingInstrumentor().instrument(set_logging_format=False)
 
 
-def get_trace_id_header() -> dict[str, str] | None:
-    """Generates a dictionary containing the trace ID header if tracing is active."""
-    span = trace.get_current_span()
-    if span.is_recording():
-        trace_id = span.get_span_context().trace_id
-        trace_id_hex = format(
-            trace_id, "032x"
-        )  # Convert trace_id to 32-character hex string
-        return {_OSPARC_TRACE_ID_HEADER: trace_id_hex}
-    return None
-
-
 @dataclass
 class TracingData:
     service_name: str
@@ -75,6 +63,18 @@ class TracingData:
             service_name=service_name,
             tracer_provider=trace_provider,
         )
+
+
+def get_trace_id_header() -> dict[str, str] | None:
+    """Generates a dictionary containing the trace ID header if tracing is active."""
+    span = trace.get_current_span()
+    if span.is_recording():
+        trace_id = span.get_span_context().trace_id
+        trace_id_hex = format(
+            trace_id, "032x"
+        )  # Convert trace_id to 32-character hex string
+        return {_OSPARC_TRACE_ID_HEADER: trace_id_hex}
+    return None
 
 
 @contextmanager

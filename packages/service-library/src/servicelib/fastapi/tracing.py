@@ -12,7 +12,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 )
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
+from opentelemetry.sdk.trace import SpanProcessor
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from settings_library.tracing import TracingSettings
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -84,7 +84,6 @@ def _startup(tracing_settings: TracingSettings, tracing_data: TracingData) -> No
     ):
         _logger.warning("Skipping opentelemetry tracing setup")
         return
-    assert isinstance(tracing_data.tracer_provider, TracerProvider)  # nosec
 
     opentelemetry_collector_endpoint: str = (
         f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}"
