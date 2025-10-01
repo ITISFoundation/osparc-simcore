@@ -21,9 +21,11 @@ from faker import Faker
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.rpc.webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.status_codes_utils import get_code_display_name
@@ -133,6 +135,7 @@ async def client(
     app_config: dict[str, Any],  # waits until swarm with *_services are up
     monkeypatch_setenv_from_app_config: Callable,
     simcore_services_ready: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> TestClient:
     cfg = deepcopy(app_config)
 
@@ -143,6 +146,13 @@ async def client(
 
     # fake config
     monkeypatch_setenv_from_app_config(cfg)
+    setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "WEBSERVER_RPC_NAMESPACE": DEFAULT_WEBSERVER_RPC_NAMESPACE,
+        },
+    )
+
     app = create_safe_application(app_config)
 
     assert setup_settings(app)
