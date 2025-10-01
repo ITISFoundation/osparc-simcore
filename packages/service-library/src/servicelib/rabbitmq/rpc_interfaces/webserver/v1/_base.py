@@ -11,9 +11,15 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 class BaseRpcApi:
     """Base class for all RPC API subclients."""
 
-    def __init__(self, rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
+    def __init__(
+        self,
+        rpc_client: RabbitMQRPCClient,
+        namespace: RPCNamespace,
+        rpc_request_kwargs: dict[str, Any] | None = None,
+    ):
         self._rpc_client = rpc_client
         self._namespace = namespace
+        self._rpc_request_kwargs = rpc_request_kwargs or {}
 
     async def _request(
         self,
@@ -21,19 +27,33 @@ class BaseRpcApi:
         *,
         product_name: ProductName,
         user_id: UserID,
-        **kwargs: Any
+        **optional_kwargs: Any
     ) -> Any:
-        return await self._rpc_client.request(
-            self._namespace,
+        assert self._rpc_request_kwargs.keys().isdisjoint(optional_kwargs.keys()), (
+            "Conflict between request extras and kwargs"
+            "Please rename the conflicting keys."
+        )
+
+        return await self._request_without_authentication(
             method_name,
             product_name=product_name,
             user_id=user_id,
-            **kwargs
+            **optional_kwargs,
+            **self._rpc_request_kwargs,
         )
 
     async def _request_without_authentication(
         self, method_name: RPCMethodName, *, product_name: ProductName, **kwargs: Any
     ) -> Any:
+        assert self._rpc_request_kwargs.keys().isdisjoint(kwargs.keys()), (
+            "Conflict between request extras and kwargs"
+            "Please rename the conflicting keys."
+        )
+
         return await self._rpc_client.request(
-            self._namespace, method_name, product_name=product_name, **kwargs
+            self._namespace,
+            method_name,
+            product_name=product_name,
+            **kwargs,
+            **self._rpc_request_kwargs,
         )
