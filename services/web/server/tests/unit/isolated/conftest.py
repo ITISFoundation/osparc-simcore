@@ -5,6 +5,7 @@
 
 
 import json
+import logging
 import os
 import random
 from pathlib import Path
@@ -186,12 +187,15 @@ def mock_webserver_service_environment(
     mock_env_devel_environment: EnvVarsDict,
     mock_env_dockerfile_build: EnvVarsDict,
     mock_env_deployer_pipeline: EnvVarsDict,
+    mock_webserver_service_environment: EnvVarsDict,
     service_name: str,
 ) -> EnvVarsDict:
     """
     Mocks environment produce in the docker compose config with a .env (.env-devel)
     and launched with a makefile
     """
+    logging.getLogger().info("Composing %s service environment ... ", service_name)
+
     # @docker compose config (overrides)
     # TODO: get from docker compose config
     # r'- ([A-Z2_]+)=\$\{\1:-([\w-]+)\}'
@@ -228,17 +232,22 @@ def mock_webserver_service_environment(
             "SWARM_STACK_NAME": os.environ.get("SWARM_STACK_NAME", "simcore"),
             "WEBSERVER_LOGLEVEL": os.environ.get("LOG_LEVEL", "WARNING"),
             "SESSION_COOKIE_MAX_AGE": str(7 * 24 * 60 * 60),
-            "WEBSERVER_RPC_NAMESPACE": service_name,
+            **mock_webserver_service_environment,
         },
     )
 
-    return (
+    envs = (
         mock_env_makefile
         | mock_env_devel_environment
         | mock_env_dockerfile_build
         | mock_env_deployer_pipeline
         | mock_envs_docker_compose_environment
     )
+
+    logging.getLogger().info(
+        "%s service environment:\n%s", service_name, json.dumps(envs, indent=1)
+    )
+    return envs
 
 
 @pytest.fixture
