@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Final
 
@@ -193,18 +194,23 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
     async def event_generator():
-        async for event_id, event in get_task_manager(request.app).consume_task_events(
-            owner_metadata=OwnerMetadata.model_validate(
-                WebServerOwnerMetadata(
-                    user_id=_req_ctx.user_id,
-                    product_name=_req_ctx.product_name,
-                ).model_dump()
-            ),
-            task_uuid=_path_params.task_id,
-            last_id=_header_params.last_event_id,
-        ):
-            yield SSEEvent(
-                id=event_id, event=event.type, data=[json_dumps(event.data)]
-            ).serialize()
+        try:
+            async for event_id, event in get_task_manager(
+                request.app
+            ).consume_task_events(
+                owner_metadata=OwnerMetadata.model_validate(
+                    WebServerOwnerMetadata(
+                        user_id=_req_ctx.user_id,
+                        product_name=_req_ctx.product_name,
+                    ).model_dump()
+                ),
+                task_uuid=_path_params.task_id,
+                last_id=_header_params.last_event_id,
+            ):
+                yield SSEEvent(
+                    id=event_id, event=event.type, data=[json_dumps(event.data)]
+                ).serialize()
+        except asyncio.CancelledError:
+            return
 
     return create_event_stream_response(event_generator=event_generator)

@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator
@@ -186,11 +187,15 @@ class RedisTaskStore:
     ) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]:
         stream_key = _build_stream_key(task_id)
         while True:
-            messages = await self._redis_client_sdk.redis.xread(
-                {stream_key: last_id or _CELERY_TASK_STREAM_DEFAULT_ID},
-                block=_CELERY_TASK_STREAM_BLOCK_TIMEOUT,
-                count=_CELERY_TASK_STREAM_COUNT,
-            )
+            try:
+                messages = await self._redis_client_sdk.redis.xread(
+                    {stream_key: last_id or _CELERY_TASK_STREAM_DEFAULT_ID},
+                    block=_CELERY_TASK_STREAM_BLOCK_TIMEOUT,
+                    count=_CELERY_TASK_STREAM_COUNT,
+                )
+            except asyncio.CancelledError:
+                break
+
             if not messages:
                 continue
             for _, events in messages:
@@ -204,6 +209,7 @@ class RedisTaskStore:
                             raw_event
                         )
                         yield msg_id, event
+                        last_id = msg_id
                     except ValidationError:
                         continue
 
