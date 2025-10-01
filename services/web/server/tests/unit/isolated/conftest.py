@@ -101,13 +101,14 @@ def mock_env_deployer_pipeline(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 
 @pytest.fixture
 def mock_env_devel_environment(
-    mock_env_devel_environment: EnvVarsDict,  # pylint: disable=redefined-outer-name
+    env_devel_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # Overrides to ensure dev-features are enabled testings
-    return mock_env_devel_environment | setenvs_from_dict(
+    return setenvs_from_dict(
         monkeypatch,
         envs={
+            **env_devel_dict,
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "null",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "null",
@@ -184,10 +185,9 @@ def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 def mock_webserver_service_environment(
     monkeypatch: pytest.MonkeyPatch,
     mock_env_makefile: EnvVarsDict,
-    mock_env_devel_environment: EnvVarsDict,
     mock_env_dockerfile_build: EnvVarsDict,
     mock_env_deployer_pipeline: EnvVarsDict,
-    mock_webserver_service_environment: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
     service_name: str,
 ) -> EnvVarsDict:
     """
@@ -232,13 +232,12 @@ def mock_webserver_service_environment(
             "SWARM_STACK_NAME": os.environ.get("SWARM_STACK_NAME", "simcore"),
             "WEBSERVER_LOGLEVEL": os.environ.get("LOG_LEVEL", "WARNING"),
             "SESSION_COOKIE_MAX_AGE": str(7 * 24 * 60 * 60),
-            **mock_webserver_service_environment,
+            **docker_compose_service_environment_dict,
         },
     )
 
     envs = (
         mock_env_makefile
-        | mock_env_devel_environment
         | mock_env_dockerfile_build
         | mock_env_deployer_pipeline
         | mock_envs_docker_compose_environment
