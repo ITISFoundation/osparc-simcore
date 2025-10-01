@@ -300,13 +300,12 @@ def mocked_rabbit_rpc_client(
 
 
 @pytest.fixture
-def mocked_app_dependencies(
-    app: FastAPI, mocker: MockerFixture, mocked_rabbit_rpc_client: MockType
+def mocked_app_rpc_dependencies(
+    app: FastAPI, mocked_rabbit_rpc_client: MockType
 ) -> Iterator[None]:
     """
-    Mocks some dependency overrides for the FastAPI app.
+    Mocks rabbit clients overrides for the FastAPI app.
     """
-    assert app.state.settings.API_SERVER_RABBITMQ is None
     from simcore_service_api_server.api.dependencies.rabbitmq import (
         get_rabbitmq_rpc_client,
     )
@@ -315,12 +314,7 @@ def mocked_app_dependencies(
     )
 
     # Overrides Depends[get_rabbitmq_rpc_client]
-    def _get_rabbitmq_rpc_client_override():
-        return mocked_rabbit_rpc_client
-
-    app.dependency_overrides[get_rabbitmq_rpc_client] = (
-        _get_rabbitmq_rpc_client_override
-    )
+    app.dependency_overrides[get_rabbitmq_rpc_client] = lambda: mocked_rabbit_rpc_client
 
     # Overrides Depends[get_wb_api_rpc_client]
     async def _get_wb_api_rpc_client_override():
@@ -628,7 +622,7 @@ def fake_job_links() -> JobLinks:
 
 @pytest.fixture
 def mocked_webserver_rpc_api(
-    mocked_app_dependencies: None,
+    mocked_app_rpc_dependencies: None,
     mocked_rabbit_rpc_client: MockType,
 ) -> dict[str, MockType]:
     """
@@ -651,7 +645,9 @@ def catalog_rpc_side_effects(request) -> Any:
 
 @pytest.fixture
 def mocked_catalog_rpc_api(
-    mocked_app_dependencies: None, mocker: MockerFixture, catalog_rpc_side_effects: Any
+    mocked_app_rpc_dependencies: None,
+    mocker: MockerFixture,
+    catalog_rpc_side_effects: Any,
 ) -> dict[str, MockType]:
     """
     Mocks the catalog's simcore service RPC API for testing purposes.
@@ -692,7 +688,7 @@ def directorv2_rpc_side_effects(request) -> Any:
 
 @pytest.fixture
 def mocked_directorv2_rpc_api(
-    mocked_app_dependencies: None,
+    mocked_app_rpc_dependencies: None,
     mocker: MockerFixture,
     directorv2_rpc_side_effects: Any,
 ) -> dict[str, MockType]:
@@ -735,7 +731,7 @@ def storage_rpc_side_effects(request) -> Any:
 
 @pytest.fixture
 def mocked_storage_rpc_api(
-    mocked_app_dependencies: None,
+    mocked_app_rpc_dependencies: None,
     mocker: MockerFixture,
     storage_rpc_side_effects: Any,
 ) -> dict[str, MockType]:

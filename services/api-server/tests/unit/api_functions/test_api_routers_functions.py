@@ -289,7 +289,7 @@ async def test_get_function_output_schema(
 
 async def test_validate_function_inputs(
     client: AsyncClient,
-    mock_rabbitmq_rpc_client: MockerFixture,
+    mocked_app_rpc_dependencies: None,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
@@ -332,7 +332,7 @@ async def test_delete_function(
 async def test_run_map_function_not_allowed(
     client: AsyncClient,
     mocker: MockerFixture,
-    mock_celery_task_manager: MockType,
+    mock_dependency_get_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,

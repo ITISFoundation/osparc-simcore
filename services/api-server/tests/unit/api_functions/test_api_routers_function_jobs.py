@@ -114,8 +114,9 @@ async def test_get_function_job(
 
 async def test_list_function_jobs(
     client: AsyncClient,
-    mock_rabbitmq_rpc_client: MockerFixture,
-    mock_celery_task_manager: MockType,
+    mocked_app_rpc_dependencies: None,
+    mocked_rabbit_rpc_client: MockerFixture,
+    mock_dependency_get_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
@@ -141,8 +142,8 @@ async def test_list_function_jobs(
 @pytest.mark.parametrize("status_str", ["SUCCESS", "FAILED"])
 async def test_list_function_jobs_with_status(
     client: AsyncClient,
-    mock_rabbitmq_rpc_client: MockerFixture,
-    mock_celery_task_manager: MockType,
+    mocked_app_rpc_dependencies: None,
+    mock_dependency_get_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
@@ -196,8 +197,8 @@ async def test_list_function_jobs_with_status(
 
 async def test_list_function_jobs_with_job_id_filter(
     client: AsyncClient,
-    mock_celery_task_manager: MockType,
-    mock_rabbitmq_rpc_client: MockerFixture,
+    mock_dependency_get_celery_task_manager: MockType,
+    mocked_app_rpc_dependencies: None,
     mock_handler_in_functions_rpc_interface: Callable[[str], MockType],
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     user_id: UserID,
@@ -273,7 +274,7 @@ async def test_list_function_jobs_with_job_id_filter(
 )
 async def test_get_function_job_status(
     app: FastAPI,
-    mocked_app_dependencies: None,
+    mocked_app_rpc_dependencies: None,
     client: AsyncClient,
     mocker: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[
@@ -397,8 +398,8 @@ async def test_get_function_job_status(
 )
 async def test_get_function_job_outputs(
     client: AsyncClient,
-    mock_celery_task_manager: MockType,
-    mock_rabbitmq_rpc_client: MockerFixture,
+    mocked_app_rpc_dependencies: None,
+    mock_dependency_get_celery_task_manager: MockType,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     fake_registered_project_function: RegisteredProjectFunction,

@@ -38,10 +38,6 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
-from simcore_service_api_server.api.dependencies import services
-from simcore_service_api_server.api.dependencies.services import get_rabbitmq_rpc_client
-from simcore_service_api_server.api.routes.functions_routes import get_wb_api_rpc_client
 
 
 @pytest.fixture
@@ -59,50 +55,16 @@ def app_environment(
     )
 
 
-class DummyRpcClient(RabbitMQRPCClient):
-
-    def __init__(self):
-        self.client_name = "dummy_client"
-        self.settings = {}  # type: ignore # Add a settings attribute to avoid AttributeError
-
-    async def request(self, namespace: str, method_name: str, **kwargs):
-        # Mock implementation of the request method
-        assert isinstance(namespace, str)
-        assert isinstance(method_name, str)
-        assert isinstance(kwargs, dict)
-        return {"mocked_response": True}
-
-
 @pytest.fixture
-async def mock_rabbitmq_rpc_client(
+async def mock_dependency_get_celery_task_manager(
     app: FastAPI, mocker: MockerFixture
-) -> MockerFixture:
-    def _():
-        return DummyRpcClient()
-
-    app.dependency_overrides[get_rabbitmq_rpc_client] = _
-    return mocker
-
-
-@pytest.fixture
-async def mock_celery_task_manager(app: FastAPI, mocker: MockerFixture) -> MockType:
+) -> MockType:
     def _new(app: FastAPI):
         return None
 
+    from simcore_service_api_server.api.dependencies import services
+
     return mocker.patch.object(services, services.get_task_manager.__name__, _new)
-
-
-@pytest.fixture
-async def mock_get_wb_api_rpc_client(app: FastAPI, mocker: MockerFixture) -> None:
-    def _new():
-        from simcore_service_api_server.services_rpc import wb_api_server
-
-        # pylint: disable=protected-access
-        return wb_api_server._create_obj(
-            app, mocker.MagicMock(spec=RabbitMQRPCClient)
-        )  # noqa: SLF001
-
-    app.dependency_overrides[get_wb_api_rpc_client] = _new
 
 
 @pytest.fixture
@@ -272,7 +234,7 @@ def fake_registered_function_job_collection(
 
 @pytest.fixture()
 def mock_handler_in_functions_rpc_interface(
-    mock_get_wb_api_rpc_client: None,
+    mocked_app_rpc_dependencies: None,
     mocker: MockerFixture,
 ) -> HandlerMockFactory:
     def _create(
@@ -299,7 +261,7 @@ def mock_handler_in_functions_rpc_interface(
 
 @pytest.fixture()
 def mock_method_in_jobs_service(
-    mock_get_wb_api_rpc_client: None,
+    mocked_app_rpc_dependencies: None,
     mocker: MockerFixture,
 ) -> Callable[[str, Any, Exception | None], MockType]:
     def _create(
