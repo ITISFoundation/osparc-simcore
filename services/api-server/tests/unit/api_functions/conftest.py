@@ -37,6 +37,7 @@ from models_library.projects import ProjectID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server.api.dependencies import services
 from simcore_service_api_server.api.dependencies.services import get_rabbitmq_rpc_client
@@ -273,7 +274,7 @@ def fake_registered_function_job_collection(
 def mock_handler_in_functions_rpc_interface(
     mock_get_wb_api_rpc_client: None,
     mocker: MockerFixture,
-) -> Callable[[str, Any, Exception | None, Callable | None], MockType]:
+) -> HandlerMockFactory:
     def _create(
         handler_name: str = "",
         return_value: Any = None,

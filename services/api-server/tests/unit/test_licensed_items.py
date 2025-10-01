@@ -6,7 +6,7 @@
 
 import asyncio
 from collections.abc import Callable
-from typing import Any, Protocol, cast
+from typing import Any, cast
 from uuid import UUID
 
 import pytest
@@ -32,6 +32,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
+from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
@@ -77,16 +78,6 @@ async def mock_rut_rpc(app: FastAPI, mocker: MockerFixture) -> None:
             _client=mocker.MagicMock(spec=RabbitMQRPCClient)
         )
     )
-
-
-class HandlerMockFactory(Protocol):
-    def __call__(
-        self,
-        handler_name: str = "",
-        return_value: Any = None,
-        exception: Exception | None = None,
-        side_effect: Callable | None = None,
-    ) -> MockType: ...
 
 
 @pytest.fixture()

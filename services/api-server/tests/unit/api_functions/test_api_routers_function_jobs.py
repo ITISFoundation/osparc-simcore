@@ -241,7 +241,6 @@ async def test_list_function_jobs_with_job_id_filter(
             auth=auth,
         )
         mock_list_function_jobs.assert_called_with(
-            ANY,  # Dummy rpc client
             filter_by_function_job_ids=[fake_registered_project_function_job.uid],
             filter_by_function_job_collection_id=None,
             filter_by_function_id=None,
