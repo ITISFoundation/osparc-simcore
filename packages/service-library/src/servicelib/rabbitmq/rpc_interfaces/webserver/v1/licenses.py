@@ -1,6 +1,6 @@
 """Licenses RPC API subclient."""
 
-from typing import Any, cast
+from typing import Any
 
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.api_schemas_webserver.licensed_items_checkouts import (
@@ -14,6 +14,7 @@ from models_library.resource_tracker_licensed_items_checkouts import (
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import TypeAdapter
 
 from ._base import BaseRpcApi
 
@@ -28,8 +29,7 @@ class LicensesRpcApi(BaseRpcApi):
         offset: int = 0,
         limit: int = 20,
     ) -> LicensedItemRpcGetPage:
-        return cast(
-            LicensedItemRpcGetPage,
+        return TypeAdapter(LicensedItemRpcGetPage).validate_python(
             await self._request_without_authentication(
                 "get_licensed_items",
                 product_name=product_name,
@@ -48,8 +48,7 @@ class LicensesRpcApi(BaseRpcApi):
         limit: int = 20,
     ) -> LicensedItemRpcGetPage:
         """Get licensed items for a wallet."""
-        return cast(
-            LicensedItemRpcGetPage,
+        return TypeAdapter(LicensedItemRpcGetPage).validate_python(
             await self._request(
                 "get_available_licensed_items_for_wallet",
                 product_name=product_name,
@@ -68,8 +67,7 @@ class LicensesRpcApi(BaseRpcApi):
         wallet_id: int | None = None,
     ) -> list[dict[str, Any]]:
         """Get licensed items checkouts for a wallet."""
-        return cast(
-            list[dict[str, Any]],
+        return TypeAdapter(list[dict[str, Any]]).validate_python(
             await self._request(
                 "get_licensed_items_checkouts_for_wallet",
                 product_name=product_name,
@@ -89,8 +87,7 @@ class LicensesRpcApi(BaseRpcApi):
         service_run_id: ServiceRunID,
     ) -> LicensedItemCheckoutRpcGet:
         """Checkout a licensed item for a wallet."""
-        return cast(
-            LicensedItemCheckoutRpcGet,
+        return TypeAdapter(LicensedItemCheckoutRpcGet).validate_python(
             await self._request(
                 "checkout_licensed_item_for_wallet",
                 product_name=product_name,
@@ -110,8 +107,7 @@ class LicensesRpcApi(BaseRpcApi):
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutRpcGet:
         """Release a licensed item checkout for a wallet."""
-        return cast(
-            LicensedItemCheckoutRpcGet,
+        return TypeAdapter(LicensedItemCheckoutRpcGet).validate_python(
             await self._request(
                 "release_licensed_item_for_wallet",
                 product_name=product_name,

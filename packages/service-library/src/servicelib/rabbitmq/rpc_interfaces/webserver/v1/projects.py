@@ -1,7 +1,5 @@
 """Projects RPC API subclient."""
 
-from typing import cast
-
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageOffsetInt
@@ -15,6 +13,7 @@ from models_library.rpc_pagination import (
     PageLimitInt,
 )
 from models_library.users import UserID
+from pydantic import TypeAdapter
 
 from ._base import BaseRpcApi
 
@@ -51,8 +50,7 @@ class ProjectsRpcApi(BaseRpcApi):
         filters: ListProjectsMarkedAsJobRpcFilters | None = None,
     ) -> PageRpcProjectJobRpcGet:
         """List projects marked as jobs."""
-        return cast(
-            PageRpcProjectJobRpcGet,
+        return TypeAdapter(PageRpcProjectJobRpcGet).validate_python(
             await self._request(
                 "list_projects_marked_as_jobs",
                 product_name=product_name,
@@ -72,8 +70,7 @@ class ProjectsRpcApi(BaseRpcApi):
         job_parent_resource_name: str,
     ) -> ProjectJobRpcGet:
         """Get a project marked as a job."""
-        return cast(
-            ProjectJobRpcGet,
+        return TypeAdapter(ProjectJobRpcGet).validate_python(
             await self._request(
                 "get_project_marked_as_job",
                 product_name=product_name,

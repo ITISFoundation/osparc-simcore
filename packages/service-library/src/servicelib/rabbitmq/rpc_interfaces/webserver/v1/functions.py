@@ -31,6 +31,7 @@ from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
+from pydantic import TypeAdapter
 
 from ._base import BaseRpcApi
 
@@ -48,8 +49,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function: Function,
     ) -> RegisteredFunction:
         """Register a function."""
-        return cast(
-            RegisteredFunction,
+        return TypeAdapter(RegisteredFunction).validate_python(
             await self._request(
                 "register_function",
                 product_name=product_name,
@@ -66,8 +66,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
     ) -> RegisteredFunction:
         """Get a function by ID."""
-        return cast(
-            RegisteredFunction,
+        return TypeAdapter(RegisteredFunction).validate_python(
             await self._request(
                 "get_function",
                 product_name=product_name,
@@ -84,8 +83,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
     ) -> FunctionInputSchema:
         """Get function input schema."""
-        return cast(
-            FunctionInputSchema,
+        return TypeAdapter(FunctionInputSchema).validate_python(
             await self._request(
                 "get_function_input_schema",
                 product_name=product_name,
@@ -102,8 +100,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
     ) -> FunctionOutputSchema:
         """Get function output schema."""
-        return cast(
-            FunctionOutputSchema,
+        return TypeAdapter(FunctionOutputSchema).validate_python(
             await self._request(
                 "get_function_output_schema",
                 product_name=product_name,
@@ -140,8 +137,9 @@ class FunctionsRpcApi(BaseRpcApi):
         search_by_multi_columns: str | None = None,
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
         """List available functions."""
-        return cast(
-            tuple[list[RegisteredFunction], PageMetaInfoLimitOffset],
+        return TypeAdapter(
+            tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]
+        ).validate_python(
             await self._request(
                 "list_functions",
                 product_name=product_name,
@@ -167,8 +165,9 @@ class FunctionsRpcApi(BaseRpcApi):
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         """List function jobs."""
-        return cast(
-            tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset],
+        return TypeAdapter(
+            tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]
+        ).validate_python(
             await self._request(
                 "list_function_jobs",
                 product_name=product_name,
@@ -193,8 +192,9 @@ class FunctionsRpcApi(BaseRpcApi):
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJobWithStatus], PageMetaInfoLimitOffset]:
         """List function jobs with status."""
-        return cast(
-            tuple[list[RegisteredFunctionJobWithStatus], PageMetaInfoLimitOffset],
+        return TypeAdapter(
+            tuple[list[RegisteredFunctionJobWithStatus], PageMetaInfoLimitOffset]
+        ).validate_python(
             await self._request(
                 "list_function_jobs_with_status",
                 product_name=product_name,
@@ -217,8 +217,9 @@ class FunctionsRpcApi(BaseRpcApi):
         filters: FunctionJobCollectionsListFilters | None = None,
     ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
         """List function job collections."""
-        return cast(
-            tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset],
+        return TypeAdapter(
+            tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]
+        ).validate_python(
             await self._request(
                 "list_function_job_collections",
                 product_name=product_name,
@@ -238,8 +239,7 @@ class FunctionsRpcApi(BaseRpcApi):
         title: str,
     ) -> RegisteredFunction:
         """Update function title."""
-        return cast(
-            RegisteredFunction,
+        return TypeAdapter(RegisteredFunction).validate_python(
             await self._request(
                 "update_function_title",
                 product_name=product_name,
@@ -258,8 +258,7 @@ class FunctionsRpcApi(BaseRpcApi):
         description: str,
     ) -> RegisteredFunction:
         """Update function description."""
-        return cast(
-            RegisteredFunction,
+        return TypeAdapter(RegisteredFunction).validate_python(
             await self._request(
                 "update_function_description",
                 product_name=product_name,
@@ -278,8 +277,7 @@ class FunctionsRpcApi(BaseRpcApi):
         inputs: FunctionInputs,
     ) -> RegisteredFunctionJob:
         """Run a function."""
-        return cast(
-            RegisteredFunctionJob,
+        return TypeAdapter(RegisteredFunctionJob).validate_python(
             await self._request(
                 "run_function",
                 product_name=product_name,
@@ -297,8 +295,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job: FunctionJob,
     ) -> RegisteredFunctionJob:
         """Register a function job."""
-        return cast(
-            RegisteredFunctionJob,
+        return TypeAdapter(RegisteredFunctionJob).validate_python(
             await self._request(
                 "register_function_job",
                 product_name=product_name,
@@ -316,8 +313,7 @@ class FunctionsRpcApi(BaseRpcApi):
         registered_function_job_patch: RegisteredFunctionJobPatch,
     ) -> RegisteredFunctionJob:
         """Patch a registered function job."""
-        return cast(
-            RegisteredFunctionJob,
+        return TypeAdapter(RegisteredFunctionJob).validate_python(
             await self._request(
                 "patch_registered_function_job",
                 product_name=product_name,
@@ -335,8 +331,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_id: FunctionJobID,
     ) -> RegisteredFunctionJob:
         """Get a function job."""
-        return cast(
-            RegisteredFunctionJob,
+        return TypeAdapter(RegisteredFunctionJob).validate_python(
             await self._request(
                 "get_function_job",
                 product_name=product_name,
@@ -353,8 +348,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_id: FunctionJobID,
     ) -> FunctionJobStatus:
         """Get function job status."""
-        return cast(
-            FunctionJobStatus,
+        return TypeAdapter(FunctionJobStatus).validate_python(
             await self._request(
                 "get_function_job_status",
                 product_name=product_name,
@@ -371,8 +365,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_id: FunctionJobID,
     ) -> FunctionOutputs:
         """Get function job outputs."""
-        return cast(
-            FunctionOutputs,
+        return TypeAdapter(FunctionOutputs).validate_python(
             await self._request(
                 "get_function_job_outputs",
                 product_name=product_name,
@@ -391,8 +384,7 @@ class FunctionsRpcApi(BaseRpcApi):
         check_write_permissions: bool = True,
     ) -> FunctionJobStatus:
         """Update function job status."""
-        return cast(
-            FunctionJobStatus,
+        return TypeAdapter(FunctionJobStatus).validate_python(
             await self._request(
                 "update_function_job_status",
                 product_name=product_name,
@@ -413,8 +405,7 @@ class FunctionsRpcApi(BaseRpcApi):
         check_write_permissions: bool = True,
     ) -> FunctionOutputs:
         """Update function job outputs."""
-        return cast(
-            FunctionOutputs,
+        return TypeAdapter(FunctionOutputs).validate_python(
             await self._request(
                 "update_function_job_outputs",
                 product_name=product_name,
@@ -449,8 +440,7 @@ class FunctionsRpcApi(BaseRpcApi):
         inputs: FunctionInputs,
     ) -> list[RegisteredFunctionJob] | None:
         """Find cached function jobs."""
-        return cast(
-            list[RegisteredFunctionJob] | None,
+        return TypeAdapter(list[RegisteredFunctionJob] | None).validate_python(
             await self._request(
                 "find_cached_function_jobs",
                 product_name=product_name,
@@ -468,8 +458,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_collection: FunctionJobCollection,
     ) -> RegisteredFunctionJobCollection:
         """Register a function job collection."""
-        return cast(
-            RegisteredFunctionJobCollection,
+        return TypeAdapter(RegisteredFunctionJobCollection).validate_python(
             await self._request(
                 "register_function_job_collection",
                 product_name=product_name,
@@ -486,8 +475,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_job_collection_id: FunctionJobCollectionID,
     ) -> RegisteredFunctionJobCollection:
         """Get a function job collection."""
-        return cast(
-            RegisteredFunctionJobCollection,
+        return TypeAdapter(RegisteredFunctionJobCollection).validate_python(
             await self._request(
                 "get_function_job_collection",
                 product_name=product_name,
@@ -519,8 +507,7 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
     ) -> FunctionUserAccessRights:
         """Get function user permissions."""
-        return cast(
-            FunctionUserAccessRights,
+        return TypeAdapter(FunctionUserAccessRights).validate_python(
             await self._request(
                 "get_function_user_permissions",
                 product_name=product_name,
@@ -536,8 +523,7 @@ class FunctionsRpcApi(BaseRpcApi):
         user_id: UserID,
     ) -> FunctionUserApiAccessRights:
         """Get functions user API access rights."""
-        return cast(
-            FunctionUserApiAccessRights,
+        return TypeAdapter(FunctionUserApiAccessRights).validate_python(
             await self._request(
                 "get_functions_user_api_access_rights",
                 product_name=product_name,

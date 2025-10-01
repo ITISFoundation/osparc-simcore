@@ -1,11 +1,10 @@
 """API Keys RPC API subclient."""
 
-from typing import cast
-
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyCreate, ApiKeyGet
 from models_library.users import UserID
+from pydantic import TypeAdapter
 
 from ._base import BaseRpcApi
 
@@ -21,8 +20,7 @@ class ApiKeysRpcApi(BaseRpcApi):
         api_key: ApiKeyCreate,
     ) -> ApiKeyGet:
         """Create an API key."""
-        return cast(
-            ApiKeyGet,
+        return TypeAdapter(ApiKeyGet).validate_python(
             await self._request(
                 "create_api_key",
                 product_name=product_name,
@@ -40,8 +38,7 @@ class ApiKeysRpcApi(BaseRpcApi):
         api_key_id: IDStr,
     ) -> ApiKeyGet:
         """Get an API key by ID."""
-        return cast(
-            ApiKeyGet,
+        return TypeAdapter(ApiKeyGet).validate_python(
             await self._request(
                 "get_api_key",
                 product_name=product_name,
