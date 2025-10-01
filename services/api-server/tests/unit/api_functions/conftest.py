@@ -92,9 +92,7 @@ async def mock_celery_task_manager(app: FastAPI, mocker: MockerFixture) -> MockT
 
 
 @pytest.fixture
-async def mock_get_wb_api_rpc_client(
-    app: FastAPI, mocker: MockerFixture
-) -> MockerFixture:
+async def mock_get_wb_api_rpc_client(app: FastAPI, mocker: MockerFixture) -> None:
     def _new():
         from simcore_service_api_server.services_rpc import wb_api_server
 
@@ -104,7 +102,6 @@ async def mock_get_wb_api_rpc_client(
         )  # noqa: SLF001
 
     app.dependency_overrides[get_wb_api_rpc_client] = _new
-    return mocker
 
 
 @pytest.fixture
@@ -274,7 +271,7 @@ def fake_registered_function_job_collection(
 
 @pytest.fixture()
 def mock_handler_in_functions_rpc_interface(
-    mock_get_wb_api_rpc_client: MockerFixture,
+    mock_get_wb_api_rpc_client: None,
     mocker: MockerFixture,
 ) -> Callable[[str, Any, Exception | None, Callable | None], MockType]:
     def _create(
@@ -301,7 +298,7 @@ def mock_handler_in_functions_rpc_interface(
 
 @pytest.fixture()
 def mock_method_in_jobs_service(
-    mock_get_wb_api_rpc_client: MockerFixture,
+    mock_get_wb_api_rpc_client: None,
     mocker: MockerFixture,
 ) -> Callable[[str, Any, Exception | None], MockType]:
     def _create(

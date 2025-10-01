@@ -2,9 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+
+
 import asyncio
-from functools import partial
-from typing import cast
+from collections.abc import Callable
+from typing import Any, Protocol, cast
 from uuid import UUID
 
 import pytest
@@ -29,7 +31,7 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
@@ -53,67 +55,106 @@ from simcore_service_api_server.models.schemas.model_adapter import LicensedItem
 from simcore_service_api_server.services_rpc.resource_usage_tracker import (
     ResourceUsageTrackerClient,
 )
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
-
-
-async def _get_backend_licensed_items(
-    exception_to_raise: Exception | None,
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    product_name: str,
-    offset: int,
-    limit: int,
-) -> LicensedItemRpcGetPage:
-    if exception_to_raise is not None:
-        raise exception_to_raise
-    extra = LicensedItemRpcGet.model_config.get("json_schema_extra")
-    assert isinstance(extra, dict)
-    examples = extra.get("examples")
-    assert isinstance(examples, list)
-    return LicensedItemRpcGetPage(
-        items=[LicensedItemRpcGet.model_validate(ex) for ex in examples],
-        total=len(examples),
-    )
 
 
 @pytest.fixture
-async def mock_wb_api_server_rcp(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
-    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+async def mock_wb_api_server_rcp(app: FastAPI, mocker: MockerFixture) -> None:
+    def _new():
+        from simcore_service_api_server.services_rpc import wb_api_server
 
-    app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
-    )
-    return mocker
+        # pylint: disable=protected-access
+        return wb_api_server._create_obj(
+            app, mocker.MagicMock(spec=RabbitMQRPCClient)
+        )  # noqa: SLF001
+
+    app.dependency_overrides[get_wb_api_rpc_client] = _new
 
 
 @pytest.fixture
-async def mock_rut_rpc(app: FastAPI, mocker: MockerFixture) -> MockerFixture:
+async def mock_rut_rpc(app: FastAPI, mocker: MockerFixture) -> None:
     app.dependency_overrides[get_resource_usage_tracker_client] = (
         lambda: ResourceUsageTrackerClient(
             _client=mocker.MagicMock(spec=RabbitMQRPCClient)
         )
     )
-    return mocker
+
+
+class HandlerMockFactory(Protocol):
+    def __call__(
+        self,
+        handler_name: str = "",
+        return_value: Any = None,
+        exception: Exception | None = None,
+        side_effect: Callable | None = None,
+    ) -> MockType: ...
+
+
+@pytest.fixture()
+def mock_handler_in_licenses_rpc_interface(
+    mock_wb_api_server_rcp: None,
+    mocker: MockerFixture,
+) -> HandlerMockFactory:
+    """Factory to mock a handler in the LicensesRpcApi interface"""
+
+    def _create(
+        handler_name: str = "",
+        return_value: Any = None,
+        exception: Exception | None = None,
+        side_effect: Callable | None = None,
+    ) -> MockType:
+        from servicelib.rabbitmq.rpc_interfaces.webserver.v1.licenses import (
+            LicensesRpcApi,
+        )
+
+        assert exception is None or side_effect is None
+
+        return mocker.patch.object(
+            LicensesRpcApi,
+            handler_name,
+            return_value=return_value,
+            side_effect=exception or side_effect,
+        )
+
+    return _create
 
 
 async def test_get_licensed_items(
-    mock_wb_api_server_rcp: MockerFixture, client: AsyncClient, auth: BasicAuth
+    mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
+    client: AsyncClient,
+    auth: BasicAuth,
 ):
-    mock_wb_api_server_rcp.patch(
-        "simcore_service_api_server.services_rpc.wb_api_server._get_licensed_items",
-        partial(_get_backend_licensed_items, None),
+    async def _get_licensed_items_side_effect(
+        product_name: str,
+        offset: int,
+        limit: int,
+    ) -> LicensedItemRpcGetPage:
+        examples = LicensedItemRpcGet.model_json_schema()["examples"]
+        assert isinstance(examples, list)
+        return LicensedItemRpcGetPage(
+            items=[LicensedItemRpcGet.model_validate(ex) for ex in examples],
+            total=len(examples),
+        )
+
+    mock_handler_in_licenses_rpc_interface(
+        handler_name="get_licensed_items",
+        side_effect=_get_licensed_items_side_effect,
     )
+
     resp = await client.get(f"{API_VTAG}/licensed-items", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
     TypeAdapter(Page[LicensedItemGet]).validate_json(resp.text)
 
 
 async def test_get_licensed_items_timeout(
-    mock_wb_api_server_rcp: MockerFixture, client: AsyncClient, auth: BasicAuth
+    mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
+    client: AsyncClient,
+    auth: BasicAuth,
 ):
-    mock_wb_api_server_rcp.patch(
-        "simcore_service_api_server.services_rpc.wb_api_server._get_licensed_items",
-        partial(_get_backend_licensed_items, exception_to_raise=TimeoutError()),
+    mock_handler_in_licenses_rpc_interface(
+        handler_name="get_licensed_items",
+        exception=TimeoutError(),
     )
+
     resp = await client.get(f"{API_VTAG}/licensed-items", auth=auth)
     assert resp.status_code == status.HTTP_504_GATEWAY_TIMEOUT
 
@@ -123,15 +164,16 @@ async def test_get_licensed_items_timeout(
     [asyncio.CancelledError(), RuntimeError(), RemoteMethodNotRegisteredError()],
 )
 async def test_get_licensed_items_502(
-    mock_wb_api_server_rcp: MockerFixture,
+    mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
     client: AsyncClient,
     auth: BasicAuth,
     exception_to_raise: Exception,
 ):
-    mock_wb_api_server_rcp.patch(
-        "simcore_service_api_server.services_rpc.wb_api_server._get_licensed_items",
-        partial(_get_backend_licensed_items, exception_to_raise),
+    mock_handler_in_licenses_rpc_interface(
+        handler_name="get_licensed_items",
+        exception=exception_to_raise,
     )
+
     resp = await client.get(f"{API_VTAG}/licensed-items", auth=auth)
     assert resp.status_code == status.HTTP_502_BAD_GATEWAY
 
@@ -143,7 +185,7 @@ async def test_get_licensed_items_502(
     ],
 )
 async def test_get_licensed_items_for_wallet(
-    mock_wb_api_server_rcp: MockerFixture,
+    mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
     client: AsyncClient,
     auth: BasicAuth,
     exception_to_raise: Exception | None,
@@ -152,30 +194,33 @@ async def test_get_licensed_items_for_wallet(
 ):
     _wallet_id = faker.pyint(min_value=1)
 
-    async def side_effect(
-        rabbitmq_rpc_client: RabbitMQRPCClient,
+    async def _side_effect(
         product_name: str,
         wallet_id: WalletID,
         user_id: UserID,
         offset: int,
         limit: int,
     ) -> LicensedItemRpcGetPage:
+
+        if exception_to_raise is not None:
+            raise exception_to_raise
+
         assert _wallet_id == wallet_id
         if exception_to_raise is not None:
             raise exception_to_raise
-        extra = LicensedItemRpcGet.model_config.get("json_schema_extra")
-        assert isinstance(extra, dict)
-        examples = extra.get("examples")
+
+        examples = LicensedItemRpcGet.model_json_schema()["examples"]
         assert isinstance(examples, list)
         return LicensedItemRpcGetPage(
             items=[LicensedItemRpcGet.model_validate(ex) for ex in examples],
             total=len(examples),
         )
 
-    mock_wb_api_server_rcp.patch(
-        "simcore_service_api_server.services_rpc.wb_api_server._get_available_licensed_items_for_wallet",
-        side_effect,
+    mock_handler_in_licenses_rpc_interface(
+        handler_name="get_available_licensed_items_for_wallet",
+        side_effect=_side_effect,
     )
+
     resp = await client.get(
         f"{API_VTAG}/wallets/{_wallet_id}/licensed-items", auth=auth
     )
@@ -195,7 +240,7 @@ async def test_get_licensed_items_for_wallet(
     ],
 )
 async def test_checkout_licensed_item(
-    mock_wb_api_server_rcp: MockerFixture,
+    mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
     client: AsyncClient,
     auth: BasicAuth,
     exception_to_raise: Exception | None,
@@ -205,8 +250,7 @@ async def test_checkout_licensed_item(
     _wallet_id = faker.pyint(min_value=1)
     _licensed_item_id = faker.uuid4()
 
-    async def side_effect(
-        rabbitmq_rpc_client: RabbitMQRPCClient,
+    async def _side_effect(
         product_name: str,
         user_id: UserID,
         wallet_id: WalletID,
@@ -216,19 +260,19 @@ async def test_checkout_licensed_item(
     ) -> LicensedItemCheckoutRpcGet:
         if exception_to_raise is not None:
             raise exception_to_raise
-        extra = LicensedItemCheckoutRpcGet.model_config.get("json_schema_extra")
-        assert isinstance(extra, dict)
-        examples = extra.get("examples")
+
+        examples = LicensedItemCheckoutRpcGet.model_json_schema()["examples"]
         assert isinstance(examples, list)
         assert len(examples) > 0
         example = examples[0]
         assert isinstance(example, dict)
         return LicensedItemCheckoutRpcGet.model_validate(example)
 
-    mock_wb_api_server_rcp.patch(
-        "simcore_service_api_server.services_rpc.wb_api_server._checkout_licensed_item_for_wallet",
-        side_effect,
+    mock_handler_in_licenses_rpc_interface(
+        handler_name="checkout_licensed_item_for_wallet",
+        side_effect=_side_effect,
     )
+
     body = LicensedItemCheckoutData(
         number_of_seats=faker.pyint(min_value=1),
         service_run_id=cast(ServiceRunID, "myservice"),
@@ -251,8 +295,9 @@ async def test_checkout_licensed_item(
     ],
 )
 async def test_release_checked_out_licensed_item(
-    mock_wb_api_server_rcp: MockerFixture,
-    mock_rut_rpc: MockerFixture,
+    mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
+    mock_rut_rpc: None,
+    mocker: MockerFixture,
     client: AsyncClient,
     auth: BasicAuth,
     wb_api_exception_to_raise: Exception | None,
@@ -264,16 +309,16 @@ async def test_release_checked_out_licensed_item(
     _licensed_item_id = cast(UUID, faker.uuid4())
     _licensed_item_checkout_id = cast(UUID, faker.uuid4())
 
-    async def get_licensed_item_checkout(
+    # mocks PRC to -> RUT (NOTE: this is old style RPC client!)
+    async def _get_licensed_item_checkout_side_effect(
         rabbitmq_rpc_client: RabbitMQRPCClient,
         product_name: str,
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutGet:
         if rut_exception_to_raise is not None:
             raise rut_exception_to_raise
-        extra = LicensedItemCheckoutGet.model_config.get("json_schema_extra")
-        assert isinstance(extra, dict)
-        examples = extra.get("examples")
+
+        examples = LicensedItemCheckoutGet.model_json_schema()["examples"]
         assert isinstance(examples, list)
         assert len(examples) > 0
         example = examples[0]
@@ -283,34 +328,37 @@ async def test_release_checked_out_licensed_item(
             licensed_item_checkout_get.licensed_item_id = _licensed_item_id
         return licensed_item_checkout_get
 
-    async def release_licensed_item_for_wallet(
-        rabbitmq_rpc_client: RabbitMQRPCClient,
+    mocker.patch(
+        "simcore_service_api_server.services_rpc.resource_usage_tracker._get_licensed_item_checkout",
+        _get_licensed_item_checkout_side_effect,
+    )
+
+    # mocks RPC to -> wb-api-server
+    async def _release_licensed_item_for_wallet_side_effect(
         product_name: str,
         user_id: int,
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutRpcGet:
         if wb_api_exception_to_raise is not None:
             raise wb_api_exception_to_raise
-        extra = LicensedItemCheckoutRpcGet.model_config.get("json_schema_extra")
-        assert isinstance(extra, dict)
-        examples = extra.get("examples")
+
+        examples = LicensedItemCheckoutRpcGet.model_json_schema()["examples"]
         assert isinstance(examples, list)
         assert len(examples) > 0
         example = examples[0]
         assert isinstance(example, dict)
         return LicensedItemCheckoutRpcGet.model_validate(example)
 
-    mock_rut_rpc.patch(
-        "simcore_service_api_server.services_rpc.resource_usage_tracker._get_licensed_item_checkout",
-        get_licensed_item_checkout,
-    )
-    mock_wb_api_server_rcp.patch(
-        "simcore_service_api_server.services_rpc.wb_api_server._release_licensed_item_for_wallet",
-        release_licensed_item_for_wallet,
+    mock_handler_in_licenses_rpc_interface(
+        handler_name="release_licensed_item_for_wallet",
+        side_effect=_release_licensed_item_for_wallet_side_effect,
     )
 
+    # TEST
     resp = await client.post(
         f"{API_VTAG}/licensed-items/{_licensed_item_id}/checked-out-items/{_licensed_item_checkout_id}/release",
         auth=auth,
     )
+
+    # ASSERT
     assert resp.status_code == expected_api_server_status_code
