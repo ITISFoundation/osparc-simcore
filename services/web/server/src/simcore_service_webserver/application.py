@@ -189,7 +189,7 @@ def create_application() -> web.Application:
     setup_exporter(app)
     setup_realtime_collaboration(app)
 
-    # celery
+    # Celery
     setup_celery(app)
 
     # NOTE: *last* events

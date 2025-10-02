@@ -1,7 +1,6 @@
 import base64
 import pickle
 from functools import wraps
-from inspect import isasyncgenfunction
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from common_library.errors_classes import OsparcErrorMixin
@@ -39,28 +38,16 @@ class TaskNotFoundError(OsparcErrorMixin, Exception):
     msg_template = "Task with id '{task_id}' was not found"
 
 
-class InternalError(OsparcErrorMixin, Exception):
+class TaskManagerError(OsparcErrorMixin, Exception):
     msg_template = "An internal error occurred"
 
 
 def handle_celery_errors(func):
-    if isasyncgenfunction(func):
-
-        @wraps(func)
-        async def async_generator_wrapper(*args, **kwargs):
-            try:
-                async for item in func(*args, **kwargs):
-                    yield item
-            except CeleryError as exc:
-                raise InternalError from exc
-
-        return async_generator_wrapper
-
     @wraps(func)
     async def wrapper(*args, **kwargs):
         try:
             return await func(*args, **kwargs)
         except CeleryError as exc:
-            raise InternalError from exc
+            raise TaskManagerError from exc
 
     return wrapper

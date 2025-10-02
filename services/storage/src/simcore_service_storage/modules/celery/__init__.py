@@ -1,6 +1,6 @@
 import logging
 
-from celery_library.backends.redis import RedisTaskInfoStore
+from celery_library.backends.redis import RedisTaskStore
 from celery_library.common import create_app
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
@@ -28,7 +28,7 @@ def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
             app.state.task_manager = CeleryTaskManager(
                 create_app(settings),
                 settings,
-                RedisTaskInfoStore(redis_client_sdk),
+                RedisTaskStore(redis_client_sdk),
             )
 
             register_celery_types()

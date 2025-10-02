@@ -21,7 +21,7 @@ from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
 from ..errors import (
-    InternalError,
+    TaskManagerError,
     TaskNotFoundError,
     TransferrableCeleryError,
     decode_celery_transferrable_error,
@@ -44,7 +44,7 @@ async def cancel(
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
-    except InternalError as exc:
+    except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
 
@@ -62,7 +62,7 @@ async def status(
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
-    except InternalError as exc:
+    except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
     return AsyncJobStatus(
@@ -101,7 +101,7 @@ async def result(
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=job_id) from exc
-    except InternalError as exc:
+    except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
     if _status.task_state == TaskState.FAILURE:
@@ -136,7 +136,7 @@ async def list_jobs(
         tasks = await task_manager.list_tasks(
             owner_metadata=owner_metadata,
         )
-    except InternalError as exc:
+    except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
     return [

@@ -24,10 +24,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobStatus,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
-    JobAbortedError,
-    JobError,
-    JobMissingError,
-    JobNotDoneError,
     JobSchedulerError,
 )
 from models_library.api_schemas_storage.export_data_async_jobs import (
@@ -61,7 +57,9 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.tasks import _service
+from simcore_service_webserver.storage import _rest as storage_rest
+from simcore_service_webserver.tasks import _tasks_service
+from simcore_service_webserver.tasks._controller import _rest as tasks_rest
 from yarl import URL
 
 API_VERSION = "v0"
@@ -422,23 +420,6 @@ async def test_upload_file(
         assert not data
 
 
-@pytest.fixture
-def create_storage_rpc_client_mock(
-    mocker: MockerFixture,
-) -> Callable[[str, str, Any], None]:
-    def _(module: str, method: str, result_or_exception: Any):
-        def side_effect(*args, **kwargs):
-            if isinstance(result_or_exception, Exception):
-                raise result_or_exception
-
-            return result_or_exception
-
-        for fct in (f"{module}.{method}",):
-            mocker.patch(fct, side_effect=side_effect)
-
-    return _
-
-
 @pytest.mark.parametrize("user_role", _user_roles)
 @pytest.mark.parametrize(
     "backend_result_or_exception, expected_status",
@@ -473,12 +454,12 @@ async def test_export_data(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
+    create_backend_mock: Callable[[str, str, Any], None],
     faker: Faker,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    create_storage_rpc_client_mock(
+    create_backend_mock(
         "simcore_service_webserver.storage._rest",
         start_export_data.__name__,
         backend_result_or_exception,
@@ -497,156 +478,12 @@ async def test_export_data(
 
 @pytest.mark.parametrize("user_role", _user_roles)
 @pytest.mark.parametrize(
-    "backend_result_or_exception, expected_status",
-    [
-        (
-            AsyncJobStatus(
-                job_id=AsyncJobId(f"{_faker.uuid4()}"),
-                progress=ProgressReport(actual_value=0.5, total=1.0),
-                done=False,
-            ),
-            status.HTTP_200_OK,
-        ),
-        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
-        (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
-    ],
-    ids=lambda x: type(x).__name__,
-)
-async def test_get_async_jobs_status(
-    user_role: UserRole,
-    logged_user: UserInfoDict,
-    client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
-    backend_result_or_exception: Any,
-    expected_status: int,
-):
-    _job_id = AsyncJobId(_faker.uuid4())
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
-        f"_service.{_service.get_task_status.__name__}",
-        backend_result_or_exception,
-    )
-
-    response = await client.get(f"/{API_VERSION}/tasks/{_job_id}")
-    assert response.status == expected_status
-    if response.status == status.HTTP_200_OK:
-        response_body_data = (
-            Envelope[TaskStatus].model_validate(await response.json()).data
-        )
-        assert response_body_data is not None
-
-
-@pytest.mark.parametrize("user_role", _user_roles)
-@pytest.mark.parametrize(
-    "backend_result_or_exception, expected_status",
-    [
-        (
-            AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
-            status.HTTP_204_NO_CONTENT,
-        ),
-        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
-        (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
-    ],
-    ids=lambda x: type(x).__name__,
-)
-async def test_cancel_async_jobs(
-    user_role: UserRole,
-    logged_user: UserInfoDict,
-    client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
-    faker: Faker,
-    backend_result_or_exception: Any,
-    expected_status: int,
-):
-    _job_id = AsyncJobId(faker.uuid4())
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
-        f"_service.{_service.cancel_task.__name__}",
-        backend_result_or_exception,
-    )
-
-    response = await client.delete(f"/{API_VERSION}/tasks/{_job_id}")
-    assert response.status == expected_status
-
-
-@pytest.mark.parametrize("user_role", _user_roles)
-@pytest.mark.parametrize(
-    "backend_result_or_exception, expected_status",
-    [
-        (JobNotDoneError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
-        (AsyncJobResult(result=None), status.HTTP_200_OK),
-        (JobError(job_id=_faker.uuid4()), status.HTTP_500_INTERNAL_SERVER_ERROR),
-        (JobAbortedError(job_id=_faker.uuid4()), status.HTTP_410_GONE),
-        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
-        (JobMissingError(job_id=_faker.uuid4()), status.HTTP_404_NOT_FOUND),
-    ],
-    ids=lambda x: type(x).__name__,
-)
-async def test_get_async_job_result(
-    user_role: UserRole,
-    logged_user: UserInfoDict,
-    client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
-    faker: Faker,
-    backend_result_or_exception: Any,
-    expected_status: int,
-):
-    _job_id = AsyncJobId(faker.uuid4())
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
-        f"_service.{_service.get_task_result.__name__}",
-        backend_result_or_exception,
-    )
-
-    response = await client.get(f"/{API_VERSION}/tasks/{_job_id}/result")
-    assert response.status == expected_status
-
-
-@pytest.mark.parametrize("user_role", _user_roles)
-@pytest.mark.parametrize(
-    "backend_result_or_exception, expected_status",
-    [
-        (
-            [
-                AsyncJobGet(
-                    job_id=AsyncJobId(_faker.uuid4()),
-                    job_name="task_name",
-                )
-            ],
-            status.HTTP_200_OK,
-        ),
-        (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
-    ],
-    ids=lambda x: type(x).__name__,
-)
-async def test_get_user_async_jobs(
-    user_role: UserRole,
-    logged_user: UserInfoDict,
-    client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
-    backend_result_or_exception: Any,
-    expected_status: int,
-):
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
-        f"_service.{_service.list_tasks.__name__}",
-        backend_result_or_exception,
-    )
-
-    response = await client.get(f"/{API_VERSION}/tasks")
-    assert response.status == expected_status
-    if response.status == status.HTTP_200_OK:
-        Envelope[list[TaskGet]].model_validate(await response.json())
-
-
-@pytest.mark.parametrize("user_role", _user_roles)
-@pytest.mark.parametrize(
     "http_method, href, backend_method, backend_object, return_status, return_schema",
     [
         (
             "GET",
             "status_href",
-            _service.get_task_status.__name__,
+            _tasks_service.get_task_status.__name__,
             AsyncJobStatus(
                 job_id=AsyncJobId(_faker.uuid4()),
                 progress=ProgressReport(actual_value=0.5, total=1.0),
@@ -658,7 +495,7 @@ async def test_get_user_async_jobs(
         (
             "DELETE",
             "abort_href",
-            _service.cancel_task.__name__,
+            _tasks_service.cancel_task.__name__,
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
             status.HTTP_204_NO_CONTENT,
             None,
@@ -666,7 +503,7 @@ async def test_get_user_async_jobs(
         (
             "GET",
             "result_href",
-            _service.get_task_result.__name__,
+            _tasks_service.get_task_result.__name__,
             AsyncJobResult(result=None),
             status.HTTP_200_OK,
             TaskResult,
@@ -677,7 +514,7 @@ async def test_get_async_job_links(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_storage_rpc_client_mock: Callable[[str, str, Any], None],
+    create_backend_mock: Callable[[str, str, Any], None],
     faker: Faker,
     http_method: str,
     href: str,
@@ -686,8 +523,8 @@ async def test_get_async_job_links(
     return_status: int,
     return_schema: OutputSchema | None,
 ):
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.storage._rest",
+    create_backend_mock(
+        storage_rest.__name__,
         start_export_data.__name__,
         (
             AsyncJobGet(
@@ -709,9 +546,9 @@ async def test_get_async_job_links(
     assert response_body_data is not None
 
     # Call the different links and check the correct model and return status
-    create_storage_rpc_client_mock(
-        "simcore_service_webserver.tasks._rest",
-        f"_service.{backend_method}",
+    create_backend_mock(
+        tasks_rest.__name__,
+        f"_tasks_service.{backend_method}",
         backend_object,
     )
     response = await client.request(

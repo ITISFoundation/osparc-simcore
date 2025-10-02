@@ -1,5 +1,4 @@
 import datetime
-from collections.abc import AsyncIterator
 from enum import StrEnum
 from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
@@ -234,14 +233,6 @@ class TaskInfoStore(Protocol):
         task_id: TaskID,
         report: ProgressReport,
     ) -> None: ...
-
-    async def publish_task_event(self, task_id: TaskID, event: TaskEvent) -> None: ...
-
-    def consume_task_events(
-        self,
-        task_id: TaskID,
-        last_id: str | None = None,
-    ) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]: ...
 
 
 class TaskStatus(BaseModel):

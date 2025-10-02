@@ -66,7 +66,7 @@ from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
-from ..tasks._exception_handlers import handle_exceptions
+from ..tasks._controller._rest_exceptions import handle_rest_requests_exceptions
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
@@ -504,7 +504,7 @@ def _allow_only_simcore(v: int) -> int:
 )
 @login_required
 @permission_required("storage.files.*")
-@handle_exceptions
+@handle_rest_requests_exceptions
 async def export_data(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
@@ -543,7 +543,7 @@ async def export_data(request: web.Request) -> web.Response:
 @routes.post(_storage_locations_prefix + "/{location_id}/search", name="search")
 @login_required
 @permission_required("storage.files.*")
-@handle_exceptions
+@handle_rest_requests_exceptions
 async def search(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
