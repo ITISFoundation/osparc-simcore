@@ -1,3 +1,4 @@
+import datetime
 from typing import Literal
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
@@ -6,6 +7,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.projects import ProjectID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -20,7 +22,7 @@ async def copy_folders_from_project(
     *,
     body: FoldersBody,
     owner_metadata: OwnerMetadata,
-    user_id: UserID
+    user_id: UserID,
 ) -> tuple[AsyncJobGet, OwnerMetadata]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
@@ -41,7 +43,7 @@ async def start_export_data(
     paths_to_export: list[PathToExport],
     export_as: Literal["path", "download_link"],
     owner_metadata: OwnerMetadata,
-    user_id: UserID
+    user_id: UserID,
 ) -> tuple[AsyncJobGet, OwnerMetadata]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
@@ -52,4 +54,31 @@ async def start_export_data(
         export_as=export_as,
         user_id=user_id,
     )
+    return async_job_rpc_get, owner_metadata
+
+
+async def start_search(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    owner_metadata: OwnerMetadata,
+    user_id: UserID,
+    limit: int,
+    name_pattern: str,
+    modified_at: (
+        tuple[datetime.datetime | None, datetime.datetime | None] | None
+    ) = None,
+    project_id: ProjectID | None = None,
+) -> tuple[AsyncJobGet, OwnerMetadata]:
+    async_job_rpc_get = await submit(
+        rabbitmq_rpc_client,
+        rpc_namespace=STORAGE_RPC_NAMESPACE,
+        method_name=TypeAdapter(RPCMethodName).validate_python("start_search"),
+        owner_metadata=owner_metadata,
+        user_id=user_id,
+        limit=limit,
+        name_pattern=name_pattern,
+        modified_at=modified_at,
+        project_id=project_id,
+    )
+
     return async_job_rpc_get, owner_metadata

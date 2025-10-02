@@ -4001,6 +4001,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
+  /v0/tasks/{task_id}/stream:
+    get:
+      tags:
+      - long-running-tasks
+      summary: Get Async Job Stream
+      description: Retrieves the stream of a task
+      operationId: get_async_job_stream
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
   /v0/tasks/{task_id}/result:
     get:
       tags:
@@ -7939,7 +7983,58 @@ paths:
             schema:
               $ref: '#/components/schemas/DataExportPost'
       responses:
-        '200':
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
+  /v0/storage/locations/{location_id}/search:
+    post:
+      tags:
+      - storage
+      summary: Search
+      description: Starts a files/folders search
+      operationId: search
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchBodyParams'
+      responses:
+        '202':
           description: Successful Response
           content:
             application/json:
@@ -17053,6 +17148,62 @@ components:
         \ - A worker has picked up the task and is executing it\n- SUCCESS - Task\
         \ finished successfully\n- FAILED - Task finished with an error\n- ABORTED\
         \ - Task was aborted before completion"
+    SearchBodyParams:
+      properties:
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+        limit:
+          type: integer
+          maximum: 50
+          minimum: 1
+          title: Limit
+          description: Limits the number of returned items per page
+          default: 25
+      type: object
+      required:
+      - filters
+      title: SearchBodyParams
+    SearchFilters:
+      properties:
+        namePattern:
+          type: string
+          title: Namepattern
+          description: Name pattern with wildcard support (*, ?). Minimum of 3 non-wildcard
+            characters required.
+        modifiedAt:
+          anyOf:
+          - $ref: '#/components/schemas/SearchTimerangeFilter'
+          - type: 'null'
+          description: Filter results based on modification date range
+        projectId:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Projectid
+          description: If provided, only files within this project are searched
+      type: object
+      required:
+      - namePattern
+      title: SearchFilters
+    SearchTimerangeFilter:
+      properties:
+        from:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: From
+          description: Filter results before this date
+        until:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Until
+          description: Filter results after this date
+      type: object
+      title: SearchTimerangeFilter
     SelectBox:
       properties:
         structure:
@@ -18015,17 +18166,23 @@ components:
         status_href:
           type: string
           title: Status Href
-        result_href:
-          type: string
-          title: Result Href
         abort_href:
           type: string
           title: Abort Href
+        result_href:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Href
+        result_stream_href:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Stream Href
       type: object
       required:
       - task_id
       - status_href
-      - result_href
       - abort_href
       title: TaskGet
     TaskInfoDict:

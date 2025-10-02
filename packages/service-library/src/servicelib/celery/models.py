@@ -1,6 +1,6 @@
 import datetime
 from enum import StrEnum
-from typing import Annotated, Final, Literal, Protocol, Self, TypeAlias, TypeVar
+from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
 import orjson
@@ -133,7 +133,41 @@ class TasksQueue(StrEnum):
 class ExecutionMetadata(BaseModel):
     name: TaskName
     ephemeral: bool = True
+    streamed_result: bool = False
     queue: TasksQueue = TasksQueue.DEFAULT
+
+
+TaskEventID: TypeAlias = str
+
+
+class TaskEventType(StrEnum):
+    DATA = "data"
+    STATUS = "status"
+
+
+class TaskStatusValue(StrEnum):
+    CREATED = "created"
+    SUCCESS = "success"
+    ERROR = "error"
+
+
+class TaskDataEvent(BaseModel):
+    type: Literal[TaskEventType.DATA] = TaskEventType.DATA
+    data: Any
+
+
+class TaskStatusEvent(BaseModel):
+    type: Literal[TaskEventType.STATUS] = TaskEventType.STATUS
+    data: TaskStatusValue
+
+    def is_done(self):
+        return self.data in (TaskStatusValue.SUCCESS, TaskStatusValue.ERROR)
+
+
+TaskEvent = Annotated[
+    TaskDataEvent | TaskStatusEvent,
+    Field(discriminator="type"),
+]
 
 
 class Task(BaseModel):
@@ -176,7 +210,7 @@ class Task(BaseModel):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-class TaskInfoStore(Protocol):
+class TaskStore(Protocol):
     async def create_task(
         self,
         task_id: TaskID,
@@ -195,7 +229,9 @@ class TaskInfoStore(Protocol):
     async def remove_task(self, task_id: TaskID) -> None: ...
 
     async def set_task_progress(
-        self, task_id: TaskID, report: ProgressReport
+        self,
+        task_id: TaskID,
+        report: ProgressReport,
     ) -> None: ...
 
 

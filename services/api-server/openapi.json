@@ -12307,20 +12307,37 @@
             "type": "string",
             "title": "Status Href"
           },
-          "result_href": {
-            "type": "string",
-            "title": "Result Href"
-          },
           "abort_href": {
             "type": "string",
             "title": "Abort Href"
+          },
+          "result_href": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Href"
+          },
+          "result_stream_href": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Stream Href"
           }
         },
         "type": "object",
         "required": [
           "task_id",
           "status_href",
-          "result_href",
           "abort_href"
         ],
         "title": "TaskGet"

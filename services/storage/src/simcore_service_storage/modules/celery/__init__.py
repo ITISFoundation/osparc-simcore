@@ -1,20 +1,14 @@
 import logging
 
-from celery_library.backends.redis import RedisTaskInfoStore
+from celery_library.backends.redis import RedisTaskStore
 from celery_library.common import create_app
 from celery_library.task_manager import CeleryTaskManager
-from celery_library.types import register_celery_types, register_pydantic_types
+from celery_library.types import register_celery_types
 from fastapi import FastAPI
-from models_library.api_schemas_storage.storage_schemas import (
-    FileUploadCompletionBody,
-    FoldersBody,
-)
 from servicelib.logging_utils import log_context
 from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
-
-from ...models import FileMetaData
 
 _logger = logging.getLogger(__name__)
 
@@ -34,11 +28,10 @@ def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
             app.state.task_manager = CeleryTaskManager(
                 create_app(settings),
                 settings,
-                RedisTaskInfoStore(redis_client_sdk),
+                RedisTaskStore(redis_client_sdk),
             )
 
             register_celery_types()
-            register_pydantic_types(FileUploadCompletionBody, FileMetaData, FoldersBody)
 
     async def on_shutdown() -> None:
         with log_context(_logger, logging.INFO, "Shutting down Celery"):
