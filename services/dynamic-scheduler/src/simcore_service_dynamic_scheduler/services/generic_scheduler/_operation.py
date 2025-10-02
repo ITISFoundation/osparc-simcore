@@ -229,7 +229,13 @@ class ParallelStepGroup(BaseStepGroup):
         return TypeAdapter(StepsSubGroup).validate_python(tuple(self._steps))
 
 
-Operation: TypeAlias = Annotated[list[BaseStepGroup], Field(min_length=1)]
+class Operation(list):
+    def __init__(self, *gorups: BaseStepGroup, is_cancellable: bool = True) -> None:
+        super().__init__(gorups)
+        self.is_cancellable = is_cancellable
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({', '.join(repr(group) for group in self)})"
 
 
 def _has_abstract_methods(cls: type[object]) -> bool:
@@ -237,7 +243,13 @@ def _has_abstract_methods(cls: type[object]) -> bool:
 
 
 @validate_call(config={"arbitrary_types_allowed": True})
-def _validate_operation(operation: Operation) -> dict[StepName, type[BaseStep]]:
+def _validate_operation(  # noqa: C901
+    operation: Operation,
+) -> dict[StepName, type[BaseStep]]:
+    if len(operation) == 0:
+        msg = f"{Operation.__name__} should have at least 1 item"
+        raise ValueError(msg)
+
     detected_steps_names: dict[StepName, type[BaseStep]] = {}
     create_provided_keys: set[str] = set()
     undo_provided_keys: set[str] = set()

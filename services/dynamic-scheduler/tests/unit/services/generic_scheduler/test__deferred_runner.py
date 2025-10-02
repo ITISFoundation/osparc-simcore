@@ -221,25 +221,25 @@ def _get_step_group(
     "operation, expected_step_status, action, expected_steps_count",
     [
         (
-            [
+            Operation(
                 SingleStepGroup(_StepFinisheWithSuccess),
-            ],
+            ),
             StepStatus.SUCCESS,
             _Action.DO_NOTHING,
             1,
         ),
         (
-            [
+            Operation(
                 SingleStepGroup(_StepFinisheError),
-            ],
+            ),
             StepStatus.FAILED,
             _Action.DO_NOTHING,
             1,
         ),
         (
-            [
+            Operation(
                 SingleStepGroup(_StepLongRunningToCancel),
-            ],
+            ),
             StepStatus.CANCELLED,
             _Action.CANCEL,
             1,

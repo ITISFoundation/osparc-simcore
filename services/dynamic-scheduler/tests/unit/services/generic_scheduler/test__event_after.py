@@ -113,9 +113,9 @@ class _BS(BaseStep):
 @pytest.mark.parametrize(
     "operation",
     [
-        [
+        Operation(
             SingleStepGroup(_BS),
-        ],
+        ),
     ],
 )
 @pytest.mark.parametrize("event_type", EventType)

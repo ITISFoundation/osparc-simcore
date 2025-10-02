@@ -42,6 +42,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import
     CannotCancelWhileWaitingForManualInterventionError,
     InitialOperationContextKeyNotAllowedError,
     OperationContextValueIsNoneError,
+    OperationNotCancellableError,
     ProvidedOperationContextKeysAreMissingError,
     StepNameNotInCurrentGroupError,
     StepNotInErrorStateError,
@@ -506,9 +507,9 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
     "operation, expected_order, create_called, undo_called",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
-            ],
+            ),
             [
                 CreateSequence(_S1),
             ],
@@ -517,9 +518,9 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             id="s1",
         ),
         pytest.param(
-            [
+            Operation(
                 ParallelStepGroup(_S1, _S2),
-            ],
+            ),
             [
                 CreateRandom(_S1, _S2),
             ],
@@ -528,9 +529,9 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             id="p2",
         ),
         pytest.param(
-            [
+            Operation(
                 ParallelStepGroup(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
-            ],
+            ),
             [
                 CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
             ],
@@ -539,13 +540,13 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             id="p10",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 SingleStepGroup(_S2),
                 SingleStepGroup(_S3),
                 ParallelStepGroup(_S4, _S5, _S6, _S7, _S8, _S9),
                 SingleStepGroup(_S10),
-            ],
+            ),
             [
                 CreateSequence(_S1, _S2, _S3),
                 CreateRandom(_S4, _S5, _S6, _S7, _S8, _S9),
@@ -556,9 +557,9 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             id="s1-s1-s1-p6-s1",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_RS1),
-            ],
+            ),
             [
                 CreateSequence(_RS1),
                 UndoSequence(_RS1),
@@ -568,9 +569,9 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             id="s1(1r)",
         ),
         pytest.param(
-            [
+            Operation(
                 ParallelStepGroup(_RS1, _S1, _S2, _S3, _S4, _S5, _S6),
-            ],
+            ),
             [
                 CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
                 UndoRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
@@ -580,13 +581,13 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             id="p7(1r)",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_S2, _S3, _S4, _S5, _S6),
                 SingleStepGroup(_RS1),
                 SingleStepGroup(_S7),  # will not execute
                 ParallelStepGroup(_S8, _S9),  # will not execute
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4, _S5, _S6),
@@ -600,12 +601,12 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             id="s1-p5-s1(1r)-s1-p2",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_RS1, _S2, _S3, _S4, _S5, _S6),
                 SingleStepGroup(_S7),  # will not execute
                 ParallelStepGroup(_S8, _S9),  # will not execute
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
@@ -617,7 +618,7 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             id="s1-p6(1r)-s1-p2",
         ),
         pytest.param(
-            [
+            Operation(
                 ParallelStepGroup(
                     _S1,
                     _S2,
@@ -640,7 +641,7 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
                     _RS9,
                     _RS10,
                 ),
-            ],
+            ),
             [
                 CreateRandom(
                     _S1,
@@ -722,9 +723,9 @@ async def test_create_undo_order(
     "operation, expected_order, expected_keys",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_FCR1),
-            ],
+            ),
             [
                 CreateSequence(_FCR1),
                 UndoSequence(_FCR1),
@@ -739,10 +740,10 @@ async def test_create_undo_order(
             id="s1(1rf)",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 SingleStepGroup(_FCR1),
-            ],
+            ),
             [
                 CreateSequence(_S1, _FCR1),
                 UndoSequence(_FCR1),
@@ -759,10 +760,10 @@ async def test_create_undo_order(
             id="s2(1rf)",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_FCR1, _S2, _S3),
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _FCR1),
@@ -784,10 +785,10 @@ async def test_create_undo_order(
             id="s1p3(1rf)",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_FCR1, _FCR2, _S2, _S3),
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _FCR1, _FCR2),
@@ -842,11 +843,11 @@ async def test_fails_during_undo_is_in_error_state(
     "operation, expected_before_cancel_order, expected_order",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_S2, _S3, _S4),
                 SingleStepGroup(_SF1),
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
@@ -863,10 +864,10 @@ async def test_fails_during_undo_is_in_error_state(
             id="s1p3s1(1s)",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_S2, _S3, _S4, _SF1, _SF2),
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_SF1, _SF2, _S2, _S3, _S4),
@@ -921,11 +922,11 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
     "operation, expected_before_cancel_order, expected_order",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(
                     _S1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
                 ),
-            ],
+            ),
             [CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
             [
                 *[CreateSequence(_S1) for _ in range(_REPAT_COUNT)],
@@ -934,14 +935,14 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
             id="s1(r)",
         ),
         pytest.param(
-            [
+            Operation(
                 ParallelStepGroup(
                     _S1,
                     _S2,
                     repeat_steps=True,
                     wait_before_repeat=_FAST_REPEAT_INTERVAL,
                 ),
-            ],
+            ),
             [CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
             [
                 *[CreateRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
@@ -950,11 +951,11 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
             id="p2(r)",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(
                     _RS1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
                 ),
-            ],
+            ),
             [CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
             [
                 *[CreateSequence(_RS1) for _ in range(_REPAT_COUNT)],
@@ -963,14 +964,14 @@ _REPAT_COUNT: Final[NonNegativeInt] = 10
             id="s1(rf)",
         ),
         pytest.param(
-            [
+            Operation(
                 ParallelStepGroup(
                     _RS1,
                     _RS2,
                     repeat_steps=True,
                     wait_before_repeat=_FAST_REPEAT_INTERVAL,
                 ),
-            ],
+            ),
             [CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
             [
                 *[CreateRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
@@ -1018,14 +1019,14 @@ async def test_repeating_step(
     "operation, expected_order, expected_keys, after_restart_expected_order",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_S2, _S3, _S4),
                 SingleStepGroup(_WMI1),
                 # below are not included when waiting for manual intervention
                 ParallelStepGroup(_S5, _S6),
                 SingleStepGroup(_S7),
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
@@ -1053,14 +1054,14 @@ async def test_repeating_step(
             id="s1-p3-s1(1mi)",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_S2, _S3, _S4),
                 ParallelStepGroup(_WMI1, _WMI2, _WMI3, _S5, _S6, _S7),
                 # below are not included when waiting for manual intervention
                 SingleStepGroup(_S8),
                 ParallelStepGroup(_S9, _S10),
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
@@ -1147,18 +1148,36 @@ async def test_wait_for_manual_intervention(
 
 
 @pytest.mark.parametrize("app_count", [10])
+async def test_operation_is_not_cancellable(
+    reset_step_issue_tracker: None,
+    preserve_caplog_for_async_logging: None,
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+    operation_name: OperationName,
+):
+    operation = Operation(SingleStepGroup(_S1), is_cancellable=False)
+    register_operation(operation_name, operation)
+
+    schedule_id = await start_operation(selected_app, operation_name, {})
+
+    # even if cancelled, state of waiting for manual intervention remains the same
+    with pytest.raises(OperationNotCancellableError):
+        await cancel_operation(selected_app, schedule_id)
+
+
+@pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_order, expected_keys, after_restart_expected_order",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_S2, _S3, _S4),
                 SingleStepGroup(_FCR1),
                 # below are not included in any expected order
                 ParallelStepGroup(_S5, _S6),
                 SingleStepGroup(_S7),
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
@@ -1190,14 +1209,14 @@ async def test_wait_for_manual_intervention(
             id="s1-p3-s1(1r)",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_S1),
                 ParallelStepGroup(_S2, _S3, _S4),
                 ParallelStepGroup(_FCR1, _FCR2, _FCR3, _S5, _S6, _S7),
                 # below are not included in any expected order
                 SingleStepGroup(_S8),
                 ParallelStepGroup(_S9, _S10),
-            ],
+            ),
             [
                 CreateSequence(_S1),
                 CreateRandom(_S2, _S3, _S4),
@@ -1298,11 +1317,11 @@ async def test_errors_with_restart_operation_step_in_error(
     in_manual_intervention: bool,
     spies: _SpiesDict,
 ):
-    operation: Operation = [
+    operation = Operation(
         SingleStepGroup(_S1),
         ParallelStepGroup(_S2, _S3, _S4),
         ParallelStepGroup(_SF1, _FCR1),  # sleeps here forever
-    ]
+    )
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
@@ -1357,9 +1376,9 @@ async def test_errors_with_restart_operation_step_in_error(
     "operation, initial_context, expected_order, create_called, undo_called",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(RPCtxS1),
-            ],
+            ),
             {
                 "bs__c_req_1": _CTX_VALUE,  # required by create
             },
@@ -1371,9 +1390,9 @@ async def test_errors_with_restart_operation_step_in_error(
             id="s1",
         ),
         pytest.param(
-            [
+            Operation(
                 ParallelStepGroup(RPCtxS1, RPCtxS2),
-            ],
+            ),
             {
                 "bs__c_req_1": _CTX_VALUE,  # required by create
                 "bs__c_req_2": _CTX_VALUE,  # required by create
@@ -1386,9 +1405,9 @@ async def test_errors_with_restart_operation_step_in_error(
             id="p2",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(RPCtxR1),
-            ],
+            ),
             {
                 "bs_undo_c_req_1": _CTX_VALUE,  # required by create
                 "bs_undo_r_req_1": _CTX_VALUE,  # not created automatically since crete fails
@@ -1402,9 +1421,9 @@ async def test_errors_with_restart_operation_step_in_error(
             id="s1(1r)",
         ),
         pytest.param(
-            [
+            Operation(
                 ParallelStepGroup(RPCtxR1, RPCtxR2),
-            ],
+            ),
             {
                 "bs_undo_c_req_1": _CTX_VALUE,  # required by create
                 "bs_undo_c_req_2": _CTX_VALUE,  # required by create
@@ -1459,27 +1478,27 @@ async def test_operation_context_usage(
     "operation, initial_context",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(RPCtxS1),
-            ],
+            ),
             {
                 "bs__c_prov_1": _CTX_VALUE,  # already provied by step creates issue
             },
             id="s1",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(RPCtxR1),
-            ],
+            ),
             {
                 "bs_undo_c_prov_1": _CTX_VALUE,  # already provied by step creates issue
             },
             id="s1",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(RPCtxR1),
-            ],
+            ),
             {
                 "bs_undo_r_prov_1": _CTX_VALUE,  # already provied by step creates issue
             },
@@ -1510,9 +1529,9 @@ async def test_operation_initial_context_using_key_provided_by_step(
     "operation, initial_context, expected_order",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(RPCtxS1),
-            ],
+            ),
             {
                 # `bs__c_req_1` is missing
             },
@@ -1522,9 +1541,9 @@ async def test_operation_initial_context_using_key_provided_by_step(
             id="missing_context_key",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(RPCtxS1),
-            ],
+            ),
             {
                 "bs__c_req_1": None,
             },
@@ -1626,9 +1645,9 @@ class _BadImplementedStep(BaseStep):
     "operation, initial_context, expected_error_str, expected_order, expected_keys",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_BadImplementedStep),
-            ],
+            ),
             {
                 "trigger_undo": False,
                 "to_return": {
@@ -1652,9 +1671,9 @@ class _BadImplementedStep(BaseStep):
             id="create-returns-key-set-to-None",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_BadImplementedStep),
-            ],
+            ),
             {
                 "trigger_undo": False,
                 "to_return": {
@@ -1677,9 +1696,9 @@ class _BadImplementedStep(BaseStep):
             id="create-does-not-set-the-key-to-return",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_BadImplementedStep),
-            ],
+            ),
             {
                 "trigger_undo": True,
                 "to_return": {
@@ -1703,9 +1722,9 @@ class _BadImplementedStep(BaseStep):
             id="undo-returns-key-set-to-None",
         ),
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_BadImplementedStep),
-            ],
+            ),
             {
                 "trigger_undo": True,
                 "to_return": {

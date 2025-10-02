@@ -30,6 +30,7 @@ from ._deferred_runner import DeferredRunner
 from ._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     NoDataFoundError,
+    OperationNotCancellableError,
     StepNameNotInCurrentGroupError,
     StepNotInErrorStateError,
     StepNotWaitingForManualInterventionError,
@@ -144,6 +145,10 @@ class Core(SingletonInAppStateMixin):
         group_index = await schedule_data_proxy.read("group_index")
 
         operation = OperationRegistry.get_operation(operation_name)
+
+        if operation.is_cancellable is False:
+            raise OperationNotCancellableError(operation_name=operation_name)
+
         group = operation[group_index]
 
         group_step_proxies = get_group_step_proxies(

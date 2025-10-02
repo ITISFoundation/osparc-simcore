@@ -19,9 +19,8 @@ _logger = logging.getLogger(__name__)
 
 class AfterEventManager(SingletonInAppStateMixin):
     """
-    Allows to dynamically subscribe a callback to events.
-    Once an event is detected the call is processed and it is
-    automatically removed.
+    Allows to register an operation to be started after
+    another opearation ends the CREATED or UNDONE successfully.
     """
 
     app_state_name: str = "after_event_manager"
@@ -76,8 +75,8 @@ class AfterEventManager(SingletonInAppStateMixin):
         await events_proxy.delete()
 
         _logger.debug(
-            "Finished execution of event_type='%s' for schedule_id='%s', "
-            "started new_schedule_id='%s' from operation_name='%s' with initial_context='%s'",
+            "Finished execution of event_type='%s' for schedule_id='%s'. "
+            "Started new_schedule_id='%s' from operation_name='%s' with initial_context='%s'",
             event_type,
             schedule_id,
             new_schedule_id,

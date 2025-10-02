@@ -265,18 +265,18 @@ class _BS3(_BS): ...
     "operation, expected_order",
     [
         pytest.param(
-            [
+            Operation(
                 SingleStepGroup(_BS1),
-            ],
+            ),
             [
                 CreateSequence(_BS1),
             ],
             id="s1",
         ),
         pytest.param(
-            [
+            Operation(
                 ParallelStepGroup(_BS1, _BS2, _BS3),
-            ],
+            ),
             [
                 CreateRandom(_BS1, _BS2, _BS3),
             ],
@@ -331,9 +331,9 @@ async def test_can_recover_from_interruption(
     await ensure_expected_order(queue_poller.events, expected_order)
 
 
-# TODO: add a test that replaces a running operation with a new one! make sure nothing bad happens and that the old
-# running operation manages to reach the end
+# TODO: test the fowlloing scenarions:
+# - REAL use cases -> Run operation after one Finishes in completed (CREATE_SERVICE -> SERVICE_MONITOR)
+# - REAL use cases -> Run operation after one Finishes in undone (CREATE_SERVICE -> STOP_SERVICE)   # stop a partially created service
 
 
-# THe only way to do it is by cancelling the existing and waitin for it to finish before running something new.
-# Finally fulfill the test that is missing here
+# TODO: some operations cannot be cancelled? Errors are allowed to run the workflow in reverse but we are not allowed to cancel them
