@@ -1,7 +1,7 @@
 import logging
 
 from celery_library.errors import (
-    InternalError,
+    TaskManagerError,
     TaskNotFoundError,
     TransferrableCeleryError,
     decode_celery_transferrable_error,
@@ -36,7 +36,7 @@ async def cancel_task(
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
-    except InternalError as exc:
+    except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
 
@@ -58,7 +58,7 @@ async def get_task_result(
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
-    except InternalError as exc:
+    except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
     if _status.task_state == TaskState.FAILURE:
@@ -94,7 +94,7 @@ async def get_task_status(
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
-    except InternalError as exc:
+    except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
     return AsyncJobStatus(
@@ -112,7 +112,7 @@ async def list_tasks(
         tasks = await task_manager.list_tasks(
             owner_metadata=owner_metadata,
         )
-    except InternalError as exc:
+    except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
     return [
