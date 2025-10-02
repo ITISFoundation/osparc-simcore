@@ -13,9 +13,9 @@ from servicelib.celery.models import (
     OwnerMetadata,
     Task,
     TaskID,
-    TaskInfoStore,
     TaskState,
     TaskStatus,
+    TaskStore,
     TaskUUID,
 )
 from servicelib.celery.task_manager import TaskManager
@@ -35,7 +35,7 @@ _MAX_PROGRESS_VALUE = 1.0
 class CeleryTaskManager:
     _celery_app: Celery
     _celery_settings: CelerySettings
-    _task_info_store: TaskInfoStore
+    _task_info_store: TaskStore
 
     @handle_celery_errors
     async def submit_task(
