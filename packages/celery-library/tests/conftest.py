@@ -156,11 +156,11 @@ async def mock_celery_app(celery_config: dict[str, Any]) -> Celery:
 
 
 @pytest.fixture
-async def celery_task_manager(
+async def task_manager(
     mock_celery_app: Celery,
     celery_settings: CelerySettings,
     use_in_memory_redis: RedisSettings,
-) -> AsyncIterator[CeleryTaskManager]:
+) -> AsyncIterator[TaskManager]:
     register_celery_types()
 
     try:

@@ -25,9 +25,12 @@ from servicelib.celery.models import (
     OwnerMetadata,
     TaskID,
     TaskState,
+    TaskStatusEvent,
+    TaskStatusValue,
     TaskUUID,
     Wildcard,
 )
+from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
@@ -89,24 +92,43 @@ async def dreamer_task(task: Task, task_id: TaskID) -> list[int]:
     return numbers
 
 
+async def event_publisher_task(task: Task, task_id: TaskID) -> None:
+    """Task that publishes custom events for testing event consumption."""
+    from servicelib.celery.models import TaskDataEvent
+
+    task_manager = get_app_server(task.app).task_manager
+
+    data_event = TaskDataEvent(data={"message": "Processing started", "step": 1})
+    await task_manager.publish_task_event(task_id, data_event)
+    data_event = TaskDataEvent(data={"message": "Halfway done", "step": 2})
+    await task_manager.publish_task_event(task_id, data_event)
+    data_event = TaskDataEvent(data={"message": "Processing completed", "step": 3})
+    await task_manager.publish_task_event(task_id, data_event)
+
+    await task_manager.publish_task_event(
+        task_id, TaskStatusEvent(data=TaskStatusValue.SUCCESS)
+    )
+
+
 @pytest.fixture
 def register_celery_tasks() -> Callable[[Celery], None]:
     def _(celery_app: Celery) -> None:
         register_task(celery_app, fake_file_processor)
         register_task(celery_app, failure_task)
         register_task(celery_app, dreamer_task)
+        register_task(celery_app, event_publisher_task)
 
     return _
 
 
 async def test_submitting_task_calling_async_function_results_with_success_state(
-    celery_task_manager: CeleryTaskManager,
+    task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
 
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
-    task_uuid = await celery_task_manager.submit_task(
+    task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=fake_file_processor.__name__,
         ),
@@ -120,27 +142,25 @@ async def test_submitting_task_calling_async_function_results_with_success_state
         stop=stop_after_delay(30),
     ):
         with attempt:
-            status = await celery_task_manager.get_task_status(
-                owner_metadata, task_uuid
-            )
+            status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
 
     assert (
-        await celery_task_manager.get_task_status(owner_metadata, task_uuid)
+        await task_manager.get_task_status(owner_metadata, task_uuid)
     ).task_state == TaskState.SUCCESS
     assert (
-        await celery_task_manager.get_task_result(owner_metadata, task_uuid)
+        await task_manager.get_task_result(owner_metadata, task_uuid)
     ) == "archive.zip"
 
 
 async def test_submitting_task_with_failure_results_with_error(
-    celery_task_manager: CeleryTaskManager,
+    task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
 
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
-    task_uuid = await celery_task_manager.submit_task(
+    task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=failure_task.__name__,
         ),
@@ -154,23 +174,21 @@ async def test_submitting_task_with_failure_results_with_error(
     ):
 
         with attempt:
-            raw_result = await celery_task_manager.get_task_result(
-                owner_metadata, task_uuid
-            )
+            raw_result = await task_manager.get_task_result(owner_metadata, task_uuid)
             assert isinstance(raw_result, TransferrableCeleryError)
 
-    raw_result = await celery_task_manager.get_task_result(owner_metadata, task_uuid)
+    raw_result = await task_manager.get_task_result(owner_metadata, task_uuid)
     assert f"{raw_result}" == "Something strange happened: BOOM!"
 
 
 async def test_cancelling_a_running_task_aborts_and_deletes(
-    celery_task_manager: CeleryTaskManager,
+    task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
 
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
-    task_uuid = await celery_task_manager.submit_task(
+    task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=dreamer_task.__name__,
         ),
@@ -179,22 +197,22 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 
     await asyncio.sleep(3.0)
 
-    await celery_task_manager.cancel_task(owner_metadata, task_uuid)
+    await task_manager.cancel_task(owner_metadata, task_uuid)
 
     with pytest.raises(TaskNotFoundError):
-        await celery_task_manager.get_task_status(owner_metadata, task_uuid)
+        await task_manager.get_task_status(owner_metadata, task_uuid)
 
-    assert task_uuid not in await celery_task_manager.list_tasks(owner_metadata)
+    assert task_uuid not in await task_manager.list_tasks(owner_metadata)
 
 
 async def test_listing_task_uuids_contains_submitted_task(
-    celery_task_manager: CeleryTaskManager,
+    task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
 
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
-    task_uuid = await celery_task_manager.submit_task(
+    task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=dreamer_task.__name__,
         ),
@@ -207,15 +225,15 @@ async def test_listing_task_uuids_contains_submitted_task(
         stop=stop_after_delay(10),
     ):
         with attempt:
-            tasks = await celery_task_manager.list_tasks(owner_metadata)
+            tasks = await task_manager.list_tasks(owner_metadata)
             assert any(task.uuid == task_uuid for task in tasks)
 
-    tasks = await celery_task_manager.list_tasks(owner_metadata)
+    tasks = await task_manager.list_tasks(owner_metadata)
     assert any(task.uuid == task_uuid for task in tasks)
 
 
 async def test_filtering_listing_tasks(
-    celery_task_manager: CeleryTaskManager,
+    task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
     class MyOwnerMetadata(OwnerMetadata):
@@ -232,7 +250,7 @@ async def test_filtering_listing_tasks(
             owner_metadata = MyOwnerMetadata(
                 user_id=user_id, product_name=_faker.word(), owner=_owner
             )
-            task_uuid = await celery_task_manager.submit_task(
+            task_uuid = await task_manager.submit_task(
                 ExecutionMetadata(
                     name=dreamer_task.__name__,
                 ),
@@ -247,7 +265,7 @@ async def test_filtering_listing_tasks(
                 product_name=_faker.word(),
                 owner=_owner,
             )
-            task_uuid = await celery_task_manager.submit_task(
+            task_uuid = await task_manager.submit_task(
                 ExecutionMetadata(
                     name=dreamer_task.__name__,
                 ),
@@ -260,9 +278,38 @@ async def test_filtering_listing_tasks(
             product_name="*",
             owner=_owner,
         )
-        tasks = await celery_task_manager.list_tasks(search_owner_metadata)
+        tasks = await task_manager.list_tasks(search_owner_metadata)
         assert expected_task_uuids == {task.uuid for task in tasks}
     finally:
         # clean up all tasks. this should ideally be done in the fixture
         for task_uuid, owner_metadata in all_tasks:
-            await celery_task_manager.cancel_task(owner_metadata, task_uuid)
+            await task_manager.cancel_task(owner_metadata, task_uuid)
+
+
+async def test_consuming_task_events(
+    task_manager: TaskManager,
+    with_celery_worker: WorkController,
+):
+
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit a task that publishes events
+    task_uuid = await task_manager.submit_task(
+        ExecutionMetadata(
+            name=event_publisher_task.__name__,
+        ),
+        owner_metadata=owner_metadata,
+    )
+
+    async for _, event in task_manager.consume_task_events(
+        owner_metadata=owner_metadata,
+        task_uuid=task_uuid,
+    ):
+        task_is_done = isinstance(event, TaskStatusEvent) and event.is_done()
+
+        if task_is_done:
+            break
+
+    assert (
+        await task_manager.get_task_status(owner_metadata, task_uuid)
+    ).task_state == TaskState.SUCCESS
