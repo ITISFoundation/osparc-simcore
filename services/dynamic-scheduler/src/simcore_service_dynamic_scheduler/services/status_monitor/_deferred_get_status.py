@@ -12,7 +12,7 @@ from models_library.projects_nodes_io import NodeID
 from servicelib.deferred_tasks import BaseDeferredHandler, TaskUID
 from servicelib.deferred_tasks._base_deferred_handler import DeferredContext
 
-from .. import scheduler_interface, service_tracker
+from .. import common_interface, service_tracker
 from ..notifier import notify_service_status_change
 
 _logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         node_id: NodeID = context["node_id"]
 
         service_status: NodeGet | RunningDynamicServiceDetails | NodeGetIdle = (
-            await scheduler_interface.get_service_status(app, node_id=node_id)
+            await common_interface.get_service_status(app, node_id=node_id)
         )
         _logger.debug(
             "Service status type=%s, %s", type(service_status), service_status
