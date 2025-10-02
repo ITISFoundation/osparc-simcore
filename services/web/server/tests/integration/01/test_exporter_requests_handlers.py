@@ -170,7 +170,7 @@ async def client(
         monkeypatch,
         {
             "SCICRUNCH_API_KEY": "REPLACE_ME_with_valid_api_key",
-            "WEBSERVER_RPC_NAMESPACE": "null",
+            "WEBSERVER_RPC_NAMESPACE": "webserver",
         },
     )
 
