@@ -30,7 +30,7 @@ def _build_key(task_id: TaskID) -> str:
     return _CELERY_TASK_PREFIX + task_id
 
 
-@dataclass
+@dataclass(frozen=True)
 class RedisTaskStore:
     _redis_client_sdk: RedisClientSDK
 
