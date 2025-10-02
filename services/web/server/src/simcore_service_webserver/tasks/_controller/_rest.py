@@ -25,7 +25,6 @@ from servicelib.aiohttp.rest_responses import (
 )
 from servicelib.celery.models import OwnerMetadata
 from servicelib.long_running_tasks import lrt_api
-from simcore_service_webserver.tasks._controller._rest_schemas import TaskPathParams
 
 from ..._meta import API_VTAG
 from ...celery import get_task_manager
@@ -34,6 +33,7 @@ from ...long_running_tasks.plugin import webserver_request_context_decorator
 from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from .. import _tasks_service
 from ._rest_exceptions import handle_rest_requests_exceptions
+from ._rest_schemas import TaskPathParams
 
 log = logging.getLogger(__name__)
 
