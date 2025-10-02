@@ -94,6 +94,12 @@ def _list_filter_with_partial_file_id_stmt(
                 ),
             )
         )
+    else:
+        project_ids = user_or_project_filter.project_ids
+        if len(project_ids) > 0:
+            conditions.append(
+                file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids)
+            )
 
     # Optional filters
     if file_id_prefix:
