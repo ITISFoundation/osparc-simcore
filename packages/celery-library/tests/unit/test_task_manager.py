@@ -25,8 +25,6 @@ from servicelib.celery.models import (
     OwnerMetadata,
     TaskID,
     TaskState,
-    TaskStatusEvent,
-    TaskStatusValue,
     TaskUUID,
     Wildcard,
 )
@@ -92,31 +90,11 @@ async def dreamer_task(task: Task, task_id: TaskID) -> list[int]:
     return numbers
 
 
-async def event_publisher_task(task: Task, task_id: TaskID) -> None:
-    """Task that publishes custom events for testing event consumption."""
-    from servicelib.celery.models import TaskDataEvent
-
-    task_manager = get_app_server(task.app).task_manager
-
-    data_event = TaskDataEvent(data={"message": "Processing started", "step": 1})
-    await task_manager.publish_task_event(task_id, data_event)
-    data_event = TaskDataEvent(data={"message": "Halfway done", "step": 2})
-    await task_manager.publish_task_event(task_id, data_event)
-    data_event = TaskDataEvent(data={"message": "Processing completed", "step": 3})
-    await task_manager.publish_task_event(task_id, data_event)
-
-    await task_manager.publish_task_event(
-        task_id, TaskStatusEvent(data=TaskStatusValue.SUCCESS)
-    )
-
-
-@pytest.fixture
 def register_celery_tasks() -> Callable[[Celery], None]:
     def _(celery_app: Celery) -> None:
         register_task(celery_app, fake_file_processor)
         register_task(celery_app, failure_task)
         register_task(celery_app, dreamer_task)
-        register_task(celery_app, event_publisher_task)
 
     return _
 
@@ -284,32 +262,3 @@ async def test_filtering_listing_tasks(
         # clean up all tasks. this should ideally be done in the fixture
         for task_uuid, owner_metadata in all_tasks:
             await task_manager.cancel_task(owner_metadata, task_uuid)
-
-
-async def test_consuming_task_events(
-    task_manager: TaskManager,
-    with_celery_worker: WorkController,
-):
-
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
-    # Submit a task that publishes events
-    task_uuid = await task_manager.submit_task(
-        ExecutionMetadata(
-            name=event_publisher_task.__name__,
-        ),
-        owner_metadata=owner_metadata,
-    )
-
-    async for _, event in task_manager.consume_task_events(
-        owner_metadata=owner_metadata,
-        task_uuid=task_uuid,
-    ):
-        task_is_done = isinstance(event, TaskStatusEvent) and event.is_done()
-
-        if task_is_done:
-            break
-
-    assert (
-        await task_manager.get_task_status(owner_metadata, task_uuid)
-    ).task_state == TaskState.SUCCESS

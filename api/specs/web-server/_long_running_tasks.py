@@ -45,15 +45,6 @@ def get_async_job_status(
     """Retrieves the status of a task"""
 
 
-@router.get(
-    "/tasks/{task_id}/stream",
-)
-def get_async_job_stream(
-    _path_params: Annotated[_PathParam, Depends()],
-):
-    """Retrieves the stream of a task"""
-
-
 @router.delete(
     "/tasks/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,

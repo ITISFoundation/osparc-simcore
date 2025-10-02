@@ -1,27 +1,22 @@
-import asyncio
 import logging
 from typing import Final
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskResult,
     TaskStatus,
 )
-from models_library.sse import SSEEvent, SSEHeaders
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     get_long_running_manager,
 )
 from servicelib.aiohttp.requests_validation import (
-    parse_request_headers_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import (
     create_data_response,
-    create_event_stream_response,
 )
 from servicelib.celery.models import OwnerMetadata
 from servicelib.long_running_tasks import lrt_api
@@ -180,37 +175,3 @@ async def get_async_job_result(request: web.Request) -> web.Response:
         TaskResult(result=task_result.result, error=None),
         status=status.HTTP_200_OK,
     )
-
-
-@routes.get(
-    _task_prefix + "/{task_id}/stream",
-    name="get_async_job_stream",
-)
-@login_required
-@handle_rest_requests_exceptions
-async def get_async_job_stream(request: web.Request) -> web.Response:
-    _req_ctx = AuthenticatedRequestContext.model_validate(request)
-    _header_params = parse_request_headers_as(SSEHeaders, request)
-    _path_params = parse_request_path_parameters_as(TaskPathParams, request)
-
-    async def event_generator():
-        try:
-            async for event_id, event in get_task_manager(
-                request.app
-            ).consume_task_events(
-                owner_metadata=OwnerMetadata.model_validate(
-                    WebServerOwnerMetadata(
-                        user_id=_req_ctx.user_id,
-                        product_name=_req_ctx.product_name,
-                    ).model_dump()
-                ),
-                task_uuid=_path_params.task_id,
-                last_id=_header_params.last_event_id,
-            ):
-                yield SSEEvent(
-                    id=event_id, event=event.type, data=[json_dumps(event.data)]
-                ).serialize()
-        except asyncio.CancelledError:
-            return
-
-    return create_event_stream_response(event_generator=event_generator)
