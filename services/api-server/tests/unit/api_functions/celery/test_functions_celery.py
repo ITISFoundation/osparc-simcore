@@ -310,7 +310,7 @@ async def test_celery_error_propagation(
     ],
 )
 @pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
-@pytest.mark.parametrize("mocked_app_dependencies", [None])
+@pytest.mark.parametrize("mocked_app_rpc_dependencies", [None])
 async def test_run_project_function_parent_info(
     app: FastAPI,
     with_api_server_celery_worker: TestWorkController,
@@ -424,7 +424,6 @@ async def test_run_project_function_parent_info(
     ],
 )
 @pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
-@pytest.mark.parametrize("mocked_app_dependencies", [None])
 async def test_map_function_parent_info(
     app: FastAPI,
     with_api_server_celery_worker: TestWorkController,
@@ -546,7 +545,6 @@ async def test_map_function_parent_info(
         assert side_effect_checks["headers_checked"] is True
 
 
-@pytest.mark.parametrize("mocked_app_dependencies", [None])
 async def test_map_function(
     app: FastAPI,
     with_api_server_celery_worker: TestWorkController,
