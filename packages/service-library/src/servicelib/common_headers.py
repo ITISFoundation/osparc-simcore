@@ -1,6 +1,5 @@
 from typing import Final
 
-# Custom Headers
 UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE: Final[str] = "undefined"
 X_DYNAMIC_SIDECAR_REQUEST_DNS: Final[str] = "X-Dynamic-Sidecar-Request-DNS"
 X_DYNAMIC_SIDECAR_REQUEST_SCHEME: Final[str] = "X-Dynamic-Sidecar-Request-Scheme"
