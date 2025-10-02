@@ -210,7 +210,7 @@ class Task(BaseModel):
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
-class TaskInfoStore(Protocol):
+class TaskStore(Protocol):
     async def create_task(
         self,
         task_id: TaskID,

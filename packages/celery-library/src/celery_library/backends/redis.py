@@ -12,7 +12,7 @@ from servicelib.celery.models import (
     OwnerMetadata,
     Task,
     TaskID,
-    TaskInfoStore,
+    TaskStore,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
@@ -142,4 +142,4 @@ class RedisTaskStore:
 
 
 if TYPE_CHECKING:
-    _: type[TaskInfoStore] = RedisTaskStore
+    _: type[TaskStore] = RedisTaskStore
