@@ -12,6 +12,8 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from ._errors import NoDataFoundError
 from ._lifecycle_protocol import SupportsLifecycle
 from ._models import (
+    EventType,
+    OperationContext,
     OperationErrorType,
     OperationName,
     ProvidedOperationContext,
@@ -26,6 +28,7 @@ _SCHEDULE_NAMESPACE: Final[str] = "SCH"
 _STEPS_KEY: Final[str] = "STEPS"
 _GROUPS_KEY: Final[str] = "GROUPS"
 _OPERATION_CONTEXT_KEY: Final[str] = "OP_CTX"
+_EVENTS_KEY: Final[str] = "EVENTS"
 
 
 def _get_is_creating_str(*, is_creating: bool) -> str:
@@ -100,6 +103,12 @@ def _get_operation_context_hash_key(
     )
 
 
+def _get_schedule_events_hash_key(
+    *, schedule_id: ScheduleId, event_type: EventType
+) -> str:
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_EVENTS_KEY}:{event_type}"
+
+
 class Store(SingletonInAppStateMixin, SupportsLifecycle):
     """
     Interface to Redis, shuld not use directly but use the
@@ -143,7 +152,7 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
         """saves a single key-value pair in a hash"""
         await self.set_keys_in_hash(hash_key, {key: value})
 
-    async def get_key_from_hash(self, hash_key: str, *keys: str) -> tuple[Any, ...]:
+    async def get_keys_from_hash(self, hash_key: str, *keys: str) -> tuple[Any, ...]:
         """retrieves one or more keys from a hash"""
         result: list[str | None] = await handle_redis_returns_union_types(
             self.redis.hmget(hash_key, list(keys))
@@ -175,6 +184,9 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
     async def delete(self, *keys: str) -> None:
         """removes keys from redis"""
         await handle_redis_returns_union_types(self.redis.delete(*keys))
+
+    async def exists(self, hash_key: str) -> bool:
+        return await handle_redis_returns_union_types(self.redis.exists(hash_key)) == 1
 
 
 class _UpdateScheduleDataDict(TypedDict):
@@ -217,7 +229,7 @@ class ScheduleDataStoreProxy:
     async def read(self, key: str) -> Any:
         """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
-        (result,) = await self._store.get_key_from_hash(hash_key, key)
+        (result,) = await self._store.get_keys_from_hash(hash_key, key)
         if result is None:
             raise NoDataFoundError(key=key, hash_key=hash_key)
         return result
@@ -347,7 +359,7 @@ class StepStoreProxy:
     async def read(self, key: str) -> Any:
         """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
-        (result,) = await self._store.get_key_from_hash(hash_key, key)
+        (result,) = await self._store.get_keys_from_hash(hash_key, key)
         if result is None:
             raise NoDataFoundError(schedule_id=self.schedule_id, hash_key=hash_key)
         return result
@@ -413,11 +425,62 @@ class OperationContextProxy:
             return {}
 
         hash_key = self._get_hash_key()
-        result = await self._store.get_key_from_hash(hash_key, *keys)
+        result = await self._store.get_keys_from_hash(hash_key, *keys)
         return dict(zip(keys, result, strict=True))
 
     async def delete(self) -> None:
         await self._store.delete(self._get_hash_key())
+
+
+class _EventDict(TypedDict):
+    operation_name: NotRequired[OperationName]
+    initial_context: NotRequired[OperationContext]
+
+
+class OperationEventsProxy:
+    def __init__(
+        self, store: Store, schedule_id: ScheduleId, event_type: EventType
+    ) -> None:
+        self._store = store
+        self.schedule_id = schedule_id
+        self.event_type = event_type
+
+    def _get_hash_key(self) -> str:
+        return _get_schedule_events_hash_key(
+            schedule_id=self.schedule_id, event_type=self.event_type
+        )
+
+    @overload
+    async def create_or_update(
+        self, key: Literal["initial_context"], value: OperationContext
+    ) -> None: ...
+    @overload
+    async def create_or_update(
+        self, key: Literal["operation_name"], value: OperationName
+    ) -> None: ...
+    async def create_or_update(self, key: str, value: Any) -> None:
+        await self._store.set_key_in_hash(self._get_hash_key(), key, value)
+
+    async def create_or_update_multiple(self, updates: _EventDict) -> None:
+        await self._store.set_keys_in_hash(self._get_hash_key(), updates=updates)  # type: ignore[arg-type]
+
+    @overload
+    async def read(self, key: Literal["operation_name"]) -> OperationName: ...
+    @overload
+    async def read(self, key: Literal["initial_context"]) -> OperationContext: ...
+    async def read(self, key: str) -> Any:
+        """raises NoDataFoundError if the key is not present in the hash"""
+        hash_key = self._get_hash_key()
+        (result,) = await self._store.get_keys_from_hash(hash_key, key)
+        if result is None:
+            raise NoDataFoundError(schedule_id=self.schedule_id, hash_key=hash_key)
+        return result
+
+    async def delete(self) -> None:
+        await self._store.delete(self._get_hash_key())
+
+    async def exists(self) -> bool:
+        return await self._store.exists(self._get_hash_key())
 
 
 class OperationRemovalProxy:

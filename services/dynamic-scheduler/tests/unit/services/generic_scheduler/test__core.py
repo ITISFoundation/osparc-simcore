@@ -9,12 +9,14 @@ from collections.abc import AsyncIterable, Awaitable, Callable, Iterable
 from contextlib import AsyncExitStack
 from datetime import timedelta
 from secrets import choice
-from typing import Any, Final
+from typing import Any, Final, TypedDict
+from unittest.mock import AsyncMock
 
 import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from pydantic import NonNegativeInt, TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
@@ -29,6 +31,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     RequiredOperationContext,
     ScheduleId,
     SingleStepGroup,
+    _core,
     cancel_operation,
     restart_operation_step_stuck_during_undo,
     restart_operation_step_stuck_in_manual_intervention_during_create,
@@ -47,9 +50,6 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     OperationContext,
 )
-from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
-    Store,
-)
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -65,6 +65,7 @@ from utils import (
     UndoRandom,
     UndoSequence,
     ensure_expected_order,
+    ensure_keys_in_store,
 )
 
 pytest_simcore_core_services_selection = [
@@ -72,7 +73,7 @@ pytest_simcore_core_services_selection = [
     "redis",
 ]
 pytest_simcore_ops_services_selection = [
-    "redis-commander",
+    #   "redis-commander",
 ]
 
 
@@ -136,6 +137,30 @@ async def selected_app(
 @pytest.fixture
 def operation_name() -> OperationName:
     return "test_op"
+
+
+class _SpiesDict(TypedDict):
+    enqueue_undo_completed_event: AsyncMock
+    enqueue_create_completed_event: AsyncMock
+
+
+@pytest.fixture
+def spies(mocker: MockerFixture) -> _SpiesDict:
+    return {
+        "enqueue_undo_completed_event": mocker.spy(
+            _core, "enqueue_undo_completed_event"
+        ),
+        "enqueue_create_completed_event": mocker.spy(
+            _core, "enqueue_create_completed_event"
+        ),
+    }
+
+
+def _ensure_spies(spies: _SpiesDict, *, create_called: bool, undo_called: bool) -> None:
+    assert spies["enqueue_create_completed_event"].call_count == (
+        1 if create_called else 0
+    )
+    assert spies["enqueue_undo_completed_event"].call_count == (1 if undo_called else 0)
 
 
 _STEPS_CALL_ORDER: list[tuple[str, str]] = []
@@ -352,17 +377,6 @@ class _BaseRequiresProvidesUndoContext(_UndoBS, _MixingGetKeNumber):
         }
 
 
-async def _assert_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
-    keys = set(await Store.get_from_app_state(app).redis.keys())
-    assert keys == expected_keys
-
-
-async def _ensure_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
-            await _assert_keys_in_store(app, expected_keys=expected_keys)
-
-
 async def _esnure_log_mesage(caplog: pytest.LogCaptureFixture, *, message: str) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
@@ -489,7 +503,7 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
 
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
-    "operation, expected_order",
+    "operation, expected_order, create_called, undo_called",
     [
         pytest.param(
             [
@@ -498,6 +512,8 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             [
                 CreateSequence(_S1),
             ],
+            True,
+            False,
             id="s1",
         ),
         pytest.param(
@@ -507,6 +523,8 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             [
                 CreateRandom(_S1, _S2),
             ],
+            True,
+            False,
             id="p2",
         ),
         pytest.param(
@@ -516,6 +534,8 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
             [
                 CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _S7, _S8, _S9, _S10),
             ],
+            True,
+            False,
             id="p10",
         ),
         pytest.param(
@@ -531,6 +551,8 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
                 CreateRandom(_S4, _S5, _S6, _S7, _S8, _S9),
                 CreateSequence(_S10),
             ],
+            True,
+            False,
             id="s1-s1-s1-p6-s1",
         ),
         pytest.param(
@@ -541,6 +563,8 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
                 CreateSequence(_RS1),
                 UndoSequence(_RS1),
             ],
+            False,
+            True,
             id="s1(1r)",
         ),
         pytest.param(
@@ -551,6 +575,8 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
                 CreateRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
                 UndoRandom(_S1, _S2, _S3, _S4, _S5, _S6, _RS1),
             ],
+            False,
+            True,
             id="p7(1r)",
         ),
         pytest.param(
@@ -569,6 +595,8 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
                 UndoRandom(_S2, _S3, _S4, _S5, _S6),
                 UndoSequence(_S1),
             ],
+            False,
+            True,
             id="s1-p5-s1(1r)-s1-p2",
         ),
         pytest.param(
@@ -584,6 +612,8 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
                 UndoRandom(_S2, _S3, _S4, _S5, _S6, _RS1),
                 UndoSequence(_S1),
             ],
+            False,
+            True,
             id="s1-p6(1r)-s1-p2",
         ),
         pytest.param(
@@ -657,6 +687,8 @@ class RPCtxR2(_BaseRequiresProvidesUndoContext): ...
                     _RS10,
                 ),
             ],
+            False,
+            True,
             id="p20(10r)",
         ),
     ],
@@ -669,6 +701,9 @@ async def test_create_undo_order(
     operation: Operation,
     operation_name: OperationName,
     expected_order: list[BaseExpectedStepOrder],
+    spies: _SpiesDict,
+    create_called: bool,
+    undo_called: bool,
 ):
     register_operation(operation_name, operation)
 
@@ -677,7 +712,9 @@ async def test_create_undo_order(
 
     await ensure_expected_order(steps_call_order, expected_order)
 
-    await _ensure_keys_in_store(selected_app, expected_keys=set())
+    await ensure_keys_in_store(selected_app, expected_keys=set())
+
+    _ensure_spies(spies, create_called=create_called, undo_called=undo_called)
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -784,6 +821,7 @@ async def test_fails_during_undo_is_in_error_state(
     operation_name: OperationName,
     expected_order: list[BaseExpectedStepOrder],
     expected_keys: set[str],
+    spies: _SpiesDict,
 ):
     register_operation(operation_name, operation)
 
@@ -793,7 +831,9 @@ async def test_fails_during_undo_is_in_error_state(
     await ensure_expected_order(steps_call_order, expected_order)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
-    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+    await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+
+    _ensure_spies(spies, create_called=False, undo_called=False)
 
 
 @pytest.mark.parametrize("cancel_count", [1, 10])
@@ -851,6 +891,7 @@ async def test_cancelled_finishes_nicely(
     expected_before_cancel_order: list[BaseExpectedStepOrder],
     expected_order: list[BaseExpectedStepOrder],
     cancel_count: NonNegativeInt,
+    spies: _SpiesDict,
 ):
     register_operation(operation_name, operation)
 
@@ -866,7 +907,9 @@ async def test_cancelled_finishes_nicely(
 
     await ensure_expected_order(steps_call_order, expected_order)
 
-    await _ensure_keys_in_store(selected_app, expected_keys=set())
+    await ensure_keys_in_store(selected_app, expected_keys=set())
+
+    _ensure_spies(spies, create_called=False, undo_called=True)
 
 
 _FAST_REPEAT_INTERVAL: Final[timedelta] = timedelta(seconds=0.1)
@@ -946,6 +989,7 @@ async def test_repeating_step(
     operation_name: OperationName,
     expected_before_cancel_order: list[BaseExpectedStepOrder],
     expected_order: list[BaseExpectedStepOrder],
+    spies: _SpiesDict,
 ):
     register_operation(operation_name, operation)
 
@@ -955,6 +999,7 @@ async def test_repeating_step(
     await ensure_expected_order(
         steps_call_order, expected_before_cancel_order, use_only_first_entries=True
     )
+    _ensure_spies(spies, create_called=False, undo_called=False)
 
     # cancelling stops the loop and causes undo to run
     await cancel_operation(selected_app, schedule_id)
@@ -963,7 +1008,9 @@ async def test_repeating_step(
         steps_call_order, expected_order, use_only_last_entries=True
     )
 
-    await _ensure_keys_in_store(selected_app, expected_keys=set())
+    await ensure_keys_in_store(selected_app, expected_keys=set())
+
+    _ensure_spies(spies, create_called=False, undo_called=True)
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -1058,6 +1105,7 @@ async def test_wait_for_manual_intervention(
     expected_order: list[BaseExpectedStepOrder],
     expected_keys: set[str],
     after_restart_expected_order: list[BaseExpectedStepOrder],
+    spies: _SpiesDict,
 ):
     register_operation(operation_name, operation)
 
@@ -1068,13 +1116,15 @@ async def test_wait_for_manual_intervention(
 
     await ensure_expected_order(steps_call_order, expected_order)
 
-    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+    await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+    _ensure_spies(spies, create_called=False, undo_called=False)
 
     # even if cancelled, state of waiting for manual intervention remains the same
     with pytest.raises(CannotCancelWhileWaitingForManualInterventionError):
         await cancel_operation(selected_app, schedule_id)
 
-    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+    await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+    _ensure_spies(spies, create_called=False, undo_called=False)
 
     # set step to no longer raise and restart the failed steps
     steps_to_restart = _get_steps_matching_class(
@@ -1092,7 +1142,8 @@ async def test_wait_for_manual_intervention(
     )
     # should finish schedule operation
     await ensure_expected_order(steps_call_order, after_restart_expected_order)
-    await _ensure_keys_in_store(selected_app, expected_keys=set())
+    await ensure_keys_in_store(selected_app, expected_keys=set())
+    _ensure_spies(spies, create_called=True, undo_called=False)
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -1200,6 +1251,7 @@ async def test_restart_undo_operation_step_in_error(
     expected_order: list[BaseExpectedStepOrder],
     expected_keys: set[str],
     after_restart_expected_order: list[BaseExpectedStepOrder],
+    spies: _SpiesDict,
 ):
     register_operation(operation_name, operation)
 
@@ -1209,7 +1261,7 @@ async def test_restart_undo_operation_step_in_error(
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
 
     await ensure_expected_order(steps_call_order, expected_order)
-    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+    await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
     # give some time for the deferred runner to store the errors
     # avoids flakiness
@@ -1231,7 +1283,8 @@ async def test_restart_undo_operation_step_in_error(
     )
     # should finish schedule operation
     await ensure_expected_order(steps_call_order, after_restart_expected_order)
-    await _ensure_keys_in_store(selected_app, expected_keys=set())
+    await ensure_keys_in_store(selected_app, expected_keys=set())
+    _ensure_spies(spies, create_called=False, undo_called=True)
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -1243,6 +1296,7 @@ async def test_errors_with_restart_operation_step_in_error(
     register_operation: Callable[[OperationName, Operation], None],
     operation_name: OperationName,
     in_manual_intervention: bool,
+    spies: _SpiesDict,
 ):
     operation: Operation = [
         SingleStepGroup(_S1),
@@ -1295,10 +1349,12 @@ async def test_errors_with_restart_operation_step_in_error(
                 in_manual_intervention=True,
             )
 
+    _ensure_spies(spies, create_called=False, undo_called=False)
+
 
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
-    "operation, initial_context, expected_order",
+    "operation, initial_context, expected_order, create_called, undo_called",
     [
         pytest.param(
             [
@@ -1310,6 +1366,8 @@ async def test_errors_with_restart_operation_step_in_error(
             [
                 CreateSequence(RPCtxS1),
             ],
+            True,
+            False,
             id="s1",
         ),
         pytest.param(
@@ -1323,6 +1381,8 @@ async def test_errors_with_restart_operation_step_in_error(
             [
                 CreateRandom(RPCtxS1, RPCtxS2),
             ],
+            True,
+            False,
             id="p2",
         ),
         pytest.param(
@@ -1337,6 +1397,8 @@ async def test_errors_with_restart_operation_step_in_error(
                 CreateSequence(RPCtxR1),
                 UndoSequence(RPCtxR1),
             ],
+            False,
+            True,
             id="s1(1r)",
         ),
         pytest.param(
@@ -1353,6 +1415,8 @@ async def test_errors_with_restart_operation_step_in_error(
                 CreateRandom(RPCtxR1, RPCtxR2),
                 UndoRandom(RPCtxR1, RPCtxR2),
             ],
+            False,
+            True,
             id="p2(2r)",
         ),
     ],
@@ -1367,6 +1431,9 @@ async def test_operation_context_usage(
     operation_name: OperationName,
     initial_context: OperationContext,
     expected_order: list[BaseExpectedStepOrder],
+    spies: _SpiesDict,
+    create_called: bool,
+    undo_called: bool,
 ):
     caplog.at_level(logging.DEBUG)
     caplog.clear()
@@ -1379,10 +1446,12 @@ async def test_operation_context_usage(
     # NOTE: might fail because it raised ProvidedOperationContextKeysAreMissingError check logs
     await ensure_expected_order(steps_call_order, expected_order)
 
-    await _ensure_keys_in_store(selected_app, expected_keys=set())
+    await ensure_keys_in_store(selected_app, expected_keys=set())
 
     assert f"{OperationContextValueIsNoneError.__name__}" not in caplog.text
     assert f"{ProvidedOperationContextKeysAreMissingError.__name__}" not in caplog.text
+
+    _ensure_spies(spies, create_called=create_called, undo_called=undo_called)
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -1425,13 +1494,15 @@ async def test_operation_initial_context_using_key_provided_by_step(
     operation: Operation,
     operation_name: OperationName,
     initial_context: OperationContext,
+    spies: _SpiesDict,
 ):
     register_operation(operation_name, operation)
 
     with pytest.raises(InitialOperationContextKeyNotAllowedError):
         await start_operation(selected_app, operation_name, initial_context)
 
-    await _ensure_keys_in_store(selected_app, expected_keys=set())
+    await ensure_keys_in_store(selected_app, expected_keys=set())
+    _ensure_spies(spies, create_called=False, undo_called=False)
 
 
 @pytest.mark.parametrize("app_count", [10])
@@ -1474,6 +1545,7 @@ async def test_step_does_not_receive_context_key_or_is_none(
     operation_name: OperationName,
     initial_context: OperationContext,
     expected_order: list[BaseExpectedStepOrder],
+    spies: _SpiesDict,
 ):
     caplog.at_level(logging.DEBUG)
     caplog.clear()
@@ -1487,7 +1559,8 @@ async def test_step_does_not_receive_context_key_or_is_none(
 
     await ensure_expected_order(steps_call_order, expected_order)
 
-    await _ensure_keys_in_store(selected_app, expected_keys=set())
+    await ensure_keys_in_store(selected_app, expected_keys=set())
+    _ensure_spies(spies, create_called=False, undo_called=True)
 
 
 class _BadImplementedStep(BaseStep):
@@ -1668,6 +1741,7 @@ async def test_step_does_not_provide_declared_key_or_is_none(
     expected_error_str: str,
     expected_order: list[BaseExpectedStepOrder],
     expected_keys: set[str],
+    spies: _SpiesDict,
 ):
     caplog.at_level(logging.DEBUG)
     caplog.clear()
@@ -1682,4 +1756,5 @@ async def test_step_does_not_provide_declared_key_or_is_none(
     await ensure_expected_order(steps_call_order, expected_order)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
-    await _ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+    await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+    _ensure_spies(spies, create_called=False, undo_called=False)

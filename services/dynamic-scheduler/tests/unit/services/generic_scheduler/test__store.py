@@ -17,7 +17,10 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._models import
     StepStatus,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
+    EventType,
+    OperationContext,
     OperationContextProxy,
+    OperationEventsProxy,
     OperationRemovalProxy,
     ScheduleDataStoreProxy,
     StepGroupProxy,
@@ -52,12 +55,12 @@ async def test_store_workflow(store: Store):
     await store.set_key_in_hash("hash1", "key1", "value1")
     await _assert_keys(store, {"hash1"})
     await _assert_keys_in_hash(store, "hash1", {"key1"})
-    assert await store.get_key_from_hash("hash1", "key1") == ("value1",)
-    assert await store.get_key_from_hash("hash1", "key1", "key1") == (
+    assert await store.get_keys_from_hash("hash1", "key1") == ("value1",)
+    assert await store.get_keys_from_hash("hash1", "key1", "key1") == (
         "value1",
         "value1",
     )
-    assert await store.get_key_from_hash("hash1", "missing1", "missing2") == (
+    assert await store.get_keys_from_hash("hash1", "missing1", "missing2") == (
         None,
         None,
     )
@@ -66,13 +69,13 @@ async def test_store_workflow(store: Store):
     await store.delete_key_from_hash("hash1", "key1")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, "hash1", set())
-    assert await store.get_key_from_hash("hash1", "key1") == (None,)
+    assert await store.get_keys_from_hash("hash1", "key1") == (None,)
 
     # save multiple values
     await store.set_keys_in_hash("hash2", {"key1": "value1", "key2": 2, "key3": True})
     await _assert_keys(store, {"hash2"})
     await _assert_keys_in_hash(store, "hash2", {"key1", "key2", "key3"})
-    assert await store.get_key_from_hash("hash2", "key1", "key2", "key3") == (
+    assert await store.get_keys_from_hash("hash2", "key1", "key2", "key3") == (
         "value1",
         2,
         True,
@@ -84,7 +87,7 @@ async def test_store_workflow(store: Store):
     )
     await _assert_keys(store, {"hash2"})
     await _assert_keys_in_hash(store, "hash2", {"key2"})
-    assert await store.get_key_from_hash("hash2", "key1", "key2", "key3") == (
+    assert await store.get_keys_from_hash("hash2", "key1", "key2", "key3") == (
         None,
         2,
         None,
@@ -100,7 +103,7 @@ async def test_store_workflow(store: Store):
     await store.delete("hash2")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, "hash2", set())
-    assert await store.get_key_from_hash("hash2", "key1", "key2", "key3") == (
+    assert await store.get_keys_from_hash("hash2", "key1", "key2", "key3") == (
         None,
         None,
         None,
@@ -122,7 +125,7 @@ async def test_store_workflow(store: Store):
 async def test_store_supporse_multiple_python_base_types(store: Store, value: Any):
     # values are stored and recovered in their original type
     await store.set_key_in_hash("hash1", "key1", value)
-    assert (await store.get_key_from_hash("hash1", "key1")) == (value,)
+    assert (await store.get_keys_from_hash("hash1", "key1")) == (value,)
 
 
 @pytest.fixture
@@ -268,7 +271,7 @@ async def test_step_group_proxy(
     )
 
     async def _get_steps_count() -> int | None:
-        (response,) = await store.get_key_from_hash(
+        (response,) = await store.get_keys_from_hash(
             step_group_proxy._get_hash_key(), "done_steps"  # noqa: SLF001
         )
         return response
@@ -381,3 +384,32 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
 
     # try to call when empty as well
     await proxy.delete()
+
+
+async def test_operation_events_proxy(store: Store, schedule_id: ScheduleId):
+    operation_name = "op1"
+    initial_context: OperationContext = {"k1": "v1", "k2": 2}
+
+    event_type = EventType.ON_CREATED_COMPLETED
+    proxy = OperationEventsProxy(store, schedule_id, event_type)
+    hash_key = f"SCH:{schedule_id}:EVENTS:{event_type}"
+
+    assert await proxy.exists() is False
+    await _assert_keys(store, set())
+    await _assert_keys_in_hash(store, hash_key, set())
+
+    await proxy.create_or_update_multiple(
+        {"operation_name": operation_name, "initial_context": initial_context}
+    )
+    assert await proxy.exists() is True
+
+    await _assert_keys(store, {hash_key})
+    await _assert_keys_in_hash(store, hash_key, {"operation_name", "initial_context"})
+
+    assert await proxy.read("operation_name") == operation_name
+    assert await proxy.read("initial_context") == initial_context
+
+    await proxy.delete()
+    assert await proxy.exists() is False
+    await _assert_keys(store, set())
+    await _assert_keys_in_hash(store, hash_key, set())
