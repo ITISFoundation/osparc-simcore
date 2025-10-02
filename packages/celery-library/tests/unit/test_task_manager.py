@@ -90,6 +90,7 @@ async def dreamer_task(task: Task, task_id: TaskID) -> list[int]:
     return numbers
 
 
+@pytest.fixture
 def register_celery_tasks() -> Callable[[Celery], None]:
     def _(celery_app: Celery) -> None:
         register_task(celery_app, fake_file_processor)
