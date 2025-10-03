@@ -1,4 +1,4 @@
 from . import server
-from ._request import RQT_LONG_RUNNING_TASKS_CONTEXT_APPKEY
+from ._request import LONG_RUNNING_TASKS_CONTEXT_REQKEY
 
-__all__ = ("server", "RQT_LONG_RUNNING_TASKS_CONTEXT_APPKEY")
+__all__ = ("server", "LONG_RUNNING_TASKS_CONTEXT_REQKEY")

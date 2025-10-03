@@ -36,7 +36,7 @@ from ._manager import (
     get_long_running_manager,
 )
 from ._request import (
-    RQT_LONG_RUNNING_TASKS_CONTEXT_APPKEY,
+    LONG_RUNNING_TASKS_CONTEXT_REQKEY,
 )
 
 
@@ -47,7 +47,7 @@ def _no_ops_decorator(handler: Handler):
 def _no_task_context_decorator(handler: Handler):
     @wraps(handler)
     async def _wrap(request: web.Request):
-        request[RQT_LONG_RUNNING_TASKS_CONTEXT_APPKEY] = {}
+        request[LONG_RUNNING_TASKS_CONTEXT_REQKEY] = {}
         return await handler(request)
 
     return _wrap

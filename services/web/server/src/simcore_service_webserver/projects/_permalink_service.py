@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Final, Protocol, cast
+from typing import Final, Protocol
 
 from aiohttp import web
 from models_library.api_schemas_webserver.permalinks import ProjectPermalink
@@ -37,7 +37,7 @@ def register_factory(app: web.Application, factory_coro: CreateLinkCoroutine):
 
 def _get_factory(app: web.Application) -> CreateLinkCoroutine:
     if _create := app.get(_PROJECT_PERMALINK_FACTORY_APPKEY):
-        return cast(CreateLinkCoroutine, _create)
+        return _create
 
     msg = "Undefined permalink factory. Check plugin initialization."
     raise PermalinkFactoryError(msg)
