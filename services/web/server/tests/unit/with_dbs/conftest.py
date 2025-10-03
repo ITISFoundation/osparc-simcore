@@ -54,9 +54,11 @@ from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
 from servicelib.common_aiopg_utils import DSN
+from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     AsyncJobComposedResult,
 )
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
@@ -69,6 +71,9 @@ from simcore_postgres_database.utils_products import (
     get_or_create_product_group,
 )
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.application_settings import (
+    get_application_settings,
+)
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.constants import (
     APP_AIOPG_ENGINE_KEY,
@@ -149,6 +154,7 @@ def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     storage_test_server_port: int,
     monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
+    service_name: str,
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -173,7 +179,8 @@ def app_environment(
             {
                 # this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
                 # affects PostgresSettings.POSTGRES_CLIENT_NAME
-                "HOSTNAME": "wb-test_host.0"
+                "HOSTNAME": "wb-test_host.0",
+                "WEBSERVER_RPC_NAMESPACE": service_name,
             },
         )
     )
@@ -249,6 +256,29 @@ async def client(
     """
     # WARNING: this fixture is commonly overriden. Check before renaming.
     return await aiohttp_client(web_server)
+
+
+@pytest.fixture
+async def webserver_rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    client: TestClient,  # app started
+) -> WebServerRpcClient:
+    """Returns a web-server RPC client connected to the web-server service"""
+
+    # ensure app is started
+    app = client.app
+    assert app
+    assert client.server.started
+
+    # get RPC namespace from settings
+    settings = get_application_settings(app)  # nosec
+    assert settings.WEBSERVER_RPC_NAMESPACE
+    rpc_namespace = settings.WEBSERVER_RPC_NAMESPACE
+
+    # Create the rabbit client
+    rabbit_client = await rabbitmq_rpc_client(f"client-for-{rpc_namespace}")
+
+    return WebServerRpcClient(rabbit_client, rpc_namespace)
 
 
 @pytest.fixture(scope="session")

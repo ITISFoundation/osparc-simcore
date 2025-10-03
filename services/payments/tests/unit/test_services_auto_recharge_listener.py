@@ -13,7 +13,7 @@ import pytest
 import sqlalchemy as sa
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodID,
@@ -205,7 +205,7 @@ async def mock_rpc_server(
             InvoiceDataGet.model_config["json_schema_extra"]["examples"][0]
         )
 
-    await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)
+    await rpc_server.register_router(router, namespace=DEFAULT_WEBSERVER_RPC_NAMESPACE)
 
     return rpc_server
 

@@ -3,19 +3,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any
 
 import pytest
-from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.products import ProductName
-from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
+from models_library.rpc.webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
-from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server._service_programs import ProgramService
 from simcore_service_api_server._service_solvers import SolverService
@@ -34,62 +29,35 @@ async def catalog_rpc_side_effect():
 
 
 @pytest.fixture
-def mocked_rpc_client(mocker: MockerFixture) -> MockType:
-    """This fixture mocks the RabbitMQRPCClient.request method which is used
-    in all RPC clients in the api-server, regardeless of the namespace.
-    """
-
-    async def _request(
-        namespace: RPCNamespace,
-        method_name: RPCMethodName,
-        **kwargs,
-    ) -> Any:
-
-        kwargs.pop("timeout_s", None)  # remove timeout from kwargs
-
-        # NOTE: we could switch to different namespaces
-        if namespace == WEBSERVER_RPC_NAMESPACE:
-            webserver_side_effect = WebserverRpcSideEffects()
-            return await getattr(webserver_side_effect, method_name)(
-                mocker.MagicMock(), **kwargs
-            )
-
-        if namespace == CATALOG_RPC_NAMESPACE:
-            catalog_side_effect = CatalogRpcSideEffects()
-            return await getattr(catalog_side_effect, method_name)(
-                mocker.MagicMock(), **kwargs
-            )
-
-        pytest.fail(f"Unexpected namespace {namespace} and method {method_name}")
-
-    mock = mocker.MagicMock(spec=RabbitMQRPCClient)
-    mock.request.side_effect = _request
-
-    return mock
-
-
-@pytest.fixture
 def wb_api_rpc_client(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
 ) -> WbApiRpcClient:
-    return WbApiRpcClient(_client=mocked_rpc_client)
+    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+
+    return WbApiRpcClient(
+        _rpc_client=WebServerRpcClient(
+            mocked_rabbit_rpc_client, DEFAULT_WEBSERVER_RPC_NAMESPACE
+        ),
+    )
 
 
 @pytest.fixture
 def director_v2_rpc_client(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
 ) -> DirectorV2Service:
-    return DirectorV2Service(_rpc_client=mocked_rpc_client)
+    return DirectorV2Service(_rpc_client=mocked_rabbit_rpc_client)
 
 
 @pytest.fixture
 def storage_rpc_client(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     user_id: UserID,
     product_name: ProductName,
 ) -> StorageService:
     return StorageService(
-        _rpc_client=mocked_rpc_client, _user_id=user_id, _product_name=product_name
+        _rpc_client=mocked_rabbit_rpc_client,
+        _user_id=user_id,
+        _product_name=product_name,
     )
 
 
@@ -124,12 +92,12 @@ def storage_rest_client(
 
 @pytest.fixture
 def catalog_service(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     product_name: ProductName,
     user_id: UserID,
 ) -> CatalogService:
     return CatalogService(
-        _rpc_client=mocked_rpc_client, user_id=user_id, product_name=product_name
+        _rpc_client=mocked_rabbit_rpc_client, user_id=user_id, product_name=product_name
     )
 
 
