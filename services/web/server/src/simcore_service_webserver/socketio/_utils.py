@@ -2,17 +2,21 @@ import inspect
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from types import ModuleType
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from socketio import AsyncServer  # type: ignore[import-untyped]
 
-APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = f"{__name__}.socketio_handlers"
-APP_CLIENT_SOCKET_SERVER_KEY = f"{__name__}.socketio_socketio"
+APP_CLIENT_SOCKET_DECORATED_HANDLERS_APPKEY: Final = web.AppKey(
+    "APP_CLIENT_SOCKET_DECORATED_HANDLERS", list[Callable]
+)
+APP_CLIENT_SOCKET_SERVER_APPKEY: Final = web.AppKey(
+    "APP_CLIENT_SOCKET_SERVER", AsyncServer
+)
 
 
 def get_socket_server(app: web.Application) -> AsyncServer:
-    return app[APP_CLIENT_SOCKET_SERVER_KEY]
+    return app[APP_CLIENT_SOCKET_SERVER_APPKEY]
 
 
 # The socket ID that was assigned to the client
@@ -76,7 +80,7 @@ def register_socketio_handlers(app: web.Application, module: ModuleType):
     partial_fcts = [
         _socket_io_handler(app)(func_handler) for func_handler in member_fcts
     ]
-    app[APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY] = partial_fcts
+    app[APP_CLIENT_SOCKET_DECORATED_HANDLERS_APPKEY] = partial_fcts
 
     # register the fcts
     for func in partial_fcts:
