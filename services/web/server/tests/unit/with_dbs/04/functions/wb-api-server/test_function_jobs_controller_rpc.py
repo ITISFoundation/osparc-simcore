@@ -32,12 +32,8 @@ from models_library.functions_errors import (
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.webserver_users import UserInfoDict
-from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from servicelib.celery.models import TaskKey
-from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
-    functions_rpc_interface as functions_rpc,
-)
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
 pytest_simcore_core_services_selection = ["rabbit"]
 
