@@ -8,7 +8,6 @@ Takes care of managing user generated resources such as:
 """
 
 import logging
-from typing import Final
 
 from aiohttp import web
 
@@ -17,10 +16,6 @@ from ..redis import setup_redis
 from .registry import CLIENT_SOCKET_REGISTRY_APPKEY, RedisResourceRegistry
 
 _logger = logging.getLogger(__name__)
-
-APP_RESOURCE_MANAGER_CLIENT_KEY: Final = web.AppKey(
-    "APP_RESOURCE_MANAGER_CLIENT_KEY", object
-)
 
 
 @app_setup_func(
