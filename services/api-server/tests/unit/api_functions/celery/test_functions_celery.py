@@ -42,7 +42,7 @@ from models_library.users import UserID
 from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
-from servicelib.celery.models import ExecutionMetadata, TaskID, TasksQueue
+from servicelib.celery.models import ExecutionMetadata, TaskKey, TasksQueue
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
@@ -114,7 +114,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
 
     async def run_function(
         task: Task,
-        task_id: TaskID,
+        task_key: TaskKey,
         *,
         user_identity: Identity,
         function: RegisteredFunction,
@@ -256,7 +256,7 @@ def _register_exception_task(exception: Exception) -> Callable[[Celery], None]:
 
     async def exception_task(
         task: Task,
-        task_id: TaskID,
+        task_id: TaskKey,
     ):
         raise exception
 

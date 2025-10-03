@@ -12,8 +12,8 @@ from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
-    TaskID,
     TaskInfoStore,
+    TaskKey,
     TaskState,
     TaskStatus,
     TaskUUID,
@@ -50,7 +50,7 @@ class CeleryTaskManager:
             msg=f"Submit {execution_metadata.name=}: {owner_metadata=} {task_params=}",
         ):
             task_uuid = uuid4()
-            task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+            task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
 
             expiry = (
                 self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
@@ -60,26 +60,26 @@ class CeleryTaskManager:
 
             try:
                 await self._task_info_store.create_task(
-                    task_id, execution_metadata, expiry=expiry
+                    task_key, execution_metadata, expiry=expiry
                 )
                 self._celery_app.send_task(
                     execution_metadata.name,
-                    task_id=task_id,
-                    kwargs={"task_id": task_id} | task_params,
+                    task_id=task_key,
+                    kwargs={"task_key": task_key} | task_params,
                     queue=execution_metadata.queue.value,
                 )
             except CeleryError as exc:
                 try:
-                    await self._task_info_store.remove_task(task_id)
+                    await self._task_info_store.remove_task(task_key)
                 except CeleryError:
                     _logger.warning(
                         "Unable to cleanup task '%s' during error handling",
-                        task_id,
+                        task_key,
                         exc_info=True,
                     )
                 raise TaskSubmissionError(
                     task_name=execution_metadata.name,
-                    task_id=task_id,
+                    task_key=task_key,
                     task_params=task_params,
                 ) from exc
 
@@ -93,19 +93,21 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"task cancellation: {owner_metadata=} {task_uuid=}",
         ):
-            task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
-            if not await self.task_exists(task_id):
-                raise TaskNotFoundError(task_id=task_id)
+            task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
+            if not await self.task_exists(task_key):
+                raise TaskNotFoundError(
+                    task_uuid=task_uuid, owner_metadata=owner_metadata
+                )
 
-            await self._task_info_store.remove_task(task_id)
-            await self._forget_task(task_id)
+            await self._task_info_store.remove_task(task_key)
+            await self._forget_task(task_key)
 
-    async def task_exists(self, task_id: TaskID) -> bool:
-        return await self._task_info_store.task_exists(task_id)
+    async def task_exists(self, task_key: TaskKey) -> bool:
+        return await self._task_info_store.task_exists(task_key)
 
     @make_async()
-    def _forget_task(self, task_id: TaskID) -> None:
-        self._celery_app.AsyncResult(task_id).forget()
+    def _forget_task(self, task_key: TaskKey) -> None:
+        self._celery_app.AsyncResult(task_key).forget()
 
     async def get_task_result(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
@@ -115,24 +117,26 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Get task result: {owner_metadata=} {task_uuid=}",
         ):
-            task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
-            if not await self.task_exists(task_id):
-                raise TaskNotFoundError(task_id=task_id)
+            task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
+            if not await self.task_exists(task_key):
+                raise TaskNotFoundError(
+                    task_uuid=task_uuid, owner_metadata=owner_metadata
+                )
 
-            async_result = self._celery_app.AsyncResult(task_id)
+            async_result = self._celery_app.AsyncResult(task_key)
             result = async_result.result
             if async_result.ready():
-                task_metadata = await self._task_info_store.get_task_metadata(task_id)
+                task_metadata = await self._task_info_store.get_task_metadata(task_key)
                 if task_metadata is not None and task_metadata.ephemeral:
-                    await self._task_info_store.remove_task(task_id)
-                    await self._forget_task(task_id)
+                    await self._task_info_store.remove_task(task_key)
+                    await self._forget_task(task_key)
             return result
 
     async def _get_task_progress_report(
-        self, task_id: TaskID, task_state: TaskState
+        self, task_key: TaskKey, task_state: TaskState
     ) -> ProgressReport:
         if task_state in (TaskState.STARTED, TaskState.RETRY):
-            progress = await self._task_info_store.get_task_progress(task_id)
+            progress = await self._task_info_store.get_task_progress(task_key)
             if progress is not None:
                 return progress
 
@@ -147,8 +151,8 @@ class CeleryTaskManager:
         )
 
     @make_async()
-    def _get_task_celery_state(self, task_id: TaskID) -> TaskState:
-        return TaskState(self._celery_app.AsyncResult(task_id).state)
+    def _get_task_celery_state(self, task_key: TaskKey) -> TaskState:
+        return TaskState(self._celery_app.AsyncResult(task_key).state)
 
     async def get_task_status(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
@@ -158,16 +162,18 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Getting task status: {owner_metadata=} {task_uuid=}",
         ):
-            task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
-            if not await self.task_exists(task_id):
-                raise TaskNotFoundError(task_id=task_id)
+            task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
+            if not await self.task_exists(task_key):
+                raise TaskNotFoundError(
+                    task_uuid=task_uuid, owner_metadata=owner_metadata
+                )
 
-            task_state = await self._get_task_celery_state(task_id)
+            task_state = await self._get_task_celery_state(task_key)
             return TaskStatus(
                 task_uuid=task_uuid,
                 task_state=task_state,
                 progress_report=await self._get_task_progress_report(
-                    task_id, task_state
+                    task_key, task_state
                 ),
             )
 
@@ -179,9 +185,11 @@ class CeleryTaskManager:
         ):
             return await self._task_info_store.list_tasks(owner_metadata)
 
-    async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
+    async def set_task_progress(
+        self, task_key: TaskKey, report: ProgressReport
+    ) -> None:
         await self._task_info_store.set_task_progress(
-            task_id=task_id,
+            task_key=task_key,
             report=report,
         )
 
