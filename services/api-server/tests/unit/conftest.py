@@ -56,6 +56,7 @@ from pytest_simcore.helpers.director_v2_rpc_server import DirectorV2SideEffects
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.storage_rpc_server import StorageSideEffects
+from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
@@ -306,10 +307,10 @@ def mocked_app_rpc_dependencies(
     """
     Mocks rabbit clients overrides for the FastAPI app.
     """
-    from simcore_service_api_server.api.dependencies.rabbitmq import (
+    from simcore_service_api_server.api.dependencies.rabbitmq import (  # noqa: PLC0415
         get_rabbitmq_rpc_client,
     )
-    from simcore_service_api_server.api.dependencies.webserver_rpc import (
+    from simcore_service_api_server.api.dependencies.webserver_rpc import (  # noqa: PLC0415
         get_wb_api_rpc_client,
     )
 
@@ -318,7 +319,9 @@ def mocked_app_rpc_dependencies(
 
     # Overrides Depends[get_wb_api_rpc_client]
     async def _get_wb_api_rpc_client_override():
-        from simcore_service_api_server.services_rpc import wb_api_server
+        from simcore_service_api_server.services_rpc import (  # noqa: PLC0415
+            wb_api_server,
+        )
 
         try:
             return WbApiRpcClient.get_from_app_state(app)
@@ -634,6 +637,34 @@ def mocked_webserver_rpc_api(
     return {
         "mocked_rabbit_rpc_client": mocked_rabbit_rpc_client,
     }
+
+
+@pytest.fixture()
+def mock_handler_in_licenses_rpc_interface(
+    mocker: MockerFixture,
+) -> HandlerMockFactory:
+    """Factory to mock a handler in the LicensesRpcApi interface"""
+
+    def _create(
+        handler_name: str,
+        return_value: Any = None,
+        exception: Exception | None = None,
+        side_effect: Callable | None = None,
+    ) -> MockType:
+        from servicelib.rabbitmq.rpc_interfaces.webserver.v1.licenses import (  # noqa: PLC0415
+            LicensesRpcApi,
+        )
+
+        assert exception is None or side_effect is None
+
+        return mocker.patch.object(
+            LicensesRpcApi,
+            handler_name,
+            return_value=return_value,
+            side_effect=exception or side_effect,
+        )
+
+    return _create
 
 
 @pytest.fixture
