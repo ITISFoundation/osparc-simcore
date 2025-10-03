@@ -41,10 +41,16 @@ from ._event import (
     enqueue_schedule_event,
     enqueue_undo_completed_event,
 )
+from ._event_after_registration import (
+    register_to_start_after_on_created_completed,
+    register_to_start_after_on_undo_completed,
+)
 from ._models import (
+    EventType,
     OperationContext,
     OperationErrorType,
     OperationName,
+    OperationToStart,
     ScheduleId,
     StepName,
     StepStatus,
@@ -57,6 +63,7 @@ from ._operation import (
 from ._store import (
     DeleteStepKeys,
     OperationContextProxy,
+    OperationEventsProxy,
     ScheduleDataStoreProxy,
     StepGroupProxy,
     StepStoreProxy,
@@ -84,7 +91,11 @@ class Core(SingletonInAppStateMixin):
         self._store: Store = Store.get_from_app_state(app)
 
     async def start_operation(
-        self, operation_name: OperationName, initial_operation_context: OperationContext
+        self,
+        operation_name: OperationName,
+        initial_operation_context: OperationContext,
+        on_create_completed: OperationToStart | None,
+        on_undo_completed: OperationToStart | None,
     ) -> ScheduleId:
         """start an operation by it's given name and providing an initial context"""
         schedule_id: ScheduleId = f"{uuid4()}"
@@ -116,6 +127,16 @@ class Core(SingletonInAppStateMixin):
             operation_name=operation_name,
         )
         await operation_content_proxy.create_or_update(initial_operation_context)
+
+        if on_create_completed:
+            await register_to_start_after_on_created_completed(
+                self.app, schedule_id, to_start=on_create_completed
+            )
+
+        if on_undo_completed:
+            await register_to_start_after_on_undo_completed(
+                self.app, schedule_id=schedule_id, to_start=on_undo_completed
+            )
 
         await enqueue_schedule_event(self.app, schedule_id)
         return schedule_id
@@ -493,10 +514,19 @@ class Core(SingletonInAppStateMixin):
             except IndexError:
 
                 # 1b) if reached the end of the CREATE operation -> remove all created data [EMIT create complete event]
+                on_created_proxy = OperationEventsProxy(
+                    self._store, schedule_id, EventType.ON_CREATED_COMPLETED
+                )
+                if await on_created_proxy.exists():
+                    operation_name = await on_created_proxy.read("operation_name")
+                    initial_context = await on_created_proxy.read("initial_context")
+                    await enqueue_create_completed_event(
+                        self.app, schedule_id, operation_name, initial_context
+                    )
+
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_creating=True
                 )
-                await enqueue_create_completed_event(self.app, schedule_id)
 
             return
 
@@ -572,10 +602,19 @@ class Core(SingletonInAppStateMixin):
             if previous_group_index < 0:
 
                 # 1a) if reached the end of the UNDO operation -> remove all created data [EMIT undo complete event]
+                on_undo_proxy = OperationEventsProxy(
+                    self._store, schedule_id, EventType.ON_UNDO_COMPLETED
+                )
+                if await on_undo_proxy.exists():
+                    operation_name = await on_undo_proxy.read("operation_name")
+                    initial_context = await on_undo_proxy.read("initial_context")
+                    await enqueue_undo_completed_event(
+                        self.app, schedule_id, operation_name, initial_context
+                    )
+
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_creating=False
                 )
-                await enqueue_undo_completed_event(self.app, schedule_id)
                 return
 
             # 1b) -> move to previous group
@@ -645,9 +684,15 @@ async def start_operation(
     app: FastAPI,
     operation_name: OperationName,
     initial_operation_context: OperationContext,
+    *,
+    on_create_completed: OperationToStart | None = None,
+    on_undo_completed: OperationToStart | None = None,
 ) -> ScheduleId:
     return await Core.get_from_app_state(app).start_operation(
-        operation_name, initial_operation_context
+        operation_name,
+        initial_operation_context,
+        on_create_completed,
+        on_undo_completed,
     )
 
 

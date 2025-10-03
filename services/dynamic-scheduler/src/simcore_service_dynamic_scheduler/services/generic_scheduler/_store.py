@@ -106,6 +106,13 @@ def _get_operation_context_hash_key(
 def _get_schedule_events_hash_key(
     *, schedule_id: ScheduleId, event_type: EventType
 ) -> str:
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME
+    # - SCHEDULE_NAMESPACE: namespace prefix
+    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - CONSTANT: the constant "EVENTS"
+    # - EVENT_TYPE: name of the event from EventType
+    # Example:
+    # - SCH:00000000-0000-0000-0000-000000000000:EVENTS:ON_...
     return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_EVENTS_KEY}:{event_type}"
 
 

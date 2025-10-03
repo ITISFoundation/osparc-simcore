@@ -3,6 +3,7 @@
 
 import asyncio
 from collections.abc import Awaitable, Callable
+from typing import Any, Final
 from unittest.mock import Mock, call
 from uuid import uuid4
 
@@ -17,6 +18,8 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._event_schedul
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     EventType,
+    OperationContext,
+    OperationName,
     ScheduleId,
 )
 from tenacity import (
@@ -29,6 +32,13 @@ from tenacity import (
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
+
+
+_RETRY_PARAMS: Final[dict[str, Any]] = {
+    "wait": wait_fixed(0.1),
+    "stop": stop_after_delay(5),
+    "retry": retry_if_exception_type(AssertionError),
+}
 
 
 @pytest.fixture
@@ -61,7 +71,7 @@ def app_environment(
 
 @pytest.fixture
 def event_scheduler(app: FastAPI) -> EventScheduler:
-    return app.state.generic_scheduler_event_scheduler
+    return EventScheduler.get_from_app_state(app)
 
 
 @pytest.fixture
@@ -72,7 +82,9 @@ def get_mock_safe_on_schedule_event(
     def _(side_effect: Callable[[ScheduleId], Awaitable[None]]) -> Mock:
         another_mock = Mock()
 
-        async def _mock(schedule_id: ScheduleId) -> None:
+        async def _mock(
+            schedule_id: ScheduleId,
+        ) -> None:
             await side_effect(schedule_id)
             another_mock(schedule_id)
 
@@ -143,14 +155,30 @@ async def test_enqueue_schedule_event_raises_error(
 @pytest.fixture
 def get_mock_safe_on_event_type(
     mocker: MockerFixture,
-) -> Callable[[Callable[[EventType, ScheduleId], Awaitable[None]]], Mock]:
+) -> Callable[
+    [
+        Callable[
+            [EventType, ScheduleId, OperationName, OperationContext], Awaitable[None]
+        ]
+    ],
+    Mock,
+]:
 
-    def _(side_effect: Callable[[EventType, ScheduleId], Awaitable[None]]) -> Mock:
+    def _(
+        side_effect: Callable[
+            [EventType, ScheduleId, OperationName, OperationContext], Awaitable[None]
+        ],
+    ) -> Mock:
         another_mock = Mock()
 
-        async def _mock(event_type: EventType, schedule_id: ScheduleId) -> None:
-            await side_effect(event_type, schedule_id)
-            another_mock(event_type, schedule_id)
+        async def _mock(
+            event_type: EventType,
+            schedule_id: ScheduleId,
+            operation_name: OperationName,
+            initial_context: OperationContext,
+        ) -> None:
+            await side_effect(event_type, schedule_id, operation_name, initial_context)
+            another_mock(event_type, schedule_id, operation_name, initial_context)
 
         core_mock = Mock()
         core_mock.safe_on_event_type = _mock
@@ -166,14 +194,23 @@ def get_mock_safe_on_event_type(
 @pytest.mark.parametrize("expected_event_type", EventType)
 async def test_enqueue_event_type(
     get_mock_safe_on_event_type: Callable[
-        [Callable[[EventType, ScheduleId], Awaitable[None]]], Mock
+        [
+            Callable[
+                [EventType, ScheduleId, OperationName, OperationContext],
+                Awaitable[None],
+            ]
+        ],
+        Mock,
     ],
     event_scheduler: EventScheduler,
     expected_event_type: EventType,
 ):
 
     async def _side_effect_nothing(
-        event_type: EventType, schedule_id: ScheduleId
+        event_type: EventType,
+        schedule_id: ScheduleId,
+        operation_name: OperationName,
+        initial_context: OperationContext,
     ) -> None:
         pass
 
@@ -182,26 +219,30 @@ async def test_enqueue_event_type(
     schedule_id = TypeAdapter(ScheduleId).validate_python(f"{uuid4()}")
     match expected_event_type:
         case EventType.ON_CREATED_COMPLETED:
-            await event_scheduler.enqueue_create_completed_event(schedule_id)
+            await event_scheduler.enqueue_create_completed_event(schedule_id, "op1", {})
         case EventType.ON_UNDO_COMPLETED:
-            await event_scheduler.enqueue_undo_completed_event(schedule_id)
+            await event_scheduler.enqueue_undo_completed_event(schedule_id, "op1", {})
         case _:
             pytest.fail("unsupported case")
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(5),
-        retry=retry_if_exception_type(AssertionError),
-    ):
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)  # wait for envet to trigger
-            assert mock.call_args_list == [call(expected_event_type, schedule_id)]
+            assert mock.call_args_list == [
+                call(expected_event_type, schedule_id, "op1", {})
+            ]
 
 
 @pytest.mark.parametrize("expected_event_type", EventType)
 async def test_enqueue_event_type_raises_error(
     get_mock_safe_on_event_type: Callable[
-        [Callable[[EventType, ScheduleId], Awaitable[None]]], Mock
+        [
+            Callable[
+                [EventType, ScheduleId, OperationName, OperationContext],
+                Awaitable[None],
+            ]
+        ],
+        Mock,
     ],
     event_scheduler: EventScheduler,
     caplog: pytest.LogCaptureFixture,
@@ -210,7 +251,10 @@ async def test_enqueue_event_type_raises_error(
     caplog.clear()
 
     async def _side_effect_raise_error(
-        event_type: EventType, schedule_id: ScheduleId
+        event_type: EventType,
+        schedule_id: ScheduleId,
+        operation_name: OperationName,
+        initial_context: OperationContext,
     ) -> None:
         msg = "always failing here as requesed"
         raise RuntimeError(msg)
@@ -221,17 +265,13 @@ async def test_enqueue_event_type_raises_error(
 
     match expected_event_type:
         case EventType.ON_CREATED_COMPLETED:
-            await event_scheduler.enqueue_create_completed_event(schedule_id)
+            await event_scheduler.enqueue_create_completed_event(schedule_id, "op1", {})
         case EventType.ON_UNDO_COMPLETED:
-            await event_scheduler.enqueue_undo_completed_event(schedule_id)
+            await event_scheduler.enqueue_undo_completed_event(schedule_id, "op1", {})
         case _:
             pytest.fail("unsupported case")
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(5),
-        retry=retry_if_exception_type(AssertionError),
-    ):
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)  # wait for envet to trigger
             assert "Unexpected error. Aborting message retry" in caplog.text

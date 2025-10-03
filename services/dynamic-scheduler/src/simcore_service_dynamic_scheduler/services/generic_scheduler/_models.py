@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import auto
 from typing import Annotated, Any, Final, TypeAlias
 
@@ -44,3 +45,9 @@ class OperationErrorType(StrAutoEnum):
 class EventType(StrAutoEnum):
     ON_CREATED_COMPLETED = auto()
     ON_UNDO_COMPLETED = auto()
+
+
+@dataclass(frozen=True)
+class OperationToStart:
+    operation_name: OperationName
+    initial_context: OperationContext

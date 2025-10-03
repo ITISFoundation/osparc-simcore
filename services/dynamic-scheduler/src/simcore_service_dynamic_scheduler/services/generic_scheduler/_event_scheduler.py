@@ -1,5 +1,6 @@
 import functools
 import logging
+from dataclasses import dataclass
 from typing import Final
 
 from fastapi import FastAPI
@@ -18,7 +19,7 @@ from ...core.settings import ApplicationSettings
 from ._core import Core
 from ._event_after import AfterEventManager
 from ._lifecycle_protocol import SupportsLifecycle
-from ._models import EventType, ScheduleId
+from ._models import EventType, OperationContext, OperationName, ScheduleId
 
 _logger = logging.getLogger(__name__)
 
@@ -62,6 +63,13 @@ def _stop_retry_for_unintended_errors(func):
     return wrapper
 
 
+@dataclass
+class _OperationToStartEvent:
+    schedule_id: ScheduleId
+    operation_name: OperationName
+    initial_context: OperationContext
+
+
 class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
     """Handles scheduling of single events for a given schedule_id"""
 
@@ -95,18 +103,24 @@ class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
 
     @_stop_retry_for_unintended_errors
     async def _on_created_completed_event(  # pylint:disable=method-hidden
-        self, schedule_id: ScheduleId
+        self, event: _OperationToStartEvent
     ) -> None:
         await AfterEventManager.get_from_app_state(self.app).safe_on_event_type(
-            EventType.ON_CREATED_COMPLETED, schedule_id
+            EventType.ON_CREATED_COMPLETED,
+            event.schedule_id,
+            event.operation_name,
+            event.initial_context,
         )
 
     @_stop_retry_for_unintended_errors
     async def _on_undo_completed_event(  # pylint:disable=method-hidden
-        self, schedule_id: ScheduleId
+        self, event: _OperationToStartEvent
     ) -> None:
         await AfterEventManager.get_from_app_state(self.app).safe_on_event_type(
-            EventType.ON_UNDO_COMPLETED, schedule_id
+            EventType.ON_UNDO_COMPLETED,
+            event.schedule_id,
+            event.operation_name,
+            event.initial_context,
         )
 
     async def enqueue_schedule_event(self, schedule_id: ScheduleId) -> None:
@@ -116,16 +130,34 @@ class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
             exchange=self._exchange,
         )
 
-    async def enqueue_create_completed_event(self, schedule_id: ScheduleId) -> None:
+    async def enqueue_create_completed_event(
+        self,
+        schedule_id: ScheduleId,
+        operation_name: OperationName,
+        initial_context: OperationContext,
+    ) -> None:
         await self._broker.publish(
-            schedule_id,
+            _OperationToStartEvent(
+                schedule_id=schedule_id,
+                operation_name=operation_name,
+                initial_context=initial_context,
+            ),
             queue=self._queue_create_completed_event,
             exchange=self._exchange,
         )
 
-    async def enqueue_undo_completed_event(self, schedule_id: ScheduleId) -> None:
+    async def enqueue_undo_completed_event(
+        self,
+        schedule_id: ScheduleId,
+        operation_name: OperationName,
+        initial_context: OperationContext,
+    ) -> None:
         await self._broker.publish(
-            schedule_id,
+            _OperationToStartEvent(
+                schedule_id=schedule_id,
+                operation_name=operation_name,
+                initial_context=initial_context,
+            ),
             queue=self._queue_undo_completed_event,
             exchange=self._exchange,
         )

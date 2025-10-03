@@ -9,9 +9,14 @@ from ._deferred_runner import (
     get_step_group_proxy,
     get_step_store_proxy,
 )
+from ._event_after_registration import (
+    register_to_start_after_on_created_completed,
+    register_to_start_after_on_undo_completed,
+)
 from ._lifespan import generic_scheduler_lifespan
 from ._models import (
     OperationName,
+    OperationToStart,
     ProvidedOperationContext,
     RequiredOperationContext,
     ScheduleId,
@@ -36,8 +41,11 @@ __all__: tuple[str, ...] = (
     "OperationContextProxy",
     "OperationName",
     "OperationRegistry",
+    "OperationToStart",
     "ParallelStepGroup",
     "ProvidedOperationContext",
+    "register_to_start_after_on_created_completed",
+    "register_to_start_after_on_undo_completed",
     "RequiredOperationContext",
     "restart_operation_step_stuck_during_undo",
     "restart_operation_step_stuck_in_manual_intervention_during_create",
