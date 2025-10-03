@@ -47,19 +47,19 @@ def service_name() -> str:
 def app_environment(
     rabbit_service: RabbitSettings,
     app_environment: EnvVarsDict,
-    docker_compose_service_environment_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    service_name: str,
 ):
     new_envs = setenvs_from_dict(
         monkeypatch,
         {
-            **docker_compose_service_environment_dict,
             **app_environment,
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
             "RABBIT_USER": rabbit_service.RABBIT_USER,
             "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
             "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
+            "WEBSERVER_RPC_NAMESPACE": service_name,
         },
     )
 
@@ -91,7 +91,7 @@ def mock_get_wallet_by_user(mocker: MockerFixture) -> tuple:
 
 
 _LICENSED_ITEM_CHECKOUT_GET = LicensedItemCheckoutGet.model_validate(
-    LicensedItemCheckoutGet.model_config["json_schema_extra"]["examples"][0]
+    LicensedItemCheckoutGet.model_json_schema()["examples"][0]
 )
 
 
@@ -138,7 +138,7 @@ async def test_license_checkout_workflow(
 ):
     assert client.app
 
-    result = await webserver_rpc_client.license.get_licensed_items(
+    result = await webserver_rpc_client.licenses.get_licensed_items(
         product_name=osparc_product_name, offset=0, limit=20
     )
     assert len(result.items) == 0
@@ -179,7 +179,7 @@ async def test_license_checkout_workflow(
             )
         )
 
-    result = await webserver_rpc_client.license.get_licensed_items(
+    result = await webserver_rpc_client.licenses.get_licensed_items(
         product_name=osparc_product_name, offset=0, limit=20
     )
     assert len(result.items) == 1
@@ -187,13 +187,13 @@ async def test_license_checkout_workflow(
     assert isinstance(result, LicensedItemRpcGetPage)
 
     with pytest.raises(NotImplementedError):
-        await webserver_rpc_client.license.get_available_licensed_items_for_wallet(
+        await webserver_rpc_client.licenses.get_available_licensed_items_for_wallet(
             user_id=logged_user["id"],
             product_name=osparc_product_name,
             wallet_id=1,
         )
 
-    checkout = await webserver_rpc_client.license.checkout_licensed_item_for_wallet(
+    checkout = await webserver_rpc_client.licenses.checkout_licensed_item_for_wallet(
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         wallet_id=1,
@@ -202,7 +202,7 @@ async def test_license_checkout_workflow(
         service_run_id="run_1",
     )
 
-    await webserver_rpc_client.license.release_licensed_item_for_wallet(
+    await webserver_rpc_client.licenses.release_licensed_item_for_wallet(
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         licensed_item_checkout_id=checkout.licensed_item_checkout_id,
