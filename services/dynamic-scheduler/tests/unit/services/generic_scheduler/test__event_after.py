@@ -32,7 +32,12 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._event_after i
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     EventType,
     OperationContext,
+    OperationToStart,
     ScheduleId,
+)
+from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
+    OperationEventsProxy,
+    Store,
 )
 from utils import ensure_keys_in_store
 
@@ -72,6 +77,11 @@ def after_event_manager(app: FastAPI) -> AfterEventManager:
 
 
 @pytest.fixture
+def store(app: FastAPI) -> Store:
+    return Store.get_from_app_state(app)
+
+
+@pytest.fixture
 def schedule_id(faker: Faker) -> ScheduleId:
     return TypeAdapter(ScheduleId).validate_python(faker.uuid4())
 
@@ -91,12 +101,14 @@ async def test_operation_is_missing(
     event_type: EventType,
 ):
     await ensure_keys_in_store(after_event_manager.app, expected_keys=set())
+
     with pytest.raises(OperationNotFoundError):
         await after_event_manager.register_to_start_after(
             schedule_id,
             event_type,
-            operation_name="missing-operation",
-            initial_context={},
+            to_start=OperationToStart(
+                operation_name="missing_operation", initial_context={}
+            ),
         )
     await ensure_keys_in_store(after_event_manager.app, expected_keys=set())
 
@@ -127,6 +139,7 @@ class _BS(BaseStep):
 )
 async def test_something(
     after_event_manager: AfterEventManager,
+    store: Store,
     schedule_id: ScheduleId,
     event_type: EventType,
     register_operation: Callable[[OperationName, Operation], None],
@@ -144,16 +157,24 @@ async def test_something(
     await after_event_manager.register_to_start_after(
         schedule_id,
         event_type,
-        operation_name=operation_name,
-        initial_context=initial_context,
+        to_start=OperationToStart(
+            operation_name=operation_name,
+            initial_context=initial_context,
+        ),
     )
     await ensure_keys_in_store(
         after_event_manager.app,
         expected_keys={f"SCH:{schedule_id}:EVENTS:{event_type}"},
     )
 
-    await after_event_manager.safe_on_event_type(event_type, schedule_id)
+    # ensure is still scheduled even when the DB entry is gone
+    events_proxy = OperationEventsProxy(store, schedule_id, event_type)
+    await events_proxy.delete()
     await ensure_keys_in_store(after_event_manager.app, expected_keys=set())
+
+    await after_event_manager.safe_on_event_type(
+        event_type, schedule_id, operation_name, initial_context
+    )
 
     assert mock_start_operation.call_args_list == [
         call(after_event_manager.app, operation_name, initial_context)
