@@ -2,7 +2,9 @@ import asyncio
 from copy import deepcopy
 from typing import Any, Final
 
+from fastapi import FastAPI
 from simcore_service_dynamic_scheduler.services.generic_scheduler import BaseStep
+from simcore_service_dynamic_scheduler.services.generic_scheduler._core import Store
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -125,3 +127,14 @@ async def ensure_expected_order(
                 use_only_first_entries=use_only_first_entries,
                 use_only_last_entries=use_only_last_entries,
             )
+
+
+async def _get_keys_in_store(app: FastAPI) -> set[str]:
+    return set(await Store.get_from_app_state(app).redis.keys())
+
+
+async def ensure_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            keys_instore = await _get_keys_in_store(app)
+            assert keys_instore == expected_keys

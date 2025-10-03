@@ -35,7 +35,11 @@ from ._errors import (
     StepNotWaitingForManualInterventionError,
     UnexpectedStepHandlingError,
 )
-from ._event import enqueue_schedule_event
+from ._event import (
+    enqueue_create_completed_event,
+    enqueue_schedule_event,
+    enqueue_undo_completed_event,
+)
 from ._models import (
     OperationContext,
     OperationErrorType,
@@ -465,7 +469,7 @@ class Core(SingletonInAppStateMixin):
         # CREATION logic:
         # 1) if all steps in group in SUUCESS
         # - 1a) -> move to next group
-        # - 1b) if reached the end of the CREATE operation -> remove all created data
+        # - 1b) if reached the end of the CREATE operation -> remove all created data [EMIT create complete event]
         # 2) if manual intervention is required -> do nothing else
         # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to undo
 
@@ -483,10 +487,11 @@ class Core(SingletonInAppStateMixin):
                 await enqueue_schedule_event(self.app, schedule_id)
             except IndexError:
 
-                # 1b) if reached the end of the CREATE operation -> remove all created data
+                # 1b) if reached the end of the CREATE operation -> remove all created data [EMIT create complete event]
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_creating=True
                 )
+                await enqueue_create_completed_event(self.app, schedule_id)
 
             return
 
@@ -551,7 +556,7 @@ class Core(SingletonInAppStateMixin):
     ) -> None:
         # UNDO logic:
         # 1) if all steps in group in SUCCESS
-        # - 1a) if reached the end of the UNDO operation -> remove all created data
+        # - 1a) if reached the end of the UNDO operation -> remove all created data [EMIT undo complete event]
         # - 1b) -> move to previous group
         # 2) it is unexpected to have a FAILED step -> do nothing else
         # 3) it is unexpected to have a CANCELLED step -> do nothing else
@@ -561,10 +566,11 @@ class Core(SingletonInAppStateMixin):
             previous_group_index = group_index - 1
             if previous_group_index < 0:
 
-                # 1a) if reached the end of the UNDO operation -> remove all created data
+                # 1a) if reached the end of the UNDO operation -> remove all created data [EMIT undo complete event]
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_creating=False
                 )
+                await enqueue_undo_completed_event(self.app, schedule_id)
                 return
 
             # 1b) -> move to previous group

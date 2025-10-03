@@ -16,8 +16,9 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ...core.settings import ApplicationSettings
 from ._core import Core
+from ._event_after import AfterEventManager
 from ._lifecycle_protocol import SupportsLifecycle
-from ._models import ScheduleId
+from ._models import EventType, ScheduleId
 
 _logger = logging.getLogger(__name__)
 
@@ -79,12 +80,34 @@ class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
             _EXCHANGE_NAME, durable=True, type=ExchangeType.DIRECT
         )
         self._queue_schedule_event = _get_global_queue(queue_name="schedule_queue")
+        self._queue_create_completed_event = _get_global_queue(
+            queue_name="create_completed_queue"
+        )
+        self._queue_undo_completed_event = _get_global_queue(
+            queue_name="undo_completed_queue"
+        )
 
     @_stop_retry_for_unintended_errors
     async def _on_safe_on_schedule_event(  # pylint:disable=method-hidden
         self, schedule_id: ScheduleId
     ) -> None:
         await Core.get_from_app_state(self.app).safe_on_schedule_event(schedule_id)
+
+    @_stop_retry_for_unintended_errors
+    async def _on_created_completed_event(  # pylint:disable=method-hidden
+        self, schedule_id: ScheduleId
+    ) -> None:
+        await AfterEventManager.get_from_app_state(self.app).safe_on_event_type(
+            EventType.ON_CREATED_COMPLETED, schedule_id
+        )
+
+    @_stop_retry_for_unintended_errors
+    async def _on_undo_completed_event(  # pylint:disable=method-hidden
+        self, schedule_id: ScheduleId
+    ) -> None:
+        await AfterEventManager.get_from_app_state(self.app).safe_on_event_type(
+            EventType.ON_UNDO_COMPLETED, schedule_id
+        )
 
     async def enqueue_schedule_event(self, schedule_id: ScheduleId) -> None:
         await self._broker.publish(
@@ -93,14 +116,41 @@ class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
             exchange=self._exchange,
         )
 
+    async def enqueue_create_completed_event(self, schedule_id: ScheduleId) -> None:
+        await self._broker.publish(
+            schedule_id,
+            queue=self._queue_create_completed_event,
+            exchange=self._exchange,
+        )
+
+    async def enqueue_undo_completed_event(self, schedule_id: ScheduleId) -> None:
+        await self._broker.publish(
+            schedule_id,
+            queue=self._queue_undo_completed_event,
+            exchange=self._exchange,
+        )
+
     def _register_subscribers(self) -> None:
         # pylint:disable=unexpected-keyword-arg
         # pylint:disable=no-value-for-parameter
+
         self._on_safe_on_schedule_event = self._router.subscriber(
             queue=self._queue_schedule_event,
             exchange=self._exchange,
             retry=True,
         )(self._on_safe_on_schedule_event)
+
+        self._on_created_completed_event = self._router.subscriber(
+            queue=self._queue_create_completed_event,
+            exchange=self._exchange,
+            retry=True,
+        )(self._on_created_completed_event)
+
+        self._on_undo_completed_event = self._router.subscriber(
+            queue=self._queue_undo_completed_event,
+            exchange=self._exchange,
+            retry=True,
+        )(self._on_undo_completed_event)
 
     async def setup(self) -> None:
         self._register_subscribers()

@@ -39,3 +39,8 @@ class StepStatus(StrAutoEnum):
 class OperationErrorType(StrAutoEnum):
     FRAMEWORK_ISSUE = auto()
     STEP_ISSUE = auto()
+
+
+class EventType(StrAutoEnum):
+    ON_CREATED_COMPLETED = auto()
+    ON_UNDO_COMPLETED = auto()
