@@ -25,7 +25,7 @@ def task_data() -> TaskData:
 
 @pytest.fixture
 def lrt_namespace(faker: Faker) -> LRTNamespace:
-    return f"TEST-NAMESPACE:{faker.uuid4()}"
+    return f"test-namespace:{faker.uuid4()}"
 
 
 @pytest.fixture
