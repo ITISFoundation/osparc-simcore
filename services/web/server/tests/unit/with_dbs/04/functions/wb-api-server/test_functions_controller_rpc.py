@@ -43,13 +43,13 @@ async def test_register_get_delete_function(
     client: TestClient,
     add_user_function_api_access_rights: None,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], Function],
+    create_fake_function_obj: Callable[[FunctionClass], Function],
     logged_user: UserInfoDict,
     user_role: UserRole,
     osparc_product_name: ProductName,
     other_logged_user: UserInfoDict,
 ):
-    function = mock_function_factory(FunctionClass.PROJECT)
+    function = create_fake_function_obj(FunctionClass.PROJECT)
     assert function.function_class == FunctionClass.PROJECT
 
     #  Register the function
@@ -205,13 +205,13 @@ async def test_list_functions(
 async def test_list_functions_mixed_user(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], ProjectFunction],
+    create_fake_function_obj: Callable[[FunctionClass], ProjectFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     other_logged_user: UserInfoDict,
     add_user_function_api_access_rights: None,
 ):
-    function = mock_function_factory(FunctionClass.PROJECT)
+    function = create_fake_function_obj(FunctionClass.PROJECT)
     # Register a function for the logged user
     registered_functions = [
         await webserver_rpc_client.functions.register_function(
@@ -287,7 +287,7 @@ async def test_list_functions_with_pagination_ordering(
     client: TestClient,
     add_user_function_api_access_rights: None,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], ProjectFunction],
+    create_fake_function_obj: Callable[[FunctionClass], ProjectFunction],
     clean_functions: None,
     osparc_product_name: ProductName,
     logged_user: UserInfoDict,
@@ -299,7 +299,7 @@ async def test_list_functions_with_pagination_ordering(
     TOTAL_FUNCTIONS = 10
     registered_functions = [
         await webserver_rpc_client.functions.register_function(
-            function=mock_function_factory(FunctionClass.PROJECT),
+            function=create_fake_function_obj(FunctionClass.PROJECT),
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
@@ -342,12 +342,12 @@ async def test_list_functions_with_pagination_ordering(
 async def test_list_functions_search(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], ProjectFunction],
+    create_fake_function_obj: Callable[[FunctionClass], ProjectFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
 ):
-    function = mock_function_factory(FunctionClass.PROJECT)
+    function = create_fake_function_obj(FunctionClass.PROJECT)
     assert function.function_class == FunctionClass.PROJECT
 
     mock_function_dummy1 = function.model_copy()
@@ -419,7 +419,7 @@ async def test_list_functions_search(
 async def test_list_functions_with_filters(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], ProjectFunction],
+    create_fake_function_obj: Callable[[FunctionClass], ProjectFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
@@ -429,7 +429,7 @@ async def test_list_functions_with_filters(
     # Register the function first
     registered_functions = [
         await webserver_rpc_client.functions.register_function(
-            function=mock_function_factory(FunctionClass.PROJECT),
+            function=create_fake_function_obj(FunctionClass.PROJECT),
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
@@ -486,7 +486,7 @@ async def test_list_functions_with_filters(
 async def test_update_function_title(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
+    create_fake_function_obj: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
@@ -494,7 +494,7 @@ async def test_update_function_title(
 ):
     # Register the function first
     registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -534,14 +534,14 @@ async def test_update_function_title(
 async def test_update_function_description(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
+    create_fake_function_obj: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
 ):
     # Register the function first
     registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -570,14 +570,14 @@ async def test_update_function_description(
 async def test_get_function_input_schema(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
+    create_fake_function_obj: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
 ):
     # Register the function first
     registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -601,14 +601,14 @@ async def test_get_function_input_schema(
 async def test_get_function_output_schema(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
+    create_fake_function_obj: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
     add_user_function_api_access_rights: None,
 ):
     # Register the function first
     registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -632,7 +632,7 @@ async def test_get_function_output_schema(
 async def test_delete_function(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
+    create_fake_function_obj: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
@@ -640,7 +640,7 @@ async def test_delete_function(
 ):
     # Register the function first
     registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -655,13 +655,13 @@ async def test_get_function_user_permissions(
     client: TestClient,
     add_user_function_api_access_rights: None,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
+    create_fake_function_obj: Callable[[FunctionClass], RegisteredFunction],
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
 ):
     # Register the function first
     registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )

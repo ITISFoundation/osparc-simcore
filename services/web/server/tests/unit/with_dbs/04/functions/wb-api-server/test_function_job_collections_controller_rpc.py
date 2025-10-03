@@ -38,7 +38,7 @@ pytest_simcore_core_services_selection = ["rabbit"]
 async def test_function_job_collection(
     client: TestClient,
     add_user_function_api_access_rights: None,
-    mock_function_factory: Callable[[FunctionClass], Function],
+    create_fake_function_obj: Callable[[FunctionClass], Function],
     webserver_rpc_client: WebServerRpcClient,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
@@ -47,7 +47,7 @@ async def test_function_job_collection(
 ):
     # Register the function first
     registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -166,7 +166,7 @@ async def test_function_job_collection(
 async def test_list_function_job_collections(
     client: TestClient,
     add_user_function_api_access_rights: None,
-    mock_function_factory: Callable[[FunctionClass], Function],
+    create_fake_function_obj: Callable[[FunctionClass], Function],
     webserver_rpc_client: WebServerRpcClient,
     clean_functions: None,
     clean_function_job_collections: None,
@@ -191,7 +191,7 @@ async def test_list_function_job_collections(
 
     # Register the function first
     registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -269,7 +269,7 @@ async def test_list_function_job_collections_filtered_function_id(
     client: TestClient,
     add_user_function_api_access_rights: None,
     webserver_rpc_client: WebServerRpcClient,
-    mock_function_factory: Callable[[FunctionClass], Function],
+    create_fake_function_obj: Callable[[FunctionClass], Function],
     clean_functions: None,
     clean_function_job_collections: None,
     logged_user: UserInfoDict,
@@ -277,12 +277,12 @@ async def test_list_function_job_collections_filtered_function_id(
 ):
     # Register the function first
     registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
     other_registered_function = await webserver_rpc_client.functions.register_function(
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
