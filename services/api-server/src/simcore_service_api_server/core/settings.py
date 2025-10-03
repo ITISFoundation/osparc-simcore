@@ -4,6 +4,7 @@ from typing import Annotated
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum, LogLevel
+from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import (
     AliasChoices,
     Field,
@@ -40,6 +41,14 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
         ),
     ]
     WEBSERVER_SESSION_NAME: str = DEFAULT_SESSION_COOKIE_NAME
+
+    WEBSERVER_RPC_NAMESPACE: Annotated[
+        RPCNamespace,
+        Field(
+            description="Namespace for the RPC server."
+            "IMPORTANT: this is typically `wb-api-server` service variant of the `webserver` image"
+        ),
+    ]
 
     @field_validator("WEBSERVER_SESSION_SECRET_KEY")
     @classmethod

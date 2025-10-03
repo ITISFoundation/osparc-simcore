@@ -98,6 +98,7 @@ def mock_environment(
                 }
             ),
             "SC_HEALTHCHECK_TIMEOUT": "2m",
+            "WEBSERVER_RPC_NAMESPACE": "null",
         },
     )
 

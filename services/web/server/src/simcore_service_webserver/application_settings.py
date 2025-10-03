@@ -8,6 +8,7 @@ from common_library.exclude import Unset
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import LogLevel, PortInt, VersionTag
+from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     AliasChoices,
@@ -154,6 +155,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
+
+    WEBSERVER_RPC_NAMESPACE: Annotated[
+        RPCNamespace | None,
+        Field(
+            description="Namespace for the RPC server (if any) otherwise None"
+            "NOTE that some webserver variants do NOT expose an RPC server e.g. wg-gargage-collector, wg-auth, etc"
+        ),
+    ]
 
     WEBSERVER_SERVER_HOST: Annotated[
         # TODO: find a better name!?
