@@ -23,17 +23,21 @@ def _load_from_redis_hash(data: dict[str, str]) -> dict[str, Any]:
     return {k: json_loads(v) for k, v in data.items()}
 
 
+def to_redis_namespace(namespace: LRTNamespace) -> str:
+    return namespace.upper()
+
+
 class RedisStore:
     def __init__(self, redis_settings: RedisSettings, namespace: LRTNamespace):
         self.redis_settings = redis_settings
-        self.namespace: LRTNamespace = namespace.upper()
+        self.redis_namespace: str = to_redis_namespace(namespace)
 
         self._client: RedisClientSDK | None = None
 
     async def setup(self) -> None:
         self._client = RedisClientSDK(
             self.redis_settings.build_redis_dsn(RedisDatabase.LONG_RUNNING_TASKS),
-            client_name=f"long_running_tasks_store_{self.namespace}",
+            client_name=f"long_running_tasks_store_{self.redis_namespace}",
         )
         await self._client.setup()
 
@@ -47,10 +51,10 @@ class RedisStore:
         return self._client.redis
 
     def _get_redis_key_task_data_match(self) -> str:
-        return f"{self.namespace}:{_STORE_TYPE_TASK_DATA}*"
+        return f"{self.redis_namespace}:{_STORE_TYPE_TASK_DATA}*"
 
     def _get_redis_task_data_key(self, task_id: TaskId) -> str:
-        return f"{self.namespace}:{_STORE_TYPE_TASK_DATA}:{task_id}"
+        return f"{self.redis_namespace}:{_STORE_TYPE_TASK_DATA}:{task_id}"
 
     async def get_task_data(self, task_id: TaskId) -> TaskData | None:
         result: dict[str, Any] = await handle_redis_returns_union_types(
