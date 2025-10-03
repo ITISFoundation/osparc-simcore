@@ -20,10 +20,7 @@ _logger = logging.getLogger(__name__)
 
 async def _prune_expired_api_keys(app: web.Application):
     if deleted := await api_keys_service.prune_expired_api_keys(app):
-        # broadcast force logout of user_id
-        for _ in deleted:
-            _logger.info("Expired API key was removed")
-
+        _logger.info("%d expired API keys were removed", len(deleted))
     else:
         _logger.info("No API keys expired")
 
