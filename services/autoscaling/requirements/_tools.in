@@ -4,4 +4,6 @@
 
 --requirement ../../../requirements/devenv.txt
 
+
+mypy<=1.18 # mypy hangs with 1.18.1
 watchdog[watchmedo]
