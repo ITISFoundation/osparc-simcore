@@ -14,6 +14,7 @@ import aiofiles
 import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from pytest_simcore.helpers.webserver_projects import (
     create_project,
@@ -152,6 +153,7 @@ async def client(
     redis_client: aioredis.Redis,
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> Iterable[TestClient]:
     # test config & env vars ----------------------
     cfg = deepcopy(app_config)
@@ -163,11 +165,24 @@ async def client(
 
     monkeypatch_setenv_from_app_config(cfg)
 
+    monkeypatch.delenv("WEBSERVER_SCICRUNCH", raising=False)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "SCICRUNCH_API_KEY": "REPLACE_ME_with_valid_api_key",
+            "WEBSERVER_RPC_NAMESPACE": "webserver",
+        },
+    )
+
     # app setup ----------------------------------
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
-    assert setup_settings(app)
+    app_settings = setup_settings(app)
+
+    assert app_settings.WEBSERVER_SCICRUNCH is not None
+    assert app_settings.WEBSERVER_RABBITMQ is not None
+    assert app_settings.WEBSERVER_EXPORTER is not None
     assert (
         exporter_settings.get_plugin_settings(app) is not None
     ), "Should capture defaults"

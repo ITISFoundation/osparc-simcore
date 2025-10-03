@@ -47,7 +47,13 @@ def app_mock(mocker: MockerFixture):
     return app
 
 
-def test_unique_application_keys(app_mock, mock_env_devel_environment: dict[str, str]):
+def test_unique_application_keys(
+    app_mock,
+    mock_env_devel_environment: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("WEBSERVER_RPC_NAMESPACE", "null")
+
     setup_settings(app_mock)
     setup_rest(app_mock)
     setup_diagnostics(app_mock)
