@@ -1,5 +1,6 @@
 import contextlib
 import logging
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import TYPE_CHECKING, Final
 
@@ -11,26 +12,27 @@ from servicelib.celery.models import (
     OwnerMetadata,
     Task,
     TaskID,
-    TaskInfoStore,
+    TaskStore,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
-_CELERY_TASK_INFO_PREFIX: Final[str] = "celery-task-info-"
+_CELERY_TASK_PREFIX: Final[str] = "celery-task-"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
 _CELERY_TASK_METADATA_KEY: Final[str] = "metadata"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 
+
 _logger = logging.getLogger(__name__)
 
 
 def _build_key(task_id: TaskID) -> str:
-    return _CELERY_TASK_INFO_PREFIX + task_id
+    return _CELERY_TASK_PREFIX + task_id
 
 
-class RedisTaskInfoStore:
-    def __init__(self, redis_client_sdk: RedisClientSDK) -> None:
-        self._redis_client_sdk = redis_client_sdk
+@dataclass(frozen=True)
+class RedisTaskStore:
+    _redis_client_sdk: RedisClientSDK
 
     async def create_task(
         self,
@@ -86,7 +88,7 @@ class RedisTaskInfoStore:
             return None
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
-        search_key = _CELERY_TASK_INFO_PREFIX + owner_metadata.model_dump_task_id(
+        search_key = _CELERY_TASK_PREFIX + owner_metadata.model_dump_task_id(
             task_uuid=WILDCARD
         )
 
@@ -141,4 +143,4 @@ class RedisTaskInfoStore:
 
 
 if TYPE_CHECKING:
-    _: type[TaskInfoStore] = RedisTaskInfoStore
+    _: type[TaskStore] = RedisTaskStore

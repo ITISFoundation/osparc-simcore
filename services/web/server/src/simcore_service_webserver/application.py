@@ -21,6 +21,7 @@ from .announcements.plugin import setup_announcements
 from .api_keys.plugin import setup_api_keys
 from .application_settings import get_application_settings, setup_settings
 from .catalog.plugin import setup_catalog
+from .celery.plugin import setup_celery
 from .collaboration.bootstrap import (
     setup_realtime_collaboration,
 )
@@ -187,6 +188,9 @@ def create_application() -> web.Application:
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_realtime_collaboration(app)
+
+    # Celery
+    setup_celery(app)
 
     # NOTE: *last* events
     app.on_startup.append(_create_welcome_banner(WELCOME_MSG))

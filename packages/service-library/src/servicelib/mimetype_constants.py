@@ -7,6 +7,7 @@ MIME types are defined and standardized in IETF's RFC 6838.
 
 SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
 """
+
 from typing import Final
 
 # NOTE: mimetypes (https://docs.python.org/3/library/mimetypes.html) is already a module in python
