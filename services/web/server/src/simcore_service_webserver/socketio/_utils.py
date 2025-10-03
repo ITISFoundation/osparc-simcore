@@ -11,7 +11,9 @@ APP_CLIENT_SOCKET_DECORATED_HANDLERS_APPKEY: Final = web.AppKey(
     "APP_CLIENT_SOCKET_DECORATED_HANDLERS", list[Callable]
 )
 APP_CLIENT_SOCKET_SERVER_APPKEY: Final = web.AppKey(
-    "APP_CLIENT_SOCKET_SERVER", AsyncServer
+    # NOTE: AsyncServer stub library is missing
+    "APP_CLIENT_SOCKET_SERVER",
+    AsyncServer,  # type: ignore[var-annotated]
 )
 
 
