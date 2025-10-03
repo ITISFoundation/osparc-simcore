@@ -28,17 +28,16 @@ async def drop_all_preferences(
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    docker_compose_service_environment_dict: EnvVarsDict,
+    service_name: str,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            **docker_compose_service_environment_dict,
             # disable tracing  for tests
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "null",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "null",
             "WEBSERVER_TRACING": "null",
-            "WEBSERVER_RPC_NAMESPACE": "null",
+            "WEBSERVER_RPC_NAMESPACE": service_name,
         },
     )
 

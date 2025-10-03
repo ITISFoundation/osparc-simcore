@@ -52,20 +52,20 @@ def fast_service_deletion_delay() -> int:
 def app_environment(
     fast_service_deletion_delay: int,
     monkeypatch: pytest.MonkeyPatch,
-    docker_compose_service_environment_dict: EnvVarsDict,
-    env_devel_dict: EnvVarsDict,
+    app_environment: EnvVarsDict,
+    service_name: str,
 ) -> EnvVarsDict:
+    monkeypatch.delenv("WEBSERVER_GARBAGE_COLLECTOR", raising=False)
+    app_environment.pop("WEBSERVER_GARBAGE_COLLECTOR", None)
 
-    return setenvs_from_dict(
+    return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            **docker_compose_service_environment_dict,
             "WEBSERVER_COMPUTATION": "1",
             "WEBSERVER_NOTIFICATIONS": "1",
             # sets TTL of a resource after logout
             "RESOURCE_MANAGER_RESOURCE_TTL_S": f"{fast_service_deletion_delay}",
-            #  "WEBSERVER_PROJECTS must be enabled for close_project fixture"
-            "WEBSERVER_PROJECTS": env_devel_dict["WEBSERVER_PROJECTS"],
+            "WEBSERVER_RPC_NAMESPACE": service_name,
         },
     )
 
