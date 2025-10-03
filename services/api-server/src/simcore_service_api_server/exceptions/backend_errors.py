@@ -146,3 +146,8 @@ class LicensedItemCheckoutNotFoundError(BaseBackEndError):
 class JobAssetsMissingError(BaseBackEndError):
     msg_template = "Job assets missing for job {job_id}"
     status_code = status.HTTP_409_CONFLICT
+
+
+class CeleryTaskNotFoundError(BaseBackEndError):
+    msg_template = "Task {task_uuid} not found"
+    status_code = status.HTTP_404_NOT_FOUND
