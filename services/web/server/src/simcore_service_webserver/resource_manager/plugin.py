@@ -14,8 +14,7 @@ from aiohttp import web
 
 from ..application_setup import ModuleCategory, app_setup_func
 from ..redis import setup_redis
-from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY, APP_RESOURCE_MANAGER_TASKS_KEY
-from .registry import RedisResourceRegistry
+from .registry import CLIENT_SOCKET_REGISTRY_APPKEY, RedisResourceRegistry
 
 _logger = logging.getLogger(__name__)
 
@@ -33,9 +32,7 @@ APP_RESOURCE_MANAGER_CLIENT_KEY: Final = web.AppKey(
 def setup_resource_manager(app: web.Application) -> bool:
     """Sets up resource manager subsystem in the application"""
 
-    app[APP_RESOURCE_MANAGER_TASKS_KEY] = []
-
     setup_redis(app)
-    app[APP_CLIENT_SOCKET_REGISTRY_KEY] = RedisResourceRegistry(app)
+    app[CLIENT_SOCKET_REGISTRY_APPKEY] = RedisResourceRegistry(app)
 
     return True
