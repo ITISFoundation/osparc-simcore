@@ -171,7 +171,7 @@ async def client(
     setenvs_from_dict(
         monkeypatch,
         envs={
-            "WEBSERVER_RPC_NAMESPACE": "null",
+            "WEBSERVER_RPC_NAMESPACE": "webserver",
         },
     )
 
