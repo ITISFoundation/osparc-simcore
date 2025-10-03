@@ -175,17 +175,18 @@ mypy: $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this 
 
 .PHONY: mypy-debug
 mypy-debug: $(REPO_BASE_DIR)/mypy.ini  ## runs mypy with profiling and reporting enabled
-	@rm -rf $(CURDIR)/.mypy-report
-	@mkdir -p $(CURDIR)/.mypy-report
+	$(eval MYPY_REPORT_DIR := $(CURDIR)/.mypy-report.ignore)
+	@rm -rf $(MYPY_REPORT_DIR)
+	@mkdir -p $(MYPY_REPORT_DIR)
 	@mypy \
 	  --config-file=$(REPO_BASE_DIR)/mypy.ini \
 	  --show-error-context \
 	  --show-traceback \
 	  --verbose \
-	  --linecount-report $(CURDIR)/.mypy-report \
-	  --any-exprs-report $(CURDIR)/.mypy-report \
+	  --linecount-report $(MYPY_REPORT_DIR) \
+	  --any-exprs-report $(MYPY_REPORT_DIR) \
 	  $(CURDIR)/src \
-	  | tee $(CURDIR)/.mypy-report/mypy.logs
+	  2>&1 | tee $(MYPY_REPORT_DIR)/mypy.logs
 
 
 .PHONY: codestyle

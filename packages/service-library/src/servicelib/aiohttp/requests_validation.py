@@ -194,7 +194,7 @@ async def parse_request_body_as(
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
             # with issubclass(model_schema, BaseModel)
             assert issubclass(model_schema_cls, BaseModel)  # nosec
-            return model_schema_cls.model_validate(body)  # type: ignore [return-value]
+            return model_schema_cls.model_validate(body)
 
         # used for model_schema like 'list[T]' or 'dict[T]'
         return TypeAdapter(model_schema_cls).validate_python(body)  # type: ignore[no-any-return]

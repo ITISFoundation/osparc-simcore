@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import contextlib
 import logging
 import random
 from collections.abc import Iterator
@@ -47,8 +48,12 @@ def storage_vtag() -> str:
 
 @pytest.fixture(scope="module")
 def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
-    app = FastAPI(debug=True)
-    add_pagination(app)
+
+    @contextlib.asynccontextmanager
+    async def _app_lifespan(app: FastAPI):
+        logging.info("Starting fake storage app ...")
+        yield
+        logging.info("Stopping fake storage app ...")
 
     router = APIRouter(
         prefix=f"/{storage_vtag}",
@@ -257,7 +262,13 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         request: Request,
     ): ...
 
-    app.include_router(router)
+    app = FastAPI(
+        debug=True,
+        lifespan=_app_lifespan,
+        routes=router.routes,
+        title="Fake Storage",
+    )
+    add_pagination(app)
 
     return app
 

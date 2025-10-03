@@ -2,6 +2,8 @@
 # Dependencies for exclusive to aiohttp-based services
 #
 #
+--constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
 
 aiohttp
 aiopg[sa]
