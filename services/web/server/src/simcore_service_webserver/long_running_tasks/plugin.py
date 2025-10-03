@@ -3,8 +3,8 @@ from functools import wraps
 
 from aiohttp import web
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from servicelib.aiohttp.long_running_tasks._constants import (
-    RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
+from servicelib.aiohttp.long_running_tasks import (
+    RQT_LONG_RUNNING_TASKS_CONTEXT_APPKEY,
 )
 from servicelib.aiohttp.long_running_tasks.server import setup
 from servicelib.aiohttp.typing_extension import Handler
@@ -31,7 +31,7 @@ def webserver_request_context_decorator(handler: Handler):
     ) -> web.StreamResponse:
         """this task context callback tries to get the user_id from the query if available"""
         req_ctx = AuthenticatedRequestContext.model_validate(request)
-        request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = jsonable_encoder(req_ctx)
+        request[RQT_LONG_RUNNING_TASKS_CONTEXT_APPKEY] = jsonable_encoder(req_ctx)
         return await handler(request)
 
     return _test_task_context_decorator

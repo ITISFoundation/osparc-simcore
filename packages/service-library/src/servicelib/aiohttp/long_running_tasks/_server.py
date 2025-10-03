@@ -29,14 +29,14 @@ from ...long_running_tasks.models import (
 )
 from ..typing_extension import Handler
 from . import _routes
-from ._constants import (
-    RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
-)
 from ._error_handlers import base_long_running_error_handler
 from ._manager import (
     APP_LONG_RUNNING_MANAGER_APPKEY,
     AiohttpLongRunningManager,
     get_long_running_manager,
+)
+from ._request import (
+    RQT_LONG_RUNNING_TASKS_CONTEXT_APPKEY,
 )
 
 
@@ -47,7 +47,7 @@ def _no_ops_decorator(handler: Handler):
 def _no_task_context_decorator(handler: Handler):
     @wraps(handler)
     async def _wrap(request: web.Request):
-        request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = {}
+        request[RQT_LONG_RUNNING_TASKS_CONTEXT_APPKEY] = {}
         return await handler(request)
 
     return _wrap
