@@ -5,6 +5,7 @@ from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..logging_utils import log_context
 from ..redis._client import RedisClientSDK
+from ._redis_store import to_redis_namespace
 from .models import LRTNamespace
 
 _logger = logging.getLogger(__name__)
@@ -32,15 +33,16 @@ class LongRunningClientHelper:
         assert self._client  # nosec
         return self._client.redis
 
-    async def cleanup(self, lrt_namespace: LRTNamespace) -> None:
+    async def cleanup(self, namespace: LRTNamespace) -> None:
         """removes Redis keys associated to the LRTNamespace if they exist"""
+        redis_namespace = to_redis_namespace(namespace)
         keys_to_remove: list[str] = [
-            x async for x in self._redis.scan_iter(f"{lrt_namespace}*")
+            x async for x in self._redis.scan_iter(f"{redis_namespace}*")
         ]
         with log_context(
             _logger,
-            logging.DEBUG,
-            msg=f"Removing {keys_to_remove=} from Redis for {lrt_namespace=}",
+            logging.INFO,
+            msg=f"Removing {keys_to_remove=} from Redis for {redis_namespace=}",
         ):
             if len(keys_to_remove) > 0:
                 await self._redis.delete(*keys_to_remove)
