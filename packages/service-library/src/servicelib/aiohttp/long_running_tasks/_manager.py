@@ -14,10 +14,10 @@ class AiohttpLongRunningManager(LongRunningManager):
         return get_task_context(request)
 
 
-APP_LONG_RUNNING_MANAGER_APPKEY: Final = web.AppKey(
-    "APP_LONG_RUNNING_MANAGER", AiohttpLongRunningManager
+LONG_RUNNING_MANAGER_APPKEY: Final = web.AppKey(
+    "LONG_RUNNING_MANAGER", AiohttpLongRunningManager
 )
 
 
 def get_long_running_manager(app: web.Application) -> AiohttpLongRunningManager:
-    return app[APP_LONG_RUNNING_MANAGER_APPKEY]
+    return app[LONG_RUNNING_MANAGER_APPKEY]
