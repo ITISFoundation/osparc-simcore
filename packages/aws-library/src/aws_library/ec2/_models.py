@@ -14,45 +14,131 @@ from pydantic import (
     Field,
     NonNegativeFloat,
     NonNegativeInt,
+    StrictFloat,
+    StrictInt,
     StringConstraints,
     field_validator,
 )
 from pydantic.config import JsonDict
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
+GenericResourceValue: TypeAlias = StrictInt | StrictFloat | str
+
 
 class Resources(BaseModel, frozen=True):
     cpus: NonNegativeFloat
     ram: ByteSize
+    generic_resources: Annotated[
+        dict[str, GenericResourceValue],
+        Field(
+            default_factory=dict,
+            description=(
+                "Arbitrary additional resources (e.g. {'threads': 8}). "
+                "Numeric values are treated as quantities and participate in add/sub/compare."
+            ),
+        ),
+    ] = DEFAULT_FACTORY
 
     @classmethod
     def create_as_empty(cls) -> "Resources":
         return cls(cpus=0, ram=ByteSize(0))
 
     def __ge__(self, other: "Resources") -> bool:
-        return self.cpus >= other.cpus and self.ram >= other.ram
+        """operator for >= comparison
+        if self has greater or equal resources than other, returns True
+        Note that generic_resources are compared only if they are numeric
+        Non-numeric generic resources must be equal in both or only defined in self
+        to be considered greater or equal
+        """
 
-    def __gt__(self, other: "Resources") -> bool:
-        return self.cpus > other.cpus or self.ram > other.ram
+        if not (self.cpus >= other.cpus and self.ram >= other.ram):
+            return False
+
+        keys = set(self.generic_resources) | set(other.generic_resources)
+        for k in keys:
+            a = self.generic_resources.get(k)
+            b = other.generic_resources.get(
+                k, a
+            )  # NOTE: get from other, default to a so that non-existing keys are considered equal
+            if isinstance(a, int | float) and isinstance(b, int | float):
+                if b > a:
+                    return False
+            elif a != b:
+                assert isinstance(a, str | None)  # nosec
+                assert isinstance(b, int | float | str | None)  # nosec
+                return False
+        return True
 
     def __add__(self, other: "Resources") -> "Resources":
+        """operator for adding two Resources
+        Note that only numeric generic resources are added
+        Non-numeric generic resources are ignored
+        """
+        merged: dict[str, GenericResourceValue] = {}
+        keys = set(self.generic_resources) | set(other.generic_resources)
+        for k in keys:
+            a = self.generic_resources.get(k)
+            b = other.generic_resources.get(k)
+            # adding non numeric values does not make sense, so we skip those for the resulting resource
+            if isinstance(a, int | float) and isinstance(b, int | float):
+                merged[k] = a + b
+            elif a is None and isinstance(b, int | float):
+                merged[k] = b
+            elif b is None and isinstance(a, int | float):
+                merged[k] = a
+
         return Resources.model_construct(
-            **{
-                key: a + b
-                for (key, a), b in zip(
-                    self.model_dump().items(), other.model_dump().values(), strict=True
-                )
-            }
+            cpus=self.cpus + other.cpus,
+            ram=self.ram + other.ram,
+            generic_resources=merged,
         )
 
     def __sub__(self, other: "Resources") -> "Resources":
+        """operator for subtracting two Resources
+        Note that only numeric generic resources are subtracted
+        Non-numeric generic resources are ignored
+        """
+        merged: dict[str, GenericResourceValue] = {}
+        keys = set(self.generic_resources) | set(other.generic_resources)
+        for k in keys:
+            a = self.generic_resources.get(k)
+            b = other.generic_resources.get(k)
+            # subtracting non numeric values does not make sense, so we skip those for the resulting resource
+            if isinstance(a, int | float) and isinstance(b, int | float):
+                merged[k] = a - b
+            elif a is None and isinstance(b, int | float):
+                merged[k] = -b
+            elif b is None and isinstance(a, int | float):
+                merged[k] = a
+
         return Resources.model_construct(
-            **{
-                key: a - b
-                for (key, a), b in zip(
-                    self.model_dump().items(), other.model_dump().values(), strict=True
-                )
-            }
+            cpus=self.cpus - other.cpus,
+            ram=self.ram - other.ram,
+            generic_resources=merged,
+        )
+
+    def __hash__(self) -> int:
+        """Deterministic hash including cpus, ram (in bytes) and generic_resources."""
+        # sort generic_resources items to ensure order-independent hashing
+        generic_items: tuple[tuple[str, GenericResourceValue], ...] = tuple(
+            sorted(self.generic_resources.items())
+        )
+        return hash((self.cpus, self.ram, generic_items))
+
+    def as_flat_dict(self) -> dict[str, int | float | str]:
+        """Like model_dump, but flattens generic_resources to top level keys"""
+        base = self.model_dump()
+        base.update(base.pop("generic_resources"))
+        return base
+
+    @classmethod
+    def from_flat_dict(cls, data: dict[str, int | float | str]) -> "Resources":
+        """Inverse of as_flat_dict"""
+        generic_resources = {k: v for k, v in data.items() if k not in {"cpus", "ram"}}
+        return cls(
+            cpus=float(data.get("cpus", 0)),
+            ram=ByteSize(data.get("ram", 0)),
+            generic_resources=generic_resources,
         )
 
     @field_validator("cpus", mode="before")
@@ -180,7 +266,10 @@ class EC2InstanceBootSpecific(BaseModel):
                 temp_file.writelines(v)
                 temp_file.flush()
                 # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
-                sh.bash("-n", temp_file.name)  # pyright: ignore[reportCallIssue]  # sh is untyped, but this call is safe for bash syntax checking
+                sh.bash(
+                    "-n",
+                    temp_file.name,  # pyright: ignore[reportCallIssue]
+                )  # sh is untyped, but this call is safe for bash syntax checking
         except sh.ErrorReturnCode as exc:
             msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
             raise ValueError(msg) from exc

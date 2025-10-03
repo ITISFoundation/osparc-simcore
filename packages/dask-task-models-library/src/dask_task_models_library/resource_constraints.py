@@ -1,8 +1,16 @@
-from typing import Any, TypeAlias
+from typing import Final, Literal, TypedDict
 
 from .constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 
-DaskTaskResources: TypeAlias = dict[str, Any]
+DASK_WORKER_THREAD_RESOURCE_NAME: Final[str] = "threads"
+
+
+class DaskTaskResources(TypedDict, total=False):
+    CPU: float
+    RAM: int  # in bytes
+    # NOTE: threads is a constant of 1 (enforced by static type checkers via Literal)
+    # a dask worker can only run as many jobs as it has threads
+    threads: Literal[1]
 
 
 def create_ec2_resource_constraint_key(ec2_instance_type: str) -> str:

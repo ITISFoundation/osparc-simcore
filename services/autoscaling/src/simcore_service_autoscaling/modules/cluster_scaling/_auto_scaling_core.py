@@ -677,15 +677,15 @@ async def _find_needed_instances(
             task_required_resources = auto_scaling_mode.get_task_required_resources(
                 task
             )
-            task_required_ec2_instance = (
-                await auto_scaling_mode.get_task_defined_instance(app, task)
+            task_required_ec2 = await auto_scaling_mode.get_task_defined_instance(
+                app, task
             )
 
             # first check if we can assign the task to one of the newly tobe created instances
             if _try_assign_task_to_ec2_instance_type(
                 task,
                 instances=needed_new_instance_types_for_tasks,
-                task_required_ec2_instance=task_required_ec2_instance,
+                task_required_ec2_instance=task_required_ec2,
                 task_required_resources=task_required_resources,
             ):
                 continue
@@ -693,12 +693,15 @@ async def _find_needed_instances(
             # so we need to find what we can create now
             try:
                 # check if exact instance type is needed first
-                if task_required_ec2_instance:
+                if task_required_ec2:
+                    # TODO: we need to adjust the available types to cope with the threads resource
+                    # and also with the dask resource reduction!
                     defined_ec2 = find_selected_instance_type_for_task(
-                        task_required_ec2_instance,
+                        task_required_ec2,
                         available_ec2_types,
                         task,
-                        auto_scaling_mode.get_task_required_resources(task),
+                        task_required_resources,
+                        auto_scaling_mode,
                     )
                     needed_new_instance_types_for_tasks.append(
                         AssignedTasksToInstanceType(
@@ -709,10 +712,12 @@ async def _find_needed_instances(
                         )
                     )
                 else:
+                    # TODO: same here. so probably the best is to adjust prior to calling
+                    # it is differnet from dynamic/computational
                     # we go for best fitting type
                     best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
                         available_ec2_types,
-                        auto_scaling_mode.get_task_required_resources(task),
+                        task_required_resources,
                         score_type=utils_ec2.closest_instance_policy,
                     )
                     needed_new_instance_types_for_tasks.append(

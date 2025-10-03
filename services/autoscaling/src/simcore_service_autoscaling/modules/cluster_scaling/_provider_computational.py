@@ -1,6 +1,6 @@
 import collections
 import logging
-from typing import cast
+from typing import Any, cast
 
 from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
@@ -88,13 +88,7 @@ class ComputationalAutoscalingProvider:
 
     def get_task_required_resources(self, task) -> Resources:
         assert self  # nosec
-        task_required_resources = utils.resources_from_dask_task(task)
-        # ensure cpu is set at least to 1 as dask-workers use 1 thread per CPU
-        if task_required_resources.cpus < 1.0:
-            task_required_resources = task_required_resources.model_copy(
-                update={"cpus": 1.0}
-            )
-        return task_required_resources
+        return utils.resources_from_dask_task(task)
 
     async def get_task_defined_instance(
         self, app: FastAPI, task
@@ -141,10 +135,14 @@ class ComputationalAutoscalingProvider:
         list_of_used_resources: list[Resources] = await logged_gather(
             *(self.compute_node_used_resources(app, i) for i in instances)
         )
-        counter = collections.Counter(dict.fromkeys(Resources.model_fields, 0))
+        counter: collections.Counter = collections.Counter()
         for result in list_of_used_resources:
-            counter.update(result.model_dump())
-        return Resources.model_validate(dict(counter))
+            counter.update(result.as_flat_dict())
+
+        flat_counter: dict[str, Any] = dict(counter)
+        flat_counter.setdefault("cpus", 0)
+        flat_counter.setdefault("ram", 0)
+        return Resources.from_flat_dict(flat_counter)
 
     async def compute_cluster_total_resources(
         self, app: FastAPI, instances: list[AssociatedInstance]
@@ -152,7 +150,9 @@ class ComputationalAutoscalingProvider:
         assert self  # nosec
         try:
             return await dask.compute_cluster_total_resources(
-                _scheduler_url(app), _scheduler_auth(app), instances
+                _scheduler_url(app),
+                _scheduler_auth(app),
+                [i.ec2_instance for i in instances],
             )
         except DaskNoWorkersError:
             return Resources.create_as_empty()
