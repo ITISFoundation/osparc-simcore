@@ -39,7 +39,7 @@ from models_library.functions import (
 )
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pytest_mock import MockerFixture, MockType
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from servicelib.celery.models import ExecutionMetadata, TaskID, TasksQueue
@@ -74,13 +74,17 @@ from tenacity import (
     wait_fixed,
 )
 
-pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "rabbit",
+    # NOTE: rabbitmq is needed for celery but NOT for RPC api. The RPC api is mocked at the client level
+]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 _faker = Faker()
 
 
-async def wait_for_task_result(
+async def _wait_for_task_result(
     client: AsyncClient,
     auth: BasicAuth,
     task_id: str,
@@ -164,13 +168,13 @@ async def test_with_fake_run_function(
     app: FastAPI,
     client: AsyncClient,
     auth: BasicAuth,
-    mocker: MockerFixture,
     with_api_server_celery_worker: TestWorkController,
     mock_handler_in_functions_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     user_id: UserID,
 ):
+    # ARRANGE
 
     body = {
         "input_1": _faker.uuid4(),
@@ -186,18 +190,16 @@ async def test_with_fake_run_function(
 
     mock_handler_in_functions_rpc_interface(
         "get_function_user_permissions",
-        FunctionUserAccessRights(
+        return_value=FunctionUserAccessRights(
             user_id=user_id,
             execute=True,
             read=True,
             write=True,
         ),
-        None,
-        None,
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
-        FunctionUserApiAccessRights(
+        return_value=FunctionUserApiAccessRights(
             user_id=user_id,
             read_functions=True,
             write_functions=True,
@@ -209,27 +211,26 @@ async def test_with_fake_run_function(
             write_function_job_collections=True,
             execute_function_job_collections=True,
         ),
-        None,
-        None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", fake_registered_project_function, None, None
+        "get_function", return_value=fake_registered_project_function
     )
-    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", fake_registered_project_function_job, None, None
+        "find_cached_function_jobs", return_value=[]
+    )
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job", return_value=fake_registered_project_function_job
     )
 
     mock_handler_in_functions_rpc_interface(
         "patch_registered_function_job",
-        None,
-        None,
-        partial(
+        side_effect=partial(
             _patch_registered_function_job_side_effect,
             fake_registered_project_function_job,
         ),
     )
 
+    # ACT
     headers = {}
     headers[X_SIMCORE_PARENT_PROJECT_UUID] = "null"
     headers[X_SIMCORE_PARENT_NODE_ID] = "null"
@@ -241,12 +242,13 @@ async def test_with_fake_run_function(
         headers=headers,
     )
 
+    # ASSERT
     assert response.status_code == status.HTTP_200_OK
     function_job = RegisteredProjectFunctionJob.model_validate(response.json())
     celery_task_id = function_job.job_creation_task_id
     assert celery_task_id is not None
     # Poll until task completion and get result
-    result = await wait_for_task_result(client, auth, celery_task_id)
+    result = await _wait_for_task_result(client, auth, celery_task_id)
     RegisteredProjectFunctionJob.model_validate(result.result)
 
 
@@ -294,7 +296,7 @@ async def test_celery_error_propagation(
     )
 
     with pytest.raises(HTTPStatusError) as exc_info:
-        await wait_for_task_result(client, auth, f"{task_uuid}")
+        await _wait_for_task_result(client, auth, f"{task_uuid}")
 
     assert exc_info.value.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
@@ -310,12 +312,17 @@ async def test_celery_error_propagation(
     ],
 )
 @pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
-@pytest.mark.parametrize("mocked_app_rpc_dependencies", [None])
+@pytest.mark.parametrize(
+    "mocked_app_rpc_dependencies",
+    [None],
+    # NOTE: rabbitmq is needed for celery but NOT for RPC api. The RPC api is mocked at the client level
+)
 async def test_run_project_function_parent_info(
     app: FastAPI,
     with_api_server_celery_worker: TestWorkController,
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: HandlerMockFactory,
+    mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
@@ -330,6 +337,10 @@ async def test_run_project_function_parent_info(
     expected_status_code: int,
     capture: str,
 ) -> None:
+
+    # ARRANGE
+
+    # Mock the HTTP calls
     def _default_side_effect(
         request: httpx.Request,
         path_params: dict[str, Any],
@@ -352,45 +363,45 @@ async def test_run_project_function_parent_info(
         side_effects_callbacks=[_default_side_effect] * 50,
     )
 
+    # Mock the RPC calls
     mock_handler_in_functions_rpc_interface(
         "get_function_user_permissions",
-        FunctionUserAccessRights(
+        return_value=FunctionUserAccessRights(
             user_id=user_id,
             execute=True,
             read=True,
             write=True,
         ),
-        None,
-        None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", fake_registered_project_function, None, None
+        "get_function", return_value=fake_registered_project_function
     )
-    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", fake_registered_project_function_job, None, None
+        "find_cached_function_jobs", return_value=[]
+    )
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job", return_value=fake_registered_project_function_job
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
-        FunctionUserApiAccessRights(
+        return_value=FunctionUserApiAccessRights(
             user_id=user_id,
             execute_functions=True,
             write_functions=True,
             read_functions=True,
         ),
-        None,
-        None,
     )
     mock_handler_in_functions_rpc_interface(
         "patch_registered_function_job",
-        None,
-        None,
-        partial(
+        side_effect=partial(
             _patch_registered_function_job_side_effect,
             fake_registered_project_function_job,
         ),
     )
 
+    mock_handler_in_projects_rpc_interface("mark_project_as_job", return_value=None)
+
+    # ACT
     headers = {}
     if parent_project_uuid:
         headers[X_SIMCORE_PARENT_PROJECT_UUID] = parent_project_uuid
@@ -403,13 +414,15 @@ async def test_run_project_function_parent_info(
         auth=auth,
         headers=headers,
     )
+
+    # ASSERT
     assert response.status_code == expected_status_code
     if response.status_code == status.HTTP_200_OK:
         function_job = RegisteredProjectFunctionJob.model_validate(response.json())
         celery_task_id = function_job.job_creation_task_id
         assert celery_task_id is not None
         # Poll until task completion and get result
-        result = await wait_for_task_result(client, auth, celery_task_id)
+        result = await _wait_for_task_result(client, auth, celery_task_id)
         RegisteredProjectFunctionJob.model_validate(result.result)
 
 
@@ -429,6 +442,7 @@ async def test_map_function_parent_info(
     with_api_server_celery_worker: TestWorkController,
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: HandlerMockFactory,
+    mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
@@ -443,7 +457,7 @@ async def test_map_function_parent_info(
     expected_status_code: int,
     capture: str,
 ) -> None:
-
+    # ARRANGE
     side_effect_checks = {}
 
     def _default_side_effect(
@@ -472,56 +486,53 @@ async def test_map_function_parent_info(
 
     mock_handler_in_functions_rpc_interface(
         "get_function_user_permissions",
-        FunctionUserAccessRights(
+        return_value=FunctionUserAccessRights(
             user_id=user_id,
             execute=True,
             read=True,
             write=True,
         ),
-        None,
-        None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", fake_registered_project_function, None, None
+        "get_function", return_value=fake_registered_project_function
     )
-    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", fake_registered_project_function_job, None, None
+        "find_cached_function_jobs", return_value=[]
+    )
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job", return_value=fake_registered_project_function_job
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
-        FunctionUserApiAccessRights(
+        return_value=FunctionUserApiAccessRights(
             user_id=user_id,
             execute_functions=True,
             write_functions=True,
             read_functions=True,
         ),
-        None,
-        None,
     )
     mock_handler_in_functions_rpc_interface(
         "register_function_job_collection",
-        RegisteredFunctionJobCollection(
+        return_value=RegisteredFunctionJobCollection(
             uid=FunctionJobID(_faker.uuid4()),
             title="Test Collection",
             description="A test function job collection",
             job_ids=[],
             created_at=datetime.datetime.now(datetime.UTC),
         ),
-        None,
-        None,
     )
 
     patch_mock = mock_handler_in_functions_rpc_interface(
         "patch_registered_function_job",
-        None,
-        None,
-        partial(
+        side_effect=partial(
             _patch_registered_function_job_side_effect,
             fake_registered_project_function_job,
         ),
     )
 
+    mock_handler_in_projects_rpc_interface("mark_project_as_job", return_value=None)
+
+    # ACT
     headers = {}
     if parent_project_uuid:
         headers[X_SIMCORE_PARENT_PROJECT_UUID] = parent_project_uuid
@@ -534,6 +545,8 @@ async def test_map_function_parent_info(
         auth=auth,
         headers=headers,
     )
+
+    # ASSERT
     assert response.status_code == expected_status_code
 
     if expected_status_code == status.HTTP_200_OK:
@@ -541,7 +554,7 @@ async def test_map_function_parent_info(
         task_id = patch_mock.call_args.kwargs[
             "registered_function_job_patch"
         ].job_creation_task_id
-        await wait_for_task_result(client, auth, f"{task_id}")
+        await _wait_for_task_result(client, auth, f"{task_id}")
         assert side_effect_checks["headers_checked"] is True
 
 
@@ -550,6 +563,7 @@ async def test_map_function(
     with_api_server_celery_worker: TestWorkController,
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: HandlerMockFactory,
+    mock_handler_in_projects_rpc_interface: HandlerMockFactory,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
@@ -561,7 +575,7 @@ async def test_map_function(
     project_tests_dir: Path,
 ) -> None:
 
-    # arrange
+    # ARRANGE
     _capture = "run_study_function_parent_info.json"
 
     def _default_side_effect(
@@ -579,19 +593,21 @@ async def test_map_function(
 
     mock_handler_in_functions_rpc_interface(
         "get_function_user_permissions",
-        FunctionUserAccessRights(
+        return_value=FunctionUserAccessRights(
             user_id=user_id,
             execute=True,
             read=True,
             write=True,
         ),
-        None,
-        None,
     )
     mock_handler_in_functions_rpc_interface(
-        "get_function", fake_registered_project_function, None, None
+        "get_function", return_value=fake_registered_project_function
     )
-    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [], None, None)
+    mock_handler_in_functions_rpc_interface(
+        "find_cached_function_jobs", return_value=[]
+    )
+
+    mock_handler_in_projects_rpc_interface("mark_project_as_job", return_value=None)
 
     _generated_function_job_ids: list[FunctionJobID] = []
 
@@ -604,20 +620,18 @@ async def test_map_function(
 
     mock_handler_in_functions_rpc_interface(
         "register_function_job",
-        None,
-        None,
-        partial(_register_function_job_side_effect, _generated_function_job_ids),
+        side_effect=partial(
+            _register_function_job_side_effect, _generated_function_job_ids
+        ),
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
-        FunctionUserApiAccessRights(
+        return_value=FunctionUserApiAccessRights(
             user_id=user_id,
             execute_functions=True,
             write_functions=True,
             read_functions=True,
         ),
-        None,
-        None,
     )
 
     async def _register_function_job_collection_side_effect(*args, **kwargs):
@@ -632,22 +646,18 @@ async def test_map_function(
 
     mock_handler_in_functions_rpc_interface(
         "register_function_job_collection",
-        None,
-        None,
-        _register_function_job_collection_side_effect,
+        side_effect=_register_function_job_collection_side_effect,
     )
 
     patch_mock = mock_handler_in_functions_rpc_interface(
         "patch_registered_function_job",
-        None,
-        None,
-        partial(
+        side_effect=partial(
             _patch_registered_function_job_side_effect,
             fake_registered_project_function_job,
         ),
     )
 
-    # act
+    # ACT
     _inputs = [{}, {}]
     response = await client.post(
         f"{API_VTAG}/functions/{fake_registered_project_function.uid}:map",
@@ -659,7 +669,7 @@ async def test_map_function(
         },
     )
 
-    # assert
+    # ASSERT
     assert response.status_code == status.HTTP_200_OK
     job_collection = FunctionJobCollection.model_validate(response.json())
     assert (
@@ -671,4 +681,4 @@ async def test_map_function(
     }
     assert len(celery_task_ids) == len(_inputs)
     for task_id in celery_task_ids:
-        await wait_for_task_result(client, auth, f"{task_id}")
+        await _wait_for_task_result(client, auth, f"{task_id}")

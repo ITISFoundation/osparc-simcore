@@ -238,7 +238,7 @@ def mock_handler_in_functions_rpc_interface(
     mocker: MockerFixture,
 ) -> HandlerMockFactory:
     def _create(
-        handler_name: str = "",
+        handler_name: str,
         return_value: Any = None,
         exception: Exception | None = None,
         side_effect: Callable | None = None,
@@ -251,6 +251,35 @@ def mock_handler_in_functions_rpc_interface(
 
         return mocker.patch.object(
             FunctionsRpcApi,
+            handler_name,
+            return_value=return_value,
+            side_effect=exception or side_effect,
+        )
+
+    return _create
+
+
+@pytest.fixture()
+def mock_handler_in_projects_rpc_interface(
+    mocked_app_rpc_dependencies: None,
+    mocker: MockerFixture,
+) -> HandlerMockFactory:
+    """Factory to mock a handler in the LicensesRpcApi interface"""
+
+    def _create(
+        handler_name: str,
+        return_value: Any = None,
+        exception: Exception | None = None,
+        side_effect: Callable | None = None,
+    ) -> MockType:
+        from servicelib.rabbitmq.rpc_interfaces.webserver.v1.projects import (
+            ProjectsRpcApi,
+        )
+
+        assert exception is None or side_effect is None
+
+        return mocker.patch.object(
+            ProjectsRpcApi,
             handler_name,
             return_value=return_value,
             side_effect=exception or side_effect,
