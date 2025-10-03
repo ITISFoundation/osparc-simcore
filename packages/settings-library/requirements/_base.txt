@@ -47,5 +47,5 @@ typing-extensions==4.15.0
     #   pydantic-extra-types
     #   typer
     #   typing-inspection
-typing-inspection==0.4.1
+typing-inspection==0.4.2
     # via pydantic

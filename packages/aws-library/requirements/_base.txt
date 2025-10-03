@@ -422,7 +422,7 @@ typing-extensions==4.15.0
     #   types-aiobotocore-s3
     #   types-aiobotocore-ssm
     #   typing-inspection
-typing-inspection==0.4.1
+typing-inspection==0.4.2
     # via pydantic
 urllib3==2.5.0
     # via

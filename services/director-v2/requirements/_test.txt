@@ -210,7 +210,7 @@ pamqp==3.3.0
     # via
     #   -c requirements/_base.txt
     #   aiormq
-pandas==2.3.2
+pandas==2.3.3
     # via bokeh
 partd==1.4.2
     # via
@@ -328,7 +328,7 @@ tornado==6.5
     #   -c requirements/_base.txt
     #   bokeh
     #   distributed
-types-networkx==3.5.0.20250918
+types-networkx==3.5.0.20251001
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20250915
     # via -r requirements/_test.in

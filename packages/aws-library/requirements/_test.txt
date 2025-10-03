@@ -61,7 +61,7 @@ coverage==7.10.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.1
+cryptography==46.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
@@ -294,7 +294,7 @@ types-awscrt==0.27.6
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
-types-boto3==1.40.41
+types-boto3==1.40.44
     # via -r requirements/_test.in
 types-s3transfer==0.13.1
     # via
@@ -318,7 +318,7 @@ typing-extensions==4.15.0
     #   types-aiobotocore
     #   types-boto3
     #   typing-inspection
-typing-inspection==0.4.1
+typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
     #   pydantic

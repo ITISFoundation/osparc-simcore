@@ -89,7 +89,7 @@ fastapi==0.116.1
     #   fastapi-pagination
 fastapi-cli==0.0.13
     # via fastapi
-fastapi-cloud-cli==0.2.1
+fastapi-cloud-cli==0.3.0
     # via fastapi-cli
 fastapi-pagination==0.14.2
     # via -r requirements/_test.in
@@ -299,7 +299,7 @@ rich-toolkit==0.15.1
     # via
     #   fastapi-cli
     #   fastapi-cloud-cli
-rignore==0.6.4
+rignore==0.7.0
     # via fastapi-cloud-cli
 sentry-sdk==2.39.0
     # via fastapi-cloud-cli

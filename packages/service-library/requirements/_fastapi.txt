@@ -32,7 +32,7 @@ fastapi==0.118.0
     #   fastapi-lifespan-manager
 fastapi-cli==0.0.13
     # via fastapi
-fastapi-cloud-cli==0.2.1
+fastapi-cloud-cli==0.3.0
     # via fastapi-cli
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/_fastapi.in
@@ -131,7 +131,7 @@ rich-toolkit==0.15.1
     # via
     #   fastapi-cli
     #   fastapi-cloud-cli
-rignore==0.6.4
+rignore==0.7.0
     # via fastapi-cloud-cli
 sentry-sdk==2.39.0
     # via fastapi-cloud-cli
@@ -161,7 +161,7 @@ typing-extensions==4.15.0
     #   starlette
     #   typer
     #   typing-inspection
-typing-inspection==0.4.1
+typing-inspection==0.4.2
     # via pydantic
 urllib3==2.5.0
     # via

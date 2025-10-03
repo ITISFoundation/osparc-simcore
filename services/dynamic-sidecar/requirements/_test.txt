@@ -164,7 +164,7 @@ types-aiobotocore-s3==2.24.2
     # via -r requirements/_test.in
 types-aiofiles==24.1.0.20250822
     # via -r requirements/_test.in
-types-psutil==7.0.0.20250822
+types-psutil==7.0.0.20251001
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
