@@ -1,4 +1,4 @@
-""" Interface to communicate with the payment's gateway
+"""Interface to communicate with the payment's gateway
 
 - httpx client with base_url to PAYMENTS_GATEWAY_URL
 - Fake gateway service in services/payments/scripts/example_payment_gateway.py
@@ -25,7 +25,7 @@ from servicelib.fastapi.http_client import (
     HealthMixinMixin,
 )
 from servicelib.fastapi.httpx_utils import to_curl_command
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_data, setup_httpx_client_tracing
 
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
@@ -216,6 +216,11 @@ def setup_payments_gateway(app: FastAPI):
         ),
     )
     if settings.PAYMENTS_TRACING:
-        setup_httpx_client_tracing(api.client)
+        setup_httpx_client_tracing(
+            api.client,
+            tracing_data=get_tracing_data(
+                app, tracing_settings=settings.PAYMENTS_TRACING
+            ),
+        )
     api.attach_lifespan_to(app)
     api.set_to_app_state(app)

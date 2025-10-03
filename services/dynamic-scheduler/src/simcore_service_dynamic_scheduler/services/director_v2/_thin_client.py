@@ -24,6 +24,7 @@ from servicelib.fastapi.http_client_thin import (
     expect_status,
     retry_on_errors,
 )
+from servicelib.fastapi.tracing import get_tracing_data
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
     DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
 )
@@ -42,6 +43,7 @@ class DirectorV2ThinClient(BaseThinClient):
             ),
             extra_allowed_method_names={"attach_lifespan_to"},
             tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
+            tracing_data=get_tracing_data(app, settings.DYNAMIC_SCHEDULER_TRACING),
         )
 
     @retry_on_errors()

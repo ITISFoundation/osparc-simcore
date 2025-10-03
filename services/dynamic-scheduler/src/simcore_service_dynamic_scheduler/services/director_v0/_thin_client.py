@@ -11,6 +11,7 @@ from servicelib.fastapi.http_client_thin import (
     expect_status,
     retry_on_errors,
 )
+from servicelib.fastapi.tracing import get_tracing_data
 from yarl import URL
 
 from ...core.settings import ApplicationSettings
@@ -37,6 +38,7 @@ class DirectorV0ThinClient(
             },
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V0_SETTINGS.endpoint,
             tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
+            tracing_data=get_tracing_data(app, settings.DYNAMIC_SCHEDULER_TRACING),
         )
 
     @retry_on_errors()

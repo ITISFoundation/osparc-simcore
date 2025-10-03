@@ -15,7 +15,7 @@ from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import NonNegativeInt, TypeAdapter
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_data, setup_httpx_client_tracing
 from servicelib.logging_utils import log_catch, log_context
 from starlette import status
 from tenacity.asyncio import AsyncRetrying
@@ -146,7 +146,12 @@ class DirectorClient:
             timeout=settings.CATALOG_CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
         if settings.CATALOG_TRACING:
-            setup_httpx_client_tracing(self.client)
+            setup_httpx_client_tracing(
+                self.client,
+                tracing_data=get_tracing_data(
+                    app=app, tracing_settings=settings.CATALOG_TRACING
+                ),
+            )
 
         assert settings.CATALOG_DIRECTOR  # nosec
         self.vtag = settings.CATALOG_DIRECTOR.DIRECTOR_VTAG

@@ -1,6 +1,7 @@
 """Adds aiohttp middleware for tracing using opentelemetry instrumentation."""
 
 import logging
+import time
 from collections.abc import AsyncIterator, Callable
 from typing import Final
 
@@ -13,18 +14,28 @@ from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-
     AioHttpClientInstrumentor,
 )
 from opentelemetry.instrumentation.aiohttp_server import (
-    middleware as aiohttp_server_opentelemetry_middleware,  # pylint:disable=no-name-in-module
+    MetricInstruments,
+    _parse_active_request_count_attrs,
+    _parse_duration_attrs,
+    collect_request_attributes,
+    extract,
+    get_default_span_details,
+    getter,
+    meter,
+    set_status_code,
 )
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
+from opentelemetry.sdk.trace import SpanProcessor
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
 from ..logging_utils import log_context
-from ..tracing import get_trace_id_header
+from ..tracing import TracingData, get_trace_id_header
 
 _logger = logging.getLogger(__name__)
+
+TRACING_DATA_KEY: Final[str] = "tracing_data"
+
 try:
     from opentelemetry.instrumentation.botocore import (  # type: ignore[import-not-found]
         BotocoreInstrumentor,
@@ -65,6 +76,56 @@ APP_OPENTELEMETRY_INSTRUMENTOR_KEY: Final = web.AppKey(
 )
 
 
+@web.middleware
+async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler):
+    """This middleware is extracted from https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/instrumentation/opentelemetry-instrumentation-aiohttp-server/src/opentelemetry/instrumentation/aiohttp_server/__init__.py
+    and adapted to allow passing the tracer provider via the app instead of using the global object. The original code for the function is licensed under https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/LICENSE.
+    I have recorded this limitation in the official source here: https://github.com/open-telemetry/opentelemetry-python-contrib/issues/3801 and plan on providing a fix soon.
+    """
+
+    span_name, additional_attributes = get_default_span_details(request)
+
+    req_attrs = collect_request_attributes(request)
+    duration_attrs = _parse_duration_attrs(req_attrs)
+    active_requests_count_attrs = _parse_active_request_count_attrs(req_attrs)
+
+    duration_histogram = meter.create_histogram(
+        name=MetricInstruments.HTTP_SERVER_DURATION,
+        unit="ms",
+        description="Measures the duration of inbound HTTP requests.",
+    )
+
+    active_requests_counter = meter.create_up_down_counter(
+        name=MetricInstruments.HTTP_SERVER_ACTIVE_REQUESTS,
+        unit="requests",
+        description="measures the number of concurrent HTTP requests those are currently in flight",
+    )
+    tracing_data = request.app[TRACING_DATA_KEY]
+    assert isinstance(tracing_data, TracingData)
+    tracer = tracing_data.tracer_provider.get_tracer(__name__)
+    with tracer.start_as_current_span(
+        span_name,
+        context=extract(request, getter=getter),
+        kind=trace.SpanKind.SERVER,
+    ) as span:
+        attributes = collect_request_attributes(request)
+        attributes.update(additional_attributes)
+        span.set_attributes(attributes)
+        start = time.perf_counter()
+        active_requests_counter.add(1, active_requests_count_attrs)
+        try:
+            resp = await handler(request)
+            set_status_code(span, resp.status)
+        except web.HTTPException as ex:
+            set_status_code(span, ex.status_code)
+            raise
+        finally:
+            duration = max((time.perf_counter() - start) * 1000, 0)
+            duration_histogram.record(duration, duration_attrs)
+            active_requests_counter.add(-1, active_requests_count_attrs)
+        return resp
+
+
 def _create_span_processor(tracing_destination: str) -> SpanProcessor:
     otlp_exporter = OTLPSpanExporterHTTP(
         endpoint=tracing_destination,
@@ -76,13 +137,12 @@ def _startup(
     *,
     app: web.Application,
     tracing_settings: TracingSettings,
-    service_name: str,
+    tracing_data: TracingData,
     add_response_trace_id_header: bool = False,
 ) -> None:
     """
     Sets up this service for a distributed tracing system (opentelemetry)
     """
-    _ = app
     opentelemetry_collector_endpoint = (
         f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}"
     )
@@ -99,9 +159,6 @@ def _startup(
             "unset. Provide both or remove both."
         )
         raise RuntimeError(msg)
-    resource = Resource(attributes={"service.name": service_name})
-    trace.set_tracer_provider(TracerProvider(resource=resource))
-    tracer_provider: trace.TracerProvider = trace.get_tracer_provider()
 
     tracing_destination: str = (
         f"{URL(opentelemetry_collector_endpoint).with_port(opentelemetry_collector_port).with_path('/v1/traces')}"
@@ -109,12 +166,14 @@ def _startup(
 
     _logger.info(
         "Trying to connect service %s to tracing collector at %s.",
-        service_name,
+        tracing_data.service_name,
         tracing_destination,
     )
 
     # Add the span processor to the tracer provider
-    tracer_provider.add_span_processor(_create_span_processor(tracing_destination))  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
+    tracing_data.tracer_provider.add_span_processor(
+        _create_span_processor(tracing_destination)
+    )
     # Instrument aiohttp server
     # Explanation for custom middleware call DK 10/2024:
     # OpenTelemetry Aiohttp autoinstrumentation is meant to be used by only calling `AioHttpServerInstrumentor().instrument()`
@@ -135,35 +194,41 @@ def _startup(
     # - opentelemetry-instrumentation==0.48b0
 
     # Instrument aiohttp client
-    AioHttpClientInstrumentor().instrument()
+    AioHttpClientInstrumentor().instrument(tracer_provider=tracing_data.tracer_provider)
     if HAS_AIOPG:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add aio-pg opentelemetry autoinstrumentation...",
         ):
-            AiopgInstrumentor().instrument()
+            AiopgInstrumentor().instrument(tracer_provider=tracing_data.tracer_provider)
     if HAS_ASYNCPG:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
-            AsyncPGInstrumentor().instrument()
+            AsyncPGInstrumentor().instrument(
+                tracer_provider=tracing_data.tracer_provider
+            )
     if HAS_BOTOCORE:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add botocore opentelemetry autoinstrumentation...",
         ):
-            BotocoreInstrumentor().instrument()
+            BotocoreInstrumentor().instrument(
+                tracer_provider=tracing_data.tracer_provider
+            )
     if HAS_REQUESTS:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add requests opentelemetry autoinstrumentation...",
         ):
-            RequestsInstrumentor().instrument()
+            RequestsInstrumentor().instrument(
+                tracer_provider=tracing_data.tracer_provider
+            )
 
     if HAS_AIO_PIKA:
         with log_context(
@@ -171,7 +236,9 @@ def _startup(
             logging.INFO,
             msg="Attempting to add aio_pika opentelemetry autoinstrumentation...",
         ):
-            AioPikaInstrumentor().instrument()
+            AioPikaInstrumentor().instrument(
+                tracer_provider=tracing_data.tracer_provider
+            )
 
 
 @web.middleware
@@ -189,8 +256,9 @@ async def response_trace_id_header_middleware(request: web.Request, handler):
     return response
 
 
-def _shutdown() -> None:
+def _shutdown(tracing_data: TracingData) -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
+    assert tracing_data  # nosec
     try:
         AioHttpClientInstrumentor().uninstrument()
     except Exception:  # pylint:disable=broad-exception-caught
@@ -222,23 +290,28 @@ def _shutdown() -> None:
             _logger.exception("Failed to uninstrument AioPikaInstrumentor")
 
 
-def get_tracing_lifespan(
+def setup_tracing(
     *,
     app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
     add_response_trace_id_header: bool = False,
 ) -> Callable[[web.Application], AsyncIterator]:
+
+    tracing_data = TracingData.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
+    app[TRACING_DATA_KEY] = tracing_data
     _startup(
         app=app,
         tracing_settings=tracing_settings,
-        service_name=service_name,
+        tracing_data=tracing_data,
         add_response_trace_id_header=add_response_trace_id_header,
     )
 
     async def tracing_lifespan(app: web.Application):
         assert app  # nosec
         yield
-        _shutdown()
+        _shutdown(tracing_data=tracing_data)
 
     return tracing_lifespan

@@ -1,14 +1,16 @@
-from collections.abc import Callable, Coroutine
 from contextlib import contextmanager
 from contextvars import Token
-from functools import wraps
-from typing import Any, Final, TypeAlias
+from dataclasses import dataclass
+from typing import Final, Self, TypeAlias
 
 import pyinstrument
 import pyinstrument.renderers
 from opentelemetry import context as otcontext
 from opentelemetry import trace
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 from settings_library.tracing import TracingSettings
 
 TracingContext: TypeAlias = otcontext.Context | None
@@ -40,9 +42,29 @@ def use_tracing_context(context: TracingContext):
             otcontext.detach(token)
 
 
-def setup_log_tracing(tracing_settings: TracingSettings):
+@dataclass
+class TracingData:
+    service_name: str
+    tracer_provider: TracerProvider
+
+    @classmethod
+    def create(cls, tracing_settings: TracingSettings, service_name: str) -> Self:
+        resource = Resource(attributes={"service.name": service_name})
+        sampler = ParentBased(
+            root=TraceIdRatioBased(tracing_settings.TRACING_SAMPLING_PROBABILITY)
+        )
+        trace_provider = TracerProvider(resource=resource, sampler=sampler)
+        return cls(
+            service_name=service_name,
+            tracer_provider=trace_provider,
+        )
+
+
+def setup_log_tracing(tracing_settings: TracingSettings, tracing_data: TracingData):
     _ = tracing_settings
-    LoggingInstrumentor().instrument(set_logging_format=False)
+    LoggingInstrumentor().instrument(
+        set_logging_format=False, tracer_provider=tracing_data.tracer_provider
+    )
 
 
 def get_trace_id_header() -> dict[str, str] | None:
@@ -57,39 +79,31 @@ def get_trace_id_header() -> dict[str, str] | None:
     return None
 
 
-def with_profiled_span(
-    func: Callable[..., Coroutine[Any, Any, Any]],
-) -> Callable[..., Coroutine[Any, Any, Any]]:
-    """Decorator that wraps an async function in an OpenTelemetry span with pyinstrument profiling."""
+@contextmanager
+def profiled_span(*, tracing_data: TracingData, span_name: str):
+    if not _is_tracing():
+        return
+    tracer = trace.get_tracer(
+        _TRACER_NAME, tracer_provider=tracing_data.tracer_provider
+    )
+    with tracer.start_as_current_span(span_name) as span:
+        profiler = pyinstrument.Profiler(async_mode="enabled")
+        profiler.start()
 
-    @wraps(func)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        if not _is_tracing():
-            return await func(*args, **kwargs)
+        try:
+            yield
 
-        tracer = trace.get_tracer(_TRACER_NAME)
-        span_name = f"{func.__module__}.{func.__qualname__}"
+        except Exception as e:
+            span.record_exception(e)
+            span.set_status(trace.Status(trace.StatusCode.ERROR, f"{e}"))
+            raise
 
-        with tracer.start_as_current_span(span_name) as span:
-            profiler = pyinstrument.Profiler(async_mode="enabled")
-            profiler.start()
-
-            try:
-                return await func(*args, **kwargs)
-
-            except Exception as e:
-                span.record_exception(e)
-                span.set_status(trace.Status(trace.StatusCode.ERROR, f"{e}"))
-                raise
-
-            finally:
-                profiler.stop()
-                renderer = pyinstrument.renderers.ConsoleRenderer(
-                    unicode=True, color=False, show_all=True
-                )
-                span.set_attribute(
-                    _PROFILE_ATTRIBUTE_NAME,
-                    profiler.output(renderer=renderer),
-                )
-
-    return wrapper
+        finally:
+            profiler.stop()
+            renderer = pyinstrument.renderers.ConsoleRenderer(
+                unicode=True, color=False, show_all=True
+            )
+            span.set_attribute(
+                _PROFILE_ATTRIBUTE_NAME,
+                profiler.output(renderer=renderer),
+            )

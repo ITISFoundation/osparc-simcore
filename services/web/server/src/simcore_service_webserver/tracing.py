@@ -1,11 +1,11 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.tracing import get_tracing_lifespan
+from servicelib.aiohttp.tracing import setup_tracing
 from settings_library.tracing import TracingSettings
 
+from ._meta import APP_NAME
 from .application_keys import APP_SETTINGS_APPKEY
-from .application_settings import get_application_settings
 from .application_setup import ModuleCategory, app_setup_func
 
 log = logging.getLogger(__name__)
@@ -32,14 +32,13 @@ def setup_app_tracing(app: web.Application):
 
     """
 
-    app_settings = get_application_settings(app)
     tracing_settings: TracingSettings = get_plugin_settings(app)
 
     app.cleanup_ctx.append(
-        get_tracing_lifespan(
+        setup_tracing(
             app=app,
             tracing_settings=tracing_settings,
-            service_name=app_settings.APP_NAME,
             add_response_trace_id_header=True,
+            service_name=APP_NAME,
         )
     )

@@ -1,14 +1,11 @@
-""" Module that takes care of communications with dynamic services v0
-
-
-"""
+"""Module that takes care of communications with dynamic services v0"""
 
 import logging
 from dataclasses import dataclass
 
 import httpx
 from fastapi import FastAPI
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_data, setup_httpx_client_tracing
 from settings_library.tracing import TracingSettings
 
 from ..utils.client_decorators import handle_errors, handle_retry
@@ -22,7 +19,12 @@ def setup(app: FastAPI, tracing_settings: TracingSettings | None) -> None:
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT
         )
         if tracing_settings:
-            setup_httpx_client_tracing(client=client)
+            setup_httpx_client_tracing(
+                client=client,
+                tracing_data=get_tracing_data(
+                    app=app, tracing_settings=tracing_settings
+                ),
+            )
         ServicesClient.create(
             app,
             client=client,
