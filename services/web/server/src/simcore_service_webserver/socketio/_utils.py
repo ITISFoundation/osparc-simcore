@@ -8,11 +8,11 @@ from aiohttp import web
 from socketio import AsyncServer  # type: ignore[import-untyped]
 
 _CLIENT_SOCKET_DECORATED_HANDLERS_APPKEY: Final = web.AppKey(
-    "APP_CLIENT_SOCKET_DECORATED_HANDLERS", list[Callable]
+    "CLIENT_SOCKET_DECORATED_HANDLERS", list[Callable]
 )
 CLIENT_SOCKET_SERVER_APPKEY: Final = web.AppKey(
     # NOTE: AsyncServer stub library is missing
-    "APP_CLIENT_SOCKET_SERVER",
+    "CLIENT_SOCKET_SERVER",
     AsyncServer,  # type: ignore[var-annotated]
 )
 
