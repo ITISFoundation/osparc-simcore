@@ -14,13 +14,13 @@ This key can have a timeout value. When the key times out then the key disappear
 """
 
 import logging
+from typing import Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
 from servicelib.redis import handle_redis_returns_union_types
 
 from ..redis import get_redis_resources_client
-from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY
 from .models import (
     ALIVE_SUFFIX,
     RESOURCE_SUFFIX,
@@ -144,7 +144,12 @@ class RedisResourceRegistry:
         return (alive_keys, dead_keys)
 
 
+CLIENT_SOCKET_REGISTRY_APPKEY: Final = web.AppKey(
+    "CLIENT_SOCKET_REGISTRY", RedisResourceRegistry
+)
+
+
 def get_registry(app: web.Application) -> RedisResourceRegistry:
-    client: RedisResourceRegistry = app[APP_CLIENT_SOCKET_REGISTRY_KEY]
+    client = app[CLIENT_SOCKET_REGISTRY_APPKEY]
     assert isinstance(client, RedisResourceRegistry)  # nosec
     return client

@@ -29,12 +29,15 @@ from ...long_running_tasks.models import (
 )
 from ..typing_extension import Handler
 from . import _routes
-from ._constants import (
-    APP_LONG_RUNNING_MANAGER_KEY,
-    RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
-)
 from ._error_handlers import base_long_running_error_handler
-from ._manager import AiohttpLongRunningManager, get_long_running_manager
+from ._manager import (
+    LONG_RUNNING_MANAGER_APPKEY,
+    AiohttpLongRunningManager,
+    get_long_running_manager,
+)
+from ._request import (
+    LONG_RUNNING_TASKS_CONTEXT_REQKEY,
+)
 
 
 def _no_ops_decorator(handler: Handler):
@@ -44,7 +47,7 @@ def _no_ops_decorator(handler: Handler):
 def _no_task_context_decorator(handler: Handler):
     @wraps(handler)
     async def _wrap(request: web.Request):
-        request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = {}
+        request[LONG_RUNNING_TASKS_CONTEXT_REQKEY] = {}
         return await handler(request)
 
     return _wrap
@@ -178,7 +181,7 @@ def setup(
         app.middlewares.append(base_long_running_error_handler)
 
         # add components to state
-        app[APP_LONG_RUNNING_MANAGER_KEY] = long_running_manager = (
+        app[LONG_RUNNING_MANAGER_APPKEY] = long_running_manager = (
             AiohttpLongRunningManager(
                 stale_task_check_interval=stale_task_check_interval,
                 stale_task_detect_timeout=stale_task_detect_timeout,
