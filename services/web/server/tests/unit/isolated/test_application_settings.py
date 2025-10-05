@@ -71,8 +71,15 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
 
 def test_settings_to_client_statics_plugins(
-    mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    mock_webserver_service_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
 ):
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+        },
+    )
     monkeypatch.delenv("WEBSERVER_REALTIME_COLLABORATION", raising=False)
 
     # explicitly disable these plugins

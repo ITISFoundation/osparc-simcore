@@ -95,6 +95,13 @@ pytest_plugins = [
 ]
 
 
+@pytest.fixture(scope="session")
+def service_name() -> str:
+    # Overrides  service_name fixture needed in docker_compose_service_environment_dict fixture
+    # NOTE: this can be used to setup configs for different webserver service variants e.g. wg-api-server, wg-garbage-collector, etc
+    return "webserver"
+
+
 @pytest.fixture
 async def exit_stack() -> AsyncIterator[contextlib.AsyncExitStack]:
     """Provides an AsyncExitStack that gets cleaned up after each test"""

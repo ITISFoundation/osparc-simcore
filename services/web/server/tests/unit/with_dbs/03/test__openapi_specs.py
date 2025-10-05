@@ -27,15 +27,18 @@ def openapi_specs_path(api_version_prefix: str) -> Path:
 @pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> EnvVarsDict:
     # Needed to enable  WEBSERVER_ACTIVITY using PROMETEUS below
     monkeypatch.delenv("WEBSERVER_ACTIVITY", raising=False)
+    docker_compose_service_environment_dict.pop("WEBSERVER_ACTIVITY", None)
 
     return mock_env_devel_environment | setenvs_from_dict(
         monkeypatch,
         {
+            **docker_compose_service_environment_dict,
             # disable bundle configs
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
