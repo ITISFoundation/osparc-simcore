@@ -210,19 +210,82 @@ def test_response_surface_modeling(
             state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
         )
 
-    page.wait_for_timeout(10000)
+    # select the function
+    with log_context(logging.INFO, "Selected test function..."):
+        service_iframe.get_by_role("button", name="SELECT").nth(0).click()
 
-    # # select the function
-    # service_iframe.get_by_role("gridcell", name=_FUNCTION_NAME).click()
+    with log_context(logging.INFO, "Filling the input parameters..."):
+        min_inputs = service_iframe.locator(
+            '[mmux-testid="input-block-Min"] input[type="number"]'
+        )
+        count_min = min_inputs.count()
 
-    # # Find the first input field (textbox) in the iframe
-    # min_input_field = service_iframe.get_by_role("textbox").nth(0)
-    # min_input_field.fill("1")
-    # max_input_field = service_iframe.get_by_role("textbox").nth(1)
-    # max_input_field.fill("10")
+        for i in range(count_min):
+            input_field = min_inputs.nth(i)
+            input_field.fill(str(i + 1))
+            print(f"Filled Min input {i} with value {i + 1}")
+            assert input_field.input_value() == str(i + 1)
 
-    # # click on next
-    # service_iframe.get_by_role("button", name="Next").click()
+        max_inputs = service_iframe.locator(
+            '[mmux-testid="input-block-Max"] input[type="number"]'
+        )
+        count_max = max_inputs.count()
+
+        for i in range(count_max):
+            input_field = max_inputs.nth(i)
+            input_field.fill(str((i + 1) * 10))
+            print(f"Filled Max input {i} with value {(i + 1) * 10}")
+            assert input_field.input_value() == str((i + 1) * 10)
+
+        page.wait_for_timeout(1000)
+        page.keyboard.press("Tab")
+        page.wait_for_timeout(1000)
+
+    # Click the next button
+    with log_context(logging.INFO, "Clicking Next to go to the next step..."):
+        service_iframe.locator('[mmux-testid="next-button"]').click()
+        page.wait_for_timeout(1000)
+
+    with log_context(logging.INFO, "Starting the sampling..."):
+        service_iframe.locator('[mmux-testid="extend-sampling-btn"]').click()
+        page.wait_for_timeout(1000)
+        service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]').click()
+        page.wait_for_timeout(1000)
+        service_iframe.locator('[mmux-testid="run-sampling-btn"]').click()
+        page.wait_for_timeout(1000)
+
+    with log_context(logging.INFO, "Waiting for the sampling to complete..."):
+        toast = service_iframe.locator("div.Toastify__toast").filter(
+            has_text="Sampling started running successfully, please wait for completion."
+        )
+        toast.wait_for(state="visible", timeout=120000)  # waits up to 120 seconds
+
+    with log_context(logging.INFO, "Waiting for the sampling to complete..."):
+        moga_container = service_iframe.locator("[mmux-testid='moga-pareto-plot']")
+
+        message_1 = service_iframe.locator(
+            "text=Select at least 5 Samples to be used by the model."
+        )
+        message_2 = service_iframe.locator(
+            "text=No data available. Please create more Samples."
+        )
+
+        # Check which one is visible
+        if message_1.is_visible():
+            message_1.wait_for(state="detached", timeout=300000)
+        elif message_2.is_visible():
+            message_2.wait_for(state="detached", timeout=300000)
+        else:
+            print("No blocking message found — continuing.")
+
+    page.wait_for_timeout(15000)
 
     # # then we wait a long time
     # page.wait_for_timeout(1 * MINUTE)
+
+    # TODO: more steps
+    # Run this tests against MOGA, UQ and SUMO services before destroying the functions / jobs / etc..
+    # 4. cleanup
+    # - drop the Jobs created for the Function
+    # - drop the function proper to avoid polluting the DB
+    # - drop the jsonifier project
