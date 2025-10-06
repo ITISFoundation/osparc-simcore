@@ -34,7 +34,7 @@ from ...socketio.server import get_socket_server
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
-from .._projects_service import conditionally_unsubscribe_from_project_logs
+from .._projects_service import conditionally_unsubscribe_project_logs_across_replicas
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
@@ -223,7 +223,7 @@ async def close_project(request: web.Request) -> web.Response:
         ),
     )
 
-    await conditionally_unsubscribe_from_project_logs(
+    await conditionally_unsubscribe_project_logs_across_replicas(
         request.app, path_params.project_id, req_ctx.user_id
     )
 

@@ -77,6 +77,23 @@ class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
         return None
 
 
+class WebserverInternalEventRabbitMessageAction(str, Enum):
+    UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE = (
+        "UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE"
+    )
+
+
+class WebserverInternalEventRabbitMessage(RabbitMessageBase):
+    channel_name: Literal["simcore.services.webserver_internal_events"] = (
+        "simcore.services.webserver_internal_events"
+    )
+    action: WebserverInternalEventRabbitMessageAction
+    data: dict[str, Any] = Field(default_factory=dict)
+
+    def routing_key(self) -> str | None:
+        return None
+
+
 class ProgressType(StrAutoEnum):
     COMPUTATION_RUNNING = auto()  # NOTE: this is the original only progress report
 
