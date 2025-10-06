@@ -88,11 +88,9 @@ async def test_valid_tracing_settings(
         tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
     )
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_settings=tracing_settings,
         tracing_data=tracing_data,
     )(app=mocked_app):
         async for _ in get_tracing_instrumentation_lifespan(
-            tracing_settings=tracing_settings,
             tracing_data=tracing_data,
         )(app=mocked_app):
             pass
@@ -128,7 +126,6 @@ async def test_invalid_tracing_settings(
             tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
         )
         async for _ in get_tracing_instrumentation_lifespan(
-            tracing_settings=tracing_settings,
             tracing_data=tracing_data,
         )(app=app):
             pass
@@ -187,12 +184,10 @@ async def test_tracing_setup_package_detection(
         tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
     )
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_settings=tracing_settings,
         tracing_data=tracing_data,
     )(app=mocked_app):
         # idempotency check
         async for _ in get_tracing_instrumentation_lifespan(
-            tracing_settings=tracing_settings,
             tracing_data=tracing_data,
         )(app=mocked_app):
             pass
@@ -238,7 +233,6 @@ async def test_trace_id_in_response_header(
     mocked_app.get("/")(partial(handler, handler_data))
 
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_settings=tracing_settings,
         tracing_data=tracing_data,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(
@@ -293,7 +287,6 @@ async def test_with_profile_span(
     mocked_app.get("/")(partial(handler, handler_data))
 
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_settings=tracing_settings,
         tracing_data=tracing_data,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(
@@ -345,7 +338,6 @@ async def test_tracing_sampling_probability_effective(
     mocked_app.get("/")(handler)
 
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_settings=tracing_settings,
         tracing_data=tracing_data,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(

@@ -68,7 +68,6 @@ def create_app_lifespan(
         assert tracing_data  # nosec
         app_lifespan.add(
             get_tracing_instrumentation_lifespan(
-                tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
                 tracing_data=tracing_data,
             )
         )
