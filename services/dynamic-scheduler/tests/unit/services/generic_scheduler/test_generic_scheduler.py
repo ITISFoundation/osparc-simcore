@@ -30,17 +30,22 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     BaseStep,
     Operation,
     OperationName,
+    OperationToStart,
     ParallelStepGroup,
     ProvidedOperationContext,
     RequiredOperationContext,
     SingleStepGroup,
+    register_to_start_after_on_created_completed,
+    register_to_start_after_on_undo_completed,
     start_operation,
 )
 from utils import (
     BaseExpectedStepOrder,
     CreateRandom,
     CreateSequence,
+    UndoSequence,
     ensure_expected_order,
+    ensure_keys_in_store,
 )
 
 pytest_simcore_core_services_selection = [
@@ -55,6 +60,7 @@ pytest_simcore_ops_services_selection = [
 _OPERATION_MIN_RUNTIME: Final[timedelta] = timedelta(seconds=2)
 _OPERATION_STEPS_COUNT: Final[NonNegativeInt] = 10
 _STEP_SLEEP_DURATION: Final[timedelta] = _OPERATION_MIN_RUNTIME / _OPERATION_STEPS_COUNT
+_RETRY_ATTEMPTS: Final[NonNegativeInt] = 10
 
 
 def _get_random_interruption_duration() -> NonNegativeFloat:
@@ -198,6 +204,11 @@ def process_manager(
     process_manager.kill()
 
 
+@pytest.fixture
+def operation_name() -> OperationName:
+    return "test-op"
+
+
 class _InterruptionType(str, Enum):
     REDIS = "redis"
     RABBIT = "rabbit"
@@ -210,11 +221,21 @@ _UNDONE: Final[str] = "undo"
 _CTX_VALUE: Final[str] = "a_value"
 
 
+_STEPS_CALL_ORDER: list[tuple[str, str]] = []
+
+
+@pytest.fixture
+def steps_call_order() -> Iterable[list[tuple[str, str]]]:
+    _STEPS_CALL_ORDER.clear()
+    yield _STEPS_CALL_ORDER
+    _STEPS_CALL_ORDER.clear()
+
+
 class _BS(BaseStep):
     @classmethod
     async def get_create_retries(cls, context: DeferredContext) -> int:
         _ = context
-        return 10
+        return _RETRY_ATTEMPTS
 
     @classmethod
     async def get_create_wait_between_attempts(
@@ -227,10 +248,12 @@ class _BS(BaseStep):
     async def create(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
-        multiprocessing_queue: _AsyncMultiprocessingQueue = (
-            app.state.multiprocessing_queue
-        )
-        await multiprocessing_queue.put((cls.__name__, _CREATED))
+        if hasattr(app.state, "multiprocessing_queue"):
+            multiprocessing_queue: _AsyncMultiprocessingQueue = (
+                app.state.multiprocessing_queue
+            )
+            await multiprocessing_queue.put((cls.__name__, _CREATED))
+        _STEPS_CALL_ORDER.append((cls.__name__, _CREATED))
 
         return {
             **required_context,
@@ -241,10 +264,12 @@ class _BS(BaseStep):
     async def undo(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
-        multiprocessing_queue: _AsyncMultiprocessingQueue = (
-            app.state.multiprocessing_queue
-        )
-        await multiprocessing_queue.put((cls.__name__, _UNDONE))
+        if hasattr(app.state, "multiprocessing_queue"):
+            multiprocessing_queue: _AsyncMultiprocessingQueue = (
+                app.state.multiprocessing_queue
+            )
+            await multiprocessing_queue.put((cls.__name__, _UNDONE))
+        _STEPS_CALL_ORDER.append((cls.__name__, _UNDONE))
 
         return {
             **required_context,
@@ -252,13 +277,43 @@ class _BS(BaseStep):
         }
 
 
-class _BS1(_BS): ...
+class _S1(_BS): ...
 
 
-class _BS2(_BS): ...
+class _S2(_BS): ...
 
 
-class _BS3(_BS): ...
+class _S3(_BS): ...
+
+
+class _ShortSleep(_BS):
+    @classmethod
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        result = await super().create(app, required_context)
+        # if sleeps more than this it will timeout
+        max_allowed_sleep = _STEP_SLEEP_DURATION.total_seconds() * 0.8
+        await asyncio.sleep(max_allowed_sleep)
+        return result
+
+
+class _ShortSleepThenUndo(_BS):
+    @classmethod
+    async def get_create_retries(cls, context: DeferredContext) -> int:
+        _ = context
+        return 0
+
+    @classmethod
+    async def create(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        await super().create(app, required_context)
+        # if sleeps more than this it will timeout
+        max_allowed_sleep = _STEP_SLEEP_DURATION.total_seconds() * 0.8
+        await asyncio.sleep(max_allowed_sleep)
+        msg = "Simulated error"
+        raise RuntimeError(msg)
 
 
 @pytest.mark.parametrize(
@@ -266,19 +321,19 @@ class _BS3(_BS): ...
     [
         pytest.param(
             Operation(
-                SingleStepGroup(_BS1),
+                SingleStepGroup(_S1),
             ),
             [
-                CreateSequence(_BS1),
+                CreateSequence(_S1),
             ],
             id="s1",
         ),
         pytest.param(
             Operation(
-                ParallelStepGroup(_BS1, _BS2, _BS3),
+                ParallelStepGroup(_S1, _S2, _S3),
             ),
             [
-                CreateRandom(_BS1, _BS2, _BS3),
+                CreateRandom(_S1, _S2, _S3),
             ],
             id="p3",
         ),
@@ -296,8 +351,8 @@ async def test_can_recover_from_interruption(
     queue_poller: _QueuePoller,
     process_manager: _ProcessManager,
     expected_order: list[BaseExpectedStepOrder],
+    operation_name: OperationName,
 ) -> None:
-    operation_name: OperationName = "test_op"
     register_operation(operation_name, operation)
     process_manager.start(operation_name)
 
@@ -331,9 +386,88 @@ async def test_can_recover_from_interruption(
     await ensure_expected_order(queue_poller.events, expected_order)
 
 
-# TODO: test the fowlloing scenarions:
-# - REAL use cases -> Run operation after one Finishes in completed (CREATE_SERVICE -> SERVICE_MONITOR)
-# - REAL use cases -> Run operation after one Finishes in undone (CREATE_SERVICE -> STOP_SERVICE)   # stop a partially created service
+@pytest.mark.parametrize("register_at_creation", [True, False])
+@pytest.mark.parametrize(
+    "is_creating, initial_op, after_op, expected_order",
+    [
+        pytest.param(
+            True,
+            Operation(SingleStepGroup(_ShortSleep)),
+            Operation(SingleStepGroup(_S2)),
+            [
+                CreateSequence(_ShortSleep),
+                CreateSequence(_S2),
+            ],
+        ),
+        pytest.param(
+            False,
+            Operation(SingleStepGroup(_ShortSleepThenUndo)),
+            Operation(SingleStepGroup(_S2)),
+            [
+                CreateSequence(_ShortSleepThenUndo),
+                UndoSequence(_ShortSleepThenUndo),
+                CreateSequence(_S2),
+            ],
+        ),
+    ],
+)
+async def test_create_undo_order(
+    app: FastAPI,
+    preserve_caplog_for_async_logging: None,
+    steps_call_order: list[tuple[str, str]],
+    register_operation: Callable[[OperationName, Operation], None],
+    register_at_creation: bool,
+    is_creating: bool,
+    initial_op: Operation,
+    after_op: Operation,
+    expected_order: list[BaseExpectedStepOrder],
+):
+    initial_op_name: OperationName = "intial"
+    after_op_name: OperationName = "after"
 
+    register_operation(initial_op_name, initial_op)
+    register_operation(after_op_name, after_op)
 
-# TODO: some operations cannot be cancelled? Errors are allowed to run the workflow in reverse but we are not allowed to cancel them
+    if is_creating:
+        on_create_completed = (
+            OperationToStart(operation_name=after_op_name, initial_context={})
+            if register_at_creation
+            else None
+        )
+        on_undo_completed = None
+    else:
+        on_create_completed = None
+        on_undo_completed = (
+            OperationToStart(operation_name=after_op_name, initial_context={})
+            if register_at_creation
+            else None
+        )
+
+    schedule_id = await start_operation(
+        app,
+        initial_op_name,
+        {},
+        on_create_completed=on_create_completed,
+        on_undo_completed=on_undo_completed,
+    )
+
+    if not register_at_creation:
+        if is_creating:
+            await register_to_start_after_on_created_completed(
+                app,
+                schedule_id,
+                to_start=OperationToStart(
+                    operation_name=after_op_name, initial_context={}
+                ),
+            )
+        else:
+            await register_to_start_after_on_undo_completed(
+                app,
+                schedule_id,
+                to_start=OperationToStart(
+                    operation_name=after_op_name, initial_context={}
+                ),
+            )
+
+    await ensure_expected_order(steps_call_order, expected_order)
+    await ensure_keys_in_store(app, expected_keys=set())
