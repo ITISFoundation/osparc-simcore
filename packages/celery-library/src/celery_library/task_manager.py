@@ -200,16 +200,16 @@ class CeleryTaskManager:
         )
 
     @handle_celery_errors
-    async def push_task_result(self, task_id: TaskID, result: str) -> None:
+    async def push_task_result(self, task_key: TaskKey, result: str) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Push task result: {task_id=}",
+            msg=f"Push task result: {task_key=}",
         ):
-            if not await self.task_exists(task_id):
-                raise TaskNotFoundError(task_id=task_id)
+            if not await self.task_exists(task_key):
+                raise TaskNotFoundError(task_key=task_key)
 
-            await self._task_info_store.push_task_result(task_id, result)
+            await self._task_info_store.push_task_result(task_key, result)
 
     @handle_celery_errors
     async def pull_task_results(
