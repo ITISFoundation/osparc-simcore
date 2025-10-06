@@ -88,6 +88,7 @@ def app_environment(
             "WEBSERVER_LOGLEVEL": "DEBUG",
             "WEBSERVER_PORT": "8080",
             "WEBSERVER_STUDIES_ACCESS_ENABLED": "True",
+            "WEBSERVER_RPC_NAMESPACE": "null",
         },
     )
 

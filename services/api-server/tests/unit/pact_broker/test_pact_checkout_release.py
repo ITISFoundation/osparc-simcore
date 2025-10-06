@@ -13,6 +13,7 @@ from models_library.api_schemas_webserver.licensed_items_checkouts import (
 )
 from pact.v3 import Verifier
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from simcore_service_api_server._meta import API_VERSION
 from simcore_service_api_server.api.dependencies.resource_usage_tracker_rpc import (
     get_resource_usage_tracker_client,
@@ -60,33 +61,35 @@ EXPECTED_RELEASE = LicensedItemCheckoutRpcGet.model_validate(
 assert EXPECTED_RELEASE.stopped_at is not None
 
 
-class DummyRpcClient:
-    pass
-
-
 @pytest.fixture
-async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
+async def mock_wb_api_server_rpc(
+    app: FastAPI,
+    mocker: MockerFixture,
+    mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
+) -> None:
+    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
     app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _client=DummyRpcClient()
+        _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
     )
 
-    mocker.patch(
-        "simcore_service_api_server.services_rpc.wb_api_server._checkout_licensed_item_for_wallet",
-        return_value=EXPECTED_CHECKOUT,
+    mock_handler_in_licenses_rpc_interface(
+        "checkout_licensed_item_for_wallet", return_value=EXPECTED_CHECKOUT
     )
 
-    mocker.patch(
-        "simcore_service_api_server.services_rpc.wb_api_server._release_licensed_item_for_wallet",
-        return_value=EXPECTED_RELEASE,
+    mock_handler_in_licenses_rpc_interface(
+        "release_licensed_item_for_wallet", return_value=EXPECTED_RELEASE
     )
 
 
 @pytest.fixture
 async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
+    from servicelib.rabbitmq import RabbitMQRPCClient
 
     app.dependency_overrides[get_resource_usage_tracker_client] = (
-        lambda: ResourceUsageTrackerClient(_client=DummyRpcClient())
+        lambda: ResourceUsageTrackerClient(
+            _client=mocker.MagicMock(spec=RabbitMQRPCClient)
+        )
     )
 
     mocker.patch(

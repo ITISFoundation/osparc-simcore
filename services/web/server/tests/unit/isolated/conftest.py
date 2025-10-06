@@ -1,4 +1,11 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
+
 import json
+import logging
 import os
 import random
 from pathlib import Path
@@ -94,13 +101,14 @@ def mock_env_deployer_pipeline(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 
 @pytest.fixture
 def mock_env_devel_environment(
-    mock_env_devel_environment: EnvVarsDict,  # pylint: disable=redefined-outer-name
+    env_devel_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # Overrides to ensure dev-features are enabled testings
-    return mock_env_devel_environment | setenvs_from_dict(
+    return setenvs_from_dict(
         monkeypatch,
         envs={
+            **env_devel_dict,
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "null",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "null",
@@ -176,15 +184,18 @@ def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 @pytest.fixture
 def mock_webserver_service_environment(
     monkeypatch: pytest.MonkeyPatch,
-    mock_env_makefile: EnvVarsDict,  # pylint: disable=redefined-outer-name
-    mock_env_devel_environment: EnvVarsDict,  # pylint: disable=redefined-outer-name
-    mock_env_dockerfile_build: EnvVarsDict,  # pylint: disable=redefined-outer-name
-    mock_env_deployer_pipeline: EnvVarsDict,  # pylint: disable=redefined-outer-name
+    mock_env_makefile: EnvVarsDict,
+    mock_env_dockerfile_build: EnvVarsDict,
+    mock_env_deployer_pipeline: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
+    service_name: str,
 ) -> EnvVarsDict:
     """
     Mocks environment produce in the docker compose config with a .env (.env-devel)
     and launched with a makefile
     """
+    logging.getLogger().info("Composing %s service environment ... ", service_name)
+
     # @docker compose config (overrides)
     # TODO: get from docker compose config
     # r'- ([A-Z2_]+)=\$\{\1:-([\w-]+)\}'
@@ -221,16 +232,21 @@ def mock_webserver_service_environment(
             "SWARM_STACK_NAME": os.environ.get("SWARM_STACK_NAME", "simcore"),
             "WEBSERVER_LOGLEVEL": os.environ.get("LOG_LEVEL", "WARNING"),
             "SESSION_COOKIE_MAX_AGE": str(7 * 24 * 60 * 60),
+            **docker_compose_service_environment_dict,
         },
     )
 
-    return (
+    envs = (
         mock_env_makefile
-        | mock_env_devel_environment
         | mock_env_dockerfile_build
         | mock_env_deployer_pipeline
         | mock_envs_docker_compose_environment
     )
+
+    logging.getLogger().info(
+        "%s service environment:\n%s", service_name, json.dumps(envs, indent=1)
+    )
+    return envs
 
 
 @pytest.fixture

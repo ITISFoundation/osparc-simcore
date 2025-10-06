@@ -114,12 +114,15 @@ from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
+from ..notifications import project_logs
 from ..products import products_web
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.models import UserSession
+from ..resource_manager.registry import get_registry
 from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
+    SOCKET_ID_FIELDNAME,
     managed_resource,
 )
 from ..resource_usage import service as rut_api
@@ -210,6 +213,43 @@ async def _create_project_document_and_notify(
         version=document_version,
         document=project_document,
     )
+
+
+async def conditionally_unsubscribe_from_project_logs(
+    app: web.Application, project_id: ProjectID, user_id: UserID
+) -> None:
+    """
+    Unsubscribes from project logs only if no active socket connections remain for the project.
+
+    This function checks for actual socket connections rather than just user sessions,
+    ensuring logs are only unsubscribed when truly no users are connected.
+
+    Args:
+        app: The web application instance
+        project_id: The project ID to check
+        user_id: Optional user ID to use for the resource session (defaults to 0 if None)
+    """
+    redis_resource_registry = get_registry(app)
+    with managed_resource(user_id, None, app) as user_session:
+        all_user_sessions_with_project = await user_session.find_users_of_resource(
+            app, key=PROJECT_ID_KEY, value=f"{project_id}"
+        )
+
+        # Check for each user session if it has an active socket_id
+        actually_used_sockets_on_project = 0
+        for user_session_key in all_user_sessions_with_project:
+            output = await redis_resource_registry.find_resources(
+                key=user_session_key, resource_name=SOCKET_ID_FIELDNAME
+            )
+            if output:
+                actually_used_sockets_on_project += 1
+
+        # Only unsubscribe from logs if there are no active socket connections to the project.
+        # NOTE: With multiple webserver replicas, this ensures we don't unsubscribe until
+        # the last socket is closed, though another replica may still maintain an active
+        # subscription even if no users are connected to it.
+        if actually_used_sockets_on_project == 0:
+            await project_logs.unsubscribe(app, project_id)
 
 
 async def patch_project_and_notify_users(

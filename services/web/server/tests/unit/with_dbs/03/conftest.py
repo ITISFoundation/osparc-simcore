@@ -28,6 +28,7 @@ async def drop_all_preferences(
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
+    service_name: str,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -36,6 +37,7 @@ def app_environment(
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": "null",
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT": "null",
             "WEBSERVER_TRACING": "null",
+            "WEBSERVER_RPC_NAMESPACE": service_name,
         },
     )
 

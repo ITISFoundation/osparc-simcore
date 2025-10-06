@@ -3,7 +3,7 @@ from typing import Literal, NamedTuple, NotRequired, Self, cast
 
 from models_library.basic_types import IDStr
 from models_library.resource_tracker import PricingPlanId
-from pydantic import BaseModel, ConfigDict, HttpUrl, PositiveInt
+from pydantic import BaseModel, ConfigDict, HttpUrl, NonNegativeInt, PositiveInt
 from pydantic.config import JsonDict
 from typing_extensions import TypedDict
 
@@ -94,7 +94,7 @@ class LicensedItemRpcGet(BaseModel):
 
 class LicensedItemRpcGetPage(NamedTuple):
     items: list[LicensedItemRpcGet]
-    total: PositiveInt
+    total: NonNegativeInt
 
 
 # Rest
