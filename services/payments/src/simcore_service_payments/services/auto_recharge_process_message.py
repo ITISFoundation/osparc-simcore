@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import cast
 
 from fastapi import FastAPI
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodID,
@@ -164,7 +164,7 @@ async def _perform_auto_recharge(
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_invoice_data"),
         user_id=payment_method_db.user_id,
         dollar_amount=wallet_auto_recharge.top_up_amount_in_usd,

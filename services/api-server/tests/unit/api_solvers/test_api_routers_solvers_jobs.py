@@ -82,7 +82,7 @@ def presigned_download_link(
 
 
 @pytest.fixture
-def mocked_directorv2_service_api(
+def mocked_directorv2_rest_api(
     app: FastAPI,
     presigned_download_link: AnyUrl,
     mocked_directorv2_rest_api_base: MockRouter,
@@ -166,7 +166,7 @@ def test_download_presigned_link(
 
 async def test_solver_logs(
     client: httpx.AsyncClient,
-    mocked_directorv2_service_api: MockRouter,
+    mocked_directorv2_rest_api: MockRouter,
     auth: httpx.BasicAuth,
     project_id: str,
     presigned_download_link: AnyUrl,
@@ -185,7 +185,7 @@ async def test_solver_logs(
     )
 
     # calls to directorv2 service
-    assert mocked_directorv2_service_api["get_computation_logs"].called
+    assert mocked_directorv2_rest_api["get_computation_logs"].called
 
     # was a re-direction
     resp0 = resp.history[0]
@@ -204,7 +204,7 @@ async def test_run_solver_job(
     directorv2_service_openapi_specs: dict[str, Any],
     catalog_service_openapi_specs: dict[str, Any],
     mocked_catalog_rpc_api: dict[str, MockType],
-    mocked_directorv2_service_api: MockRouter,
+    mocked_directorv2_rest_api: MockRouter,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
@@ -239,7 +239,7 @@ async def test_run_solver_job(
     } == set(oas["components"]["schemas"]["ComputationGet"]["properties"].keys())
 
     # CREATE and optionally start
-    mocked_directorv2_service_api.get(
+    mocked_directorv2_rest_api.get(
         path__regex=r"^/v2/computations/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
         name="inspect_computation",
     ).respond(
@@ -349,7 +349,7 @@ async def test_run_solver_job(
         auth=auth,
     )
     assert resp.status_code == status.HTTP_202_ACCEPTED
-    assert mocked_directorv2_service_api["inspect_computation"].called
+    assert mocked_directorv2_rest_api["inspect_computation"].called
 
     job_status = JobStatus.model_validate(resp.json())
     assert job_status.progress == 0.0
