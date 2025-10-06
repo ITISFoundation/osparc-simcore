@@ -25,7 +25,6 @@ if _settings.STORAGE_TRACING:
 setup_loggers(
     log_format_local_dev_enabled=_settings.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
     logger_filter_mapping=_settings.STORAGE_LOG_FILTER_MAPPING,
-    tracing_settings=_settings.STORAGE_TRACING,
     tracing_data=_tracing_data,
     log_base_level=_settings.log_level,
     noisy_loggers=None,

@@ -4,7 +4,7 @@ from contextlib import AsyncExitStack
 
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
-from settings_library.tracing import TracingSettings
+from servicelib.tracing import TracingData
 
 from ..logging_utils import (
     LogLevelInt,
@@ -20,7 +20,7 @@ def create_logging_lifespan(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
-    tracing_settings: TracingSettings | None,
+    tracing_data: TracingData,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> Lifespan:
@@ -32,7 +32,7 @@ def create_logging_lifespan(
             noisy_loggers=noisy_loggers,
             log_format_local_dev_enabled=log_format_local_dev_enabled,
             logger_filter_mapping=logger_filter_mapping,
-            tracing_settings=tracing_settings,
+            tracing_data=tracing_data,
         )
     )
 
@@ -49,7 +49,7 @@ def create_logging_shutdown_event(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
-    tracing_settings: TracingSettings | None,
+    tracing_data: TracingData,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> Callable[[], Awaitable[None]]:
@@ -67,7 +67,7 @@ def create_logging_shutdown_event(
             noisy_loggers=noisy_loggers,
             log_format_local_dev_enabled=log_format_local_dev_enabled,
             logger_filter_mapping=logger_filter_mapping,
-            tracing_settings=tracing_settings,
+            tracing_data=tracing_data,
         )
     )
 

@@ -15,12 +15,12 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingData
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
     API_VERSION,
     API_VTAG,
-    APP_NAME,
     PROJECT_NAME,
     SUMMARY,
 )
@@ -33,6 +33,7 @@ _logger = logging.getLogger(__name__)
 
 def create_app(
     *,
+    tracing_data: TracingData,
     settings: ApplicationSettings | None = None,
     logging_lifespan: Lifespan | None = None,
 ) -> FastAPI:
@@ -58,17 +59,16 @@ def create_app(
 
     # STATE
     app.state.settings = settings
+    app.state.tracing_data = tracing_data
 
     # MIDDLEWARES
     if settings.CATALOG_TRACING:
-        setup_tracing(app, settings.CATALOG_TRACING, service_name=APP_NAME)
+        setup_tracing(app, tracing_data=get_tracing_data(app))
     if settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     if settings.CATALOG_TRACING:
-        initialize_fastapi_app_tracing(
-            app, tracing_data=get_tracing_data(app, settings.CATALOG_TRACING)
-        )
+        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
 
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)

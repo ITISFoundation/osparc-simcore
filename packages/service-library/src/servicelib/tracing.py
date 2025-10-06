@@ -1,6 +1,5 @@
 from contextlib import contextmanager
 from contextvars import Token
-from dataclasses import dataclass
 from typing import Final, Self, TypeAlias
 
 import pyinstrument
@@ -11,6 +10,7 @@ from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
+from pydantic import BaseModel, model_validator
 from settings_library.tracing import TracingSettings
 
 TracingContext: TypeAlias = otcontext.Context | None
@@ -42,29 +42,45 @@ def use_tracing_context(context: TracingContext):
             otcontext.detach(token)
 
 
-@dataclass
-class TracingData:
+class TracingData(BaseModel):
     service_name: str
-    tracer_provider: TracerProvider
+    tracing_settings: TracingSettings | None
+    tracer_provider: TracerProvider | None
+
+    @model_validator(mode="after")
+    def _check_tracing_fields(self):
+        if (self.tracing_settings is None) != (self.tracer_provider is None):
+            msg = "Both 'tracing_settings' and 'tracer_provider' must be None or both not None."
+            raise ValueError(msg)
+        return self
+
+    @property
+    def tracing_enabled(self) -> bool:
+        return self.tracer_provider is not None and self.tracing_settings is not None
 
     @classmethod
-    def create(cls, tracing_settings: TracingSettings, service_name: str) -> Self:
-        resource = Resource(attributes={"service.name": service_name})
-        sampler = ParentBased(
-            root=TraceIdRatioBased(tracing_settings.TRACING_SAMPLING_PROBABILITY)
-        )
-        trace_provider = TracerProvider(resource=resource, sampler=sampler)
+    def create(
+        cls, tracing_settings: TracingSettings | None, service_name: str
+    ) -> Self:
+        tracer_provider: TracerProvider | None = None
+        if tracing_settings:
+            resource = Resource(attributes={"service.name": service_name})
+            sampler = ParentBased(
+                root=TraceIdRatioBased(tracing_settings.TRACING_SAMPLING_PROBABILITY)
+            )
+            tracer_provider = TracerProvider(resource=resource, sampler=sampler)
         return cls(
             service_name=service_name,
-            tracer_provider=trace_provider,
+            tracing_settings=tracing_settings,
+            tracer_provider=tracer_provider,
         )
 
 
-def setup_log_tracing(tracing_settings: TracingSettings, tracing_data: TracingData):
-    _ = tracing_settings
-    LoggingInstrumentor().instrument(
-        set_logging_format=False, tracer_provider=tracing_data.tracer_provider
-    )
+def setup_log_tracing(tracing_data: TracingData):
+    if tracing_data.tracing_enabled:
+        LoggingInstrumentor().instrument(
+            set_logging_format=False, tracer_provider=tracing_data.tracer_provider
+        )
 
 
 def get_trace_id_header() -> dict[str, str] | None:

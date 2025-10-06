@@ -2,7 +2,6 @@
 
 import logging
 from collections.abc import AsyncIterator
-from typing import overload
 
 from fastapi import FastAPI, Request
 from fastapi_lifespan_manager import State
@@ -12,7 +11,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 )
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-from opentelemetry.sdk.trace import SpanProcessor
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from settings_library.tracing import TracingSettings
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -77,7 +76,11 @@ def _create_span_processor(tracing_destination: str) -> SpanProcessor:
     return BatchSpanProcessor(otlp_exporter)
 
 
-def _startup(tracing_settings: TracingSettings, tracing_data: TracingData) -> None:
+def _startup(
+    tracing_settings: TracingSettings,
+    service_name: str,
+    tracer_provider: TracerProvider,
+) -> None:
     if (
         not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
         and not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
@@ -95,13 +98,11 @@ def _startup(tracing_settings: TracingSettings, tracing_data: TracingData) -> No
 
     _logger.info(
         "Trying to connect service %s to opentelemetry tracing collector at %s.",
-        tracing_data.service_name,
+        service_name,
         tracing_destination,
     )
     # Add the span processor to the tracer provider
-    tracing_data.tracer_provider.add_span_processor(
-        _create_span_processor(tracing_destination)
-    )
+    tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
 
     if HAS_AIOPG:
         with log_context(
@@ -109,95 +110,75 @@ def _startup(tracing_settings: TracingSettings, tracing_data: TracingData) -> No
             logging.INFO,
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
-            AiopgInstrumentor().instrument(tracer_provider=tracing_data.tracer_provider)
+            AiopgInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_AIOPIKA_INSTRUMENTOR:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add aio_pika opentelemetry autoinstrumentation...",
         ):
-            AioPikaInstrumentor().instrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            AioPikaInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_ASYNCPG:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
-            AsyncPGInstrumentor().instrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            AsyncPGInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REDIS:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add redis opentelemetry autoinstrumentation...",
         ):
-            RedisInstrumentor().instrument(tracer_provider=tracing_data.tracer_provider)
+            RedisInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_BOTOCORE:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add botocore opentelemetry autoinstrumentation...",
         ):
-            BotocoreInstrumentor().instrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            BotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REQUESTS:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add requests opentelemetry autoinstrumentation...",
         ):
-            RequestsInstrumentor().instrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            RequestsInstrumentor().instrument(tracer_provider=tracer_provider)
 
 
-def _shutdown(tracing_data: TracingData) -> None:
+def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
-    FastAPIInstrumentor().uninstrument(tracer_provider=tracing_data.tracer_provider)
+    FastAPIInstrumentor().uninstrument()
     if HAS_AIOPG:
         try:
-            AiopgInstrumentor().uninstrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            AiopgInstrumentor().uninstrument()
         except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument AiopgInstrumentor")
     if HAS_AIOPIKA_INSTRUMENTOR:
         try:
-            AioPikaInstrumentor().uninstrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            AioPikaInstrumentor().uninstrument()
         except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument AioPikaInstrumentor")
     if HAS_ASYNCPG:
         try:
-            AsyncPGInstrumentor().uninstrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            AsyncPGInstrumentor().uninstrument()
         except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument AsyncPGInstrumentor")
     if HAS_REDIS:
         try:
-            RedisInstrumentor().uninstrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            RedisInstrumentor().uninstrument()
         except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument RedisInstrumentor")
     if HAS_BOTOCORE:
         try:
-            BotocoreInstrumentor().uninstrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            BotocoreInstrumentor().uninstrument()
         except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument BotocoreInstrumentor")
     if HAS_REQUESTS:
         try:
-            RequestsInstrumentor().uninstrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            RequestsInstrumentor().uninstrument()
         except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument RequestsInstrumentor")
 
@@ -223,28 +204,38 @@ def setup_httpx_client_tracing(
     )
 
 
-def setup_tracing(
-    app: FastAPI, tracing_settings: TracingSettings, service_name: str
-) -> None:
+def setup_tracing(app: FastAPI, tracing_data: TracingData) -> None:
     # NOTE: This does not instrument the app itself. Call setup_fastapi_app_tracing to do that.
-    assert getattr(app.state, "tracing_data", None) is None
-    tracing_data = TracingData.create(
-        tracing_settings=tracing_settings, service_name=service_name
+    if not tracing_data.tracing_enabled:
+        msg = "Tracing is not enabled in tracing_data"
+        raise ValueError(msg)
+    assert tracing_data.tracing_settings  # nosec
+    assert tracing_data.tracer_provider  # nosec
+
+    _startup(
+        tracing_settings=tracing_data.tracing_settings,
+        service_name=tracing_data.service_name,
+        tracer_provider=tracing_data.tracer_provider,
     )
-    app.state.tracing_data = tracing_data
-    _startup(tracing_settings=tracing_settings, tracing_data=tracing_data)
 
     def _on_shutdown() -> None:
-        _shutdown(tracing_data=tracing_data)
+        _shutdown()
 
     app.add_event_handler("shutdown", _on_shutdown)
 
 
-def get_tracing_instrumentation_lifespan(
-    tracing_settings: TracingSettings, tracing_data: TracingData
-):
+def get_tracing_instrumentation_lifespan(tracing_data: TracingData):
     # NOTE: This lifespan does not instrument the app itself. Call setup_fastapi_app_tracing to do that.
-    _startup(tracing_settings=tracing_settings, tracing_data=tracing_data)
+    if not tracing_data.tracing_enabled:
+        msg = "Tracing is not enabled in tracing_data"
+        raise ValueError(msg)
+    assert tracing_data.tracing_settings  # nosec
+    assert tracing_data.tracer_provider  # nosec
+    _startup(
+        tracing_settings=tracing_data.tracing_settings,
+        service_name=tracing_data.service_name,
+        tracer_provider=tracing_data.tracer_provider,
+    )
 
     async def tracing_instrumentation_lifespan(
         app: FastAPI,
@@ -253,7 +244,7 @@ def get_tracing_instrumentation_lifespan(
 
         yield {}
 
-        _shutdown(tracing_data=tracing_data)
+        _shutdown()
 
     return tracing_instrumentation_lifespan
 
@@ -268,21 +259,7 @@ class ResponseTraceIdHeaderMiddleware(BaseHTTPMiddleware):
         return response
 
 
-@overload
-def get_tracing_data(
-    app: FastAPI, tracing_settings: TracingSettings
-) -> TracingData: ...
-
-
-@overload
-def get_tracing_data(app: FastAPI, tracing_settings: None) -> None: ...
-
-
-def get_tracing_data(
-    app: FastAPI, tracing_settings: TracingSettings | None
-) -> TracingData | None:
-    if tracing_settings is None:
-        return None
+def get_tracing_data(app: FastAPI) -> TracingData:
     assert hasattr(app.state, "tracing_data"), "Tracing not setup for this app"  # nosec
     assert isinstance(app.state.tracing_data, TracingData)
     return app.state.tracing_data
