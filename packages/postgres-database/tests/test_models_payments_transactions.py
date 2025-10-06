@@ -262,4 +262,3 @@ async def test_get_user_payments_transactions_with_pagination_options(
             connection, user_id=user_id, limit=0
         )
         assert not rows
-        assert not rows
