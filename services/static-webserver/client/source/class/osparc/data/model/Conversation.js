@@ -225,7 +225,11 @@ qx.Class.define("osparc.data.model.Conversation", {
             this.setFirstMessage(messages[0]);
           } else if (resp["_meta"]["total"] > 1) {
             osparc.store.ConversationsSupport.getInstance().fetchFirstMessage(this.getConversationId(), resp["_meta"])
-              .then(firstMessage => this.setFirstMessage(firstMessage));
+              .then(firstMessages => {
+                if (firstMessages.length) {
+                  this.setFirstMessage(firstMessages[0]);
+                }
+              });
           }
           return null;
         })
