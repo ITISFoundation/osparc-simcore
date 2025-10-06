@@ -90,12 +90,36 @@ async def dreamer_task(task: Task, task_id: TaskID) -> list[int]:
     return numbers
 
 
+def streaming_results_task(task: Task, task_id: TaskID, num_results: int = 5) -> str:
+    assert task_id
+    assert task.name
+
+    async def _stream_results() -> None:
+        app_server = get_app_server(task.app)
+        for i in range(num_results):
+            result_data = f"result-{i}-{_faker.word()}"
+            await app_server.task_manager.push_task_result(
+                task_id=task_id,
+                result=result_data,  # Use the task_id parameter, not task.request.id
+            )
+            _logger.info("Pushed result %d: %s", i, result_data)
+            await asyncio.sleep(0.2)
+
+    # Run the streaming in the event loop
+    asyncio.run_coroutine_threadsafe(
+        _stream_results(), get_app_server(task.app).event_loop
+    ).result()
+
+    return f"completed-{num_results}-results"
+
+
 @pytest.fixture
 def register_celery_tasks() -> Callable[[Celery], None]:
     def _(celery_app: Celery) -> None:
         register_task(celery_app, fake_file_processor)
         register_task(celery_app, failure_task)
         register_task(celery_app, dreamer_task)
+        register_task(celery_app, streaming_results_task)
 
     return _
 
@@ -263,3 +287,138 @@ async def test_filtering_listing_tasks(
         # clean up all tasks. this should ideally be done in the fixture
         for task_uuid, owner_metadata in all_tasks:
             await task_manager.cancel_task(owner_metadata, task_uuid)
+
+
+async def test_push_task_result_streams_data_during_execution(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    task_uuid = await task_manager.submit_task(
+        ExecutionMetadata(
+            name=streaming_results_task.__name__,
+            ephemeral=False,  # Keep task available after completion for result pulling
+        ),
+        owner_metadata=owner_metadata,
+        num_results=3,
+    )
+
+    # Wait for task to start streaming results
+    await asyncio.sleep(2.0)
+
+    # Pull results while task is running
+    results, next_offset, done = await task_manager.pull_task_results(
+        owner_metadata, task_uuid, offset=0, limit=10
+    )
+
+    # Should have at least some results streamed
+    assert len(results) >= 1
+    assert next_offset == len(results)
+
+    # Verify result format
+    for result in results:
+        assert result.startswith("result-")
+
+    # Wait for task completion
+    for attempt in Retrying(
+        retry=retry_if_exception_type(AssertionError),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(30),
+    ):
+        with attempt:
+            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            assert status.task_state == TaskState.SUCCESS
+
+    # Final task result should be available
+    final_result = await task_manager.get_task_result(owner_metadata, task_uuid)
+    assert final_result == "completed-3-results"
+
+    # After task completion, all results should be available
+    all_results, final_offset, is_done = await task_manager.pull_task_results(
+        owner_metadata, task_uuid, offset=0, limit=10
+    )
+    assert len(all_results) == 3
+    assert is_done
+    assert final_offset == 3
+
+
+async def test_pull_task_results_with_pagination(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit task with more results to test pagination
+    task_uuid = await task_manager.submit_task(
+        ExecutionMetadata(
+            name=streaming_results_task.__name__,
+            ephemeral=False,  # Keep task available after completion for result pulling
+        ),
+        owner_metadata=owner_metadata,
+        num_results=8,
+    )
+
+    # Wait for task to complete
+    for attempt in Retrying(
+        retry=retry_if_exception_type(AssertionError),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(30),
+    ):
+        with attempt:
+            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            assert status.task_state == TaskState.SUCCESS
+
+    # Test pagination - get first batch
+    results_batch1, next_offset1, done1 = await task_manager.pull_task_results(
+        owner_metadata, task_uuid, offset=0, limit=3
+    )
+
+    assert len(results_batch1) == 3
+    assert next_offset1 == 3
+    assert not done1  # Should have more results
+
+    # Get second batch
+    results_batch2, next_offset2, done2 = await task_manager.pull_task_results(
+        owner_metadata, task_uuid, offset=next_offset1, limit=3
+    )
+
+    assert len(results_batch2) == 3
+    assert next_offset2 == 6
+    assert not done2  # Should have more results
+
+    # Get final batch
+    results_batch3, next_offset3, done3 = await task_manager.pull_task_results(
+        owner_metadata, task_uuid, offset=next_offset2, limit=3
+    )
+
+    assert len(results_batch3) == 2  # Only 2 remaining results
+    assert next_offset3 == 8
+    assert done3  # Should be done now
+
+    # Verify all results are distinct and follow expected format
+    all_results = results_batch1 + results_batch2 + results_batch3
+    assert len(all_results) == 8
+    assert len(set(all_results)) == 8  # All results should be unique
+
+    for i, result in enumerate(all_results):
+        assert result.startswith(f"result-{i}-")
+
+
+async def test_pull_task_results_from_nonexistent_task_raises_error(
+    task_manager: CeleryTaskManager,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+    fake_task_uuid = TaskUUID(_faker.uuid4())
+
+    with pytest.raises(TaskNotFoundError):
+        await task_manager.pull_task_results(owner_metadata, fake_task_uuid)
+
+
+async def test_push_task_result_to_nonexistent_task_raises_error(
+    task_manager: CeleryTaskManager,
+):
+    not_existing_task_id = "not_existing"
+
+    with pytest.raises(TaskNotFoundError):
+        await task_manager.push_task_result(not_existing_task_id, "some-result")

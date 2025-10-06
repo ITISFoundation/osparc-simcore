@@ -1,7 +1,7 @@
 import contextlib
-import datetime
 import logging
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import TYPE_CHECKING, Final
 
 from models_library.progress_bar import ProgressReport
@@ -12,11 +12,15 @@ from servicelib.celery.models import (
     OwnerMetadata,
     Task,
     TaskID,
+    TaskStatusEvent,
+    TaskStatusValue,
     TaskStore,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
 _CELERY_TASK_PREFIX: Final[str] = "celery-task-"
+_CELERY_TASK_STREAM_PREFIX: Final[str] = "celery-task-stream-"
+_CELERY_TASK_STREAM_EXPIRY_DEFAULT: Final[timedelta] = timedelta(minutes=5)
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
 _CELERY_TASK_METADATA_KEY: Final[str] = "metadata"
@@ -29,6 +33,10 @@ def _build_key(task_id: TaskID) -> str:
     return _CELERY_TASK_PREFIX + task_id
 
 
+def _build_stream_key(task_id: TaskID) -> str:
+    return _CELERY_TASK_STREAM_PREFIX + task_id
+
+
 @dataclass(frozen=True)
 class RedisTaskStore:
     _redis_client_sdk: RedisClientSDK
@@ -37,7 +45,7 @@ class RedisTaskStore:
         self,
         task_id: TaskID,
         execution_metadata: ExecutionMetadata,
-        expiry: datetime.timedelta,
+        expiry: timedelta,
     ) -> None:
         task_key = _build_key(task_id)
         await handle_redis_returns_union_types(
@@ -51,6 +59,19 @@ class RedisTaskStore:
             task_key,
             expiry,
         )
+
+        if execution_metadata.streamed_result:
+            stream_key = _build_stream_key(task_id)
+            await handle_redis_returns_union_types(
+                self._redis_client_sdk.redis.rpush(
+                    stream_key,
+                    TaskStatusEvent(data=TaskStatusValue.CREATED).model_dump_json(),
+                )
+            )
+            await self._redis_client_sdk.redis.expire(
+                stream_key,
+                _CELERY_TASK_STREAM_EXPIRY_DEFAULT,
+            )
 
     async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None:
         raw_result = await handle_redis_returns_union_types(
@@ -136,9 +157,38 @@ class RedisTaskStore:
         )
 
     async def task_exists(self, task_id: TaskID) -> bool:
-        n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
+        n = await self._redis_client_sdk.redis.exists(
+            _build_key(task_id),
+        )
         assert isinstance(n, int)  # nosec
         return n > 0
+
+    async def push_task_result(self, task_id: TaskID, result: str) -> None:
+        stream_key = _build_stream_key(task_id)
+        await handle_redis_returns_union_types(
+            self._redis_client_sdk.redis.rpush(
+                stream_key,
+                result,
+            )
+        )
+
+    async def pull_task_results(
+        self, task_id: TaskID, offset: int = 0, limit: int = 50
+    ) -> tuple[list[str], int, bool]:
+        stream_key = _build_stream_key(task_id)
+        end = offset + limit - 1
+        items: list[str] = await handle_redis_returns_union_types(
+            self._redis_client_sdk.redis.lrange(stream_key, offset, end)
+        )
+
+        next_offset = offset + len(items)
+
+        total_len = await handle_redis_returns_union_types(
+            self._redis_client_sdk.redis.llen(stream_key)
+        )
+        done = next_offset >= total_len
+
+        return items, next_offset, done
 
 
 if TYPE_CHECKING:

@@ -41,3 +41,13 @@ class TaskManager(Protocol):
     ) -> None: ...
 
     async def task_exists(self, task_id: TaskID) -> bool: ...
+
+    async def push_task_result(self, task_id: TaskID, result: str) -> None: ...
+
+    async def pull_task_results(
+        self,
+        owner_metadata: OwnerMetadata,
+        task_uuid: TaskUUID,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> tuple[list[str], int, bool]: ...

@@ -234,6 +234,12 @@ class TaskStore(Protocol):
         report: ProgressReport,
     ) -> None: ...
 
+    async def push_task_result(self, task_id: TaskID, result: str) -> None: ...
+
+    async def pull_task_results(
+        self, task_id: TaskID, offset: int = 0, limit: int = 50
+    ) -> tuple[list[str], int, bool]: ...
+
 
 class TaskStatus(BaseModel):
     task_uuid: TaskUUID

@@ -1,5 +1,4 @@
 import logging
-from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
@@ -13,8 +12,6 @@ from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
-    TaskEvent,
-    TaskEventID,
     TaskID,
     TaskState,
     TaskStatus,
@@ -195,21 +192,35 @@ class CeleryTaskManager:
         )
 
     @handle_celery_errors
-    async def publish_task_event(self, task_id: TaskID, event: TaskEvent) -> None:
-        await self._task_info_store.publish_task_event(task_id, event)
+    async def push_task_result(self, task_id: TaskID, result: str) -> None:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Push task result: {task_id=}",
+        ):
+            if not await self.task_exists(task_id):
+                raise TaskNotFoundError(task_id=task_id)
+
+            await self._task_info_store.push_task_result(task_id, result)
 
     @handle_celery_errors
-    async def consume_task_events(
+    async def pull_task_results(
         self,
         owner_metadata: OwnerMetadata,
         task_uuid: TaskUUID,
-        last_id: str | None = None,
-    ) -> AsyncIterator[tuple[TaskEventID, TaskEvent]]:
-        task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
-        async for event in self._task_info_store.consume_task_events(
-            task_id=task_id, last_id=last_id
+        offset: int = 0,
+        limit: int = 50,
+    ) -> tuple[list[str], int, bool]:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Pull task results: {owner_metadata=} {task_uuid=} {offset=} {limit=}",
         ):
-            yield event
+            task_id = owner_metadata.model_dump_task_id(task_uuid=task_uuid)
+            if not await self.task_exists(task_id):
+                raise TaskNotFoundError(task_id=task_id)
+
+            return await self._task_info_store.pull_task_results(task_id, offset, limit)
 
 
 if TYPE_CHECKING:
