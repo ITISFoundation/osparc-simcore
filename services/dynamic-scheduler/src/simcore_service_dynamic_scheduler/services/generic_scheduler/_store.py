@@ -368,7 +368,7 @@ class StepStoreProxy:
         hash_key = self._get_hash_key()
         (result,) = await self._store.get_keys_from_hash(hash_key, key)
         if result is None:
-            raise NoDataFoundError(schedule_id=self.schedule_id, hash_key=hash_key)
+            raise NoDataFoundError(key=key, hash_key=hash_key)
         return result
 
     @overload
@@ -480,7 +480,7 @@ class OperationEventsProxy:
         hash_key = self._get_hash_key()
         (result,) = await self._store.get_keys_from_hash(hash_key, key)
         if result is None:
-            raise NoDataFoundError(schedule_id=self.schedule_id, hash_key=hash_key)
+            raise NoDataFoundError(key=key, hash_key=hash_key)
         return result
 
     async def delete(self) -> None:

@@ -13,6 +13,7 @@ from typing import Any, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
+from asyncpg import NoDataFoundError
 from fastapi import FastAPI
 from pydantic import NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -29,12 +30,19 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     RequiredOperationContext,
     ScheduleId,
     SingleStepGroup,
+    StepStoreProxy,
     cancel_operation,
     restart_operation_step_stuck_during_undo,
     restart_operation_step_stuck_in_manual_intervention_during_create,
     start_operation,
 )
-from simcore_service_dynamic_scheduler.services.generic_scheduler._core import Core
+from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
+    Core,
+    Store,
+)
+from simcore_service_dynamic_scheduler.services.generic_scheduler._deferred_runner import (
+    StepGroupName,
+)
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     InitialOperationContextKeyNotAllowedError,
@@ -155,7 +163,6 @@ class _BS(BaseStep):
         _ = app
         _ = required_context
         _STEPS_CALL_ORDER.append((cls.__name__, CREATED))
-        await asyncio.sleep(0.2)
 
         return {
             **required_context,
@@ -169,7 +176,6 @@ class _BS(BaseStep):
         _ = app
         _ = required_context
         _STEPS_CALL_ORDER.append((cls.__name__, UNDONE))
-        await asyncio.sleep(0.2)
 
         return {
             **required_context,
@@ -358,6 +364,38 @@ async def _esnure_log_mesage(caplog: pytest.LogCaptureFixture, *, message: str) 
         with attempt:
             await asyncio.sleep(0)  # wait for envet to trigger
             assert message in caplog.text
+
+
+async def _esnure_steps_have_status(
+    app: FastAPI,
+    schedule_id: ScheduleId,
+    operation_name: OperationName,
+    *,
+    step_group_name: StepGroupName,
+    steps: Iterable[type[BaseStep]],
+) -> None:
+    store = Store.get_from_app_state(app)
+
+    store_proxies = [
+        StepStoreProxy(
+            store=store,
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            step_group_name=step_group_name,
+            step_name=step.get_step_name(),
+            is_creating=True,
+        )
+        for step in steps
+    ]
+
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            for step_proxy in store_proxies:
+                try:
+                    await step_proxy.read("status")
+                except NoDataFoundError:
+                    msg = f"Step {step_proxy.step_name} has no status"
+                    raise AssertionError(msg) from None
 
 
 ############## TESTS ##############
@@ -1060,6 +1098,16 @@ async def test_wait_for_manual_intervention(
 
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
+    await _esnure_steps_have_status(
+        selected_app,
+        schedule_id,
+        operation_name,
+        step_group_name=operation[len(expected_order) - 1].get_step_group_name(
+            index=len(expected_order) - 1
+        ),
+        steps=expected_order[-1].steps,
+    )
+
     # even if cancelled, state of waiting for manual intervention remains the same
     with pytest.raises(CannotCancelWhileWaitingForManualInterventionError):
         await cancel_operation(selected_app, schedule_id)
@@ -1219,9 +1267,15 @@ async def test_restart_undo_operation_step_in_error(
     await ensure_expected_order(steps_call_order, expected_order)
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
-    # give some time for the deferred runner to store the errors
-    # avoids flakiness
-    await asyncio.sleep(0.1)
+    await _esnure_steps_have_status(
+        selected_app,
+        schedule_id,
+        operation_name,
+        step_group_name=operation[len(expected_order) - 2].get_step_group_name(
+            index=len(expected_order) - 2
+        ),
+        steps=expected_order[-1].steps,
+    )
 
     # set step to no longer raise and restart the failed steps
     steps_to_restart = _get_steps_matching_class(
@@ -1270,8 +1324,14 @@ async def test_errors_with_restart_operation_step_in_error(
             CreateRandom(_SF1, _FCR1),
         ],
     )
-    # give some time for the deferred runner to store the errors
-    await asyncio.sleep(0.1)
+
+    await _esnure_steps_have_status(
+        selected_app,
+        schedule_id,
+        operation_name,
+        step_group_name=operation[2].get_step_group_name(index=2),
+        steps=operation[-1].steps,
+    )
 
     with pytest.raises(StepNameNotInCurrentGroupError):
         await Core.get_from_app_state(

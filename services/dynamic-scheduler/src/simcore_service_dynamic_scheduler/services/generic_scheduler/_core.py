@@ -182,15 +182,14 @@ class Core(SingletonInAppStateMixin):
         )
 
         # not allowed to cancel while waiting for manual intervention
-        if any(
-            await limited_gather(
-                *(
-                    get_requires_manual_intervention(step)
-                    for step in group_step_proxies.values()
-                ),
-                limit=PARALLEL_REQUESTS,
-            )
-        ):
+        require_manual_intervention = await limited_gather(
+            *(
+                get_requires_manual_intervention(step)
+                for step in group_step_proxies.values()
+            ),
+            limit=PARALLEL_REQUESTS,
+        )
+        if any(require_manual_intervention):
             raise CannotCancelWhileWaitingForManualInterventionError(
                 schedule_id=schedule_id
             )
