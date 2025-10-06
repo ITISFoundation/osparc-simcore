@@ -43,16 +43,17 @@ async def traefik_service(
     return traefik_endpoints
 
 
-# TODO: this can be used by ANY of the simcore services!
 @tenacity.retry(**ServiceRetryPolicyUponInitialization().kwargs)
 async def wait_till_traefik_responsive(api_endpoint: URL):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(api_endpoint.with_path("/api/http/routers")) as resp:
-            assert resp.status == 200
-            data = await resp.json()
-            for proxied_service in data:
-                assert "service" in proxied_service
-                if "webserver" in proxied_service["service"]:
-                    assert proxied_service["status"] == "enabled"
-                elif "api-server" in proxied_service["service"]:
-                    assert proxied_service["status"] == "enabled"
+    async with aiohttp.ClientSession() as session, session.get(
+        api_endpoint.with_path("/api/http/routers")
+    ) as resp:
+        assert resp.status == 200
+        data = await resp.json()
+        for proxied_service in data:
+            assert "service" in proxied_service
+            if (
+                "webserver" in proxied_service["service"]
+                or "api-server" in proxied_service["service"]
+            ):
+                assert proxied_service["status"] == "enabled"
