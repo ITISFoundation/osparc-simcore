@@ -3,6 +3,7 @@
 # pylint: disable=unexpected-keyword-arg
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pytlin: disable=protected-access
 
 import decimal
 from collections.abc import Callable
@@ -101,7 +102,7 @@ async def test_init_transaction_sets_it_as_pending(
     assert row is not None
 
     # tests that defaults are right?
-    assert dict(row._mapping.items()) == {
+    assert row._asdict() == {
         "completed_at": None,
         "state": PaymentTransactionState.PENDING,
         "state_message": None,
