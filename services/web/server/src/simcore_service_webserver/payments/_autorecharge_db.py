@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 AutoRechargeID: TypeAlias = PositiveInt
 
 
-class PaymentsAutorechargeDB(BaseModel):
+class PaymentsAutorechargeGetDB(BaseModel):
     wallet_id: WalletID
     enabled: bool
     primary_payment_method_id: PaymentMethodID
@@ -31,12 +31,12 @@ async def get_wallet_autorecharge(
     app: web.Application,
     *,
     wallet_id: WalletID,
-) -> PaymentsAutorechargeDB | None:
+) -> PaymentsAutorechargeGetDB | None:
     async with get_database_engine_legacy(app).acquire() as conn:
         stmt = AutoRechargeStmts.get_wallet_autorecharge(wallet_id)
         result = await conn.execute(stmt)
         row = await result.first()
-        return PaymentsAutorechargeDB.model_validate(row) if row else None
+        return PaymentsAutorechargeGetDB.model_validate(row) if row else None
 
 
 async def replace_wallet_autorecharge(
@@ -44,8 +44,8 @@ async def replace_wallet_autorecharge(
     *,
     user_id: UserID,
     wallet_id: WalletID,
-    new: PaymentsAutorechargeDB,
-) -> PaymentsAutorechargeDB:
+    new: PaymentsAutorechargeGetDB,
+) -> PaymentsAutorechargeGetDB:
     """
     Raises:
         InvalidPaymentMethodError: if `new` includes some invalid 'primary_payment_method_id'
@@ -73,4 +73,4 @@ async def replace_wallet_autorecharge(
         result = await conn.execute(stmt)
         row = await result.first()
         assert row  # nosec
-        return PaymentsAutorechargeDB.model_validate(row)
+        return PaymentsAutorechargeGetDB.model_validate(row)
