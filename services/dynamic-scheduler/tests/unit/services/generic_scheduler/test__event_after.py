@@ -149,8 +149,6 @@ async def test_something(
 ):
     operation_name = "op1"
 
-    initial_context = {}
-
     register_operation(operation_name, operation)
     await ensure_keys_in_store(after_event_manager.app, expected_keys=set())
 

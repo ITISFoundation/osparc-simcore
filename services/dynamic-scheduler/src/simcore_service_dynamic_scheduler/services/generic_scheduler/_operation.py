@@ -230,8 +230,8 @@ class ParallelStepGroup(BaseStepGroup):
 
 
 class Operation(list):
-    def __init__(self, *gorups: BaseStepGroup, is_cancellable: bool = True) -> None:
-        super().__init__(gorups)
+    def __init__(self, *groups: BaseStepGroup, is_cancellable: bool = True) -> None:
+        super().__init__(groups)
         self.is_cancellable = is_cancellable
 
     def __repr__(self) -> str:

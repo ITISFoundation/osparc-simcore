@@ -134,7 +134,7 @@ async def test_enqueue_schedule_event_raises_error(
     caplog.clear()
 
     async def _side_effect_raise_error(schedule_id: ScheduleId) -> None:
-        msg = "always failing here as requesed"
+        msg = "always failing here as requested"
         raise RuntimeError(msg)
 
     get_mock_safe_on_schedule_event(_side_effect_raise_error)
@@ -256,7 +256,7 @@ async def test_enqueue_event_type_raises_error(
         operation_name: OperationName,
         initial_context: OperationContext,
     ) -> None:
-        msg = "always failing here as requesed"
+        msg = "always failing here as requested"
         raise RuntimeError(msg)
 
     get_mock_safe_on_event_type(_side_effect_raise_error)

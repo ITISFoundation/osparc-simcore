@@ -422,7 +422,7 @@ async def test_create_undo_order(
     after_op: Operation,
     expected_order: list[BaseExpectedStepOrder],
 ):
-    initial_op_name: OperationName = "intial"
+    initial_op_name: OperationName = "initial"
     after_op_name: OperationName = "after"
 
     register_operation(initial_op_name, initial_op)

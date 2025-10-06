@@ -21,7 +21,7 @@ _logger = logging.getLogger(__name__)
 class AfterEventManager(SingletonInAppStateMixin):
     """
     Allows to register an operation to be started after
-    another opearation ends the CREATED or UNDONE successfully.
+    another operation ends the CREATED or UNDONE successfully.
     """
 
     app_state_name: str = "after_event_manager"
