@@ -45,7 +45,7 @@ qx.Class.define("osparc.data.model.Conversation", {
     this.__listenToConversationMessageWS();
 
     if (conversationData.type === "SUPPORT") {
-      this.__fetchLastMessage();
+      this.__fetchFirstAndLastMessages();
     }
   },
 
@@ -132,6 +132,13 @@ qx.Class.define("osparc.data.model.Conversation", {
       event: "changeNameAlias",
     },
 
+    firstMessage: {
+      check: "Object",
+      nullable: true,
+      init: null,
+      event: "changeFirstMessage",
+    },
+
     lastMessage: {
       check: "Object",
       nullable: true,
@@ -154,7 +161,7 @@ qx.Class.define("osparc.data.model.Conversation", {
   },
 
   members: {
-    __fetchLastMessagePromise: null,
+    __fetchingFirstAndLastMessage: null,
     __nextRequestParams: null,
     __messages: null,
 
@@ -200,24 +207,30 @@ qx.Class.define("osparc.data.model.Conversation", {
       });
     },
 
-    __fetchLastMessage: function() {
-      if (this.__fetchLastMessagePromise) {
-        return this.__fetchLastMessagePromise;
+    __fetchFirstAndLastMessages: function() {
+      if (this.__fetchingFirstAndLastMessage) {
+        return this.__fetchingFirstAndLastMessage;
       }
 
-      let promise = osparc.store.ConversationsSupport.getInstance().fetchLastMessage(this.getConversationId());
-      promise
-        .then(lastMessage => {
-          this.addMessage(lastMessage);
-          promise = null;
-          return lastMessage;
+      this.__fetchingFirstAndLastMessage = true;
+      osparc.store.ConversationsSupport.getInstance().fetchLastMessage(this.getConversationId())
+        .then(resp => {
+          const messages = resp["data"];
+          if (messages.length) {
+            this.addMessage(messages[0]);
+            this.setLastMessage(messages[0]);
+          }
+          // fetch first message only if there is more than one message
+          if (resp["_meta"]["total"] === 1) {
+            this.setFirstMessage(messages[0]);
+          } else if (resp["_meta"]["total"] > 1) {
+            osparc.store.ConversationsSupport.getInstance().fetchFirstMessage(this.getConversationId(), resp["_meta"])
+              .then(firstMessage => this.setFirstMessage(firstMessage));
+          }
+          return null;
         })
-        .finally(() => {
-          this.__fetchLastMessagePromise = null;
-        });
-
-      this.__fetchLastMessagePromise = promise;
-      return promise;
+        .catch(err => osparc.FlashMessenger.logError(err))
+        .finally(() => this.__fetchingFirstAndLastMessage = null);
     },
 
     amIOwner: function() {

@@ -154,15 +154,21 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           limit: 1,
         }
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params)
-        .then(messagesData => {
-          if (messagesData && messagesData.length) {
-            const lastMessage = messagesData[0];
-            this.__addMessageToConversation(conversationId, lastMessage);
-            return lastMessage;
-          }
-          return null;
-        });
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options);
+    },
+
+    fetchFirstMessage: function(conversationId, conversationPaginationMetadata) {
+      const params = {
+        url: {
+          conversationId,
+          offset: Math.max(0, conversationPaginationMetadata["total"] - 1),
+          limit: 1,
+        }
+      };
+      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params);
     },
 
     postMessage: function(conversationId, message) {
