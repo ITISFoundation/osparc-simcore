@@ -196,7 +196,7 @@ class BaseCompScheduler(ABC):
             for t in await comp_tasks_repo.list_computational_tasks(project_id)
             if (f"{t.node_id}" in list(pipeline_dag.nodes()))
         }
-        if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):  # type: ignore[arg-type]
+        if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):
             msg = (
                 f"The tasks defined for {project_id} do not contain all"
                 f" the tasks defined in the pipeline [{list(pipeline_dag.nodes)}]! Please check."
