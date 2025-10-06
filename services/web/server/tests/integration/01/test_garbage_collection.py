@@ -28,6 +28,7 @@ from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import webserver_projects
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import log_client_in
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
@@ -151,6 +152,7 @@ async def client(
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     director_v2_service_mock: aioresponses,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> TestClient:
     cfg = deepcopy(app_config)
 
@@ -166,6 +168,13 @@ async def client(
     )
 
     monkeypatch_setenv_from_app_config(cfg)
+    setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "WEBSERVER_RPC_NAMESPACE": "webserver",
+        },
+    )
+
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules

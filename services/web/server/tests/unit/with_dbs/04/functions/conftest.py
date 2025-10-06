@@ -19,14 +19,14 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.functions import FunctionClass, SolverFunction
 from models_library.products import ProductName
+from models_library.rabbitmq_basic_types import RPCNamespace
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
-    functions_rpc_interface as functions_rpc,
-)
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1.client import WebServerRpcClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.funcapi_api_access_rights_table import (
     funcapi_api_access_rights_table,
@@ -45,13 +45,16 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 @pytest.fixture
 def app_environment(
+    service_name: str,
     rabbit_service: RabbitSettings,
     app_environment: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     new_envs = setenvs_from_dict(
         monkeypatch,
         {
+            **docker_compose_service_environment_dict,
             **app_environment,
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
@@ -65,6 +68,10 @@ def app_environment(
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.WEBSERVER_RABBITMQ
+    assert (
+        TypeAdapter(RPCNamespace).validate_python(service_name)
+        == settings.WEBSERVER_RPC_NAMESPACE
+    )
 
     return new_envs
 
@@ -77,7 +84,7 @@ async def rpc_client(
 
 
 @pytest.fixture
-def mock_function_factory() -> Callable[[FunctionClass], Function]:
+def create_fake_function_obj() -> Callable[[FunctionClass], Function]:
     def _(function_class: FunctionClass) -> Function:
         if function_class == FunctionClass.PROJECT:
             return ProjectFunction(
@@ -143,14 +150,13 @@ async def user_without_function_api_access_rights(
 @pytest.fixture
 async def clean_functions(
     client: TestClient,
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
 ) -> None:
     assert client.app
 
-    functions, _ = await functions_rpc.list_functions(
-        rabbitmq_rpc_client=rpc_client,
+    functions, _ = await webserver_rpc_client.functions.list_functions(
         pagination_limit=100,
         pagination_offset=0,
         user_id=logged_user["id"],
@@ -158,8 +164,7 @@ async def clean_functions(
     )
     for function in functions:
         assert function.uid is not None
-        await functions_rpc.delete_function(
-            rabbitmq_rpc_client=rpc_client,
+        await webserver_rpc_client.functions.delete_function(
             function_id=function.uid,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -169,23 +174,23 @@ async def clean_functions(
 @pytest.fixture
 async def clean_function_job_collections(
     client: TestClient,
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
 ) -> None:
     assert client.app
 
-    job_collections, _ = await functions_rpc.list_function_job_collections(
-        rabbitmq_rpc_client=rpc_client,
-        pagination_limit=100,
-        pagination_offset=0,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    job_collections, _ = (
+        await webserver_rpc_client.functions.list_function_job_collections(
+            pagination_limit=100,
+            pagination_offset=0,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
     )
     for function_job_collection in job_collections:
         assert function_job_collection.uid is not None
-        await functions_rpc.delete_function_job_collection(
-            rabbitmq_rpc_client=rpc_client,
+        await webserver_rpc_client.functions.delete_function_job_collection(
             function_job_collection_id=function_job_collection.uid,
             user_id=logged_user["id"],
             product_name=osparc_product_name,

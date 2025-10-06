@@ -104,7 +104,7 @@ async def mock_scicrunch_service_resolver(
 
 @pytest.fixture
 async def app(
-    mock_env_devel_environment: EnvVarsDict,
+    mock_webserver_service_environment: EnvVarsDict,
     aiohttp_server: Callable,
     mocker: MockerFixture,
 ) -> web.Application:

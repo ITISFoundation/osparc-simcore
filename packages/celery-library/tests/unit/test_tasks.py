@@ -23,7 +23,7 @@ from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
-    TaskID,
+    TaskKey,
     TaskState,
     TaskUUID,
     Wildcard,
@@ -44,7 +44,7 @@ class MyOwnerMetadata(OwnerMetadata):
 
 
 async def _fake_file_processor(
-    celery_app: Celery, task_name: str, task_id: str, files: list[str]
+    celery_app: Celery, task_name: str, task_key: str, files: list[str]
 ) -> str:
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
@@ -52,7 +52,7 @@ async def _fake_file_processor(
     for n, file in enumerate(files, start=1):
         with log_context(_logger, logging.INFO, msg=f"Processing file {file}"):
             await get_app_server(celery_app).task_manager.set_task_progress(
-                task_id=task_id,
+                task_key=task_key,
                 report=ProgressReport(actual_value=n / len(files)),
             )
             await asyncio.get_event_loop().run_in_executor(None, sleep_for, 1)
@@ -60,8 +60,8 @@ async def _fake_file_processor(
     return "archive.zip"
 
 
-def fake_file_processor(task: Task, task_id: TaskID, files: list[str]) -> str:
-    assert task_id
+def fake_file_processor(task: Task, task_key: TaskKey, files: list[str]) -> str:
+    assert task_key
     assert task.name
     _logger.info("Calling _fake_file_processor")
     return asyncio.run_coroutine_threadsafe(
@@ -74,14 +74,14 @@ class MyError(OsparcErrorMixin, Exception):
     msg_template = "Something strange happened: {msg}"
 
 
-def failure_task(task: Task, task_id: TaskID) -> None:
-    assert task_id
+def failure_task(task: Task, task_key: TaskKey) -> None:
+    assert task_key
     assert task
     msg = "BOOM!"
     raise MyError(msg=msg)
 
 
-async def dreamer_task(task: Task, task_id: TaskID) -> list[int]:
+async def dreamer_task(task: Task, task_key: TaskKey) -> list[int]:
     numbers = []
     for _ in range(30):
         numbers.append(randint(1, 90))  # noqa: S311

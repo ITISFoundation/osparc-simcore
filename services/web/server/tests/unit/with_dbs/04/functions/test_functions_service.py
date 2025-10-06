@@ -29,13 +29,13 @@ async def test_set_and_remove_group_permissions(
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-    mock_function_factory: Callable[[FunctionClass], RegisteredFunction],
+    create_fake_function_obj: Callable[[FunctionClass], RegisteredFunction],
     clean_functions: None,
 ) -> None:
     # Register the function
     registered_function = await _functions_service.register_function(
         app=client.app,
-        function=mock_function_factory(FunctionClass.PROJECT),
+        function=create_fake_function_obj(FunctionClass.PROJECT),
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
