@@ -49,6 +49,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -1072,6 +1073,7 @@ async def test_close_project(
     fake_services: Callable[..., Awaitable[list[DynamicServiceGet]]],
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
+    mocked_conditionally_unsubscribe_project_logs: mock.Mock,
 ):
     # POST /v0/projects/{project_id}:close
     fake_dynamic_services = await fake_services(number_services=5)
@@ -1109,8 +1111,10 @@ async def test_close_project(
     await assert_status(resp, expected.no_content)
 
     if resp.status == status.HTTP_204_NO_CONTENT:
-        mocked_notifications_plugin["unsubscribe"].assert_called_once_with(
-            client.app, ProjectID(user_project["uuid"])
+        mocked_conditionally_unsubscribe_project_logs.assert_called_once_with(
+            client.app,
+            project_id=ProjectID(user_project["uuid"]),
+            user_id=UserID(user_id),
         )
         # These checks are after a fire&forget, so we wait a moment
         await asyncio.sleep(2)

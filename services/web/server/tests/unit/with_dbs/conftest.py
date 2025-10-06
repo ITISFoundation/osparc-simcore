@@ -708,6 +708,18 @@ def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
 
 
 @pytest.fixture
+def mocked_conditionally_unsubscribe_project_logs(
+    mocker: MockerFixture,
+) -> dict[str, mock.Mock]:
+    mocked_unsubscribe = mocker.patch(
+        "simcore_service_webserver.projects._projects_service.conditionally_unsubscribe_project_logs_across_replicas",
+        autospec=True,
+    )
+
+    return mocked_unsubscribe
+
+
+@pytest.fixture
 async def user_project(
     client: TestClient,
     fake_project: ProjectDict,

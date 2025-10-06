@@ -1807,6 +1807,10 @@ async def close_project_for_user(
         )
         await notify_project_state_update(app, project)
 
+    await conditionally_unsubscribe_project_logs_across_replicas(
+        app, project_uuid, user_id
+    )
+
 
 async def _get_project_share_state(
     user_id: int,
