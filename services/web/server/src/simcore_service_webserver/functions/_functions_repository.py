@@ -456,6 +456,7 @@ async def list_functions(
         # Build the base query with join to access rights table
         base_query = (
             functions_table.select()
+            .distinct()
             .join(
                 functions_access_rights_table,
                 functions_table.c.uuid == functions_access_rights_table.c.function_uuid,

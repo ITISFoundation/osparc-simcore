@@ -27,6 +27,7 @@ from models_library.functions_errors import (
     FunctionsWriteApiAccessDeniedError,
     FunctionWriteAccessDeniedError,
 )
+from models_library.groups import EVERYONE_GROUP_ID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -194,7 +195,7 @@ async def test_list_functions(
     )
 
     # Assert the list contains the registered function
-    assert len(functions) > 0
+    assert len(functions) == 1
     assert any(f.uid == registered_function.uid for f in functions)
 
 
@@ -221,7 +222,7 @@ async def test_list_functions_mixed_user(
         )
         for _ in range(2)
     ]
-
+    assert int(logged_user["primary_gid"]) != 1
     # List functions for the other logged user
     other_functions, _ = await webserver_rpc_client.functions.list_functions(
         pagination_limit=10,
@@ -250,7 +251,7 @@ async def test_list_functions_mixed_user(
         product_name=osparc_product_name,
     )
     # Assert the list contains only the logged user's function
-    assert len(functions) == 2
+    assert len(functions) == len(registered_functions)
     assert all(f.uid in [rf.uid for rf in registered_functions] for f in functions)
 
     other_functions, _ = await webserver_rpc_client.functions.list_functions(
@@ -260,10 +261,47 @@ async def test_list_functions_mixed_user(
         product_name=osparc_product_name,
     )
     # Assert the list contains only the other user's functions
-    assert len(other_functions) == 3
+    assert len(other_functions) == len(other_registered_function)
     assert all(
         f.uid in [orf.uid for orf in other_registered_function] for f in other_functions
     )
+
+    # Add other-user permissions to a logged user function
+    await webserver_rpc_client.functions.set_group_permissions(
+        object_type="function",
+        permission_group_id=int(other_logged_user["primary_gid"]),
+        object_ids=[registered_functions[0].uid],
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        read=True,
+    )
+
+    other_functions, _ = await webserver_rpc_client.functions.list_functions(
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=other_logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    assert len(other_functions) == len(other_registered_function) + 1
+    assert any(f.uid == registered_functions[0].uid for f in other_functions)
+
+    # Add all-user permissions to a logged user function
+    await webserver_rpc_client.functions.set_group_permissions(
+        object_type="function",
+        permission_group_id=EVERYONE_GROUP_ID,
+        object_ids=[registered_functions[0].uid],
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        read=True,
+    )
+    other_functions, _ = await webserver_rpc_client.functions.list_functions(
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=other_logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert len(other_functions) == len(other_registered_function) + 1
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
