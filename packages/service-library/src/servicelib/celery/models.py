@@ -142,7 +142,7 @@ class ExecutionMetadata(BaseModel):
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
-class TaskResultItem(BaseModel):
+class TaskStreamItem(BaseModel):
     data: Any
 
 
@@ -212,13 +212,13 @@ class TaskStore(Protocol):
         report: ProgressReport,
     ) -> None: ...
 
-    async def push_task_result_items(
-        self, task_key: TaskKey, *result: TaskResultItem
+    async def push_task_stream_items(
+        self, task_key: TaskKey, *item: TaskStreamItem
     ) -> None: ...
 
-    async def pull_task_result_items(
+    async def pull_task_stream_items(
         self, task_key: TaskKey, offset: int = 0, limit: int = 50
-    ) -> tuple[list[TaskResultItem], int, bool]: ...
+    ) -> list[TaskStreamItem]: ...
 
 
 class TaskStatus(BaseModel):

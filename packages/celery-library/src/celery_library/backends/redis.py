@@ -12,10 +12,8 @@ from servicelib.celery.models import (
     OwnerMetadata,
     Task,
     TaskKey,
-    TaskResultItem,
-    TaskStatusEvent,
-    TaskStatusValue,
     TaskStore,
+    TaskStreamItem,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
@@ -64,14 +62,16 @@ class RedisTaskStore:
         if execution_metadata.streamed_result:
             stream_key = _build_redis_stream_key(task_key)
             await handle_redis_returns_union_types(
-                self._redis_client_sdk.redis.rpush(
-                    stream_key,
-                    TaskStatusEvent(data=TaskStatusValue.CREATED).model_dump_json(),
-                )
+                self._redis_client_sdk.redis.rpush(stream_key, "__init__")
             )
-            await self._redis_client_sdk.redis.expire(
-                stream_key,
-                _CELERY_TASK_STREAM_EXPIRY_DEFAULT,
+            await handle_redis_returns_union_types(
+                self._redis_client_sdk.redis.lpop(stream_key)
+            )
+            await handle_redis_returns_union_types(
+                self._redis_client_sdk.redis.expire(
+                    stream_key,
+                    _CELERY_TASK_STREAM_EXPIRY_DEFAULT,
+                )
             )
 
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None:
@@ -174,8 +174,8 @@ class RedisTaskStore:
         assert isinstance(n, int)  # nosec
         return n > 0
 
-    async def push_task_result_items(
-        self, task_key: TaskKey, *result: TaskResultItem
+    async def push_task_stream_items(
+        self, task_key: TaskKey, *result: TaskStreamItem
     ) -> None:
         stream_key = _build_redis_stream_key(task_key)
         await handle_redis_returns_union_types(
@@ -185,23 +185,14 @@ class RedisTaskStore:
             )
         )
 
-    async def pull_task_results(
+    async def pull_task_stream_items(
         self, task_key: TaskKey, offset: int = 0, limit: int = 50
-    ) -> tuple[list[str], int, bool]:
+    ) -> list[TaskStreamItem]:
         stream_key = _build_redis_stream_key(task_key)
-        end = offset + limit - 1
-        items: list[str] = await handle_redis_returns_union_types(
-            self._redis_client_sdk.redis.lrange(stream_key, offset, end)
+        raw_items: list[str] = await handle_redis_returns_union_types(
+            self._redis_client_sdk.redis.lrange(stream_key, offset, offset + limit - 1)
         )
-
-        next_offset = offset + len(items)
-
-        total_len = await handle_redis_returns_union_types(
-            self._redis_client_sdk.redis.llen(stream_key)
-        )
-        done = next_offset >= total_len
-
-        return items, next_offset, done
+        return [TaskStreamItem.model_validate_json(item) for item in raw_items]
 
 
 if TYPE_CHECKING:

@@ -14,10 +14,10 @@ from servicelib.celery.models import (
     OwnerMetadata,
     Task,
     TaskKey,
-    TaskResultItem,
     TaskState,
     TaskStatus,
     TaskStore,
+    TaskStreamItem,
     TaskUUID,
 )
 from servicelib.celery.task_manager import TaskManager
@@ -203,17 +203,17 @@ class CeleryTaskManager:
 
     @handle_celery_errors
     async def push_task_result_items(
-        self, task_key: TaskKey, *result: TaskResultItem
+        self, task_key: TaskKey, *item: TaskStreamItem
     ) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Push task result: {task_key=}",
+            msg=f"Push task stream item: {task_key=} {item=}",
         ):
             if not await self.task_exists(task_key):
                 raise TaskNotFoundError(task_key=task_key)
 
-            await self._task_store.push_task_result_items(task_key, *result)
+            await self._task_store.push_task_result_items(task_key, *item)
 
     @handle_celery_errors
     async def pull_task_results(
@@ -222,7 +222,7 @@ class CeleryTaskManager:
         task_uuid: TaskUUID,
         offset: int = 0,
         limit: int = 50,
-    ) -> tuple[list[TaskResultItem], int, bool]:
+    ) -> tuple[list[TaskStreamItem], int, bool]:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -232,11 +232,11 @@ class CeleryTaskManager:
             if not await self.task_exists(task_key):
                 raise TaskNotFoundError(task_key=task_key)
 
-            events, next_offset, has_more = await self._task_store.pull_task_results(
-                task_key, offset, limit
+            events, next_offset, has_more = (
+                await self._task_store.pull_task_stream_items(task_key, offset, limit)
             )
             return (
-                [TypeAdapter(TaskResultItem).validate_json(event) for event in events],
+                [TypeAdapter(TaskStreamItem).validate_json(item) for item in events],
                 next_offset,
                 has_more,
             )

@@ -20,9 +20,9 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.celery.models import (
     TaskKey,
-    TaskResultItem,
     TaskStatusEvent,
     TaskStatusValue,
+    TaskStreamItem,
 )
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
@@ -166,7 +166,7 @@ async def search(
             modified_at=modified_at,
         ):
             data = [
-                TaskResultItem(
+                TaskStreamItem(
                     data=SearchResultItem(
                         name=item.file_name,
                         project_id=item.project_id,
@@ -180,11 +180,11 @@ async def search(
                 for item in items
             ]
 
-            await app_server.task_manager.push_task_result_items(
+            await app_server.task_manager.push_task_stream_items(
                 task_key,
                 *data,
             )
 
-        await app_server.task_manager.push_task_result_items(
+        await app_server.task_manager.push_task_stream_items(
             task_key, TaskStatusEvent(data=TaskStatusValue.SUCCESS).model_dump_json()
         )

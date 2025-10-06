@@ -192,7 +192,7 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
         TaskStreamQueryParams, request
     )
 
-    task_result, cursor, has_more = await _tasks_service.get_task_stream(
+    task_result, cursor, has_more = await _tasks_service.get_task_stream_items(
         get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(

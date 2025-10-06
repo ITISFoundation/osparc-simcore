@@ -24,8 +24,8 @@ from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
     TaskKey,
-    TaskResultItem,
     TaskState,
+    TaskStreamItem,
     TaskUUID,
     Wildcard,
 )
@@ -99,8 +99,8 @@ def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) 
         app_server = get_app_server(task.app)
         for i in range(num_results):
             result_data = f"result-{i}-{_faker.word()}"
-            result_item = TaskResultItem(data=result_data)
-            await app_server.task_manager.push_task_result_items(
+            result_item = TaskStreamItem(data=result_data)
+            await app_server.task_manager.push_task_stream_items(
                 task_key,
                 result_item,
             )
