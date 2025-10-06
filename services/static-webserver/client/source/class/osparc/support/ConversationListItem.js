@@ -27,6 +27,9 @@ qx.Class.define("osparc.support.ConversationListItem", {
 
     // decorate
     this.getChildControl("thumbnail").setDecorator("circled");
+    this.getChildControl("title").set({
+      rich: false, // let ellipsis work
+    });
     this.getChildControl("subtitle").set({
       textColor: "text-disabled",
     });
