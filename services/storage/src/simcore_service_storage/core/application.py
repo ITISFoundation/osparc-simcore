@@ -22,6 +22,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingData
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -47,7 +48,9 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
+def create_app(
+    settings: ApplicationSettings, tracing_data: TracingData
+) -> FastAPI:  # noqa: C901
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
@@ -63,16 +66,16 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
 
     # STATE
     app.state.settings = settings
+    app.state.tracing_data = tracing_data
 
-    if settings.STORAGE_TRACING:
-        setup_tracing(app, settings.STORAGE_TRACING, APP_NAME)
+    if tracing_data.tracing_enabled:
+        setup_tracing(app, tracing_data)
 
     setup_db(app)
     setup_s3(app)
     setup_client_session(
         app,
-        tracing_settings=settings.STORAGE_TRACING,
-        tracing_data=get_tracing_data(app, settings.STORAGE_TRACING),
+        tracing_data=get_tracing_data(app),
     )
 
     if settings.STORAGE_CELERY:
@@ -107,10 +110,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     if settings.STORAGE_MONITORING_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if settings.STORAGE_TRACING:
-        initialize_fastapi_app_tracing(
-            app, tracing_data=get_tracing_data(app, settings.STORAGE_TRACING)
-        )
+    if tracing_data.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_data=tracing_data)
 
     async def _on_startup() -> None:
         if settings.STORAGE_WORKER_MODE:

@@ -5,10 +5,10 @@ from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.client_session import setup_client_session
 from servicelib.fastapi.http_error import set_app_default_http_error_handlers
 from servicelib.fastapi.tracing import (
-    get_tracing_data,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingData
 
 from .._meta import (
     API_VERSION,
@@ -25,7 +25,7 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:
+def create_app(settings: ApplicationSettings, tracing_data: TracingData) -> FastAPI:
     app = FastAPI(
         debug=settings.DIRECTOR_DEBUG,
         title=APP_NAME,
@@ -37,11 +37,12 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     )
     # STATE
     app.state.settings = settings
+    app.state.tracing_data = tracing_data
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
-    if app.state.settings.DIRECTOR_TRACING:
-        setup_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
+    if tracing_data.tracing_enabled:
+        setup_tracing(app, tracing_data)
 
     setup_api_routes(app)
 
@@ -52,14 +53,12 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
         tracing_settings=settings.DIRECTOR_TRACING,
-        tracing_data=get_tracing_data(app, settings.DIRECTOR_TRACING),
+        tracing_data=tracing_data,
     )
     setup_registry(app)
 
-    if settings.DIRECTOR_TRACING:
-        initialize_fastapi_app_tracing(
-            app, tracing_data=get_tracing_data(app, settings.DIRECTOR_TRACING)
-        )
+    if tracing_data.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_data=tracing_data)
 
     # ERROR HANDLERS
     set_app_default_http_error_handlers(app)

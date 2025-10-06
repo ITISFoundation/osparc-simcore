@@ -2,10 +2,10 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.fastapi.tracing import (
-    get_tracing_data,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingData
 
 from .._meta import (
     API_VERSION,
@@ -29,8 +29,14 @@ from .settings import ApplicationSettings
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+def create_app(
+    settings: ApplicationSettings | None = None, tracing_data: TracingData | None = None
+) -> FastAPI:
     app_settings = settings or ApplicationSettings.create_from_envs()
+    tracing_data = tracing_data or TracingData.create(
+        service_name=app_settings.APP_NAME,
+        tracing_settings=app_settings.EFS_GUARDIAN_TRACING,
+    )
 
     app = FastAPI(
         debug=app_settings.EFS_GUARDIAN_DEBUG,
@@ -43,9 +49,10 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     )
     # STATE
     app.state.settings = app_settings
+    app.state.tracing_data = tracing_data
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
-    if app.state.settings.EFS_GUARDIAN_TRACING:
-        setup_tracing(app, app.state.settings.EFS_GUARDIAN_TRACING, APP_NAME)
+    if tracing_data.tracing_enabled:
+        setup_tracing(app, tracing_data)
 
     # PLUGINS SETUP
     setup_rabbitmq(app)
@@ -61,10 +68,8 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     setup_fire_and_forget(app)
 
-    if app_settings.EFS_GUARDIAN_TRACING:
-        initialize_fastapi_app_tracing(
-            app, tracing_data=get_tracing_data(app, app_settings.EFS_GUARDIAN_TRACING)
-        )
+    if tracing_data.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_data=tracing_data)
 
     # EVENTS
     async def _on_startup() -> None:

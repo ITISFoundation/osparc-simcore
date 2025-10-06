@@ -3,7 +3,6 @@ import datetime
 import httpx
 from fastapi import FastAPI
 from servicelib.tracing import TracingData
-from settings_library.tracing import TracingSettings
 
 from .tracing import setup_httpx_client_tracing
 
@@ -13,7 +12,6 @@ def setup_client_session(
     *,
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
-    tracing_settings: TracingSettings | None,
     tracing_data: TracingData | None
 ) -> None:
     async def on_startup() -> None:
@@ -22,7 +20,7 @@ def setup_client_session(
             limits=httpx.Limits(max_keepalive_connections=max_keepalive_connections),
             timeout=default_timeout.total_seconds(),
         )
-        if tracing_settings and tracing_data:
+        if tracing_data:
             setup_httpx_client_tracing(session, tracing_data=tracing_data)
         app.state.aiohttp_client_session = session
 

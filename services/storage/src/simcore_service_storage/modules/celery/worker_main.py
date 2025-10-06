@@ -15,12 +15,10 @@ from ...core.application import create_app
 from ...core.settings import ApplicationSettings
 
 _settings = ApplicationSettings.create_from_envs()
-_tracing_data: TracingData | None = None
-if _settings.STORAGE_TRACING:
-    _tracing_data = TracingData.create(
-        tracing_settings=_settings.STORAGE_TRACING,
-        service_name="storage-celery-worker",
-    )
+_tracing_data = TracingData.create(
+    tracing_settings=_settings.STORAGE_TRACING,
+    service_name="storage-celery-worker",
+)
 
 setup_loggers(
     log_format_local_dev_enabled=_settings.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
@@ -34,7 +32,7 @@ setup_loggers(
 assert _settings.STORAGE_CELERY  # nosec
 app = create_celery_app(_settings.STORAGE_CELERY)
 
-app_server = FastAPIAppServer(app=create_app(_settings))
+app_server = FastAPIAppServer(app=create_app(_settings, tracing_data=_tracing_data))
 
 
 def worker_init_wrapper(sender, **kwargs):

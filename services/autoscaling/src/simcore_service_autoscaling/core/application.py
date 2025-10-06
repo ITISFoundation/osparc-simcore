@@ -51,7 +51,7 @@ def create_app(settings: ApplicationSettings, tracing_data: TracingData) -> Fast
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
-    if app.state.settings.AUTOSCALING_TRACING:
+    if tracing_data.tracing_enabled:
         setup_tracing(app, tracing_data=tracing_data)
 
     setup_instrumentation(app)

@@ -65,6 +65,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.tracing import TracingData
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.tokens import tokens
@@ -236,7 +237,11 @@ async def initialized_app(
     mock_celery_app: None,
     app_settings: ApplicationSettings,
 ) -> AsyncIterator[FastAPI]:
-    app = create_app(app_settings)
+    tracing_data = TracingData.create(
+        tracing_settings=app_settings.STORAGE_TRACING,
+        service_name="storage-api",
+    )
+    app = create_app(app_settings, tracing_data=tracing_data)
     # NOTE: the timeout is sometime too small for CI machines, and even larger machines
     async with LifespanManager(
         app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
@@ -1013,8 +1018,14 @@ async def with_storage_celery_worker(
     # Signals must be explicitily connected
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
+    tracing_data = TracingData.create(
+        tracing_settings=app_settings.STORAGE_TRACING,
+        service_name="storage-api",
+    )
 
-    app_server = FastAPIAppServer(app=create_app(app_settings))
+    app_server = FastAPIAppServer(
+        app=create_app(app_settings, tracing_data=tracing_data)
+    )
 
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
         return on_worker_init(sender, app_server, **_kwargs)

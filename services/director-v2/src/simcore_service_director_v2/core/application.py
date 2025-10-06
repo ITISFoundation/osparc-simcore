@@ -17,6 +17,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingData
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.entrypoints import api_router
@@ -120,10 +121,13 @@ def create_base_app(
     if app_settings is None:
         app_settings = AppSettings.create_from_envs()
 
+    tracing_data = TracingData.create(
+        service_name=APP_NAME, tracing_settings=app_settings.DIRECTOR_V2_TRACING
+    )
     logging_shutdown_event = create_logging_shutdown_event(
         log_format_local_dev_enabled=app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
-        tracing_settings=app_settings.DIRECTOR_V2_TRACING,
+        tracing_data=tracing_data,
         log_base_level=app_settings.log_level,
         noisy_loggers=_NOISY_LOGGERS,
     )
@@ -148,6 +152,7 @@ def create_base_app(
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
+    app.state.tracing_data = tracing_data
 
     app.include_router(api_router)
 
@@ -170,8 +175,8 @@ def create_app(  # noqa: C901, PLR0912
 
     substitutions.setup(app)
 
-    if settings.DIRECTOR_V2_TRACING:
-        setup_tracing(app, settings.DIRECTOR_V2_TRACING, APP_NAME)
+    if get_tracing_data(app).tracing_enabled:
+        setup_tracing(app, get_tracing_data(app))
 
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         instrumentation.setup(app)
@@ -199,13 +204,11 @@ def create_app(  # noqa: C901, PLR0912
 
     db.setup(app, settings.POSTGRES)
 
-    if settings.DIRECTOR_V2_TRACING:
-        initialize_fastapi_app_tracing(
-            app, tracing_data=get_tracing_data(app, settings.DIRECTOR_V2_TRACING)
-        )
+    if get_tracing_data(app).tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
-        dynamic_services.setup(app, tracing_settings=settings.DIRECTOR_V2_TRACING)
+        dynamic_services.setup(app)
 
     dynamic_scheduler_enabled = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
         settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER

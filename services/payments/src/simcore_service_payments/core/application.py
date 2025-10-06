@@ -4,10 +4,10 @@ from servicelib.fastapi.monitoring import (
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
-    get_tracing_data,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingData
 
 from .._meta import (
     API_VERSION,
@@ -31,10 +31,14 @@ from ..services.stripe import setup_stripe
 from .settings import ApplicationSettings
 
 
-def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+def create_app(
+    settings: ApplicationSettings | None = None, tracing_data: TracingData | None = None
+) -> FastAPI:
 
     app_settings = settings or ApplicationSettings.create_from_envs()
-
+    app_tracing_data = tracing_data or TracingData.create(
+        service_name=APP_NAME, tracing_settings=app_settings.PAYMENTS_TRACING
+    )
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,
@@ -47,11 +51,12 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # STATE
     app.state.settings = app_settings
+    app.state.tracing_data = app_tracing_data
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
-    if app.state.settings.PAYMENTS_TRACING:
-        setup_tracing(app, app.state.settings.PAYMENTS_TRACING, APP_NAME)
+    if app_tracing_data:
+        setup_tracing(app, app_tracing_data)
 
     # API w/ postgres db
     setup_postgres(app)
@@ -78,10 +83,8 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if app_settings.PAYMENTS_TRACING:
-        initialize_fastapi_app_tracing(
-            app, tracing_data=get_tracing_data(app, app_settings.PAYMENTS_TRACING)
-        )
+    if app_tracing_data:
+        initialize_fastapi_app_tracing(app, tracing_data=app_tracing_data)
 
     # ERROR HANDLERS
     # ... add here ...

@@ -11,7 +11,6 @@ from servicelib.fastapi.monitoring import (
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
-    get_tracing_data,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
@@ -62,13 +61,13 @@ def create_app(
     app.state.tracing_data = tracing_data
 
     # MIDDLEWARES
-    if settings.CATALOG_TRACING:
-        setup_tracing(app, tracing_data=get_tracing_data(app))
+    if tracing_data.tracing_enabled:
+        setup_tracing(app, tracing_data=tracing_data)
     if settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if settings.CATALOG_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+    if tracing_data.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_data=tracing_data)
 
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)
