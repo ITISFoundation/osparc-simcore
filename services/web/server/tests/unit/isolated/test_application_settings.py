@@ -8,6 +8,7 @@ from typing import Annotated
 import pytest
 from aiohttp import web
 from common_library.json_serialization import json_dumps
+from models_library.rpc.webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from pydantic import Field, HttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -230,3 +231,47 @@ def test_valid_application_settings(mock_webserver_service_environment: EnvVarsD
     assert settings
 
     assert settings == ApplicationSettings.create_from_envs()
+
+
+@pytest.fixture
+def mock_service_environment(
+    docker_compose_service_environment_dict,
+    service_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    print("Mocking envs for service", service_name)
+
+    assert docker_compose_service_environment_dict
+    return setenvs_from_dict(monkeypatch, {**docker_compose_service_environment_dict})
+
+
+@pytest.mark.parametrize(
+    "service_name", ["webserver", "wb-db-event-listener", "wb-garbage-collector"]
+)
+def test_webserver_rpc_namespace_must_be_default(mock_service_environment: EnvVarsDict):
+    settings = ApplicationSettings.create_from_envs()  # type: ignore
+    assert settings
+
+    assert settings.WEBSERVER_RPC_NAMESPACE == DEFAULT_WEBSERVER_RPC_NAMESPACE
+
+
+@pytest.mark.parametrize("service_name", ["wb-api-server"])
+def test_webserver_rpc_namespace_must_be_non_default(
+    mock_service_environment: EnvVarsDict,
+    env_devel_dict: EnvVarsDict,
+):
+    settings = ApplicationSettings.create_from_envs()  # type: ignore
+    assert settings
+
+    assert settings.WEBSERVER_RPC_NAMESPACE != DEFAULT_WEBSERVER_RPC_NAMESPACE
+    assert env_devel_dict["WB_API_WEBSERVER_HOST"] == settings.WEBSERVER_RPC_NAMESPACE
+
+
+@pytest.mark.parametrize("service_name", ["wb-auth"])
+def test_webserver_rpc_namespace_must_be_disabled(
+    mock_service_environment: EnvVarsDict,
+):
+    settings = ApplicationSettings.create_from_envs()  # type: ignore
+    assert settings
+
+    assert settings.WEBSERVER_RPC_NAMESPACE is None
