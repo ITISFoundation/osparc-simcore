@@ -120,7 +120,7 @@ async def test_enqueue_schedule_event(
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-            await asyncio.sleep(0)  # wait for envet to trigger
+            await asyncio.sleep(0)  # wait for event to trigger
             assert mock.call_args_list == [call(schedule_id)]
 
 
@@ -148,7 +148,7 @@ async def test_enqueue_schedule_event_raises_error(
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-            await asyncio.sleep(0)  # wait for envet to trigger
+            await asyncio.sleep(0)  # wait for event to trigger
             assert "Unexpected error. Aborting message retry" in caplog.text
 
 
@@ -227,7 +227,7 @@ async def test_enqueue_event_type(
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            await asyncio.sleep(0)  # wait for envet to trigger
+            await asyncio.sleep(0)  # wait for event to trigger
             assert mock.call_args_list == [
                 call(expected_event_type, schedule_id, "op1", {})
             ]
@@ -273,5 +273,5 @@ async def test_enqueue_event_type_raises_error(
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            await asyncio.sleep(0)  # wait for envet to trigger
+            await asyncio.sleep(0)  # wait for event to trigger
             assert "Unexpected error. Aborting message retry" in caplog.text

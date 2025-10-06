@@ -38,7 +38,7 @@ def _get_is_creating_str(*, is_creating: bool) -> str:
 def _get_scheduler_data_hash_key(*, schedule_id: ScheduleId) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID
     # - SCHEDULE_NAMESPACE: namespace prefix
-    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - SCHEDULE_ID: the unique schedule_id assigned
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000
     return f"{_SCHEDULE_NAMESPACE}:{schedule_id}"
@@ -54,7 +54,7 @@ def _get_step_hash_key(
 ) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_SHORT_NAME:STEP_NAME:IS_CREATING
     # - SCHEDULE_NAMESPACE: namespace prefix
-    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "STEPS"
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_SHORT_NAME
@@ -76,7 +76,7 @@ def _get_group_hash_key(
 ) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID:GROUPS:OPERATION_NAME:GROUP_SHORT_NAME:IS_CREATING
     # - SCHEDULE_NAMESPACE: namespace prefix
-    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "GROUPS"
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_SHORT_NAME
@@ -93,7 +93,7 @@ def _get_operation_context_hash_key(
 ) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME
     # - SCHEDULE_NAMESPACE: namespace prefix
-    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "OP_CTX"
     # - OPERATION_NAME form the vairble's name during registration
     # Example:
@@ -108,7 +108,7 @@ def _get_schedule_events_hash_key(
 ) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME
     # - SCHEDULE_NAMESPACE: namespace prefix
-    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "EVENTS"
     # - EVENT_TYPE: name of the event from EventType
     # Example:

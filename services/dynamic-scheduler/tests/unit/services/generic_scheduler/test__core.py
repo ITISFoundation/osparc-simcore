@@ -362,7 +362,7 @@ class _BaseRequiresProvidesUndoContext(_UndoBS, _MixingGetKeNumber):
 async def _esnure_log_mesage(caplog: pytest.LogCaptureFixture, *, message: str) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            await asyncio.sleep(0)  # wait for envet to trigger
+            await asyncio.sleep(0)  # wait for event to trigger
             assert message in caplog.text
 
 

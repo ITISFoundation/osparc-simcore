@@ -120,7 +120,7 @@ async def ensure_expected_order(
 ) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            await asyncio.sleep(0)  # wait for envet to trigger
+            await asyncio.sleep(0)  # wait for event to trigger
             _assert_expected_order(
                 detected_calls,
                 expected_order,
