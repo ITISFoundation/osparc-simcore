@@ -41,7 +41,7 @@ def upgrade():
         "products",
         "login_settings",
         server_default=sa.text("'{}'::jsonb"),
-        existing_server_default=sa.text("'{\"two_factor_enabled\": false}'::jsonb"),  # type: ignore[arg-type]
+        existing_server_default=sa.text("'{\"two_factor_enabled\": false}'::jsonb"),
     )
 
 
@@ -68,6 +68,6 @@ def downgrade():
         "products",
         "login_settings",
         existing_type=postgresql.JSONB(astext_type=sa.Text()),
-        existing_server_default=sa.text("'{}'::jsonb"),  # type: ignore[arg-type]
+        existing_server_default=sa.text("'{}'::jsonb"),
         server_default=sa.text("'{\"two_factor_enabled\": false}'::jsonb"),
     )
