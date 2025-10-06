@@ -23,14 +23,14 @@ def _load_from_redis_hash(data: dict[str, str]) -> dict[str, Any]:
     return {k: json_loads(v) for k, v in data.items()}
 
 
-def to_redis_namespace(namespace: LRTNamespace) -> str:
-    return namespace.upper()
+def to_redis_namespace(lrt_namespace: LRTNamespace) -> str:
+    return lrt_namespace.upper()
 
 
 class RedisStore:
-    def __init__(self, redis_settings: RedisSettings, namespace: LRTNamespace):
+    def __init__(self, redis_settings: RedisSettings, lrt_namespace: LRTNamespace):
         self.redis_settings = redis_settings
-        self.redis_namespace: str = to_redis_namespace(namespace)
+        self.redis_namespace = to_redis_namespace(lrt_namespace)
 
         self._client: RedisClientSDK | None = None
 

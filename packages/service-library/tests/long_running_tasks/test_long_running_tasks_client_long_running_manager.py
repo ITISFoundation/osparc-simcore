@@ -25,7 +25,7 @@ def task_data() -> TaskData:
 
 @pytest.fixture
 def lrt_namespace(faker: Faker) -> LRTNamespace:
-    return f"test-namespace:{faker.uuid4()}"
+    return TypeAdapter(LRTNamespace).validate_python(f"test-namespace:{faker.uuid4()}")
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ async def store(
     ],
     lrt_namespace: LRTNamespace,
 ) -> AsyncIterable[RedisStore]:
-    store = RedisStore(redis_settings=use_in_memory_redis, namespace=lrt_namespace)
+    store = RedisStore(redis_settings=use_in_memory_redis, lrt_namespace=lrt_namespace)
 
     await store.setup()
     yield store
