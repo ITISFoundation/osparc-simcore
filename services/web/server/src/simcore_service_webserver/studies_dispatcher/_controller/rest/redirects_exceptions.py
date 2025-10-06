@@ -5,7 +5,7 @@ from aiohttp import web
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
-from models_library.function_services_catalog._utils import ServiceNotFound
+from models_library.function_services_catalog._utils import ServiceNotFoundError
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 
@@ -121,7 +121,7 @@ def handle_errors_with_error_page(handler: Handler):
             ) from err
 
         except (
-            ServiceNotFound,
+            ServiceNotFoundError,
             FileToLargeError,
             IncompatibleServiceError,
             GuestUsersLimitError,

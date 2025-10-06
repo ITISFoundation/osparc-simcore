@@ -1,9 +1,12 @@
+import inspect
 import logging
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from typing import Any, get_args, get_origin
 from urllib.parse import quote
 
 from ..services import Author, ServiceKey, ServiceMetaDataPublished, ServiceVersion
+from ..services_io import ServiceInput, ServiceOutput
 from ._settings import AUTHORS, FunctionServiceSettings
 
 _logger = logging.getLogger(__name__)
@@ -24,7 +27,7 @@ def create_fake_thumbnail_url(label: str) -> str:
     return f"https://fakeimg.pl/100x100/ff0000%2C128/000%2C255/?text={quote(label)}"
 
 
-class ServiceNotFound(KeyError):
+class ServiceNotFoundError(KeyError):
     pass
 
 
@@ -33,6 +36,135 @@ class _Record:
     meta: ServiceMetaDataPublished
     implementation: Callable | None = None
     is_under_development: bool = False
+
+
+_TYPE_MAPPING = {
+    "number": float,
+    "integer": int,
+    "boolean": bool,
+    "string": str,
+    "data:*/*": str,
+    "ref_contentSchema": type[Any],
+}
+
+
+def _service_type_to_python_type(property_type: str) -> type[Any]:
+    """Convert service property type to Python type"""
+    # Fast lookup for exact matches
+    if mapped_type := _TYPE_MAPPING.get(property_type):
+        return mapped_type
+
+    # Handle data: prefix patterns
+    if property_type.startswith("data:"):
+        return str
+
+    # Default to Any for unknown types
+    return type[Any]
+
+
+def validate_callable_signature(
+    implementation: Callable | None,
+    service_inputs: dict[str, ServiceInput] | None,
+    service_outputs: dict[str, ServiceOutput] | None,
+) -> None:
+    """
+    Validates that the callable signature matches the service inputs and outputs.
+
+    Args:
+        implementation: The callable to validate
+        service_inputs: Dictionary of service input specifications
+        service_outputs: Dictionary of service output specifications
+
+    Raises:
+        ValueError: If signature doesn't match the expected inputs/outputs
+        TypeError: If types are incompatible
+    """
+    if implementation is None:
+        return
+
+    sig = inspect.signature(implementation)
+    service_inputs = service_inputs or {}
+    service_outputs = service_outputs or {}
+
+    # Validate input parameters
+    sig_params = list(sig.parameters.values())
+    expected_input_count = len(service_inputs)
+    actual_input_count = len(
+        [
+            p
+            for p in sig_params
+            if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+        ]
+    )
+
+    if actual_input_count != expected_input_count:
+        msg = f"Function has {actual_input_count} parameters but service expects {expected_input_count} inputs"
+        raise ValueError(msg)
+
+    # Check parameter types if type hints are available
+    for i, (input_key, input_spec) in enumerate(service_inputs.items()):
+        assert input_key  # nosec
+        if i < len(sig_params):
+            param = sig_params[i]
+            expected_type = _service_type_to_python_type(input_spec.property_type)
+
+            if param.annotation != inspect.Parameter.empty and expected_type != Any:
+                param_type = param.annotation
+                # Handle Union types and optional parameters
+                if get_origin(param_type) is not None:
+                    param_types = get_args(param_type)
+                    if expected_type not in param_types:
+                        _logger.warning(
+                            "Parameter '%s' type hint %s doesn't match expected service input type %s",
+                            param.name,
+                            param_type,
+                            expected_type,
+                        )
+                elif param_type != expected_type:
+                    _logger.warning(
+                        "Parameter '%s' type hint %s doesn't match expected service input type %s",
+                        param.name,
+                        param_type,
+                        expected_type,
+                    )
+
+    # Validate return type
+    if service_outputs:
+        return_annotation = sig.return_annotation
+        if return_annotation != inspect.Signature.empty:
+            output_count = len(service_outputs)
+
+            # If single output, return type should match directly
+            if output_count == 1:
+                output_spec = next(iter(service_outputs.values()))
+                expected_return_type = _service_type_to_python_type(
+                    output_spec.property_type
+                )
+
+                if return_annotation not in {Any, expected_return_type}:
+                    # Check if it's a Union type containing the expected type
+                    if get_origin(return_annotation) is not None:
+                        return_types = get_args(return_annotation)
+                        if expected_return_type not in return_types:
+                            _logger.warning(
+                                "Return type %s doesn't match expected service output type %s",
+                                return_annotation,
+                                expected_return_type,
+                            )
+                    else:
+                        _logger.warning(
+                            "Return type %s doesn't match expected service output type %s",
+                            return_annotation,
+                            expected_return_type,
+                        )
+
+            # If multiple outputs, expect tuple or dict return type
+            elif output_count > 1:
+                if get_origin(return_annotation) not in (tuple, dict):
+                    _logger.warning(
+                        "Multiple outputs expected but return type %s is not tuple or dict",
+                        return_annotation,
+                    )
 
 
 class FunctionServices:
@@ -61,7 +193,8 @@ class FunctionServices:
             msg = f"{meta.key, meta.version} is already registered"
             raise ValueError(msg)
 
-        # TODO: ensure callable signature fits metadata
+        # Validate callable signature matches metadata
+        validate_callable_signature(implementation, meta.inputs, meta.outputs)
 
         # register
         self._functions[(meta.key, meta.version)] = _Record(
@@ -72,8 +205,10 @@ class FunctionServices:
 
     def extend(self, other: "FunctionServices"):
         # pylint: disable=protected-access
-        for f in other._functions.values():
-            self.add(f.meta, f.implementation, f.is_under_development)
+        for f in other._functions.values():  # noqa: SLF001
+            self.add(
+                f.meta, f.implementation, is_under_development=f.is_under_development
+            )
 
     def _skip_dev(self):
         skip = True
@@ -111,7 +246,7 @@ class FunctionServices:
             func = self._functions[(service_key, service_version)]
         except KeyError as err:
             msg = f"{service_key}:{service_version} not found in registry"
-            raise ServiceNotFound(msg) from err
+            raise ServiceNotFoundError(msg) from err
         return func.implementation
 
     def get_metadata(
@@ -122,7 +257,7 @@ class FunctionServices:
             func = self._functions[(service_key, service_version)]
         except KeyError as err:
             msg = f"{service_key}:{service_version} not found in registry"
-            raise ServiceNotFound(msg) from err
+            raise ServiceNotFoundError(msg) from err
         return func.meta
 
     def __len__(self):
