@@ -46,6 +46,7 @@ class FunctionServices:
         self,
         meta: ServiceMetaDataPublished,
         implementation: Callable | None = None,
+        *,
         is_under_development: bool = False,
     ):
         """
@@ -53,7 +54,7 @@ class FunctionServices:
         """
         if not isinstance(meta, ServiceMetaDataPublished):
             msg = f"Expected ServiceDockerData, got {type(meta)}"
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         # ensure unique
         if (meta.key, meta.version) in self._functions:
