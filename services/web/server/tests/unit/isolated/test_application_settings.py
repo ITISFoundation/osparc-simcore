@@ -239,6 +239,8 @@ def mock_service_environment(
     service_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
+    # NOTE: the name of the service in real deploys are not necessarily the ones we have here in the docker-compose
+    # Typically they include prefixes with the deployment name e.g. master-webserver or staging-webserver instead of just webserver
     print("Mocking envs for service", service_name)
 
     assert docker_compose_service_environment_dict
@@ -249,6 +251,7 @@ def mock_service_environment(
     "service_name", ["webserver", "wb-db-event-listener", "wb-garbage-collector"]
 )
 def test_webserver_rpc_namespace_must_be_default(mock_service_environment: EnvVarsDict):
+    # NOTE: This requirement will change when https://github.com/ITISFoundation/osparc-simcore/issues/8448  is implemented
     settings = ApplicationSettings.create_from_envs()  # type: ignore
     assert settings
 
