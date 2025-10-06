@@ -15,10 +15,6 @@ from pact.v3 import Verifier
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from simcore_service_api_server._meta import API_VERSION
-from simcore_service_api_server.api.dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 # Fake response based on values from 05_licensed_items.json
 EXPECTED_LICENSED_ITEMS = [
@@ -141,15 +137,9 @@ class DummyRpcClient:
 async def mock_wb_api_server_rpc(
     app: FastAPI,
     mocker: MockerFixture,
+    mocked_app_rpc_dependencies: None,
     mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
 ) -> None:
-    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import (  # noqa: PLC0415
-        WebServerRpcClient,
-    )
-
-    app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
-    )
 
     mock_handler_in_licenses_rpc_interface(
         "get_licensed_items", return_value=EXPECTED_LICENSED_ITEMS_PAGE
