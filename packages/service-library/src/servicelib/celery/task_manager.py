@@ -7,6 +7,7 @@ from .models import (
     OwnerMetadata,
     Task,
     TaskKey,
+    TaskResultItem,
     TaskStatus,
     TaskUUID,
 )
@@ -40,14 +41,16 @@ class TaskManager(Protocol):
         self, task_key: TaskKey, report: ProgressReport
     ) -> None: ...
 
-    async def push_task_result(self, task_key: TaskKey, result: str) -> None: ...
+    async def push_task_result_items(
+        self, task_key: TaskKey, *result: TaskResultItem
+    ) -> None: ...
 
-    async def pull_task_results(
+    async def pull_task_result_items(
         self,
         owner_metadata: OwnerMetadata,
         task_uuid: TaskUUID,
         offset: int = 0,
         limit: int = 50,
-    ) -> tuple[list[str], int, bool]: ...
+    ) -> tuple[list[TaskResultItem], int, bool]: ...
 
     async def task_exists(self, task_key: TaskKey) -> bool: ...

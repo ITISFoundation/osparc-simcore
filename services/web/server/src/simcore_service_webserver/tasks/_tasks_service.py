@@ -19,6 +19,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 )
 from servicelib.celery.models import (
     OwnerMetadata,
+    TaskResultItem,
     TaskState,
     TaskUUID,
 )
@@ -109,6 +110,29 @@ async def get_task_status(
         progress=task_status.progress_report,
         done=task_status.is_done,
     )
+
+
+async def get_task_stream(
+    task_manager: TaskManager,
+    *,
+    owner_metadata: OwnerMetadata,
+    task_uuid: TaskUUID,
+    offset: int = 0,
+    limit: int = 50,
+) -> tuple[list[TaskResultItem], int, bool]:
+    try:
+        results, next_offset, has_more = await task_manager.pull_task_result_items(
+            owner_metadata=owner_metadata,
+            task_uuid=task_uuid,
+            offset=offset,
+            limit=limit,
+        )
+    except TaskNotFoundError as exc:
+        raise JobMissingError(job_id=task_uuid) from exc
+    except TaskManagerError as exc:
+        raise JobSchedulerError(exc=f"{exc}") from exc
+
+    return results, next_offset, has_more
 
 
 async def list_tasks(

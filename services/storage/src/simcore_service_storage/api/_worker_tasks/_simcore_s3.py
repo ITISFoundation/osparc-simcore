@@ -6,7 +6,7 @@ from typing import Any
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.utils import get_app_server
-from models_library.api_schemas_storage.search_async_jobs import SearchResult
+from models_library.api_schemas_storage.search_async_jobs import SearchResultItem
 from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
     LinkType,
@@ -19,8 +19,8 @@ from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.celery.models import (
-    TaskDataEvent,
     TaskKey,
+    TaskResultItem,
     TaskStatusEvent,
     TaskStatusValue,
 )
@@ -144,7 +144,6 @@ async def search(
     *,
     user_id: UserID,
     project_id: ProjectID | None,
-    limit: int,
     name_pattern: str,
     modified_at: tuple[datetime.datetime | None, datetime.datetime | None] | None,
 ) -> None:
@@ -160,33 +159,32 @@ async def search(
 
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
-        async for page in dsm.search(
+        async for items in dsm.search(
             user_id=user_id,
             project_id=project_id,
             name_pattern=name_pattern,
-            limit=limit,
             modified_at=modified_at,
         ):
             data = [
-                SearchResult(
-                    name=item.file_name,
-                    project_id=item.project_id,
-                    created_at=item.created_at,
-                    last_modified=item.last_modified,
-                    is_directory=item.is_directory,
-                    size=item.file_size,
-                    path=item.object_name,
+                TaskResultItem(
+                    data=SearchResultItem(
+                        name=item.file_name,
+                        project_id=item.project_id,
+                        created_at=item.created_at,
+                        last_modified=item.last_modified,
+                        is_directory=item.is_directory,
+                        size=item.file_size,
+                        path=item.object_name,
+                    )
                 )
-                for item in page
+                for item in items
             ]
 
-            await app_server.task_manager.push_task_result(
+            await app_server.task_manager.push_task_result_items(
                 task_key,
-                TaskDataEvent(
-                    data=[r.model_dump(mode="json", by_alias=True) for r in data]
-                ).model_dump_json(),
+                *data,
             )
 
-        await app_server.task_manager.push_task_result(
+        await app_server.task_manager.push_task_result_items(
             task_key, TaskStatusEvent(data=TaskStatusValue.SUCCESS).model_dump_json()
         )

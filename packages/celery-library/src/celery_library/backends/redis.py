@@ -12,6 +12,7 @@ from servicelib.celery.models import (
     OwnerMetadata,
     Task,
     TaskKey,
+    TaskResultItem,
     TaskStatusEvent,
     TaskStatusValue,
     TaskStore,
@@ -173,12 +174,14 @@ class RedisTaskStore:
         assert isinstance(n, int)  # nosec
         return n > 0
 
-    async def push_task_result(self, task_key: TaskKey, result: str) -> None:
+    async def push_task_result_items(
+        self, task_key: TaskKey, *result: TaskResultItem
+    ) -> None:
         stream_key = _build_redis_stream_key(task_key)
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.rpush(
                 stream_key,
-                result,
+                *[r.model_dump_json(by_alias=True) for r in result],
             )
         )
 

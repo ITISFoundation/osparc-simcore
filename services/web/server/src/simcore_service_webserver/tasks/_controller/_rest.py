@@ -14,12 +14,14 @@ from servicelib.aiohttp.long_running_tasks.server import (
 )
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import (
     create_data_response,
 )
 from servicelib.celery.models import OwnerMetadata
 from servicelib.long_running_tasks import lrt_api
+from yarl import URL
 
 from ..._meta import API_VTAG
 from ...celery import get_task_manager
@@ -27,8 +29,9 @@ from ...login.decorators import login_required
 from ...long_running_tasks.plugin import webserver_request_context_decorator
 from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from .. import _tasks_service
+from . import _rest_utils
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._rest_schemas import TaskPathParams
+from ._rest_schemas import TaskPathParams, TaskStreamQueryParams
 
 log = logging.getLogger(__name__)
 
@@ -172,4 +175,41 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     return create_data_response(
         TaskResult(result=task_result.result, error=None),
         status=status.HTTP_200_OK,
+    )
+
+
+@routes.get(
+    _task_prefix + "/{task_id}/stream",
+    name="get_async_job_stream",
+)
+@login_required
+@handle_rest_requests_exceptions
+async def get_async_job_stream(request: web.Request) -> web.Response:
+
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    _path_params = parse_request_path_parameters_as(TaskPathParams, request)
+    _query_params: TaskStreamQueryParams = parse_request_query_parameters_as(
+        TaskStreamQueryParams, request
+    )
+
+    task_result, cursor, has_more = await _tasks_service.get_task_stream(
+        get_task_manager(request.app),
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            ).model_dump()
+        ),
+        task_uuid=_path_params.task_id,
+        offset=_query_params.offset,
+        limit=_query_params.limit,
+    )
+
+    return _rest_utils.create_page_response(
+        events=task_result,
+        request_url=URL(
+            f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=str(_path_params.task_id))))}"
+        ),
+        cursor=cursor,
+        has_more=has_more,
     )

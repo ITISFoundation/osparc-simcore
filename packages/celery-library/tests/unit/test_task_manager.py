@@ -24,6 +24,7 @@ from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
     TaskKey,
+    TaskResultItem,
     TaskState,
     TaskUUID,
     Wildcard,
@@ -90,17 +91,18 @@ async def dreamer_task(task: Task, task_key: TaskKey) -> list[int]:
     return numbers
 
 
-def streaming_results_task(task: Task, task_id: TaskID, num_results: int = 5) -> str:
-    assert task_id
+def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) -> str:
+    assert task_key
     assert task.name
 
     async def _stream_results() -> None:
         app_server = get_app_server(task.app)
         for i in range(num_results):
             result_data = f"result-{i}-{_faker.word()}"
-            await app_server.task_manager.push_task_result(
-                task_id=task_id,
-                result=result_data,  # Use the task_id parameter, not task.request.id
+            result_item = TaskResultItem(data=result_data)
+            await app_server.task_manager.push_task_result_items(
+                task_key,
+                result_item,
             )
             _logger.info("Pushed result %d: %s", i, result_data)
             await asyncio.sleep(0.2)

@@ -15,6 +15,9 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.tasks._controller._rest_exceptions import (
     _TO_HTTP_ERROR_MAP,
 )
+from simcore_service_webserver.tasks._controller._rest_schemas import (
+    TaskStreamQueryParams,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -45,15 +48,6 @@ def get_async_job_status(
     """Retrieves the status of a task"""
 
 
-@router.get(
-    "/tasks/{task_id}/stream",
-)
-def get_async_job_stream(
-    _path_params: Annotated[_PathParam, Depends()],
-):
-    """Retrieves the stream of a task"""
-
-
 @router.delete(
     "/tasks/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -72,3 +66,14 @@ def get_async_job_result(
     _path_params: Annotated[_PathParam, Depends()],
 ):
     """Retrieves the result of a task"""
+
+
+@router.get(
+    "/tasks/{task_id}/stream",
+    response_model=Any,
+)
+def get_async_job_stream(
+    _path_params: Annotated[_PathParam, Depends()],
+    _query_params: Annotated[TaskStreamQueryParams, Depends()],
+):
+    """Retrieves the stream of a task"""

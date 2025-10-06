@@ -4001,13 +4001,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-  /v0/tasks/{task_id}/stream:
+  /v0/tasks/{task_id}/result:
     get:
       tags:
       - long-running-tasks
-      summary: Get Async Job Stream
-      description: Retrieves the stream of a task
-      operationId: get_async_job_stream
+      summary: Get Async Job Result
+      description: Retrieves the result of a task
+      operationId: get_async_job_result
       parameters:
       - name: task_id
         in: path
@@ -4020,7 +4020,8 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                title: Response Get Async Job Result
         '404':
           content:
             application/json:
@@ -4045,13 +4046,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-  /v0/tasks/{task_id}/result:
+  /v0/tasks/{task_id}/stream:
     get:
       tags:
       - long-running-tasks
-      summary: Get Async Job Result
-      description: Retrieves the result of a task
-      operationId: get_async_job_result
+      summary: Get Async Job Stream
+      description: Retrieves the stream of a task
+      operationId: get_async_job_stream
       parameters:
       - name: task_id
         in: path
@@ -4059,13 +4060,30 @@ paths:
         schema:
           type: string
           title: Task Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                title: Response Get Async Job Result
+                title: Response Get Async Job Stream
         '404':
           content:
             application/json:

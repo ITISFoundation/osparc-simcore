@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from typing import Annotated, Final, Self
+from typing import Annotated, Self
 
 from models_library.projects import ProjectID
 from models_library.utils.common_validators import (
@@ -17,9 +17,6 @@ from ..api_schemas_storage.storage_schemas import (
 from ..projects_nodes_io import LocationID
 from ..rest_pagination import CursorQueryParameters
 from ._base import InputSchema
-
-MAX_SEARCH_ITEMS_PER_PAGE: Final[int] = 50
-DEFAULT_MAX_SEARCH_ITEMS_PER_PAGE: Final[int] = 25
 
 
 class StorageLocationPathParams(BaseModel):
@@ -106,11 +103,3 @@ class SearchFilters(InputSchema):
 
 class SearchBodyParams(InputSchema):
     filters: SearchFilters
-    limit: Annotated[
-        int,
-        Field(
-            description="Limits the number of returned items per page",
-            ge=1,
-            le=MAX_SEARCH_ITEMS_PER_PAGE,
-        ),
-    ] = DEFAULT_MAX_SEARCH_ITEMS_PER_PAGE

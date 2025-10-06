@@ -564,7 +564,6 @@ async def search(request: web.Request) -> web.Response:
             ).model_dump()
         ),
         user_id=_req_ctx.user_id,
-        limit=search_body.limit,
         name_pattern=search_body.filters.name_pattern,
         modified_at=(
             (
@@ -584,7 +583,7 @@ async def search(request: web.Request) -> web.Response:
             task_name=SEARCH_TASK_NAME,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_task_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_task_id)))}",
-            result_stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_task_id)))}",
+            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_task_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )

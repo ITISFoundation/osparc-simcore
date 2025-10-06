@@ -6,7 +6,7 @@ from pydantic import BaseModel, ByteSize, ConfigDict
 from pydantic.alias_generators import to_camel
 
 
-class SearchResult(BaseModel):
+class SearchResultItem(BaseModel):
     name: str
     created_at: datetime.datetime
     last_modified: datetime.datetime

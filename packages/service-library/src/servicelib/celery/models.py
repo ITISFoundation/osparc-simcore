@@ -142,37 +142,8 @@ class ExecutionMetadata(BaseModel):
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
-TaskEventID: TypeAlias = str
-
-
-class TaskEventType(StrEnum):
-    DATA = "data"
-    STATUS = "status"
-
-
-class TaskStatusValue(StrEnum):
-    CREATED = "created"
-    SUCCESS = "success"
-    ERROR = "error"
-
-
-class TaskDataEvent(BaseModel):
-    type: Literal[TaskEventType.DATA] = TaskEventType.DATA
+class TaskResultItem(BaseModel):
     data: Any
-
-
-class TaskStatusEvent(BaseModel):
-    type: Literal[TaskEventType.STATUS] = TaskEventType.STATUS
-    data: TaskStatusValue
-
-    def is_done(self):
-        return self.data in (TaskStatusValue.SUCCESS, TaskStatusValue.ERROR)
-
-
-TaskEvent = Annotated[
-    TaskDataEvent | TaskStatusEvent,
-    Field(discriminator="type"),
-]
 
 
 class Task(BaseModel):
@@ -241,11 +212,13 @@ class TaskStore(Protocol):
         report: ProgressReport,
     ) -> None: ...
 
-    async def push_task_result(self, task_key: TaskKey, result: str) -> None: ...
+    async def push_task_result_items(
+        self, task_key: TaskKey, *result: TaskResultItem
+    ) -> None: ...
 
-    async def pull_task_results(
+    async def pull_task_result_items(
         self, task_key: TaskKey, offset: int = 0, limit: int = 50
-    ) -> tuple[list[str], int, bool]: ...
+    ) -> tuple[list[TaskResultItem], int, bool]: ...
 
 
 class TaskStatus(BaseModel):
