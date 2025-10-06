@@ -5,6 +5,7 @@ from contextlib import AbstractAsyncContextManager
 from copy import deepcopy
 
 import pytest
+from faker import Faker
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks._redis_store import RedisStore
 from servicelib.long_running_tasks.long_running_client_helper import (
@@ -23,8 +24,8 @@ def task_data() -> TaskData:
 
 
 @pytest.fixture
-def lrt_namespace() -> LRTNamespace:
-    return "TEST-NAMESPACE"
+def lrt_namespace(faker: Faker) -> LRTNamespace:
+    return TypeAdapter(LRTNamespace).validate_python(f"test-namespace:{faker.uuid4()}")
 
 
 @pytest.fixture
@@ -35,7 +36,7 @@ async def store(
     ],
     lrt_namespace: LRTNamespace,
 ) -> AsyncIterable[RedisStore]:
-    store = RedisStore(redis_settings=use_in_memory_redis, namespace=lrt_namespace)
+    store = RedisStore(redis_settings=use_in_memory_redis, lrt_namespace=lrt_namespace)
 
     await store.setup()
     yield store

@@ -36,7 +36,7 @@ async def store(
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
     ],
 ) -> AsyncIterable[RedisStore]:
-    store = RedisStore(redis_settings=use_in_memory_redis, namespace="test")
+    store = RedisStore(redis_settings=use_in_memory_redis, lrt_namespace="test")
 
     await store.setup()
     yield store
@@ -78,7 +78,7 @@ async def redis_stores(
     ],
 ) -> AsyncIterable[list[RedisStore]]:
     stores: list[RedisStore] = [
-        RedisStore(redis_settings=use_in_memory_redis, namespace=f"test-{i}")
+        RedisStore(redis_settings=use_in_memory_redis, lrt_namespace=f"test-{i}")
         for i in range(5)
     ]
     for store in stores:
