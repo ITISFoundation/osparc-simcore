@@ -8,8 +8,13 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, PositiveInt
 from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStmts
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
+from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from .errors import InvalidPaymentMethodError
 
 _logger = logging.getLogger(__name__)
@@ -29,18 +34,20 @@ class PaymentsAutorechargeGetDB(BaseModel):
 
 async def get_wallet_autorecharge(
     app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     wallet_id: WalletID,
 ) -> PaymentsAutorechargeGetDB | None:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         stmt = AutoRechargeStmts.get_wallet_autorecharge(wallet_id)
         result = await conn.execute(stmt)
-        row = await result.first()
+        row = result.one_or_none()
         return PaymentsAutorechargeGetDB.model_validate(row) if row else None
 
 
 async def replace_wallet_autorecharge(
     app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     wallet_id: WalletID,
@@ -51,7 +58,7 @@ async def replace_wallet_autorecharge(
         InvalidPaymentMethodError: if `new` includes some invalid 'primary_payment_method_id'
 
     """
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         stmt = AutoRechargeStmts.is_valid_payment_method(
             user_id=user_id,
             wallet_id=new.wallet_id,
@@ -71,6 +78,5 @@ async def replace_wallet_autorecharge(
             monthly_limit_in_usd=new.monthly_limit_in_usd,
         )
         result = await conn.execute(stmt)
-        row = await result.first()
-        assert row  # nosec
+        row = result.one()
         return PaymentsAutorechargeGetDB.model_validate(row)
