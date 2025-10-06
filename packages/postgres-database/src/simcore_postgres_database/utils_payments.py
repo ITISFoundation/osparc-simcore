@@ -6,6 +6,7 @@ from typing import Final, TypeAlias
 
 import sqlalchemy as sa
 import sqlalchemy.exc
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .models.payments_transactions import PaymentTransactionState, payments_transactions
@@ -14,7 +15,7 @@ _logger = logging.getLogger(__name__)
 
 
 PaymentID: TypeAlias = str
-PaymentTransactionRow: TypeAlias = sa.Row
+PaymentTransactionRow: TypeAlias = Row
 
 
 UNSET: Final[str] = "__UNSET__"
