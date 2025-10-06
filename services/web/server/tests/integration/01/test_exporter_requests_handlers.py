@@ -167,7 +167,11 @@ async def client(
 
     monkeypatch.delenv("WEBSERVER_SCICRUNCH", raising=False)
     setenvs_from_dict(
-        monkeypatch, {"SCICRUNCH_API_KEY": "REPLACE_ME_with_valid_api_key"}
+        monkeypatch,
+        {
+            "SCICRUNCH_API_KEY": "REPLACE_ME_with_valid_api_key",
+            "WEBSERVER_RPC_NAMESPACE": "webserver",
+        },
     )
 
     # app setup ----------------------------------

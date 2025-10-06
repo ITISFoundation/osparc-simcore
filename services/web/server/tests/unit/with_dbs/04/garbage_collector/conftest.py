@@ -34,6 +34,12 @@ from simcore_service_webserver.users.plugin import setup_users
 
 
 @pytest.fixture(scope="session")
+def service_name() -> str:
+    # Overrides  service_name fixture needed in docker_compose_service_environment_dict fixture
+    return "wb-garbage-collector"
+
+
+@pytest.fixture(scope="session")
 def fast_service_deletion_delay() -> int:
     """
     Returns the delay in seconds for fast service deletion.
@@ -47,8 +53,8 @@ def app_environment(
     fast_service_deletion_delay: int,
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
+    service_name: str,
 ) -> EnvVarsDict:
-    # NOTE: undos some app_environment settings
     monkeypatch.delenv("WEBSERVER_GARBAGE_COLLECTOR", raising=False)
     app_environment.pop("WEBSERVER_GARBAGE_COLLECTOR", None)
 
@@ -59,7 +65,7 @@ def app_environment(
             "WEBSERVER_NOTIFICATIONS": "1",
             # sets TTL of a resource after logout
             "RESOURCE_MANAGER_RESOURCE_TTL_S": f"{fast_service_deletion_delay}",
-            "GARBAGE_COLLECTOR_INTERVAL_S": "30",
+            "WEBSERVER_RPC_NAMESPACE": service_name,
         },
     )
 
@@ -75,11 +81,8 @@ async def client(
 ) -> TestClient:
     app = create_safe_application()
 
-    assert "WEBSERVER_GARBAGE_COLLECTOR" not in app_environment
-
     settings = setup_settings(app)
     assert settings.WEBSERVER_GARBAGE_COLLECTOR is not None
-    assert settings.WEBSERVER_PROJECTS is not None
 
     setup_db(app)
     setup_session(app)
@@ -88,7 +91,12 @@ async def client(
     setup_login(app)
     setup_users(app)
     setup_socketio(app)
+
+    assert (
+        settings.WEBSERVER_PROJECTS is not None
+    ), "WEBSERVER_PROJECTS must be enabled for close_project fixture"
     assert setup_projects(app)
+
     setup_director_v2(app)
     assert setup_resource_manager(app)
     setup_rabbitmq(app)

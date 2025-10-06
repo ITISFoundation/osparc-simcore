@@ -61,7 +61,7 @@ from ..tasks._exception_handlers import handle_export_data_exceptions
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _get_base_storage_url(app: web.Application) -> URL:
@@ -139,6 +139,7 @@ async def _forward_request_to_storage(
     async with session.request(
         method.upper(), url, ssl=False, json=body, **kwargs
     ) as resp:
+        _logger.debug("Forwarded request to storage %s %s: %s", method, url, resp)
         match resp.status:
             case status.HTTP_422_UNPROCESSABLE_ENTITY:
                 raise web.HTTPUnprocessableEntity(
