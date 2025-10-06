@@ -3,6 +3,7 @@
 # pylint:disable=no-name-in-module
 
 import json
+import logging
 from typing import Annotated
 
 import pytest
@@ -18,6 +19,8 @@ from simcore_service_webserver.application_settings import (
     ApplicationSettings,
     setup_settings,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -241,7 +244,7 @@ def mock_service_environment(
 ) -> EnvVarsDict:
     # NOTE: the name of the service in real deploys are not necessarily the ones we have here in the docker-compose
     # Typically they include prefixes with the deployment name e.g. master-webserver or staging-webserver instead of just webserver
-    print("Mocking envs for service", service_name)
+    _logger.info("Mocking envs for service: %s", service_name)
 
     assert docker_compose_service_environment_dict
     return setenvs_from_dict(monkeypatch, {**docker_compose_service_environment_dict})
@@ -252,7 +255,7 @@ def mock_service_environment(
 )
 def test_webserver_rpc_namespace_must_be_default(mock_service_environment: EnvVarsDict):
     # NOTE: This requirement will change when https://github.com/ITISFoundation/osparc-simcore/issues/8448  is implemented
-    settings = ApplicationSettings.create_from_envs()  # type: ignore
+    settings = ApplicationSettings.create_from_envs()
     assert settings
 
     assert settings.WEBSERVER_RPC_NAMESPACE == DEFAULT_WEBSERVER_RPC_NAMESPACE
@@ -263,7 +266,7 @@ def test_webserver_rpc_namespace_must_be_non_default(
     mock_service_environment: EnvVarsDict,
     env_devel_dict: EnvVarsDict,
 ):
-    settings = ApplicationSettings.create_from_envs()  # type: ignore
+    settings = ApplicationSettings.create_from_envs()
     assert settings
 
     assert settings.WEBSERVER_RPC_NAMESPACE != DEFAULT_WEBSERVER_RPC_NAMESPACE
@@ -274,7 +277,7 @@ def test_webserver_rpc_namespace_must_be_non_default(
 def test_webserver_rpc_namespace_must_be_disabled(
     mock_service_environment: EnvVarsDict,
 ):
-    settings = ApplicationSettings.create_from_envs()  # type: ignore
+    settings = ApplicationSettings.create_from_envs()
     assert settings
 
     assert settings.WEBSERVER_RPC_NAMESPACE is None
