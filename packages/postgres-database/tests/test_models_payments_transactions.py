@@ -10,8 +10,6 @@ from typing import Any
 
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_payment_transaction, utcnow
 from simcore_postgres_database.models.payments_transactions import (
@@ -26,9 +24,10 @@ from simcore_postgres_database.utils_payments import (
     insert_init_payment_transaction,
     update_payment_transaction_state,
 )
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 
-async def test_numerics_precission_and_scale(connection: SAConnection):
+async def test_numerics_precission_and_scale(connection: AsyncConnection):
     # https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.Numeric
     # precision: This parameter specifies the total number of digits that can be stored, both before and after the decimal point.
     # scale: This parameter specifies the number of digits that can be stored to the right of the decimal point.
@@ -58,7 +57,7 @@ def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def init_transaction(connection: SAConnection):
+def init_transaction(connection: AsyncConnection):
     async def _init(payment_id: str):
         # get payment_id from payment-gateway
         values = _remove_not_required(random_payment_transaction(payment_id=payment_id))
@@ -81,7 +80,7 @@ def payment_id() -> str:
 
 
 async def test_init_transaction_sets_it_as_pending(
-    connection: SAConnection, init_transaction: Callable, payment_id: str
+    connection: AsyncConnection, init_transaction: Callable, payment_id: str
 ):
     values = await init_transaction(payment_id)
     assert values["payment_id"] == payment_id
@@ -94,11 +93,11 @@ async def test_init_transaction_sets_it_as_pending(
             payments_transactions.c.state_message,
         ).where(payments_transactions.c.payment_id == payment_id)
     )
-    row: RowProxy | None = await result.fetchone()
+    row = result.one_or_none()
     assert row is not None
 
     # tests that defaults are right?
-    assert dict(row.items()) == {
+    assert dict(row._mapping.items()) == {
         "completed_at": None,
         "state": PaymentTransactionState.PENDING,
         "state_message": None,
@@ -127,7 +126,7 @@ def invoice_url(faker: Faker, expected_state: PaymentTransactionState) -> str | 
     ],
 )
 async def test_complete_transaction(
-    connection: SAConnection,
+    connection: AsyncConnection,
     init_transaction: Callable,
     payment_id: str,
     expected_state: PaymentTransactionState,
@@ -152,7 +151,7 @@ async def test_complete_transaction(
 
 
 async def test_update_transaction_failures_and_exceptions(
-    connection: SAConnection,
+    connection: AsyncConnection,
     init_transaction: Callable,
     payment_id: str,
 ):
@@ -188,7 +187,9 @@ def user_id() -> int:
 
 
 @pytest.fixture
-def create_fake_user_transactions(connection: SAConnection, user_id: int) -> Callable:
+def create_fake_user_transactions(
+    connection: AsyncConnection, user_id: int
+) -> Callable:
     async def _go(expected_total=5):
         payment_ids = []
         for _ in range(expected_total):
@@ -204,7 +205,7 @@ def create_fake_user_transactions(connection: SAConnection, user_id: int) -> Cal
 
 
 async def test_get_user_payments_transactions(
-    connection: SAConnection, create_fake_user_transactions: Callable, user_id: int
+    connection: AsyncConnection, create_fake_user_transactions: Callable, user_id: int
 ):
     expected_payments_ids = await create_fake_user_transactions()
     expected_total = len(expected_payments_ids)
@@ -216,7 +217,7 @@ async def test_get_user_payments_transactions(
 
 
 async def test_get_user_payments_transactions_with_pagination_options(
-    connection: SAConnection, create_fake_user_transactions: Callable, user_id: int
+    connection: AsyncConnection, create_fake_user_transactions: Callable, user_id: int
 ):
     expected_payments_ids = await create_fake_user_transactions()
     expected_total = len(expected_payments_ids)
@@ -243,4 +244,5 @@ async def test_get_user_payments_transactions_with_pagination_options(
     total, rows = await get_user_payments_transactions(
         connection, user_id=user_id, limit=0
     )
+    assert not rows
     assert not rows
