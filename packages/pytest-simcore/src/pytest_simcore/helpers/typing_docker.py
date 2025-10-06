@@ -55,13 +55,6 @@ class StatusDict(TypedDict):
     Timestamp: str
     State: str
     Message: str
-
-    # TODO: represent each state of StatusDict as
-    # class TaskDict:
-    #    Status: Union[ StatusDict0, StatusDict1, etc]?
-    # e.g. in StatusDict1 we add
-    # ContainerStatus:
-
     PortStatus: dict
 
 
