@@ -534,7 +534,10 @@ class Core(SingletonInAppStateMixin):
                     and on_create_initial_context is not None
                 ):
                     await enqueue_create_completed_event(
-                        self.app, schedule_id, operation_name, on_create_initial_context
+                        self.app,
+                        schedule_id,
+                        on_create_operation_name,
+                        on_create_initial_context,
                     )
 
             return
@@ -630,7 +633,10 @@ class Core(SingletonInAppStateMixin):
                     and on_undo_initial_context is not None
                 ):
                     await enqueue_undo_completed_event(
-                        self.app, schedule_id, operation_name, on_undo_initial_context
+                        self.app,
+                        schedule_id,
+                        on_undo_operation_name,
+                        on_undo_initial_context,
                     )
                 return
 

@@ -76,7 +76,7 @@ def _assert_order_random(
 
 
 def _assert_expected_order(
-    steps_call_order: list[tuple[str, str]],
+    detected_order: list[tuple[str, str]],
     expected_order: list[BaseExpectedStepOrder],
     *,
     use_only_first_entries: bool,
@@ -87,7 +87,7 @@ def _assert_expected_order(
     expected_order_length = sum(len(x) for x in expected_order)
 
     # below operations are destructive make a copy
-    call_order = deepcopy(steps_call_order)
+    call_order = deepcopy(detected_order)
 
     if use_only_first_entries:
         call_order = call_order[:expected_order_length]
@@ -112,7 +112,7 @@ def _assert_expected_order(
 
 
 async def ensure_expected_order(
-    detected_calls: list[tuple[str, str]],
+    detected_order: list[tuple[str, str]],
     expected_order: list[BaseExpectedStepOrder],
     *,
     use_only_first_entries: bool = False,
@@ -122,7 +122,7 @@ async def ensure_expected_order(
         with attempt:
             await asyncio.sleep(0)  # wait for event to trigger
             _assert_expected_order(
-                detected_calls,
+                detected_order,
                 expected_order,
                 use_only_first_entries=use_only_first_entries,
                 use_only_last_entries=use_only_last_entries,

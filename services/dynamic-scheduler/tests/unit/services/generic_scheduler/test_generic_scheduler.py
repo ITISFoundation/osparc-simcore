@@ -411,7 +411,7 @@ async def test_can_recover_from_interruption(
         ),
     ],
 )
-async def test_create_undo_order(
+async def test_run_operation_after(
     app: FastAPI,
     preserve_caplog_for_async_logging: None,
     steps_call_order: list[tuple[str, str]],
@@ -451,7 +451,7 @@ async def test_create_undo_order(
         on_undo_completed=on_undo_completed,
     )
 
-    if not register_at_creation:
+    if register_at_creation is False:
         if is_creating:
             await register_to_start_after_on_created_completed(
                 app,
