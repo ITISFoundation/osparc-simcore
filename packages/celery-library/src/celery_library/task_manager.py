@@ -7,7 +7,6 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery.exceptions import CeleryError
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
-from pydantic import TypeAdapter  # type: ignore[import-untyped]
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     ExecutionMetadata,
@@ -202,7 +201,7 @@ class CeleryTaskManager:
         )
 
     @handle_celery_errors
-    async def push_task_result_items(
+    async def push_task_stream_items(
         self, task_key: TaskKey, *item: TaskStreamItem
     ) -> None:
         with log_context(
@@ -213,16 +212,16 @@ class CeleryTaskManager:
             if not await self.task_exists(task_key):
                 raise TaskNotFoundError(task_key=task_key)
 
-            await self._task_store.push_task_result_items(task_key, *item)
+            await self._task_store.push_task_stream_items(task_key, *item)
 
     @handle_celery_errors
-    async def pull_task_results(
+    async def pull_task_stream_items(
         self,
         owner_metadata: OwnerMetadata,
         task_uuid: TaskUUID,
         offset: int = 0,
         limit: int = 50,
-    ) -> tuple[list[TaskStreamItem], int, bool]:
+    ) -> list[TaskStreamItem]:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -232,13 +231,8 @@ class CeleryTaskManager:
             if not await self.task_exists(task_key):
                 raise TaskNotFoundError(task_key=task_key)
 
-            events, next_offset, has_more = (
-                await self._task_store.pull_task_stream_items(task_key, offset, limit)
-            )
-            return (
-                [TypeAdapter(TaskStreamItem).validate_json(item) for item in events],
-                next_offset,
-                has_more,
+            return await self._task_store.pull_task_stream_items(
+                task_key, offset, limit
             )
 
 

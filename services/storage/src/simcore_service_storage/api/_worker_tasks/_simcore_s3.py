@@ -20,8 +20,6 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.celery.models import (
     TaskKey,
-    TaskStatusEvent,
-    TaskStatusValue,
     TaskStreamItem,
 )
 from servicelib.logging_utils import log_context
@@ -184,7 +182,3 @@ async def search(
                 task_key,
                 *data,
             )
-
-        await app_server.task_manager.push_task_stream_items(
-            task_key, TaskStatusEvent(data=TaskStatusValue.SUCCESS).model_dump_json()
-        )
