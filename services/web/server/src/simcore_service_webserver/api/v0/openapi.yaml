@@ -4001,50 +4001,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
-  /v0/tasks/{task_id}/stream:
-    get:
-      tags:
-      - long-running-tasks
-      summary: Get Async Job Stream
-      description: Retrieves the stream of a task
-      operationId: get_async_job_stream
-      parameters:
-      - name: task_id
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Task Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Not Found
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Forbidden
-        '410':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Gone
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnvelopedError'
-          description: Internal Server Error
   /v0/tasks/{task_id}/result:
     get:
       tags:
