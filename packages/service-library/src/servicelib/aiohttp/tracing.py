@@ -24,7 +24,7 @@ from opentelemetry.instrumentation.aiohttp_server import (
     meter,
     set_status_code,
 )
-from opentelemetry.sdk.trace import SpanProcessor
+from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from settings_library.tracing import TracingSettings
 from yarl import URL
@@ -137,7 +137,8 @@ def _startup(
     *,
     app: web.Application,
     tracing_settings: TracingSettings,
-    tracing_data: TracingData,
+    service_name: str,
+    tracer_provider: TracerProvider,
     add_response_trace_id_header: bool = False,
 ) -> None:
     """
@@ -166,14 +167,12 @@ def _startup(
 
     _logger.info(
         "Trying to connect service %s to tracing collector at %s.",
-        tracing_data.service_name,
+        service_name,
         tracing_destination,
     )
 
     # Add the span processor to the tracer provider
-    tracing_data.tracer_provider.add_span_processor(
-        _create_span_processor(tracing_destination)
-    )
+    tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
     # Instrument aiohttp server
     # Explanation for custom middleware call DK 10/2024:
     # OpenTelemetry Aiohttp autoinstrumentation is meant to be used by only calling `AioHttpServerInstrumentor().instrument()`
@@ -194,41 +193,35 @@ def _startup(
     # - opentelemetry-instrumentation==0.48b0
 
     # Instrument aiohttp client
-    AioHttpClientInstrumentor().instrument(tracer_provider=tracing_data.tracer_provider)
+    AioHttpClientInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_AIOPG:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add aio-pg opentelemetry autoinstrumentation...",
         ):
-            AiopgInstrumentor().instrument(tracer_provider=tracing_data.tracer_provider)
+            AiopgInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_ASYNCPG:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
-            AsyncPGInstrumentor().instrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            AsyncPGInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_BOTOCORE:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add botocore opentelemetry autoinstrumentation...",
         ):
-            BotocoreInstrumentor().instrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            BotocoreInstrumentor().instrument(tracer_provider=tracer_provider)
     if HAS_REQUESTS:
         with log_context(
             _logger,
             logging.INFO,
             msg="Attempting to add requests opentelemetry autoinstrumentation...",
         ):
-            RequestsInstrumentor().instrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            RequestsInstrumentor().instrument(tracer_provider=tracer_provider)
 
     if HAS_AIO_PIKA:
         with log_context(
@@ -236,9 +229,7 @@ def _startup(
             logging.INFO,
             msg="Attempting to add aio_pika opentelemetry autoinstrumentation...",
         ):
-            AioPikaInstrumentor().instrument(
-                tracer_provider=tracing_data.tracer_provider
-            )
+            AioPikaInstrumentor().instrument(tracer_provider=tracer_provider)
 
 
 @web.middleware
@@ -256,9 +247,8 @@ async def response_trace_id_header_middleware(request: web.Request, handler):
     return response
 
 
-def _shutdown(tracing_data: TracingData) -> None:
+def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
-    assert tracing_data  # nosec
     try:
         AioHttpClientInstrumentor().uninstrument()
     except Exception:  # pylint:disable=broad-exception-caught
@@ -293,25 +283,27 @@ def _shutdown(tracing_data: TracingData) -> None:
 def setup_tracing(
     *,
     app: web.Application,
-    tracing_settings: TracingSettings,
-    service_name: str,
+    tracing_data: TracingData,
     add_response_trace_id_header: bool = False,
 ) -> Callable[[web.Application], AsyncIterator]:
 
-    tracing_data = TracingData.create(
-        tracing_settings=tracing_settings, service_name=service_name
-    )
+    if tracing_data.tracing_enabled is False:
+        msg = "Tracing is not enabled"
+        raise ValueError(msg)
+    assert tracing_data.tracer_provider  # nosec
+    assert tracing_data.tracing_settings  # nosec
     app[TRACING_DATA_KEY] = tracing_data
     _startup(
         app=app,
-        tracing_settings=tracing_settings,
-        tracing_data=tracing_data,
+        tracing_settings=tracing_data.tracing_settings,
+        tracer_provider=tracing_data.tracer_provider,
+        service_name=tracing_data.service_name,
         add_response_trace_id_header=add_response_trace_id_header,
     )
 
     async def tracing_lifespan(app: web.Application):
         assert app  # nosec
         yield
-        _shutdown(tracing_data=tracing_data)
+        _shutdown()
 
     return tracing_lifespan
