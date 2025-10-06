@@ -51,7 +51,7 @@ qx.Class.define("osparc.support.SupportCenter", {
   },
 
   statics: {
-    WINDOW_WIDTH: 430,
+    WINDOW_WIDTH: 450,
     WINDOW_HEIGHT: 700,
     REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
 
