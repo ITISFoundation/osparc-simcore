@@ -453,10 +453,9 @@ async def list_functions(
             search_by_function_title=search_by_function_title,
         )
 
-        # Build the base query with join to access rights table
+        # Use GROUP BY on the primary key to ensure unique functions
         base_query = (
             functions_table.select()
-            .distinct()
             .join(
                 functions_access_rights_table,
                 functions_table.c.uuid == functions_access_rights_table.c.function_uuid,
@@ -467,6 +466,7 @@ async def list_functions(
                 functions_access_rights_table.c.read,
                 *attributes_filters,
             )
+            .group_by(functions_table.c.uuid)
         )
 
         # Get total count

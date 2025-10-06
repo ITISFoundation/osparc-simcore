@@ -4,7 +4,7 @@
 
 
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, suppress
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunction,
 )
 from models_library.functions import FunctionClass, SolverFunction
+from models_library.functions_errors import FunctionWriteAccessDeniedError
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import TypeAdapter
@@ -152,23 +153,26 @@ async def clean_functions(
     client: TestClient,
     webserver_rpc_client: WebServerRpcClient,
     logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
     osparc_product_name: ProductName,
 ) -> None:
     assert client.app
 
-    functions, _ = await webserver_rpc_client.functions.list_functions(
-        pagination_limit=100,
-        pagination_offset=0,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-    )
-    for function in functions:
-        assert function.uid is not None
-        await webserver_rpc_client.functions.delete_function(
-            function_id=function.uid,
-            user_id=logged_user["id"],
+    for user_id in (logged_user["id"], other_logged_user["id"]):
+        functions, _ = await webserver_rpc_client.functions.list_functions(
+            pagination_limit=100,
+            pagination_offset=0,
+            user_id=user_id,
             product_name=osparc_product_name,
         )
+        for function in functions:
+            assert function.uid is not None
+            with suppress(FunctionWriteAccessDeniedError):
+                await webserver_rpc_client.functions.delete_function(
+                    function_id=function.uid,
+                    user_id=user_id,
+                    product_name=osparc_product_name,
+                )
 
 
 @pytest.fixture
