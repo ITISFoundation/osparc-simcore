@@ -3,7 +3,7 @@
 # pylint: disable=unexpected-keyword-arg
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pytlin: disable=protected-access
+# pylint: disable=protected-access
 
 import decimal
 from collections.abc import Callable
