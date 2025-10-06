@@ -70,7 +70,9 @@ class _OperationToStartEvent:
     initial_context: OperationContext
 
 
-class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
+class EventScheduler(  # pylint: disable=too-many-instance-attributes
+    SingletonInAppStateMixin, SupportsLifecycle
+):
     """Handles scheduling of single events for a given schedule_id"""
 
     app_state_name: str = "generic_scheduler_event_scheduler"

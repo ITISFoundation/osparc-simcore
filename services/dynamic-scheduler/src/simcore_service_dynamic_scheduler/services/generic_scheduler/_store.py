@@ -193,7 +193,10 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
         await handle_redis_returns_union_types(self.redis.delete(*keys))
 
     async def exists(self, hash_key: str) -> bool:
-        return await handle_redis_returns_union_types(self.redis.exists(hash_key)) == 1
+        result: bool = (
+            await handle_redis_returns_union_types(self.redis.exists(hash_key)) == 1
+        )
+        return result
 
 
 class _UpdateScheduleDataDict(TypedDict):

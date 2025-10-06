@@ -516,18 +516,25 @@ class Core(SingletonInAppStateMixin):
                 on_created_proxy = OperationEventsProxy(
                     self._store, schedule_id, EventType.ON_CREATED_COMPLETED
                 )
-                operation_name: OperationName | None = None
-                initial_context: OperationContext | None = None
+                on_create_operation_name: OperationName | None = None
+                on_create_initial_context: OperationContext | None = None
                 if await on_created_proxy.exists():
-                    operation_name = await on_created_proxy.read("operation_name")
-                    initial_context = await on_created_proxy.read("initial_context")
+                    on_create_operation_name = await on_created_proxy.read(
+                        "operation_name"
+                    )
+                    on_create_initial_context = await on_created_proxy.read(
+                        "initial_context"
+                    )
 
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_creating=True
                 )
-                if operation_name is not None and initial_context is not None:
+                if (
+                    on_create_operation_name is not None
+                    and on_create_initial_context is not None
+                ):
                     await enqueue_create_completed_event(
-                        self.app, schedule_id, operation_name, initial_context
+                        self.app, schedule_id, operation_name, on_create_initial_context
                     )
 
             return
@@ -607,18 +614,23 @@ class Core(SingletonInAppStateMixin):
                 on_undo_proxy = OperationEventsProxy(
                     self._store, schedule_id, EventType.ON_UNDO_COMPLETED
                 )
-                operation_name: OperationName | None = None
-                initial_context: OperationContext | None = None
+                on_undo_operation_name: OperationName | None = None
+                on_undo_initial_context: OperationContext | None = None
                 if await on_undo_proxy.exists():
-                    operation_name = await on_undo_proxy.read("operation_name")
-                    initial_context = await on_undo_proxy.read("initial_context")
+                    on_undo_operation_name = await on_undo_proxy.read("operation_name")
+                    on_undo_initial_context = await on_undo_proxy.read(
+                        "initial_context"
+                    )
 
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_creating=False
                 )
-                if operation_name is not None and initial_context is not None:
+                if (
+                    on_undo_operation_name is not None
+                    and on_undo_initial_context is not None
+                ):
                     await enqueue_undo_completed_event(
-                        self.app, schedule_id, operation_name, initial_context
+                        self.app, schedule_id, operation_name, on_undo_initial_context
                     )
                 return
 
