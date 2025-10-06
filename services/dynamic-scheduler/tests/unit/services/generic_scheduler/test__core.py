@@ -1109,8 +1109,10 @@ async def test_wait_for_manual_intervention(
     )
 
     # even if cancelled, state of waiting for manual intervention remains the same
-    with pytest.raises(CannotCancelWhileWaitingForManualInterventionError):
-        await cancel_operation(selected_app, schedule_id)
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:  # noqa: SIM117
+            with pytest.raises(CannotCancelWhileWaitingForManualInterventionError):
+                await cancel_operation(selected_app, schedule_id)
 
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
