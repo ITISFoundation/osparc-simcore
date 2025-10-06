@@ -125,8 +125,7 @@ async def update_payment_transaction_state(
             .where(payments_transactions.c.payment_id == payment_id)
             .returning(payments_transactions)
         )
-        row = result.one()
-        return row
+        return result.one()
 
 
 async def get_user_payments_transactions(

@@ -22,7 +22,6 @@ from simcore_postgres_database.utils_payments import (
 )
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
-    transaction_context,
 )
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -104,7 +103,8 @@ async def complete_payment_transaction(
     if invoice_url:
         optional_kwargs["invoice_url"] = invoice_url
 
-    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        # NOTE: update_payment_transaction_state() uses a transaction internally, therefore we use pass_or_acquire_connection(...)
         row = await update_payment_transaction_state(
             conn,
             payment_id=payment_id,
