@@ -44,7 +44,9 @@ async def get_solver_output_results(
                 port.property_type,
                 port.value,
             )
-            assert TypeAdapter(ResultsTypes).validate_python(port.value) == port.value  # type: ignore  # nosec
+            assert (
+                TypeAdapter(ResultsTypes).validate_python(port.value) == port.value
+            )  # nosec
 
             solver_output_results[port.key] = port.value
 

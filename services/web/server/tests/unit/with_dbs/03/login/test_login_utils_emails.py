@@ -12,6 +12,7 @@ from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from faker import Faker
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.constants import RQ_PRODUCT_KEY
@@ -27,7 +28,12 @@ from simcore_service_webserver.statics._constants import FRONTEND_APPS_AVAILABLE
 
 
 @pytest.fixture
-def app(mock_env_devel_environment: EnvVarsDict) -> web.Application:
+def app(
+    docker_compose_service_environment_dict: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> web.Application:
+
+    setenvs_from_dict(monkeypatch, {**docker_compose_service_environment_dict})
 
     # app_environment: EnvVarsDict) -> web.Application:
     app_ = web.Application()

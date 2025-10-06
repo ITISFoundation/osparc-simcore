@@ -6,7 +6,7 @@ from .models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
-    TaskID,
+    TaskKey,
     TaskStatus,
     TaskUUID,
 )
@@ -37,12 +37,10 @@ class TaskManager(Protocol):
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
     async def set_task_progress(
-        self, task_id: TaskID, report: ProgressReport
+        self, task_key: TaskKey, report: ProgressReport
     ) -> None: ...
 
-    async def task_exists(self, task_id: TaskID) -> bool: ...
-
-    async def push_task_result(self, task_id: TaskID, result: str) -> None: ...
+    async def push_task_result(self, task_key: TaskKey, result: str) -> None: ...
 
     async def pull_task_results(
         self,
@@ -51,3 +49,5 @@ class TaskManager(Protocol):
         offset: int = 0,
         limit: int = 50,
     ) -> tuple[list[str], int, bool]: ...
+
+    async def task_exists(self, task_key: TaskKey) -> bool: ...
