@@ -137,7 +137,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
     __applyMessage: function(message) {
       const createdDate = osparc.utils.Utils.formatDateAndTime(message.getCreated());
       const lastUpdate = this.getChildControl("last-updated");
-      if (message.getCreated() === message.getModified()) {
+      if (message.getCreated().getTime() === message.getModified().getTime()) {
         lastUpdate.setValue(createdDate);
       } else {
         const updatedDate = osparc.utils.Utils.formatDateAndTime(message.getModified());
