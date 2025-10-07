@@ -133,14 +133,14 @@ qx.Class.define("osparc.data.model.Conversation", {
     },
 
     firstMessage: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       nullable: true,
       init: null,
       event: "changeFirstMessage",
     },
 
     lastMessage: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       nullable: true,
       init: null,
       event: "changeLastMessage",
@@ -217,17 +217,19 @@ qx.Class.define("osparc.data.model.Conversation", {
         .then(resp => {
           const messages = resp["data"];
           if (messages.length) {
-            this.addMessage(messages[0]);
-            this.setLastMessage(messages[0]);
+            const message = this.addMessage(messages[0]);
+            this.setLastMessage(message);
           }
           // fetch first message only if there is more than one message
           if (resp["_meta"]["total"] === 1) {
-            this.setFirstMessage(messages[0]);
+            const message = new osparc.data.model.Message(messages[0]);
+            this.setFirstMessage(message);
           } else if (resp["_meta"]["total"] > 1) {
             osparc.store.ConversationsSupport.getInstance().fetchFirstMessage(this.getConversationId(), resp["_meta"])
               .then(firstMessages => {
                 if (firstMessages.length) {
-                  this.setFirstMessage(firstMessages[0]);
+                  const message = new osparc.data.model.Message(firstMessages[0]);
+                  this.setFirstMessage(message);
                 }
               });
           }
