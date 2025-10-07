@@ -181,6 +181,7 @@ qx.Class.define("osparc.product.Utils", {
             key: "organization",
           };
         case "osparc":
+        default:
           return {
             label: qx.locale.Manager.tr("Research Group/Organization"),
             key: "organization",
