@@ -43,7 +43,7 @@ class DirectorV2ThinClient(BaseThinClient):
             ),
             extra_allowed_method_names={"attach_lifespan_to"},
             tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
-            tracing_data=get_tracing_data(app, settings.DYNAMIC_SCHEDULER_TRACING),
+            tracing_data=get_tracing_data(app),
         )
 
     @retry_on_errors()

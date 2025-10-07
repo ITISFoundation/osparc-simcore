@@ -36,7 +36,7 @@ class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespan
             },
             base_url=settings.DYNAMIC_SCHEDULER_CATALOG_SETTINGS.api_base_url,
             tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
-            tracing_data=get_tracing_data(app, settings.DYNAMIC_SCHEDULER_TRACING),
+            tracing_data=get_tracing_data(app),
         )
 
     @retry_on_errors()

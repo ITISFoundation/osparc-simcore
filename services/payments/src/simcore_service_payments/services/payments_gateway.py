@@ -218,9 +218,7 @@ def setup_payments_gateway(app: FastAPI):
     if settings.PAYMENTS_TRACING:
         setup_httpx_client_tracing(
             api.client,
-            tracing_data=get_tracing_data(
-                app, tracing_settings=settings.PAYMENTS_TRACING
-            ),
+            tracing_data=get_tracing_data(app),
         )
     api.attach_lifespan_to(app)
     api.set_to_app_state(app)

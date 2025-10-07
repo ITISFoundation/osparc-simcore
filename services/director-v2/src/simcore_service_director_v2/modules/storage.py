@@ -40,7 +40,7 @@ def setup(
         if tracing_settings:
             setup_httpx_client_tracing(
                 client=client,
-                tracing_data=get_tracing_data(app, tracing_settings=tracing_settings),
+                tracing_data=get_tracing_data(app),
             )
         StorageClient.create(
             app,

@@ -45,9 +45,7 @@ class ResourceUsageTrackerClient:
         if settings.DIRECTOR_V2_TRACING:
             setup_httpx_client_tracing(
                 client=client,
-                tracing_data=get_tracing_data(
-                    app=app, tracing_settings=settings.DIRECTOR_V2_TRACING
-                ),
+                tracing_data=get_tracing_data(app),
             )
         exit_stack = contextlib.AsyncExitStack()
 
