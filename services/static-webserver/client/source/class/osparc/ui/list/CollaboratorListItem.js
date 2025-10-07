@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.ui.list.CollaboratorListItem", {
-  extend: osparc.ui.list.ListItem,
+  extend: osparc.ui.list.ListItemWithMenu,
 
   properties: {
     collabType: {
@@ -27,20 +27,6 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         "user",         // osparc.store.Groups.COLLAB_TYPE.USER
       ],
       event: "changeCollabType",
-      nullable: true
-    },
-
-    accessRights: {
-      check: "Object",
-      apply: "__applyAccessRights",
-      event: "changeAccessRights",
-      nullable: true
-    },
-
-    showOptions: {
-      check: "Boolean",
-      apply: "__applyShowOptions",
-      event: "changeShowOptions",
       nullable: true
     },
 
@@ -103,31 +89,6 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       return roleInfo;
     },
 
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "options": {
-          const iconSize = 25;
-          control = new qx.ui.form.MenuButton().set({
-            maxWidth: iconSize,
-            maxHeight: iconSize,
-            alignX: "center",
-            alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
-            focusable: false
-          });
-          this._add(control, {
-            row: 0,
-            column: 3,
-            rowSpan: 2
-          });
-          break;
-        }
-      }
-
-      return control || this.base(arguments, id);
-    },
-
     // overridden
     _applyTitle: function(value) {
       if (value === null) {
@@ -175,7 +136,8 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       }
     },
 
-    __applyAccessRights: function(value) {
+    // overridden
+    _applyAccessRights: function(value) {
       if (value === null) {
         return;
       }
@@ -278,10 +240,5 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
       return menu;
     },
-
-    __applyShowOptions: function(value) {
-      const optionsMenu = this.getChildControl("options");
-      optionsMenu.setVisibility(value ? "visible" : "excluded");
-    }
   }
 });
