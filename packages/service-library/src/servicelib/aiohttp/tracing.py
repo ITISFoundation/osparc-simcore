@@ -14,18 +14,18 @@ from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-
     AioHttpClientInstrumentor,
 )
 from opentelemetry.instrumentation.aiohttp_server import (
-    MetricInstruments,
     _parse_active_request_count_attrs,
     _parse_duration_attrs,
     collect_request_attributes,
-    extract,
     get_default_span_details,
     getter,
     meter,
     set_status_code,
 )
+from opentelemetry.propagate import extract
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.semconv.metrics import MetricInstruments
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
@@ -101,7 +101,8 @@ async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler)
         description="measures the number of concurrent HTTP requests those are currently in flight",
     )
     tracing_data = request.app[TRACING_DATA_KEY]
-    assert isinstance(tracing_data, TracingData)
+    assert isinstance(tracing_data, TracingData)  # nosec
+    assert tracing_data.tracer_provider  # nosec
     tracer = tracing_data.tracer_provider.get_tracer(__name__)
     with tracer.start_as_current_span(
         span_name,
