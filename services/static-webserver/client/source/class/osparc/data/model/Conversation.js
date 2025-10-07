@@ -174,7 +174,7 @@ qx.Class.define("osparc.data.model.Conversation", {
     __applyLastMessage: function(lastMessage) {
       const name = this.getName();
       if (!name || name === "null") {
-        this.setNameAlias(lastMessage ? lastMessage.content : "");
+        this.setNameAlias(lastMessage ? lastMessage.getContent() : "");
       }
     },
 
@@ -287,17 +287,28 @@ qx.Class.define("osparc.data.model.Conversation", {
         });
     },
 
+    getMessages: function() {
+      return this.__messages;
+    },
+
+    getMessageIndex: function(messageId) {
+      return this.__messages.findIndex(msg => msg.getMessageId() === messageId);
+    },
+
+    messageExists: function(messageId) {
+      return this.__messages.some(msg => msg.getMessageId() === messageId);
+    },
+
     addMessage: function(messageData) {
-      if (messageData) {
-        const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
-        if (!found) {
-          const message = new osparc.data.model.Message(messageData);
-          this.__messages.push(message);
-          this.fireDataEvent("messageAdded", message);
-        }
-        osparc.data.model.Message.sortMessagesByDate(this.__messages);
-        this.setLastMessage(this.__messages[0]);
+      let message = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
+      if (!message) {
+        message = new osparc.data.model.Message(messageData);
+        this.__messages.push(message);
+        this.fireDataEvent("messageAdded", message);
       }
+      osparc.data.model.Message.sortMessagesByDate(this.__messages);
+      this.setLastMessage(this.__messages[0]);
+      return message;
     },
 
     updateMessage: function(messageData) {

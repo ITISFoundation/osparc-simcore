@@ -104,15 +104,11 @@ qx.Class.define("osparc.conversation.MessageList", {
       if (conversation) {
         conversation.addListener("messageAdded", e => {
           const data = e.getData();
-          this.addMessage(data);
-        });
-        conversation.addListener("messageUpdated", e => {
-          const data = e.getData();
-          this.updateMessage(data);
+          this.__messageAdded(data);
         });
         conversation.addListener("messageDeleted", e => {
           const data = e.getData();
-          this.deleteMessage(data);
+          this.__messageDeleted(data);
         });
       }
     },
@@ -132,8 +128,6 @@ qx.Class.define("osparc.conversation.MessageList", {
       loadMoreMessages.setFetching(true);
       this.getConversation().getNextMessages()
         .then(resp => {
-          const messages = resp["data"];
-          messages.forEach(message => this.addMessage(message));
           if (resp["_links"]["next"] === null && loadMoreMessages) {
             loadMoreMessages.exclude();
           }
@@ -146,32 +140,22 @@ qx.Class.define("osparc.conversation.MessageList", {
     },
 
     getMessages: function() {
-      return this._messages;
+      return this.getConversation().getMessages();
     },
 
     clearAllMessages: function() {
-      this._messages = [];
       this.getChildControl("messages-container").removeAll();
-
       this.fireEvent("messagesChanged");
     },
 
-    addMessage: function(messageData) {
+    __messageAdded: function(messageData) {
       // ignore it if it was already there
-      const messageIndex = this._messages.findIndex(msg => msg.getMessageId() === messageData["messageId"]);
-      if (messageIndex !== -1) {
+      if (this.getConversation().messageExists(messageData["messageId"])) {
         return;
       }
 
       // determine insertion index for latest‐first order
-      const newTime = new Date(messageData["created"]);
-      let insertAt = this._messages.findIndex(m => new Date(m["created"]) > newTime);
-      if (insertAt === -1) {
-        insertAt = this._messages.length;
-      }
-
-      // Insert the message in the messages array
-      const message = new osparc.data.model.Message(messageData);
+      const insertAt = this.getConversation().getMessageIndex(message.getMessageId());
       this._messages.splice(insertAt, 0, message);
 
       // Add the UI element to the messages list
@@ -179,8 +163,7 @@ qx.Class.define("osparc.conversation.MessageList", {
       switch (message.getType()) {
         case "MESSAGE":
           control = this._createMessageUI(messageData);
-          control.addListener("messageUpdated", e => this.updateMessage(e.getData()));
-          control.addListener("messageDeleted", e => this.deleteMessage(e.getData()));
+          control.addListener("messageDeleted", e => this.__messageDeleted(e.getData()));
           break;
         case "NOTIFICATION":
           control = new osparc.conversation.NotificationUI(messageData);
@@ -202,44 +185,18 @@ qx.Class.define("osparc.conversation.MessageList", {
       this.fireEvent("messagesChanged");
     },
 
-    deleteMessage: function(messageData) {
-      // remove it from the messages array
-      const messageIndex = this._messages.findIndex(msg => msg.getMessageId() === messageData["messageId"]);
-      if (messageIndex === -1) {
-        return;
-      }
-      this._messages.splice(messageIndex, 1);
-
+    __messageDeleted: function(messageData) {
       // Remove the UI element from the messages list
       const messagesContainer = this.getChildControl("messages-container");
       const children = messagesContainer.getChildren();
       const controlIndex = children.findIndex(
-        ctrl => ("getMessage" in ctrl && ctrl.getMessage()["messageId"] === messageData["messageId"])
+        ctrl => ("getMessage" in ctrl && ctrl.getMessage().getMessageId() === messageData["messageId"])
       );
       if (controlIndex > -1) {
         messagesContainer.remove(children[controlIndex]);
       }
 
       this.fireEvent("messagesChanged");
-    },
-
-    updateMessage: function(messageData) {
-      // Replace the message in the messages array
-      const messageIndex = this._messages.findIndex(msg => msg.getMessageId() === messageData["messageId"]);
-      if (messageIndex === -1) {
-        return;
-      }
-      this._messages[messageIndex] = messageData;
-
-      // Update the UI element from the messages list
-      const messagesContainer = this.getChildControl("messages-container");
-      const messageUI = messagesContainer.getChildren().find(control => {
-        return "getMessage" in control && control.getMessage()["messageId"] === messageData["messageId"];
-      });
-      if (messageUI) {
-        // Force a new reference
-        messageUI.setMessage(Object.assign({}, messageData));
-      }
     },
   }
 });
