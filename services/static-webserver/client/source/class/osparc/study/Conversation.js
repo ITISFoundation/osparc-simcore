@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.study.Conversation", {
-  extend: osparc.conversation.Conversation,
+  extend: osparc.conversation.MessageList,
 
   /**
     * @param studyData {String} Study Data

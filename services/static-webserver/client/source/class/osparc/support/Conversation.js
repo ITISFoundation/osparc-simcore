@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.support.Conversation", {
-  extend: osparc.conversation.Conversation,
+  extend: osparc.conversation.MessageList,
 
   /**
     * @param conversation {osparc.data.model.Conversation} Conversation
