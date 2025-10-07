@@ -89,7 +89,7 @@ async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
                 statement="pytest statement",
                 params={},
                 orig=Exception("pytest original"),
-                dbapi_base_err=Exception("pytest dbapi base error"),
+                dbapi_base_err=Exception,
             ),
             status.HTTP_503_SERVICE_UNAVAILABLE,
         ),
