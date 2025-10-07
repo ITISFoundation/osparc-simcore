@@ -121,6 +121,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
           if (found) {
             control.setSelection([found]);
           }
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           this._add(control);
           break;
         }
