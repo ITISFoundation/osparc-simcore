@@ -35,7 +35,7 @@ get_asyncpg_engine = _asyncpg.get_async_engine
 )
 def setup_db(app: web.Application):
 
-    # ensures keys exist
+    # ensures keys exist DEPRECATED
     app[APP_AIOPG_ENGINE_KEY] = None
     assert get_database_engine_legacy(app) is None  # nosec
 
