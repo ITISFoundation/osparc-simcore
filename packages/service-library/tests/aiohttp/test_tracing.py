@@ -70,9 +70,10 @@ async def test_valid_tracing_settings(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
-    async for _ in setup_tracing(
-        app=app, tracing_settings=tracing_settings, service_name=service_name
-    )(app):
+    tracing_data = TracingData.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
+    async for _ in setup_tracing(app=app, tracing_data=tracing_data)(app):
         pass
 
 
@@ -147,13 +148,12 @@ async def test_tracing_setup_package_detection(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
-    async for _ in setup_tracing(
-        app=app, tracing_settings=tracing_settings, service_name=service_name
-    )(app):
+    tracing_data = TracingData.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
+    async for _ in setup_tracing(app=app, tracing_data=tracing_data)(app):
         # idempotency
-        async for _ in setup_tracing(
-            app=app, tracing_settings=tracing_settings, service_name=service_name
-        )(app):
+        async for _ in setup_tracing(app=app, tracing_data=tracing_data)(app):
             pass
 
 
@@ -195,8 +195,7 @@ async def test_trace_id_in_response_header(
 
     async for _ in setup_tracing(
         app=app,
-        tracing_settings=tracing_settings,
-        service_name=service_name,
+        tracing_data=tracing_data,
         add_response_trace_id_header=True,
     )(app):
         client = await aiohttp_client(app)
@@ -242,9 +241,7 @@ async def test_tracing_sampling_probability_effective(
 
     app.router.add_get("/", handler)
 
-    async for _ in setup_tracing(
-        app=app, tracing_settings=tracing_settings, service_name=service_name
-    )(app):
+    async for _ in setup_tracing(app=app, tracing_data=tracing_data)(app):
         client = await aiohttp_client(app)
 
         async def make_request():
