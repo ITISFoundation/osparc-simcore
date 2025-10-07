@@ -137,12 +137,16 @@ qx.Class.define("osparc.conversation.MessageUI", {
     __applyMessage: function(message) {
       const createdDate = osparc.utils.Utils.formatDateAndTime(message.getCreated());
       const lastUpdate = this.getChildControl("last-updated");
-      if (message.getCreated().getTime() === message.getModified().getTime()) {
-        lastUpdate.setValue(createdDate);
-      } else {
-        const updatedDate = osparc.utils.Utils.formatDateAndTime(message.getModified());
-        lastUpdate.setValue(createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")");
-      }
+      const updateLastUpdate = () => {
+        if (message.getCreated().getTime() === message.getModified().getTime()) {
+          lastUpdate.setValue(createdDate);
+        } else {
+          const updatedDate = osparc.utils.Utils.formatDateAndTime(message.getModified());
+          lastUpdate.setValue(createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")");
+        }
+      };
+      updateLastUpdate();
+      message.addListener("changeModified", () => updateLastUpdate());
 
       const messageContent = this.getChildControl("message-content");
       message.bind("content", messageContent, "value");
@@ -191,7 +195,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       });
       addMessage.getChildControl("notify-user-button").exclude();
       const title = this.tr("Edit message");
-      const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 135).set({
+      const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 120).set({
         clickAwayClose: false,
         resizable: true,
         showClose: true,
