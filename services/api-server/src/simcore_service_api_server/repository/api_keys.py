@@ -9,7 +9,7 @@ from simcore_postgres_database.models.api_keys import api_keys as auth_api_keys_
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ._base import BaseRepository
+from ._base import DB_CACHE_TTL_SECONDS, BaseRepository
 
 _logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class ApiKeysRepository(BaseRepository):
     """Auth access"""
 
     @cached(
-        ttl=120,
+        ttl=DB_CACHE_TTL_SECONDS,
         key_builder=lambda *_args, **kwargs: f"api_auth:{kwargs['api_key']}",
         namespace=__name__,
         noself=True,

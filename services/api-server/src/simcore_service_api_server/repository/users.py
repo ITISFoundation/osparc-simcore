@@ -8,12 +8,12 @@ from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ._base import BaseRepository
+from ._base import DB_CACHE_TTL_SECONDS, BaseRepository
 
 
 class UsersRepository(BaseRepository):
     @cached(
-        ttl=120,
+        ttl=DB_CACHE_TTL_SECONDS,
         key_builder=lambda *_args, **kwargs: f"user_email:{kwargs['user_id']}",
         cache=Cache.MEMORY,
         namespace=__name__,
