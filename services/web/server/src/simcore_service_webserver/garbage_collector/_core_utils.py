@@ -137,7 +137,6 @@ async def replace_current_owner(
         )
 
     except (
-        DatabaseError,
         asyncpg.exceptions.PostgresError,
         ProjectNotFoundError,
         UserNotFoundError,
