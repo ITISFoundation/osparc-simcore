@@ -96,11 +96,10 @@ qx.Class.define("osparc.support.Conversations", {
       const conversationsLayout = this.getChildControl("conversations-layout");
       if (position !== undefined) {
         conversationsLayout.addAt(conversationListItem, position);
-        this.__conversationListItems.splice(position, 0, conversationListItem);
       } else {
         conversationsLayout.add(conversationListItem);
-        this.__conversationListItems.push(conversationListItem);
       }
+      this.__conversationListItems.push(conversationListItem);
 
       return conversationListItem;
     },
