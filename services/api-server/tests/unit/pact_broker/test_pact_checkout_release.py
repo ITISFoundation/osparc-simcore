@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import AsyncIterable
+from collections.abc import Iterable
 
 import pytest
 from fastapi import FastAPI
@@ -74,9 +74,7 @@ async def mock_wb_api_server_rpc(
 
 
 @pytest.fixture
-def mock_rut_server_rpc(
-    app: FastAPI, mocker: MockerFixture
-) -> None:
+def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> Iterable[None]:
     import simcore_service_api_server.services_rpc.resource_usage_tracker  # noqa: PLC0415
     from servicelib.rabbitmq import RabbitMQRPCClient  # noqa: PLC0415
 
