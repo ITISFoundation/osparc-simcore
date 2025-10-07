@@ -113,6 +113,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const country = new qx.ui.form.SelectBox().set({
         required: true
       });
+      country.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       doubleSpaced.push(country);
       const countries = osparc.store.StaticInfo.getCountries();
       countries.forEach(c => {
@@ -144,6 +145,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         case "s4lacad":
         case "s4ldesktopacad": {
           const application = new qx.ui.form.SelectBox();
+          application.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           osparc.product.Utils.S4L_TOPICS.forEach(topic => {
             const lItem = new qx.ui.form.ListItem(topic.label, null, topic.id).set({
               rich: true
@@ -160,6 +162,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         }
         case "osparc": {
           const application = new qx.ui.form.SelectBox();
+          application.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           [{
             id: "other",
             label: "Other"
@@ -207,6 +210,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
 
       const hear = new qx.ui.form.SelectBox();
+      hear.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       let hearOptions = [];
       switch (osparc.product.Utils.getProductName()) {
         case "osparc":
