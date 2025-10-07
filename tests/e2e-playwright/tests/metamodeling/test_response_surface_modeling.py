@@ -241,6 +241,21 @@ def test_response_surface_modeling(
         page.keyboard.press("Tab")
         page.wait_for_timeout(1000)
 
+    if "moga" in service_key.lower():
+        with log_context(logging.INFO, "Filling the output parameters..."):
+            output_plus_button = service_iframe.locator(
+                '[mmux-testid="add-output-var-btn"]'
+            )
+
+            output_plus_button.click()
+            page.wait_for_timeout(1000)
+
+            output_confirm_button = service_iframe.locator(
+                '[mmux-testid="confirm-add-output-btn"]'
+            )
+            output_confirm_button.click()
+            page.wait_for_timeout(1000)
+
     # Click the next button
     with log_context(logging.INFO, "Clicking Next to go to the next step..."):
         service_iframe.locator('[mmux-testid="next-button"]').click()
