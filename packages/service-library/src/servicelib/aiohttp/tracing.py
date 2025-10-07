@@ -292,7 +292,7 @@ def setup_tracing(
         raise ValueError(msg)
     assert tracing_data.tracer_provider  # nosec
     assert tracing_data.tracing_settings  # nosec
-    app[TRACING_DATA_KEY] = tracing_data
+
     _startup(
         app=app,
         tracing_settings=tracing_data.tracing_settings,
