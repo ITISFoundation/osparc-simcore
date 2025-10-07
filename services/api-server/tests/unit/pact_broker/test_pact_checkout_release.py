@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-import os
+from collections.abc import Iterable
 
 import pytest
 from fastapi import FastAPI
@@ -18,13 +18,9 @@ from simcore_service_api_server._meta import API_VERSION
 from simcore_service_api_server.api.dependencies.resource_usage_tracker_rpc import (
     get_resource_usage_tracker_client,
 )
-from simcore_service_api_server.api.dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
 from simcore_service_api_server.services_rpc.resource_usage_tracker import (
     ResourceUsageTrackerClient,
 )
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 # Fake response based on values from 01_checkout_release.json
 EXPECTED_CHECKOUT = LicensedItemCheckoutRpcGet.model_validate(
@@ -64,14 +60,9 @@ assert EXPECTED_RELEASE.stopped_at is not None
 @pytest.fixture
 async def mock_wb_api_server_rpc(
     app: FastAPI,
-    mocker: MockerFixture,
+    mocked_app_rpc_dependencies: None,
     mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
 ) -> None:
-    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
-
-    app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
-    )
 
     mock_handler_in_licenses_rpc_interface(
         "checkout_licensed_item_for_wallet", return_value=EXPECTED_CHECKOUT
@@ -83,8 +74,9 @@ async def mock_wb_api_server_rpc(
 
 
 @pytest.fixture
-async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
-    from servicelib.rabbitmq import RabbitMQRPCClient
+def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> Iterable[None]:
+    import simcore_service_api_server.services_rpc.resource_usage_tracker  # noqa: PLC0415
+    from servicelib.rabbitmq import RabbitMQRPCClient  # noqa: PLC0415
 
     app.dependency_overrides[get_resource_usage_tracker_client] = (
         lambda: ResourceUsageTrackerClient(
@@ -92,17 +84,18 @@ async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
         )
     )
 
-    mocker.patch(
-        "simcore_service_api_server.services_rpc.resource_usage_tracker._get_licensed_item_checkout",
+    mocker.patch.object(
+        simcore_service_api_server.services_rpc.resource_usage_tracker,
+        "_get_licensed_item_checkout",
         return_value=EXPECTED_CHECKOUT,
     )
 
+    yield None
 
-@pytest.mark.skipif(
-    not os.getenv("PACT_BROKER_URL"),
-    reason="This test runs only if PACT_BROKER_URL is provided",
-)
-def test_provider_against_pact(
+    app.dependency_overrides.pop(get_resource_usage_tracker_client, None)
+
+
+def test_osparc_api_server_checkout_release_pact(
     pact_broker_credentials: tuple[str, str, str],
     mock_wb_api_server_rpc: None,
     mock_rut_server_rpc: None,
@@ -127,7 +120,7 @@ def test_provider_against_pact(
 
     # NOTE: If you want to filter/test against specific contract use tags
     verifier = broker_builder.consumer_tags(
-        "checkout_release"  # <-- Here you define which pact to verify
+        "checkout_release"  # NOTE: Here you define which pact to verify
     ).build()
 
     # Set API version and run verification
