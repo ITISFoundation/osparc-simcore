@@ -13,6 +13,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.tracing import TracingData
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_director.core.application import create_app
 from simcore_service_director.core.settings import ApplicationSettings
@@ -163,7 +164,10 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
 async def app(
     app_settings: ApplicationSettings, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
-    the_test_app = create_app(settings=app_settings)
+    tracing_data = TracingData.create(
+        service_name="director", tracing_settings=app_settings.DIRECTOR_TRACING
+    )
+    the_test_app = create_app(settings=app_settings, tracing_data=tracing_data)
     async with LifespanManager(
         the_test_app,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
