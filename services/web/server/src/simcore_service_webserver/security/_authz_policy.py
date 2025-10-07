@@ -50,7 +50,7 @@ def _handle_exceptions_as_503():
     except DatabaseError as err:
         _logger.exception(
             **create_troubleshooting_log_kwargs(
-                MSG_AUTH_NOT_AVAILABLE + ": Auth unavailable due to database error.",
+                f"{MSG_AUTH_NOT_AVAILABLE}: Auth unavailable due to database error.",
                 error=err,
                 error_context={"origin": str(err.orig) if err.orig else None},
                 tip="Check database connection",
