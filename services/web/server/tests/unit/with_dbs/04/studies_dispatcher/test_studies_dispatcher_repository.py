@@ -317,7 +317,7 @@ async def test_validate_requested_service_success(
     assert valid_service.version == service_metadata_in_db["version"]
     assert valid_service.title == service_metadata_in_db["name"]
     assert valid_service.is_public == consume_filetypes_in_db["is_guest_allowed"]
-    assert valid_service.thumbnail is None  # No valid URL in test data
+    assert str(valid_service.thumbnail) == str(service_metadata_in_db["thumbnail"])
 
 
 async def test_validate_requested_service_not_found(
