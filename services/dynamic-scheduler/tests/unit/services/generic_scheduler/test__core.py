@@ -359,7 +359,7 @@ class _BaseRequiresProvidesUndoContext(_UndoBS, _MixingGetKeNumber):
         }
 
 
-async def _esnure_log_mesage(caplog: pytest.LogCaptureFixture, *, message: str) -> None:
+async def _ensure_log_mesage(caplog: pytest.LogCaptureFixture, *, message: str) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)  # wait for event to trigger
@@ -1553,7 +1553,7 @@ async def test_step_does_not_receive_context_key_or_is_none(
     schedule_id = await start_operation(selected_app, operation_name, initial_context)
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
-    await _esnure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
+    await _ensure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
 
     await ensure_expected_order(steps_call_order, expected_order)
 
@@ -1747,7 +1747,7 @@ async def test_step_does_not_provide_declared_key_or_is_none(
     schedule_id = await start_operation(selected_app, operation_name, initial_context)
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
-    await _esnure_log_mesage(caplog, message=expected_error_str)
+    await _ensure_log_mesage(caplog, message=expected_error_str)
 
     await ensure_expected_order(steps_call_order, expected_order)
 
