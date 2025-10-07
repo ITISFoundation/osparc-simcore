@@ -206,11 +206,5 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     __addToCache: function(conversation) {
       this.__conversationsCached[conversation.getConversationId()] = conversation;
     },
-
-    __addMessageToConversation: function(conversationId, messageData) {
-      if (conversationId in this.__conversationsCached) {
-        this.__conversationsCached[conversationId].addMessage(messageData);
-      }
-    },
   }
 });
