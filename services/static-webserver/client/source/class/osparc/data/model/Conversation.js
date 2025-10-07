@@ -270,32 +270,32 @@ qx.Class.define("osparc.data.model.Conversation", {
         });
     },
 
-    addMessage: function(message) {
-      if (message) {
-        const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
+    addMessage: function(messageData) {
+      if (messageData) {
+        const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
         if (!found) {
+          const message = new osparc.data.model.Message(messageData);
           this.__messages.push(message);
           this.fireDataEvent("messageAdded", message);
         }
-        // latest first
-        this.__messages.sort((a, b) => new Date(b.created) - new Date(a.created));
+        osparc.data.model.Message.sortMessagesByDate(this.__messages);
         this.setLastMessage(this.__messages[0]);
       }
     },
 
-    updateMessage: function(message) {
-      if (message) {
-        const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
+    updateMessage: function(messageData) {
+      if (messageData) {
+        const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
         if (found) {
-          Object.assign(found, message);
+          found.setData(messageData);
           this.fireDataEvent("messageUpdated", found);
         }
       }
     },
 
-    deleteMessage: function(message) {
-      if (message) {
-        const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
+    deleteMessage: function(messageData) {
+      if (messageData) {
+        const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
         if (found) {
           this.__messages.splice(this.__messages.indexOf(found), 1);
           this.fireDataEvent("messageDeleted", found);
