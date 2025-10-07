@@ -18,13 +18,9 @@ from simcore_service_api_server._meta import API_VERSION
 from simcore_service_api_server.api.dependencies.resource_usage_tracker_rpc import (
     get_resource_usage_tracker_client,
 )
-from simcore_service_api_server.api.dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
 from simcore_service_api_server.services_rpc.resource_usage_tracker import (
     ResourceUsageTrackerClient,
 )
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 # Fake response based on values from 01_checkout_release.json
 EXPECTED_CHECKOUT = LicensedItemCheckoutRpcGet.model_validate(
@@ -64,14 +60,9 @@ assert EXPECTED_RELEASE.stopped_at is not None
 @pytest.fixture
 async def mock_wb_api_server_rpc(
     app: FastAPI,
-    mocker: MockerFixture,
+    mocked_app_rpc_dependencies: None,
     mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
 ) -> None:
-    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
-
-    app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _rpc_client=mocker.MagicMock(spec=WebServerRpcClient),
-    )
 
     mock_handler_in_licenses_rpc_interface(
         "checkout_licensed_item_for_wallet", return_value=EXPECTED_CHECKOUT
@@ -84,6 +75,7 @@ async def mock_wb_api_server_rpc(
 
 @pytest.fixture
 async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
+    import simcore_service_api_server.services_rpc.resource_usage_tracker
     from servicelib.rabbitmq import RabbitMQRPCClient
 
     app.dependency_overrides[get_resource_usage_tracker_client] = (
@@ -92,8 +84,9 @@ async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
         )
     )
 
-    mocker.patch(
-        "simcore_service_api_server.services_rpc.resource_usage_tracker._get_licensed_item_checkout",
+    mocker.patch.object(
+        simcore_service_api_server.services_rpc.resource_usage_tracker,
+        "_get_licensed_item_checkout",
         return_value=EXPECTED_CHECKOUT,
     )
 
@@ -102,7 +95,7 @@ async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
     not os.getenv("PACT_BROKER_URL"),
     reason="This test runs only if PACT_BROKER_URL is provided",
 )
-def test_provider_against_pact(
+def test_osparc_api_server_checkout_release_pact(
     pact_broker_credentials: tuple[str, str, str],
     mock_wb_api_server_rpc: None,
     mock_rut_server_rpc: None,

@@ -150,7 +150,7 @@ async def mock_wb_api_server_rpc(
     not os.getenv("PACT_BROKER_URL"),
     reason="This test runs only if PACT_BROKER_URL is provided",
 )
-def test_provider_against_pact(
+def test_osparc_api_server_licensed_items_pact(
     pact_broker_credentials: tuple[str, str, str],
     mock_wb_api_server_rpc: None,
     running_test_server_url: str,
