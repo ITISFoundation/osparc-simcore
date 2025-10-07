@@ -20,7 +20,7 @@ qx.Class.define("osparc.conversation.NotificationUI", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param message {Object} message
+    * @param message {osparc.data.model.Message} message
     */
   construct: function(message) {
     this.base(arguments);
@@ -39,7 +39,7 @@ qx.Class.define("osparc.conversation.NotificationUI", {
 
   properties: {
     message: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       init: null,
       nullable: false,
       apply: "__applyMessage",
@@ -101,14 +101,13 @@ qx.Class.define("osparc.conversation.NotificationUI", {
 
       const isMyMessage = osparc.conversation.MessageUI.isMyMessage(message);
 
-      const modifiedDate = new Date(message["modified"]);
-      const date = osparc.utils.Utils.formatDateAndTime(modifiedDate);
+      const date = osparc.utils.Utils.formatDateAndTime(message.getModified());
       const lastUpdate = this.getChildControl("last-updated");
       lastUpdate.setValue(isMyMessage ? date + " -" : " - " + date);
 
       const messageContent = this.getChildControl("message-content");
-      const notifierUserGroupId = parseInt(message["userGroupId"]);
-      const notifiedUserGroupId = parseInt(message["content"]);
+      const notifierUserGroupId = parseInt(message.getUserGroupId());
+      const notifiedUserGroupId = parseInt(message.getContent());
       let msgContent = "🔔 ";
       Promise.all([
         osparc.store.Users.getInstance().getUser(notifierUserGroupId),

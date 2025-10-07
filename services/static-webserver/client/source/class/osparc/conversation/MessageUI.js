@@ -20,7 +20,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param message {Object} message data
+    * @param message {osparc.data.model.Message} message
     * @param studyData {Object?null} serialized Study Data
     */
   construct: function(message, studyData = null) {
@@ -38,10 +38,10 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
   statics: {
     isMyMessage: function(message) {
-      if (message["userGroupId"] === "system") {
+      if (message.getUserGroupId() === "system") {
         return false;
       }
-      return message && osparc.auth.Data.getInstance().getGroupId() === message["userGroupId"];
+      return message && osparc.auth.Data.getInstance().getGroupId() === message.getUserGroupId();
     }
   },
 
@@ -52,7 +52,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
   properties: {
     message: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       init: null,
       nullable: false,
       apply: "__applyMessage",
@@ -135,26 +135,24 @@ qx.Class.define("osparc.conversation.MessageUI", {
     },
 
     __applyMessage: function(message) {
-      const createdDateData = new Date(message["created"]);
-      const createdDate = osparc.utils.Utils.formatDateAndTime(createdDateData);
+      const createdDate = osparc.utils.Utils.formatDateAndTime(message.getCreated());
       const lastUpdate = this.getChildControl("last-updated");
-      if (message["created"] === message["modified"]) {
+      if (message.getCreated() === message.getModified()) {
         lastUpdate.setValue(createdDate);
       } else {
-        const updatedDateData = new Date(message["modified"]);
-        const updatedDate = osparc.utils.Utils.formatDateAndTime(updatedDateData);
+        const updatedDate = osparc.utils.Utils.formatDateAndTime(message.getModified());
         lastUpdate.setValue(createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")");
       }
 
       const messageContent = this.getChildControl("message-content");
-      messageContent.setValue(message["content"]);
+      message.bind("content", messageContent, "value");
 
       const avatar = this.getChildControl("avatar");
       const userName = this.getChildControl("user-name");
-      if (message["userGroupId"] === "system") {
+      if (message.getUserGroupId() === "system") {
         userName.setValue("Support");
       } else {
-        osparc.store.Users.getInstance().getUser(message["userGroupId"])
+        osparc.store.Users.getInstance().getUser(message.getUserGroupId())
           .then(user => {
             avatar.setUser(user);
             userName.setValue(user ? user.getLabel() : "Unknown user");
@@ -188,7 +186,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
       const addMessage = new osparc.conversation.AddMessage().set({
         studyData: this.__studyData,
-        conversationId: message["conversationId"],
+        conversationId: message.getConversationId(),
         message,
       });
       const title = this.tr("Edit message");
@@ -199,8 +197,8 @@ qx.Class.define("osparc.conversation.MessageUI", {
       });
       addMessage.addListener("updateMessage", e => {
         const content = e.getData();
-        const conversationId = message["conversationId"];
-        const messageId = message["messageId"];
+        const conversationId = message.getConversationId();
+        const messageId = message.getMessageId();
         if (this.__studyData) {
           promise = osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], conversationId, messageId, content);
         } else {

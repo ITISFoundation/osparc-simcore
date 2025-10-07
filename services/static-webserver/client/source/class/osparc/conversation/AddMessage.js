@@ -44,7 +44,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     message: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       init: null,
       nullable: true,
       event: "changeMessage",
@@ -161,7 +161,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       if (message) {
         // edit mode
         const commentField = this.getChildControl("comment-field");
-        commentField.setText(message["content"]);
+        commentField.setText(message.getContent());
       }
     },
 

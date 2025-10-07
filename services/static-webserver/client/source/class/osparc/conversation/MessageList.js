@@ -158,16 +158,15 @@ qx.Class.define("osparc.conversation.MessageList", {
         return;
       }
 
-      const messageData = message.serialize();
       // Add the UI element to the messages list
       let control = null;
       switch (message.getType()) {
         case "MESSAGE":
-          control = this._createMessageUI(messageData);
+          control = this._createMessageUI(message);
           control.addListener("messageDeleted", e => this.__messageDeleted(e.getData()));
           break;
         case "NOTIFICATION":
-          control = new osparc.conversation.NotificationUI(messageData);
+          control = new osparc.conversation.NotificationUI(message);
           break;
       }
       if (control) {
