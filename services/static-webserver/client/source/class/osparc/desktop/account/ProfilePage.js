@@ -460,6 +460,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       const twoFAPreferenceSB = new qx.ui.form.SelectBox().set({
         allowGrowX: false
       });
+      twoFAPreferenceSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       [{
         id: "SMS",
         label: "SMS"

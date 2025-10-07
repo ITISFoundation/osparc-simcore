@@ -164,13 +164,13 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params);
     },
 
-    postMessage: function(conversationId, message) {
+    postMessage: function(conversationId, content) {
       const params = {
         url: {
           conversationId,
         },
         data: {
-          "content": message,
+          content,
           "type": "MESSAGE",
         }
       };
@@ -178,14 +178,16 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    editMessage: function(conversationId, messageId, message) {
+    editMessage: function(message, content) {
+      const conversationId = message.getConversationId();
+      const messageId = message.getMessageId();
       const params = {
         url: {
           conversationId,
           messageId,
         },
         data: {
-          "content": message,
+          content,
         },
       };
       return osparc.data.Resources.fetch("conversationsSupport", "editMessage", params)
@@ -193,10 +195,12 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     },
 
     deleteMessage: function(message) {
+      const conversationId = message.getConversationId();
+      const messageId = message.getMessageId();
       const params = {
         url: {
-          conversationId: message["conversationId"],
-          messageId: message["messageId"],
+          conversationId,
+          messageId,
         },
       };
       return osparc.data.Resources.fetch("conversationsSupport", "deleteMessage", params)
@@ -205,12 +209,6 @@ qx.Class.define("osparc.store.ConversationsSupport", {
 
     __addToCache: function(conversation) {
       this.__conversationsCached[conversation.getConversationId()] = conversation;
-    },
-
-    __addMessageToConversation: function(conversationId, messageData) {
-      if (conversationId in this.__conversationsCached) {
-        this.__conversationsCached[conversationId].addMessage(messageData);
-      }
     },
   }
 });
