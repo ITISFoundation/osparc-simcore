@@ -10,6 +10,10 @@ PACT_BROKER_URL=<fill-broker-url> PACT_BROKER_USERNAME=<fill-username> PACT_BROK
 make test-pacts
 ```
 
+## How to run this test locally?
+
+- Still not implemented
+- The idea would be use local copies of the pacts  (see services/api-server/tests/unit/pact_broker/pacts/*.json) instead of reaching the pact server for them.
 
 ## How to install and Publish new contract to Broker?
 
