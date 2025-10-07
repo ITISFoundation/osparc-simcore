@@ -7,14 +7,15 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 
 def create_page_response(
-    events: list[TaskStreamItem], request_url: _URLType, cursor: int, has_more: bool
+    items: list[TaskStreamItem],
+    request_url: _URLType,
 ) -> web.Response:
     page = Page[TaskStreamItem].model_validate(
         paginate_stream_chunk(
-            chunk=events,
+            chunk=items,
             request_url=request_url,
-            cursor=cursor,
-            has_more=has_more,
+            cursor=0,
+            has_more=True,
         )
     )
     return web.Response(

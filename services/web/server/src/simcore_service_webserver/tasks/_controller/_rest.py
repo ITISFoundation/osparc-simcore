@@ -21,7 +21,6 @@ from servicelib.aiohttp.rest_responses import (
 )
 from servicelib.celery.models import OwnerMetadata
 from servicelib.long_running_tasks import lrt_api
-from yarl import URL
 
 from ..._meta import API_VTAG
 from ...celery import get_task_manager
@@ -29,7 +28,6 @@ from ...login.decorators import login_required
 from ...long_running_tasks.plugin import webserver_request_context_decorator
 from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from .. import _tasks_service
-from . import _rest_utils
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import TaskPathParams, TaskStreamQueryParams
 
@@ -192,7 +190,7 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
         TaskStreamQueryParams, request
     )
 
-    task_result, cursor, has_more = await _tasks_service.get_task_stream_items(
+    task_result = await _tasks_service.get_task_stream_items(
         get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
@@ -205,11 +203,7 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
         limit=_query_params.limit,
     )
 
-    return _rest_utils.create_page_response(
-        events=task_result,
-        request_url=URL(
-            f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=str(_path_params.task_id))))}"
-        ),
-        cursor=cursor,
-        has_more=has_more,
+    return create_data_response(
+        task_result,
+        status=status.HTTP_200_OK,
     )
