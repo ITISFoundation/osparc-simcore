@@ -25,7 +25,7 @@ from ..wallets.api import get_wallet_by_user
 from . import _rpc
 from ._autorecharge_db import get_wallet_autorecharge
 from ._methods_db import (
-    PaymentsMethodsDB,
+    PaymentsMethodsGetDB,
     delete_payment_method,
     get_successful_payment_method,
     insert_init_payment_method,
@@ -52,7 +52,7 @@ def _get_payment_methods_from_fake_gateway(fake: Faker):
 
 
 def _to_api_model(
-    entry: PaymentsMethodsDB, payment_method_details_from_gateway: dict[str, Any]
+    entry: PaymentsMethodsGetDB, payment_method_details_from_gateway: dict[str, Any]
 ) -> PaymentMethodGet:
     assert entry.completed_at  # nosec
 
@@ -107,12 +107,12 @@ async def _ack_creation_of_wallet_payment_method(
     payment_method_id: PaymentMethodID,
     completion_state: InitPromptAckFlowState,
     message: str | None = None,
-) -> PaymentsMethodsDB:
+) -> PaymentsMethodsGetDB:
     """Acks as completed (i.e. SUCCESSFUL, FAILED, CANCELED )"""
     assert completion_state != InitPromptAckFlowState.PENDING  # nosec
 
     # annotate
-    updated: PaymentsMethodsDB = await udpate_payment_method(
+    updated: PaymentsMethodsGetDB = await udpate_payment_method(
         app,
         payment_method_id=payment_method_id,
         state=completion_state,
