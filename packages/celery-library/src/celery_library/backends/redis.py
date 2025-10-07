@@ -1,7 +1,8 @@
 import contextlib
+import datetime
 import logging
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
 from models_library.progress_bar import ProgressReport
@@ -17,13 +18,19 @@ from servicelib.celery.models import (
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
+_CELERY_TASK_DELIMTATOR: Final[str] = ":"
 _CELERY_TASK_PREFIX: Final[str] = "celery-task-"
-_CELERY_TASK_STREAM_PREFIX: Final[str] = "celery-task-stream-"
-_CELERY_TASK_STREAM_EXPIRY_DEFAULT: Final[timedelta] = timedelta(minutes=5)
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
-_CELERY_TASK_METADATA_KEY: Final[str] = "metadata"
+_CELERY_TASK_EXEC_METADATA_KEY: Final[str] = "exec-meta"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
+
+### Redis list to store streamed results
+_CELERY_TASK_STREAM_PREFIX: Final[str] = "celery-task-stream-"
+_CELERY_TASK_STREAM_EXPIRY: Final[timedelta] = timedelta(minutes=3)
+_CELERY_TASK_STREAM_METADATA: Final[str] = "meta"
+_CELERY_TASK_STREAM_DONE_KEY: Final[str] = "done"
+_CELERY_TASK_STREAM_LAST_UPDATE_KEY: Final[str] = "last_update"
 
 _logger = logging.getLogger(__name__)
 
@@ -32,8 +39,16 @@ def _build_redis_task_key(task_key: TaskKey) -> str:
     return _CELERY_TASK_PREFIX + task_key
 
 
-def _build_redis_stream_key(task_id: TaskKey) -> str:
-    return _CELERY_TASK_STREAM_PREFIX + task_id
+def _build_redis_stream_key(task_key: TaskKey) -> str:
+    return _CELERY_TASK_STREAM_PREFIX + task_key
+
+
+def _build_redis_stream_meta_key(task_key: TaskKey) -> str:
+    return (
+        _build_redis_stream_key(task_key)
+        + _CELERY_TASK_DELIMTATOR
+        + _CELERY_TASK_STREAM_METADATA
+    )
 
 
 @dataclass(frozen=True)
@@ -50,7 +65,7 @@ class RedisTaskStore:
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hset(
                 name=redis_key,
-                key=_CELERY_TASK_METADATA_KEY,
+                key=_CELERY_TASK_EXEC_METADATA_KEY,
                 value=execution_metadata.model_dump_json(),
             )
         )
@@ -59,26 +74,11 @@ class RedisTaskStore:
             expiry,
         )
 
-        if execution_metadata.streamed_result:
-            stream_key = _build_redis_stream_key(task_key)
-            await handle_redis_returns_union_types(
-                self._redis_client_sdk.redis.rpush(stream_key, "__init__")
-            )
-            await handle_redis_returns_union_types(
-                self._redis_client_sdk.redis.lpop(stream_key)
-            )
-            await handle_redis_returns_union_types(
-                self._redis_client_sdk.redis.expire(
-                    stream_key,
-                    _CELERY_TASK_STREAM_EXPIRY_DEFAULT,
-                )
-            )
-
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None:
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
                 _build_redis_task_key(task_key),
-                _CELERY_TASK_METADATA_KEY,
+                _CELERY_TASK_EXEC_METADATA_KEY,
             )
         )
         if not raw_result:
@@ -120,7 +120,7 @@ class RedisTaskStore:
         )
 
         keys: list[str] = []
-        pipeline = self._redis_client_sdk.redis.pipeline()
+        pipe = self._redis_client_sdk.redis.pipeline()
         async for key in self._redis_client_sdk.redis.scan_iter(
             match=search_key, count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
         ):
@@ -131,9 +131,9 @@ class RedisTaskStore:
                 else key
             )
             keys.append(_key)
-            pipeline.hget(_key, _CELERY_TASK_METADATA_KEY)
+            pipe.hget(_key, _CELERY_TASK_EXEC_METADATA_KEY)
 
-        results = await pipeline.execute()
+        results = await pipe.execute()
 
         tasks = []
         for key, raw_metadata in zip(keys, results, strict=True):
@@ -178,20 +178,39 @@ class RedisTaskStore:
         self, task_key: TaskKey, *result: TaskStreamItem
     ) -> None:
         stream_key = _build_redis_stream_key(task_key)
+        stream_meta_key = _build_redis_stream_meta_key(task_key)
+
+        pipe = self._redis_client_sdk.redis.pipeline()
+        pipe.rpush(stream_key, *[r.model_dump_json(by_alias=True) for r in result])
+        pipe.hset(
+            stream_meta_key, mapping={"last_update": datetime.now(UTC).isoformat()}
+        )
+        pipe.expire(stream_key, _CELERY_TASK_STREAM_EXPIRY)
+        pipe.expire(stream_meta_key, _CELERY_TASK_STREAM_EXPIRY)
+        await pipe.execute()
+
+    async def set_task_stream_done(self, task_key: TaskKey) -> None:
+        stream_meta_key = _build_redis_stream_meta_key(task_key)
         await handle_redis_returns_union_types(
-            self._redis_client_sdk.redis.rpush(
-                stream_key,
-                *[r.model_dump_json(by_alias=True) for r in result],
+            self._redis_client_sdk.redis.hset(
+                name=stream_meta_key,
+                key=_CELERY_TASK_STREAM_DONE_KEY,
+                value="1",
             )
         )
 
     async def pull_task_stream_items(
         self, task_key: TaskKey, limit: int = 20
-    ) -> tuple[list[TaskStreamItem], int]:
+    ) -> tuple[list[TaskStreamItem], bool, datetime | None]:
         stream_key = _build_redis_stream_key(task_key)
-        raw_items: list[str] = await handle_redis_returns_union_types(
-            self._redis_client_sdk.redis.lrange(stream_key, 0, limit - 1)
-        )
+        meta_key = _build_redis_stream_meta_key(task_key)
+
+        async with self._redis_client_sdk.redis.pipeline(transaction=True) as pipe:
+            pipe.lrange(stream_key, 0, limit - 1)
+            pipe.ltrim(stream_key, limit, -1)
+            pipe.hget(meta_key, _CELERY_TASK_STREAM_DONE_KEY)
+            pipe.hget(meta_key, _CELERY_TASK_STREAM_LAST_UPDATE_KEY)
+            raw_items, _, done, last_update = await pipe.execute()
 
         stream_items = [TaskStreamItem.model_validate_json(item) for item in raw_items]
 
@@ -200,11 +219,11 @@ class RedisTaskStore:
                 self._redis_client_sdk.redis.ltrim(stream_key, len(stream_items), -1)
             )
 
-        remaining = await handle_redis_returns_union_types(
-            self._redis_client_sdk.redis.llen(stream_key)
+        return (
+            stream_items,
+            done == b"1",
+            datetime.fromisoformat(last_update) if last_update else None,
         )
-
-        return stream_items, remaining
 
 
 if TYPE_CHECKING:

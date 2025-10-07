@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -201,18 +202,30 @@ class CeleryTaskManager:
         )
 
     @handle_celery_errors
-    async def push_task_stream_items(
-        self, task_key: TaskKey, *item: TaskStreamItem
-    ) -> None:
+    async def set_task_stream_done(self, task_key: TaskKey) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Push task stream item: {task_key=} {item=}",
+            msg=f"Set task stream done: {task_key=}",
         ):
             if not await self.task_exists(task_key):
                 raise TaskNotFoundError(task_key=task_key)
 
-            await self._task_store.push_task_stream_items(task_key, *item)
+            await self._task_store.set_task_stream_done(task_key)
+
+    @handle_celery_errors
+    async def push_task_stream_items(
+        self, task_key: TaskKey, *items: TaskStreamItem
+    ) -> None:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Push task stream items: {task_key=} {items=}",
+        ):
+            if not await self.task_exists(task_key):
+                raise TaskNotFoundError(task_key=task_key)
+
+            await self._task_store.push_task_stream_items(task_key, *items)
 
     @handle_celery_errors
     async def pull_task_stream_items(
@@ -221,7 +234,7 @@ class CeleryTaskManager:
         task_uuid: TaskUUID,
         offset: int = 0,
         limit: int = 50,
-    ) -> tuple[list[TaskStreamItem], int]:
+    ) -> tuple[list[TaskStreamItem], bool, datetime | None]:
         with log_context(
             _logger,
             logging.DEBUG,

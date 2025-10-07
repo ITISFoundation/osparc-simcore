@@ -182,3 +182,5 @@ async def search(
                 task_key,
                 *data,
             )
+
+    await app_server.task_manager.set_task_stream_done(task_key)

@@ -190,7 +190,7 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
         TaskStreamQueryParams, request
     )
 
-    task_result, remaining, done = await _tasks_service.pull_task_stream_items(
+    task_result, is_done = await _tasks_service.pull_task_stream_items(
         get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
@@ -203,6 +203,6 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
     )
 
     return create_data_response(
-        [r.data for r in task_result],
+        {"items": [r.data for r in task_result], "is_done": is_done},
         status=status.HTTP_200_OK,
     )

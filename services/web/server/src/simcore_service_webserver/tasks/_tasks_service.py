@@ -1,4 +1,5 @@
 import logging
+from datetime import UTC, datetime
 
 from celery_library.errors import (
     TaskManagerError,
@@ -112,29 +113,35 @@ async def get_task_status(
     )
 
 
+STALL_THRESHOLD = 30
+
+
 async def pull_task_stream_items(
     task_manager: TaskManager,
     *,
     owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
     limit: int = 50,
-) -> tuple[list[TaskStreamItem], int, bool]:
+) -> tuple[list[TaskStreamItem], bool]:
     try:
-        results, remaining = await task_manager.pull_task_stream_items(
+        results, is_done, last_update = await task_manager.pull_task_stream_items(
             owner_metadata=owner_metadata,
             task_uuid=task_uuid,
             limit=limit,
         )
-        task_status = await task_manager.get_task_status(
-            owner_metadata=owner_metadata, task_uuid=task_uuid
-        )
 
+        if not is_done and last_update:
+            delta = datetime.now(UTC) - last_update
+            if delta.total_seconds() > STALL_THRESHOLD:
+                raise JobSchedulerError(
+                    exc=f"Task seems stalled since {delta.total_seconds()} seconds"
+                )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    return results, remaining, task_status.is_done
+    return results, is_done
 
 
 async def list_tasks(

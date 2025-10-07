@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 
 from models_library.progress_bar import ProgressReport
@@ -42,7 +43,7 @@ class TaskManager(Protocol):
     ) -> None: ...
 
     async def push_task_stream_items(
-        self, task_key: TaskKey, *item: TaskStreamItem
+        self, task_key: TaskKey, *items: TaskStreamItem
     ) -> None: ...
 
     async def pull_task_stream_items(
@@ -51,6 +52,8 @@ class TaskManager(Protocol):
         task_uuid: TaskUUID,
         offset: int = 0,
         limit: int = 50,
-    ) -> tuple[list[TaskStreamItem], int]: ...
+    ) -> tuple[list[TaskStreamItem], bool, datetime | None]: ...
+
+    async def set_task_stream_done(self, task_key: TaskKey) -> None: ...
 
     async def task_exists(self, task_key: TaskKey) -> bool: ...
