@@ -26,9 +26,11 @@ from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.tracing import TracingData
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
+from simcore_service_clusters_keeper._meta import APP_NAME
 from simcore_service_clusters_keeper.core.application import create_app
 from simcore_service_clusters_keeper.core.settings import (
     CLUSTERS_KEEPER_ENV_PREFIX,
@@ -253,7 +255,10 @@ async def initialized_app(
     app_environment: EnvVarsDict, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
-    app = create_app(settings)
+    tracing_data = TracingData.create(
+        service_name=APP_NAME, tracing_settings=settings.CLUSTERS_KEEPER_TRACING
+    )
+    app = create_app(settings, tracing_data=tracing_data)
     async with LifespanManager(app, shutdown_timeout=None if is_pdb_enabled else 20):
         yield app
 
