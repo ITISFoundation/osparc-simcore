@@ -55,7 +55,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       check: "osparc.data.model.Message",
       init: null,
       nullable: false,
-      apply: "__applyMessage",
+      apply: "_applyMessage",
     },
   },
 
@@ -134,7 +134,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       return control || this.base(arguments, id);
     },
 
-    __applyMessage: function(message) {
+    _applyMessage: function(message) {
       const updateLastUpdate = () => {
         const createdDate = osparc.utils.Utils.formatDateAndTime(message.getCreated());
         let value = "";
