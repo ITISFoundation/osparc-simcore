@@ -19,8 +19,8 @@ from aiohttp.test_utils import TestClient
 from pydantic import TypeAdapter, create_model
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
-from servicelib.aiohttp.long_running_tasks._server import (
-    RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
+from servicelib.aiohttp.long_running_tasks._request import (
+    LONG_RUNNING_TASKS_CONTEXT_REQKEY,
 )
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
@@ -56,7 +56,7 @@ def task_context_decorator(task_context: TaskContext):
         ) -> web.StreamResponse:
             """this task context callback tries to get the user_id from the query if available"""
             query_param = parse_request_query_parameters_as(query_model, request)
-            request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = query_param.model_dump()
+            request[LONG_RUNNING_TASKS_CONTEXT_REQKEY] = query_param.model_dump()
             return await handler(request)
 
         return _test_task_context_decorator
