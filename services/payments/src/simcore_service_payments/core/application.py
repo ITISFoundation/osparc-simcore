@@ -55,7 +55,7 @@ def create_app(
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
-    if app_tracing_data:
+    if app_tracing_data.tracing_enabled:
         setup_tracing(app, app_tracing_data)
 
     # API w/ postgres db

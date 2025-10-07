@@ -124,8 +124,8 @@ def create_base_app() -> FastAPI:
         service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING
     )
     logging_shutdown_event = create_logging_shutdown_event(
-        log_format_local_dev_enabled=app_settings.DYNAMIC_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=app_settings.DYNAMIC_SIDECAR_LOG_FILTER_MAPPING,
+        log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
         tracing_data=tracing_data,
         log_base_level=app_settings.log_level,
         noisy_loggers=_NOISY_LOGGERS,
