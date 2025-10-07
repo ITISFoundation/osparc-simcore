@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-import os
+from collections.abc import AsyncIterable
 
 import pytest
 from fastapi import FastAPI
@@ -74,9 +74,11 @@ async def mock_wb_api_server_rpc(
 
 
 @pytest.fixture
-async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
-    import simcore_service_api_server.services_rpc.resource_usage_tracker
-    from servicelib.rabbitmq import RabbitMQRPCClient
+async def mock_rut_server_rpc(
+    app: FastAPI, mocker: MockerFixture
+) -> AsyncIterable[None]:
+    import simcore_service_api_server.services_rpc.resource_usage_tracker  # noqa: PLC0415
+    from servicelib.rabbitmq import RabbitMQRPCClient  # noqa: PLC0415
 
     app.dependency_overrides[get_resource_usage_tracker_client] = (
         lambda: ResourceUsageTrackerClient(
@@ -90,11 +92,11 @@ async def mock_rut_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
         return_value=EXPECTED_CHECKOUT,
     )
 
+    yield None
 
-@pytest.mark.skipif(
-    not os.getenv("PACT_BROKER_URL"),
-    reason="This test runs only if PACT_BROKER_URL is provided",
-)
+    app.dependency_overrides.pop(get_resource_usage_tracker_client, None)
+
+
 def test_osparc_api_server_checkout_release_pact(
     pact_broker_credentials: tuple[str, str, str],
     mock_wb_api_server_rpc: None,
@@ -120,7 +122,7 @@ def test_osparc_api_server_checkout_release_pact(
 
     # NOTE: If you want to filter/test against specific contract use tags
     verifier = broker_builder.consumer_tags(
-        "checkout_release"  # <-- Here you define which pact to verify
+        "checkout_release"  # NOTE: Here you define which pact to verify
     ).build()
 
     # Set API version and run verification

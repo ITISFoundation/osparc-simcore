@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import os
 
 import pytest
 from fastapi import FastAPI
@@ -146,10 +145,6 @@ async def mock_wb_api_server_rpc(
     )
 
 
-@pytest.mark.skipif(
-    not os.getenv("PACT_BROKER_URL"),
-    reason="This test runs only if PACT_BROKER_URL is provided",
-)
 def test_osparc_api_server_licensed_items_pact(
     pact_broker_credentials: tuple[str, str, str],
     mock_wb_api_server_rpc: None,
@@ -174,7 +169,7 @@ def test_osparc_api_server_licensed_items_pact(
 
     # NOTE: If you want to filter/test against specific contract use tags
     verifier = broker_builder.consumer_tags(
-        "licensed_items"  # <-- Here you define which pact to verify
+        "licensed_items"  # NOTE: Here you define which pact to verify
     ).build()
 
     # Set API version and run verification
