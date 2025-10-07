@@ -148,7 +148,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
             allowGrowX: false,
             backgroundColor: "transparent",
           });
-          control.getChildControl("arrow").syncAppearance();
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           this.getChildControl("access-rights-layout").add(control);
           break;
         case "access-rights-helper": {

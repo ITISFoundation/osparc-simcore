@@ -46,6 +46,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
             allowStretchX: false,
             width: 200
           });
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           layout = this.getChildControl("wallet-selector-layout");
           layout.add(control);
           break;
