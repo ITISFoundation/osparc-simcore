@@ -8,8 +8,10 @@ from typing import Any, Final
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.tracing import TracingData
 
 from ._meta import (
+    APP_NAME,
     WELCOME_AUTH_APP_MSG,
     WELCOME_DB_LISTENER_MSG,
     WELCOME_GC_MSG,
@@ -61,7 +63,7 @@ from .storage.plugin import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags.plugin import setup_tags
 from .tasks.plugin import setup_tasks
-from .tracing import setup_app_tracing
+from .tracing import TRACING_DATA_KEY, setup_app_tracing
 from .trash.plugin import setup_trash
 from .users.plugin import setup_users
 from .wallets.plugin import setup_wallets
@@ -98,12 +100,13 @@ def _create_finished_banner() -> Callable:
     return _finished_banner
 
 
-def create_application() -> web.Application:
+def create_application(tracing_data: TracingData) -> web.Application:
     """
     Initializes service
     """
     app = create_safe_application()
     setup_settings(app)
+    app[TRACING_DATA_KEY] = tracing_data
 
     # WARNING: setup order matters
     # NOTE: compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
@@ -201,6 +204,8 @@ def create_application_auth() -> web.Application:
     app = create_safe_application()
 
     settings = setup_settings(app)
+    tracing_data = TracingData.create(settings.WEBSERVER_TRACING, service_name=APP_NAME)
+    app[TRACING_DATA_KEY] = tracing_data
     assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"  # nosec
 
     # Monitoring and diagnostics
