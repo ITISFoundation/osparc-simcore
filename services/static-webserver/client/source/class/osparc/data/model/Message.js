@@ -104,5 +104,18 @@ qx.Class.define("osparc.data.model.Message", {
         type: messageData.type,
       });
     },
+
+    // TODO: remove this
+    serialize: function() {
+      return {
+        messageId: this.getMessageId(),
+        conversationId: this.getConversationId(),
+        content: this.getContent(),
+        userGroupId: this.getUserGroupId(),
+        created: this.getCreated().toISOString(),
+        modified: this.getModified().toISOString(),
+        type: this.getType(),
+      };
+    },
   }
 });

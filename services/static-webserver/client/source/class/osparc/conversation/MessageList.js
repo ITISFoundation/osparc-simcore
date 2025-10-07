@@ -148,9 +148,9 @@ qx.Class.define("osparc.conversation.MessageList", {
       this.fireEvent("messagesChanged");
     },
 
-    __messageAdded: function(messageData) {
+    __messageAdded: function(message) {
       // ignore it if it was already there
-      if (this.getConversation().messageExists(messageData["messageId"])) {
+      if (this.getConversation().messageExists(message.getMessageId())) {
         return;
       }
 
@@ -158,6 +158,7 @@ qx.Class.define("osparc.conversation.MessageList", {
       const insertAt = this.getConversation().getMessageIndex(message.getMessageId());
       this._messages.splice(insertAt, 0, message);
 
+      const messageData = message.serialize();
       // Add the UI element to the messages list
       let control = null;
       switch (message.getType()) {
@@ -185,12 +186,12 @@ qx.Class.define("osparc.conversation.MessageList", {
       this.fireEvent("messagesChanged");
     },
 
-    __messageDeleted: function(messageData) {
+    __messageDeleted: function(message) {
       // Remove the UI element from the messages list
       const messagesContainer = this.getChildControl("messages-container");
       const children = messagesContainer.getChildren();
       const controlIndex = children.findIndex(
-        ctrl => ("getMessage" in ctrl && ctrl.getMessage().getMessageId() === messageData["messageId"])
+        ctrl => ("getMessage" in ctrl && ctrl.getMessage().getMessageId() === message.getMessageId())
       );
       if (controlIndex > -1) {
         messagesContainer.remove(children[controlIndex]);
