@@ -31,7 +31,6 @@ qx.Class.define("osparc.support.ConversationListItem", {
       rich: false, // let ellipsis work
     });
     this.getChildControl("subtitle").set({
-      // textColor: "text-disabled",
       rich: false, // let ellipsis work
     });
     this.getChildControl("sub-subtitle").set({
