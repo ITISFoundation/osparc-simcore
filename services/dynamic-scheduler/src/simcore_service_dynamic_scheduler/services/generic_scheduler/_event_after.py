@@ -67,26 +67,16 @@ class AfterEventManager(SingletonInAppStateMixin):
             f"processing {event_type=} for {schedule_id=} {operation_name=} {initial_context=}",
             log_duration=True,
         ):
-            await self._on_event_type(
-                event_type, schedule_id, operation_name, initial_context
-            )
 
-    async def _on_event_type(
-        self,
-        event_type: EventType,
-        schedule_id: ScheduleId,
-        operation_name: OperationName,
-        initial_context: OperationContext,
-    ) -> None:
-        new_schedule_id = await start_operation(
-            self.app, operation_name, initial_context
-        )
-        _logger.debug(
-            "Finished execution of event_type='%s' for schedule_id='%s'. "
-            "Started new_schedule_id='%s' from operation_name='%s' with initial_context='%s'",
-            event_type,
-            schedule_id,
-            new_schedule_id,
-            operation_name,
-            initial_context,
-        )
+            new_schedule_id = await start_operation(
+                self.app, operation_name, initial_context
+            )
+            _logger.debug(
+                "Finished execution of event_type='%s' for schedule_id='%s'. "
+                "Started new_schedule_id='%s' from operation_name='%s' with initial_context='%s'",
+                event_type,
+                schedule_id,
+                new_schedule_id,
+                operation_name,
+                initial_context,
+            )

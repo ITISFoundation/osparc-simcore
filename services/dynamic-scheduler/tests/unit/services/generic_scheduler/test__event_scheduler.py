@@ -13,8 +13,10 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
-from simcore_service_dynamic_scheduler.services.generic_scheduler._event_scheduler import (
-    EventScheduler,
+from simcore_service_dynamic_scheduler.services.generic_scheduler._event import (
+    enqueue_create_completed_event,
+    enqueue_schedule_event,
+    enqueue_undo_completed_event,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     EventType,
@@ -70,11 +72,6 @@ def app_environment(
 
 
 @pytest.fixture
-def event_scheduler(app: FastAPI) -> EventScheduler:
-    return EventScheduler.get_from_app_state(app)
-
-
-@pytest.fixture
 def get_mock_safe_on_schedule_event(
     mocker: MockerFixture,
 ) -> Callable[[Callable[[ScheduleId], Awaitable[None]]], Mock]:
@@ -82,16 +79,14 @@ def get_mock_safe_on_schedule_event(
     def _(side_effect: Callable[[ScheduleId], Awaitable[None]]) -> Mock:
         another_mock = Mock()
 
-        async def _mock(
-            schedule_id: ScheduleId,
-        ) -> None:
+        async def _mock(schedule_id: ScheduleId) -> None:
             await side_effect(schedule_id)
             another_mock(schedule_id)
 
         core_mock = Mock()
         core_mock.safe_on_schedule_event = _mock
         mocker.patch(
-            "simcore_service_dynamic_scheduler.services.generic_scheduler._event_scheduler.Core.get_from_app_state",
+            "simcore_service_dynamic_scheduler.services.generic_scheduler._event_queues.get_core",
             return_value=core_mock,
         )
         return another_mock
@@ -103,7 +98,7 @@ async def test_enqueue_schedule_event(
     get_mock_safe_on_schedule_event: Callable[
         [Callable[[ScheduleId], Awaitable[None]]], Mock
     ],
-    event_scheduler: EventScheduler,
+    app: FastAPI,
 ) -> None:
 
     async def _side_effect_nothing(schedule_id: ScheduleId) -> None:
@@ -112,7 +107,7 @@ async def test_enqueue_schedule_event(
     mock = get_mock_safe_on_schedule_event(_side_effect_nothing)
 
     schedule_id = TypeAdapter(ScheduleId).validate_python(f"{uuid4()}")
-    await event_scheduler.enqueue_schedule_event(schedule_id)
+    await enqueue_schedule_event(app, schedule_id)
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -128,7 +123,7 @@ async def test_enqueue_schedule_event_raises_error(
     get_mock_safe_on_schedule_event: Callable[
         [Callable[[ScheduleId], Awaitable[None]]], Mock
     ],
-    event_scheduler: EventScheduler,
+    app: FastAPI,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     caplog.clear()
@@ -140,7 +135,7 @@ async def test_enqueue_schedule_event_raises_error(
     get_mock_safe_on_schedule_event(_side_effect_raise_error)
 
     schedule_id = TypeAdapter(ScheduleId).validate_python(f"{uuid4()}")
-    await event_scheduler.enqueue_schedule_event(schedule_id)
+    await enqueue_schedule_event(app, schedule_id)
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -183,7 +178,7 @@ def get_mock_safe_on_event_type(
         core_mock = Mock()
         core_mock.safe_on_event_type = _mock
         mocker.patch(
-            "simcore_service_dynamic_scheduler.services.generic_scheduler._event_after.AfterEventManager.get_from_app_state",
+            "simcore_service_dynamic_scheduler.services.generic_scheduler._event_queues.get_after_event_manager",
             return_value=core_mock,
         )
         return another_mock
@@ -202,7 +197,7 @@ async def test_enqueue_event_type(
         ],
         Mock,
     ],
-    event_scheduler: EventScheduler,
+    app: FastAPI,
     expected_event_type: EventType,
 ):
 
@@ -219,9 +214,9 @@ async def test_enqueue_event_type(
     schedule_id = TypeAdapter(ScheduleId).validate_python(f"{uuid4()}")
     match expected_event_type:
         case EventType.ON_CREATED_COMPLETED:
-            await event_scheduler.enqueue_create_completed_event(schedule_id, "op1", {})
+            await enqueue_create_completed_event(app, schedule_id, "op1", {})
         case EventType.ON_UNDO_COMPLETED:
-            await event_scheduler.enqueue_undo_completed_event(schedule_id, "op1", {})
+            await enqueue_undo_completed_event(app, schedule_id, "op1", {})
         case _:
             pytest.fail("unsupported case")
 
@@ -244,7 +239,7 @@ async def test_enqueue_event_type_raises_error(
         ],
         Mock,
     ],
-    event_scheduler: EventScheduler,
+    app: FastAPI,
     caplog: pytest.LogCaptureFixture,
     expected_event_type: EventType,
 ) -> None:
@@ -265,9 +260,9 @@ async def test_enqueue_event_type_raises_error(
 
     match expected_event_type:
         case EventType.ON_CREATED_COMPLETED:
-            await event_scheduler.enqueue_create_completed_event(schedule_id, "op1", {})
+            await enqueue_create_completed_event(app, schedule_id, "op1", {})
         case EventType.ON_UNDO_COMPLETED:
-            await event_scheduler.enqueue_undo_completed_event(schedule_id, "op1", {})
+            await enqueue_undo_completed_event(app, schedule_id, "op1", {})
         case _:
             pytest.fail("unsupported case")
 

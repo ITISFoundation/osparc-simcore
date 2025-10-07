@@ -1,22 +1,13 @@
-from typing import TYPE_CHECKING
-
 from fastapi import FastAPI
 
+from ._dependencies import get_event_scheduler
+from ._event_base_queue import OperationToStartEvent
+from ._event_queues import CreateCompletedQueue, ScheduleQueue, UndoCompletedQueue
 from ._models import OperationContext, OperationName, ScheduleId
-
-if TYPE_CHECKING:
-    from ._event_scheduler import EventScheduler
-
-
-def _get_event_scheduler(app: FastAPI) -> "EventScheduler":
-    # NOTE: could not use EventScheduler.get_from_app_state(app)
-    # due to circular dependency
-    event_scheduler: EventScheduler = app.state.generic_scheduler_event_scheduler
-    return event_scheduler
 
 
 async def enqueue_schedule_event(app: FastAPI, schedule_id: ScheduleId) -> None:
-    await _get_event_scheduler(app).enqueue_schedule_event(schedule_id)
+    await get_event_scheduler(app).enqueue_message_for(ScheduleQueue, schedule_id)
 
 
 async def enqueue_create_completed_event(
@@ -25,8 +16,13 @@ async def enqueue_create_completed_event(
     operation_name: OperationName,
     initial_context: OperationContext,
 ) -> None:
-    await _get_event_scheduler(app).enqueue_create_completed_event(
-        schedule_id, operation_name, initial_context
+    await get_event_scheduler(app).enqueue_message_for(
+        CreateCompletedQueue,
+        OperationToStartEvent(
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            initial_context=initial_context,
+        ),
     )
 
 
@@ -36,6 +32,11 @@ async def enqueue_undo_completed_event(
     operation_name: OperationName,
     initial_context: OperationContext,
 ) -> None:
-    await _get_event_scheduler(app).enqueue_undo_completed_event(
-        schedule_id, operation_name, initial_context
+    await get_event_scheduler(app).enqueue_message_for(
+        UndoCompletedQueue,
+        OperationToStartEvent(
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            initial_context=initial_context,
+        ),
     )
