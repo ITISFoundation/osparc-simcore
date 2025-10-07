@@ -89,7 +89,7 @@ qx.Class.define("osparc.data.model.Message", {
     SYSTEM_MESSAGE_ID: -1,
 
     sortMessagesByDate: function(messages) {
-      // newest first (higher in the list, last in the bottom)
+      // oldest first: higher in the list. Latest at the bottom
       messages.sort((a, b) => a.getCreated() - b.getCreated());
     },
   },

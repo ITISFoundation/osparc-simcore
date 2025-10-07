@@ -305,16 +305,12 @@ qx.Class.define("osparc.data.model.Conversation", {
       let message = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
       if (!message) {
         message = new osparc.data.model.Message(messageData);
-        this.__messageToList(message);
+        this.__messages.push(message);
+        osparc.data.model.Message.sortMessagesByDate(this.__messages);
+        this.fireDataEvent("messageAdded", message);
+        this.__evalFirstAndLastMessage();
       }
       return message;
-    },
-
-    __messageToList: function(message) {
-      this.__messages.push(message);
-      osparc.data.model.Message.sortMessagesByDate(this.__messages);
-      this.setLastMessage(this.__messages[0]);
-      this.fireDataEvent("messageAdded", message);
     },
 
     updateMessage: function(messageData) {
@@ -323,6 +319,7 @@ qx.Class.define("osparc.data.model.Conversation", {
         if (found) {
           found.setData(messageData);
           this.fireDataEvent("messageUpdated", found);
+          this.__evalFirstAndLastMessage();
         }
       }
     },
@@ -333,7 +330,16 @@ qx.Class.define("osparc.data.model.Conversation", {
         if (found) {
           this.__messages.splice(this.__messages.indexOf(found), 1);
           this.fireDataEvent("messageDeleted", found);
+          this.__evalFirstAndLastMessage();
         }
+      }
+    },
+
+    __evalFirstAndLastMessage: function() {
+      if (this.__messages && this.__messages.length) {
+        // newest first
+        this.setFirstMessage(this.__messages[this.__messages.length - 1]);
+        this.setLastMessage(this.__messages[0]);
       }
     },
 
