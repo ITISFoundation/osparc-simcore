@@ -15,7 +15,7 @@ from aiohttp.test_utils import TestClient
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
-from servicelib.aiohttp.tracing import setup_tracing
+from servicelib.aiohttp.tracing import TRACING_DATA_KEY, setup_tracing
 from servicelib.tracing import _OSPARC_TRACE_ID_HEADER, TracingData
 from settings_library.tracing import TracingSettings
 
@@ -180,6 +180,7 @@ async def test_trace_id_in_response_header(
     tracing_data = TracingData.create(
         tracing_settings=tracing_settings, service_name=service_name
     )
+    app[TRACING_DATA_KEY] = tracing_data
 
     async def handler(handler_data: dict, request: web.Request) -> web.Response:
         current_span = trace.get_current_span()
@@ -235,6 +236,7 @@ async def test_tracing_sampling_probability_effective(
     tracing_data = TracingData.create(
         tracing_settings=tracing_settings, service_name=service_name
     )
+    app[TRACING_DATA_KEY] = tracing_data
 
     async def handler(request: web.Request) -> web.Response:
         return web.Response(text="ok")
