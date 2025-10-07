@@ -249,6 +249,11 @@ qx.Class.define("osparc.support.ConversationPage", {
           if (extraContext && Object.keys(extraContext).length) {
             const ticketIdLabel = createExtraContextLabel(`Ticket ID: ${osparc.utils.Utils.uuidToShort(conversation.getConversationId())}`);
             extraContextLayout.add(ticketIdLabel);
+            const contextProjectId = conversation.getContextProjectId();
+            if (contextProjectId) {
+              const projectIdLabel = createExtraContextLabel(`Project ID: ${osparc.utils.Utils.uuidToShort(contextProjectId)}`);
+              extraContextLayout.add(projectIdLabel);
+            }
             if (amISupporter) {
               const fogbugzLink = conversation.getFogbugzLink();
               if (fogbugzLink) {
@@ -260,12 +265,6 @@ qx.Class.define("osparc.support.ConversationPage", {
                 });
                 extraContextLayout.add(fogbugzLabel);
               }
-              const contextProjectId = conversation.getContextProjectId();
-              if (contextProjectId) {
-                const projectIdLabel = createExtraContextLabel(`Project ID: ${osparc.utils.Utils.uuidToShort(contextProjectId)}`);
-                extraContextLayout.add(projectIdLabel);
-              }
-
             }
           }
         };
