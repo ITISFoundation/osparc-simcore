@@ -87,8 +87,8 @@ qx.Class.define("osparc.data.model.Message", {
 
   statics: {
     sortMessagesByDate: function(messages) {
-      // latest first
-      messages.sort((a, b) => new Date(b.getCreated()) - new Date(a.getCreated()));
+      // newest first (higher in the list, last in the bottom)
+      messages.sort((a, b) => a.getCreated() - b.getCreated());
     },
   },
 
