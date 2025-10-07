@@ -179,124 +179,132 @@ def test_response_surface_modeling(
     create_function_from_project(page, our_project["uuid"])
 
     # 3. start a RSM with that function
+    service_keys = [
+        "mmux-vite-app-moga-write",
+        "mmux-vite-app-sumo-write",
+        "mmux-vite-app-uq-write",
+    ]
 
-    with log_context(
-        logging.INFO,
-        f"Waiting for {service_key} to be responsive (waiting for {_DEFAULT_RESPONSE_TO_WAIT_FOR})",
-    ):
-        project_data = create_project_from_service_dashboard(
-            ServiceType.DYNAMIC, service_key, None, service_version
-        )
-        assert "workbench" in project_data, "Expected workbench to be in project data!"
-        assert isinstance(
-            project_data["workbench"], dict
-        ), "Expected workbench to be a dict!"
-        node_ids: list[str] = list(project_data["workbench"])
-        assert len(node_ids) == 1, "Expected 1 node in the workbench!"
+    for service_key in service_keys:
+        with log_context(
+            logging.INFO,
+            f"Waiting for {service_key} to be responsive (waiting for {_DEFAULT_RESPONSE_TO_WAIT_FOR})",
+        ):
+            project_data = create_project_from_service_dashboard(
+                ServiceType.DYNAMIC, service_key, None, service_version
+            )
+            assert (
+                "workbench" in project_data
+            ), "Expected workbench to be in project data!"
+            assert isinstance(
+                project_data["workbench"], dict
+            ), "Expected workbench to be a dict!"
+            node_ids: list[str] = list(project_data["workbench"])
+            assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
-        wait_for_service_running(
-            page=page,
-            node_id=node_ids[0],
-            websocket=log_in_and_out,
-            timeout=_WAITING_FOR_SERVICE_TO_START,
-            press_start_button=False,
-            product_url=product_url,
-            is_service_legacy=is_service_legacy,
-        )
-
-    service_iframe = page.frame_locator("iframe")
-    with log_context(logging.INFO, "Waiting for the RSM to be ready..."):
-        service_iframe.get_by_role("grid").wait_for(
-            state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
-        )
-
-    # select the function
-    with log_context(logging.INFO, "Selected test function..."):
-        service_iframe.get_by_role("button", name="SELECT").nth(0).click()
-
-    with log_context(logging.INFO, "Filling the input parameters..."):
-        min_inputs = service_iframe.locator(
-            '[mmux-testid="input-block-Min"] input[type="number"]'
-        )
-        count_min = min_inputs.count()
-
-        for i in range(count_min):
-            input_field = min_inputs.nth(i)
-            input_field.fill(str(i + 1))
-            print(f"Filled Min input {i} with value {i + 1}")
-            assert input_field.input_value() == str(i + 1)
-
-        max_inputs = service_iframe.locator(
-            '[mmux-testid="input-block-Max"] input[type="number"]'
-        )
-        count_max = max_inputs.count()
-
-        for i in range(count_max):
-            input_field = max_inputs.nth(i)
-            input_field.fill(str((i + 1) * 10))
-            print(f"Filled Max input {i} with value {(i + 1) * 10}")
-            assert input_field.input_value() == str((i + 1) * 10)
-
-        page.wait_for_timeout(1000)
-        page.keyboard.press("Tab")
-        page.wait_for_timeout(1000)
-
-    if "moga" in service_key.lower():
-        with log_context(logging.INFO, "Filling the output parameters..."):
-            output_plus_button = service_iframe.locator(
-                '[mmux-testid="add-output-var-btn"]'
+            wait_for_service_running(
+                page=page,
+                node_id=node_ids[0],
+                websocket=log_in_and_out,
+                timeout=_WAITING_FOR_SERVICE_TO_START,
+                press_start_button=False,
+                product_url=product_url,
+                is_service_legacy=is_service_legacy,
             )
 
-            output_plus_button.click()
-            page.wait_for_timeout(1000)
-
-            output_confirm_button = service_iframe.locator(
-                '[mmux-testid="confirm-add-output-btn"]'
+        service_iframe = page.frame_locator("iframe")
+        with log_context(logging.INFO, "Waiting for the RSM to be ready..."):
+            service_iframe.get_by_role("grid").wait_for(
+                state="visible", timeout=_WAITING_FOR_SERVICE_TO_APPEAR
             )
-            output_confirm_button.click()
+
+        # select the function
+        with log_context(logging.INFO, "Selected test function..."):
+            service_iframe.get_by_role("button", name="SELECT").nth(0).click()
+
+        with log_context(logging.INFO, "Filling the input parameters..."):
+            min_test_id = "Mean" if "uq" in service_key.lower() else "Min"
+            min_inputs = service_iframe.locator(
+                f'[mmux-testid="input-block-{min_test_id}"] input[type="number"]'
+            )
+            count_min = min_inputs.count()
+
+            for i in range(count_min):
+                input_field = min_inputs.nth(i)
+                input_field.fill(str(i + 1))
+                print(f"Filled {min_test_id} input {i} with value {i + 1}")
+                assert input_field.input_value() == str(i + 1)
+
+            max_test_id = "Standard Deviation" if "uq" in service_key.lower() else "Max"
+            max_inputs = service_iframe.locator(
+                f'[mmux-testid="input-block-{max_test_id}"] input[type="number"]'
+            )
+            count_max = max_inputs.count()
+
+            for i in range(count_max):
+                input_field = max_inputs.nth(i)
+                input_field.fill(str((i + 1) * 10))
+                print(f"Filled {max_test_id} input {i} with value {(i + 1) * 10}")
+                assert input_field.input_value() == str((i + 1) * 10)
+
+            page.wait_for_timeout(1000)
+            page.keyboard.press("Tab")
             page.wait_for_timeout(1000)
 
-    # Click the next button
-    with log_context(logging.INFO, "Clicking Next to go to the next step..."):
-        service_iframe.locator('[mmux-testid="next-button"]').click()
-        page.wait_for_timeout(1000)
+        if "moga" in service_key.lower():
+            with log_context(logging.INFO, "Filling the output parameters..."):
+                output_plus_button = service_iframe.locator(
+                    '[mmux-testid="add-output-var-btn"]'
+                )
 
-    with log_context(logging.INFO, "Starting the sampling..."):
-        service_iframe.locator('[mmux-testid="extend-sampling-btn"]').click()
-        page.wait_for_timeout(1000)
-        service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]').click()
-        page.wait_for_timeout(1000)
-        service_iframe.locator('[mmux-testid="run-sampling-btn"]').click()
-        page.wait_for_timeout(1000)
+                output_plus_button.click()
+                page.wait_for_timeout(1000)
 
-    with log_context(logging.INFO, "Waiting for the sampling to complete..."):
-        toast = service_iframe.locator("div.Toastify__toast").filter(
-            has_text="Sampling started running successfully, please wait for completion."
-        )
-        toast.wait_for(state="visible", timeout=120000)  # waits up to 120 seconds
+                output_confirm_button = service_iframe.locator(
+                    '[mmux-testid="confirm-add-output-btn"]'
+                )
+                output_confirm_button.click()
+                page.wait_for_timeout(1000)
 
-    with log_context(logging.INFO, "Waiting for the sampling to complete..."):
-        moga_container = service_iframe.locator("[mmux-testid='moga-pareto-plot']")
+        # Click the next button
+        with log_context(logging.INFO, "Clicking Next to go to the next step..."):
+            service_iframe.locator('[mmux-testid="next-button"]').click()
+            page.wait_for_timeout(1000)
 
-        message_1 = service_iframe.locator(
-            "text=Select at least 5 Samples to be used by the model."
-        )
-        message_2 = service_iframe.locator(
-            "text=No data available. Please create more Samples."
-        )
+        with log_context(logging.INFO, "Starting the sampling..."):
+            service_iframe.locator('[mmux-testid="extend-sampling-btn"]').click()
+            page.wait_for_timeout(1000)
+            service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]').click()
+            page.wait_for_timeout(1000)
+            service_iframe.locator('[mmux-testid="run-sampling-btn"]').click()
+            page.wait_for_timeout(1000)
 
-        # Check which one is visible
-        if message_1.is_visible():
-            message_1.wait_for(state="detached", timeout=300000)
-        elif message_2.is_visible():
-            message_2.wait_for(state="detached", timeout=300000)
-        else:
-            print("No blocking message found — continuing.")
+        with log_context(logging.INFO, "Waiting for the sampling to complete..."):
+            toast = service_iframe.locator("div.Toastify__toast").filter(
+                has_text="Sampling started running successfully, please wait for completion."
+            )
+            toast.wait_for(state="visible", timeout=120000)  # waits up to 120 seconds
 
-    page.wait_for_timeout(15000)
+        with log_context(logging.INFO, "Waiting for the sampling to complete..."):
+            plotly_graph = service_iframe.locator(".js-plotly-plot")
+            plotly_graph.wait_for(state="visible", timeout=300000)
+            page.wait_for_timeout(2000)
+
+        with (
+            log_context(logging.INFO, "Go back to dashboard"),
+            page.expect_response(
+                re.compile(r"/projects\?.+")
+            ) as list_projects_response,
+        ):
+            page.get_by_test_id("dashboardBtn").click()
+            page.get_by_test_id("confirmDashboardBtn").click()
+            assert (
+                list_projects_response.value.ok
+            ), f"Failed to list projects: {list_projects_response.value.status}"
+            page.wait_for_timeout(2000)
 
     # # then we wait a long time
-    # page.wait_for_timeout(1 * MINUTE)
+    page.wait_for_timeout(1 * MINUTE)
 
     # TODO: more steps
     # Run this tests against MOGA, UQ and SUMO services before destroying the functions / jobs / etc..
