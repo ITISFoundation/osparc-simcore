@@ -25,8 +25,6 @@ qx.Class.define("osparc.conversation.MessageList", {
   construct: function(conversation) {
     this.base(arguments);
 
-    this._messages = [];
-
     this._setLayout(new qx.ui.layout.VBox(5));
 
     this._buildLayout();
@@ -51,8 +49,6 @@ qx.Class.define("osparc.conversation.MessageList", {
   },
 
   members: {
-    _messages: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -148,15 +144,19 @@ qx.Class.define("osparc.conversation.MessageList", {
       this.fireEvent("messagesChanged");
     },
 
+    __getMessageUI: function(messageId) {
+      const messagesContainer = this.getChildControl("messages-container");
+      return messagesContainer.getChildren().find(
+        ctrl => ("getMessage" in ctrl && ctrl.getMessage().getMessageId() === messageId)
+      );
+    },
+
     __messageAdded: function(message) {
       // ignore it if it was already there
-      if (this.getConversation().messageExists(message.getMessageId())) {
+      const existingMessageUI = this.__getMessageUI(message.getMessageId());
+      if (existingMessageUI) {
         return;
       }
-
-      // determine insertion index for latest‐first order
-      const insertAt = this.getConversation().getMessageIndex(message.getMessageId());
-      this._messages.splice(insertAt, 0, message);
 
       const messageData = message.serialize();
       // Add the UI element to the messages list
@@ -172,6 +172,7 @@ qx.Class.define("osparc.conversation.MessageList", {
       }
       if (control) {
         // insert into the UI at the same position
+        const insertAt = this.getConversation().getMessageIndex(message.getMessageId());
         const messagesContainer = this.getChildControl("messages-container");
         messagesContainer.addAt(control, insertAt);
       }
@@ -188,13 +189,10 @@ qx.Class.define("osparc.conversation.MessageList", {
 
     __messageDeleted: function(message) {
       // Remove the UI element from the messages list
-      const messagesContainer = this.getChildControl("messages-container");
-      const children = messagesContainer.getChildren();
-      const controlIndex = children.findIndex(
-        ctrl => ("getMessage" in ctrl && ctrl.getMessage().getMessageId() === message.getMessageId())
-      );
-      if (controlIndex > -1) {
-        messagesContainer.remove(children[controlIndex]);
+      const existingMessageUI = this.__getMessageUI(message.getMessageId());
+      if (existingMessageUI) {
+        const messagesContainer = this.getChildControl("messages-container");
+        messagesContainer.remove(existingMessageUI);
       }
 
       this.fireEvent("messagesChanged");

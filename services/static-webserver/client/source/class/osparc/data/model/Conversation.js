@@ -217,19 +217,19 @@ qx.Class.define("osparc.data.model.Conversation", {
         .then(resp => {
           const messages = resp["data"];
           if (messages.length) {
-            const message = this.addMessage(messages[0]);
-            this.setLastMessage(message);
+            const lastMessage = new osparc.data.model.Message(messages[0]);
+            this.setLastMessage(lastMessage);
           }
           // fetch first message only if there is more than one message
           if (resp["_meta"]["total"] === 1) {
-            const message = new osparc.data.model.Message(messages[0]);
-            this.setFirstMessage(message);
+            const firstMessage = new osparc.data.model.Message(messages[0]);
+            this.setFirstMessage(firstMessage);
           } else if (resp["_meta"]["total"] > 1) {
             osparc.store.ConversationsSupport.getInstance().fetchFirstMessage(this.getConversationId(), resp["_meta"])
               .then(firstMessages => {
                 if (firstMessages.length) {
-                  const message = new osparc.data.model.Message(firstMessages[0]);
-                  this.setFirstMessage(message);
+                  const firstMessage = new osparc.data.model.Message(firstMessages[0]);
+                  this.setFirstMessage(firstMessage);
                 }
               });
           }
@@ -305,12 +305,16 @@ qx.Class.define("osparc.data.model.Conversation", {
       let message = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
       if (!message) {
         message = new osparc.data.model.Message(messageData);
-        this.__messages.push(message);
-        this.fireDataEvent("messageAdded", message);
+        this.__messageToList(message);
       }
+      return message;
+    },
+
+    __messageToList: function(message) {
+      this.__messages.push(message);
       osparc.data.model.Message.sortMessagesByDate(this.__messages);
       this.setLastMessage(this.__messages[0]);
-      return message;
+      this.fireDataEvent("messageAdded", message);
     },
 
     updateMessage: function(messageData) {
