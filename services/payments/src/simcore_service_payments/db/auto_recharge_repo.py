@@ -6,7 +6,7 @@ from models_library.basic_types import NonNegativeDecimal
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import BaseModel, ConfigDict, PositiveInt
-from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStmts
+from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStatements
 
 from .base import BaseRepository
 
@@ -33,7 +33,7 @@ class AutoRechargeRepo(BaseRepository):
         """
 
         async with self.db_engine.begin() as conn:
-            stmt = AutoRechargeStmts.get_wallet_autorecharge(wallet_id)
+            stmt = AutoRechargeStatements.get_wallet_autorecharge(wallet_id)
             result = await conn.execute(stmt)
             row = result.first()
             return PaymentsAutorechargeDB.model_validate(row) if row else None
@@ -50,7 +50,7 @@ class AutoRechargeRepo(BaseRepository):
 
         """
         async with self.db_engine.begin() as conn:
-            stmt = AutoRechargeStmts.is_valid_payment_method(
+            stmt = AutoRechargeStatements.is_valid_payment_method(
                 user_id=user_id,
                 wallet_id=new.wallet_id,
                 payment_method_id=new.primary_payment_method_id,
@@ -61,7 +61,7 @@ class AutoRechargeRepo(BaseRepository):
                     payment_method_id=new.primary_payment_method_id
                 )
 
-            stmt = AutoRechargeStmts.upsert_wallet_autorecharge(
+            stmt = AutoRechargeStatements.upsert_wallet_autorecharge(
                 wallet_id=wallet_id,
                 enabled=new.enabled,
                 primary_payment_method_id=new.primary_payment_method_id,
