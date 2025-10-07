@@ -95,11 +95,5 @@ test-api: ## Runs schemathesis against development server (NOTE: make up-devel f
 		"$(APP_URL)/api/v0/openapi.json"
 
 
-test-pacts: guard-PACT_BROKER_USERNAME guard-PACT_BROKER_PASSWORD guard-PACT_BROKER_URL _check_venv_active ## Test pacts
+test-pacts: guard-PACT_BROKER_USERNAME guard-PACT_BROKER_PASSWORD guard-PACT_BROKER_URL _check_venv_active ## Test pacts. Usage: PACT_BROKER_USERNAME=your_username PACT_BROKER_PASSWORD=your_password PACT_BROKER_URL=your_broker_url make test-pacts
 	pytest tests/unit/pact_broker/test*
-
-# Usage:
-# PACT_BROKER_USERNAME=your_username \
-# PACT_BROKER_PASSWORD=your_password \
-# PACT_BROKER_URL=your_broker_url \
-# make test-pacts
