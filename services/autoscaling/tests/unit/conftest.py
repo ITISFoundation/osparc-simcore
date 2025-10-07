@@ -63,6 +63,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     delenvs_from_dict,
     setenvs_from_dict,
 )
+from servicelib.tracing import TracingData
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
 from simcore_service_autoscaling.constants import PRE_PULLED_IMAGES_EC2_TAG_KEY
@@ -415,7 +416,11 @@ _LIFESPAN_TIMEOUT: Final[int] = 10
 @pytest.fixture
 async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
-    app = create_app(settings)
+    tracing_data = TracingData.create(
+        service_name=settings.APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
+    )
+    app = create_app(settings, tracing_data=tracing_data)
     # NOTE: the timeout is sometime too small for CI machines, and even larger machines
     async with LifespanManager(
         app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
