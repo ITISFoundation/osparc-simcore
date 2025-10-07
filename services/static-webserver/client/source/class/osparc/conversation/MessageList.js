@@ -120,6 +120,8 @@ qx.Class.define("osparc.conversation.MessageList", {
         return;
       }
 
+      this.getConversation().getMessages().forEach(message => this.__messageAdded(message));
+
       loadMoreMessages.show();
       loadMoreMessages.setFetching(true);
       this.getConversation().getNextMessages()
