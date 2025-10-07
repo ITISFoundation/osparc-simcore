@@ -189,6 +189,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
         conversationId: message.getConversationId(),
         message,
       });
+      addMessage.getChildControl("notify-user-button").exclude();
       const title = this.tr("Edit message");
       const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 135).set({
         clickAwayClose: false,
