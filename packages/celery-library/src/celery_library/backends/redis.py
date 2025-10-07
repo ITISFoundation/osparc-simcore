@@ -221,7 +221,7 @@ class RedisTaskStore:
 
         return (
             stream_items,
-            done == b"1",
+            done == "1",
             datetime.fromisoformat(last_update) if last_update else None,
         )
 

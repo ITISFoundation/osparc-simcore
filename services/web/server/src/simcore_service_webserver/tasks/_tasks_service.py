@@ -113,7 +113,7 @@ async def get_task_status(
     )
 
 
-STALL_THRESHOLD = 30
+STALL_THRESHOLD = 60  # seconds
 
 
 async def pull_task_stream_items(
@@ -129,17 +129,17 @@ async def pull_task_stream_items(
             task_uuid=task_uuid,
             limit=limit,
         )
-
-        if not is_done and last_update:
-            delta = datetime.now(UTC) - last_update
-            if delta.total_seconds() > STALL_THRESHOLD:
-                raise JobSchedulerError(
-                    exc=f"Task seems stalled since {delta.total_seconds()} seconds"
-                )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
+
+    if not is_done and last_update:
+        delta = datetime.now(UTC) - last_update
+        if delta.total_seconds() > STALL_THRESHOLD:
+            raise JobSchedulerError(
+                exc=f"Task seems stalled since {delta.total_seconds()} seconds"
+            )
 
     return results, is_done
 
