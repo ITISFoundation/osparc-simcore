@@ -20,8 +20,12 @@ from simcore_postgres_database.utils_payments import (
     get_user_payments_transactions,
     update_payment_transaction_state,
 )
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+)
+from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from .errors import PaymentCompletedError, PaymentNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -30,7 +34,7 @@ _logger = logging.getLogger(__name__)
 #
 # NOTE: this will be moved to the payments service
 # NOTE: with https://sqlmodel.tiangolo.com/ we would only define this once!
-class PaymentsTransactionsDB(BaseModel):
+class PaymentsTransactionsGetDB(BaseModel):
     payment_id: PaymentID
     price_dollars: Decimal  # accepts negatives
     osparc_credits: Decimal  # accepts negatives
@@ -48,43 +52,47 @@ class PaymentsTransactionsDB(BaseModel):
 
 
 async def list_user_payment_transactions(
-    app,
+    app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     offset: PositiveInt,
     limit: PositiveInt,
-) -> tuple[int, list[PaymentsTransactionsDB]]:
+) -> tuple[int, list[PaymentsTransactionsGetDB]]:
     """List payments done by a give user (any wallet)
 
     Sorted by newest-first
     """
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_number_of_items, rows = await get_user_payments_transactions(
             conn, user_id=user_id, offset=offset, limit=limit
         )
-        page = TypeAdapter(list[PaymentsTransactionsDB]).validate_python(rows)
+        page = TypeAdapter(list[PaymentsTransactionsGetDB]).validate_python(rows)
         return total_number_of_items, page
 
 
-async def get_pending_payment_transactions_ids(app: web.Application) -> list[PaymentID]:
-    async with get_database_engine_legacy(app).acquire() as conn:
+async def get_pending_payment_transactions_ids(
+    app: web.Application, connection: AsyncConnection | None = None
+) -> list[PaymentID]:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
             sa.select(payments_transactions.c.payment_id)
             .where(payments_transactions.c.completed_at == None)  # noqa: E711
             .order_by(payments_transactions.c.initiated_at.asc())  # oldest first
         )
-        rows = await result.fetchall() or []
+        rows = result.fetchall()
         return [TypeAdapter(PaymentID).validate_python(row.payment_id) for row in rows]
 
 
 async def complete_payment_transaction(
     app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     payment_id: PaymentID,
     completion_state: PaymentTransactionState,
     state_message: str | None,
     invoice_url: HttpUrl | None = None,
-) -> PaymentsTransactionsDB:
+) -> PaymentsTransactionsGetDB:
     """
 
     Raises:
@@ -95,7 +103,8 @@ async def complete_payment_transaction(
     if invoice_url:
         optional_kwargs["invoice_url"] = invoice_url
 
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        # NOTE: update_payment_transaction_state() uses a transaction internally, therefore we use pass_or_acquire_connection(...)
         row = await update_payment_transaction_state(
             conn,
             payment_id=payment_id,
@@ -111,4 +120,4 @@ async def complete_payment_transaction(
             raise PaymentCompletedError(payment_id=row.payment_id)
 
         assert row  # nosec
-        return PaymentsTransactionsDB.model_validate(row)
+        return PaymentsTransactionsGetDB.model_validate(row)
