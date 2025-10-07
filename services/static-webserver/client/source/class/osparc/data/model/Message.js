@@ -41,7 +41,7 @@ qx.Class.define("osparc.data.model.Message", {
 
     conversationId: {
       check: "String",
-      nullable: false,
+      nullable: true, // system messages have null conversationId
       init: null,
       event: "changeConversationId",
     },
@@ -86,6 +86,8 @@ qx.Class.define("osparc.data.model.Message", {
   },
 
   statics: {
+    SYSTEM_MESSAGE_ID: -1,
+
     sortMessagesByDate: function(messages) {
       // newest first (higher in the list, last in the bottom)
       messages.sort((a, b) => a.getCreated() - b.getCreated());

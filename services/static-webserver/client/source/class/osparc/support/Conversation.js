@@ -225,9 +225,11 @@ qx.Class.define("osparc.support.Conversation", {
           "messageId": `system-${now.getTime()}`,
           "modified": now.toISOString(),
           "type": "MESSAGE",
-          "userGroupId": "system",
+          "userGroupId": osparc.data.model.Message.SYSTEM_MESSAGE_ID,
         };
-        this.addMessage(systemMessageData);
+        const systemMessage = new osparc.data.model.Message(systemMessageData);
+        const messageUI = new osparc.conversation.MessageUI(systemMessage);
+        this.getChildControl("messages-container").add(messageUI);
       }
     },
 

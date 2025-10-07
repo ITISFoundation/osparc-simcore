@@ -38,7 +38,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
   statics: {
     isMyMessage: function(message) {
-      if (message.getUserGroupId() === "system") {
+      if (message.getUserGroupId() === osparc.data.model.Message.SYSTEM_MESSAGE_ID) {
         return false;
       }
       return message && osparc.auth.Data.getInstance().getGroupId() === message.getUserGroupId();
@@ -154,7 +154,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
       const avatar = this.getChildControl("avatar");
       const userName = this.getChildControl("user-name");
-      if (message.getUserGroupId() === "system") {
+      if (message.getUserGroupId() === osparc.data.model.Message.SYSTEM_MESSAGE_ID) {
         userName.setValue("Support");
       } else {
         osparc.store.Users.getInstance().getUser(message.getUserGroupId())
