@@ -181,8 +181,8 @@ async def _webserver_internal_events_message_parser(
             )
             await project_logs.unsubscribe(app, ProjectID(_project_id))
         else:
-            _logger.exception(
-                "Missing project_id in UNSUBSCRIBE_FROM_LOGS_RABBIT_QUEUE event, this should never happen, investigate!"
+            _logger.error(
+                "Missing project_id in UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE event, this should never happen, investigate!"
             )
 
     else:
