@@ -5,8 +5,6 @@
 
 import time
 
-import pytest
-from aiocache import Cache
 from fastapi.security import HTTPBasicCredentials
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pytest_mock import MockerFixture
@@ -43,7 +41,6 @@ async def test_cache_effectiveness_in_rest_authentication_dependencies(
     api_key_in_db: ApiKeyInDB,
     api_key_repo: ApiKeysRepository,
     users_repo: UsersRepository,
-    monkeypatch: pytest.MonkeyPatch,
     mocker: MockerFixture,
 ):
     """Test that caching reduces database calls and improves performance.
@@ -118,15 +115,21 @@ async def test_cache_effectiveness_in_rest_authentication_dependencies(
         username=api_key_in_db.api_key, password=api_key_in_db.api_secret
     )
 
-    # Test with cache enabled (default)
-    monkeypatch.delenv("AIOCACHE_DISABLE", raising=False)
-    await Cache().clear()  # Clear any existing cache
+    # Get cache instances from repository methods
+    # pylint: disable=no-member
+    api_keys_cache = api_key_repo.get_user.cache
+    users_cache = users_repo.get_active_user_email.cache
+
+    # Clear any existing cache
+    await api_keys_cache.clear()
+    await users_cache.clear()
 
     # Spy on the connection's execute method by patching AsyncConnection.execute
     from sqlalchemy.ext.asyncio import AsyncConnection  # noqa: PLC0415
 
     execute_spy = mocker.spy(AsyncConnection, "execute")
 
+    # Test with cache enabled (default behavior)
     # First call - should hit database
     start_time = time.time()
     result1 = await get_current_identity(
@@ -148,8 +151,16 @@ async def test_cache_effectiveness_in_rest_authentication_dependencies(
     cached_db_calls = execute_spy.call_count
     execute_spy.reset_mock()
 
-    # Test with cache disabled
-    monkeypatch.setenv("AIOCACHE_DISABLE", "1")
+    # Verify cache was used
+    api_key_cache_key = f"api_auth:{api_key_in_db.api_key}"
+    user_cache_key = f"user_email:{api_key_in_db.user_id}"
+
+    assert await api_keys_cache.exists(api_key_cache_key), "API key should be cached"
+    assert await users_cache.exists(user_cache_key), "User email should be cached"
+
+    # Test with cache disabled by clearing cache before each call
+    await api_keys_cache.clear()
+    await users_cache.clear()
 
     # First call without cache
     start_time = time.time()
@@ -159,6 +170,10 @@ async def test_cache_effectiveness_in_rest_authentication_dependencies(
         credentials=credentials,
     )
     no_cache_first_time = time.time() - start_time
+
+    # Clear cache again to simulate no caching
+    await api_keys_cache.clear()
+    await users_cache.clear()
 
     # Second call without cache
     start_time = time.time()
