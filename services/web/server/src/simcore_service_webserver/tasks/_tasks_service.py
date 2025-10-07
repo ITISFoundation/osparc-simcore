@@ -112,27 +112,29 @@ async def get_task_status(
     )
 
 
-async def get_task_stream_items(
+async def pull_task_stream_items(
     task_manager: TaskManager,
     *,
     owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
-    offset: int = 0,
     limit: int = 50,
-) -> list[TaskStreamItem]:
+) -> tuple[list[TaskStreamItem], int, bool]:
     try:
-        results = await task_manager.pull_task_stream_items(
+        results, remaining = await task_manager.pull_task_stream_items(
             owner_metadata=owner_metadata,
             task_uuid=task_uuid,
-            offset=offset,
             limit=limit,
         )
+        task_status = await task_manager.get_task_status(
+            owner_metadata=owner_metadata, task_uuid=task_uuid
+        )
+
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    return results
+    return results, remaining, task_status.is_done
 
 
 async def list_tasks(

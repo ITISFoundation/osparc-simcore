@@ -1,6 +1,9 @@
 from uuid import UUID
 
-from models_library.rest_pagination import PageQueryParameters
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageLimitInt,
+)
 from pydantic import BaseModel, ConfigDict
 
 
@@ -9,4 +12,5 @@ class TaskPathParams(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
-class TaskStreamQueryParams(PageQueryParameters): ...
+class TaskStreamQueryParams(BaseModel):
+    limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE

@@ -190,7 +190,7 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
         TaskStreamQueryParams, request
     )
 
-    task_result = await _tasks_service.get_task_stream_items(
+    task_result, remaining, done = await _tasks_service.pull_task_stream_items(
         get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
@@ -199,11 +199,10 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
             ).model_dump()
         ),
         task_uuid=_path_params.task_id,
-        offset=_query_params.offset,
         limit=_query_params.limit,
     )
 
     return create_data_response(
-        task_result,
+        [r.data for r in task_result],
         status=status.HTTP_200_OK,
     )

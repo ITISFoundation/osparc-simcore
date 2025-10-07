@@ -15,6 +15,5 @@ from typing import Final
 MIMETYPE_APPLICATION_JSON: Final[str] = "application/json"
 MIMETYPE_APPLICATION_ND_JSON: Final[str] = "application/x-ndjson"
 MIMETYPE_APPLICATION_ZIP: Final[str] = "application/zip"
-MIMETYPE_TEXT_EVENT_STREAM: Final[str] = "text/event-stream"
 MIMETYPE_TEXT_HTML: Final[str] = "text/html"
 MIMETYPE_TEXT_PLAIN: Final[str] = "text/plain"

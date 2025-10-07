@@ -217,8 +217,8 @@ class TaskStore(Protocol):
     ) -> None: ...
 
     async def pull_task_stream_items(
-        self, task_key: TaskKey, offset: int = 0, limit: int = 50
-    ) -> list[TaskStreamItem]: ...
+        self, task_key: TaskKey, limit: int
+    ) -> tuple[list[TaskStreamItem], int]: ...
 
 
 class TaskStatus(BaseModel):

@@ -7,7 +7,7 @@ from common_library.json_serialization import json_dumps
 from models_library.rest_error import ErrorGet, ErrorItemType
 
 from ..aiohttp.status import HTTP_200_OK
-from ..mimetype_constants import MIMETYPE_APPLICATION_JSON, MIMETYPE_TEXT_EVENT_STREAM
+from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..rest_responses import is_enveloped
 from ..status_codes_utils import get_code_description, get_code_display_name, is_error
@@ -34,16 +34,6 @@ def create_data_response(data: Any, *, status: int = HTTP_200_OK) -> web.Respons
 
     enveloped_payload = wrap_as_envelope(data) if not is_enveloped(data) else data
     return web.json_response(enveloped_payload, dumps=json_dumps, status=status)
-
-
-def create_event_stream_response(event_generator: Any) -> web.Response:
-    return web.Response(
-        body=event_generator(),
-        status=HTTP_200_OK,
-        reason=get_code_description(HTTP_200_OK),
-        content_type=MIMETYPE_TEXT_EVENT_STREAM,
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
-    )
 
 
 MAX_STATUS_MESSAGE_LENGTH: Final[int] = 100

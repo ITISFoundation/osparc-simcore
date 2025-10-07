@@ -186,13 +186,25 @@ class RedisTaskStore:
         )
 
     async def pull_task_stream_items(
-        self, task_key: TaskKey, offset: int = 0, limit: int = 50
-    ) -> list[TaskStreamItem]:
+        self, task_key: TaskKey, limit: int = 20
+    ) -> tuple[list[TaskStreamItem], int]:
         stream_key = _build_redis_stream_key(task_key)
         raw_items: list[str] = await handle_redis_returns_union_types(
-            self._redis_client_sdk.redis.lrange(stream_key, offset, offset + limit - 1)
+            self._redis_client_sdk.redis.lrange(stream_key, 0, limit - 1)
         )
-        return [TaskStreamItem.model_validate_json(item) for item in raw_items]
+
+        stream_items = [TaskStreamItem.model_validate_json(item) for item in raw_items]
+
+        if stream_items:
+            await handle_redis_returns_union_types(
+                self._redis_client_sdk.redis.ltrim(stream_key, len(stream_items), -1)
+            )
+
+        remaining = await handle_redis_returns_union_types(
+            self._redis_client_sdk.redis.llen(stream_key)
+        )
+
+        return stream_items, remaining
 
 
 if TYPE_CHECKING:
