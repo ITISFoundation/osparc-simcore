@@ -36,7 +36,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         tracing_settings: TracingSettings | None = (
             app.state.settings.DIRECTOR_V2_TRACING
         )
-        tracing_data = get_tracing_data(app, tracing_settings)
+        tracing_data = get_tracing_data(app)
 
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)

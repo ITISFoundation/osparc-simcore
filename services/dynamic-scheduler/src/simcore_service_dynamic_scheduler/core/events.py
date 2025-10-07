@@ -56,7 +56,7 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 def create_app_lifespan(
     settings: ApplicationSettings,
-    tracing_data: TracingData | None,
+    tracing_data: TracingData,
     logging_lifespan: Lifespan | None,
 ) -> LifespanManager:
     app_lifespan = LifespanManager()
@@ -64,8 +64,7 @@ def create_app_lifespan(
         app_lifespan.add(logging_lifespan)
     app_lifespan.add(_settings_lifespan)
 
-    if settings.DYNAMIC_SCHEDULER_TRACING:
-        assert tracing_data  # nosec
+    if tracing_data.tracing_enabled:
         app_lifespan.add(
             get_tracing_instrumentation_lifespan(
                 tracing_data=tracing_data,

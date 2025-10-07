@@ -148,9 +148,7 @@ class DirectorClient:
         if settings.CATALOG_TRACING:
             setup_httpx_client_tracing(
                 self.client,
-                tracing_data=get_tracing_data(
-                    app=app, tracing_settings=settings.CATALOG_TRACING
-                ),
+                tracing_data=get_tracing_data(app=app),
             )
 
         assert settings.CATALOG_DIRECTOR  # nosec

@@ -43,7 +43,7 @@ def use_tracing_context(context: TracingContext):
 
 
 class TracingData(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
     service_name: str
     tracing_settings: TracingSettings | None
     tracer_provider: TracerProvider | None

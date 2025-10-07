@@ -52,7 +52,6 @@ def create_app(settings: ApplicationSettings, tracing_data: TracingData) -> Fast
         app,
         max_keepalive_connections=settings.DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS,
         default_timeout=settings.DIRECTOR_REGISTRY_CLIENT_TIMEOUT,
-        tracing_settings=settings.DIRECTOR_TRACING,
         tracing_data=tracing_data,
     )
     setup_registry(app)
