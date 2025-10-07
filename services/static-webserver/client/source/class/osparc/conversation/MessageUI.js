@@ -135,15 +135,16 @@ qx.Class.define("osparc.conversation.MessageUI", {
     },
 
     __applyMessage: function(message) {
-      const createdDate = osparc.utils.Utils.formatDateAndTime(message.getCreated());
-      const lastUpdate = this.getChildControl("last-updated");
       const updateLastUpdate = () => {
+        const createdDate = osparc.utils.Utils.formatDateAndTime(message.getCreated());
+        let value = "";
         if (message.getCreated().getTime() === message.getModified().getTime()) {
-          lastUpdate.setValue(createdDate);
+          value = createdDate;
         } else {
           const updatedDate = osparc.utils.Utils.formatDateAndTime(message.getModified());
-          lastUpdate.setValue(createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")");
+          value = createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")";
         }
+        this.getChildControl("last-updated").setValue(value);
       };
       updateLastUpdate();
       message.addListener("changeModified", () => updateLastUpdate());
