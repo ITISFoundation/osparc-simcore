@@ -10,7 +10,7 @@ from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from settings_library.tracing import TracingSettings
 
 TracingContext: TypeAlias = otcontext.Context | None
@@ -43,6 +43,7 @@ def use_tracing_context(context: TracingContext):
 
 
 class TracingData(BaseModel):
+    model_config = ConfigDict(frozen=True)
     service_name: str
     tracing_settings: TracingSettings | None
     tracer_provider: TracerProvider | None
