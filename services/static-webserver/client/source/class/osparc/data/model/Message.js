@@ -25,18 +25,10 @@ qx.Class.define("osparc.data.model.Message", {
   /**
    * @param messageData {Object} Object containing the serialized Message Data
    * */
-  construct: function(messageData, studyId) {
+  construct: function(messageData) {
     this.base(arguments);
 
-    this.set({
-      messageId: messageData.messageId,
-      conversationId: messageData.conversationId,
-      content: messageData.content,
-      userGroupId: messageData.userGroupId,
-      created: new Date(messageData.created),
-      modified: new Date(messageData.modified),
-      type: messageData.type,
-    });
+    this.setData(messageData);
   },
 
   properties: {
@@ -92,4 +84,25 @@ qx.Class.define("osparc.data.model.Message", {
       event: "changeModified",
     },
   },
+
+  statics: {
+    sortMessagesByDate: function(messages) {
+      // latest first
+      messages.sort((a, b) => new Date(b.getCreated()) - new Date(a.getCreated()));
+    },
+  },
+
+  members: {
+    setData: function(messageData) {
+      this.set({
+        messageId: messageData.messageId,
+        conversationId: messageData.conversationId,
+        content: messageData.content,
+        userGroupId: messageData.userGroupId,
+        created: new Date(messageData.created),
+        modified: new Date(messageData.modified),
+        type: messageData.type,
+      });
+    },
+  }
 });
