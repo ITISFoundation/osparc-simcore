@@ -2,6 +2,7 @@ import logging
 from typing import NamedTuple
 
 import sqlalchemy as sa
+from aiocache import cached
 from models_library.products import ProductName
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.api_keys import api_keys as auth_api_keys_table
@@ -21,13 +22,24 @@ class UserAndProductTuple(NamedTuple):
 class ApiKeysRepository(BaseRepository):
     """Auth access"""
 
+    @cached(
+        ttl=120,
+        key_builder=lambda *_args, **kwargs: f"api_auth:{kwargs['api_key']}",
+        namespace=__name__,
+        noself=True,
+    )
     async def get_user(
         self,
         connection: AsyncConnection | None = None,
         *,
         api_key: str,
-        api_secret: str
+        api_secret: str,
     ) -> UserAndProductTuple | None:
+        """Validates API key and secret, returning user info if valid otherwise None.
+
+        WARNING: Cached for 120s TTL - secret validation occurs every 2 minutes.
+        NOTE: to disable caching set AIOCACHE_DISABLE=1
+        """
 
         stmt = sa.select(
             auth_api_keys_table.c.user_id,
