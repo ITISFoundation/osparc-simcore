@@ -15,8 +15,7 @@ from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
-from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
-from sqlalchemy.exc import DatabaseError as SQLAlchemyDatabaseError
+from sqlalchemy.exc import DatabaseError
 
 from . import _authz_repository
 from ._authz_access_model import (
@@ -48,7 +47,7 @@ _AUTHZ_BURST_CACHE_TTL: Final = (
 def _handle_exceptions_as_503():
     try:
         yield
-    except (AiopgDatabaseError, SQLAlchemyDatabaseError) as err:
+    except DatabaseError as err:
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 "Auth unavailable due to database error",
