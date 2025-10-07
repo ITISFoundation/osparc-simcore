@@ -203,12 +203,10 @@ qx.Class.define("osparc.conversation.MessageUI", {
       });
       addMessage.addListener("updateMessage", e => {
         const content = e.getData();
-        const conversationId = message.getConversationId();
-        const messageId = message.getMessageId();
         if (this.__studyData) {
-          promise = osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], conversationId, messageId, content);
+          promise = osparc.store.ConversationsProject.getInstance().editMessage(message, content, this.__studyData["uuid"]);
         } else {
-          promise = osparc.store.ConversationsSupport.getInstance().editMessage(conversationId, messageId, content);
+          promise = osparc.store.ConversationsSupport.getInstance().editMessage(message, content);
         }
         promise.then(data => {
           win.close();
@@ -230,7 +228,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
         if (win.getConfirmed()) {
           let promise = null;
           if (this.__studyData) {
-            promise = osparc.store.ConversationsProject.getInstance().deleteMessage(message);
+            promise = osparc.store.ConversationsProject.getInstance().deleteMessage(message, this.__studyData["uuid"]);
           } else {
             promise = osparc.store.ConversationsSupport.getInstance().deleteMessage(message);
           }
