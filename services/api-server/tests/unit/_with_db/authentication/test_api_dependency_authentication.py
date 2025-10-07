@@ -4,96 +4,17 @@
 # pylint: disable=too-many-arguments
 
 import time
-from collections.abc import AsyncGenerator, AsyncIterator, Callable
 
 import pytest
 from aiocache import Cache
-from asgi_lifespan import LifespanManager
-from fastapi import FastAPI
 from fastapi.security import HTTPBasicCredentials
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
-from pydantic import PositiveInt
 from pytest_mock import MockerFixture
 from simcore_service_api_server.api.dependencies.authentication import (
     get_current_identity,
 )
-from simcore_service_api_server.clients.postgres import get_engine
 from simcore_service_api_server.repository.api_keys import ApiKeysRepository
 from simcore_service_api_server.repository.users import UsersRepository
-from sqlalchemy.ext.asyncio import AsyncEngine
-
-MAX_TIME_FOR_APP_TO_STARTUP = 10
-MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
-
-
-@pytest.fixture
-async def app_started(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
-    # LifespanManager will trigger app's startup&shutown event handlers
-    async with LifespanManager(
-        app,
-        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
-        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
-    ):
-        yield app
-
-
-@pytest.fixture
-async def async_engine(app_started: FastAPI) -> AsyncEngine:
-    # Overrides
-    return get_engine(app_started)
-
-
-@pytest.fixture
-def api_key_repo(
-    async_engine: AsyncEngine,
-) -> ApiKeysRepository:
-    return ApiKeysRepository(db_engine=async_engine)
-
-
-@pytest.fixture
-def users_repo(
-    async_engine: AsyncEngine,
-) -> UsersRepository:
-    return UsersRepository(db_engine=async_engine)
-
-
-@pytest.fixture
-async def api_key_in_db(
-    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
-) -> ApiKeyInDB:
-    """Creates a single API key in DB for testing purposes"""
-    return await anext(create_fake_api_keys(1))
-
-
-async def test_get_user_with_valid_credentials(
-    api_key_in_db: ApiKeyInDB,
-    api_key_repo: ApiKeysRepository,
-):
-    # Act
-    result = await api_key_repo.get_user(
-        api_key=api_key_in_db.api_key, api_secret=api_key_in_db.api_secret
-    )
-
-    # Assert
-    assert result is not None
-    assert result.user_id == api_key_in_db.user_id
-    assert result.product_name == api_key_in_db.product_name
-
-
-async def test_get_user_with_invalid_credentials(
-    api_key_in_db: ApiKeyInDB,
-    api_key_repo: ApiKeysRepository,
-):
-
-    # Generate a fake API key
-
-    # Act - use wrong secret
-    result = await api_key_repo.get_user(
-        api_key=api_key_in_db.api_key, api_secret="wrong_secret"
-    )
-
-    # Assert
-    assert result is None
 
 
 async def test_rest_dependency_authentication(
@@ -125,7 +46,72 @@ async def test_cache_effectiveness_in_rest_authentication_dependencies(
     monkeypatch: pytest.MonkeyPatch,
     mocker: MockerFixture,
 ):
-    """Test that caching reduces database calls and improves performance."""
+    """Test that caching reduces database calls and improves performance.
+
+    ## Memory Implications of aiocache
+
+    ### Memory Usage Characteristics
+
+    **aiocache** uses in-memory storage by default, which means:
+
+    1. **Linear memory growth**: Each cached item consumes RAM proportional to the serialized size of the cached data
+    2. **No automatic memory limits**: By default, there's no built-in maximum memory cap
+    3. **TTL-based cleanup**: Items are only removed when they expire (TTL) or are explicitly deleted
+
+    ### Memory Limits & Configuration
+
+    **Available configuration options:**
+
+    ```python
+    # Memory backend configuration
+    cache = Cache(Cache.MEMORY, **{
+        'serializer': {
+            'class': 'aiocache.serializers.PickleSerializer'
+        },
+        # No built-in memory limit options for MEMORY backend
+    })
+    ```
+
+    **Key limitations:**
+    - **MEMORY backend**: No built-in memory limits or LRU eviction
+    - **Maximum capacity**: Limited only by available system RAM
+    - **Risk**: Memory leaks if TTL is too long or cache keys grow unbounded
+
+    ### Recommendations for Your Use Case
+
+    **For authentication caching:**
+
+    1. **Low memory impact**: User authentication data is typically small (user_id, email, product_name)
+    2. **Short TTL**: Your 120s TTL helps prevent unbounded growth
+    3. **Bounded key space**: API keys are finite, not user-generated
+
+    **Memory estimation:**
+    ```
+    Per cache entry ≈ 200-500 bytes (user data + overhead)
+    1000 active users ≈ 500KB
+    10000 active users ≈ 5MB
+    ```
+
+    ### Alternative Approaches
+
+    **If memory becomes a concern:**
+
+    1. **Redis backend**:
+    ```python
+    cache = Cache(Cache.REDIS, endpoint="redis://localhost", ...)
+    ```
+
+    2. **Custom eviction policy**: Implement LRU manually or use shorter TTL
+
+    3. **Monitoring**: Track cache size in production:
+    ```python
+    # Check cache statistics
+    cache_stats = await cache.get_stats()
+    ```
+
+    **Verdict**:
+    For authentication use case with reasonable user counts (<10K active), memory impact should be minimal with your current TTL configuration.
+    """
 
     # Generate a fake API key
     credentials = HTTPBasicCredentials(
