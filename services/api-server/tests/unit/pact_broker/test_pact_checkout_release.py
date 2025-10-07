@@ -74,9 +74,9 @@ async def mock_wb_api_server_rpc(
 
 
 @pytest.fixture
-async def mock_rut_server_rpc(
+def mock_rut_server_rpc(
     app: FastAPI, mocker: MockerFixture
-) -> AsyncIterable[None]:
+) -> None:
     import simcore_service_api_server.services_rpc.resource_usage_tracker  # noqa: PLC0415
     from servicelib.rabbitmq import RabbitMQRPCClient  # noqa: PLC0415
 
