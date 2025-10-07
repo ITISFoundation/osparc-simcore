@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from celery import Celery  # type: ignore[import-untyped]
-from celery.exceptions import CeleryError
+from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
