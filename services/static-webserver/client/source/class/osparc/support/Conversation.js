@@ -155,7 +155,9 @@ qx.Class.define("osparc.support.Conversation", {
       if (showLayout) {
         this.__populateShareProjectCB();
         const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
-        currentStudy.addListener("changeAccessRights", () => this.__populateShareProjectCB(), this);
+        if (currentStudy) {
+          currentStudy.addListener("changeAccessRights", () => this.__populateShareProjectCB(), this);
+        }
       }
     },
 
