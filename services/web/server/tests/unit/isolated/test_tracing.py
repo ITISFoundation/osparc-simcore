@@ -4,11 +4,11 @@
 
 
 import pytest
-from opentelemetry.instrumentation.aiohttp_server import (
-    middleware as aiohttp_opentelemetry_middleware,
-)
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.aiohttp.tracing import aiohttp_server_opentelemetry_middleware
+from servicelib.tracing import TracingData
+from simcore_service_api_server._meta import APP_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import ApplicationSettings
 
@@ -32,7 +32,10 @@ def test_middleware_restrictions_opentelemetry_is_second_middleware(
 ):
     settings = ApplicationSettings.create_from_envs()
     assert settings.WEBSERVER_TRACING
+    tracing_data = TracingData.create(
+        service_name=APP_NAME, tracing_settings=settings.WEBSERVER_TRACING
+    )
 
-    app = create_application()
+    app = create_application(tracing_data=tracing_data)
     assert app.middlewares
-    assert app.middlewares[0] is aiohttp_opentelemetry_middleware
+    assert app.middlewares[0] is aiohttp_server_opentelemetry_middleware

@@ -13,6 +13,7 @@ from faker import Faker
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.openapi_specs import Entrypoint
+from servicelib.tracing import TracingData
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.rest._utils import get_openapi_specs_path
@@ -59,7 +60,10 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     # - routings happen during setup!
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
     #
-    app_ = create_application()
+    tracing_data = TracingData.create(
+        service_name="test-webserver", tracing_settings=None
+    )
+    app_ = create_application(tracing_data=tracing_data)
     print(get_application_settings(app_).model_dump_json(indent=1))
     return app_
 
