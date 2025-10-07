@@ -8,6 +8,7 @@ from typing import Any, Final
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.tracing import TRACING_DATA_KEY
 from servicelib.tracing import TracingData
 
 from ._meta import (
@@ -63,7 +64,7 @@ from .storage.plugin import setup_storage
 from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags.plugin import setup_tags
 from .tasks.plugin import setup_tasks
-from .tracing import TRACING_DATA_KEY, setup_app_tracing
+from .tracing import setup_app_tracing
 from .trash.plugin import setup_trash
 from .users.plugin import setup_users
 from .wallets.plugin import setup_wallets
