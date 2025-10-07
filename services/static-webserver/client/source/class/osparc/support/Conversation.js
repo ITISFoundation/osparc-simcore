@@ -218,7 +218,7 @@ qx.Class.define("osparc.support.Conversation", {
       }
       if (msg) {
         const now = new Date();
-        const systemMessage = {
+        const systemMessageData = {
           "conversationId": null,
           "content": msg,
           "created": now.toISOString(),
@@ -227,7 +227,7 @@ qx.Class.define("osparc.support.Conversation", {
           "type": "MESSAGE",
           "userGroupId": "system",
         };
-        this.addMessage(systemMessage);
+        this.addMessage(systemMessageData);
       }
     },
 

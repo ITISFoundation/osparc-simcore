@@ -185,19 +185,19 @@ qx.Class.define("osparc.data.model.Conversation", {
         this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED,
         this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED,
       ].forEach(eventName => {
-        const eventHandler = message => {
-          if (message) {
-            const conversationId = message["conversationId"];
+        const eventHandler = messageData => {
+          if (messageData) {
+            const conversationId = messageData["conversationId"];
             if (conversationId === this.getConversationId()) {
               switch (eventName) {
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
-                  this.addMessage(message);
+                  this.addMessage(messageData);
                   break;
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED:
-                  this.updateMessage(message);
+                  this.updateMessage(messageData);
                   break;
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED:
-                  this.deleteMessage(message);
+                  this.deleteMessage(messageData);
                   break;
               }
             }
@@ -268,8 +268,8 @@ qx.Class.define("osparc.data.model.Conversation", {
         osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options);
       return promise
         .then(resp => {
-          const messages = resp["data"];
-          messages.forEach(message => this.addMessage(message));
+          const messagesData = resp["data"];
+          messagesData.forEach(messageData => this.addMessage(messageData));
           this.__nextRequestParams = resp["_links"]["next"];
           return resp;
         })
