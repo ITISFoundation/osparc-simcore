@@ -24,7 +24,7 @@ from simcore_postgres_database.models.payments_transactions import (
 from simcore_postgres_database.utils_payments import insert_init_payment_transaction
 from yarl import URL
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from ..products import products_service
 from ..resource_usage.service import add_credits_to_wallet
 from ..users import users_service
@@ -46,7 +46,7 @@ _FAKE_PAYMENT_TRANSACTION_ID_PREFIX = "fpt"
 
 
 def _to_api_model(
-    transaction: _onetime_db.PaymentsTransactionsDB,
+    transaction: _onetime_db.PaymentsTransactionsGetDB,
 ) -> PaymentTransaction:
     data: dict[str, Any] = {
         "payment_id": transaction.payment_id,
@@ -90,7 +90,7 @@ async def _fake_init_payment(
         .with_query(id=payment_id)
     )
     # (2) Annotate INIT transaction
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with get_asyncpg_engine(app).begin() as conn:
         await insert_init_payment_transaction(
             conn,
             payment_id=payment_id,
