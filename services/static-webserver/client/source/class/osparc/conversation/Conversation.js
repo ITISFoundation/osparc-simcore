@@ -156,33 +156,34 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.fireEvent("messagesChanged");
     },
 
-    addMessage: function(message) {
+    addMessage: function(messageData) {
       // ignore it if it was already there
-      const messageIndex = this._messages.findIndex(msg => msg["messageId"] === message["messageId"]);
+      const messageIndex = this._messages.findIndex(msg => msg.getMessageId() === messageData["messageId"]);
       if (messageIndex !== -1) {
         return;
       }
 
       // determine insertion index for latest‐first order
-      const newTime = new Date(message["created"]);
+      const newTime = new Date(messageData["created"]);
       let insertAt = this._messages.findIndex(m => new Date(m["created"]) > newTime);
       if (insertAt === -1) {
         insertAt = this._messages.length;
       }
 
       // Insert the message in the messages array
+      const message = new osparc.data.model.Message(messageData);
       this._messages.splice(insertAt, 0, message);
 
       // Add the UI element to the messages list
       let control = null;
-      switch (message["type"]) {
+      switch (message.getType()) {
         case "MESSAGE":
-          control = this._createMessageUI(message);
+          control = this._createMessageUI(messageData);
           control.addListener("messageUpdated", e => this.updateMessage(e.getData()));
           control.addListener("messageDeleted", e => this.deleteMessage(e.getData()));
           break;
         case "NOTIFICATION":
-          control = new osparc.conversation.NotificationUI(message);
+          control = new osparc.conversation.NotificationUI(messageData);
           break;
       }
       if (control) {
@@ -201,9 +202,9 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.fireEvent("messagesChanged");
     },
 
-    deleteMessage: function(message) {
+    deleteMessage: function(messageData) {
       // remove it from the messages array
-      const messageIndex = this._messages.findIndex(msg => msg["messageId"] === message["messageId"]);
+      const messageIndex = this._messages.findIndex(msg => msg.getMessageId() === messageData["messageId"]);
       if (messageIndex === -1) {
         return;
       }
@@ -213,7 +214,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       const messagesContainer = this.getChildControl("messages-container");
       const children = messagesContainer.getChildren();
       const controlIndex = children.findIndex(
-        ctrl => ("getMessage" in ctrl && ctrl.getMessage()["messageId"] === message["messageId"])
+        ctrl => ("getMessage" in ctrl && ctrl.getMessage()["messageId"] === messageData["messageId"])
       );
       if (controlIndex > -1) {
         messagesContainer.remove(children[controlIndex]);
@@ -222,22 +223,22 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.fireEvent("messagesChanged");
     },
 
-    updateMessage: function(message) {
+    updateMessage: function(messageData) {
       // Replace the message in the messages array
-      const messageIndex = this._messages.findIndex(msg => msg["messageId"] === message["messageId"]);
+      const messageIndex = this._messages.findIndex(msg => msg.getMessageId() === messageData["messageId"]);
       if (messageIndex === -1) {
         return;
       }
-      this._messages[messageIndex] = message;
+      this._messages[messageIndex] = messageData;
 
       // Update the UI element from the messages list
       const messagesContainer = this.getChildControl("messages-container");
       const messageUI = messagesContainer.getChildren().find(control => {
-        return "getMessage" in control && control.getMessage()["messageId"] === message["messageId"];
+        return "getMessage" in control && control.getMessage()["messageId"] === messageData["messageId"];
       });
       if (messageUI) {
         // Force a new reference
-        messageUI.setMessage(Object.assign({}, message));
+        messageUI.setMessage(Object.assign({}, messageData));
       }
     },
   }
