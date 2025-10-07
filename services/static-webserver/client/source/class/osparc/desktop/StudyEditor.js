@@ -288,7 +288,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       study.listenToChanges(); // this includes the listener on the workbench and ui
-      study.addListener("projectDocumentChanged", e => this.projectDocumentChanged(e.getData()), this);
+      study.addListener("projectDocumentChanged", e => this.__projectDocumentChanged(e.getData()), this);
 
       if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         this.__listenToProjectDocument();
@@ -998,7 +998,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     /**
      * @param {JSON Patch} data It will soon be used to patch the project document https://datatracker.ietf.org/doc/html/rfc6902
      */
-    projectDocumentChanged: function(patchData) {
+    __projectDocumentChanged: function(patchData) {
       patchData["userGroupId"] = osparc.auth.Data.getInstance().getGroupId();
       // avoid echo loop
       if (this.__blockUpdates) {
