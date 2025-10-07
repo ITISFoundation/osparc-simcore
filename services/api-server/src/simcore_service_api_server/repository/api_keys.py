@@ -2,7 +2,7 @@ import logging
 from typing import NamedTuple
 
 import sqlalchemy as sa
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from models_library.products import ProductName
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.api_keys import api_keys as auth_api_keys_table
