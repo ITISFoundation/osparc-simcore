@@ -10,8 +10,8 @@ from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
-    TaskID,
     TaskInfoStore,
+    TaskKey,
 )
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
@@ -24,8 +24,8 @@ _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 _logger = logging.getLogger(__name__)
 
 
-def _build_key(task_id: TaskID) -> str:
-    return _CELERY_TASK_INFO_PREFIX + task_id
+def _build_key(task_key: TaskKey) -> str:
+    return _CELERY_TASK_INFO_PREFIX + task_key
 
 
 class RedisTaskInfoStore:
@@ -34,27 +34,27 @@ class RedisTaskInfoStore:
 
     async def create_task(
         self,
-        task_id: TaskID,
+        task_key: TaskKey,
         execution_metadata: ExecutionMetadata,
         expiry: timedelta,
     ) -> None:
-        task_key = _build_key(task_id)
+        redis_key = _build_key(task_key)
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hset(
-                name=task_key,
+                name=redis_key,
                 key=_CELERY_TASK_METADATA_KEY,
                 value=execution_metadata.model_dump_json(),
             )
         )
         await self._redis_client_sdk.redis.expire(
-            task_key,
+            redis_key,
             expiry,
         )
 
-    async def get_task_metadata(self, task_id: TaskID) -> ExecutionMetadata | None:
+    async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None:
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
-                _build_key(task_id), _CELERY_TASK_METADATA_KEY
+                _build_key(task_key), _CELERY_TASK_METADATA_KEY
             )
         )
         if not raw_result:
@@ -64,14 +64,16 @@ class RedisTaskInfoStore:
             return ExecutionMetadata.model_validate_json(raw_result)
         except ValidationError as exc:
             _logger.debug(
-                "Failed to deserialize task metadata for task %s: %s", task_id, f"{exc}"
+                "Failed to deserialize task metadata for task %s: %s",
+                task_key,
+                f"{exc}",
             )
             return None
 
-    async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None:
+    async def get_task_progress(self, task_key: TaskKey) -> ProgressReport | None:
         raw_result = await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hget(
-                _build_key(task_id), _CELERY_TASK_PROGRESS_KEY
+                _build_key(task_key), _CELERY_TASK_PROGRESS_KEY
             )
         )
         if not raw_result:
@@ -81,12 +83,14 @@ class RedisTaskInfoStore:
             return ProgressReport.model_validate_json(raw_result)
         except ValidationError as exc:
             _logger.debug(
-                "Failed to deserialize task progress for task %s: %s", task_id, f"{exc}"
+                "Failed to deserialize task progress for task %s: %s",
+                task_key,
+                f"{exc}",
             )
             return None
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
-        search_key = _CELERY_TASK_INFO_PREFIX + owner_metadata.model_dump_task_id(
+        search_key = _CELERY_TASK_INFO_PREFIX + owner_metadata.model_dump_task_key(
             task_uuid=WILDCARD
         )
 
@@ -122,20 +126,22 @@ class RedisTaskInfoStore:
 
         return tasks
 
-    async def remove_task(self, task_id: TaskID) -> None:
-        await self._redis_client_sdk.redis.delete(_build_key(task_id))
+    async def remove_task(self, task_key: TaskKey) -> None:
+        await self._redis_client_sdk.redis.delete(_build_key(task_key))
 
-    async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
+    async def set_task_progress(
+        self, task_key: TaskKey, report: ProgressReport
+    ) -> None:
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hset(
-                name=_build_key(task_id),
+                name=_build_key(task_key),
                 key=_CELERY_TASK_PROGRESS_KEY,
                 value=report.model_dump_json(),
             )
         )
 
-    async def task_exists(self, task_id: TaskID) -> bool:
-        n = await self._redis_client_sdk.redis.exists(_build_key(task_id))
+    async def task_exists(self, task_key: TaskKey) -> bool:
+        n = await self._redis_client_sdk.redis.exists(_build_key(task_key))
         assert isinstance(n, int)  # nosec
         return n > 0
 

@@ -13,7 +13,9 @@ import redis.asyncio as aioredis
 from aiohttp import web
 from faker import Faker
 from models_library.users import UserID
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver.application_settings import setup_settings
@@ -36,12 +38,11 @@ from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 
 @pytest.fixture
-def mock_env_devel_environment(
-    mock_env_devel_environment: dict[str, str],
+def app_environment(
+    app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
-):
-    return mock_env_devel_environment | setenvs_from_dict(
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
         monkeypatch,
         {
             "RESOURCE_MANAGER_RESOURCE_TTL_S": "3",
@@ -51,7 +52,7 @@ def mock_env_devel_environment(
 
 @pytest.fixture
 def redis_enabled_app(
-    redis_client: aioredis.Redis, mocker, mock_env_devel_environment
+    redis_client: aioredis.Redis, mocker: MockerFixture, app_environment: EnvVarsDict
 ) -> web.Application:
     # app.cleanup_ctx.append(redis_client) in setup_redis would create a client and connect
     # to a real redis service. Instead, we mock the get_redis_resources_client access
