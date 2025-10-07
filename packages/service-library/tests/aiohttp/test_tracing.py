@@ -244,10 +244,7 @@ async def test_tracing_sampling_probability_effective(
     async for _ in setup_tracing(app=app, tracing_data=tracing_data)(app):
         client = await aiohttp_client(app)
 
-        async def make_request():
-            await client.get("/")
-
-        await asyncio.gather(*(make_request() for _ in range(n_requests)))
+        await asyncio.gather(*(client.get("/") for _ in range(n_requests)))
         trace_ids = {
             span.context.trace_id
             for span in mock_otel_collector.get_finished_spans()
