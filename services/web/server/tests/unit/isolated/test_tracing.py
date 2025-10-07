@@ -8,7 +8,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp.tracing import aiohttp_server_opentelemetry_middleware
 from servicelib.tracing import TracingData
-from simcore_service_api_server._meta import APP_NAME
+from simcore_service_webserver._meta import APP_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import ApplicationSettings
 
