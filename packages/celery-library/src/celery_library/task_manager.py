@@ -221,7 +221,7 @@ class CeleryTaskManager:
         task_uuid: TaskUUID,
         offset: int = 0,
         limit: int = 50,
-    ) -> list[TaskStreamItem]:
+    ) -> tuple[list[TaskStreamItem], int]:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -231,9 +231,7 @@ class CeleryTaskManager:
             if not await self.task_exists(task_key):
                 raise TaskNotFoundError(task_key=task_key)
 
-            return await self._task_store.pull_task_stream_items(
-                task_key, offset, limit
-            )
+            return await self._task_store.pull_task_stream_items(task_key, limit)
 
 
 if TYPE_CHECKING:

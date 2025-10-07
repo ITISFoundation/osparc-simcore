@@ -4069,14 +4069,6 @@ paths:
           minimum: 1
           default: 20
           title: Limit
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
       responses:
         '200':
           description: Successful Response
@@ -17170,13 +17162,6 @@ components:
       properties:
         filters:
           $ref: '#/components/schemas/SearchFilters'
-        limit:
-          type: integer
-          maximum: 50
-          minimum: 1
-          title: Limit
-          description: Limits the number of returned items per page
-          default: 25
       type: object
       required:
       - filters
@@ -18192,11 +18177,11 @@ components:
           - type: string
           - type: 'null'
           title: Result Href
-        result_stream_href:
+        stream_href:
           anyOf:
           - type: string
           - type: 'null'
-          title: Result Stream Href
+          title: Stream Href
       type: object
       required:
       - task_id

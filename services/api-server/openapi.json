@@ -12322,7 +12322,7 @@
             ],
             "title": "Result Href"
           },
-          "result_stream_href": {
+          "stream_href": {
             "anyOf": [
               {
                 "type": "string"
@@ -12331,7 +12331,7 @@
                 "type": "null"
               }
             ],
-            "title": "Result Stream Href"
+            "title": "Stream Href"
           }
         },
         "type": "object",
