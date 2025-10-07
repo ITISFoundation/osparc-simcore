@@ -55,7 +55,6 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 def create_app_lifespan(
-    settings: ApplicationSettings,
     tracing_data: TracingData,
     logging_lifespan: Lifespan | None,
 ) -> LifespanManager:

@@ -113,7 +113,8 @@ def create_application(tracing_data: TracingData) -> web.Application:
     # NOTE: compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
 
     # core modules
-    setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
+    if tracing_data.tracing_enabled:
+        setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
     setup_db(app)
     setup_redis(app)
     setup_session(app)

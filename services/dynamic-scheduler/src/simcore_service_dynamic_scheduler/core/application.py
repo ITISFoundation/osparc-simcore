@@ -36,7 +36,6 @@ def create_app(
         ),
         redoc_url=None,
         lifespan=events.create_app_lifespan(
-            settings=app_settings,
             tracing_data=app_tracing_data,
             logging_lifespan=logging_lifespan,
         ),
