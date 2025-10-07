@@ -7,6 +7,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 
+from ....db.plugin import get_asyncpg_engine
 from ....dynamic_scheduler import api as dynamic_scheduler_service
 from ....products import products_web
 from ....utils_aiohttp import create_redirect_to_page_response, get_api_base_url
@@ -133,7 +134,7 @@ async def get_redirection_to_viewer(request: web.Request):
         service_params_ = query_params
 
         valid_service: ValidService = await validate_requested_service(
-            app=request.app,
+            get_asyncpg_engine(request.app),
             service_key=service_params_.viewer_key,
             service_version=service_params_.viewer_version,
         )
