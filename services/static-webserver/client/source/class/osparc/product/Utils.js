@@ -164,7 +164,7 @@ qx.Class.define("osparc.product.Utils", {
             required: true,
           };
         case "s4lacad":
-        case "s4ldesktopacad":
+        case "s4llite":
           return {
             label: qx.locale.Manager.tr("University"),
             key: "university",
