@@ -194,7 +194,7 @@ async def conditionally_unsubscribe_project_logs_across_replicas(
     app: web.Application, project_id: ProjectID, user_id: UserID
 ) -> None:
     """
-    Unsubscribes from project logs only if no active socket connections remain for the project.
+    Unsubscribes from project logs only if no active socket connections remain for the project (across all users).
 
     This function checks for actual socket connections rather than just user sessions,
     ensuring logs are only unsubscribed when truly no users are connected. When no active

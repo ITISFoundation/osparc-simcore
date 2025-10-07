@@ -77,10 +77,8 @@ class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
         return None
 
 
-class WebserverInternalEventRabbitMessageAction(str, Enum):
-    UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE = (
-        "UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE"
-    )
+class WebserverInternalEventRabbitMessageAction(StrAutoEnum):
+    UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE = auto()
 
 
 class WebserverInternalEventRabbitMessage(RabbitMessageBase):
