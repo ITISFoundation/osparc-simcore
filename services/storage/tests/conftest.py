@@ -238,7 +238,7 @@ async def initialized_app(
     app_settings: ApplicationSettings,
 ) -> AsyncIterator[FastAPI]:
     tracing_data = TracingData.create(
-        tracing_settings=app_settings.STORAGE_TRACING,
+        tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
     app = create_app(app_settings, tracing_data=tracing_data)
@@ -1019,7 +1019,7 @@ async def with_storage_celery_worker(
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
     tracing_data = TracingData.create(
-        tracing_settings=app_settings.STORAGE_TRACING,
+        tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
 

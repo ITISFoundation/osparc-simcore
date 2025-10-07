@@ -148,7 +148,7 @@ async def app(
     # create instance
     assert app_environment
     tracing_data = TracingData.create(
-        service_name=APP_NAME, tracing_settings=app_settings.CATALOG_TRACING
+        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
     )
     app_under_test = create_app(tracing_data=tracing_data)
 
@@ -178,7 +178,7 @@ def client(
     # create instance
     assert app_environment
     tracing_data = TracingData.create(
-        service_name=APP_NAME, tracing_settings=app_settings.CATALOG_TRACING
+        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
     )
     app_under_test = create_app(tracing_data=tracing_data)
 

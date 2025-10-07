@@ -56,7 +56,7 @@ def mocked_app(
     app.state.settings = AppSettings.create_from_envs()
     tracing_data = TracingData.create(
         service_name=APP_NAME,
-        tracing_settings=app.state.settings.DIRECTOR_V2_TRACING,
+        tracing_settings=None,  # disable tracing in tests
     )
     app.state.tracing_data = tracing_data
     return app

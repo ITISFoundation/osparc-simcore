@@ -65,7 +65,7 @@ async def _wait_for_server_ready(server: URL) -> None:
 async def real_storage_server(app_settings: ApplicationSettings) -> AsyncIterator[URL]:
     settings = ApplicationSettings.create_from_envs()
     tracing_data = TracingData.create(
-        tracing_settings=settings.STORAGE_TRACING,
+        tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
     app = create_app(settings, tracing_data=tracing_data)
