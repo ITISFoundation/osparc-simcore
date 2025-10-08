@@ -108,8 +108,8 @@ qx.Class.define("osparc.task.TasksButton", {
       const bounds = osparc.utils.Utils.getBounds(this);
       const tasks = osparc.task.TasksContainer.getInstance();
       tasks.setTasksContainerPosition(
-        bounds.left + bounds.width - osparc.task.TaskUI.MAX_WIDTH,
-        osparc.navigation.NavigationBar.HEIGHT + 4
+        bounds.left + bounds.width - osparc.task.TaskUI.MAX_WIDTH - 2*8,
+        osparc.navigation.NavigationBar.HEIGHT - 8
       );
     },
 
