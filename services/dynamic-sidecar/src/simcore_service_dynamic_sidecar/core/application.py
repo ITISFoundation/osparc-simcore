@@ -176,9 +176,10 @@ def create_app() -> FastAPI:
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
     application_settings: ApplicationSettings = app.state.settings
+    tracing_config = get_tracing_config(app)
 
-    if get_tracing_config(app).tracing_enabled:
-        setup_tracing(app, get_tracing_config(app))
+    if tracing_config.tracing_enabled:
+        setup_tracing(app, tracing_config)
 
     setup_rabbitmq(app)
     setup_rpc_api_routes(app)
@@ -200,10 +201,10 @@ def create_app() -> FastAPI:
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
 
-    if get_tracing_config(app).tracing_enabled:
+    if tracing_config.tracing_enabled:
         initialize_fastapi_app_tracing(
             app,
-            tracing_config=get_tracing_config(app),
+            tracing_config=tracing_config,
         )
 
     # ERROR HANDLERS  ------------

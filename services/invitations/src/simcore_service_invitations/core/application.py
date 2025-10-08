@@ -4,7 +4,6 @@ from servicelib.fastapi.monitoring import (
 )
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import (
-    get_tracing_config,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
@@ -41,13 +40,14 @@ def create_app(
 
     # STATE
     app.state.settings = settings or ApplicationSettings()  # type: ignore[call-arg]
-    app.state.tracing_config = tracing_config or TracingConfig.create(
+    tracing_config = tracing_config or TracingConfig.create(
         service_name=APP_NAME, tracing_settings=app.state.settings.INVITATIONS_TRACING
     )
+    app.state.tracing_config = tracing_config
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
-    if get_tracing_config(app).tracing_enabled:
-        setup_tracing(app, tracing_config=get_tracing_config(app))
+    if tracing_config.tracing_enabled:
+        setup_tracing(app, tracing_config=tracing_config)
 
     # PLUGINS SETUP
     setup_api_routes(app)
@@ -55,8 +55,8 @@ def create_app(
     if app.state.settings.INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if get_tracing_config(app).tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_config=get_tracing_config(app))
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
 
     # ERROR HANDLERS
     exceptions_handlers.setup(app)

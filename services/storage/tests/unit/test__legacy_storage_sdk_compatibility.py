@@ -64,11 +64,11 @@ async def _wait_for_server_ready(server: URL) -> None:
 @pytest.fixture
 async def real_storage_server(app_settings: ApplicationSettings) -> AsyncIterator[URL]:
     settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
-    app = create_app(settings, tracing_config=tracing_data)
+    app = create_app(settings, tracing_config=tracing_config)
     storage_port = unused_port()
     with log_context(
         logging.INFO,

@@ -237,11 +237,11 @@ async def initialized_app(
     mock_celery_app: None,
     app_settings: ApplicationSettings,
 ) -> AsyncIterator[FastAPI]:
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
-    app = create_app(app_settings, tracing_config=tracing_data)
+    app = create_app(app_settings, tracing_config=tracing_config)
     # NOTE: the timeout is sometime too small for CI machines, and even larger machines
     async with LifespanManager(
         app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
@@ -1018,13 +1018,13 @@ async def with_storage_celery_worker(
     # Signals must be explicitily connected
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
 
     app_server = FastAPIAppServer(
-        app=create_app(app_settings, tracing_config=tracing_data)
+        app=create_app(app_settings, tracing_config=tracing_config)
     )
 
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
