@@ -9,7 +9,6 @@ from common_library.user_messages import user_message
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
-from models_library.api_schemas_catalog.services import MyServiceGet
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
@@ -547,19 +546,23 @@ async def get_project_services(request: web.Request) -> web.Response:
         )
     )
 
-    services: list[MyServiceGet] = await catalog_service.batch_get_my_services(
+    batch_got = await catalog_service.batch_get_my_services(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         services_ids=services_in_project,
     )
 
+    #
+    # FIXME: in "data" we return list[ProjectNodeServiceGet] that were found
+    # in "error" we return list[ServiceKeyVersion] that were not found!
+    # returned lists should keep the order of services_in_project
     return envelope_json_response(
         ProjectNodeServicesGet(
             project_uuid=path_params.project_id,
             services=[
                 NodeServiceGet.model_validate(sv, from_attributes=True)
-                for sv in services
+                for sv in batch_got.found_items
             ],
         )
     )

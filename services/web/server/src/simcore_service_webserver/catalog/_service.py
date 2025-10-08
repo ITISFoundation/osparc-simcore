@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from typing import Any, cast
 
 from aiohttp import web
-from models_library.api_schemas_catalog.services import MyServiceGet, ServiceUpdateV2
+from models_library.api_schemas_catalog.services import ServiceUpdateV2
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
@@ -37,6 +37,7 @@ from ._controller_rest_schemas import (
     ServiceInputGetFactory,
     ServiceOutputGetFactory,
 )
+from ._models import MyServicesBatchGetResult
 from ._units_service import can_connect, replace_service_input_outputs
 
 _logger = logging.getLogger(__name__)
@@ -97,7 +98,7 @@ async def batch_get_my_services(
     user_id: UserID,
     product_name: ProductName,
     services_ids: list[tuple[ServiceKey, ServiceVersion]],
-) -> list[MyServiceGet]:
+) -> MyServicesBatchGetResult:
     try:
 
         return await catalog_rpc.batch_get_my_services(
