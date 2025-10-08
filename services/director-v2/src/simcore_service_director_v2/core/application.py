@@ -121,13 +121,13 @@ def create_base_app(
     if app_settings is None:
         app_settings = AppSettings.create_from_envs()
 
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=app_settings.DIRECTOR_V2_TRACING
     )
     logging_shutdown_event = create_logging_shutdown_event(
         log_format_local_dev_enabled=app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
         log_base_level=app_settings.log_level,
         noisy_loggers=_NOISY_LOGGERS,
     )
@@ -152,7 +152,7 @@ def create_base_app(
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
-    app.state.tracing_data = tracing_data
+    app.state.tracing_data = tracing_config
 
     app.include_router(api_router)
 
