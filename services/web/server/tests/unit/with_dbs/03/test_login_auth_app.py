@@ -67,6 +67,7 @@ def app_environment_for_wb_authz_service_dict(
         "POSTGRES_USER": postgres_cfg["user"],
         "POSTGRES_PASSWORD": postgres_cfg["password"],
         "HOSTNAME": docker_compose_service_hostname,
+        "WEBSERVER_CELERY": "null",
         "WEBSERVER_TRACING": "null",  # BUT we will disable it for tests
     }
 
