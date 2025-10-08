@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.study.Conversation", {
-  extend: osparc.conversation.Conversation,
+  extend: osparc.conversation.MessageList,
 
   /**
     * @param studyData {String} Study Data
@@ -70,6 +70,7 @@ qx.Class.define("osparc.study.Conversation", {
       });
     },
 
+    // overridden
     _createMessageUI: function(message) {
       const messageUI = new osparc.conversation.MessageUI(message, this.__studyData);
       messageUI.getChildControl("message-content").set({

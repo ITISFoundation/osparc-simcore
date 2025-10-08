@@ -330,6 +330,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       const bootModeSB = new qx.ui.form.SelectBox();
+      bootModeSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       this.populateBootModes(bootModeSB, nodeMetadata, workbench, nodeId);
       return bootModeSB;
     },

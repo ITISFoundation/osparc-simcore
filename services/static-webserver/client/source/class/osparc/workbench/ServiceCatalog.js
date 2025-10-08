@@ -177,6 +177,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       const selectBox = this.__versionsBox = new qx.ui.form.SelectBox().set({
         enabled: false
       });
+      selectBox.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       layout.add(selectBox);
       const infoBtn = this.__infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
         enabled: false
