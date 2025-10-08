@@ -27,7 +27,13 @@ qx.Class.define("osparc.support.ConversationListItem", {
 
     // decorate
     this.getChildControl("thumbnail").setDecorator("circled");
+    this.getChildControl("title").set({
+      rich: false, // let ellipsis work
+    });
     this.getChildControl("subtitle").set({
+      rich: false, // let ellipsis work
+    });
+    this.getChildControl("sub-subtitle").set({
       textColor: "text-disabled",
     });
   },
@@ -48,26 +54,53 @@ qx.Class.define("osparc.support.ConversationListItem", {
 
       this.__populateWithLastMessage();
       conversation.addListener("changeLastMessage", this.__populateWithLastMessage, this);
+
+      this.__populateWithFirstMessage();
+      conversation.addListener("changeFirstMessage", this.__populateWithFirstMessage, this);
     },
 
     __populateWithLastMessage: function() {
-      const lastMessage = this.getConversation().getLastMessage();
+      const conversation = this.getConversation();
+      const lastMessage = conversation.getLastMessage();
       if (lastMessage) {
-        const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
+        const date = osparc.utils.Utils.formatDateAndTime(lastMessage.getCreated());
         this.set({
-          subtitle: date,
+          role: date,
         });
-        const userGroupId = lastMessage.userGroupId;
+        const userGroupId = lastMessage.getUserGroupId();
         osparc.store.Users.getInstance().getUser(userGroupId)
           .then(user => {
             if (user) {
               this.set({
                 thumbnail: user.getThumbnail(),
-                subtitle: user.getLabel() + " - " + date,
+                subtitle: user.getLabel() + ": " + lastMessage.getContent(),
               });
             }
           });
       }
     },
-  }
+
+    __populateWithFirstMessage: function() {
+      const conversation = this.getConversation();
+      const firstMessage = conversation.getFirstMessage();
+      if (firstMessage) {
+        const userGroupId = firstMessage.getUserGroupId();
+        osparc.store.Users.getInstance().getUser(userGroupId)
+          .then(user => {
+            if (user) {
+              const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
+              let subSubtitle = "Started";
+              if (amISupporter) {
+                subSubtitle += " by " + user.getLabel();
+              }
+              const date = osparc.utils.Utils.formatDateAndTime(firstMessage.getCreated());
+              subSubtitle += " on " + date;
+              this.set({
+                subSubtitle,
+              });
+            }
+          });
+      }
+    },
+  },
 });

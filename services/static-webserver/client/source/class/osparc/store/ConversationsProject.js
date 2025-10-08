@@ -128,7 +128,9 @@ qx.Class.define("osparc.store.ConversationsProject", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    editMessage: function(studyId, conversationId, messageId, message) {
+    editMessage: function(message, content, studyId) {
+      const conversationId = message.getConversationId();
+      const messageId = message.getMessageId();
       const params = {
         url: {
           studyId,
@@ -136,19 +138,21 @@ qx.Class.define("osparc.store.ConversationsProject", {
           messageId,
         },
         data: {
-          "content": message,
+          content,
         },
       };
       return osparc.data.Resources.fetch("conversationsStudies", "editMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    deleteMessage: function(message) {
+    deleteMessage: function(message, studyId) {
+      const conversationId = message.getConversationId();
+      const messageId = message.getMessageId();
       const params = {
         url: {
-          studyId: message["projectId"],
-          conversationId: message["conversationId"],
-          messageId: message["messageId"],
+          studyId,
+          conversationId,
+          messageId,
         },
       };
       return osparc.data.Resources.fetch("conversationsStudies", "deleteMessage", params)

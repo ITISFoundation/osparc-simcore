@@ -136,11 +136,16 @@ async def _get_self_container() -> str:
 
 async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
     self_container = await _get_self_container()
-    await run_command_in_container(
-        self_container,
-        command=f"chmod -R o+rX '{source_dir}'",
-        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
-    )
+    for command in (
+        # files will be removed, grant full access to all users
+        f"chown -R root:root '{source_dir}'",
+        f"chmod -R 0777 '{source_dir}'",
+    ):
+        await run_command_in_container(
+            self_container,
+            command=command,
+            timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+        )
 
 
 async def _store_in_s3(

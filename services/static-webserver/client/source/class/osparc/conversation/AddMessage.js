@@ -44,7 +44,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     message: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       init: null,
       nullable: true,
       event: "changeMessage",
@@ -81,15 +81,20 @@ qx.Class.define("osparc.conversation.AddMessage", {
           this.getChildControl("add-comment-layout").add(control);
           break;
         }
-        case "comment-field":
+        case "comment-field": {
           control = new osparc.editor.MarkdownEditor();
           control.addListener("textChanged", () => this.__addCommentPressed(), this);
           control.setCompact(true);
-          control.getChildControl("text-area").set({
+          const textArea = control.getChildControl("text-area");
+          textArea.set({
             maxLength: osparc.data.model.Conversation.MAX_CONTENT_LENGTH,
           });
+          textArea.addListener("appear", () => {
+            textArea.focus();
+            textArea.activate();
+          });
           // make it visually connected to the button
-          control.getChildControl("text-area").getContentElement().setStyles({
+          textArea.getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
           });
           // make it more compact
@@ -97,6 +102,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
             flex: 1
           });
           break;
+        }
         case "add-comment-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/16").set({
             toolTipText: this.tr("Ctrl+Enter"),
@@ -129,7 +135,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control = new qx.ui.form.Button("🔔 " + this.tr("Notify user")).set({
             appearance: "form-button",
             allowGrowX: false,
-            alignX: "right"
+            alignX: "right",
           });
           control.addListener("execute", () => this.__notifyUserTapped());
           this._add(control);
@@ -161,7 +167,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       if (message) {
         // edit mode
         const commentField = this.getChildControl("comment-field");
-        commentField.setText(message["content"]);
+        commentField.setText(message.getContent());
       }
     },
 

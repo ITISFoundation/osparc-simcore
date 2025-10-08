@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.support.Conversation", {
-  extend: osparc.conversation.Conversation,
+  extend: osparc.conversation.MessageList,
 
   /**
     * @param conversation {osparc.data.model.Conversation} Conversation
@@ -155,7 +155,9 @@ qx.Class.define("osparc.support.Conversation", {
       if (showLayout) {
         this.__populateShareProjectCB();
         const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
-        currentStudy.addListener("changeAccessRights", () => this.__populateShareProjectCB(), this);
+        if (currentStudy) {
+          currentStudy.addListener("changeAccessRights", () => this.__populateShareProjectCB(), this);
+        }
       }
     },
 
@@ -216,16 +218,18 @@ qx.Class.define("osparc.support.Conversation", {
       }
       if (msg) {
         const now = new Date();
-        const systemMessage = {
+        const systemMessageData = {
           "conversationId": null,
           "content": msg,
           "created": now.toISOString(),
           "messageId": `system-${now.getTime()}`,
           "modified": now.toISOString(),
           "type": "MESSAGE",
-          "userGroupId": "system",
+          "userGroupId": osparc.data.model.Message.SYSTEM_MESSAGE_ID,
         };
-        this.addMessage(systemMessage);
+        const systemMessage = new osparc.data.model.Message(systemMessageData);
+        const messageUI = new osparc.conversation.MessageUI(systemMessage);
+        this.getChildControl("messages-container").add(messageUI);
       }
     },
 
