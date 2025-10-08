@@ -671,29 +671,28 @@ async def batch_get_user_services(
                 user_id=user_id,
                 key=service_key,
             )
-            if history:
-                compatibility_map = await evaluate_service_compatibility_map(
-                    repo,
-                    product_name=product_name,
-                    user_id=user_id,
-                    service_release_history=history,
-                )
-                compatibility = compatibility_map.get(service_db.version)
+            compatibility_map = await evaluate_service_compatibility_map(
+                repo,
+                product_name=product_name,
+                user_id=user_id,
+                service_release_history=history,
+            )
+            compatibility = compatibility_map.get(service_db.version)
 
-        service = MyServiceGet(
-            key=service_db.key,
-            release=ServiceRelease(
-                version=service_db.version,
-                version_display=service_db.version_display,
-                released=service_db.created,
-                retired=service_db.deprecated,
-                compatibility=compatibility,
-            ),
-            owner=owner,
-            my_access_rights=my_access_rights,
+        found.append(
+            MyServiceGet(
+                key=service_db.key,
+                release=ServiceRelease(
+                    version=service_db.version,
+                    version_display=service_db.version_display,
+                    released=service_db.created,
+                    retired=service_db.deprecated,
+                    compatibility=compatibility,
+                ),
+                owner=owner,
+                my_access_rights=my_access_rights,
+            )
         )
-
-        found.append(service)
 
     # Check for complete failure scenarios and raise appropriate exceptions
     if not found:
