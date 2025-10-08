@@ -150,13 +150,10 @@ def to_camel_recursive(data: dict[str, Any]) -> dict[str, Any]:
     return new_dict
 
 
-def ensure_pattern_has_enough_characters(
+def ensure_pattern_has_enough_characters(  # pylint: disable=dangerous-default-value
     min_non_wildcard_chars: int = MIN_NON_WILDCARD_CHARS,
-    wildcard_chars: list[str] | None = None,
+    wildcard_chars: list[str] | None = WILDCARD_CHARS,
 ) -> BeforeValidator:
-    if wildcard_chars is None:
-        wildcard_chars = WILDCARD_CHARS
-
     def _validator(value):
         non_wildcard_chars = len([c for c in value if c not in wildcard_chars])
 
