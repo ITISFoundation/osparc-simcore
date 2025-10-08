@@ -553,16 +553,16 @@ async def get_project_services(request: web.Request) -> web.Response:
         services_ids=services_in_project,
     )
 
-    #
-    # FIXME: in "data" we return list[ProjectNodeServiceGet] that were found
-    # in "error" we return list[ServiceKeyVersion] that were not found!
-    # returned lists should keep the order of services_in_project
     return envelope_json_response(
         ProjectNodeServicesGet(
             project_uuid=path_params.project_id,
             services=[
                 NodeServiceGet.model_validate(sv, from_attributes=True)
                 for sv in batch_got.found_items
+            ],
+            missing=[
+                ServiceKeyVersion(key=skey, version=sver)
+                for skey, sver in batch_got.missing_identifiers
             ],
         )
     )

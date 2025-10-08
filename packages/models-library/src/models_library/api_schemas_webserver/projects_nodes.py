@@ -1,6 +1,7 @@
 # mypy: disable-error-code=truthy-function
 from typing import Annotated, Any, Literal, TypeAlias
 
+from models_library.services_base import ServiceKeyVersion
 from pydantic import ConfigDict, Field
 from pydantic.config import JsonDict
 
@@ -225,3 +226,9 @@ class NodeServiceGet(OutputSchema):
 class ProjectNodeServicesGet(OutputSchema):
     project_uuid: ProjectID
     services: list[NodeServiceGet]
+    missing: Annotated[
+        list[ServiceKeyVersion] | None,
+        Field(
+            description="List of services in defined in the project but that were not found in the catalog"
+        ),
+    ] = None
