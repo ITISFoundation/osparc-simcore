@@ -18,8 +18,8 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogItemNotFoundError,
+    CatalogForbiddenRpcError,
+    CatalogItemNotFoundRpcError,
 )
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
@@ -345,14 +345,14 @@ async def test_patch_project_node_service_key_with_error(
 
     with mocker.patch(
         "simcore_service_webserver.projects._projects_service.catalog_rpc.check_for_service",
-        side_effect=CatalogForbiddenError(name="test"),
+        side_effect=CatalogForbiddenRpcError(name="test"),
     ):
         resp = await client.patch(f"{url}", json=_patch_version)
         assert resp.status == status.HTTP_403_FORBIDDEN
 
     with mocker.patch(
         "simcore_service_webserver.projects._projects_service.catalog_rpc.check_for_service",
-        side_effect=CatalogItemNotFoundError(name="test"),
+        side_effect=CatalogItemNotFoundRpcError(name="test"),
     ):
         resp = await client.patch(f"{url}", json=_patch_version)
         assert resp.status == status.HTTP_404_NOT_FOUND

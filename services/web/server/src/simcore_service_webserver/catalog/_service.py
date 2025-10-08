@@ -27,7 +27,9 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
 from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
-from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogNotAvailableError
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogNotAvailableRpcError,
+)
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -109,7 +111,7 @@ async def batch_get_my_services(
         )
 
     except RPCServerError as err:
-        raise CatalogNotAvailableError(
+        raise CatalogNotAvailableRpcError(
             user_id=user_id,
             product_name=product_name,
             services_ids=services_ids,

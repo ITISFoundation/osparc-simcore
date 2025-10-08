@@ -22,10 +22,12 @@ from pydantic import TypeAdapter, ValidationError, validate_call
 from pyinstrument import Profiler
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogItemNotFoundError,
+    CatalogBatchNotFoundRpcError,
+    CatalogForbiddenRpcError,
+    CatalogItemNotFoundRpcError,
 )
 
+from ...errors import BatchNotFoundError
 from ...models.services_db import ServiceDBFilters
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
@@ -58,7 +60,12 @@ def _profile_rpc_call(coro):
     return _wrapper
 
 
-@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
+@router.expose(
+    reraise_if_error_type=(
+        CatalogForbiddenRpcError,
+        ValidationError,
+    )
+)
 @_profile_rpc_call
 @validate_call(config={"arbitrary_types_allowed": True})
 async def list_services_paginated(
@@ -100,8 +107,8 @@ async def list_services_paginated(
 
 @router.expose(
     reraise_if_error_type=(
-        CatalogItemNotFoundError,
-        CatalogForbiddenError,
+        CatalogItemNotFoundRpcError,
+        CatalogForbiddenRpcError,
         ValidationError,
     )
 )
@@ -134,8 +141,8 @@ async def get_service(
 
 @router.expose(
     reraise_if_error_type=(
-        CatalogItemNotFoundError,
-        CatalogForbiddenError,
+        CatalogItemNotFoundRpcError,
+        CatalogForbiddenRpcError,
         ValidationError,
     )
 )
@@ -171,8 +178,8 @@ async def update_service(
 
 @router.expose(
     reraise_if_error_type=(
-        CatalogItemNotFoundError,
-        CatalogForbiddenError,
+        CatalogItemNotFoundRpcError,
+        CatalogForbiddenRpcError,
         ValidationError,
     )
 )
@@ -198,7 +205,13 @@ async def check_for_service(
     )
 
 
-@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
+@router.expose(
+    reraise_if_error_type=(
+        CatalogForbiddenRpcError,
+        CatalogBatchNotFoundRpcError,
+        ValidationError,
+    )
+)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def batch_get_my_services(
     app: FastAPI,
@@ -214,13 +227,20 @@ async def batch_get_my_services(
 ) -> MyServicesRpcBatchGet:
     assert app.state.engine  # nosec
 
-    batch_got = await catalog_services.batch_get_user_services(
-        repo=ServicesRepository(app.state.engine),
-        groups_repo=GroupsRepository(app.state.engine),
-        product_name=product_name,
-        user_id=user_id,
-        ids=ids,
-    )
+    try:
+
+        batch_got = await catalog_services.batch_get_user_services(
+            repo=ServicesRepository(app.state.engine),
+            groups_repo=GroupsRepository(app.state.engine),
+            product_name=product_name,
+            user_id=user_id,
+            ids=ids,
+        )
+
+    except BatchNotFoundError as e:
+        ctx = e.error_context()
+        ctx["name"] = f"{ctx.get('missing_services',[])}"
+        raise CatalogBatchNotFoundRpcError(**ctx) from e
 
     assert [
         (sv.key, sv.release.version) for sv in batch_got.found_items
@@ -275,8 +295,8 @@ async def list_my_service_history_latest_first(
 
 @router.expose(
     reraise_if_error_type=(
-        CatalogItemNotFoundError,
-        CatalogForbiddenError,
+        CatalogItemNotFoundRpcError,
+        CatalogForbiddenRpcError,
         ValidationError,
     )
 )
@@ -311,7 +331,7 @@ async def get_service_ports(
     ]
 
 
-@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
+@router.expose(reraise_if_error_type=(CatalogForbiddenRpcError, ValidationError))
 @_profile_rpc_call
 @validate_call(config={"arbitrary_types_allowed": True})
 async def list_all_services_summaries_paginated(

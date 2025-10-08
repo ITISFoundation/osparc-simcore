@@ -1,10 +1,10 @@
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class CatalogBaseError(OsparcErrorMixin, Exception): ...
+class BaseCatalogError(OsparcErrorMixin, Exception): ...
 
 
-class RepositoryError(CatalogBaseError):
+class RepositoryError(BaseCatalogError):
     msg_template = "Unexpected error in {repo_cls}"
 
 
@@ -12,7 +12,7 @@ class UninitializedGroupError(RepositoryError):
     msg_tempalte = "{group} groups was never initialized"
 
 
-class BaseDirectorError(CatalogBaseError): ...
+class BaseDirectorError(BaseCatalogError): ...
 
 
 class DirectorUnresponsiveError(BaseDirectorError):
@@ -22,5 +22,5 @@ class DirectorUnresponsiveError(BaseDirectorError):
 class DirectorStatusError(BaseDirectorError): ...
 
 
-class CatalogServiceNotFoundError(CatalogBaseError):
-    msg_template = "One or more services were not found in the catalog. Missing: {missing_services}"
+class BatchNotFoundError(BaseCatalogError):
+    msg_template = "None of the batch services were found in the catalog. Missing: {missing_services}"

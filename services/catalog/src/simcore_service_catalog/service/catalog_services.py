@@ -25,13 +25,13 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogInconsistentError,
-    CatalogItemNotFoundError,
+    CatalogForbiddenRpcError,
+    CatalogInconsistentRpcError,
+    CatalogItemNotFoundRpcError,
 )
 
 from ..clients.director import DirectorClient
-from ..errors import CatalogServiceNotFoundError
+from ..errors import BatchNotFoundError
 from ..models.catalog_services import BatchGetUserServicesResult
 from ..models.services_db import (
     ServiceAccessRightsDB,
@@ -178,7 +178,7 @@ async def _get_services_with_access_rights(
         ((sc.key, sc.version) for sc in services), product_name=product_name
     )
     if not access_rights:
-        raise CatalogForbiddenError(
+        raise CatalogForbiddenRpcError(
             name="any service",
             user_id=user_id,
             product_name=product_name,
@@ -241,7 +241,7 @@ async def _get_services_manifests(
         _logger.warning(
             **create_troubleshooting_log_kwargs(
                 msg,
-                error=CatalogInconsistentError(
+                error=CatalogInconsistentRpcError(
                     missing_services=missing_services,
                     user_id=user_id,
                     product_name=product_name,
@@ -414,7 +414,7 @@ async def get_catalog_service(
     )
     if not service:
         # no service found provided `access_rights`
-        raise CatalogForbiddenError(
+        raise CatalogForbiddenRpcError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -449,7 +449,7 @@ async def update_catalog_service(
     update: ServiceUpdateV2,
 ) -> ServiceGetV2:
     if is_function_service(service_key):
-        raise CatalogForbiddenError(
+        raise CatalogForbiddenRpcError(
             name=f"function service {service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -550,7 +550,7 @@ async def check_catalog_service_permissions(
         product_name=product_name,
     )
     if not access_rights:
-        raise CatalogItemNotFoundError(
+        raise CatalogItemNotFoundRpcError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -575,7 +575,7 @@ async def check_catalog_service_permissions(
         )
 
     if not has_permission:
-        raise CatalogForbiddenError(
+        raise CatalogForbiddenRpcError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -611,7 +611,7 @@ async def batch_get_user_services(
         key_versions=unique_service_identifiers, product_name=product_name
     )
     if not services_access_rights:
-        raise CatalogServiceNotFoundError(
+        raise BatchNotFoundError(
             missing_services=unique_service_identifiers,
             user_id=user_id,
             product_name=product_name,
@@ -695,7 +695,7 @@ async def batch_get_user_services(
     if not found:
         # None of the services found
         assert len(unique_service_identifiers) == len(missing)  # nosec
-        raise CatalogServiceNotFoundError(
+        raise BatchNotFoundError(
             missing_services=missing,
             user_id=user_id,
             product_name=product_name,

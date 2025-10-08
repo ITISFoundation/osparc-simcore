@@ -19,7 +19,7 @@ from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallabl
 from respx.router import MockRouter
 from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.clients.director import DirectorClient
-from simcore_service_catalog.errors import CatalogServiceNotFoundError
+from simcore_service_catalog.errors import BatchNotFoundError
 from simcore_service_catalog.repository.groups import GroupsRepository
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service import catalog_services, manifest
@@ -365,7 +365,7 @@ async def test_batch_get_my_services_none_found_raises_error(
     ]
 
     # ACT & ASSERT
-    with pytest.raises(CatalogServiceNotFoundError) as exc_info:
+    with pytest.raises(BatchNotFoundError) as exc_info:
         await catalog_services.batch_get_user_services(
             services_repo,
             groups_repo,
@@ -375,14 +375,7 @@ async def test_batch_get_my_services_none_found_raises_error(
         )
 
     # Verify the exception contains the missing services information
-    assert exc_info.value.missing_identifiers_services == [
-        ServiceKeyVersion(
-            key="simcore/services/comp/missing-service-1", version="1.0.0"
-        ),
-        ServiceKeyVersion(
-            key="simcore/services/comp/missing-service-2", version="2.0.0"
-        ),
-    ]
+    assert exc_info.value.missing_services == services_ids
     assert exc_info.value.user_id == user_id
     assert exc_info.value.product_name == target_product
 
