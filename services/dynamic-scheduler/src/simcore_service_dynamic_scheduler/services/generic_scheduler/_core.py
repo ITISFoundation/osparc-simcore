@@ -37,13 +37,13 @@ from ._errors import (
     UnexpectedStepHandlingError,
 )
 from ._event import (
-    enqueue_create_completed_event,
+    enqueue_execute_completed_event,
+    enqueue_revert_completed_event,
     enqueue_schedule_event,
-    enqueue_undo_completed_event,
 )
 from ._event_after_registration import (
-    register_to_start_after_on_created_completed,
-    register_to_start_after_on_undo_completed,
+    register_to_start_after_on_executed_completed,
+    register_to_start_after_on_reverted_completed,
 )
 from ._models import (
     EventType,
@@ -94,8 +94,8 @@ class Core(SingletonInAppStateMixin):
         self,
         operation_name: OperationName,
         initial_operation_context: OperationContext,
-        on_create_completed: OperationToStart | None,
-        on_undo_completed: OperationToStart | None,
+        on_execute_completed: OperationToStart | None,
+        on_revert_completed: OperationToStart | None,
     ) -> ScheduleId:
         """start an operation by it's given name and providing an initial context"""
         schedule_id: ScheduleId = f"{uuid4()}"
@@ -117,7 +117,7 @@ class Core(SingletonInAppStateMixin):
             {
                 "operation_name": operation_name,
                 "group_index": 0,
-                "is_creating": True,
+                "is_executing": True,
             }
         )
 
@@ -128,14 +128,14 @@ class Core(SingletonInAppStateMixin):
         )
         await operation_content_proxy.create_or_update(initial_operation_context)
 
-        if on_create_completed:
-            await register_to_start_after_on_created_completed(
-                self.app, schedule_id, to_start=on_create_completed
+        if on_execute_completed:
+            await register_to_start_after_on_executed_completed(
+                self.app, schedule_id, to_start=on_execute_completed
             )
 
-        if on_undo_completed:
-            await register_to_start_after_on_undo_completed(
-                self.app, schedule_id=schedule_id, to_start=on_undo_completed
+        if on_revert_completed:
+            await register_to_start_after_on_reverted_completed(
+                self.app, schedule_id=schedule_id, to_start=on_revert_completed
             )
 
         await enqueue_schedule_event(self.app, schedule_id)
@@ -143,9 +143,9 @@ class Core(SingletonInAppStateMixin):
 
     async def cancel_operation(self, schedule_id: ScheduleId) -> None:
         """
-        Sets the operation to undo form the point in which it arrived in:
-        - when is_creating=True: cancels all steps & moves operation to undo
-        - when is_creating=False: does nothing, since undo is already running
+        Sets the operation to revert form the point in which it arrived in:
+        - when is_executing=True: cancels all steps & moves operation to revert
+        - when is_executing=False: does nothing, since revert is already running
 
         # NOTE: SEE `_on_schedule_event` for more details
         """
@@ -153,11 +153,11 @@ class Core(SingletonInAppStateMixin):
             store=self._store, schedule_id=schedule_id
         )
 
-        is_creating = await schedule_data_proxy.read("is_creating")
+        is_executing = await schedule_data_proxy.read("is_executing")
 
-        if is_creating is False:
+        if is_executing is False:
             _logger.warning(
-                "Cannot cancel steps for schedule_id='%s' since UNDO is running",
+                "Cannot cancel steps for schedule_id='%s' since REVERT is running",
                 schedule_id,
             )
             return
@@ -178,7 +178,7 @@ class Core(SingletonInAppStateMixin):
             operation_name=operation_name,
             group_index=group_index,
             step_group=group,
-            is_creating=is_creating,
+            is_executing=is_executing,
         )
 
         # not allowed to cancel while waiting for manual intervention
@@ -227,7 +227,7 @@ class Core(SingletonInAppStateMixin):
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
         )
-        is_creating = await schedule_data_proxy.read("is_creating")
+        is_executing = await schedule_data_proxy.read("is_executing")
         operation_name = await schedule_data_proxy.read("operation_name")
         group_index = await schedule_data_proxy.read("group_index")
 
@@ -250,7 +250,7 @@ class Core(SingletonInAppStateMixin):
             operation_name=operation_name,
             step_group_name=step_group_name,
             step_name=step_name,
-            is_creating=is_creating,
+            is_executing=is_executing,
         )
 
         try:
@@ -284,7 +284,7 @@ class Core(SingletonInAppStateMixin):
             schedule_id=schedule_id,
             operation_name=operation_name,
             step_group_name=step_group_name,
-            is_creating=is_creating,
+            is_executing=is_executing,
         )
 
         # remove previus entries for the step
@@ -299,12 +299,12 @@ class Core(SingletonInAppStateMixin):
             step_name,
             operation_name,
             schedule_id,
-            "manual intervention" if in_manual_intervention else "error in undo",
+            "manual intervention" if in_manual_intervention else "error during revert",
         )
         # restart only this step
         await start_and_mark_as_started(
             step_proxy,
-            is_creating=is_creating,
+            is_executing=is_executing,
             expected_steps_count=len(step_group),
         )
 
@@ -330,26 +330,26 @@ class Core(SingletonInAppStateMixin):
 
         From this point onwards an `operation` can be advanced in one the following modes:
         - `CEREATEING`: default mode when starting an operation
-            - runs the `create()` of each step in each group (`first` -> `last` group)
+            - runs the `execute()` of each step in each group (`first` -> `last` group)
             - when done, it removes all operation data
-        - `UNDOING`: undo the actions of `create()` in reverse order with respect to CREATING
-            - runs the `undo()` of each step in each group (`current` -> `first` group)
+        - `REVERTING`: revert the actions of `execute()` in reverse order with respect to CREATING
+            - runs the `revert()` of each step in each group (`current` -> `first` group)
             - when done, it removes all operation data
-        - `REPEATING`: repeats the `create()` of all steps in a group
-            - waits and runs the `create()` of all the steps in last group in the operation
+        - `REPEATING`: repeats the `execute()` of all steps in a group
+            - waits and runs the `execute()` of all the steps in last group in the operation
             - never completes, unless operation is cancelled
 
         NOTE: `REPEATING` is triggered by setting `BaseStepGroup(repeat_steps=True)` during definition
         of an `operation`.
-        NOTE: `UNDOING` is triggered by calling `cancel_operation()` or when a step finishes with
+        NOTE: `REVERTING` is triggered by calling `cancel_operation()` or when a step finishes with
         status `FAILED` or `CANCELLED` (except in manual intervention).
 
         There are 3 reasons why an operation will hang:
-        - MANUAL_INTERVENTION: step failed during `create()` and flagged for manual intervention
+        - MANUAL_INTERVENTION: step failed during `execute()` and flagged for manual intervention
             -> requires support intervention
-        - STEP_ISSUE: a step failed during `undo()` due to an error in the step's undo code
+        - STEP_ISSUE: a step failed during `revert()` due to an error in the step's revert code
             -> unexpected behviour / requires developer intervention
-        - FRAMEWORK_ISSUE: a step failed during `undo()` because it was cancelled
+        - FRAMEWORK_ISSUE: a step failed during `revert()` because it was cancelled
             -> unexpected behviour / requires developer intervention
 
         NOTE: only MANUAL_INTERVENTION is an allowed to happen all other failuires are to be treated
@@ -360,7 +360,7 @@ class Core(SingletonInAppStateMixin):
         )
 
         operation_name = await schedule_data_proxy.read("operation_name")
-        is_creating = await schedule_data_proxy.read("is_creating")
+        is_executing = await schedule_data_proxy.read("is_executing")
         group_index = await schedule_data_proxy.read("group_index")
 
         operation = OperationRegistry.get_operation(operation_name)
@@ -372,13 +372,13 @@ class Core(SingletonInAppStateMixin):
             operation_name=operation_name,
             group_index=group_index,
             step_group=step_group,
-            is_creating=is_creating,
+            is_executing=is_executing,
         )
 
         # 1) ensure all operation steps in the group are started before advancing
         if await start_steps_which_were_not_started(
             group_step_proxies,
-            is_creating=is_creating,
+            is_executing=is_executing,
             group_step_count=len(step_group),
         ):
             return
@@ -403,7 +403,7 @@ class Core(SingletonInAppStateMixin):
         step_group_name = step_group.get_step_group_name(index=group_index)
         base_message = f"{step_group_name=} in {operation_name=} for {schedule_id=}"
 
-        if step_group.repeat_steps is True and is_creating:
+        if step_group.repeat_steps is True and is_executing:
             with log_context(_logger, logging.DEBUG, f"REPEATING {base_message}"):
                 await self._advance_as_repeating(
                     schedule_data_proxy,
@@ -414,7 +414,7 @@ class Core(SingletonInAppStateMixin):
                     group_step_proxies,
                 )
 
-        elif is_creating:
+        elif is_executing:
             with log_context(_logger, logging.DEBUG, f"CREATING {base_message}"):
                 await self._advance_as_creating(
                     steps_statuses,
@@ -427,8 +427,8 @@ class Core(SingletonInAppStateMixin):
                 )
 
         else:
-            with log_context(_logger, logging.DEBUG, f"UNDOING {base_message}"):
-                await self._advance_as_undoing(
+            with log_context(_logger, logging.DEBUG, f"REVERTING {base_message}"):
+                await self._advance_as_reverting(
                     steps_statuses,
                     schedule_data_proxy,
                     schedule_id,
@@ -448,7 +448,7 @@ class Core(SingletonInAppStateMixin):
     ) -> None:
         # REPEATING logic:
         # 1) sleep before repeating
-        # 2) if any of the repeating steps was cancelled -> move to undo
+        # 2) if any of the repeating steps was cancelled -> move to revert
         # 3) -> restart all steps in the group
 
         step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
@@ -456,14 +456,14 @@ class Core(SingletonInAppStateMixin):
         # 1) sleep before repeating
         await asyncio.sleep(current_step_group.wait_before_repeat.total_seconds())
 
-        # 2) if any of the repeating steps was cancelled -> move to undo
+        # 2) if any of the repeating steps was cancelled -> move to revert
 
         # since some time passed, query all steps statuses again,
         # a cancellation request might have been requested
         steps_stauses = await get_steps_statuses(step_proxies)
         if any(status == StepStatus.CANCELLED for status in steps_stauses.values()):
             # NOTE:
-            await schedule_data_proxy.create_or_update("is_creating", value=False)
+            await schedule_data_proxy.create_or_update("is_executing", value=False)
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
@@ -476,7 +476,7 @@ class Core(SingletonInAppStateMixin):
             schedule_id=schedule_id,
             operation_name=operation_name,
             step_group_name=current_step_group.get_step_group_name(index=group_index),
-            is_creating=True,
+            is_executing=True,
         )
         await group_proxy.delete()
         await enqueue_schedule_event(self.app, schedule_id)
@@ -494,9 +494,9 @@ class Core(SingletonInAppStateMixin):
         # CREATION logic:
         # 1) if all steps in group in SUUCESS
         # - 1a) -> move to next group
-        # - 1b) if reached the end of the CREATE operation -> remove all created data [EMIT create complete event]
+        # - 1b) if reached the end of the EXECUTE operation -> remove all created data [EMIT execute complete event]
         # 2) if manual intervention is required -> do nothing else
-        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to undo
+        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to revert
 
         # 1) if all steps in group in SUUCESS
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
@@ -512,32 +512,32 @@ class Core(SingletonInAppStateMixin):
                 await enqueue_schedule_event(self.app, schedule_id)
             except IndexError:
 
-                # 1b) if reached the end of the CREATE operation -> remove all created data [EMIT create complete event]
-                on_created_proxy = OperationEventsProxy(
-                    self._store, schedule_id, EventType.ON_CREATED_COMPLETED
+                # 1b) if reached the end of the EXECUTE operation -> remove all created data [EMIT execute complete event]
+                on_executed_proxy = OperationEventsProxy(
+                    self._store, schedule_id, EventType.ON_EXECUTEDD_COMPLETED
                 )
-                on_create_operation_name: OperationName | None = None
-                on_create_initial_context: OperationContext | None = None
-                if await on_created_proxy.exists():
-                    on_create_operation_name = await on_created_proxy.read(
+                on_executed_operation_name: OperationName | None = None
+                on_executed_initial_context: OperationContext | None = None
+                if await on_executed_proxy.exists():
+                    on_executed_operation_name = await on_executed_proxy.read(
                         "operation_name"
                     )
-                    on_create_initial_context = await on_created_proxy.read(
+                    on_executed_initial_context = await on_executed_proxy.read(
                         "initial_context"
                     )
 
                 await cleanup_after_finishing(
-                    self._store, schedule_id=schedule_id, is_creating=True
+                    self._store, schedule_id=schedule_id, is_executing=True
                 )
                 if (
-                    on_create_operation_name is not None
-                    and on_create_initial_context is not None
+                    on_executed_operation_name is not None
+                    and on_executed_initial_context is not None
                 ):
-                    await enqueue_create_completed_event(
+                    await enqueue_execute_completed_event(
                         self.app,
                         schedule_id,
-                        on_create_operation_name,
-                        on_create_initial_context,
+                        on_executed_operation_name,
+                        on_executed_initial_context,
                     )
 
             return
@@ -556,7 +556,7 @@ class Core(SingletonInAppStateMixin):
                         index=group_index
                     ),
                     step_name=step.get_step_name(),
-                    is_creating=True,
+                    is_executing=True,
                 )
                 await step_proxy.create_or_update(
                     "requires_manual_intervention", value=True
@@ -574,7 +574,7 @@ class Core(SingletonInAppStateMixin):
             )
             return
 
-        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to undo
+        # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to revert
         if any(
             s in {StepStatus.FAILED, StepStatus.CANCELLED}
             for s in steps_statuses.values()
@@ -582,9 +582,9 @@ class Core(SingletonInAppStateMixin):
             with log_context(
                 _logger,
                 logging.DEBUG,
-                f"{operation_name=} was not successfull: {steps_statuses=}, moving to undo",
+                f"{operation_name=} was not successfull: {steps_statuses=}, moving to revert",
             ):
-                await schedule_data_proxy.create_or_update("is_creating", value=False)
+                await schedule_data_proxy.create_or_update("is_executing", value=False)
                 await enqueue_schedule_event(self.app, schedule_id)
             return
 
@@ -592,7 +592,7 @@ class Core(SingletonInAppStateMixin):
             direction="creation", steps_statuses=steps_statuses, schedule_id=schedule_id
         )
 
-    async def _advance_as_undoing(
+    async def _advance_as_reverting(
         self,
         steps_statuses: dict[StepName, StepStatus],
         schedule_data_proxy: ScheduleDataStoreProxy,
@@ -601,9 +601,9 @@ class Core(SingletonInAppStateMixin):
         group_index: NonNegativeInt,
         current_step_group: BaseStepGroup,
     ) -> None:
-        # UNDO logic:
+        # REVERT logic:
         # 1) if all steps in group in SUCCESS
-        # - 1a) if reached the end of the UNDO operation -> remove all created data [EMIT undo complete event]
+        # - 1a) if reached the end of the REVERT operation -> remove all created data [EMIT revert complete event]
         # - 1b) -> move to previous group
         # 2) it is unexpected to have a FAILED step -> do nothing else
         # 3) it is unexpected to have a CANCELLED step -> do nothing else
@@ -613,30 +613,32 @@ class Core(SingletonInAppStateMixin):
             previous_group_index = group_index - 1
             if previous_group_index < 0:
 
-                # 1a) if reached the end of the UNDO operation -> remove all created data [EMIT undo complete event]
-                on_undo_proxy = OperationEventsProxy(
-                    self._store, schedule_id, EventType.ON_UNDO_COMPLETED
+                # 1a) if reached the end of the REVERT operation -> remove all created data [EMIT revert complete event]
+                on_reverted_proxy = OperationEventsProxy(
+                    self._store, schedule_id, EventType.ON_REVERT_COMPLETED
                 )
-                on_undo_operation_name: OperationName | None = None
-                on_undo_initial_context: OperationContext | None = None
-                if await on_undo_proxy.exists():
-                    on_undo_operation_name = await on_undo_proxy.read("operation_name")
-                    on_undo_initial_context = await on_undo_proxy.read(
+                on_reverted_operation_name: OperationName | None = None
+                on_reverted_initial_context: OperationContext | None = None
+                if await on_reverted_proxy.exists():
+                    on_reverted_operation_name = await on_reverted_proxy.read(
+                        "operation_name"
+                    )
+                    on_reverted_initial_context = await on_reverted_proxy.read(
                         "initial_context"
                     )
 
                 await cleanup_after_finishing(
-                    self._store, schedule_id=schedule_id, is_creating=False
+                    self._store, schedule_id=schedule_id, is_executing=False
                 )
                 if (
-                    on_undo_operation_name is not None
-                    and on_undo_initial_context is not None
+                    on_reverted_operation_name is not None
+                    and on_reverted_initial_context is not None
                 ):
-                    await enqueue_undo_completed_event(
+                    await enqueue_revert_completed_event(
                         self.app,
                         schedule_id,
-                        on_undo_operation_name,
-                        on_undo_initial_context,
+                        on_reverted_operation_name,
+                        on_reverted_initial_context,
                     )
                 return
 
@@ -671,7 +673,7 @@ class Core(SingletonInAppStateMixin):
                 for step_name, traceback in error_tracebacks
             )
             message = (
-                f"Operation 'undo' for schedule_id='{schedule_id}' failed for steps: "
+                f"Operation 'revert' for schedule_id='{schedule_id}' failed for steps: "
                 f"'{failed_step_names}'. Step code should never fail during destruction, "
                 f"please report to developers:\n{formatted_tracebacks}"
             )
@@ -686,7 +688,7 @@ class Core(SingletonInAppStateMixin):
             n for n, s in steps_statuses.items() if s == StepStatus.CANCELLED
         ]:
             message = (
-                f"Operation 'undo' for schedule_id='{schedule_id}' was cancelled for steps: "
+                f"Operation 'revert' for schedule_id='{schedule_id}' was cancelled for steps: "
                 f"{cancelled_step_names}. This should not happen, and should be addressed."
             )
             _logger.error(message)
@@ -699,7 +701,7 @@ class Core(SingletonInAppStateMixin):
             return
 
         raise UnexpectedStepHandlingError(
-            direction="undo", steps_statuses=steps_statuses, schedule_id=schedule_id
+            direction="revert", steps_statuses=steps_statuses, schedule_id=schedule_id
         )
 
 
@@ -708,29 +710,29 @@ async def start_operation(
     operation_name: OperationName,
     initial_operation_context: OperationContext,
     *,
-    on_create_completed: OperationToStart | None = None,
-    on_undo_completed: OperationToStart | None = None,
+    on_execute_completed: OperationToStart | None = None,
+    on_revert_completed: OperationToStart | None = None,
 ) -> ScheduleId:
     return await Core.get_from_app_state(app).start_operation(
         operation_name,
         initial_operation_context,
-        on_create_completed,
-        on_undo_completed,
+        on_execute_completed,
+        on_revert_completed,
     )
 
 
 async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
     """
-    Unstruct scheduler to undo all steps completed until
+    Unstruct scheduler to revert all steps completed until
     now for the running operation.
 
-    `undoing` refers to the act of undoing the effects of a step
+    `reverting` refers to the act of reverting the effects of a step
     that has already been completed (eg: remove a created network)
     """
     await Core.get_from_app_state(app).cancel_operation(schedule_id)
 
 
-async def restart_operation_step_stuck_in_manual_intervention_during_create(
+async def restart_operation_step_stuck_in_manual_intervention_during_execute(
     app: FastAPI, schedule_id: ScheduleId, step_name: StepName
 ) -> None:
     """
@@ -746,14 +748,14 @@ async def restart_operation_step_stuck_in_manual_intervention_during_create(
     )
 
 
-async def restart_operation_step_stuck_during_undo(
+async def restart_operation_step_stuck_during_revert(
     app: FastAPI, schedule_id: ScheduleId, step_name: StepName
 ) -> None:
     """
-    Restarts a `stuck step` while the operation is being undone
+    Restarts a `stuck step` while the operation is being reverted
 
     `stuck step` is a step that has failed and exhausted all retries
-    `undoing` refers to the act of undoing the effects of a step
+    `reverting` refers to the act of reverting the effects of a step
     that has already been completed (eg: remove a created network)
     """
     await Core.get_from_app_state(app).restart_operation_step_stuck_in_error(

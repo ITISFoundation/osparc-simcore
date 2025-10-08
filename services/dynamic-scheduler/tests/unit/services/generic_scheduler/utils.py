@@ -18,8 +18,8 @@ _RETRY_PARAMS: Final[dict[str, Any]] = {
     "retry": retry_if_exception_type(AssertionError),
 }
 
-CREATED: Final[str] = "create"
-UNDONE: Final[str] = "undo"
+EXECUTED: Final[str] = "executed"
+REVERTED: Final[str] = "reverted"
 
 
 class BaseExpectedStepOrder:
@@ -33,20 +33,20 @@ class BaseExpectedStepOrder:
         return f"{self.__class__.__name__}({', '.join(step.get_step_name() for step in self.steps)})"
 
 
-class CreateSequence(BaseExpectedStepOrder):
-    """steps appear in a sequence as CREATE"""
+class ExecuteSequence(BaseExpectedStepOrder):
+    """steps appear in a sequence as EXECUTE"""
 
 
-class CreateRandom(BaseExpectedStepOrder):
-    """steps appear in any given order as CREATE"""
+class ExecuteRandom(BaseExpectedStepOrder):
+    """steps appear in any given order as EXECUTE"""
 
 
-class UndoSequence(BaseExpectedStepOrder):
-    """steps appear in a sequence as UNDO"""
+class RevertSequence(BaseExpectedStepOrder):
+    """steps appear in a sequence as REVERT"""
 
 
-class UndoRandom(BaseExpectedStepOrder):
-    """steps appear in any given order as UNDO"""
+class RevertRandom(BaseExpectedStepOrder):
+    """steps appear in any given order as REVERT"""
 
 
 def _assert_order_sequence(
@@ -97,14 +97,14 @@ def _assert_expected_order(
     assert len(call_order) == expected_order_length
 
     for group in expected_order:
-        if isinstance(group, CreateSequence):
-            _assert_order_sequence(call_order, group.steps, expected=CREATED)
-        elif isinstance(group, CreateRandom):
-            _assert_order_random(call_order, group.steps, expected=CREATED)
-        elif isinstance(group, UndoSequence):
-            _assert_order_sequence(call_order, group.steps, expected=UNDONE)
-        elif isinstance(group, UndoRandom):
-            _assert_order_random(call_order, group.steps, expected=UNDONE)
+        if isinstance(group, ExecuteSequence):
+            _assert_order_sequence(call_order, group.steps, expected=EXECUTED)
+        elif isinstance(group, ExecuteRandom):
+            _assert_order_random(call_order, group.steps, expected=EXECUTED)
+        elif isinstance(group, RevertSequence):
+            _assert_order_sequence(call_order, group.steps, expected=REVERTED)
+        elif isinstance(group, RevertRandom):
+            _assert_order_random(call_order, group.steps, expected=REVERTED)
         else:
             msg = f"Unknown {group=}"
             raise NotImplementedError(msg)

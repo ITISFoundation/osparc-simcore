@@ -12,7 +12,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ...core.settings import ApplicationSettings
 from ._event_base_queue import EXCHANGE_NAME, BaseEventQueue
-from ._event_queues import CreateCompletedQueue, ScheduleQueue, UndoCompletedQueue
+from ._event_queues import ExecuteCompletedQueue, RevertCompletedQueue, ScheduleQueue
 from ._lifecycle_protocol import SupportsLifecycle
 
 
@@ -36,7 +36,11 @@ class EventScheduler(SingletonInAppStateMixin, SupportsLifecycle):
 
         self._queues: dict[str, BaseEventQueue] = {
             queue_class.get_queue_name(): queue_class(app, self._router, self._exchange)
-            for queue_class in (ScheduleQueue, CreateCompletedQueue, UndoCompletedQueue)
+            for queue_class in (
+                ScheduleQueue,
+                ExecuteCompletedQueue,
+                RevertCompletedQueue,
+            )
         }
 
     async def enqueue_message_for(

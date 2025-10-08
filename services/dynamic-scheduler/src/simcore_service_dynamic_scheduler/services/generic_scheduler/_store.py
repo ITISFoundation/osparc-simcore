@@ -31,8 +31,8 @@ _OPERATION_CONTEXT_KEY: Final[str] = "OP_CTX"
 _EVENTS_KEY: Final[str] = "EVENTS"
 
 
-def _get_is_creating_str(*, is_creating: bool) -> str:
-    return "C" if is_creating else "U"
+def _get_is_executing_str(*, is_executing: bool) -> str:
+    return "E" if is_executing else "R"
 
 
 def _get_scheduler_data_hash_key(*, schedule_id: ScheduleId) -> str:
@@ -50,21 +50,21 @@ def _get_step_hash_key(
     operation_name: OperationName,
     group_name: StepGroupName,
     step_name: StepName,
-    is_creating: bool,
+    is_executing: bool,
 ) -> str:
-    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_SHORT_NAME:STEP_NAME:IS_CREATING
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_SHORT_NAME:STEP_NAME:IS_EXECUTING
     # - SCHEDULE_NAMESPACE: namespace prefix
     # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "STEPS"
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_SHORT_NAME
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
-    # - IS_CREATING: "C" (create) or "U" (undo)
+    # - IS_EXECUTING: "E" (execute) or "R" (revert)
     # - STEP_NAME form it's class
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:STEPS:START_SERVICE:0S:C:BS1
-    is_creating_str = _get_is_creating_str(is_creating=is_creating)
-    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group_name}:{is_creating_str}:{step_name}"
+    is_executing_str = _get_is_executing_str(is_executing=is_executing)
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group_name}:{is_executing_str}:{step_name}"
 
 
 def _get_group_hash_key(
@@ -72,20 +72,20 @@ def _get_group_hash_key(
     schedule_id: ScheduleId,
     operation_name: OperationName,
     group_name: StepGroupName,
-    is_creating: bool,
+    is_executing: bool,
 ) -> str:
-    # SCHEDULE_NAMESPACE:SCHEDULE_ID:GROUPS:OPERATION_NAME:GROUP_SHORT_NAME:IS_CREATING
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:GROUPS:OPERATION_NAME:GROUP_SHORT_NAME:IS_EXECUTING
     # - SCHEDULE_NAMESPACE: namespace prefix
     # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "GROUPS"
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_SHORT_NAME
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
-    # - IS_CREATING: "C" (create) or "U" (undo)
+    # - IS_EXECUTING: "E" (execute) or "R" (revert)
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:GROUPS:START_SERVICE:0S:C
-    is_creating_str = _get_is_creating_str(is_creating=is_creating)
-    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_GROUPS_KEY}:{operation_name}:{group_name}:{is_creating_str}"
+    is_executing_str = _get_is_executing_str(is_executing=is_executing)
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_GROUPS_KEY}:{operation_name}:{group_name}:{is_executing_str}"
 
 
 def _get_operation_context_hash_key(
@@ -202,7 +202,7 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
 class _UpdateScheduleDataDict(TypedDict):
     operation_name: NotRequired[OperationName]
     group_index: NotRequired[NonNegativeInt]
-    is_creating: NotRequired[bool]
+    is_executing: NotRequired[bool]
     operation_error_type: NotRequired[OperationErrorType]
     operation_error_message: NotRequired[str]
 
@@ -210,7 +210,7 @@ class _UpdateScheduleDataDict(TypedDict):
 _DeleteScheduleDataKeys = Literal[
     "operation_name",
     "group_index",
-    "is_creating",
+    "is_executing",
     "operation_error_type",
     "operation_error_message",
 ]
@@ -229,7 +229,7 @@ class ScheduleDataStoreProxy:
     @overload
     async def read(self, key: Literal["group_index"]) -> NonNegativeInt: ...
     @overload
-    async def read(self, key: Literal["is_creating"]) -> bool: ...
+    async def read(self, key: Literal["is_executing"]) -> bool: ...
     @overload
     async def read(
         self, key: Literal["operation_error_type"]
@@ -254,7 +254,7 @@ class ScheduleDataStoreProxy:
     ) -> None: ...
     @overload
     async def create_or_update(
-        self, key: Literal["is_creating"], *, value: bool
+        self, key: Literal["is_executing"], *, value: bool
     ) -> None: ...
     @overload
     async def create_or_update(
@@ -282,20 +282,20 @@ class StepGroupProxy:
         schedule_id: ScheduleId,
         operation_name: OperationName,
         step_group_name: StepGroupName,
-        is_creating: bool,
+        is_executing: bool,
     ) -> None:
         self._store = store
         self.schedule_id = schedule_id
         self.operation_name = operation_name
         self.step_group_name = step_group_name
-        self.is_creating = is_creating
+        self.is_executing = is_executing
 
     def _get_hash_key(self) -> str:
         return _get_group_hash_key(
             schedule_id=self.schedule_id,
             operation_name=self.operation_name,
             group_name=self.step_group_name,
-            is_creating=self.is_creating,
+            is_executing=self.is_executing,
         )
 
     async def increment_and_get_done_steps_count(self) -> NonNegativeInt:
@@ -338,14 +338,14 @@ class StepStoreProxy:
         operation_name: OperationName,
         step_group_name: StepGroupName,
         step_name: StepName,
-        is_creating: bool,
+        is_executing: bool,
     ) -> None:
         self._store = store
         self.schedule_id = schedule_id
         self.operation_name = operation_name
         self.step_group_name = step_group_name
         self.step_name = step_name
-        self.is_creating = is_creating
+        self.is_executing = is_executing
 
     def _get_hash_key(self) -> str:
         return _get_step_hash_key(
@@ -353,7 +353,7 @@ class StepStoreProxy:
             operation_name=self.operation_name,
             group_name=self.step_group_name,
             step_name=self.step_name,
-            is_creating=self.is_creating,
+            is_executing=self.is_executing,
         )
 
     @overload

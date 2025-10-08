@@ -71,13 +71,13 @@ def test_ensure_keys_have_the_same_prefix(schedule_id: ScheduleId):
             operation_name="op1",
             group_name="sg1",
             step_name="step1",
-            is_creating=True,
+            is_executing=True,
         ),
         _get_group_hash_key(
             schedule_id=schedule_id,
             operation_name="op1",
             group_name="sg1",
-            is_creating=True,
+            is_executing=True,
         ),
         _get_operation_context_hash_key(
             schedule_id=schedule_id,
@@ -174,19 +174,19 @@ async def test_schedule_data_store_proxy(store: Store, schedule_id: ScheduleId):
     # set
     await proxy.create_or_update("operation_name", "op1")
     await proxy.create_or_update("group_index", 1)
-    await proxy.create_or_update("is_creating", value=True)
+    await proxy.create_or_update("is_executing", value=True)
     await _assert_keys(store, {hash_key})
     await _assert_keys_in_hash(
-        store, hash_key, {"operation_name", "group_index", "is_creating"}
+        store, hash_key, {"operation_name", "group_index", "is_executing"}
     )
 
     # get
     assert await proxy.read("operation_name") == "op1"
     assert await proxy.read("group_index") == 1
-    assert await proxy.read("is_creating") is True
+    assert await proxy.read("is_executing") is True
 
     # remove
-    await proxy.delete_keys("operation_name", "is_creating", "group_index")
+    await proxy.delete_keys("operation_name", "is_executing", "group_index")
     await _assert_keys(store, set())
     await _assert_keys_in_hash(store, hash_key, set())
 
@@ -194,7 +194,7 @@ async def test_schedule_data_store_proxy(store: Store, schedule_id: ScheduleId):
     await proxy.create_or_update_multiple(
         {
             "group_index": 2,
-            "is_creating": False,
+            "is_executing": False,
             "operation_error_type": OperationErrorType.STEP_ISSUE,
             "operation_error_message": "mock_error_message",
         }
@@ -205,7 +205,7 @@ async def test_schedule_data_store_proxy(store: Store, schedule_id: ScheduleId):
         hash_key,
         {
             "group_index",
-            "is_creating",
+            "is_executing",
             "operation_error_type",
             "operation_error_message",
         },
@@ -214,7 +214,7 @@ async def test_schedule_data_store_proxy(store: Store, schedule_id: ScheduleId):
     # remove all keys an even missing ones
     await proxy.delete_keys(
         "operation_name",
-        "is_creating",
+        "is_executing",
         "group_index",
         "operation_error_type",
         "operation_error_message",
@@ -223,10 +223,10 @@ async def test_schedule_data_store_proxy(store: Store, schedule_id: ScheduleId):
     await _assert_keys_in_hash(store, hash_key, set())
 
 
-@pytest.mark.parametrize("is_creating", [True, False])
+@pytest.mark.parametrize("is_executing", [True, False])
 @pytest.mark.parametrize("use_remove", [True, False])
 async def test_steps_store_proxy(
-    store: Store, schedule_id: ScheduleId, is_creating: bool, use_remove: bool
+    store: Store, schedule_id: ScheduleId, is_executing: bool, use_remove: bool
 ):
     proxy = StepStoreProxy(
         store=store,
@@ -234,10 +234,10 @@ async def test_steps_store_proxy(
         operation_name="op1",
         step_group_name="sg1",
         step_name="step",
-        is_creating=is_creating,
+        is_executing=is_executing,
     )
-    is_creating_str = "C" if is_creating else "U"
-    hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{is_creating_str}:step"
+    is_executing_str = "E" if is_executing else "R"
+    hash_key = f"SCH:{schedule_id}:STEPS:op1:sg1:{is_executing_str}:step"
 
     # set
     await proxy.create_or_update("status", StepStatus.RUNNING)
@@ -290,18 +290,18 @@ async def test_steps_store_proxy(
     await _assert_keys_in_hash(store, hash_key, set())
 
 
-@pytest.mark.parametrize("is_creating", [True, False])
+@pytest.mark.parametrize("is_executing", [True, False])
 async def test_step_group_proxy(
     store: Store,
     schedule_id: ScheduleId,
-    is_creating: bool,
+    is_executing: bool,
 ):
     step_group_proxy = StepGroupProxy(
         store=store,
         schedule_id=schedule_id,
         operation_name="op1",
         step_group_name="sg1",
-        is_creating=is_creating,
+        is_executing=is_executing,
     )
 
     async def _get_steps_count() -> int | None:
@@ -363,7 +363,7 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
     await proxy.create_or_update_multiple(
         {
             "group_index": 1,
-            "is_creating": True,
+            "is_executing": True,
             "operation_error_type": OperationErrorType.STEP_ISSUE,
             "operation_error_message": "mock_error_message",
             "operation_name": "op1",
@@ -376,7 +376,7 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
         operation_name="op1",
         step_group_name="sg1",
         step_name="step",
-        is_creating=True,
+        is_executing=True,
     )
     await proxy.create_or_update_multiple(
         {
@@ -393,7 +393,7 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
         schedule_id=schedule_id,
         operation_name="op1",
         step_group_name="sg1",
-        is_creating=True,
+        is_executing=True,
     )
     await proxy.increment_and_get_done_steps_count()
 
@@ -406,9 +406,9 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
         store,
         {
             f"SCH:{schedule_id}",
-            f"SCH:{schedule_id}:GROUPS:op1:sg1:C",
+            f"SCH:{schedule_id}:GROUPS:op1:sg1:E",
             f"SCH:{schedule_id}:OP_CTX:op1",
-            f"SCH:{schedule_id}:STEPS:op1:sg1:C:step",
+            f"SCH:{schedule_id}:STEPS:op1:sg1:E:step",
         },
     )
 
@@ -424,7 +424,7 @@ async def test_operation_events_proxy(store: Store, schedule_id: ScheduleId):
     operation_name = "op1"
     initial_context: OperationContext = {"k1": "v1", "k2": 2}
 
-    event_type = EventType.ON_CREATED_COMPLETED
+    event_type = EventType.ON_EXECUTEDD_COMPLETED
     proxy = OperationEventsProxy(store, schedule_id, event_type)
     hash_key = f"SCH:{schedule_id}:EVENTS:{event_type}"
 

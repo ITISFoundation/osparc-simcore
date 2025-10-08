@@ -115,7 +115,7 @@ async def test_operation_is_missing(
 
 class _BS(BaseStep):
     @classmethod
-    async def create(
+    async def execute(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app

@@ -136,16 +136,16 @@ class _StepResultStore:
 
 class _StepFinisheWithSuccess(BaseStep):
     @classmethod
-    async def create(
+    async def execute(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
-        _StepResultStore.set_result(cls.__name__, "created")
+        _StepResultStore.set_result(cls.__name__, "executed")
         return {}
 
     @classmethod
-    async def undo(
+    async def revert(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
@@ -156,17 +156,17 @@ class _StepFinisheWithSuccess(BaseStep):
 
 class _StepFinisheError(BaseStep):
     @classmethod
-    async def create(
+    async def execute(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
-        _StepResultStore.set_result(cls.__name__, "created")
+        _StepResultStore.set_result(cls.__name__, "executed")
         msg = "I failed creating"
         raise RuntimeError(msg)
 
     @classmethod
-    async def undo(
+    async def revert(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
@@ -178,17 +178,17 @@ class _StepFinisheError(BaseStep):
 
 class _StepLongRunningToCancel(BaseStep):
     @classmethod
-    async def create(
+    async def execute(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
-        _StepResultStore.set_result(cls.__name__, "created")
+        _StepResultStore.set_result(cls.__name__, "executed")
         await asyncio.sleep(10000)
         return {}
 
     @classmethod
-    async def undo(
+    async def revert(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
@@ -246,7 +246,7 @@ def _get_step_group(
         ),
     ],
 )
-@pytest.mark.parametrize("is_creating", [True, False])
+@pytest.mark.parametrize("is_executing", [True, False])
 async def test_something(
     mock_enqueue_event: AsyncMock,
     registed_operation: None,
@@ -255,7 +255,7 @@ async def test_something(
     schedule_id: ScheduleId,
     operation_name: OperationName,
     expected_step_status: StepStatus,
-    is_creating: bool,
+    is_executing: bool,
     action: _Action,
     expected_steps_count: NonNegativeInt,
 ) -> None:
@@ -263,7 +263,11 @@ async def test_something(
     # setup
     schedule_data_proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
     await schedule_data_proxy.create_or_update_multiple(
-        {"operation_name": operation_name, "group_index": 0, "is_creating": is_creating}
+        {
+            "operation_name": operation_name,
+            "group_index": 0,
+            "is_executing": is_executing,
+        }
     )
 
     step_group = _get_step_group(operation_name, 0)
@@ -282,7 +286,7 @@ async def test_something(
         operation_name=operation_name,
         step_group_name=step_group_name,
         step_name=step_name,
-        is_creating=is_creating,
+        is_executing=is_executing,
     )
 
     ### tests starts here
@@ -292,7 +296,7 @@ async def test_something(
         operation_name=operation_name,
         step_group_name=step_group_name,
         step_name=step_name,
-        is_creating=is_creating,
+        is_executing=is_executing,
         expected_steps_count=expected_steps_count,
     )
 
@@ -305,7 +309,7 @@ async def test_something(
     await _assert_finshed_with_status(step_proxy, expected_step_status)
 
     assert _StepResultStore.get_result(step.__name__) == (
-        "created" if is_creating else "destroyed"
+        "executed" if is_executing else "destroyed"
     )
 
     if expected_step_status == StepStatus.FAILED:

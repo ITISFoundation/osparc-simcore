@@ -23,7 +23,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._operation imp
 
 class BaseBS(BaseStep):
     @classmethod
-    async def create(
+    async def execute(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
@@ -47,26 +47,26 @@ class MI1(BaseBS):
 
 class WrongBS1C(BaseBS):
     @classmethod
-    def get_create_provides_context_keys(cls) -> set[str]:
-        return {"create_key"}
+    def get_execute_provides_context_keys(cls) -> set[str]:
+        return {"execute_key"}
 
 
 class WrongBS2C(BaseBS):
     @classmethod
-    def get_create_provides_context_keys(cls) -> set[str]:
-        return {"create_key"}
+    def get_execute_provides_context_keys(cls) -> set[str]:
+        return {"execute_key"}
 
 
 class WrongBS1R(BaseBS):
     @classmethod
-    def get_undo_provides_context_keys(cls) -> set[str]:
-        return {"undo_key"}
+    def get_revert_provides_context_keys(cls) -> set[str]:
+        return {"revert_key"}
 
 
 class WrongBS2R(BaseBS):
     @classmethod
-    def get_undo_provides_context_keys(cls) -> set[str]:
-        return {"undo_key"}
+    def get_revert_provides_context_keys(cls) -> set[str]:
+        return {"revert_key"}
 
 
 @pytest.mark.parametrize(
@@ -142,19 +142,19 @@ def test_validate_operation_passes(operation: Operation):
         ),
         (
             Operation(SingleStepGroup(WrongBS1C), SingleStepGroup(WrongBS2C)),
-            f"already provided key='create_key' in {BaseStep.get_create_provides_context_keys.__name__}",
+            f"already provided key='execute_key' in {BaseStep.get_execute_provides_context_keys.__name__}",
         ),
         (
             Operation(ParallelStepGroup(WrongBS1C, WrongBS2C)),
-            f"already provided key='create_key' in {BaseStep.get_create_provides_context_keys.__name__}",
+            f"already provided key='execute_key' in {BaseStep.get_execute_provides_context_keys.__name__}",
         ),
         (
             Operation(SingleStepGroup(WrongBS1R), SingleStepGroup(WrongBS2R)),
-            f"already provided key='undo_key' in {BaseStep.get_undo_provides_context_keys.__name__}",
+            f"already provided key='revert_key' in {BaseStep.get_revert_provides_context_keys.__name__}",
         ),
         (
             Operation(ParallelStepGroup(WrongBS1R, WrongBS2R)),
-            f"already provided key='undo_key' in {BaseStep.get_undo_provides_context_keys.__name__}",
+            f"already provided key='revert_key' in {BaseStep.get_revert_provides_context_keys.__name__}",
         ),
         (
             Operation(SingleStepGroup(MI1, repeat_steps=True)),
