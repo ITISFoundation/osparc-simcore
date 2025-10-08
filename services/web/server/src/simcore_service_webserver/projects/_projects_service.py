@@ -190,6 +190,23 @@ from .utils import extract_dns_without_default_port
 _logger = logging.getLogger(__name__)
 
 
+async def _publish_unsubscribe_from_project_logs_event(
+    app: web.Application, project_id: ProjectID, user_id: UserID
+) -> None:
+    """Publishes an unsubscribe event for project logs to all webserver replicas."""
+    rabbitmq_client = get_rabbitmq_client(app)
+    message = WebserverInternalEventRabbitMessage(
+        action=WebserverInternalEventRabbitMessageAction.UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE,
+        data={"project_id": f"{project_id}"},
+    )
+    _logger.debug(
+        "No active socket connections detected for project %s by user %s. Sending unsubscribe event to all replicas.",
+        project_id,
+        user_id,
+    )
+    await rabbitmq_client.publish(message.channel_name, message)
+
+
 async def conditionally_unsubscribe_project_logs_across_replicas(
     app: web.Application, project_id: ProjectID, user_id: UserID
 ) -> None:
@@ -231,17 +248,7 @@ async def conditionally_unsubscribe_project_logs_across_replicas(
         # the last socket is closed, though another replica may still maintain an active
         # subscription even if no users are connected to it.
         if actually_used_sockets_on_project == 0:
-            rabbitmq_client = get_rabbitmq_client(app)
-            message = WebserverInternalEventRabbitMessage(
-                action=WebserverInternalEventRabbitMessageAction.UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE,
-                data={"project_id": f"{project_id}"},
-            )
-            _logger.debug(
-                "No active socket connections detected for project %s by user %s. Sending unsubscribe event to all replicas.",
-                project_id,
-                user_id,
-            )
-            await rabbitmq_client.publish(message.channel_name, message)
+            await _publish_unsubscribe_from_project_logs_event(app, project_id, user_id)
 
 
 async def patch_project_and_notify_users(
