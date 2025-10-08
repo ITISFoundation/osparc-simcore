@@ -263,7 +263,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         }
         case "tasks-button":
           control = new osparc.task.TasksButton().set({
-            visibility: "excluded",
             ...this.self().RIGHT_BUTTON_OPTS
           });
           this.getChildControl("right-items").add(control);
