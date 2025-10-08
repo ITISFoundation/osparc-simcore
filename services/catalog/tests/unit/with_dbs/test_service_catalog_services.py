@@ -127,7 +127,7 @@ async def test_list_latest_catalog_services(
 
     assert not mocked_director_rest_api["get_service"].called
 
-    total_count, page_items = await catalog_services.list_latest_catalog_services(
+    total_count, page_found_items = await catalog_services.list_latest_catalog_services(
         services_repo,
         director_client,
         product_name=target_product,
@@ -137,12 +137,12 @@ async def test_list_latest_catalog_services(
     )
 
     assert total_count == num_services
-    assert page_items
-    assert len(page_items) <= limit
+    assert page_found_items
+    assert len(page_found_items) <= limit
     assert mocked_director_rest_api["get_service"].called
     assert mocked_director_rest_api["get_service"].call_count == limit
 
-    for item in page_items:
+    for item in page_found_items:
         assert item.access_rights
         assert item.owner is not None
 
@@ -237,11 +237,11 @@ async def test_batch_get_my_services(
         ids=services_ids,
     )
 
-    my_services = result.items
+    my_services = result.found_items
 
     # ASSERT -------------------------------
 
-    assert result.missing == []
+    assert result.missing_identifiers == []
     assert len(my_services) == 2
 
     # assert returned order and length as ids
@@ -328,11 +328,11 @@ async def test_batch_get_my_services_partial_success(
     )
 
     # ASSERT
-    assert len(result.items) == 1  # Only one service found
-    assert len(result.missing) == 2  # Two services missing
+    assert len(result.found_items) == 1  # Only one service found
+    assert len(result.missing_identifiers) == 2  # Two services missing
 
     # Check the found service
-    found_service = result.items[0]
+    found_service = result.found_items[0]
     assert found_service.key == service_key
     assert found_service.release.version == service_version
     assert found_service.owner == user["primary_gid"]
@@ -344,7 +344,7 @@ async def test_batch_get_my_services_partial_success(
         ServiceKeyVersion(key="simcore/services/comp/missing-service", version="2.0.0"),
         ServiceKeyVersion(key="simcore/services/comp/another-missing", version="3.0.0"),
     ]
-    assert result.missing == expected_missing
+    assert result.missing_identifiers == expected_missing
 
 
 async def test_batch_get_my_services_none_found_raises_error(
@@ -375,7 +375,7 @@ async def test_batch_get_my_services_none_found_raises_error(
         )
 
     # Verify the exception contains the missing services information
-    assert exc_info.value.missing_services == [
+    assert exc_info.value.missing_identifiers_services == [
         ServiceKeyVersion(
             key="simcore/services/comp/missing-service-1", version="1.0.0"
         ),
@@ -457,11 +457,11 @@ async def test_batch_get_my_services_deduplication(
 
     # ASSERT
     assert (
-        len(result.items) == 1
+        len(result.found_items) == 1
     )  # Only one service should be returned despite duplicates
-    assert len(result.missing) == 0
+    assert len(result.missing_identifiers) == 0
 
-    found_service = result.items[0]
+    found_service = result.found_items[0]
     assert found_service.key == service_key
     assert found_service.release.version == service_version
 
@@ -485,7 +485,7 @@ async def test_list_all_vs_latest_services(
     offset = 0
 
     # Get latest services first
-    latest_total_count, latest_items = (
+    latest_total_count, latest_found_items = (
         await catalog_services.list_latest_catalog_services(
             services_repo,
             director_client,
@@ -497,13 +497,15 @@ async def test_list_all_vs_latest_services(
     )
 
     # Get all services as summaries
-    all_total_count, all_items = await catalog_services.list_all_service_summaries(
-        services_repo,
-        director_client,
-        product_name=target_product,
-        user_id=user_id,
-        limit=limit,
-        offset=offset,
+    all_total_count, all_found_items = (
+        await catalog_services.list_all_service_summaries(
+            services_repo,
+            director_client,
+            product_name=target_product,
+            user_id=user_id,
+            limit=limit,
+            offset=offset,
+        )
     )
 
     # Verify counts
@@ -512,33 +514,33 @@ async def test_list_all_vs_latest_services(
     assert latest_total_count == num_services
     assert all_total_count == num_services * num_versions_per_service
 
-    # Verify we got the expected number of items
-    assert len(latest_items) == num_services
-    assert len(all_items) == num_services * num_versions_per_service
+    # Verify we got the expected number of found_items
+    assert len(latest_found_items) == num_services
+    assert len(all_found_items) == num_services * num_versions_per_service
 
-    # Collect all service keys from latest items
-    latest_keys = {item.key for item in latest_items}
+    # Collect all service keys from latest found_items
+    latest_keys = {item.key for item in latest_found_items}
 
-    # Verify all returned items have the expected structure
-    for item in all_items:
+    # Verify all returned found_items have the expected structure
+    for item in all_found_items:
         # Each summary should have the basic fields
         assert item.key in latest_keys
         assert item.name
         assert item.description is not None
         assert isinstance(item, ServiceSummary)
 
-    # Group all items by key
+    # Group all found_items by key
     key_to_all_versions = {}
-    for item in all_items:
+    for item in all_found_items:
         if item.key not in key_to_all_versions:
             key_to_all_versions[item.key] = []
         key_to_all_versions[item.key].append(item)
 
     # For each service key, verify we have the expected number of versions
-    for key, versions in key_to_all_versions.items():
+    for key, versions in key_to_all_versions.found_items():
         assert len(versions) == num_versions_per_service
 
-        # Find this service in latest_items
-        latest_item = next(item for item in latest_items if item.key == key)
+        # Find this service in latest_found_items
+        latest_item = next(item for item in latest_found_items if item.key == key)
         # Verify there's a summary item with the same version as the latest
         assert any(item.version == latest_item.version for item in versions)

@@ -2,7 +2,7 @@
 
 import logging
 from contextlib import suppress
-from typing import Annotated, Literal, TypeVar
+from typing import Literal, TypeVar
 
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_catalog.services import (
@@ -14,6 +14,7 @@ from models_library.api_schemas_catalog.services import (
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.basic_types import VersionStr
+from models_library.batch_operations import create_batch_ids_validator
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt, PageTotalCount
@@ -23,7 +24,7 @@ from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import BeforeValidator, Field, HttpUrl, TypeAdapter
+from pydantic import HttpUrl
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogInconsistentError,
@@ -589,20 +590,7 @@ async def check_catalog_service_permissions(
 ServiceKeyVersionTuple = tuple[ServiceKey, ServiceVersion]
 
 
-def _deduplicate_ids(ids):
-    # removes duplicates while preserving order
-    return list(dict.fromkeys(ids))
-
-
-BatchIdsValidator = TypeAdapter(
-    # Passing an empty list means you're not actually identifying anything to
-    # fetch — so it's a client error (bad request), not a legitimate “empty result.”
-    Annotated[
-        list[ServiceKeyVersionTuple],
-        BeforeValidator(_deduplicate_ids),
-        Field(min_length=1),
-    ]
-)
+_BatchIdsValidator = create_batch_ids_validator(ServiceKeyVersionTuple)
 
 
 async def batch_get_user_services(
@@ -621,7 +609,7 @@ async def batch_get_user_services(
     Raises:
         CatalogItemNotFoundError: When no services are found at all
     """
-    unique_service_identifiers = BatchIdsValidator.validate_python(ids)
+    unique_service_identifiers = _BatchIdsValidator.validate_python(ids)
 
     # FIXME: implement partial fail
     services_access_rights = await repo.batch_get_services_access_rights(
@@ -714,7 +702,7 @@ async def batch_get_user_services(
         )
 
     # Success or partial success - return the result model
-    return BatchGetUserServicesResult(items=found, missing=missing)
+    return BatchGetUserServicesResult(found_items=found, missing_identifiers=missing)
 
 
 async def list_user_service_release_history(
