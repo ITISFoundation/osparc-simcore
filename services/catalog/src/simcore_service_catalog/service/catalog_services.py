@@ -174,7 +174,7 @@ async def _get_services_with_access_rights(
         return {}
 
     # Inject access-rights
-    access_rights = await repo.batch_get_services_access_rights(
+    access_rights = await repo.batch_get_services_access_rights_or_none(
         ((sc.key, sc.version) for sc in services), product_name=product_name
     )
     if not access_rights:
@@ -610,10 +610,15 @@ async def batch_get_user_services(
     """
     unique_service_identifiers = _BatchIdsValidator.validate_python(ids)
 
-    # FIXME: implement partial fail
-    services_access_rights = await repo.batch_get_services_access_rights(
+    services_access_rights = await repo.batch_get_services_access_rights_or_none(
         key_versions=unique_service_identifiers, product_name=product_name
     )
+    if not services_access_rights:
+        raise CatalogServiceNotFoundError(
+            missing_services=unique_service_identifiers,
+            user_id=user_id,
+            product_name=product_name,
+        )
 
     user_groups = await groups_repo.list_user_groups(user_id=user_id)
     my_group_ids = {g.gid for g in user_groups}
