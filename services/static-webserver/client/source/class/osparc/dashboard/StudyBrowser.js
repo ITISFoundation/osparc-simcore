@@ -916,10 +916,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
           requestParams.includeExtras = "true";
           break;
-        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS: {
+        case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
           requestParams.type = "user";
           break;
-        }
       }
 
       if (this.getCurrentContext().includes("search")) {
