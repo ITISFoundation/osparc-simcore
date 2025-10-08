@@ -46,5 +46,5 @@ def app_factory() -> FastAPI:
     return create_app(
         settings=app_settings,
         logging_lifespan=logging_lifespan,
-        tracing_data=tracing_data,
+        tracing_config=tracing_data,
     )

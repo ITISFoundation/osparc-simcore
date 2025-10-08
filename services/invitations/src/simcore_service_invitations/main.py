@@ -36,6 +36,6 @@ def app_factory() -> FastAPI:
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
-    app = create_app(settings=app_settings, tracing_data=tracing_data)
+    app = create_app(settings=app_settings, tracing_config=tracing_data)
     app.add_event_handler("shutdown", logging_shutdown_event)
     return app

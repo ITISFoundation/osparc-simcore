@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 
 def create_app(
     settings: ApplicationSettings | None = None,
-    tracing_data: TracingConfig | None = None,
+    tracing_config: TracingConfig | None = None,
 ) -> FastAPI:
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
@@ -42,8 +42,8 @@ def create_app(
             "Application settings: %s",
             json_dumps(settings, indent=2, sort_keys=True),
         )
-    if tracing_data is None:
-        tracing_data = TracingConfig.create(
+    if tracing_config is None:
+        tracing_config = TracingConfig.create(
             service_name=APP_NAME, tracing_settings=settings.AGENT_TRACING
         )
 
@@ -58,7 +58,7 @@ def create_app(
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings
-    app.state.tracing_data = tracing_data
+    app.state.tracing_config = tracing_config
 
     if settings.AGENT_TRACING:
         setup_tracing(app, get_tracing_config(app))
@@ -72,7 +72,7 @@ def create_app(
     setup_rpc_api_routes(app)
 
     if settings.AGENT_TRACING:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_config(app))
+        initialize_fastapi_app_tracing(app, tracing_config=get_tracing_config(app))
 
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201

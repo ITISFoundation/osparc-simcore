@@ -26,10 +26,10 @@ _logger = logging.getLogger(__name__)
 def create_app(
     settings: ApplicationSettings | None = None,
     logging_lifespan: Lifespan | None = None,
-    tracing_data: TracingConfig | None = None,
+    tracing_config: TracingConfig | None = None,
 ) -> FastAPI:
     settings = settings or ApplicationSettings.create_from_envs()
-    tracing_data = tracing_data or TracingConfig.create(
+    tracing_config = tracing_config or TracingConfig.create(
         service_name=APP_NAME, tracing_settings=settings.NOTIFICATIONS_TRACING
     )
 
@@ -45,17 +45,17 @@ def create_app(
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings
-    app.state.tracing_data = tracing_data
+    app.state.tracing_config = tracing_config
 
-    if tracing_data.tracing_enabled:
-        setup_tracing(app, tracing_data=tracing_data)
+    if tracing_config.tracing_enabled:
+        setup_tracing(app, tracing_config=tracing_config)
 
     initialize_rest_api(app)
 
     if settings.NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         initialize_prometheus_instrumentation(app)
 
-    if tracing_data.tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_data=tracing_data)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
 
     return app

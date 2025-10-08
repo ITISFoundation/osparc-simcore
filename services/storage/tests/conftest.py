@@ -241,7 +241,7 @@ async def initialized_app(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
-    app = create_app(app_settings, tracing_data=tracing_data)
+    app = create_app(app_settings, tracing_config=tracing_data)
     # NOTE: the timeout is sometime too small for CI machines, and even larger machines
     async with LifespanManager(
         app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
@@ -1024,7 +1024,7 @@ async def with_storage_celery_worker(
     )
 
     app_server = FastAPIAppServer(
-        app=create_app(app_settings, tracing_data=tracing_data)
+        app=create_app(app_settings, tracing_config=tracing_data)
     )
 
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):

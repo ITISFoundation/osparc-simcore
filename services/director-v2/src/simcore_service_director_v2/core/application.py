@@ -152,7 +152,7 @@ def create_base_app(
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
-    app.state.tracing_data = tracing_config
+    app.state.tracing_config = tracing_config
 
     app.include_router(api_router)
 

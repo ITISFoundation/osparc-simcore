@@ -120,13 +120,13 @@ class AppState:
 def create_base_app() -> FastAPI:
     # settings
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING
     )
     logging_shutdown_event = create_logging_shutdown_event(
         log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
         log_base_level=app_settings.log_level,
         noisy_loggers=_NOISY_LOGGERS,
     )
@@ -150,7 +150,7 @@ def create_base_app() -> FastAPI:
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
-    app.state.tracing_data = tracing_data
+    app.state.tracing_config = tracing_config
 
     app.include_router(get_main_router(app))
 
@@ -203,7 +203,7 @@ def create_app() -> FastAPI:
     if get_tracing_config(app).tracing_enabled:
         initialize_fastapi_app_tracing(
             app,
-            tracing_data=get_tracing_config(app),
+            tracing_config=get_tracing_config(app),
         )
 
     # ERROR HANDLERS  ------------

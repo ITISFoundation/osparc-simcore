@@ -26,7 +26,7 @@ from .settings import ApplicationSettings
 
 def create_app(
     settings: ApplicationSettings | None = None,
-    tracing_data: TracingConfig | None = None,
+    tracing_config: TracingConfig | None = None,
 ) -> FastAPI:
 
     app = FastAPI(
@@ -41,13 +41,13 @@ def create_app(
 
     # STATE
     app.state.settings = settings or ApplicationSettings()  # type: ignore[call-arg]
-    app.state.tracing_data = tracing_data or TracingConfig.create(
+    app.state.tracing_config = tracing_config or TracingConfig.create(
         service_name=APP_NAME, tracing_settings=app.state.settings.INVITATIONS_TRACING
     )
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     if get_tracing_config(app).tracing_enabled:
-        setup_tracing(app, tracing_data=get_tracing_config(app))
+        setup_tracing(app, tracing_config=get_tracing_config(app))
 
     # PLUGINS SETUP
     setup_api_routes(app)
@@ -56,7 +56,7 @@ def create_app(
         setup_prometheus_instrumentation(app)
 
     if get_tracing_config(app).tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_config(app))
+        initialize_fastapi_app_tracing(app, tracing_config=get_tracing_config(app))
 
     # ERROR HANDLERS
     exceptions_handlers.setup(app)

@@ -18,10 +18,10 @@ from .settings import ApplicationSettings
 def create_app(
     settings: ApplicationSettings | None = None,
     logging_lifespan: Lifespan | None = None,
-    tracing_data: TracingConfig | None = None,
+    tracing_config: TracingConfig | None = None,
 ) -> FastAPI:
     app_settings = settings or ApplicationSettings.create_from_envs()
-    app_tracing_data = tracing_data or TracingConfig.create(
+    app_tracing_config = tracing_config or TracingConfig.create(
         tracing_settings=app_settings.DYNAMIC_SCHEDULER_TRACING,
         service_name=APP_NAME,
     )
@@ -36,7 +36,7 @@ def create_app(
         ),
         redoc_url=None,
         lifespan=events.create_app_lifespan(
-            tracing_data=app_tracing_data,
+            tracing_data=app_tracing_config,
             logging_lifespan=logging_lifespan,
         ),
     )
@@ -44,7 +44,7 @@ def create_app(
 
     # STATE
     app.state.settings = app_settings
-    app.state.tracing_data = app_tracing_data
+    app.state.tracing_config = app_tracing_config
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     initialize_rest_api(app)
@@ -57,7 +57,7 @@ def create_app(
     if app_settings.DYNAMIC_SCHEDULER_PROFILING:
         initialize_profiler(app)
 
-    if app_tracing_data.tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_data=app_tracing_data)
+    if app_tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_config=app_tracing_config)
 
     return app

@@ -32,7 +32,7 @@ _logger = logging.getLogger(__name__)
 
 def create_app(
     *,
-    tracing_data: TracingConfig,
+    tracing_config: TracingConfig,
     settings: ApplicationSettings | None = None,
     logging_lifespan: Lifespan | None = None,
 ) -> FastAPI:
@@ -58,16 +58,16 @@ def create_app(
 
     # STATE
     app.state.settings = settings
-    app.state.tracing_data = tracing_data
+    app.state.tracing_config = tracing_config
 
     # MIDDLEWARES
-    if tracing_data.tracing_enabled:
-        setup_tracing(app, tracing_data=tracing_data)
+    if tracing_config.tracing_enabled:
+        setup_tracing(app, tracing_config=tracing_config)
     if settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if tracing_data.tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_data=tracing_data)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
 
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)

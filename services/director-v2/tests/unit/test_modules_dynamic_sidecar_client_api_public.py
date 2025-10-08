@@ -66,7 +66,7 @@ async def sidecars_client(
 ) -> AsyncIterable[SidecarsClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
-    app.state.tracing_data = TracingConfig.create(
+    app.state.tracing_config = TracingConfig.create(
         service_name=APP_NAME,
         tracing_settings=None,  # disable tracing in tests
     )

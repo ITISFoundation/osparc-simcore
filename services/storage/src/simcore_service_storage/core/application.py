@@ -49,7 +49,7 @@ _logger = logging.getLogger(__name__)
 
 
 def create_app(
-    settings: ApplicationSettings, tracing_data: TracingConfig
+    settings: ApplicationSettings, tracing_config: TracingConfig
 ) -> FastAPI:  # noqa: C901
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
@@ -66,16 +66,16 @@ def create_app(
 
     # STATE
     app.state.settings = settings
-    app.state.tracing_data = tracing_data
+    app.state.tracing_config = tracing_config
 
-    if tracing_data.tracing_enabled:
-        setup_tracing(app, tracing_data)
+    if tracing_config.tracing_enabled:
+        setup_tracing(app, tracing_config)
 
     setup_db(app)
     setup_s3(app)
     setup_client_session(
         app,
-        tracing_data=get_tracing_config(app),
+        tracing_config=get_tracing_config(app),
     )
 
     if settings.STORAGE_CELERY:
@@ -110,8 +110,8 @@ def create_app(
     if settings.STORAGE_MONITORING_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if tracing_data.tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_data=tracing_data)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
 
     async def _on_startup() -> None:
         if settings.STORAGE_WORKER_MODE:

@@ -167,7 +167,7 @@ async def app(
     tracing_data = TracingConfig.create(
         service_name="director", tracing_settings=None  # disable tracing in tests
     )
-    the_test_app = create_app(settings=app_settings, tracing_data=tracing_data)
+    the_test_app = create_app(settings=app_settings, tracing_config=tracing_data)
     async with LifespanManager(
         the_test_app,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,

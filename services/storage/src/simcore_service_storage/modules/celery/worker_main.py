@@ -32,7 +32,7 @@ setup_loggers(
 assert _settings.STORAGE_CELERY  # nosec
 app = create_celery_app(_settings.STORAGE_CELERY)
 
-app_server = FastAPIAppServer(app=create_app(_settings, tracing_data=_tracing_data))
+app_server = FastAPIAppServer(app=create_app(_settings, tracing_config=_tracing_data))
 
 
 def worker_init_wrapper(sender, **kwargs):

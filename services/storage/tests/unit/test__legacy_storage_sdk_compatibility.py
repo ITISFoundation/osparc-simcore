@@ -68,7 +68,7 @@ async def real_storage_server(app_settings: ApplicationSettings) -> AsyncIterato
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
-    app = create_app(settings, tracing_data=tracing_data)
+    app = create_app(settings, tracing_config=tracing_data)
     storage_port = unused_port()
     with log_context(
         logging.INFO,

@@ -54,11 +54,11 @@ def mocked_app(
 
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name=APP_NAME,
         tracing_settings=None,  # disable tracing in tests
     )
-    app.state.tracing_data = tracing_data
+    app.state.tracing_config = tracing_config
     return app
 
 

@@ -52,7 +52,7 @@ def _label_title_and_version(settings: ApplicationSettings, title: str, version:
 
 def create_app(
     settings: ApplicationSettings | None = None,
-    tracing_data: TracingConfig | None = None,
+    tracing_config: TracingConfig | None = None,
 ) -> FastAPI:
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
@@ -60,13 +60,13 @@ def create_app(
             "Application settings: %s",
             json_dumps(settings, indent=2, sort_keys=True),
         )
-    if tracing_data is None:
-        tracing_data = TracingConfig.create(
+    if tracing_config is None:
+        tracing_config = TracingConfig.create(
             service_name=APP_NAME, tracing_settings=settings.API_SERVER_TRACING
         )
 
     assert settings  # nosec
-    assert tracing_data  # nosec
+    assert tracing_config  # nosec
 
     # Labeling
     title = "osparc.io public API"
@@ -90,10 +90,10 @@ def create_app(
     add_pagination(app)
 
     app.state.settings = settings
-    app.state.tracing_data = tracing_data
+    app.state.tracing_config = tracing_config
 
     if settings.API_SERVER_TRACING:
-        setup_tracing(app, tracing_data)
+        setup_tracing(app, tracing_config)
 
     if settings.API_SERVER_POSTGRES:
         setup_postgres(app)
@@ -109,7 +109,7 @@ def create_app(
     if settings.API_SERVER_TRACING:
         initialize_fastapi_app_tracing(
             app,
-            tracing_data=tracing_data,
+            tracing_config=tracing_config,
             add_response_trace_id_header=True,
         )
 
