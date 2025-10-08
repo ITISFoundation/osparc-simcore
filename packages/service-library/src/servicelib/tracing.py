@@ -42,7 +42,7 @@ def use_tracing_context(context: TracingContext):
             otcontext.detach(token)
 
 
-class TracingData(BaseModel):
+class TracingConfig(BaseModel):
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
     service_name: str
     tracing_settings: TracingSettings | None
@@ -77,10 +77,10 @@ class TracingData(BaseModel):
         )
 
 
-def setup_log_tracing(tracing_data: TracingData):
-    if tracing_data.tracing_enabled:
+def setup_log_tracing(tracing_config: TracingConfig):
+    if tracing_config.tracing_enabled:
         LoggingInstrumentor().instrument(
-            set_logging_format=False, tracer_provider=tracing_data.tracer_provider
+            set_logging_format=False, tracer_provider=tracing_config.tracer_provider
         )
 
 
@@ -97,11 +97,11 @@ def get_trace_id_header() -> dict[str, str] | None:
 
 
 @contextmanager
-def profiled_span(*, tracing_data: TracingData, span_name: str):
+def profiled_span(*, tracing_config: TracingConfig, span_name: str):
     if not _is_tracing():
         return
     tracer = trace.get_tracer(
-        _TRACER_NAME, tracer_provider=tracing_data.tracer_provider
+        _TRACER_NAME, tracer_provider=tracing_config.tracer_provider
     )
     with tracer.start_as_current_span(span_name) as span:
         profiler = pyinstrument.Profiler(async_mode="enabled")

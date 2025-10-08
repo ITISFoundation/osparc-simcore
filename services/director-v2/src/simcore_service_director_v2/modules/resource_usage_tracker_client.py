@@ -22,7 +22,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
-from servicelib.fastapi.tracing import get_tracing_data, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
 
 from ..core.errors import PricingPlanUnitNotFoundError
 from ..core.settings import AppSettings
@@ -45,7 +45,7 @@ class ResourceUsageTrackerClient:
         if settings.DIRECTOR_V2_TRACING:
             setup_httpx_client_tracing(
                 client=client,
-                tracing_data=get_tracing_data(app),
+                tracing_data=get_tracing_config(app),
             )
         exit_stack = contextlib.AsyncExitStack()
 

@@ -7,7 +7,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 
 from .._meta import (
     API_VERSION,
@@ -32,11 +32,12 @@ from .settings import ApplicationSettings
 
 
 def create_app(
-    settings: ApplicationSettings | None = None, tracing_data: TracingData | None = None
+    settings: ApplicationSettings | None = None,
+    tracing_data: TracingConfig | None = None,
 ) -> FastAPI:
 
     app_settings = settings or ApplicationSettings.create_from_envs()
-    app_tracing_data = tracing_data or TracingData.create(
+    app_tracing_data = tracing_data or TracingConfig.create(
         service_name=APP_NAME, tracing_settings=app_settings.PAYMENTS_TRACING
     )
     app = FastAPI(

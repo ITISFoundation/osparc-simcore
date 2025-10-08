@@ -13,11 +13,11 @@ from servicelib.fastapi.openapi import (
 )
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.tracing import (
-    get_tracing_data,
+    get_tracing_config,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.entrypoints import api_router
@@ -121,7 +121,7 @@ def create_base_app(
     if app_settings is None:
         app_settings = AppSettings.create_from_envs()
 
-    tracing_data = TracingData.create(
+    tracing_data = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=app_settings.DIRECTOR_V2_TRACING
     )
     logging_shutdown_event = create_logging_shutdown_event(
@@ -175,8 +175,8 @@ def create_app(  # noqa: C901, PLR0912
 
     substitutions.setup(app)
 
-    if get_tracing_data(app).tracing_enabled:
-        setup_tracing(app, get_tracing_data(app))
+    if get_tracing_config(app).tracing_enabled:
+        setup_tracing(app, get_tracing_config(app))
 
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         instrumentation.setup(app)
@@ -204,8 +204,8 @@ def create_app(  # noqa: C901, PLR0912
 
     db.setup(app, settings.POSTGRES)
 
-    if get_tracing_data(app).tracing_enabled:
-        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_data(app))
+    if get_tracing_config(app).tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_data=get_tracing_config(app))
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app)

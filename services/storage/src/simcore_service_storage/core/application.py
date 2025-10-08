@@ -18,11 +18,11 @@ from servicelib.fastapi.monitoring import (
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import ProfilerMiddleware
 from servicelib.fastapi.tracing import (
-    get_tracing_data,
+    get_tracing_config,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -49,7 +49,7 @@ _logger = logging.getLogger(__name__)
 
 
 def create_app(
-    settings: ApplicationSettings, tracing_data: TracingData
+    settings: ApplicationSettings, tracing_data: TracingConfig
 ) -> FastAPI:  # noqa: C901
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
@@ -75,7 +75,7 @@ def create_app(
     setup_s3(app)
     setup_client_session(
         app,
-        tracing_data=get_tracing_data(app),
+        tracing_data=get_tracing_config(app),
     )
 
     if settings.STORAGE_CELERY:

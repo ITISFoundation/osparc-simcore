@@ -32,7 +32,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from simcore_service_catalog._meta import APP_NAME
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
@@ -147,7 +147,7 @@ async def app(
 
     # create instance
     assert app_environment
-    tracing_data = TracingData.create(
+    tracing_data = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
     )
     app_under_test = create_app(tracing_data=tracing_data)
@@ -177,7 +177,7 @@ def client(
 
     # create instance
     assert app_environment
-    tracing_data = TracingData.create(
+    tracing_data = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
     )
     app_under_test = create_app(tracing_data=tracing_data)

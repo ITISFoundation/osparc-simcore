@@ -28,7 +28,7 @@ from common_library.logging.logging_utils_filtering import (
     MessageSubstring,
 )
 
-from .tracing import TracingData, setup_log_tracing
+from .tracing import TracingConfig, setup_log_tracing
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
@@ -181,7 +181,7 @@ def _dampen_noisy_loggers(
 def _configure_common_logging_settings(
     *,
     log_format_local_dev_enabled: bool,
-    tracing_data: TracingData,
+    tracing_config: TracingConfig,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> logging.Formatter:
@@ -193,7 +193,7 @@ def _configure_common_logging_settings(
     _setup_base_logging_level(log_base_level)
     if noisy_loggers is not None:
         _dampen_noisy_loggers(noisy_loggers)
-    setup_log_tracing(tracing_data=tracing_data)
+    setup_log_tracing(tracing_config=tracing_config)
     return _setup_logging_formatter(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
@@ -217,7 +217,7 @@ def setup_loggers(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
-    tracing_data: TracingData,
+    tracing_config: TracingConfig,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> None:
@@ -259,7 +259,7 @@ def setup_loggers(
     """
     formatter = _configure_common_logging_settings(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
         log_base_level=log_base_level,
         noisy_loggers=noisy_loggers,
     )
@@ -325,7 +325,7 @@ def async_loggers(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
-    tracing_data: TracingData,
+    tracing_config: TracingConfig,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> Iterator[None]:
@@ -373,7 +373,7 @@ def async_loggers(
     """
     formatter = _configure_common_logging_settings(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
         log_base_level=log_base_level,
         noisy_loggers=noisy_loggers,
     )

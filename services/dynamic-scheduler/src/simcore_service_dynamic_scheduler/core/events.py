@@ -15,7 +15,7 @@ from servicelib.fastapi.postgres_lifespan import (
     create_postgres_database_input_state,
 )
 from servicelib.fastapi.tracing import get_tracing_instrumentation_lifespan
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..api.rpc.routes import rpc_api_routes_lifespan
@@ -55,7 +55,7 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 def create_app_lifespan(
-    tracing_data: TracingData,
+    tracing_data: TracingConfig,
     logging_lifespan: Lifespan | None,
 ) -> LifespanManager:
     app_lifespan = LifespanManager()

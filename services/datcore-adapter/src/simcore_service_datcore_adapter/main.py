@@ -23,7 +23,7 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
 
 def app_factory() -> FastAPI:
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_data = tracing.TracingData.create(
+    tracing_data = tracing.TracingConfig.create(
         service_name=APP_NAME, tracing_settings=app_settings.DATCORE_ADAPTER_TRACING
     )
     logging_shutdown_event = create_logging_shutdown_event(

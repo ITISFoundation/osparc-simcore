@@ -8,7 +8,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 
 from .._meta import (
     API_VERSION,
@@ -30,7 +30,7 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings, tracing_data: TracingData) -> FastAPI:
+def create_app(settings: ApplicationSettings, tracing_data: TracingConfig) -> FastAPI:
     _logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
     app = FastAPI(

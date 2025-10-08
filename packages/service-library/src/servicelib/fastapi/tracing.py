@@ -18,7 +18,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from yarl import URL
 
 from ..logging_utils import log_context
-from ..tracing import TracingData, get_trace_id_header
+from ..tracing import TracingConfig, get_trace_id_header
 
 _logger = logging.getLogger(__name__)
 
@@ -186,36 +186,36 @@ def _shutdown() -> None:
 def initialize_fastapi_app_tracing(
     app: FastAPI,
     *,
-    tracing_data: TracingData,
+    tracing_config: TracingConfig,
     add_response_trace_id_header: bool = False,
 ):
     if add_response_trace_id_header:
         app.add_middleware(ResponseTraceIdHeaderMiddleware)
     FastAPIInstrumentor.instrument_app(
-        app, tracer_provider=tracing_data.tracer_provider
+        app, tracer_provider=tracing_config.tracer_provider
     )
 
 
 def setup_httpx_client_tracing(
-    client: AsyncClient | Client, tracing_data: TracingData
+    client: AsyncClient | Client, tracing_config: TracingConfig
 ) -> None:
     HTTPXClientInstrumentor.instrument_client(
-        client, tracer_provider=tracing_data.tracer_provider
+        client, tracer_provider=tracing_config.tracer_provider
     )
 
 
-def setup_tracing(app: FastAPI, tracing_data: TracingData) -> None:
+def setup_tracing(app: FastAPI, tracing_config: TracingConfig) -> None:
     # NOTE: This does not instrument the app itself. Call setup_fastapi_app_tracing to do that.
-    if not tracing_data.tracing_enabled:
-        msg = "Tracing is not enabled in tracing_data"
+    if not tracing_config.tracing_enabled:
+        msg = "Tracing is not enabled in tracing_config"
         raise ValueError(msg)
-    assert tracing_data.tracing_settings  # nosec
-    assert tracing_data.tracer_provider  # nosec
+    assert tracing_config.tracing_settings  # nosec
+    assert tracing_config.tracer_provider  # nosec
 
     _startup(
-        tracing_settings=tracing_data.tracing_settings,
-        service_name=tracing_data.service_name,
-        tracer_provider=tracing_data.tracer_provider,
+        tracing_settings=tracing_config.tracing_settings,
+        service_name=tracing_config.service_name,
+        tracer_provider=tracing_config.tracer_provider,
     )
 
     def _on_shutdown() -> None:
@@ -224,17 +224,17 @@ def setup_tracing(app: FastAPI, tracing_data: TracingData) -> None:
     app.add_event_handler("shutdown", _on_shutdown)
 
 
-def get_tracing_instrumentation_lifespan(tracing_data: TracingData):
+def get_tracing_instrumentation_lifespan(tracing_config: TracingConfig):
     # NOTE: This lifespan does not instrument the app itself. Call setup_fastapi_app_tracing to do that.
-    if not tracing_data.tracing_enabled:
-        msg = "Tracing is not enabled in tracing_data"
+    if not tracing_config.tracing_enabled:
+        msg = "Tracing is not enabled in tracing_config"
         raise ValueError(msg)
-    assert tracing_data.tracing_settings  # nosec
-    assert tracing_data.tracer_provider  # nosec
+    assert tracing_config.tracing_settings  # nosec
+    assert tracing_config.tracer_provider  # nosec
     _startup(
-        tracing_settings=tracing_data.tracing_settings,
-        service_name=tracing_data.service_name,
-        tracer_provider=tracing_data.tracer_provider,
+        tracing_settings=tracing_config.tracing_settings,
+        service_name=tracing_config.service_name,
+        tracer_provider=tracing_config.tracer_provider,
     )
 
     async def tracing_instrumentation_lifespan(
@@ -259,7 +259,9 @@ class ResponseTraceIdHeaderMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def get_tracing_data(app: FastAPI) -> TracingData:
-    assert hasattr(app.state, "tracing_data"), "Tracing not setup for this app"  # nosec
-    assert isinstance(app.state.tracing_data, TracingData)
-    return app.state.tracing_data
+def get_tracing_config(app: FastAPI) -> TracingConfig:
+    assert hasattr(
+        app.state, "tracing_config"
+    ), "Tracing not setup for this app"  # nosec
+    assert isinstance(app.state.tracing_config, TracingConfig)
+    return app.state.tracing_config

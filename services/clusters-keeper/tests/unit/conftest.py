@@ -26,7 +26,7 @@ from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
@@ -255,7 +255,7 @@ async def initialized_app(
     app_environment: EnvVarsDict, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingData.create(
+    tracing_data = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
     )
     app = create_app(settings, tracing_data=tracing_data)

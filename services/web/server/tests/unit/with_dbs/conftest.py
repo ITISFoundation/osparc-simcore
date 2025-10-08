@@ -228,7 +228,7 @@ async def web_server(
     assert app_environment
 
     # original APP
-    tracing_data = tracing.TracingData.create(
+    tracing_data = tracing.TracingConfig.create(
         service_name="test-webserver", tracing_settings=None
     )
     app = create_application(tracing_data=tracing_data)

@@ -8,14 +8,14 @@ from celery_library.signals import (
 )
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.logging_utils import setup_loggers
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 
 from ...api._worker_tasks.tasks import setup_worker_tasks
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
 
 _settings = ApplicationSettings.create_from_envs()
-_tracing_data = TracingData.create(
+_tracing_data = TracingConfig.create(
     tracing_settings=_settings.STORAGE_TRACING,
     service_name="storage-celery-worker",
 )

@@ -65,7 +65,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.tokens import tokens
@@ -237,7 +237,7 @@ async def initialized_app(
     mock_celery_app: None,
     app_settings: ApplicationSettings,
 ) -> AsyncIterator[FastAPI]:
-    tracing_data = TracingData.create(
+    tracing_data = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
@@ -1018,7 +1018,7 @@ async def with_storage_celery_worker(
     # Signals must be explicitily connected
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingData.create(
+    tracing_data = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )

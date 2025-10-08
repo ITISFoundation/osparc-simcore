@@ -6,7 +6,7 @@ from typing import Final
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.logging_lifespan import create_logging_lifespan
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
 
@@ -25,7 +25,7 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
 
 def app_factory() -> FastAPI:
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingData.create(
+    tracing_data = TracingConfig.create(
         tracing_settings=app_settings.CATALOG_TRACING,
         service_name="catalog",
     )

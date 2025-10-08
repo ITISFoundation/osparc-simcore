@@ -25,7 +25,7 @@ from servicelib.logging_utils import (
     log_exceptions,
     set_parent_module_log_level,
 )
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -441,8 +441,8 @@ def test_set_parent_module_log_level_(caplog: pytest.LogCaptureFixture):
 
 
 @pytest.fixture
-def tracing_data() -> TracingData:
-    return TracingData.create(
+def tracing_data() -> TracingConfig:
+    return TracingConfig.create(
         service_name="test-service",
         tracing_settings=None,  # disable tracing in tests
     )
@@ -452,7 +452,7 @@ def tracing_data() -> TracingData:
 def test_setup_async_loggers_basic(
     caplog: pytest.LogCaptureFixture,
     log_format_local_dev_enabled: bool,
-    tracing_data: TracingData,
+    tracing_data: TracingConfig,
 ):
     """Test basic async logging setup without filters."""
     caplog.clear()
@@ -473,7 +473,7 @@ def test_setup_async_loggers_basic(
 
 def test_setup_async_loggers_with_filters(
     caplog: pytest.LogCaptureFixture,
-    tracing_data: TracingData,
+    tracing_data: TracingConfig,
 ):
     caplog.clear()
     caplog.set_level(logging.INFO)
@@ -513,7 +513,7 @@ def test_setup_async_loggers_with_filters(
 
 def test_setup_async_loggers_with_tracing_settings(
     caplog: pytest.LogCaptureFixture,
-    tracing_data: TracingData,
+    tracing_data: TracingConfig,
 ):
     """Test async logging setup with tracing settings."""
     caplog.clear()
@@ -536,7 +536,7 @@ def test_setup_async_loggers_with_tracing_settings(
 
 def test_setup_async_loggers_context_manager_cleanup(
     caplog: pytest.LogCaptureFixture,
-    tracing_data: TracingData,
+    tracing_data: TracingConfig,
 ):
     """Test that async logging context manager properly cleans up."""
     caplog.clear()
@@ -559,7 +559,7 @@ def test_setup_async_loggers_context_manager_cleanup(
 
 def test_setup_async_loggers_exception_handling(
     caplog: pytest.LogCaptureFixture,
-    tracing_data: TracingData,
+    tracing_data: TracingConfig,
 ):
     """Test that async logging handles exceptions gracefully."""
     caplog.clear()

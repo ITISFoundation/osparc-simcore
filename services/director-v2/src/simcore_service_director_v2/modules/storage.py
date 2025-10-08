@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import httpx
 from fastapi import FastAPI, HTTPException
 from models_library.users import UserID
-from servicelib.fastapi.tracing import get_tracing_data, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
 from settings_library.s3 import S3Settings
 from settings_library.storage import StorageSettings
@@ -40,7 +40,7 @@ def setup(
         if tracing_settings:
             setup_httpx_client_tracing(
                 client=client,
-                tracing_data=get_tracing_data(app),
+                tracing_data=get_tracing_config(app),
             )
         StorageClient.create(
             app,

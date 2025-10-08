@@ -1,7 +1,7 @@
 from typing import Final
 
 from servicelib.logging_utils import setup_loggers
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 
 from .._meta import PROJECT_NAME
 from ..settings import ApplicationSettings
@@ -14,7 +14,9 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
 
 
 def setup_app_logging(settings: ApplicationSettings) -> None:
-    tracing_data = TracingData.create(service_name=PROJECT_NAME, tracing_settings=None)
+    tracing_data = TracingConfig.create(
+        service_name=PROJECT_NAME, tracing_settings=None
+    )
     setup_loggers(
         log_format_local_dev_enabled=settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DASK_LOG_FILTER_MAPPING,

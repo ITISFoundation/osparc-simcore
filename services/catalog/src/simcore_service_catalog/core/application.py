@@ -14,7 +14,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -32,7 +32,7 @@ _logger = logging.getLogger(__name__)
 
 def create_app(
     *,
-    tracing_data: TracingData,
+    tracing_data: TracingConfig,
     settings: ApplicationSettings | None = None,
     logging_lifespan: Lifespan | None = None,
 ) -> FastAPI:

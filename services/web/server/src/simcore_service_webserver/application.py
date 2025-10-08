@@ -8,8 +8,8 @@ from typing import Any, Final
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
-from servicelib.aiohttp.tracing import TRACING_DATA_KEY
-from servicelib.tracing import TracingData
+from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY
+from servicelib.tracing import TracingConfig
 
 from ._meta import (
     APP_NAME,
@@ -101,19 +101,19 @@ def _create_finished_banner() -> Callable:
     return _finished_banner
 
 
-def create_application(tracing_data: TracingData) -> web.Application:
+def create_application(tracing_config: TracingConfig) -> web.Application:
     """
     Initializes service
     """
     app = create_safe_application()
     setup_settings(app)
-    app[TRACING_DATA_KEY] = tracing_data
+    app[TRACING_CONFIG_KEY] = tracing_config
 
     # WARNING: setup order matters
     # NOTE: compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
 
     # core modules
-    if tracing_data.tracing_enabled:
+    if tracing_config.tracing_enabled:
         setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
     setup_db(app)
     setup_redis(app)
@@ -206,8 +206,10 @@ def create_application_auth() -> web.Application:
     app = create_safe_application()
 
     settings = setup_settings(app)
-    tracing_data = TracingData.create(settings.WEBSERVER_TRACING, service_name=APP_NAME)
-    app[TRACING_DATA_KEY] = tracing_data
+    tracing_config = TracingConfig.create(
+        settings.WEBSERVER_TRACING, service_name=APP_NAME
+    )
+    app[TRACING_CONFIG_KEY] = tracing_config
     assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"  # nosec
 
     # Monitoring and diagnostics

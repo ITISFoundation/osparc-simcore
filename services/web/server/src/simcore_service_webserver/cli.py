@@ -20,7 +20,7 @@ from typing import Annotated, Final
 import typer
 from aiohttp import web
 from common_library.json_serialization import json_dumps
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from settings_library.utils_cli import create_settings_command
 
 from ._meta import APP_NAME
@@ -39,7 +39,7 @@ _logger = logging.getLogger(__name__)
 
 def _setup_app_from_settings(
     settings: ApplicationSettings,
-    tracing_data: TracingData,
+    tracing_config: TracingConfig,
 ) -> tuple[web.Application, dict]:
     # NOTE: keeping imports here to reduce CLI load time
     from .application import create_application
@@ -52,7 +52,7 @@ def _setup_app_from_settings(
     # given configs and changing those would not have
     # a meaningful RoI.
     config = convert_to_app_config(settings)
-    app = create_application(tracing_data=tracing_data)
+    app = create_application(tracing_config=tracing_config)
     return (app, config)
 
 
@@ -65,7 +65,7 @@ async def app_factory() -> web.Application:
     from .log import setup_logging
 
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingData.create(
+    tracing_config = TracingConfig.create(
         app_settings.WEBSERVER_TRACING, service_name=APP_NAME
     )
 
@@ -79,13 +79,13 @@ async def app_factory() -> web.Application:
     )
 
     logging_lifespan_cleanup_event = setup_logging(
-        app_settings, tracing_data=tracing_data
+        app_settings, tracing_config=tracing_config
     )
 
     if app_settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY":
         app = create_application_auth()
     else:
-        app, _ = _setup_app_from_settings(app_settings, tracing_data)
+        app, _ = _setup_app_from_settings(app_settings, tracing_config)
 
     app.on_cleanup.append(logging_lifespan_cleanup_event)
     return app
@@ -128,8 +128,8 @@ def run():
     from .application import run_service
 
     app_settings = ApplicationSettings.create_from_envs()
-    app_tracing_data = TracingData.create(
+    app_tracing_config = TracingConfig.create(
         app_settings.WEBSERVER_TRACING, service_name=APP_NAME
     )
-    app, cfg = _setup_app_from_settings(app_settings, app_tracing_data)
+    app, cfg = _setup_app_from_settings(app_settings, app_tracing_config)
     run_service(app, cfg)

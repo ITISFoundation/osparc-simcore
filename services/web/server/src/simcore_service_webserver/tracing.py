@@ -1,7 +1,7 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.tracing import TRACING_DATA_KEY, setup_tracing
+from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY, setup_tracing
 
 from .application_setup import ModuleCategory, app_setup_func
 
@@ -25,7 +25,7 @@ def setup_app_tracing(app: web.Application):
     app.cleanup_ctx.append(
         setup_tracing(
             app=app,
-            tracing_data=app[TRACING_DATA_KEY],
+            tracing_config=app[TRACING_CONFIG_KEY],
             add_response_trace_id_header=True,
         )
     )

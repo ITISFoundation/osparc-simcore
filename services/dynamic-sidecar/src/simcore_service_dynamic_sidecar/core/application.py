@@ -11,11 +11,11 @@ from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
 )
 from servicelib.fastapi.tracing import (
-    get_tracing_data,
+    get_tracing_config,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY, __version__
@@ -120,7 +120,7 @@ class AppState:
 def create_base_app() -> FastAPI:
     # settings
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingData.create(
+    tracing_data = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING
     )
     logging_shutdown_event = create_logging_shutdown_event(
@@ -177,8 +177,8 @@ def create_app() -> FastAPI:
     app.state.application_health = ApplicationHealth()
     application_settings: ApplicationSettings = app.state.settings
 
-    if get_tracing_data(app).tracing_enabled:
-        setup_tracing(app, get_tracing_data(app))
+    if get_tracing_config(app).tracing_enabled:
+        setup_tracing(app, get_tracing_config(app))
 
     setup_rabbitmq(app)
     setup_rpc_api_routes(app)
@@ -200,10 +200,10 @@ def create_app() -> FastAPI:
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
 
-    if get_tracing_data(app).tracing_enabled:
+    if get_tracing_config(app).tracing_enabled:
         initialize_fastapi_app_tracing(
             app,
-            tracing_data=get_tracing_data(app),
+            tracing_data=get_tracing_config(app),
         )
 
     # ERROR HANDLERS  ------------

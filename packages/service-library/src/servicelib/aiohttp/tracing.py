@@ -30,11 +30,11 @@ from settings_library.tracing import TracingSettings
 from yarl import URL
 
 from ..logging_utils import log_context
-from ..tracing import TracingData, get_trace_id_header
+from ..tracing import TracingConfig, get_trace_id_header
 
 _logger = logging.getLogger(__name__)
 
-TRACING_DATA_KEY: Final[str] = "tracing_data"
+TRACING_CONFIG_KEY: Final[str] = "tracing_config"
 
 try:
     from opentelemetry.instrumentation.botocore import (  # type: ignore[import-not-found]
@@ -100,10 +100,10 @@ async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler)
         unit="requests",
         description="measures the number of concurrent HTTP requests those are currently in flight",
     )
-    tracing_data = request.app[TRACING_DATA_KEY]
-    assert isinstance(tracing_data, TracingData)  # nosec
-    assert tracing_data.tracer_provider  # nosec
-    tracer = tracing_data.tracer_provider.get_tracer(__name__)
+    tracing_config = request.app[TRACING_CONFIG_KEY]
+    assert isinstance(tracing_config, TracingConfig)  # nosec
+    assert tracing_config.tracer_provider  # nosec
+    tracer = tracing_config.tracer_provider.get_tracer(__name__)
     with tracer.start_as_current_span(
         span_name,
         context=extract(request, getter=getter),
@@ -284,21 +284,21 @@ def _shutdown() -> None:
 def setup_tracing(
     *,
     app: web.Application,
-    tracing_data: TracingData,
+    tracing_config: TracingConfig,
     add_response_trace_id_header: bool = False,
 ) -> Callable[[web.Application], AsyncIterator]:
 
-    if tracing_data.tracing_enabled is False:
+    if tracing_config.tracing_enabled is False:
         msg = "Tracing is not enabled"
         raise ValueError(msg)
-    assert tracing_data.tracer_provider  # nosec
-    assert tracing_data.tracing_settings  # nosec
+    assert tracing_config.tracer_provider  # nosec
+    assert tracing_config.tracing_settings  # nosec
 
     _startup(
         app=app,
-        tracing_settings=tracing_data.tracing_settings,
-        tracer_provider=tracing_data.tracer_provider,
-        service_name=tracing_data.service_name,
+        tracing_settings=tracing_config.tracing_settings,
+        tracer_provider=tracing_config.tracer_provider,
+        service_name=tracing_config.service_name,
         add_response_trace_id_header=add_response_trace_id_header,
     )
 

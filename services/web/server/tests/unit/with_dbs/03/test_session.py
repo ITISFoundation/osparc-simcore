@@ -14,7 +14,7 @@ from cryptography.fernet import Fernet
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.session._cookie_storage import (
     SharedCookieEncryptedCookieStorage,
@@ -58,7 +58,7 @@ async def client(
         session = await get_session(request)
         return web.json_response(dict(session))
 
-    tracing_data = TracingData.create(
+    tracing_data = TracingConfig.create(
         service_name="test-webserver", tracing_settings=None
     )
     app = create_application(tracing_data=tracing_data)

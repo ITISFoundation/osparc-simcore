@@ -10,7 +10,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -51,7 +51,8 @@ def _label_title_and_version(settings: ApplicationSettings, title: str, version:
 
 
 def create_app(
-    settings: ApplicationSettings | None = None, tracing_data: TracingData | None = None
+    settings: ApplicationSettings | None = None,
+    tracing_data: TracingConfig | None = None,
 ) -> FastAPI:
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
@@ -60,7 +61,7 @@ def create_app(
             json_dumps(settings, indent=2, sort_keys=True),
         )
     if tracing_data is None:
-        tracing_data = TracingData.create(
+        tracing_data = TracingConfig.create(
             service_name=APP_NAME, tracing_settings=settings.API_SERVER_TRACING
         )
 

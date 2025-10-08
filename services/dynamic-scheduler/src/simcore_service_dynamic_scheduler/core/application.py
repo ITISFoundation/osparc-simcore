@@ -6,7 +6,7 @@ from servicelib.fastapi.monitoring import (
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import initialize_profiler
 from servicelib.fastapi.tracing import initialize_fastapi_app_tracing
-from servicelib.tracing import TracingData
+from servicelib.tracing import TracingConfig
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.frontend import initialize_frontend
@@ -18,10 +18,10 @@ from .settings import ApplicationSettings
 def create_app(
     settings: ApplicationSettings | None = None,
     logging_lifespan: Lifespan | None = None,
-    tracing_data: TracingData | None = None,
+    tracing_data: TracingConfig | None = None,
 ) -> FastAPI:
     app_settings = settings or ApplicationSettings.create_from_envs()
-    app_tracing_data = tracing_data or TracingData.create(
+    app_tracing_data = tracing_data or TracingConfig.create(
         tracing_settings=app_settings.DYNAMIC_SCHEDULER_TRACING,
         service_name=APP_NAME,
     )
