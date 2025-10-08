@@ -165,6 +165,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
             appearance: "toolbar-selectbox",
             maxWidth: 80
           });
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           let logLevelSet = false;
           Object.keys(this.self().LOG_LEVELS).forEach(logLevelKey => {
             const logLevel = this.self().LOG_LEVELS[logLevelKey];

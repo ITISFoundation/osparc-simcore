@@ -179,8 +179,8 @@ qx.Class.define("osparc.study.ConversationPage", {
 
     __updateMessagesNumber: function() {
       const nMessagesLabel = this.getChildControl("n-messages");
-      const messages = this.getChildControl("conversation").getMessages();
-      const nMessages = messages.filter(msg => msg["type"] === "MESSAGE").length;
+      const messages = this.getConversation().getMessages();
+      const nMessages = messages.filter(msg => msg.getType() === "MESSAGE").length;
       if (nMessages === 0) {
         nMessagesLabel.setValue(this.tr("No Messages yet"));
       } else if (nMessages === 1) {

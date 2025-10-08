@@ -13,11 +13,11 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import HttpUrl, PositiveInt, TypeAdapter
-from simcore_postgres_database import aiopg_errors as pg_errors
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
 )
+from sqlalchemy.exc import IntegrityError
 
 from ..models.db import PaymentsTransactionsDB
 from .base import BaseRepository
@@ -58,7 +58,7 @@ class PaymentsTransactionsRepo(BaseRepository):
                     )
                 )
                 return payment_id
-        except pg_errors.UniqueViolation as exc:
+        except IntegrityError as exc:
             raise PaymentAlreadyExistsError(payment_id=f"{payment_id}") from exc
 
     async def update_ack_payment_transaction(
