@@ -50,6 +50,7 @@ from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
@@ -58,9 +59,11 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.storage import _rest as storage_rest
-from simcore_service_webserver.tasks import _tasks_service
-from simcore_service_webserver.tasks._controller import _rest as tasks_rest
+from simcore_service_webserver.tasks._tasks_service import (
+    cancel_task,
+    get_task_result,
+    get_task_status,
+)
 from yarl import URL
 
 API_VERSION = "v0"
@@ -455,15 +458,14 @@ async def test_export_data(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_backend_mock: Callable[[str, str, Any], None],
+    mock_handler_in_storage_rest: HandlerMockFactory,
     faker: Faker,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    create_backend_mock(
-        "simcore_service_webserver.storage._rest",
+    mock_handler_in_storage_rest(
         start_export_data.__name__,
-        backend_result_or_exception,
+        side_effect=backend_result_or_exception,
     )
 
     _body = DataExportPost(
@@ -498,15 +500,14 @@ async def test_get_async_jobs_status(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_backend_mock: Callable[[str, str, Any], None],
+    mock_handler_in_task_service: HandlerMockFactory,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(_faker.uuid4())
-    create_backend_mock(
-        tasks_rest.__name__,
-        f"_tasks_service.{_tasks_service.get_task_status.__name__}",
-        backend_result_or_exception,
+    mock_handler_in_task_service(
+        get_task_status.__name__,
+        side_effect=backend_result_or_exception,
     )
 
     response = await client.get(f"/{API_VERSION}/tasks/{_job_id}")
@@ -535,16 +536,15 @@ async def test_cancel_async_jobs(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_backend_mock: Callable[[str, str, Any], None],
+    mock_handler_in_task_service: HandlerMockFactory,
     faker: Faker,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(faker.uuid4())
-    create_backend_mock(
-        tasks_rest.__name__,
-        f"_tasks_service.{_tasks_service.cancel_task.__name__}",
-        backend_result_or_exception,
+    mock_handler_in_task_service(
+        cancel_task.__name__,
+        side_effect=backend_result_or_exception,
     )
 
     response = await client.delete(f"/{API_VERSION}/tasks/{_job_id}")
@@ -558,7 +558,7 @@ async def test_cancel_async_jobs(
         (
             "GET",
             "status_href",
-            _tasks_service.get_task_status.__name__,
+            get_task_status.__name__,
             AsyncJobStatus(
                 job_id=AsyncJobId(_faker.uuid4()),
                 progress=ProgressReport(actual_value=0.5, total=1.0),
@@ -570,7 +570,7 @@ async def test_cancel_async_jobs(
         (
             "DELETE",
             "abort_href",
-            _tasks_service.cancel_task.__name__,
+            cancel_task.__name__,
             AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
             status.HTTP_204_NO_CONTENT,
             None,
@@ -578,7 +578,7 @@ async def test_cancel_async_jobs(
         (
             "GET",
             "result_href",
-            _tasks_service.get_task_result.__name__,
+            get_task_result.__name__,
             AsyncJobResult(result=None),
             status.HTTP_200_OK,
             TaskResult,
@@ -589,7 +589,8 @@ async def test_get_async_job_links(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    create_backend_mock: Callable[[str, str, Any], None],
+    mock_handler_in_task_service: HandlerMockFactory,
+    mock_handler_in_storage_rest: HandlerMockFactory,
     faker: Faker,
     http_method: str,
     href: str,
@@ -598,10 +599,9 @@ async def test_get_async_job_links(
     return_status: int,
     return_schema: OutputSchema | None,
 ):
-    create_backend_mock(
-        storage_rest.__name__,
+    mock_handler_in_storage_rest(
         start_export_data.__name__,
-        (
+        return_value=(
             AsyncJobGet(
                 job_id=AsyncJobId(f"{_faker.uuid4()}"),
                 job_name="export_data",
@@ -621,10 +621,9 @@ async def test_get_async_job_links(
     assert response_body_data is not None
 
     # Call the different links and check the correct model and return status
-    create_backend_mock(
-        tasks_rest.__name__,
-        f"_tasks_service.{backend_method}",
-        backend_object,
+    mock_handler_in_task_service(
+        backend_method,
+        return_value=backend_object,
     )
     response = await client.request(
         http_method, URL(getattr(response_body_data, href)).path
