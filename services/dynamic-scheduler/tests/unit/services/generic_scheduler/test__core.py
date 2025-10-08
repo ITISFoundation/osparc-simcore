@@ -256,7 +256,7 @@ def _get_steps_matching_class(
 ) -> list[type]:
     return [
         step
-        for group in operation
+        for group in operation.step_groups
         for step in group.get_step_subgroup_to_run()
         if issubclass(step, match)
     ]
@@ -1102,9 +1102,9 @@ async def test_wait_for_manual_intervention(
         selected_app,
         schedule_id,
         operation_name,
-        step_group_name=operation[len(expected_order) - 1].get_step_group_name(
-            index=len(expected_order) - 1
-        ),
+        step_group_name=operation.step_groups[
+            len(expected_order) - 1
+        ].get_step_group_name(index=len(expected_order) - 1),
         steps=expected_order[-1].steps,
     )
 
@@ -1273,9 +1273,9 @@ async def test_restart_undo_operation_step_in_error(
         selected_app,
         schedule_id,
         operation_name,
-        step_group_name=operation[len(expected_order) - 2].get_step_group_name(
-            index=len(expected_order) - 2
-        ),
+        step_group_name=operation.step_groups[
+            len(expected_order) - 2
+        ].get_step_group_name(index=len(expected_order) - 2),
         steps=expected_order[-1].steps,
     )
 
@@ -1331,8 +1331,8 @@ async def test_errors_with_restart_operation_step_in_error(
         selected_app,
         schedule_id,
         operation_name,
-        step_group_name=operation[2].get_step_group_name(index=2),
-        steps=operation[-1].steps,
+        step_group_name=operation.step_groups[2].get_step_group_name(index=2),
+        steps=operation.step_groups[-1].steps,
     )
 
     with pytest.raises(StepNameNotInCurrentGroupError):

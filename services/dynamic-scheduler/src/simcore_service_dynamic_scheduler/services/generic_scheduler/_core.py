@@ -170,7 +170,7 @@ class Core(SingletonInAppStateMixin):
         if operation.is_cancellable is False:
             raise OperationNotCancellableError(operation_name=operation_name)
 
-        group = operation[group_index]
+        group = operation.step_groups[group_index]
 
         group_step_proxies = get_group_step_proxies(
             self._store,
@@ -232,7 +232,7 @@ class Core(SingletonInAppStateMixin):
         group_index = await schedule_data_proxy.read("group_index")
 
         operation = OperationRegistry.get_operation(operation_name)
-        step_group = operation[group_index]
+        step_group = operation.step_groups[group_index]
         step_group_name = step_group.get_step_group_name(index=group_index)
 
         if step_name not in {
@@ -364,7 +364,7 @@ class Core(SingletonInAppStateMixin):
         group_index = await schedule_data_proxy.read("group_index")
 
         operation = OperationRegistry.get_operation(operation_name)
-        step_group = operation[group_index]
+        step_group = operation.step_groups[group_index]
 
         group_step_proxies = get_group_step_proxies(
             self._store,
@@ -505,7 +505,7 @@ class Core(SingletonInAppStateMixin):
             try:
                 next_group_index = group_index + 1
                 # does a next group exist?
-                _ = operation[next_group_index]
+                _ = operation.step_groups[next_group_index]
                 await schedule_data_proxy.create_or_update(
                     "group_index", value=next_group_index
                 )

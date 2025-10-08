@@ -229,13 +229,15 @@ class ParallelStepGroup(BaseStepGroup):
         return TypeAdapter(StepsSubGroup).validate_python(tuple(self._steps))
 
 
-class Operation(list):
-    def __init__(self, *groups: BaseStepGroup, is_cancellable: bool = True) -> None:
-        super().__init__(groups)
+class Operation:
+    def __init__(
+        self, *step_groups: BaseStepGroup, is_cancellable: bool = True
+    ) -> None:
+        self.step_groups = list(step_groups)
         self.is_cancellable = is_cancellable
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({', '.join(repr(group) for group in self)})"
+        return f"{self.__class__.__name__}({', '.join(repr(group) for group in self.step_groups)})"
 
 
 def _has_abstract_methods(cls: type[object]) -> bool:
@@ -246,7 +248,7 @@ def _has_abstract_methods(cls: type[object]) -> bool:
 def _validate_operation(  # noqa: C901
     operation: Operation,
 ) -> dict[StepName, type[BaseStep]]:
-    if len(operation) == 0:
+    if len(operation.step_groups) == 0:
         msg = f"{Operation.__name__} should have at least 1 item"
         raise ValueError(msg)
 
@@ -254,7 +256,7 @@ def _validate_operation(  # noqa: C901
     create_provided_keys: set[str] = set()
     undo_provided_keys: set[str] = set()
 
-    for k, step_group in enumerate(operation):
+    for k, step_group in enumerate(operation.step_groups):
         if (
             isinstance(step_group, ParallelStepGroup)
             and len(step_group.steps) < _MIN_PARALLEL_STEPS
@@ -265,7 +267,7 @@ def _validate_operation(  # noqa: C901
             )
             raise ValueError(msg)
 
-        if k < len(operation) - 1 and step_group.repeat_steps is True:
+        if k < len(operation.step_groups) - 1 and step_group.repeat_steps is True:
             msg = f"Only the last step group can have repeat_steps=True. Error at index {k=}"
             raise ValueError(msg)
 
@@ -301,7 +303,7 @@ def _validate_operation(  # noqa: C901
 
         if (
             step_group.repeat_steps is True
-            and k == len(operation) - 1
+            and k == len(operation.step_groups) - 1
             and any(
                 step.wait_for_manual_intervention()
                 for step in step_group.get_step_subgroup_to_run()
@@ -319,7 +321,7 @@ def _validate_operation(  # noqa: C901
 def get_operation_provided_context_keys(operation: Operation) -> set[str]:
     provided_keys: set[str] = set()
 
-    for step_group in operation:
+    for step_group in operation.step_groups:
         for step in step_group.get_step_subgroup_to_run():
             provided_keys.update(step.get_create_provides_context_keys())
             provided_keys.update(step.get_undo_provides_context_keys())

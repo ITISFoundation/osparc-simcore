@@ -211,10 +211,10 @@ def _get_step_group(
     operation = OperationRegistry._OPERATIONS[operation_name][  # noqa: SLF001
         "operation"
     ]
-    operations_count = len(operation)
+    operations_count = len(operation.step_groups)
     assert group_index < operations_count
 
-    return operation[group_index]
+    return operation.step_groups[group_index]
 
 
 @pytest.mark.parametrize(
