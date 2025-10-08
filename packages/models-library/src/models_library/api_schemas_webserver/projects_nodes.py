@@ -229,6 +229,6 @@ class ProjectNodeServicesGet(OutputSchema):
     missing: Annotated[
         list[ServiceKeyVersion] | None,
         Field(
-            description="List of services in defined in the project but that were not found in the catalog"
+            description="List of services defined in the project but that were not found in the catalog"
         ),
     ] = None

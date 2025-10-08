@@ -271,7 +271,7 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
     ),
     CatalogBatchNotFoundRpcError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("None of the items '{name}' were not found.", _version=1),
+        user_message("None of these items '{name}' could be found.", _version=1),
     ),
 }
 
