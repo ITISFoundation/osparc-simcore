@@ -1,4 +1,5 @@
 # pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
 # pylint:disable=unused-argument
 
 import asyncio
@@ -30,17 +31,22 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     BaseStep,
     Operation,
     OperationName,
+    OperationToStart,
     ParallelStepGroup,
     ProvidedOperationContext,
     RequiredOperationContext,
     SingleStepGroup,
+    register_to_start_after_on_executed_completed,
+    register_to_start_after_on_reverted_completed,
     start_operation,
 )
 from utils import (
     BaseExpectedStepOrder,
-    CreateRandom,
-    CreateSequence,
+    ExecuteRandom,
+    ExecuteSequence,
+    RevertSequence,
     ensure_expected_order,
+    ensure_keys_in_store,
 )
 
 pytest_simcore_core_services_selection = [
@@ -55,6 +61,7 @@ pytest_simcore_ops_services_selection = [
 _OPERATION_MIN_RUNTIME: Final[timedelta] = timedelta(seconds=2)
 _OPERATION_STEPS_COUNT: Final[NonNegativeInt] = 10
 _STEP_SLEEP_DURATION: Final[timedelta] = _OPERATION_MIN_RUNTIME / _OPERATION_STEPS_COUNT
+_RETRY_ATTEMPTS: Final[NonNegativeInt] = 10
 
 
 def _get_random_interruption_duration() -> NonNegativeFloat:
@@ -198,87 +205,136 @@ def process_manager(
     process_manager.kill()
 
 
+@pytest.fixture
+def operation_name() -> OperationName:
+    return "test-op"
+
+
 class _InterruptionType(str, Enum):
     REDIS = "redis"
     RABBIT = "rabbit"
     DYNAMIC_SCHEDULER = "dynamic-scheduler"
 
 
-_CREATED: Final[str] = "create"
-_UNDONE: Final[str] = "undo"
+_EXECUTED: Final[str] = "executed"
+_REVERTED: Final[str] = "reverted"
 
 _CTX_VALUE: Final[str] = "a_value"
 
 
+_STEPS_CALL_ORDER: list[tuple[str, str]] = []
+
+
+@pytest.fixture
+def steps_call_order() -> Iterable[list[tuple[str, str]]]:
+    _STEPS_CALL_ORDER.clear()
+    yield _STEPS_CALL_ORDER
+    _STEPS_CALL_ORDER.clear()
+
+
 class _BS(BaseStep):
     @classmethod
-    async def get_create_retries(cls, context: DeferredContext) -> int:
+    async def get_execute_retries(cls, context: DeferredContext) -> int:
         _ = context
-        return 10
+        return _RETRY_ATTEMPTS
 
     @classmethod
-    async def get_create_wait_between_attempts(
+    async def get_execute_wait_between_attempts(
         cls, context: DeferredContext
     ) -> timedelta:
         _ = context
         return _STEP_SLEEP_DURATION
 
     @classmethod
-    async def create(
+    async def execute(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
-        multiprocessing_queue: _AsyncMultiprocessingQueue = (
-            app.state.multiprocessing_queue
-        )
-        await multiprocessing_queue.put((cls.__name__, _CREATED))
+        if hasattr(app.state, "multiprocessing_queue"):
+            multiprocessing_queue: _AsyncMultiprocessingQueue = (
+                app.state.multiprocessing_queue
+            )
+            await multiprocessing_queue.put((cls.__name__, _EXECUTED))
+        _STEPS_CALL_ORDER.append((cls.__name__, _EXECUTED))
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_create_provides_context_keys()},
+            **{k: _CTX_VALUE for k in cls.get_execute_provides_context_keys()},
         }
 
     @classmethod
-    async def undo(
+    async def revert(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
-        multiprocessing_queue: _AsyncMultiprocessingQueue = (
-            app.state.multiprocessing_queue
-        )
-        await multiprocessing_queue.put((cls.__name__, _UNDONE))
+        if hasattr(app.state, "multiprocessing_queue"):
+            multiprocessing_queue: _AsyncMultiprocessingQueue = (
+                app.state.multiprocessing_queue
+            )
+            await multiprocessing_queue.put((cls.__name__, _REVERTED))
+        _STEPS_CALL_ORDER.append((cls.__name__, _REVERTED))
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_undo_provides_context_keys()},
+            **{k: _CTX_VALUE for k in cls.get_revert_provides_context_keys()},
         }
 
 
-class _BS1(_BS): ...
+class _S1(_BS): ...
 
 
-class _BS2(_BS): ...
+class _S2(_BS): ...
 
 
-class _BS3(_BS): ...
+class _S3(_BS): ...
+
+
+class _ShortSleep(_BS):
+    @classmethod
+    async def execute(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        result = await super().execute(app, required_context)
+        # if sleeps more than this it will timeout
+        max_allowed_sleep = _STEP_SLEEP_DURATION.total_seconds() * 0.8
+        await asyncio.sleep(max_allowed_sleep)
+        return result
+
+
+class _ShortSleepThenRevert(_BS):
+    @classmethod
+    async def get_execute_retries(cls, context: DeferredContext) -> int:
+        _ = context
+        return 0
+
+    @classmethod
+    async def execute(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        await super().execute(app, required_context)
+        # if sleeps more than this it will timeout
+        max_allowed_sleep = _STEP_SLEEP_DURATION.total_seconds() * 0.8
+        await asyncio.sleep(max_allowed_sleep)
+        msg = "Simulated error"
+        raise RuntimeError(msg)
 
 
 @pytest.mark.parametrize(
     "operation, expected_order",
     [
         pytest.param(
+            Operation(
+                SingleStepGroup(_S1),
+            ),
             [
-                SingleStepGroup(_BS1),
-            ],
-            [
-                CreateSequence(_BS1),
+                ExecuteSequence(_S1),
             ],
             id="s1",
         ),
         pytest.param(
+            Operation(
+                ParallelStepGroup(_S1, _S2, _S3),
+            ),
             [
-                ParallelStepGroup(_BS1, _BS2, _BS3),
-            ],
-            [
-                CreateRandom(_BS1, _BS2, _BS3),
+                ExecuteRandom(_S1, _S2, _S3),
             ],
             id="p3",
         ),
@@ -296,8 +352,8 @@ async def test_can_recover_from_interruption(
     queue_poller: _QueuePoller,
     process_manager: _ProcessManager,
     expected_order: list[BaseExpectedStepOrder],
+    operation_name: OperationName,
 ) -> None:
-    operation_name: OperationName = "test_op"
     register_operation(operation_name, operation)
     process_manager.start(operation_name)
 
@@ -331,8 +387,88 @@ async def test_can_recover_from_interruption(
     await ensure_expected_order(queue_poller.events, expected_order)
 
 
-# TODO: add a test that replaces a running operation with a new one! make sure nothing bad happens and that the old
-# running operation manages to reach the end
+@pytest.mark.parametrize("register_at_creation", [True, False])
+@pytest.mark.parametrize(
+    "is_executing, initial_op, after_op, expected_order",
+    [
+        pytest.param(
+            True,
+            Operation(SingleStepGroup(_ShortSleep)),
+            Operation(SingleStepGroup(_S2)),
+            [
+                ExecuteSequence(_ShortSleep),
+                ExecuteSequence(_S2),
+            ],
+        ),
+        pytest.param(
+            False,
+            Operation(SingleStepGroup(_ShortSleepThenRevert)),
+            Operation(SingleStepGroup(_S2)),
+            [
+                ExecuteSequence(_ShortSleepThenRevert),
+                RevertSequence(_ShortSleepThenRevert),
+                ExecuteSequence(_S2),
+            ],
+        ),
+    ],
+)
+async def test_run_operation_after(
+    app: FastAPI,
+    preserve_caplog_for_async_logging: None,
+    steps_call_order: list[tuple[str, str]],
+    register_operation: Callable[[OperationName, Operation], None],
+    register_at_creation: bool,
+    is_executing: bool,
+    initial_op: Operation,
+    after_op: Operation,
+    expected_order: list[BaseExpectedStepOrder],
+):
+    initial_op_name: OperationName = "initial"
+    after_op_name: OperationName = "after"
 
+    register_operation(initial_op_name, initial_op)
+    register_operation(after_op_name, after_op)
 
-# THe only way to do it is by cancelling the existing and waitin for it to finish before running something new.
+    if is_executing:
+        on_execute_completed = (
+            OperationToStart(operation_name=after_op_name, initial_context={})
+            if register_at_creation
+            else None
+        )
+        on_revert_completed = None
+    else:
+        on_execute_completed = None
+        on_revert_completed = (
+            OperationToStart(operation_name=after_op_name, initial_context={})
+            if register_at_creation
+            else None
+        )
+
+    schedule_id = await start_operation(
+        app,
+        initial_op_name,
+        {},
+        on_execute_completed=on_execute_completed,
+        on_revert_completed=on_revert_completed,
+    )
+
+    if register_at_creation is False:
+        if is_executing:
+            await register_to_start_after_on_executed_completed(
+                app,
+                schedule_id,
+                to_start=OperationToStart(
+                    operation_name=after_op_name, initial_context={}
+                ),
+            )
+        else:
+            await register_to_start_after_on_reverted_completed(
+                app,
+                schedule_id,
+                to_start=OperationToStart(
+                    operation_name=after_op_name, initial_context={}
+                ),
+            )
+
+    await ensure_expected_order(steps_call_order, expected_order)
+    await ensure_keys_in_store(app, expected_keys=set())
