@@ -1,6 +1,7 @@
 from typing import Final
 
 from common_library.user_messages import user_message
+from models_library.functions import FunctionsApiAccessRights
 from models_library.functions_errors import (
     FunctionBaseError,
     FunctionJobCollectionsExecuteApiAccessDeniedError,
@@ -15,9 +16,6 @@ from models_library.functions_errors import (
 )
 
 from ..errors import WebServerBaseError
-from ._functions_permissions_repository import (
-    FunctionsApiAccessRights,
-)
 
 
 class FunctionGroupAccessRightsNotFoundError(WebServerBaseError, RuntimeError):

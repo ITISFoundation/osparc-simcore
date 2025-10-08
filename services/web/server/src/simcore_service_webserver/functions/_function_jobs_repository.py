@@ -1,3 +1,5 @@
+# pylint: disable=too-many-arguments
+
 import json
 
 import sqlalchemy
