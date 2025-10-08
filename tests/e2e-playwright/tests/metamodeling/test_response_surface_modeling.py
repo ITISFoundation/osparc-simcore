@@ -138,14 +138,13 @@ def test_response_surface_modeling(
             page.get_by_test_id("connect_probe_btn_number_3").click()
 
         patch_prj_probe_resp = patch_prj_probe_ctx.value
-        create_probe_resp = create_probe_ctx.value
         assert (
             patch_prj_probe_resp.status == 204
         ), f"Expected 204 from PATCH, got {patch_prj_probe_resp.status}"
-        assert create_probe_resp.status in (
-            200,
-            201,
-        ), f"Unexpected POST status: {create_probe_resp.status}"
+        create_probe_resp = create_probe_ctx.value
+        assert (
+            create_probe_resp.status == 201
+        ), f"Expected 201 from POST, got {create_probe_resp.status}"
 
         # create the parameter
         page.get_by_test_id("connect_input_btn_number_1").click()
