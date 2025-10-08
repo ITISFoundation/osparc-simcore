@@ -21,14 +21,15 @@ qx.Class.define("osparc.task.TaskUI", {
   construct: function() {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(5, 5);
+    const grid = new qx.ui.layout.Grid(4, 4);
     grid.setColumnFlex(1, 1);
     this._setLayout(grid);
 
     this.set({
-      padding: 5,
+      padding: 4,
       maxWidth: this.self().MAX_WIDTH,
-      backgroundColor: "background-main-3"
+      backgroundColor: "background-main-3",
+      decorator: "rounded",
     });
 
     this._buildLayout();
