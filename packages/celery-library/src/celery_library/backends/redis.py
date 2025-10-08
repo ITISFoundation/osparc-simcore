@@ -18,6 +18,7 @@ from servicelib.celery.models import (
 from servicelib.redis import RedisClientSDK, handle_redis_returns_union_types
 
 _CELERY_TASK_DELIMTATOR: Final[str] = ":"
+
 _CELERY_TASK_PREFIX: Final[str] = "celery-task-"
 _CELERY_TASK_ID_KEY_ENCODING = "utf-8"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
