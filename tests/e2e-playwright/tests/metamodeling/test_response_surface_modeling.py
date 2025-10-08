@@ -122,17 +122,32 @@ def test_response_surface_modeling(
             1
         ].click()
 
+        prj_uuid = jsonifier_project_data["uuid"]
+
         # create the probe
-        with page.expect_response(
-            lambda response: re.compile(
-                rf"/projects/{jsonifier_project_data['uuid']}"
-            ).search(response.url)
-            is not None
-            and response.request.method == "PATCH"
+        with (
+            page.expect_response(
+                lambda resp: resp.url.endswith(f"/projects/{prj_uuid}")
+                and resp.request.method == "PATCH"
+            ) as patch_prj_probe_ctx,
+            page.expect_response(
+                lambda resp: resp.url.endswith(f"/projects/{prj_uuid}/nodes")
+                and resp.request.method == "POST"
+            ) as create_probe_ctx,
         ):
             page.get_by_test_id("connect_probe_btn_number_3").click()
 
-        # # create the parameter
+        patch_prj_probe_resp = patch_prj_probe_ctx.value
+        create_probe_resp = create_probe_ctx.value
+        assert (
+            patch_prj_probe_resp.status == 204
+        ), f"Expected 204 from PATCH, got {patch_prj_probe_resp.status}"
+        assert create_probe_resp.status in (
+            200,
+            201,
+        ), f"Unexpected POST status: {create_probe_resp.status}"
+
+        # create the parameter
         page.get_by_test_id("connect_input_btn_number_1").click()
         with page.expect_response(
             lambda response: re.compile(
