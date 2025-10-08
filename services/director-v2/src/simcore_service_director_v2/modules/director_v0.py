@@ -42,7 +42,7 @@ def setup(
         if tracing_settings:
             setup_httpx_client_tracing(
                 client=client,
-                tracing_data=get_tracing_config(app),
+                tracing_config=get_tracing_config(app),
             )
         DirectorV0Client.create(
             app,

@@ -38,7 +38,7 @@ class DirectorV0ThinClient(
             },
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V0_SETTINGS.endpoint,
             tracing_settings=settings.DYNAMIC_SCHEDULER_TRACING,
-            tracing_data=get_tracing_config(app),
+            tracing_config=get_tracing_config(app),
         )
 
     @retry_on_errors()

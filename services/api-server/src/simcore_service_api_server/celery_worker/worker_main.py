@@ -18,14 +18,14 @@ from .worker_tasks.tasks import setup_worker_tasks
 def get_app():
     _settings = ApplicationSettings.create_from_envs()
     _tracing_settings = _settings.API_SERVER_TRACING
-    _tracing_data = TracingConfig.create(
+    _tracing_config = TracingConfig.create(
         tracing_settings=_tracing_settings,
         service_name="api-server-celery-worker",
     )
     setup_loggers(
         log_format_local_dev_enabled=_settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=_settings.API_SERVER_LOG_FILTER_MAPPING,
-        tracing_data=_tracing_data,
+        tracing_config=_tracing_config,
         log_base_level=_settings.log_level,
         noisy_loggers=None,
     )

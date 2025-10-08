@@ -36,7 +36,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         tracing_settings: TracingSettings | None = (
             app.state.settings.DIRECTOR_V2_TRACING
         )
-        tracing_data = get_tracing_config(app)
+        tracing_config = get_tracing_config(app)
 
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)
@@ -60,7 +60,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
                 connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             ),
             tracing_settings=tracing_settings,
-            tracing_data=tracing_data,
+            tracing_config=tracing_config,
         )
 
     def _get_url(

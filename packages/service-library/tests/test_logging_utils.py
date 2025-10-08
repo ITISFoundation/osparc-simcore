@@ -441,7 +441,7 @@ def test_set_parent_module_log_level_(caplog: pytest.LogCaptureFixture):
 
 
 @pytest.fixture
-def tracing_data() -> TracingConfig:
+def tracing_config() -> TracingConfig:
     return TracingConfig.create(
         service_name="test-service",
         tracing_settings=None,  # disable tracing in tests
@@ -452,7 +452,7 @@ def tracing_data() -> TracingConfig:
 def test_setup_async_loggers_basic(
     caplog: pytest.LogCaptureFixture,
     log_format_local_dev_enabled: bool,
-    tracing_data: TracingConfig,
+    tracing_config: TracingConfig,
 ):
     """Test basic async logging setup without filters."""
     caplog.clear()
@@ -461,7 +461,7 @@ def test_setup_async_loggers_basic(
     with async_loggers(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
         logger_filter_mapping={},  # No filters for this test
-        tracing_data=tracing_data,  # No tracing for this test
+        tracing_config=tracing_config,  # No tracing for this test
         log_base_level=logging.INFO,  # Set base log level
         noisy_loggers=(),  # No noisy loggers for this test
     ):
@@ -473,7 +473,7 @@ def test_setup_async_loggers_basic(
 
 def test_setup_async_loggers_with_filters(
     caplog: pytest.LogCaptureFixture,
-    tracing_data: TracingConfig,
+    tracing_config: TracingConfig,
 ):
     caplog.clear()
     caplog.set_level(logging.INFO)
@@ -486,7 +486,7 @@ def test_setup_async_loggers_with_filters(
     with async_loggers(
         log_format_local_dev_enabled=True,
         logger_filter_mapping=filter_mapping,
-        tracing_data=tracing_data,  # no tracing in this test
+        tracing_config=tracing_config,  # no tracing in this test
         log_base_level=logging.INFO,  # Set base log level
         noisy_loggers=(),  # No noisy loggers for this test
     ):
@@ -513,7 +513,7 @@ def test_setup_async_loggers_with_filters(
 
 def test_setup_async_loggers_with_tracing_settings(
     caplog: pytest.LogCaptureFixture,
-    tracing_data: TracingConfig,
+    tracing_config: TracingConfig,
 ):
     """Test async logging setup with tracing settings."""
     caplog.clear()
@@ -524,7 +524,7 @@ def test_setup_async_loggers_with_tracing_settings(
     with async_loggers(
         log_format_local_dev_enabled=False,
         logger_filter_mapping={},  # No filters for this test
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
         log_base_level=logging.INFO,  # Set base log level
         noisy_loggers=(),  # No noisy loggers for this test
     ):
@@ -536,7 +536,7 @@ def test_setup_async_loggers_with_tracing_settings(
 
 def test_setup_async_loggers_context_manager_cleanup(
     caplog: pytest.LogCaptureFixture,
-    tracing_data: TracingConfig,
+    tracing_config: TracingConfig,
 ):
     """Test that async logging context manager properly cleans up."""
     caplog.clear()
@@ -547,7 +547,7 @@ def test_setup_async_loggers_context_manager_cleanup(
     with async_loggers(
         log_format_local_dev_enabled=True,
         logger_filter_mapping={},
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
         log_base_level=logging.INFO,  # Set base log level
         noisy_loggers=(),  # No noisy loggers for this test
     ):
@@ -559,7 +559,7 @@ def test_setup_async_loggers_context_manager_cleanup(
 
 def test_setup_async_loggers_exception_handling(
     caplog: pytest.LogCaptureFixture,
-    tracing_data: TracingConfig,
+    tracing_config: TracingConfig,
 ):
     """Test that async logging handles exceptions gracefully."""
     caplog.clear()
@@ -574,7 +574,7 @@ def test_setup_async_loggers_exception_handling(
         with async_loggers(
             log_format_local_dev_enabled=True,
             logger_filter_mapping={},
-            tracing_data=tracing_data,
+            tracing_config=tracing_config,
             log_base_level=logging.INFO,  # Set base log level
             noisy_loggers=(),  # No noisy loggers for this test
         ):

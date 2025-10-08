@@ -58,10 +58,10 @@ async def client(
         session = await get_session(request)
         return web.json_response(dict(session))
 
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name="test-webserver", tracing_settings=None
     )
-    app = create_application(tracing_data=tracing_data)
+    app = create_application(tracing_config=tracing_config)
     disable_static_webserver(app)
 
     app.add_routes(extra_routes)

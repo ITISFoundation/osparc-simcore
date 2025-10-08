@@ -35,7 +35,7 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings, tracing_data: TracingConfig) -> FastAPI:
+def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
     app = FastAPI(
         debug=settings.RESOURCE_USAGE_TRACKER_DEBUG,
         title=f"{PROJECT_NAME} web API",
@@ -52,10 +52,10 @@ def create_app(settings: ApplicationSettings, tracing_data: TracingConfig) -> Fa
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
-    if tracing_data.tracing_enabled:
+    if tracing_config.tracing_enabled:
         setup_tracing(
             app,
-            tracing_data,
+            tracing_config,
         )
     setup_api_routes(app)
     fire_and_forget_setup(app)
@@ -73,10 +73,10 @@ def create_app(settings: ApplicationSettings, tracing_data: TracingConfig) -> Fa
 
     setup_process_message_running_service(app)  # Requires Rabbit
 
-    if tracing_data.tracing_enabled:
+    if tracing_config.tracing_enabled:
         initialize_fastapi_app_tracing(
             app,
-            tracing_data=tracing_data,
+            tracing_config=tracing_config,
         )
 
     # ERROR HANDLERS

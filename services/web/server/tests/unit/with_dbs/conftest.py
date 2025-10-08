@@ -228,10 +228,10 @@ async def web_server(
     assert app_environment
 
     # original APP
-    tracing_data = tracing.TracingConfig.create(
+    tracing_config = tracing.TracingConfig.create(
         service_name="test-webserver", tracing_settings=None
     )
-    app = create_application(tracing_data=tracing_data)
+    app = create_application(tracing_config=tracing_config)
 
     disable_static_webserver(app)
 

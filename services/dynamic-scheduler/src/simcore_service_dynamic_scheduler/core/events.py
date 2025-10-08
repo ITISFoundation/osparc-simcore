@@ -55,7 +55,7 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 def create_app_lifespan(
-    tracing_data: TracingConfig,
+    tracing_config: TracingConfig,
     logging_lifespan: Lifespan | None,
 ) -> LifespanManager:
     app_lifespan = LifespanManager()
@@ -63,10 +63,10 @@ def create_app_lifespan(
         app_lifespan.add(logging_lifespan)
     app_lifespan.add(_settings_lifespan)
 
-    if tracing_data.tracing_enabled:
+    if tracing_config.tracing_enabled:
         app_lifespan.add(
             get_tracing_instrumentation_lifespan(
-                tracing_data=tracing_data,
+                tracing_config=tracing_config,
             )
         )
 

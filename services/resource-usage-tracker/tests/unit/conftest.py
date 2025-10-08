@@ -122,7 +122,7 @@ def app_settings(
 
 
 @pytest.fixture
-def tracing_data(app_settings: ApplicationSettings) -> TracingConfig:
+def tracing_config(app_settings: ApplicationSettings) -> TracingConfig:
     return TracingConfig.create(
         service_name="resource-usage-tracker-tests",
         tracing_settings=None,  # disable tracing in tests
@@ -131,18 +131,18 @@ def tracing_data(app_settings: ApplicationSettings) -> TracingConfig:
 
 @pytest.fixture
 async def initialized_app(
-    app_settings: ApplicationSettings, tracing_data: TracingConfig
+    app_settings: ApplicationSettings, tracing_config: TracingConfig
 ) -> AsyncIterator[FastAPI]:
-    app = create_app(app_settings, tracing_data=tracing_data)
+    app = create_app(app_settings, tracing_config=tracing_config)
     async with LifespanManager(app):
         yield app
 
 
 @pytest.fixture
 def client(
-    app_settings: ApplicationSettings, tracing_data: TracingConfig
+    app_settings: ApplicationSettings, tracing_config: TracingConfig
 ) -> Iterator[TestClient]:
-    app = create_app(app_settings, tracing_data=tracing_data)
+    app = create_app(app_settings, tracing_config=tracing_config)
     with TestClient(app, base_url="http://testserver.test") as client:
         yield client
 

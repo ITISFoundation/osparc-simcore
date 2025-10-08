@@ -147,10 +147,10 @@ async def app(
 
     # create instance
     assert app_environment
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
     )
-    app_under_test = create_app(tracing_config=tracing_data)
+    app_under_test = create_app(tracing_config=tracing_config)
 
     assert spy_app.on_startup.call_count == 0
     assert spy_app.on_shutdown.call_count == 0
@@ -177,10 +177,10 @@ def client(
 
     # create instance
     assert app_environment
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
     )
-    app_under_test = create_app(tracing_config=tracing_data)
+    app_under_test = create_app(tracing_config=tracing_config)
 
     assert (
         spy_app.on_startup.call_count == 0

@@ -84,14 +84,14 @@ async def test_valid_tracing_settings(
     tracing_settings_in: Callable[[], dict[str, Any]],
 ):
     tracing_settings = TracingSettings()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
     )
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
     )(app=mocked_app):
         async for _ in get_tracing_instrumentation_lifespan(
-            tracing_data=tracing_data,
+            tracing_config=tracing_config,
         )(app=mocked_app):
             pass
 
@@ -122,11 +122,11 @@ async def test_invalid_tracing_settings(
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings()
-        tracing_data = TracingConfig.create(
+        tracing_config = TracingConfig.create(
             tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
         )
         async for _ in get_tracing_instrumentation_lifespan(
-            tracing_data=tracing_data,
+            tracing_config=tracing_config,
         )(app=app):
             pass
 
@@ -180,15 +180,15 @@ async def test_tracing_setup_package_detection(
     package_name = manage_package
     importlib.import_module(package_name)
     tracing_settings = TracingSettings()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
     )
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
     )(app=mocked_app):
         # idempotency check
         async for _ in get_tracing_instrumentation_lifespan(
-            tracing_data=tracing_data,
+            tracing_config=tracing_config,
         )(app=mocked_app):
             pass
 
@@ -215,7 +215,7 @@ async def test_trace_id_in_response_header(
     server_response: PlainTextResponse | HTTPException,
 ) -> None:
     tracing_settings = TracingSettings()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
     )
 
@@ -233,10 +233,10 @@ async def test_trace_id_in_response_header(
     mocked_app.get("/")(partial(handler, handler_data))
 
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(
-            mocked_app, tracing_data=tracing_data, add_response_trace_id_header=True
+            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
         )
         client = TestClient(mocked_app)
         response = client.get("/")
@@ -268,14 +268,14 @@ async def test_with_profile_span(
     server_response: PlainTextResponse | HTTPException,
 ):
     tracing_settings = TracingSettings()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
     )
 
     handler_data = dict()
 
     async def handler(handler_data: dict):
-        with profiled_span(tracing_data=tracing_data, span_name="my favorite span"):
+        with profiled_span(tracing_config=tracing_config, span_name="my favorite span"):
             current_span = trace.get_current_span()
             handler_data[_OSPARC_TRACE_ID_HEADER] = format(
                 current_span.get_span_context().trace_id, "032x"
@@ -287,10 +287,10 @@ async def test_with_profile_span(
     mocked_app.get("/")(partial(handler, handler_data))
 
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(
-            mocked_app, tracing_data=tracing_data, add_response_trace_id_header=True
+            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
         )
         client = TestClient(mocked_app)
         _ = client.get("/")
@@ -328,7 +328,7 @@ async def test_tracing_sampling_probability_effective(
     tolerance_probability = 0.5
 
     tracing_settings = TracingSettings()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
     )
 
@@ -338,10 +338,10 @@ async def test_tracing_sampling_probability_effective(
     mocked_app.get("/")(handler)
 
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
     )(app=mocked_app):
         initialize_fastapi_app_tracing(
-            mocked_app, tracing_data=tracing_data, add_response_trace_id_header=True
+            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
         )
         client = TestClient(mocked_app)
         for _ in range(n_requests):

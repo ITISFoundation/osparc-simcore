@@ -255,10 +255,10 @@ async def initialized_app(
     app_environment: EnvVarsDict, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
     )
-    app = create_app(settings, tracing_data=tracing_data)
+    app = create_app(settings, tracing_config=tracing_config)
     async with LifespanManager(app, shutdown_timeout=None if is_pdb_enabled else 20):
         yield app
 

@@ -416,11 +416,11 @@ _LIFESPAN_TIMEOUT: Final[int] = 10
 @pytest.fixture
 async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name=settings.APP_NAME,
         tracing_settings=None,  # disable tracing in tests
     )
-    app = create_app(settings, tracing_data=tracing_data)
+    app = create_app(settings, tracing_config=tracing_config)
     # NOTE: the timeout is sometime too small for CI machines, and even larger machines
     async with LifespanManager(
         app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT

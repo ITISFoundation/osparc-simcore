@@ -68,11 +68,11 @@ async def initialized_app(
     postgres_host_config: dict[str, str],
 ) -> AsyncIterable[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name="resource-usage-tracker",
         tracing_settings=None,  # disable tracing in tests
     )
-    app = create_app(settings, tracing_data=tracing_data)
+    app = create_app(settings, tracing_config=tracing_config)
     async with LifespanManager(app):
         yield app
 

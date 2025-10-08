@@ -72,7 +72,7 @@ def request_timeout() -> int:
 @pytest.fixture
 async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
     async with FakeThickClient(
-        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_config=None
     ) as client:
         yield client
 
@@ -100,7 +100,7 @@ async def test_retry_on_errors(
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
     client = FakeThickClient(
-        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_config=None
     )
 
     with pytest.raises(ClientHttpError):
@@ -126,7 +126,7 @@ async def test_retry_on_errors_by_error_type(
             )
 
     client = ATestClient(
-        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_config=None
     )
 
     with pytest.raises(ClientHttpError):
@@ -154,7 +154,7 @@ async def test_retry_on_errors_raises_client_http_error(
             raise HTTPError(msg)
 
     client = ATestClient(
-        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_config=None
     )
 
     with pytest.raises(ClientHttpError):
@@ -170,7 +170,7 @@ async def test_methods_do_not_return_response(
 
     # OK
     OKTestClient(
-        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_config=None
     )
 
     class FailWrongAnnotationTestClient(BaseThinClient):
@@ -181,7 +181,7 @@ async def test_methods_do_not_return_response(
         FailWrongAnnotationTestClient(
             total_retry_interval=request_timeout,
             tracing_settings=None,
-            tracing_data=None,
+            tracing_config=None,
         )
 
     class FailNoAnnotationTestClient(BaseThinClient):
@@ -192,7 +192,7 @@ async def test_methods_do_not_return_response(
         FailNoAnnotationTestClient(
             total_retry_interval=request_timeout,
             tracing_settings=None,
-            tracing_data=None,
+            tracing_config=None,
         )
 
 
@@ -218,7 +218,7 @@ async def test_expect_state_decorator(
     respx_mock.get(get_wrong_state).mock(return_value=Response(codes.OK))
 
     test_client = ATestClient(
-        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_config=None
     )
 
     # OK
@@ -241,7 +241,7 @@ async def test_retry_timeout_overwrite(
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
     client = FakeThickClient(
-        total_retry_interval=request_timeout, tracing_settings=None, tracing_data=None
+        total_retry_interval=request_timeout, tracing_settings=None, tracing_config=None
     )
 
     caplog_info_level.clear()

@@ -15,7 +15,7 @@ class ThinDV2LocalhostClient(BaseThinClient):
             total_retry_interval=10,
             default_http_client_timeout=Timeout(5),
             tracing_settings=None,
-            tracing_data=None,
+            tracing_config=None,
         )
 
     def _get_url(self, postfix: str) -> str:

@@ -60,10 +60,10 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     # - routings happen during setup!
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
     #
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         service_name="test-webserver", tracing_settings=None
     )
-    app_ = create_application(tracing_data=tracing_data)
+    app_ = create_application(tracing_config=tracing_config)
     print(get_application_settings(app_).model_dump_json(indent=1))
     return app_
 

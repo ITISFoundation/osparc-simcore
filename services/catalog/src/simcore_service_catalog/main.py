@@ -25,14 +25,14 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
 
 def app_factory() -> FastAPI:
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_data = TracingConfig.create(
+    tracing_config = TracingConfig.create(
         tracing_settings=app_settings.CATALOG_TRACING,
         service_name="catalog",
     )
     logging_lifespan = create_logging_lifespan(
         log_format_local_dev_enabled=app_settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.CATALOG_LOG_FILTER_MAPPING,
-        tracing_data=tracing_data,
+        tracing_config=tracing_config,
         log_base_level=app_settings.log_level,
         noisy_loggers=_NOISY_LOGGERS,
     )
@@ -44,6 +44,6 @@ def app_factory() -> FastAPI:
 
     return create_app(
         settings=app_settings,
-        tracing_config=tracing_data,
+        tracing_config=tracing_config,
         logging_lifespan=logging_lifespan,
     )
