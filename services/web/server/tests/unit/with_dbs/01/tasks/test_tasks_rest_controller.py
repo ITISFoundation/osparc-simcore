@@ -27,6 +27,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 from models_library.generics import Envelope
 from models_library.progress_bar import ProgressReport
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from servicelib.aiohttp import status
 from simcore_service_webserver.tasks import _tasks_service
 from simcore_service_webserver.tasks._controller import _rest
@@ -94,14 +95,13 @@ class MockEvent:
 @pytest.mark.usefixtures("user_role", "logged_user")
 async def test_get_user_async_jobs(
     client: TestClient,
-    create_backend_mock: Callable[[str, str, Any], None],
+    mock_handler_in_task_service: HandlerMockFactory,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    create_backend_mock(
-        _rest.__name__,
-        f"_tasks_service.{_tasks_service.list_tasks.__name__}",
-        backend_result_or_exception,
+    mock_handler_in_task_service(
+        _tasks_service.list_tasks.__name__,
+        side_effect=backend_result_or_exception,
     )
 
     response = await client.get(f"/{API_VERSION}/tasks")
@@ -130,15 +130,14 @@ async def test_get_user_async_jobs(
 @pytest.mark.usefixtures("user_role", "logged_user")
 async def test_get_async_jobs_status(
     client: TestClient,
-    create_backend_mock: Callable[[str, str, Any], None],
+    mock_handler_in_task_service: HandlerMockFactory,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(_faker.uuid4())
-    create_backend_mock(
-        _rest.__name__,
-        f"_tasks_service.{_tasks_service.get_task_status.__name__}",
-        backend_result_or_exception,
+    mock_handler_in_task_service(
+        _tasks_service.get_task_status.__name__,
+        side_effect=backend_result_or_exception,
     )
 
     response = await client.get(f"/{API_VERSION}/tasks/{_job_id}")
@@ -166,16 +165,15 @@ async def test_get_async_jobs_status(
 @pytest.mark.usefixtures("user_role", "logged_user")
 async def test_get_async_job_result(
     client: TestClient,
-    create_backend_mock: Callable[[str, str, Any], None],
+    mock_handler_in_task_service: HandlerMockFactory,
     faker: Faker,
     backend_result_or_exception: Any,
     expected_status: int,
 ):
     _job_id = AsyncJobId(faker.uuid4())
-    create_backend_mock(
-        _rest.__name__,
-        f"_tasks_service.{_tasks_service.get_task_result.__name__}",
-        backend_result_or_exception,
+    mock_handler_in_task_service(
+        _tasks_service.get_task_result.__name__,
+        side_effect=backend_result_or_exception,
     )
 
     response = await client.get(f"/{API_VERSION}/tasks/{_job_id}/result")
