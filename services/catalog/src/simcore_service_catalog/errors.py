@@ -20,3 +20,7 @@ class DirectorUnresponsiveError(BaseDirectorError):
 
 
 class DirectorStatusError(BaseDirectorError): ...
+
+
+class CatalogServiceNotFoundError(CatalogBaseError):
+    msg_template = "One or more services were not found in the catalog. Missing: {missing_services}"
