@@ -75,7 +75,7 @@ async def get_steps_statuses(
 async def start_and_mark_as_started(
     step_proxy: StepStoreProxy,
     *,
-    is_creating: bool,
+    is_executing: bool,
     expected_steps_count: NonNegativeInt,
 ) -> None:
     await DeferredRunner.start(
@@ -83,7 +83,7 @@ async def start_and_mark_as_started(
         operation_name=step_proxy.operation_name,
         step_group_name=step_proxy.step_group_name,
         step_name=step_proxy.step_name,
-        is_creating=is_creating,
+        is_executing=is_executing,
         expected_steps_count=expected_steps_count,
     )
     await step_proxy.create_or_update_multiple(
@@ -117,7 +117,7 @@ async def get_step_error_traceback(
         operation_name=operation_name,
         step_group_name=current_step_group.get_step_group_name(index=group_index),
         step_name=step_name,
-        is_creating=False,
+        is_executing=False,
     )
     return step_name, await step_proxy.read("error_traceback")
 
@@ -129,7 +129,7 @@ def get_group_step_proxies(
     operation_name: OperationName,
     group_index: NonNegativeInt,
     step_group: BaseStepGroup,
-    is_creating: bool,
+    is_executing: bool,
 ) -> dict[StepName, StepStoreProxy]:
     return {
         step.get_step_name(): StepStoreProxy(
@@ -138,7 +138,7 @@ def get_group_step_proxies(
             operation_name=operation_name,
             step_group_name=step_group.get_step_group_name(index=group_index),
             step_name=step.get_step_name(),
-            is_creating=is_creating,
+            is_executing=is_executing,
         )
         for step in step_group.get_step_subgroup_to_run()
     }
@@ -168,7 +168,7 @@ async def _get_steps_to_start(
 async def start_steps_which_were_not_started(
     group_step_proxies: dict[StepName, StepStoreProxy],
     *,
-    is_creating: bool,
+    is_executing: bool,
     group_step_count: NonNegativeInt,
 ) -> bool:
     """retruns True if any step was started"""
@@ -186,7 +186,7 @@ async def start_steps_which_were_not_started(
                 *(
                     start_and_mark_as_started(
                         step_proxy,
-                        is_creating=is_creating,
+                        is_executing=is_executing,
                         expected_steps_count=group_step_count,
                     )
                     for step_proxy in to_start_step_proxies
@@ -198,11 +198,11 @@ async def start_steps_which_were_not_started(
 
 
 async def cleanup_after_finishing(
-    store: Store, *, schedule_id: ScheduleId, is_creating: bool
+    store: Store, *, schedule_id: ScheduleId, is_executing: bool
 ) -> None:
     removal_proxy = OperationRemovalProxy(store=store, schedule_id=schedule_id)
     await removal_proxy.delete()
-    verb = "COMPLETED" if is_creating else "UNDONE"
+    verb = "COMPLETED" if is_executing else "REVERTED"
     _logger.debug("Operation for schedule_id='%s' %s successfully", verb, schedule_id)
 
 
