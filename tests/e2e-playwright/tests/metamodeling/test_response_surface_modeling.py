@@ -184,7 +184,6 @@ def test_response_surface_modeling(
             assert (
                 patch_prj_rename_resp.status == 204
             ), f"Expected 204 from PATCH, got {patch_prj_rename_resp.status}"
-            create_param_resp = create_param_ctx.value
 
     # 2. go back to dashboard
     with (
