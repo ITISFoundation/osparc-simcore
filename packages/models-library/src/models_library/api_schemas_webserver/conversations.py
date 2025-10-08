@@ -26,6 +26,7 @@ class ConversationRestGet(OutputSchema):
     project_uuid: ProjectID | None
     user_group_id: GroupID
     type: ConversationType
+    fogbugz_case_id: str | None
     created: datetime
     modified: datetime
     extra_context: dict[str, str]
@@ -39,6 +40,7 @@ class ConversationRestGet(OutputSchema):
             project_uuid=domain.project_uuid,
             user_group_id=domain.user_group_id,
             type=domain.type,
+            fogbugz_case_id=domain.fogbugz_case_id,
             created=domain.created,
             modified=domain.modified,
             extra_context=domain.extra_context,

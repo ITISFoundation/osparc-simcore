@@ -32,7 +32,7 @@ class FogbugzRestClient:
     """REST client for Fogbugz API"""
 
     def __init__(self, api_token: SecretStr, base_url: AnyUrl) -> None:
-        self._client = httpx.AsyncClient()
+        self._client = httpx.AsyncClient()  # MD: TODO / retry
         self._api_token = api_token
         self._base_url = base_url
 
@@ -126,7 +126,9 @@ class FogbugzRestClient:
 
         return status
 
-    async def reopen_case(self, case_id: str, assigned_fogbugz_person_id: str) -> None:
+    async def reopen_case(
+        self, case_id: str, assigned_fogbugz_person_id: str, reopen_msg: str = ""
+    ) -> None:
         """Reopen a case in Fogbugz (uses reactivate for resolved cases, reopen for closed cases)"""
         # First get the current status to determine which command to use
         current_status = await self.get_case_status(case_id)
@@ -145,6 +147,7 @@ class FogbugzRestClient:
             "token": self._api_token.get_secret_value(),
             "ixBug": case_id,
             "ixPersonAssignedTo": assigned_fogbugz_person_id,
+            "sEvent": reopen_msg,
         }
 
         response_data = await self._make_api_request(json_payload)

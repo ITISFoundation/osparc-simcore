@@ -78,6 +78,12 @@ conversations = sa.Table(
         server_default=sa.text("'{}'::jsonb"),
         doc="Free JSON to store extra context",
     ),
+    sa.Column(
+        "fogbugz_case_id",
+        sa.String,
+        nullable=True,
+        doc="Fogbugz case ID associated with the conversation",
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
 )

@@ -46,6 +46,7 @@ class ConversationGetDB(BaseModel):
     user_group_id: GroupID
     type: ConversationType
     extra_context: dict[str, Any]
+    fogbugz_case_id: str | None
 
     # states
     created: datetime
@@ -71,6 +72,7 @@ class ConversationMessageGetDB(BaseModel):
 class ConversationPatchDB(BaseModel):
     name: ConversationName | None = None
     extra_context: dict[str, Any] | None = None
+    fogbugz_case_id: str | None = None
 
 
 class ConversationMessagePatchDB(BaseModel):

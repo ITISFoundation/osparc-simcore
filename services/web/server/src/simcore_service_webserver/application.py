@@ -169,8 +169,8 @@ def create_application() -> web.Application:
     setup_projects(app)
 
     # conversations
-    setup_conversations(app)
     setup_fogbugz(app)  # Needed for support conversations
+    setup_conversations(app)
 
     # licenses
     setup_licenses(app)

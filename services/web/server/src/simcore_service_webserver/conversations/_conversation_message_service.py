@@ -5,6 +5,7 @@ import logging
 from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.conversations import (
+    ConversationGetDB,
     ConversationID,
     ConversationMessageGetDB,
     ConversationMessageID,
@@ -17,7 +18,9 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 from servicelib.redis import exclusive
+from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.groups import api as group_service
+from yarl import URL
 
 from ..products import products_service
 from ..redis import get_redis_lock_manager_client_sdk
@@ -98,12 +101,11 @@ async def create_message(
     return created_message
 
 
-async def create_support_message_with_first_check(
+async def _create_support_message_with_first_check(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
-    project_id: ProjectID | None,
     conversation_id: ConversationID,
     # Creation attributes
     content: str,
@@ -142,7 +144,7 @@ async def create_support_message_with_first_check(
             app,
             product_name=product_name,
             user_id=user_id,
-            project_id=project_id,
+            project_id=None,  # Support conversations don't use project_id
             conversation_id=conversation_id,
             content=content,
             type_=type_,
@@ -165,6 +167,92 @@ async def create_support_message_with_first_check(
         return created_message, is_first_message
 
     return await _create_support_message_and_check_if_it_is_first_message()
+
+
+async def create_support_message(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    conversation: ConversationGetDB,
+    request_url: URL,
+    request_host: str,
+    # Creation attributes
+    content: str,
+    type_: ConversationMessageType,
+) -> ConversationMessageGetDB:
+    message, is_first_message = await _create_support_message_with_first_check(
+        app=app,
+        product_name=product_name,
+        user_id=user_id,
+        conversation_id=conversation.conversation_id,
+        content=content,
+        type_=type_,
+    )
+
+    product = products_service.get_product(app, product_name=product_name)
+    fogbugz_settings_or_none = app[APP_SETTINGS_APPKEY].WEBSERVER_FOGBUGZ
+    _conversation_url = f"{request_url.scheme}://{request_url.host}/#/conversation/{conversation.conversation_id}"
+
+    if (
+        product.support_standard_group_id is None
+        or product.support_assigned_fogbugz_project_id
+        or product.support_assigned_fogbugz_person_id is None
+        or fogbugz_settings_or_none is None
+    ):
+        _logger.warning(
+            "Support settings NOT available, so no need to create FogBugz case. Conversation ID: %s",
+            conversation.conversation_id,
+        )
+        return message
+
+    if is_first_message or conversation.fogbugz_case_id is None:
+        _logger.debug(
+            "Support settings available, this is first message, creating FogBugz case for Conversation ID: %s",
+            conversation.conversation_id,
+        )
+        assert product.support_assigned_fogbugz_project_id  # nosec
+
+        try:
+            await _conversation_service.create_fogbugz_case_for_support_conversation(
+                app,
+                conversation=conversation,
+                user_id=user_id,
+                message_content=message.content,
+                conversation_url=_conversation_url,
+                host=request_host,
+                product_support_assigned_fogbugz_project_id=product.support_assigned_fogbugz_project_id,
+                fogbugz_url=str(fogbugz_settings_or_none.FOGBUGZ_URL),
+            )
+        except Exception:  # pylint: disable=broad-except
+            _logger.exception(
+                "Failed to create support request FogBugz case for conversation %s.",
+                conversation.conversation_id,
+            )
+    else:
+        assert not is_first_message  # nosec
+        _logger.debug(
+            "Support settings available, but this is NOT the first message, so we need to reopen a FogBugz case. Conversation ID: %s",
+            conversation.conversation_id,
+        )
+        assert product.support_assigned_fogbugz_project_id  # nosec
+        assert product.support_assigned_fogbugz_person_id  # nosec
+        assert conversation.fogbugz_case_id  # nosec
+
+        try:
+            await _conversation_service.reopen_fogbugz_case_for_support_conversation(
+                app,
+                case_id=conversation.fogbugz_case_id,
+                conversation_url=_conversation_url,
+                product_support_assigned_fogbugz_person_id=f"{product.support_assigned_fogbugz_person_id}",
+            )
+        except Exception:  # pylint: disable=broad-except
+            _logger.exception(
+                "Failed to reopen support request FogBugz case for conversation %s.",
+                conversation.conversation_id,
+            )
+
+    return message
 
 
 async def get_message(
