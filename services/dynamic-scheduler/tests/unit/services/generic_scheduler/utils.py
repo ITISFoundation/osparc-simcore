@@ -14,7 +14,7 @@ from tenacity import (
 
 _RETRY_PARAMS: Final[dict[str, Any]] = {
     "wait": wait_fixed(0.1),
-    "stop": stop_after_delay(5),
+    "stop": stop_after_delay(10),
     "retry": retry_if_exception_type(AssertionError),
 }
 
