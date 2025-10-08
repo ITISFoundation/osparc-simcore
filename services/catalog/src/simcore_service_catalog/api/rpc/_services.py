@@ -4,7 +4,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
-    MyServiceGet,
+    MyServicesRpcBatchGet,
     PageRpcLatestServiceGet,
     PageRpcServiceRelease,
     PageRpcServiceSummary,
@@ -211,10 +211,10 @@ async def batch_get_my_services(
             ServiceVersion,
         ]
     ],
-) -> list[MyServiceGet]:
+) -> MyServicesRpcBatchGet:
     assert app.state.engine  # nosec
 
-    services_batch = await catalog_services.batch_get_user_services(
+    batch_got = await catalog_services.batch_get_user_services(
         repo=ServicesRepository(app.state.engine),
         groups_repo=GroupsRepository(app.state.engine),
         product_name=product_name,
@@ -222,9 +222,14 @@ async def batch_get_my_services(
         ids=ids,
     )
 
-    assert [(sv.key, sv.release.version) for sv in services_batch] == ids  # nosec
+    assert [
+        (sv.key, sv.release.version) for sv in batch_got.found_items
+    ] == ids  # nosec
 
-    return services_batch
+    return MyServicesRpcBatchGet(
+        found_items=batch_got.found_items,
+        missing_identifiers=batch_got.missing_identifiers,
+    )
 
 
 @router.expose(reraise_if_error_type=(ValidationError,))

@@ -19,7 +19,6 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt, PageTotalCount
 from models_library.services_access import ServiceGroupAccessRightsV2
-from models_library.services_base import ServiceKeyVersion
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -626,7 +625,7 @@ async def batch_get_user_services(
         # Evaluate user's access-rights to this service key:version
         access_rights = services_access_rights.get((service_key, service_version), [])
         if not access_rights:
-            missing.append(ServiceKeyVersion(key=service_key, version=service_version))
+            missing.append((service_key, service_version))
             continue
 
         my_access_rights = ServiceGroupAccessRightsV2(execute=False, write=False)
@@ -643,7 +642,7 @@ async def batch_get_user_services(
         )
 
         if not service_db:
-            missing.append(ServiceKeyVersion(key=service_key, version=service_version))
+            missing.append((service_key, service_version))
             continue
 
         # Find service owner (if defined!)

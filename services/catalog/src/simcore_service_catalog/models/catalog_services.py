@@ -1,9 +1,7 @@
-from models_library.api_schemas_catalog.services import MyServiceGet
-from models_library.batch_operations import BatchGetEnvelope
-from models_library.services import ServiceKeyVersion
+from typing import TypeAlias
 
+from models_library.api_schemas_catalog.services import MyServicesRpcBatchGet
 
-class BatchGetUserServicesResult(BatchGetEnvelope[MyServiceGet, ServiceKeyVersion]):
-    """
-    batch-get result for services in the catalog
-    """
+# NOTE: for now schema and domain are identical. If they differ in the future
+# this indirection will allow us to transform between the two
+BatchGetUserServicesResult: TypeAlias = MyServicesRpcBatchGet

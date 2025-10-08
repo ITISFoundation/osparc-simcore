@@ -6,6 +6,7 @@ from models_library.rpc_pagination import PageRpc
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
 from pydantic.config import JsonDict
 
+from ..batch_operations import BatchGetEnvelope
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
 from ..groups import GroupID
@@ -418,6 +419,13 @@ class MyServiceGet(CatalogOutputSchema):
 
     owner: GroupID | None
     my_access_rights: ServiceGroupAccessRightsV2
+
+
+class MyServicesRpcBatchGet(
+    CatalogOutputSchema,
+    BatchGetEnvelope[MyServiceGet, tuple[ServiceKey, ServiceVersion]],
+):
+    """Result for batch get user services operations"""
 
 
 class ServiceListFilters(Filters):
