@@ -12,6 +12,8 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from ._errors import NoDataFoundError
 from ._lifecycle_protocol import SupportsLifecycle
 from ._models import (
+    EventType,
+    OperationContext,
     OperationErrorType,
     OperationName,
     ProvidedOperationContext,
@@ -26,16 +28,17 @@ _SCHEDULE_NAMESPACE: Final[str] = "SCH"
 _STEPS_KEY: Final[str] = "STEPS"
 _GROUPS_KEY: Final[str] = "GROUPS"
 _OPERATION_CONTEXT_KEY: Final[str] = "OP_CTX"
+_EVENTS_KEY: Final[str] = "EVENTS"
 
 
-def _get_is_creating_str(*, is_creating: bool) -> str:
-    return "C" if is_creating else "U"
+def _get_is_executing_str(*, is_executing: bool) -> str:
+    return "E" if is_executing else "R"
 
 
 def _get_scheduler_data_hash_key(*, schedule_id: ScheduleId) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID
     # - SCHEDULE_NAMESPACE: namespace prefix
-    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - SCHEDULE_ID: the unique schedule_id assigned
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000
     return f"{_SCHEDULE_NAMESPACE}:{schedule_id}"
@@ -47,21 +50,21 @@ def _get_step_hash_key(
     operation_name: OperationName,
     group_name: StepGroupName,
     step_name: StepName,
-    is_creating: bool,
+    is_executing: bool,
 ) -> str:
-    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_SHORT_NAME:STEP_NAME:IS_CREATING
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME:GROUP_SHORT_NAME:STEP_NAME:IS_EXECUTING
     # - SCHEDULE_NAMESPACE: namespace prefix
-    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "STEPS"
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_SHORT_NAME
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
-    # - IS_CREATING: "C" (create) or "U" (undo)
+    # - IS_EXECUTING: "E" (execute) or "R" (revert)
     # - STEP_NAME form it's class
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:STEPS:START_SERVICE:0S:C:BS1
-    is_creating_str = _get_is_creating_str(is_creating=is_creating)
-    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group_name}:{is_creating_str}:{step_name}"
+    is_executing_str = _get_is_executing_str(is_executing=is_executing)
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_STEPS_KEY}:{operation_name}:{group_name}:{is_executing_str}:{step_name}"
 
 
 def _get_group_hash_key(
@@ -69,20 +72,20 @@ def _get_group_hash_key(
     schedule_id: ScheduleId,
     operation_name: OperationName,
     group_name: StepGroupName,
-    is_creating: bool,
+    is_executing: bool,
 ) -> str:
-    # SCHEDULE_NAMESPACE:SCHEDULE_ID:GROUPS:OPERATION_NAME:GROUP_SHORT_NAME:IS_CREATING
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:GROUPS:OPERATION_NAME:GROUP_SHORT_NAME:IS_EXECUTING
     # - SCHEDULE_NAMESPACE: namespace prefix
-    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "GROUPS"
     # - OPERATION_NAME form the vairble's name during registration
     # - GROUP_SHORT_NAME
     #   -> "{index}(S|P)[R]": S=single or P=parallel and optinally, "R" if steps should be repeated forever
-    # - IS_CREATING: "C" (create) or "U" (undo)
+    # - IS_EXECUTING: "E" (execute) or "R" (revert)
     # Example:
     # - SCH:00000000-0000-0000-0000-000000000000:GROUPS:START_SERVICE:0S:C
-    is_creating_str = _get_is_creating_str(is_creating=is_creating)
-    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_GROUPS_KEY}:{operation_name}:{group_name}:{is_creating_str}"
+    is_executing_str = _get_is_executing_str(is_executing=is_executing)
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_GROUPS_KEY}:{operation_name}:{group_name}:{is_executing_str}"
 
 
 def _get_operation_context_hash_key(
@@ -90,7 +93,7 @@ def _get_operation_context_hash_key(
 ) -> str:
     # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME
     # - SCHEDULE_NAMESPACE: namespace prefix
-    # - SCHEDULE_ID: the unique scheudle_id assigned
+    # - SCHEDULE_ID: the unique schedule_id assigned
     # - CONSTANT: the constant "OP_CTX"
     # - OPERATION_NAME form the vairble's name during registration
     # Example:
@@ -98,6 +101,19 @@ def _get_operation_context_hash_key(
     return (
         f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_OPERATION_CONTEXT_KEY}:{operation_name}"
     )
+
+
+def _get_schedule_events_hash_key(
+    *, schedule_id: ScheduleId, event_type: EventType
+) -> str:
+    # SCHEDULE_NAMESPACE:SCHEDULE_ID:STEPS:OPERATION_NAME
+    # - SCHEDULE_NAMESPACE: namespace prefix
+    # - SCHEDULE_ID: the unique schedule_id assigned
+    # - CONSTANT: the constant "EVENTS"
+    # - EVENT_TYPE: name of the event from EventType
+    # Example:
+    # - SCH:00000000-0000-0000-0000-000000000000:EVENTS:ON_...
+    return f"{_SCHEDULE_NAMESPACE}:{schedule_id}:{_EVENTS_KEY}:{event_type}"
 
 
 class Store(SingletonInAppStateMixin, SupportsLifecycle):
@@ -143,7 +159,7 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
         """saves a single key-value pair in a hash"""
         await self.set_keys_in_hash(hash_key, {key: value})
 
-    async def get_key_from_hash(self, hash_key: str, *keys: str) -> tuple[Any, ...]:
+    async def get_keys_from_hash(self, hash_key: str, *keys: str) -> tuple[Any, ...]:
         """retrieves one or more keys from a hash"""
         result: list[str | None] = await handle_redis_returns_union_types(
             self.redis.hmget(hash_key, list(keys))
@@ -176,11 +192,17 @@ class Store(SingletonInAppStateMixin, SupportsLifecycle):
         """removes keys from redis"""
         await handle_redis_returns_union_types(self.redis.delete(*keys))
 
+    async def exists(self, hash_key: str) -> bool:
+        result: bool = (
+            await handle_redis_returns_union_types(self.redis.exists(hash_key)) == 1
+        )
+        return result
+
 
 class _UpdateScheduleDataDict(TypedDict):
     operation_name: NotRequired[OperationName]
     group_index: NotRequired[NonNegativeInt]
-    is_creating: NotRequired[bool]
+    is_executing: NotRequired[bool]
     operation_error_type: NotRequired[OperationErrorType]
     operation_error_message: NotRequired[str]
 
@@ -188,7 +210,7 @@ class _UpdateScheduleDataDict(TypedDict):
 _DeleteScheduleDataKeys = Literal[
     "operation_name",
     "group_index",
-    "is_creating",
+    "is_executing",
     "operation_error_type",
     "operation_error_message",
 ]
@@ -207,7 +229,7 @@ class ScheduleDataStoreProxy:
     @overload
     async def read(self, key: Literal["group_index"]) -> NonNegativeInt: ...
     @overload
-    async def read(self, key: Literal["is_creating"]) -> bool: ...
+    async def read(self, key: Literal["is_executing"]) -> bool: ...
     @overload
     async def read(
         self, key: Literal["operation_error_type"]
@@ -217,7 +239,7 @@ class ScheduleDataStoreProxy:
     async def read(self, key: str) -> Any:
         """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
-        (result,) = await self._store.get_key_from_hash(hash_key, key)
+        (result,) = await self._store.get_keys_from_hash(hash_key, key)
         if result is None:
             raise NoDataFoundError(key=key, hash_key=hash_key)
         return result
@@ -232,7 +254,7 @@ class ScheduleDataStoreProxy:
     ) -> None: ...
     @overload
     async def create_or_update(
-        self, key: Literal["is_creating"], *, value: bool
+        self, key: Literal["is_executing"], *, value: bool
     ) -> None: ...
     @overload
     async def create_or_update(
@@ -260,20 +282,20 @@ class StepGroupProxy:
         schedule_id: ScheduleId,
         operation_name: OperationName,
         step_group_name: StepGroupName,
-        is_creating: bool,
+        is_executing: bool,
     ) -> None:
         self._store = store
         self.schedule_id = schedule_id
         self.operation_name = operation_name
         self.step_group_name = step_group_name
-        self.is_creating = is_creating
+        self.is_executing = is_executing
 
     def _get_hash_key(self) -> str:
         return _get_group_hash_key(
             schedule_id=self.schedule_id,
             operation_name=self.operation_name,
             group_name=self.step_group_name,
-            is_creating=self.is_creating,
+            is_executing=self.is_executing,
         )
 
     async def increment_and_get_done_steps_count(self) -> NonNegativeInt:
@@ -316,14 +338,14 @@ class StepStoreProxy:
         operation_name: OperationName,
         step_group_name: StepGroupName,
         step_name: StepName,
-        is_creating: bool,
+        is_executing: bool,
     ) -> None:
         self._store = store
         self.schedule_id = schedule_id
         self.operation_name = operation_name
         self.step_group_name = step_group_name
         self.step_name = step_name
-        self.is_creating = is_creating
+        self.is_executing = is_executing
 
     def _get_hash_key(self) -> str:
         return _get_step_hash_key(
@@ -331,7 +353,7 @@ class StepStoreProxy:
             operation_name=self.operation_name,
             group_name=self.step_group_name,
             step_name=self.step_name,
-            is_creating=self.is_creating,
+            is_executing=self.is_executing,
         )
 
     @overload
@@ -347,9 +369,9 @@ class StepStoreProxy:
     async def read(self, key: str) -> Any:
         """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
-        (result,) = await self._store.get_key_from_hash(hash_key, key)
+        (result,) = await self._store.get_keys_from_hash(hash_key, key)
         if result is None:
-            raise NoDataFoundError(schedule_id=self.schedule_id, hash_key=hash_key)
+            raise NoDataFoundError(key=key, hash_key=hash_key)
         return result
 
     @overload
@@ -413,11 +435,62 @@ class OperationContextProxy:
             return {}
 
         hash_key = self._get_hash_key()
-        result = await self._store.get_key_from_hash(hash_key, *keys)
+        result = await self._store.get_keys_from_hash(hash_key, *keys)
         return dict(zip(keys, result, strict=True))
 
     async def delete(self) -> None:
         await self._store.delete(self._get_hash_key())
+
+
+class _EventDict(TypedDict):
+    operation_name: NotRequired[OperationName]
+    initial_context: NotRequired[OperationContext]
+
+
+class OperationEventsProxy:
+    def __init__(
+        self, store: Store, schedule_id: ScheduleId, event_type: EventType
+    ) -> None:
+        self._store = store
+        self.schedule_id = schedule_id
+        self.event_type = event_type
+
+    def _get_hash_key(self) -> str:
+        return _get_schedule_events_hash_key(
+            schedule_id=self.schedule_id, event_type=self.event_type
+        )
+
+    @overload
+    async def create_or_update(
+        self, key: Literal["initial_context"], value: OperationContext
+    ) -> None: ...
+    @overload
+    async def create_or_update(
+        self, key: Literal["operation_name"], value: OperationName
+    ) -> None: ...
+    async def create_or_update(self, key: str, value: Any) -> None:
+        await self._store.set_key_in_hash(self._get_hash_key(), key, value)
+
+    async def create_or_update_multiple(self, updates: _EventDict) -> None:
+        await self._store.set_keys_in_hash(self._get_hash_key(), updates=updates)  # type: ignore[arg-type]
+
+    @overload
+    async def read(self, key: Literal["operation_name"]) -> OperationName: ...
+    @overload
+    async def read(self, key: Literal["initial_context"]) -> OperationContext: ...
+    async def read(self, key: str) -> Any:
+        """raises NoDataFoundError if the key is not present in the hash"""
+        hash_key = self._get_hash_key()
+        (result,) = await self._store.get_keys_from_hash(hash_key, key)
+        if result is None:
+            raise NoDataFoundError(key=key, hash_key=hash_key)
+        return result
+
+    async def delete(self) -> None:
+        await self._store.delete(self._get_hash_key())
+
+    async def exists(self) -> bool:
+        return await self._store.exists(self._get_hash_key())
 
 
 class OperationRemovalProxy:
