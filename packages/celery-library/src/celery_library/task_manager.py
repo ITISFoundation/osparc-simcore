@@ -12,17 +12,17 @@ from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
-    TaskInfoStore,
     TaskKey,
     TaskState,
     TaskStatus,
+    TaskStore,
     TaskUUID,
 )
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
-from .errors import TaskNotFoundError, TaskSubmissionError
+from .errors import TaskNotFoundError, TaskSubmissionError, handle_celery_errors
 
 _logger = logging.getLogger(__name__)
 
@@ -35,8 +35,9 @@ _MAX_PROGRESS_VALUE = 1.0
 class CeleryTaskManager:
     _celery_app: Celery
     _celery_settings: CelerySettings
-    _task_info_store: TaskInfoStore
+    _task_info_store: TaskStore
 
+    @handle_celery_errors
     async def submit_task(
         self,
         execution_metadata: ExecutionMetadata,
@@ -85,6 +86,7 @@ class CeleryTaskManager:
 
             return task_uuid
 
+    @handle_celery_errors
     async def cancel_task(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> None:
@@ -109,6 +111,7 @@ class CeleryTaskManager:
     def _forget_task(self, task_key: TaskKey) -> None:
         self._celery_app.AsyncResult(task_key).forget()
 
+    @handle_celery_errors
     async def get_task_result(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> Any:
@@ -154,6 +157,7 @@ class CeleryTaskManager:
     def _get_task_celery_state(self, task_key: TaskKey) -> TaskState:
         return TaskState(self._celery_app.AsyncResult(task_key).state)
 
+    @handle_celery_errors
     async def get_task_status(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> TaskStatus:
@@ -177,6 +181,7 @@ class CeleryTaskManager:
                 ),
             )
 
+    @handle_celery_errors
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
         with log_context(
             _logger,
@@ -185,6 +190,7 @@ class CeleryTaskManager:
         ):
             return await self._task_info_store.list_tasks(owner_metadata)
 
+    @handle_celery_errors
     async def set_task_progress(
         self, task_key: TaskKey, report: ProgressReport
     ) -> None:
