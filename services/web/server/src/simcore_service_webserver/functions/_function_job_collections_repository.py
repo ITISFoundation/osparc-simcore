@@ -95,7 +95,7 @@ async def create_function_job_collection(
             row
         )
         job_collection_entries: list[Row] = []
-        for order, job_id in enumerate(job_ids):
+        for order, job_id in enumerate(job_ids, 1):
             result = await transaction.execute(
                 function_job_collections_to_function_jobs_table.insert()
                 .values(

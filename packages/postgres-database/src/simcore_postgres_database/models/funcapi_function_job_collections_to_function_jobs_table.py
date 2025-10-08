@@ -47,6 +47,6 @@ function_job_collections_to_function_jobs_table = sa.Table(
         "function_job_collection_uuid",
         "function_job_uuid",
         "order",
-        name="funcapi_fjc_to_fj_order_pk",
+        name="funcapi_function_job_collections_to_function_jobs_pk",
     ),
 )
