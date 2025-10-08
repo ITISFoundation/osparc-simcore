@@ -436,11 +436,11 @@ class MyServicesRpcBatchGet(
                     {
                         "found_items": [
                             {
-                                "key": "simcore/services/comp/itis/sleeper",
+                                "key": missing[0][0],
                                 "release": {
                                     "version": "2.2.1",
-                                    "version_display": "Summer Release",
-                                    "released": "2024-07-21T15:00:00",
+                                    "version_display": "Winter Release",
+                                    "released": "2026-07-21T15:00:00",
                                 },
                                 "owner": 42,
                                 "my_access_rights": {
