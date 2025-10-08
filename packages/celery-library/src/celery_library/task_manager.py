@@ -7,6 +7,7 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
+from pydantic import BaseModel
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     ExecutionMetadata,
@@ -29,6 +30,21 @@ _logger = logging.getLogger(__name__)
 
 _MIN_PROGRESS_VALUE = 0.0
 _MAX_PROGRESS_VALUE = 1.0
+
+
+def _serialize_task_params(task_params: dict[str, Any]) -> dict[str, Any]:
+    """Recursively convert Pydantic models to dicts for safe serialization."""
+
+    def _serialize(value: Any) -> Any:
+        if isinstance(value, BaseModel):
+            return value.model_dump(mode="json")
+        if isinstance(value, dict):
+            return {k: _serialize(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple, set)):
+            return type(value)(_serialize(v) for v in value)
+        return value
+
+    return {k: _serialize(v) for k, v in task_params.items()}
 
 
 @dataclass(frozen=True)
@@ -66,7 +82,7 @@ class CeleryTaskManager:
                 self._celery_app.send_task(
                     execution_metadata.name,
                     task_id=task_key,
-                    kwargs={"task_key": task_key} | task_params,
+                    kwargs={"task_key": task_key} | _serialize_task_params(task_params),
                     queue=execution_metadata.queue.value,
                 )
             except CeleryError as exc:
