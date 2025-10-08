@@ -37,6 +37,7 @@ async def test_rest_dependency_authentication(
     assert result.product_name == api_key_in_db.product_name
 
 
+@pytest.mark.skip(reason="This test is intended to be used for local profiling only")
 async def test_cache_effectiveness_in_rest_authentication_dependencies(
     api_key_in_db: ApiKeyInDB,
     api_key_repo: ApiKeysRepository,
