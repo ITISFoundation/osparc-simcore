@@ -42,7 +42,7 @@ qx.Class.define("osparc.task.ExportData", {
 
         if (task.getAbortHref()) {
           const cancelButton = progressWindow.addCancelButton();
-          cancelButton.setLabel(qx.locale.Manager.tr("Ignore"));
+          cancelButton.setLabel(qx.locale.Manager.tr("Hide"));
           const abortButton = new qx.ui.form.Button().set({
             label: qx.locale.Manager.tr("Cancel"),
             center: true,
