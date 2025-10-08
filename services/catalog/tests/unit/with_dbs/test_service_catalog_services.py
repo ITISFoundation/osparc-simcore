@@ -12,7 +12,6 @@ import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import MyServiceGet, ServiceSummary
 from models_library.products import ProductName
-from models_library.services_base import ServiceKeyVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
@@ -341,8 +340,8 @@ async def test_batch_get_my_services_partial_success(
 
     # Check missing services
     expected_missing = [
-        ServiceKeyVersion(key="simcore/services/comp/missing-service", version="2.0.0"),
-        ServiceKeyVersion(key="simcore/services/comp/another-missing", version="3.0.0"),
+        ("simcore/services/comp/missing-service", "2.0.0"),
+        ("simcore/services/comp/another-missing", "3.0.0"),
     ]
     assert result.missing_identifiers == expected_missing
 
