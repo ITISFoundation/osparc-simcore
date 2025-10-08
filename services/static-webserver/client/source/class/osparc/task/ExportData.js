@@ -22,7 +22,7 @@ qx.Class.define("osparc.task.ExportData", {
     this.base(arguments);
 
     this.setIcon(this.self().ICON+"/14");
-    this.setTitle(this.tr("Downloading files:"));
+    this.setTitle(this.tr("Preparing files:"));
   },
 
   statics: {
