@@ -65,7 +65,6 @@ def test_create_batch_ids_validator(
             original_first_positions = {
                 item: input_ids.index(item) for item in set(input_ids)
             }
-            result_positions = {item: result.index(item) for item in result}
             # Items should appear in the same relative order as their first occurrence
             sorted_by_original = sorted(
                 result, key=lambda x: original_first_positions[x]
@@ -74,11 +73,13 @@ def test_create_batch_ids_validator(
 
 
 def test_composing_schemas_for_batch_operations(faker: Faker):
-    from models_library.api_schemas_webserver._base import (
+    from models_library.api_schemas_webserver._base import (  # noqa: PLC0415
         OutputSchema as WebServerOutputSchema,
     )
-    from models_library.api_schemas_webserver.projects import ProjectGet
-    from models_library.projects import ProjectID
+    from models_library.api_schemas_webserver.projects import (  # noqa: PLC0415
+        ProjectGet,
+    )
+    from models_library.projects import ProjectID  # noqa: PLC0415
 
     # inner schema model
     class WebServerProjectBatchGetSchema(
