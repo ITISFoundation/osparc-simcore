@@ -2,7 +2,7 @@
 
 import logging
 from contextlib import suppress
-from typing import Literal, TypeVar
+from typing import Annotated, Literal, TypeVar
 
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_catalog.services import (
@@ -18,11 +18,12 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt, PageTotalCount
 from models_library.services_access import ServiceGroupAccessRightsV2
+from models_library.services_base import ServiceKeyVersion
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import HttpUrl
+from pydantic import BeforeValidator, Field, HttpUrl, TypeAdapter
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogInconsistentError,
@@ -30,6 +31,8 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
 )
 
 from ..clients.director import DirectorClient
+from ..errors import CatalogServiceNotFoundError
+from ..models.catalog_services import BatchGetUserServicesResult
 from ..models.services_db import (
     ServiceAccessRightsDB,
     ServiceDBFilters,
@@ -583,30 +586,61 @@ async def check_catalog_service_permissions(
     return access_rights
 
 
+ServiceKeyVersionTuple = tuple[ServiceKey, ServiceVersion]
+
+
+def _deduplicate_ids(ids):
+    # removes duplicates while preserving order
+    return list(dict.fromkeys(ids))
+
+
+BatchIdsValidator = TypeAdapter(
+    # Passing an empty list means you're not actually identifying anything to
+    # fetch — so it's a client error (bad request), not a legitimate “empty result.”
+    Annotated[
+        list[ServiceKeyVersionTuple],
+        BeforeValidator(_deduplicate_ids),
+        Field(min_length=1),
+    ]
+)
+
+
 async def batch_get_user_services(
     repo: ServicesRepository,
     groups_repo: GroupsRepository,
     *,
     product_name: ProductName,
     user_id: UserID,
-    ids: list[
-        tuple[
-            ServiceKey,
-            ServiceVersion,
-        ]
-    ],
-) -> list[MyServiceGet]:
+    ids: list[ServiceKeyVersionTuple],
+) -> BatchGetUserServicesResult:
+    """Batch get user services.
+
+    - Allows partial success, i.e. some services might be found while others not.
+    - Silently deduplicates ids while preserving order.
+
+    Raises:
+        CatalogItemNotFoundError: When no services are found at all
+    """
+    unique_service_identifiers = BatchIdsValidator.validate_python(ids)
+
+    # FIXME: implement partial fail
     services_access_rights = await repo.batch_get_services_access_rights(
-        key_versions=ids, product_name=product_name
+        key_versions=unique_service_identifiers, product_name=product_name
     )
 
     user_groups = await groups_repo.list_user_groups(user_id=user_id)
     my_group_ids = {g.gid for g in user_groups}
 
-    my_services = []
-    for service_key, service_version in ids:
+    found = []
+    missing = []
+
+    for service_key, service_version in unique_service_identifiers:
         # Evaluate user's access-rights to this service key:version
         access_rights = services_access_rights.get((service_key, service_version), [])
+        if not access_rights:
+            missing.append(ServiceKeyVersion(key=service_key, version=service_version))
+            continue
+
         my_access_rights = ServiceGroupAccessRightsV2(execute=False, write=False)
         for ar in access_rights:
             if ar.gid in my_group_ids:
@@ -619,7 +653,10 @@ async def batch_get_user_services(
             key=service_key,
             version=service_version,
         )
-        assert service_db  # nosec
+
+        if not service_db:
+            missing.append(ServiceKeyVersion(key=service_key, version=service_version))
+            continue
 
         # Find service owner (if defined!)
         owner: GroupID | None = service_db.owner
@@ -642,33 +679,42 @@ async def batch_get_user_services(
                 user_id=user_id,
                 key=service_key,
             )
-            assert history  # nosec
+            if history:
+                compatibility_map = await evaluate_service_compatibility_map(
+                    repo,
+                    product_name=product_name,
+                    user_id=user_id,
+                    service_release_history=history,
+                )
+                compatibility = compatibility_map.get(service_db.version)
 
-            compatibility_map = await evaluate_service_compatibility_map(
-                repo,
-                product_name=product_name,
-                user_id=user_id,
-                service_release_history=history,
-            )
-
-            compatibility = compatibility_map.get(service_db.version)
-
-        my_services.append(
-            MyServiceGet(
-                key=service_db.key,
-                release=ServiceRelease(
-                    version=service_db.version,
-                    version_display=service_db.version_display,
-                    released=service_db.created,
-                    retired=service_db.deprecated,
-                    compatibility=compatibility,
-                ),
-                owner=owner,
-                my_access_rights=my_access_rights,
-            )
+        service = MyServiceGet(
+            key=service_db.key,
+            release=ServiceRelease(
+                version=service_db.version,
+                version_display=service_db.version_display,
+                released=service_db.created,
+                retired=service_db.deprecated,
+                compatibility=compatibility,
+            ),
+            owner=owner,
+            my_access_rights=my_access_rights,
         )
 
-    return my_services
+        found.append(service)
+
+    # Check for complete failure scenarios and raise appropriate exceptions
+    if not found:
+        # None of the services found
+        assert len(unique_service_identifiers) == len(missing)  # nosec
+        raise CatalogServiceNotFoundError(
+            missing_services=missing,
+            user_id=user_id,
+            product_name=product_name,
+        )
+
+    # Success or partial success - return the result model
+    return BatchGetUserServicesResult(items=found, missing=missing)
 
 
 async def list_user_service_release_history(

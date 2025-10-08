@@ -12,12 +12,14 @@ import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import MyServiceGet, ServiceSummary
 from models_library.products import ProductName
+from models_library.services_base import ServiceKeyVersion
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
 from respx.router import MockRouter
 from simcore_service_catalog.api._dependencies.director import get_director_client
 from simcore_service_catalog.clients.director import DirectorClient
+from simcore_service_catalog.errors import CatalogServiceNotFoundError
 from simcore_service_catalog.repository.groups import GroupsRepository
 from simcore_service_catalog.repository.services import ServicesRepository
 from simcore_service_catalog.service import catalog_services, manifest
@@ -219,7 +221,7 @@ async def test_batch_get_my_services(
     # Inject fake services into the database
     await services_db_tables_injector([fake_service_1, fake_service_2, fake_service_3])
 
-    # UNDER TEST -------------------------------
+    # ACT -------------------------------
 
     # Batch get services e.g. services in a project
     services_ids = [
@@ -227,7 +229,7 @@ async def test_batch_get_my_services(
         (other_service_key, other_service_version),
     ]
 
-    my_services = await catalog_services.batch_get_user_services(
+    result = await catalog_services.batch_get_user_services(
         services_repo,
         groups_repo,
         product_name=target_product,
@@ -235,7 +237,12 @@ async def test_batch_get_my_services(
         ids=services_ids,
     )
 
-    # CHECKS -------------------------------
+    my_services = result.items
+
+    # ASSERT -------------------------------
+
+    assert result.missing == []
+    assert len(my_services) == 2
 
     # assert returned order and length as ids
     assert services_ids == [(sc.key, sc.release.version) for sc in my_services]
@@ -273,6 +280,190 @@ async def test_batch_get_my_services(
             },
         ]
     )
+
+
+async def test_batch_get_my_services_partial_success(
+    background_task_lifespan_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_rest_api: MockRouter,
+    target_product: ProductName,
+    services_repo: ServicesRepository,
+    groups_repo: GroupsRepository,
+    user_id: UserID,
+    user: dict[str, Any],
+    create_fake_service_data: CreateFakeServiceDataCallable,
+    services_db_tables_injector: Callable,
+):
+    """Test batch get with some services found and some missing."""
+
+    # Create only one service in the database
+    service_key = "simcore/services/comp/existing-service"
+    service_version = "1.0.0"
+
+    fake_service = create_fake_service_data(
+        service_key,
+        service_version,
+        team_access=None,
+        everyone_access=None,
+        product=target_product,
+    )
+
+    # Inject only this service into the database
+    await services_db_tables_injector([fake_service])
+
+    # Request both existing and non-existing services
+    services_ids = [
+        (service_key, service_version),  # exists
+        ("simcore/services/comp/missing-service", "2.0.0"),  # does not exist
+        ("simcore/services/comp/another-missing", "3.0.0"),  # does not exist
+    ]
+
+    # ACT
+    result = await catalog_services.batch_get_user_services(
+        services_repo,
+        groups_repo,
+        product_name=target_product,
+        user_id=user_id,
+        ids=services_ids,
+    )
+
+    # ASSERT
+    assert len(result.items) == 1  # Only one service found
+    assert len(result.missing) == 2  # Two services missing
+
+    # Check the found service
+    found_service = result.items[0]
+    assert found_service.key == service_key
+    assert found_service.release.version == service_version
+    assert found_service.owner == user["primary_gid"]
+    assert found_service.my_access_rights.execute is True
+    assert found_service.my_access_rights.write is True
+
+    # Check missing services
+    expected_missing = [
+        ServiceKeyVersion(key="simcore/services/comp/missing-service", version="2.0.0"),
+        ServiceKeyVersion(key="simcore/services/comp/another-missing", version="3.0.0"),
+    ]
+    assert result.missing == expected_missing
+
+
+async def test_batch_get_my_services_none_found_raises_error(
+    background_task_lifespan_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_rest_api: MockRouter,
+    target_product: ProductName,
+    services_repo: ServicesRepository,
+    groups_repo: GroupsRepository,
+    user_id: UserID,
+):
+    """Test batch get with no services found raises CatalogServiceNotFoundError."""
+
+    # Request non-existing services only (no services in database)
+    services_ids = [
+        ("simcore/services/comp/missing-service-1", "1.0.0"),
+        ("simcore/services/comp/missing-service-2", "2.0.0"),
+    ]
+
+    # ACT & ASSERT
+    with pytest.raises(CatalogServiceNotFoundError) as exc_info:
+        await catalog_services.batch_get_user_services(
+            services_repo,
+            groups_repo,
+            product_name=target_product,
+            user_id=user_id,
+            ids=services_ids,
+        )
+
+    # Verify the exception contains the missing services information
+    assert exc_info.value.missing_services == [
+        ServiceKeyVersion(
+            key="simcore/services/comp/missing-service-1", version="1.0.0"
+        ),
+        ServiceKeyVersion(
+            key="simcore/services/comp/missing-service-2", version="2.0.0"
+        ),
+    ]
+    assert exc_info.value.user_id == user_id
+    assert exc_info.value.product_name == target_product
+
+
+async def test_batch_get_my_services_empty_ids_raises_validation_error(
+    target_product: ProductName,
+    services_repo: ServicesRepository,
+    groups_repo: GroupsRepository,
+    user_id: UserID,
+):
+    """Test batch get with empty ids list raises ValidationError."""
+
+    # ACT & ASSERT
+    with pytest.raises(ValidationError) as exc_info:
+        await catalog_services.batch_get_user_services(
+            services_repo,
+            groups_repo,
+            product_name=target_product,
+            user_id=user_id,
+            ids=[],  # Empty list should raise ValidationError due to Field(min_length=1)
+        )
+
+    # Verify it's a validation error related to the min_length constraint
+    assert "at least 1 item" in str(exc_info.value) or "min_length" in str(
+        exc_info.value
+    )
+
+
+async def test_batch_get_my_services_deduplication(
+    background_task_lifespan_disabled: None,
+    rabbitmq_and_rpc_setup_disabled: None,
+    mocked_director_rest_api: MockRouter,
+    target_product: ProductName,
+    services_repo: ServicesRepository,
+    groups_repo: GroupsRepository,
+    user_id: UserID,
+    user: dict[str, Any],
+    create_fake_service_data: CreateFakeServiceDataCallable,
+    services_db_tables_injector: Callable,
+):
+    """Test that duplicate service identifiers are silently deduplicated while preserving order."""
+
+    # Create a service in the database
+    service_key = "simcore/services/comp/test-service"
+    service_version = "1.0.0"
+
+    fake_service = create_fake_service_data(
+        service_key,
+        service_version,
+        team_access=None,
+        everyone_access=None,
+        product=target_product,
+    )
+
+    await services_db_tables_injector([fake_service])
+
+    # Request the same service multiple times with duplicates
+    services_ids = [
+        (service_key, service_version),  # first occurrence
+        (service_key, service_version),  # duplicate
+        (service_key, service_version),  # another duplicate
+    ]
+
+    # ACT
+    result = await catalog_services.batch_get_user_services(
+        services_repo,
+        groups_repo,
+        product_name=target_product,
+        user_id=user_id,
+        ids=services_ids,
+    )
+
+    # ASSERT
+    assert (
+        len(result.items) == 1
+    )  # Only one service should be returned despite duplicates
+    assert len(result.missing) == 0
+
+    found_service = result.items[0]
+    assert found_service.key == service_key
+    assert found_service.release.version == service_version
 
 
 async def test_list_all_vs_latest_services(
