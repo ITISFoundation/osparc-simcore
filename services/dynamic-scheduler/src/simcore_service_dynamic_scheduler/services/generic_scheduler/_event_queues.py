@@ -4,14 +4,14 @@ from ._models import EventType, ScheduleId
 
 
 class ScheduleQueue(BaseEventQueue):
-    async def handler(  # pylint:disable=arguments-differ
+    async def handler(  # type:ignore[override] # pylint:disable=arguments-differ
         self, schedule_id: ScheduleId
     ) -> None:
         await get_core(self.app).safe_on_schedule_event(schedule_id)
 
 
 class ExecuteCompletedQueue(BaseEventQueue):
-    async def handler(  # pylint:disable=arguments-differ
+    async def handler(  # type:ignore[override] # pylint:disable=arguments-differ
         self, event: OperationToStartEvent
     ) -> None:
         await get_after_event_manager(self.app).safe_on_event_type(
@@ -23,7 +23,7 @@ class ExecuteCompletedQueue(BaseEventQueue):
 
 
 class RevertCompletedQueue(BaseEventQueue):
-    async def handler(  # pylint:disable=arguments-differ
+    async def handler(  # type:ignore[override] # pylint:disable=arguments-differ
         self, event: OperationToStartEvent
     ) -> None:
         await get_after_event_manager(self.app).safe_on_event_type(
