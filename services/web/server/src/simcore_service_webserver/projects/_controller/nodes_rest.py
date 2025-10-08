@@ -560,10 +560,14 @@ async def get_project_services(request: web.Request) -> web.Response:
                 NodeServiceGet.model_validate(sv, from_attributes=True)
                 for sv in batch_got.found_items
             ],
-            missing=[
-                ServiceKeyVersion(key=skey, version=sver)
-                for skey, sver in batch_got.missing_identifiers
-            ],
+            missing=(
+                [
+                    ServiceKeyVersion(key=k, version=v)
+                    for k, v in batch_got.missing_identifiers
+                ]
+                if batch_got.missing_identifiers
+                else None
+            ),
         )
     )
 
