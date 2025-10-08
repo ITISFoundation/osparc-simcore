@@ -16236,6 +16236,15 @@ components:
             $ref: '#/components/schemas/NodeServiceGet'
           type: array
           title: Services
+        missing:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ServiceKeyVersion'
+            type: array
+          - type: 'null'
+          title: Missing
+          description: List of services in defined in the project but that were not
+            found in the catalog
       type: object
       required:
       - projectUuid
