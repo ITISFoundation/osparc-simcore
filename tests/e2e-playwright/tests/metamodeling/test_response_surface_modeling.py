@@ -122,16 +122,18 @@ def test_response_surface_modeling(
             1
         ].click()
 
-        prj_uuid = jsonifier_project_data["uuid"]
+        jsonifier_prj_uuid = jsonifier_project_data["uuid"]
 
         with log_context(logging.INFO, "Create probe"):
             with (
                 page.expect_response(
-                    lambda resp: resp.url.endswith(f"/projects/{prj_uuid}")
+                    lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}")
                     and resp.request.method == "PATCH"
                 ) as patch_prj_probe_ctx,
                 page.expect_response(
-                    lambda resp: resp.url.endswith(f"/projects/{prj_uuid}/nodes")
+                    lambda resp: resp.url.endswith(
+                        f"/projects/{jsonifier_prj_uuid}/nodes"
+                    )
                     and resp.request.method == "POST"
                 ) as create_probe_ctx,
             ):
@@ -151,11 +153,13 @@ def test_response_surface_modeling(
 
             with (
                 page.expect_response(
-                    lambda resp: resp.url.endswith(f"/projects/{prj_uuid}")
+                    lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}")
                     and resp.request.method == "PATCH"
                 ) as patch_prj_param_ctx,
                 page.expect_response(
-                    lambda resp: resp.url.endswith(f"/projects/{prj_uuid}/nodes")
+                    lambda resp: resp.url.endswith(
+                        f"/projects/{jsonifier_prj_uuid}/nodes"
+                    )
                     and resp.request.method == "POST"
                 ) as create_param_ctx,
             ):
@@ -173,7 +177,7 @@ def test_response_surface_modeling(
         with log_context(logging.INFO, "Rename project"):
             page.get_by_test_id("studyTitleRenamer").click()
             with page.expect_response(
-                lambda resp: resp.url.endswith(f"/projects/{prj_uuid}")
+                lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}")
                 and resp.request.method == "PATCH"
             ) as patch_prj_rename_ctx:
                 page.get_by_test_id("studyTitleRenamer").locator("input").fill(
