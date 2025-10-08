@@ -19,3 +19,7 @@ class CatalogForbiddenError(CatalogApiBaseError):
 
 class CatalogNotAvailableError(CatalogApiBaseError):
     msg_template = "Catalog service failed unexpectedly"
+
+
+class CatalogBadRequestError(CatalogApiBaseError):
+    msg_template = "Bad request on {name}: {reason}"

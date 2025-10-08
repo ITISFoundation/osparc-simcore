@@ -608,12 +608,15 @@ async def test_rpc_batch_get_my_services(
         (other_service_key, other_service_version),
     ]
 
-    my_services = await catalog_rpc.batch_get_my_services(
+    batch_got = await catalog_rpc.batch_get_my_services(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
         ids=ids,
     )
+
+    my_services = batch_got.found_items
+    assert batch_got.missing_identifiers == []
 
     assert len(my_services) == 2
 

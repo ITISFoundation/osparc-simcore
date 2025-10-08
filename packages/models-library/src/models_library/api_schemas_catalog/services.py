@@ -427,6 +427,39 @@ class MyServicesRpcBatchGet(
 ):
     """Result for batch get user services operations"""
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        missing: Any = [("simcore/services/comp/itis/sleeper", "100.2.3")]
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "found_items": [
+                            {
+                                "key": "simcore/services/comp/itis/sleeper",
+                                "release": {
+                                    "version": "2.2.1",
+                                    "version_display": "Summer Release",
+                                    "released": "2024-07-21T15:00:00",
+                                },
+                                "owner": 42,
+                                "my_access_rights": {
+                                    "execute": True,
+                                    "write": False,
+                                },
+                            }
+                        ],
+                        "missing_identifiers": missing,
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra=_update_json_schema_extra,
+    )
+
 
 class ServiceListFilters(Filters):
     service_type: Annotated[
