@@ -28,7 +28,8 @@ qx.Class.define("osparc.task.TasksButton", {
     });
 
     const tasks = osparc.task.TasksContainer.getInstance();
-    tasks.getTasks().addListener("change", e => this.__updateTasksButton(), this);
+    tasks.getTasks().addListener("change", () => this.__updateTasksButton(), this);
+    this.__updateTasksButton();
     this.addListener("tap", () => this.__showTasks(), this);
   },
 
@@ -60,8 +61,8 @@ qx.Class.define("osparc.task.TasksButton", {
             "border-radius": "8px"
           });
           this._add(control, {
-            bottom: 8,
-            right: 4
+            bottom: -6,
+            right: -4
           });
           break;
       }
@@ -74,7 +75,11 @@ qx.Class.define("osparc.task.TasksButton", {
 
       const tasks = osparc.task.TasksContainer.getInstance();
       const nTasks = tasks.getTasks().length;
-      number.setValue(nTasks.toString());
+      if (nTasks > 9) {
+        number.setValue("9+");
+      } else {
+        number.setValue(nTasks.toString());
+      }
       nTasks ? this.show() : this.exclude();
     },
 
