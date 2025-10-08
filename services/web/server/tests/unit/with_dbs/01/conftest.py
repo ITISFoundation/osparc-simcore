@@ -46,7 +46,11 @@ def mock_handler_in_storage_rest(
             _rest,
             handler_name,
             return_value=return_value,
-            side_effect=partial(_result_or_exception_side_effect, side_effect),
+            side_effect=(
+                partial(_result_or_exception_side_effect, side_effect)
+                if side_effect
+                else None
+            ),
         )
 
     return _create
@@ -73,7 +77,11 @@ def mock_handler_in_task_service(
             _tasks_service,
             handler_name,
             return_value=return_value,
-            side_effect=partial(_result_or_exception_side_effect, side_effect),
+            side_effect=(
+                partial(_result_or_exception_side_effect, side_effect)
+                if side_effect
+                else None
+            ),
         )
 
     return _create
