@@ -5,6 +5,7 @@
 
 import time
 
+import pytest
 from fastapi.security import HTTPBasicCredentials
 from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from pytest_mock import MockerFixture
