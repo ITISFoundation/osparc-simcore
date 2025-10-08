@@ -85,5 +85,5 @@ def _do_assert_error(
 
         for msg in list_expected_msg:
             assert any(
-                re.search(msg, e) for e in details
+                msg == e or re.search(msg, e) for e in details
             ), f"could not find {msg=} in {details=}"

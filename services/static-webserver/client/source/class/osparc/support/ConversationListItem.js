@@ -63,17 +63,17 @@ qx.Class.define("osparc.support.ConversationListItem", {
       const conversation = this.getConversation();
       const lastMessage = conversation.getLastMessage();
       if (lastMessage) {
-        const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
+        const date = osparc.utils.Utils.formatDateAndTime(lastMessage.getCreated());
         this.set({
           role: date,
         });
-        const userGroupId = lastMessage.userGroupId;
+        const userGroupId = lastMessage.getUserGroupId();
         osparc.store.Users.getInstance().getUser(userGroupId)
           .then(user => {
             if (user) {
               this.set({
                 thumbnail: user.getThumbnail(),
-                subtitle: user.getLabel() + ": " + lastMessage["content"],
+                subtitle: user.getLabel() + ": " + lastMessage.getContent(),
               });
             }
           });
@@ -84,7 +84,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
       const conversation = this.getConversation();
       const firstMessage = conversation.getFirstMessage();
       if (firstMessage) {
-        const userGroupId = firstMessage.userGroupId;
+        const userGroupId = firstMessage.getUserGroupId();
         osparc.store.Users.getInstance().getUser(userGroupId)
           .then(user => {
             if (user) {
@@ -93,7 +93,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
               if (amISupporter) {
                 subSubtitle += " by " + user.getLabel();
               }
-              const date = osparc.utils.Utils.formatDateAndTime(new Date(firstMessage.created));
+              const date = osparc.utils.Utils.formatDateAndTime(firstMessage.getCreated());
               subSubtitle += " on " + date;
               this.set({
                 subSubtitle,

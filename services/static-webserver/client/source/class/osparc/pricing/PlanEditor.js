@@ -135,6 +135,7 @@ qx.Class.define("osparc.pricing.PlanEditor", {
           control = new qx.ui.form.SelectBox().set({
             font: "text-14",
           });
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           [
             "TIER",
             "LICENSE",
