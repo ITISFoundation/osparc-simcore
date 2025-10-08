@@ -1,6 +1,8 @@
 import pytest
-from models_library.batch_operations import create_batch_ids_validator
-from pydantic import ValidationError
+from faker import Faker
+from models_library.batch_operations import BatchGetEnvelope, create_batch_ids_validator
+from models_library.generics import Envelope
+from pydantic import TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -69,3 +71,37 @@ def test_create_batch_ids_validator(
                 result, key=lambda x: original_first_positions[x]
             )
             assert result == sorted_by_original
+
+
+def test_composing_schemas_for_batch_operations(faker: Faker):
+    from models_library.api_schemas_webserver._base import (
+        OutputSchema as WebServerOutputSchema,
+    )
+    from models_library.api_schemas_webserver.projects import ProjectGet
+    from models_library.projects import ProjectID
+
+    # inner schema model
+    class WebServerProjectBatchGetSchema(
+        WebServerOutputSchema, BatchGetEnvelope[ProjectGet, ProjectID]
+    ): ...
+
+    some_projects = ProjectGet.model_json_schema()["examples"]
+
+    # response model
+    response_model = Envelope[WebServerProjectBatchGetSchema].model_validate(
+        {
+            # NOTE: how camelcase (from WebServerOutputSchema.model_config) applies here
+            "data": {
+                "foundItems": some_projects,
+                "missingIdentifiers": [ProjectID(faker.uuid4())],
+            }
+        }
+    )
+
+    assert response_model.data is not None
+
+    assert response_model.data.found_items == TypeAdapter(
+        list[ProjectGet]
+    ).validate_python(some_projects)
+
+    assert len(response_model.data.missing_identifiers) == 1
