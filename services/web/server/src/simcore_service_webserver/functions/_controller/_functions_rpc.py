@@ -1,5 +1,7 @@
 from typing import Literal
 
+import simcore_service_webserver.functions._function_job_collections_repository
+import simcore_service_webserver.functions._function_jobs_repository
 from aiohttp import web
 from models_library.functions import (
     Function,
@@ -354,7 +356,7 @@ async def delete_function_job(
     product_name: ProductName,
     function_job_id: FunctionJobID,
 ) -> None:
-    return await _functions_repository.delete_function_job(
+    return await simcore_service_webserver.functions._function_jobs_repository.delete_function_job(
         app=app,
         user_id=user_id,
         product_name=product_name,
@@ -377,7 +379,7 @@ async def delete_function_job_collection(
     product_name: ProductName,
     function_job_collection_id: FunctionJobID,
 ) -> None:
-    return await _functions_repository.delete_function_job_collection(
+    return await simcore_service_webserver.functions._function_job_collections_repository.delete_function_job_collection(
         app=app,
         user_id=user_id,
         product_name=product_name,
