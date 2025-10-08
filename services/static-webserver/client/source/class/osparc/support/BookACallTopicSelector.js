@@ -75,6 +75,7 @@ qx.Class.define("osparc.support.BookACallTopicSelector", {
           control = new qx.ui.form.SelectBox().set({
             marginLeft: 20,
           });
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           this.getChildControl("content-box").add(control);
           this.getChildControl("specific-intro-button").bind("value", control, "visibility", {
             converter: val => val ? "visible" : "excluded"

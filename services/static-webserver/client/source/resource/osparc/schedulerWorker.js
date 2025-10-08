@@ -14,6 +14,6 @@ self.onmessage = (e) => {
     clearInterval(schedules[id]);
     delete schedules[id];
   } else {
-    console.log("Worker could not handle command:", command, interval, id);
+    // do nothing here, in case of issues try logging the event here
   }
 };

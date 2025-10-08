@@ -21,6 +21,7 @@ from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import limited_gather, logged_gather
+from simcore_sdk.node_ports_common.exceptions import ProjectNotFoundError
 
 from ..projects import _nodes_service, _projects_service
 from ..rabbitmq import get_rabbitmq_client
@@ -93,12 +94,21 @@ async def _computational_pipeline_status_message_parser(
     app: web.Application, data: bytes
 ) -> bool:
     rabbit_message = ComputationalPipelineStatusMessage.model_validate_json(data)
-    project = await _projects_service.get_project_for_user(
-        app,
-        f"{rabbit_message.project_id}",
-        rabbit_message.user_id,
-        include_state=True,
-    )
+    try:
+        project = await _projects_service.get_project_for_user(
+            app,
+            f"{rabbit_message.project_id}",
+            rabbit_message.user_id,
+            include_state=True,
+        )
+    except ProjectNotFoundError:
+        _logger.warning(
+            "Cannot notify user %s about project %s status: project not found",
+            rabbit_message.user_id,
+            rabbit_message.project_id,
+        )
+        return True  # <-- telling RabbitMQ that message was processed
+
     if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
         # the pipeline finished, the frontend needs to update all computational nodes
         computational_node_ids = (
