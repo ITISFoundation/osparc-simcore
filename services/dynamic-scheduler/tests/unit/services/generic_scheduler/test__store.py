@@ -26,7 +26,16 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._store import 
     StepGroupProxy,
     StepStoreProxy,
     Store,
+    _get_group_hash_key,
+    _get_operation_context_hash_key,
+    _get_scheduler_data_hash_key,
+    _get_step_hash_key,
 )
+
+
+@pytest.fixture
+def schedule_id(faker: Faker) -> ScheduleId:
+    return faker.uuid4()
 
 
 @pytest.fixture
@@ -48,6 +57,36 @@ async def _assert_keys_in_hash(
 ) -> None:
     keys = set(await handle_redis_returns_union_types(store.redis.hkeys(hash_key)))
     assert keys == expected_keys
+
+
+def test_ensure_keys_have_the_same_prefix(schedule_id: ScheduleId):
+    key_prefix = f"SCH:{schedule_id}"
+
+    assert key_prefix == _get_scheduler_data_hash_key(schedule_id=schedule_id)
+
+    keys: list[str] = [
+        _get_scheduler_data_hash_key(schedule_id=schedule_id),
+        _get_step_hash_key(
+            schedule_id=schedule_id,
+            operation_name="op1",
+            group_name="sg1",
+            step_name="step1",
+            is_creating=True,
+        ),
+        _get_group_hash_key(
+            schedule_id=schedule_id,
+            operation_name="op1",
+            group_name="sg1",
+            is_creating=True,
+        ),
+        _get_operation_context_hash_key(
+            schedule_id=schedule_id,
+            operation_name="op1",
+        ),
+    ]
+
+    for key in keys:
+        assert key.startswith(key_prefix)
 
 
 async def test_store_workflow(store: Store):
@@ -126,11 +165,6 @@ async def test_store_supporse_multiple_python_base_types(store: Store, value: An
     # values are stored and recovered in their original type
     await store.set_key_in_hash("hash1", "key1", value)
     assert (await store.get_keys_from_hash("hash1", "key1")) == (value,)
-
-
-@pytest.fixture
-def schedule_id(faker: Faker) -> ScheduleId:
-    return faker.uuid4()
 
 
 async def test_schedule_data_store_proxy(store: Store, schedule_id: ScheduleId):
