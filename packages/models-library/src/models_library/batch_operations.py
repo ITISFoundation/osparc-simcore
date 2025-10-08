@@ -28,7 +28,7 @@ def create_batch_ids_validator(identifier_type: type[IdentifierT]) -> TypeAdapte
     """
     return TypeAdapter(
         Annotated[
-            list[identifier_type],
+            list[identifier_type],  # type: ignore[valid-type]
             BeforeValidator(_deduplicate_preserving_order),
             Field(
                 min_length=1,

@@ -537,7 +537,7 @@ async def test_list_all_vs_latest_services(
         key_to_all_versions[item.key].append(item)
 
     # For each service key, verify we have the expected number of versions
-    for key, versions in key_to_all_versions.found_items():
+    for key, versions in key_to_all_versions.items():
         assert len(versions) == num_versions_per_service
 
         # Find this service in latest_found_items

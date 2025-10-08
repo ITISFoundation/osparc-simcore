@@ -586,10 +586,7 @@ async def check_catalog_service_permissions(
     return access_rights
 
 
-ServiceKeyVersionTuple = tuple[ServiceKey, ServiceVersion]
-
-
-_BatchIdsValidator = create_batch_ids_validator(ServiceKeyVersionTuple)
+_BatchIdsValidator = create_batch_ids_validator(tuple[ServiceKey, ServiceVersion])
 
 
 async def batch_get_user_services(
@@ -598,7 +595,7 @@ async def batch_get_user_services(
     *,
     product_name: ProductName,
     user_id: UserID,
-    ids: list[ServiceKeyVersionTuple],
+    ids: list[tuple[ServiceKey, ServiceVersion]],
 ) -> BatchGetUserServicesResult:
     """Batch get user services.
 
