@@ -124,51 +124,67 @@ def test_response_surface_modeling(
 
         prj_uuid = jsonifier_project_data["uuid"]
 
-        # create the probe
-        with (
-            page.expect_response(
+        with log_context(logging.INFO, "Create probe"):
+            with (
+                page.expect_response(
+                    lambda resp: resp.url.endswith(f"/projects/{prj_uuid}")
+                    and resp.request.method == "PATCH"
+                ) as patch_prj_probe_ctx,
+                page.expect_response(
+                    lambda resp: resp.url.endswith(f"/projects/{prj_uuid}/nodes")
+                    and resp.request.method == "POST"
+                ) as create_probe_ctx,
+            ):
+                page.get_by_test_id("connect_probe_btn_number_3").click()
+
+            patch_prj_probe_resp = patch_prj_probe_ctx.value
+            assert (
+                patch_prj_probe_resp.status == 204
+            ), f"Expected 204 from PATCH, got {patch_prj_probe_resp.status}"
+            create_probe_resp = create_probe_ctx.value
+            assert (
+                create_probe_resp.status == 201
+            ), f"Expected 201 from POST, got {create_probe_resp.status}"
+
+        with log_context(logging.INFO, "Create parameter"):
+            page.get_by_test_id("connect_input_btn_number_1").click()
+
+            with (
+                page.expect_response(
+                    lambda resp: resp.url.endswith(f"/projects/{prj_uuid}")
+                    and resp.request.method == "PATCH"
+                ) as patch_prj_param_ctx,
+                page.expect_response(
+                    lambda resp: resp.url.endswith(f"/projects/{prj_uuid}/nodes")
+                    and resp.request.method == "POST"
+                ) as create_param_ctx,
+            ):
+                page.get_by_text("new parameter").click()
+
+            patch_prj_param_resp = patch_prj_param_ctx.value
+            assert (
+                patch_prj_param_resp.status == 204
+            ), f"Expected 204 from PATCH, got {patch_prj_param_resp.status}"
+            create_param_resp = create_param_ctx.value
+            assert (
+                create_param_resp.status == 201
+            ), f"Expected 201 from POST, got {create_param_resp.status}"
+
+        with log_context(logging.INFO, "Rename project"):
+            page.get_by_test_id("studyTitleRenamer").click()
+            with page.expect_response(
                 lambda resp: resp.url.endswith(f"/projects/{prj_uuid}")
                 and resp.request.method == "PATCH"
-            ) as patch_prj_probe_ctx,
-            page.expect_response(
-                lambda resp: resp.url.endswith(f"/projects/{prj_uuid}/nodes")
-                and resp.request.method == "POST"
-            ) as create_probe_ctx,
-        ):
-            page.get_by_test_id("connect_probe_btn_number_3").click()
+            ) as patch_prj_rename_ctx:
+                page.get_by_test_id("studyTitleRenamer").locator("input").fill(
+                    _STUDY_FUNCTION_NAME
+                )
 
-        patch_prj_probe_resp = patch_prj_probe_ctx.value
-        assert (
-            patch_prj_probe_resp.status == 204
-        ), f"Expected 204 from PATCH, got {patch_prj_probe_resp.status}"
-        create_probe_resp = create_probe_ctx.value
-        assert (
-            create_probe_resp.status == 201
-        ), f"Expected 201 from POST, got {create_probe_resp.status}"
-
-        # create the parameter
-        page.get_by_test_id("connect_input_btn_number_1").click()
-        with page.expect_response(
-            lambda response: re.compile(
-                rf"/projects/{jsonifier_project_data['uuid']}"
-            ).search(response.url)
-            is not None
-            and response.request.method == "PATCH"
-        ):
-            page.get_by_text("new parameter").click()
-
-        # rename the project to identify it
-        page.get_by_test_id("studyTitleRenamer").click()
-        with page.expect_response(
-            lambda response: re.compile(
-                rf"/projects/{jsonifier_project_data['uuid']}"
-            ).search(response.url)
-            is not None
-            and response.request.method == "PATCH"
-        ):
-            page.get_by_test_id("studyTitleRenamer").locator("input").fill(
-                _STUDY_FUNCTION_NAME
-            )
+            patch_prj_rename_resp = patch_prj_rename_ctx.value
+            assert (
+                patch_prj_rename_resp.status == 204
+            ), f"Expected 204 from PATCH, got {patch_prj_rename_resp.status}"
+            create_param_resp = create_param_ctx.value
 
     # 2. go back to dashboard
     with (
