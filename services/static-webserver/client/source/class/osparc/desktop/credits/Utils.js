@@ -103,6 +103,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       const walletSelector = new qx.ui.form.SelectBox().set({
         maxWidth: 250
       });
+      walletSelector.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
 
       const populateSelectBox = selectBox => {
         selectBox.removeAll();

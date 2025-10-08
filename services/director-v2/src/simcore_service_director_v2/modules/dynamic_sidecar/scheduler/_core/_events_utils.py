@@ -286,11 +286,12 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await app.state.dynamic_sidecar_scheduler.scheduler.remove_service_from_observation(
         scheduler_data.node_uuid
     )
+
+    await _cleanup_long_running_tasks(app, scheduler_data.node_uuid)
+
     await task_progress.update(
         message="finished removing resources", percent=ProgressPercent(1)
     )
-
-    await _cleanup_long_running_tasks(app, scheduler_data.node_uuid)
 
 
 async def _cleanup_long_running_tasks(app: FastAPI, node_id: NodeID) -> None:

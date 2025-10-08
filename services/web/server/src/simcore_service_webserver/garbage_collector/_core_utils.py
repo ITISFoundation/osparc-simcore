@@ -5,7 +5,8 @@ from aiohttp import web
 from models_library.groups import Group, GroupID, GroupType
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from simcore_postgres_database.aiopg_errors import DatabaseError
+from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
+from sqlalchemy.exc import DatabaseError
 
 from ..groups.api import get_group_by_gid
 from ..projects._projects_repository_legacy import (
@@ -137,7 +138,6 @@ async def replace_current_owner(
         )
 
     except (
-        DatabaseError,
         asyncpg.exceptions.PostgresError,
         ProjectNotFoundError,
         UserNotFoundError,
@@ -188,8 +188,8 @@ async def replace_current_owner(
         )
 
     except (
+        AiopgDatabaseError,
         DatabaseError,
-        asyncpg.exceptions.PostgresError,
         ProjectNotFoundError,
         UserNotFoundError,
     ):

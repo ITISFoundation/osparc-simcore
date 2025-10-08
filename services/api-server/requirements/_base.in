@@ -17,6 +17,7 @@
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
+aiocache
 aiofiles
 cryptography
 fastapi-pagination

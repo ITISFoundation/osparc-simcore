@@ -7,7 +7,7 @@ from simcore_postgres_database.models.payments_methods import (
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
-class AutoRechargeStmts:
+class AutoRechargeStatements:
     @staticmethod
     def is_valid_payment_method(user_id, wallet_id, payment_method_id) -> sa.sql.Select:
         return sa.select(payments_methods.c.payment_method_id).where(

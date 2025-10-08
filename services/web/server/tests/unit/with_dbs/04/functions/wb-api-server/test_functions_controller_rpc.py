@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=too-many-arguments
 
 import datetime
 from collections.abc import Callable
@@ -27,8 +28,10 @@ from models_library.functions_errors import (
     FunctionsWriteApiAccessDeniedError,
     FunctionWriteAccessDeniedError,
 )
+from models_library.groups import EVERYONE_GROUP_ID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
+from models_library.rest_pagination import PageMetaInfoLimitOffset
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
@@ -194,7 +197,7 @@ async def test_list_functions(
     )
 
     # Assert the list contains the registered function
-    assert len(functions) > 0
+    assert len(functions) == 1
     assert any(f.uid == registered_function.uid for f in functions)
 
 
@@ -221,7 +224,7 @@ async def test_list_functions_mixed_user(
         )
         for _ in range(2)
     ]
-
+    assert int(logged_user["primary_gid"]) != 1
     # List functions for the other logged user
     other_functions, _ = await webserver_rpc_client.functions.list_functions(
         pagination_limit=10,
@@ -250,7 +253,7 @@ async def test_list_functions_mixed_user(
         product_name=osparc_product_name,
     )
     # Assert the list contains only the logged user's function
-    assert len(functions) == 2
+    assert len(functions) == len(registered_functions)
     assert all(f.uid in [rf.uid for rf in registered_functions] for f in functions)
 
     other_functions, _ = await webserver_rpc_client.functions.list_functions(
@@ -260,10 +263,48 @@ async def test_list_functions_mixed_user(
         product_name=osparc_product_name,
     )
     # Assert the list contains only the other user's functions
-    assert len(other_functions) == 3
+    assert len(other_functions) == len(other_registered_function)
     assert all(
         f.uid in [orf.uid for orf in other_registered_function] for f in other_functions
     )
+
+    # Add other-user permissions to a logged user function
+    await webserver_rpc_client.functions.set_group_permissions(
+        object_type="function",
+        permission_group_id=int(other_logged_user["primary_gid"]),
+        object_ids=[registered_functions[0].uid],
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        read=True,
+    )
+
+    other_functions, _ = await webserver_rpc_client.functions.list_functions(
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=other_logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    assert len(other_functions) == len(other_registered_function) + 1
+    assert any(f.uid == registered_functions[0].uid for f in other_functions)
+
+    # Add all-user permissions to a logged user function
+    await webserver_rpc_client.functions.set_group_permissions(
+        object_type="function",
+        permission_group_id=EVERYONE_GROUP_ID,
+        object_ids=[registered_functions[0].uid],
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        read=True,
+        write=True,
+    )
+    other_functions, _ = await webserver_rpc_client.functions.list_functions(
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=other_logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert len(other_functions) == len(other_registered_function) + 1
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -276,11 +317,11 @@ async def test_list_functions_mixed_user(
     ],
 )
 @pytest.mark.parametrize(
-    "test_pagination_limit, test_pagination_offset",
+    "test_pagination_limit, test_pagination_offset, total_number_functions",
     [
-        (5, 0),
-        (2, 2),
-        (12, 4),
+        (5, 0, 10),
+        (2, 2, 10),
+        (12, 4, 10),
     ],
 )
 async def test_list_functions_with_pagination_ordering(
@@ -288,26 +329,36 @@ async def test_list_functions_with_pagination_ordering(
     add_user_function_api_access_rights: None,
     webserver_rpc_client: WebServerRpcClient,
     create_fake_function_obj: Callable[[FunctionClass], ProjectFunction],
-    clean_functions: None,
     osparc_product_name: ProductName,
     logged_user: UserInfoDict,
     order_by: OrderBy | None,
     test_pagination_limit: int,
     test_pagination_offset: int,
+    total_number_functions: int,
+    clean_functions: None,
 ):
+    # Making sure functions are empty before we start
+    assert await webserver_rpc_client.functions.list_functions(
+        pagination_limit=1,
+        pagination_offset=0,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    ) == (
+        [],
+        PageMetaInfoLimitOffset(limit=1, total=0, offset=0, count=0),
+    )
     # Register multiple functions
-    TOTAL_FUNCTIONS = 10
     registered_functions = [
         await webserver_rpc_client.functions.register_function(
             function=create_fake_function_obj(FunctionClass.PROJECT),
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
-        for _ in range(TOTAL_FUNCTIONS)
+        for _ in range(total_number_functions)
     ]
 
     # List functions with pagination
-    functions, page_info = await webserver_rpc_client.functions.list_functions(
+    listed_functions, page_info = await webserver_rpc_client.functions.list_functions(
         pagination_limit=test_pagination_limit,
         pagination_offset=test_pagination_offset,
         user_id=logged_user["id"],
@@ -316,23 +367,26 @@ async def test_list_functions_with_pagination_ordering(
     )
 
     # Assert the list contains the correct number of functions
-    assert len(functions) == min(
-        test_pagination_limit, max(0, TOTAL_FUNCTIONS - test_pagination_offset)
+    assert len(listed_functions) == min(
+        test_pagination_limit, max(0, total_number_functions - test_pagination_offset)
     )
-    assert all(f.uid in [rf.uid for rf in registered_functions] for f in functions)
-    assert page_info.count == len(functions)
-    assert page_info.total == TOTAL_FUNCTIONS
+
+    assert all(
+        f.uid in [rf.uid for rf in registered_functions] for f in listed_functions
+    )
+    assert page_info.count == len(listed_functions)
+    assert page_info.total == total_number_functions
 
     # Verify the functions are sorted correctly based on the order_by parameter
     if order_by:
         field = order_by.field
         direction = order_by.direction
         sorted_functions = sorted(
-            functions,
+            listed_functions,
             key=lambda f: getattr(f, field),
             reverse=(direction == OrderDirection.DESC),
         )
-        assert functions == sorted_functions
+        assert listed_functions == sorted_functions
 
 
 @pytest.mark.parametrize(

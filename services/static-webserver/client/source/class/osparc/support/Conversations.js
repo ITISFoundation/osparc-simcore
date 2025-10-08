@@ -78,11 +78,11 @@ qx.Class.define("osparc.support.Conversations", {
     __listenToNewConversations: function() {
       osparc.store.ConversationsSupport.getInstance().addListener("conversationCreated", e => {
         const conversation = e.getData();
-        this.__addConversation(conversation);
+        this.__addConversation(conversation, 0);
       });
     },
 
-    __addConversation: function(conversation) {
+    __addConversation: function(conversation, position) {
       // ignore it if it was already there
       const conversationId = conversation.getConversationId();
       const conversationItemFound = this.__getConversationItem(conversationId);
@@ -94,7 +94,11 @@ qx.Class.define("osparc.support.Conversations", {
       conversationListItem.setConversation(conversation);
       conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationId, this));
       const conversationsLayout = this.getChildControl("conversations-layout");
-      conversationsLayout.add(conversationListItem);
+      if (position !== undefined) {
+        conversationsLayout.addAt(conversationListItem, position);
+      } else {
+        conversationsLayout.add(conversationListItem);
+      }
       this.__conversationListItems.push(conversationListItem);
 
       return conversationListItem;

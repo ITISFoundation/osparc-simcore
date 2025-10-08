@@ -521,6 +521,7 @@ qx.Class.define("osparc.form.Auto", {
           break;
         case "SelectBox":
           control = new qx.ui.form.SelectBox();
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           setup = this.__setupSelectBox;
           s.set["minWidth"] = 80;
           break;

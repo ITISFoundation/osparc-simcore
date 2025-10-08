@@ -340,6 +340,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
         const targetRule = copyTSRTarget[ruleKey];
         if (targetRule.level !== undefined) {
           const targetsBox = new qx.ui.form.SelectBox();
+          targetsBox.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           const conformanceLevels = osparc.metadata.Quality.getConformanceLevel();
           Object.values(conformanceLevels).forEach(conformanceLevel => {
             let text = `${conformanceLevel.level} - `;
