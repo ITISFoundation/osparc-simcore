@@ -45,7 +45,7 @@ qx.Class.define("osparc.data.model.Conversation", {
     this.__listenToConversationMessageWS();
 
     if (conversationData.type === "SUPPORT") {
-      this.__fetchLastMessage();
+      this.__fetchFirstAndLastMessages();
     }
   },
 
@@ -132,8 +132,15 @@ qx.Class.define("osparc.data.model.Conversation", {
       event: "changeNameAlias",
     },
 
+    firstMessage: {
+      check: "osparc.data.model.Message",
+      nullable: true,
+      init: null,
+      event: "changeFirstMessage",
+    },
+
     lastMessage: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       nullable: true,
       init: null,
       event: "changeLastMessage",
@@ -154,7 +161,7 @@ qx.Class.define("osparc.data.model.Conversation", {
   },
 
   members: {
-    __fetchLastMessagePromise: null,
+    __fetchingFirstAndLastMessage: null,
     __nextRequestParams: null,
     __messages: null,
 
@@ -167,7 +174,7 @@ qx.Class.define("osparc.data.model.Conversation", {
     __applyLastMessage: function(lastMessage) {
       const name = this.getName();
       if (!name || name === "null") {
-        this.setNameAlias(lastMessage ? lastMessage.content : "");
+        this.setNameAlias(lastMessage ? lastMessage.getContent() : "");
       }
     },
 
@@ -178,19 +185,19 @@ qx.Class.define("osparc.data.model.Conversation", {
         this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED,
         this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED,
       ].forEach(eventName => {
-        const eventHandler = message => {
-          if (message) {
-            const conversationId = message["conversationId"];
+        const eventHandler = messageData => {
+          if (messageData) {
+            const conversationId = messageData["conversationId"];
             if (conversationId === this.getConversationId()) {
               switch (eventName) {
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
-                  this.addMessage(message);
+                  this.addMessage(messageData);
                   break;
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED:
-                  this.updateMessage(message);
+                  this.updateMessage(messageData);
                   break;
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED:
-                  this.deleteMessage(message);
+                  this.deleteMessage(messageData);
                   break;
               }
             }
@@ -200,24 +207,36 @@ qx.Class.define("osparc.data.model.Conversation", {
       });
     },
 
-    __fetchLastMessage: function() {
-      if (this.__fetchLastMessagePromise) {
-        return this.__fetchLastMessagePromise;
+    __fetchFirstAndLastMessages: function() {
+      if (this.__fetchingFirstAndLastMessage) {
+        return this.__fetchingFirstAndLastMessage;
       }
 
-      let promise = osparc.store.ConversationsSupport.getInstance().fetchLastMessage(this.getConversationId());
-      promise
-        .then(lastMessage => {
-          this.addMessage(lastMessage);
-          promise = null;
-          return lastMessage;
+      this.__fetchingFirstAndLastMessage = true;
+      osparc.store.ConversationsSupport.getInstance().fetchLastMessage(this.getConversationId())
+        .then(resp => {
+          const messages = resp["data"];
+          if (messages.length) {
+            const lastMessage = new osparc.data.model.Message(messages[0]);
+            this.setLastMessage(lastMessage);
+          }
+          // fetch first message only if there is more than one message
+          if (resp["_meta"]["total"] === 1) {
+            const firstMessage = new osparc.data.model.Message(messages[0]);
+            this.setFirstMessage(firstMessage);
+          } else if (resp["_meta"]["total"] > 1) {
+            osparc.store.ConversationsSupport.getInstance().fetchFirstMessage(this.getConversationId(), resp["_meta"])
+              .then(firstMessages => {
+                if (firstMessages.length) {
+                  const firstMessage = new osparc.data.model.Message(firstMessages[0]);
+                  this.setFirstMessage(firstMessage);
+                }
+              });
+          }
+          return null;
         })
-        .finally(() => {
-          this.__fetchLastMessagePromise = null;
-        });
-
-      this.__fetchLastMessagePromise = promise;
-      return promise;
+        .catch(err => osparc.FlashMessenger.logError(err))
+        .finally(() => this.__fetchingFirstAndLastMessage = null);
     },
 
     amIOwner: function() {
@@ -249,8 +268,8 @@ qx.Class.define("osparc.data.model.Conversation", {
         osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options);
       return promise
         .then(resp => {
-          const messages = resp["data"];
-          messages.forEach(message => this.addMessage(message));
+          const messagesData = resp["data"];
+          messagesData.forEach(messageData => this.addMessage(messageData));
           this.__nextRequestParams = resp["_links"]["next"];
           return resp;
         })
@@ -270,36 +289,57 @@ qx.Class.define("osparc.data.model.Conversation", {
         });
     },
 
-    addMessage: function(message) {
-      if (message) {
-        const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
-        if (!found) {
-          this.__messages.push(message);
-          this.fireDataEvent("messageAdded", message);
-        }
-        // latest first
-        this.__messages.sort((a, b) => new Date(b.created) - new Date(a.created));
-        this.setLastMessage(this.__messages[0]);
-      }
+    getMessages: function() {
+      return this.__messages;
     },
 
-    updateMessage: function(message) {
-      if (message) {
-        const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
+    getMessageIndex: function(messageId) {
+      return this.__messages.findIndex(msg => msg.getMessageId() === messageId);
+    },
+
+    messageExists: function(messageId) {
+      return this.__messages.some(msg => msg.getMessageId() === messageId);
+    },
+
+    addMessage: function(messageData) {
+      let message = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
+      if (!message) {
+        message = new osparc.data.model.Message(messageData);
+        this.__messages.push(message);
+        osparc.data.model.Message.sortMessagesByDate(this.__messages);
+        this.fireDataEvent("messageAdded", message);
+        this.__evalFirstAndLastMessage();
+      }
+      return message;
+    },
+
+    updateMessage: function(messageData) {
+      if (messageData) {
+        const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
         if (found) {
-          Object.assign(found, message);
+          found.setData(messageData);
           this.fireDataEvent("messageUpdated", found);
+          this.__evalFirstAndLastMessage();
         }
       }
     },
 
-    deleteMessage: function(message) {
-      if (message) {
-        const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
+    deleteMessage: function(messageData) {
+      if (messageData) {
+        const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
         if (found) {
           this.__messages.splice(this.__messages.indexOf(found), 1);
           this.fireDataEvent("messageDeleted", found);
+          this.__evalFirstAndLastMessage();
         }
+      }
+    },
+
+    __evalFirstAndLastMessage: function() {
+      if (this.__messages && this.__messages.length) {
+        // newest first
+        this.setFirstMessage(this.__messages[this.__messages.length - 1]);
+        this.setLastMessage(this.__messages[0]);
       }
     },
 

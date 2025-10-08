@@ -683,11 +683,11 @@ def mocked_catalog_rpc_api(
     """
     Mocks the catalog's simcore service RPC API for testing purposes.
     """
-    from servicelib.rabbitmq.rpc_interfaces.catalog import (
-        services as catalog_rpc,  # keep import here
+    from servicelib.rabbitmq.rpc_interfaces.catalog import (  # noqa: PLC0415; keep import here
+        services as catalog_rpc,
     )
 
-    mocks = {}
+    mocks: dict[str, MockType] = {}
 
     # Get all callable methods from the side effects class that are not built-ins
     side_effect_methods = [
@@ -726,8 +726,8 @@ def mocked_directorv2_rpc_api(
     """
     Mocks the director-v2's simcore service RPC API for testing purposes.
     """
-    from servicelib.rabbitmq.rpc_interfaces.director_v2 import (
-        computations_tasks as directorv2_rpc,  # keep import here
+    from servicelib.rabbitmq.rpc_interfaces.director_v2 import (  # noqa: PLC0415; keep import here
+        computations_tasks as directorv2_rpc,
     )
 
     mocks = {}

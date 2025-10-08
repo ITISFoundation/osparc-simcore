@@ -185,6 +185,7 @@ qx.Class.define("osparc.study.Utils", {
       const templateTypeSB = new qx.ui.form.SelectBox().set({
         allowGrowX: false,
       });
+      templateTypeSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       const templateTypes = [{
         label: "Template",
         id: osparc.data.model.StudyUI.TEMPLATE_TYPE,

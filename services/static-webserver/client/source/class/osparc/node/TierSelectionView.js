@@ -43,6 +43,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
         allowGrowX: false,
         allowGrowY: false
       });
+      tierBox.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       tiersLayout.add(tierBox);
 
       const node = this.getNode();

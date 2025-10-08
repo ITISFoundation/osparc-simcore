@@ -55,6 +55,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
         allowGrowX: false
       });
+      walletIndicatorVisibilitySB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       [{
         id: "always",
         label: "Always"

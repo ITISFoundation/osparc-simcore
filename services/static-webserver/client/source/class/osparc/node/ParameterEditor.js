@@ -62,6 +62,7 @@ qx.Class.define("osparc.node.ParameterEditor", {
           control = new qx.ui.form.SelectBox().set({
             allowGrowX: false
           });
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           [
             "number",
             "integer",
