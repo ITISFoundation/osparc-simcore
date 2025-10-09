@@ -219,9 +219,16 @@ class RedisTaskStore:
                 self._redis_client_sdk.redis.ltrim(stream_key, len(stream_items), -1)
             )
 
+        empty = (
+            await handle_redis_returns_union_types(
+                self._redis_client_sdk.redis.llen(stream_key)
+            )
+            == 0
+        )
+
         return (
             stream_items,
-            done == "1",
+            done == "1" and empty,
             datetime.fromisoformat(last_update) if last_update else None,
         )
 

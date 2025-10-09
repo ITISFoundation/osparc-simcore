@@ -51,7 +51,7 @@ class TaskManager(Protocol):
         owner_metadata: OwnerMetadata,
         task_uuid: TaskUUID,
         offset: int = 0,
-        limit: int = 50,
+        limit: int = 20,
     ) -> tuple[list[TaskStreamItem], bool, datetime | None]: ...
 
     async def set_task_stream_done(self, task_key: TaskKey) -> None: ...

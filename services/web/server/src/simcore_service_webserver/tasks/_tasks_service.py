@@ -30,6 +30,9 @@ from servicelib.logging_utils import log_catch
 _logger = logging.getLogger(__name__)
 
 
+_STREAM_STALL_THRESHOLD = 60  # seconds
+
+
 async def cancel_task(
     task_manager: TaskManager,
     *,
@@ -113,9 +116,6 @@ async def get_task_status(
     )
 
 
-STALL_THRESHOLD = 60  # seconds
-
-
 async def pull_task_stream_items(
     task_manager: TaskManager,
     *,
@@ -124,7 +124,7 @@ async def pull_task_stream_items(
     limit: int = 50,
 ) -> tuple[list[TaskStreamItem], bool]:
     try:
-        results, is_done, last_update = await task_manager.pull_task_stream_items(
+        results, end, last_update = await task_manager.pull_task_stream_items(
             owner_metadata=owner_metadata,
             task_uuid=task_uuid,
             limit=limit,
@@ -134,14 +134,14 @@ async def pull_task_stream_items(
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    if not is_done and last_update:
+    if not end and last_update:
         delta = datetime.now(UTC) - last_update
-        if delta.total_seconds() > STALL_THRESHOLD:
+        if delta.total_seconds() > _STREAM_STALL_THRESHOLD:
             raise JobSchedulerError(
                 exc=f"Task seems stalled since {delta.total_seconds()} seconds"
             )
 
-    return results, is_done
+    return results, end
 
 
 async def list_tasks(
