@@ -216,6 +216,15 @@ class Core(SingletonInAppStateMixin):
             limit=PARALLEL_REQUESTS,
         )
 
+    async def get_operation_name(self, schedule_id: ScheduleId) -> OperationName | None:
+        schedule_data_proxy = ScheduleDataStoreProxy(
+            store=self._store, schedule_id=schedule_id
+        )
+        try:
+            return await schedule_data_proxy.read("operation_name")
+        except NoDataFoundError:
+            return None
+
     async def restart_operation_step_stuck_in_error(
         self,
         schedule_id: ScheduleId,
@@ -733,6 +742,13 @@ async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
     that has already been completed (eg: remove a created network)
     """
     await Core.get_from_app_state(app).cancel_operation(schedule_id)
+
+
+async def get_operation_name(
+    app: FastAPI, schedule_id: ScheduleId
+) -> OperationName | None:
+    """returns the name of the operation or None if not found"""
+    await Core.get_from_app_state(app).get_operation_name(schedule_id)
 
 
 async def restart_operation_step_stuck_in_manual_intervention_during_execute(

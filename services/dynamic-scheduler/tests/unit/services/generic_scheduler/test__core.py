@@ -1753,3 +1753,28 @@ async def test_step_does_not_provide_declared_key_or_is_none(
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+
+
+@pytest.mark.parametrize("app_count", [10])
+async def test_get_operation_name(
+    preserve_caplog_for_async_logging: None,
+    operation_name: OperationName,
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+):
+    assert (
+        await Core.get_from_app_state(selected_app).get_operation_name(
+            "non_existing_schedule_id"
+        )
+        is None
+    )
+
+    operation = Operation(SingleStepGroup(_S1))
+    register_operation(operation_name, operation)
+
+    schedule_id = await start_operation(selected_app, operation_name, {})
+
+    assert (
+        await Core.get_from_app_state(selected_app).get_operation_name(schedule_id)
+        == operation_name
+    )
