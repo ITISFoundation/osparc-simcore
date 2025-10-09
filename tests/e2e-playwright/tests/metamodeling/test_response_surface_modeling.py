@@ -180,9 +180,9 @@ def test_response_surface_modeling(
                 lambda resp: resp.url.endswith(f"/projects/{jsonifier_prj_uuid}")
                 and resp.request.method == "PATCH"
             ) as patch_prj_rename_ctx:
-                page.get_by_test_id("studyTitleRenamer").locator("input").fill(
-                    _STUDY_FUNCTION_NAME
-                )
+                renamer = page.get_by_test_id("studyTitleRenamer").locator("input")
+                renamer.fill(_STUDY_FUNCTION_NAME)
+                renamer.press("Enter")
 
             patch_prj_rename_resp = patch_prj_rename_ctx.value
             assert (
