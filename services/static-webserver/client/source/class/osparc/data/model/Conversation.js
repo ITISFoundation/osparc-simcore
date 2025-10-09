@@ -211,7 +211,6 @@ qx.Class.define("osparc.data.model.Conversation", {
         this.__messages.push(message);
         osparc.data.model.Message.sortMessagesByDate(this.__messages);
         this.fireDataEvent("messageAdded", message);
-        this.__evalFirstAndLastMessage();
       }
       return message;
     },
