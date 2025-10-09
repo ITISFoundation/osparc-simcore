@@ -31,11 +31,11 @@ def max_number_of_user_sessions() -> int:
 def mocked_publish_unsubscribe_from_project_logs_event(
     mocker: MockerFixture,
 ) -> MockType:
-    import simcore_service_webserver.projects._projects_service
+    import simcore_service_webserver.projects._projects_service  # noqa: PLC0415
 
     return mocker.patch.object(
-        simcore_service_webserver.projects._projects_service,
-        "_publish_unsubscribe_from_project_logs_event",  # noqa: SLF001
+        simcore_service_webserver.projects._projects_service,  # noqa: SLF001
+        "_publish_unsubscribe_from_project_logs_event",
         autospec=True,
     )
 
