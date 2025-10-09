@@ -156,7 +156,9 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       osparc.store.ConversationsSupport.getInstance().markAsResolved(this.getConversationId())
         .then(() => {
           this.setResolved(true);
-        });
+          osparc.FlashMessenger.log(qx.locale.Manager.tr("The case has been marked as resolved"));
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     addMessage: function(messageData) {

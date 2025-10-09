@@ -216,15 +216,15 @@ qx.Class.define("osparc.support.ConversationPage", {
     },
 
     __applyConversation: function(conversation) {
-      const title = this.getChildControl("conversation-title");
-      if (conversation) {
-        conversation.bind("nameAlias", title, "value");
-      }
-
-      const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
       const extraContextLayout = this.getChildControl("conversation-extra-layout");
       extraContextLayout.removeAll();
+
       if (conversation) {
+        const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
+
+        const title = this.getChildControl("conversation-title");
+        conversation.bind("nameAlias", title, "value");
+
         const createExtraContextLabel = text => {
           return new qx.ui.basic.Label(text).set({
             font: "text-12",
@@ -260,21 +260,23 @@ qx.Class.define("osparc.support.ConversationPage", {
         };
         updateExtraContext();
         conversation.addListener("changeExtraContext", () => updateExtraContext(), this);
+
+        this.getChildControl("rename-conversation-button");
+
+        const openProjectButton = this.getChildControl("open-project-button");
+        openProjectButton.setVisibility(conversation && conversation.getContextProjectId() ? "visible" : "excluded");
+
+        this.getChildControl("copy-ticket-id-button");
+
+        if (amISupporter) {
+          const resolveCaseButton = this.getChildControl("resolve-case-button");
+          conversation.bind("resolved", resolveCaseButton, "visibility", {
+            converter: val => val !== true ? "visible" : "excluded"
+          });
+        }
       }
 
       this.getChildControl("buttons-layout").setVisibility(conversation ? "visible" : "excluded");
-
-      this.getChildControl("rename-conversation-button");
-      const openProjectButton = this.getChildControl("open-project-button");
-      openProjectButton.setVisibility(conversation && conversation.getContextProjectId() ? "visible" : "excluded");
-      this.getChildControl("copy-ticket-id-button");
-      if (amISupporter) {
-        const resolveCaseButton = this.getChildControl("resolve-case-button");
-        conversation.bind("resolved", resolveCaseButton, "visibility", {
-          converter: val => val !== true ? "visible" : "excluded"
-        });
-
-      }
     },
 
     __openProjectDetails: function() {
@@ -301,9 +303,7 @@ qx.Class.define("osparc.support.ConversationPage", {
 
     __resolveCase: function() {
       if (this.getConversation()) {
-        this.getConversation().resolveCase()
-          .then(() => osparc.FlashMessenger.log(this.tr("The case has been marked as resolved")))
-          .catch(err => osparc.FlashMessenger.logError(err));
+        this.getConversation().markAsResolved()
       }
     },
 
