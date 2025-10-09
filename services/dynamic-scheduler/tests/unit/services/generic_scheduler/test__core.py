@@ -32,7 +32,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     SingleStepGroup,
     StepStoreProxy,
     cancel_operation,
-    get_operation_name,
+    get_operation_name_or_none,
     restart_operation_step_stuck_during_revert,
     restart_operation_step_stuck_in_manual_intervention_during_execute,
     start_operation,
@@ -1765,17 +1765,20 @@ async def test_step_does_not_provide_declared_key_or_is_none(
 
 
 @pytest.mark.parametrize("app_count", [10])
-async def test_get_operation_name(
+async def test_get_operation_name_or_none(
     preserve_caplog_for_async_logging: None,
     operation_name: OperationName,
     selected_app: FastAPI,
     register_operation: Callable[[OperationName, Operation], None],
 ):
-    assert await get_operation_name(selected_app, "non_existing_schedule_id") is None
+    assert (
+        await get_operation_name_or_none(selected_app, "non_existing_schedule_id")
+        is None
+    )
 
     operation = Operation(SingleStepGroup(_S1))
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
 
-    assert await get_operation_name(selected_app, schedule_id) == operation_name
+    assert await get_operation_name_or_none(selected_app, schedule_id) == operation_name
