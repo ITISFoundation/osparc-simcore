@@ -723,6 +723,7 @@ async def test_execute_revert_order(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:R",
                 "SCH:{schedule_id}:STEPS:test_op:0S:E:_FCR1",
@@ -741,6 +742,7 @@ async def test_execute_revert_order(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1S:R",
@@ -762,6 +764,7 @@ async def test_execute_revert_order(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:R",
@@ -787,6 +790,7 @@ async def test_execute_revert_order(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:R",
@@ -1015,6 +1019,7 @@ async def test_repeating_step(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:2S:E",
@@ -1050,6 +1055,7 @@ async def test_repeating_step(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:2P:E",
@@ -1175,6 +1181,7 @@ async def test_operation_is_not_cancellable(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:2S:E",
@@ -1214,6 +1221,7 @@ async def test_operation_is_not_cancellable(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:2P:E",
