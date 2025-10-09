@@ -62,6 +62,10 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.rabbitmq_messages import (
+    WebserverInternalEventRabbitMessage,
+    WebserverInternalEventRabbitMessageAction,
+)
 from models_library.resource_tracker import (
     HardwareInfo,
     PricingAndHardwareInfoTuple,
@@ -115,9 +119,8 @@ from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
-from ..notifications import project_logs
 from ..products import products_web
-from ..rabbitmq import get_rabbitmq_rpc_client
+from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.models import UserSession
 from ..resource_manager.registry import get_registry
@@ -187,19 +190,43 @@ from .utils import extract_dns_without_default_port
 _logger = logging.getLogger(__name__)
 
 
-async def conditionally_unsubscribe_from_project_logs(
+async def _publish_unsubscribe_from_project_logs_event(
+    app: web.Application, project_id: ProjectID, user_id: UserID
+) -> None:
+    """Publishes an unsubscribe event for project logs to all webserver replicas."""
+    rabbitmq_client = get_rabbitmq_client(app)
+    message = WebserverInternalEventRabbitMessage(
+        action=WebserverInternalEventRabbitMessageAction.UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE,
+        data={"project_id": f"{project_id}"},
+    )
+    _logger.debug(
+        "No active socket connections detected for project %s by user %s. Sending unsubscribe event to all replicas.",
+        project_id,
+        user_id,
+    )
+    await rabbitmq_client.publish(message.channel_name, message)
+
+
+async def conditionally_unsubscribe_project_logs_across_replicas(
     app: web.Application, project_id: ProjectID, user_id: UserID
 ) -> None:
     """
-    Unsubscribes from project logs only if no active socket connections remain for the project.
+    Unsubscribes from project logs only if no active socket connections remain for the project (across all users).
 
     This function checks for actual socket connections rather than just user sessions,
-    ensuring logs are only unsubscribed when truly no users are connected.
+    ensuring logs are only unsubscribed when truly no users are connected. When no active
+    connections are detected, an unsubscribe event is sent via RabbitMQ to all webserver
+    replicas to coordinate the unsubscription across the entire cluster.
+
+    Note: With multiple webserver replicas, this ensures we don't unsubscribe until
+    the last socket is closed. However, another replica may still maintain an active
+    subscription even if no users are connected to it, as the RabbitMQ event ensures
+    all replicas receive the unsubscription notification.
 
     Args:
         app: The web application instance
-        project_id: The project ID to check
-        user_id: Optional user ID to use for the resource session (defaults to 0 if None)
+        project_id: The project ID to check for active connections
+        user_id: User ID to use for the resource session management
     """
     redis_resource_registry = get_registry(app)
     with managed_resource(user_id, None, app) as user_session:
@@ -221,7 +248,7 @@ async def conditionally_unsubscribe_from_project_logs(
         # the last socket is closed, though another replica may still maintain an active
         # subscription even if no users are connected to it.
         if actually_used_sockets_on_project == 0:
-            await project_logs.unsubscribe(app, project_id)
+            await _publish_unsubscribe_from_project_logs_event(app, project_id, user_id)
 
 
 async def patch_project_and_notify_users(
@@ -1569,7 +1596,7 @@ async def _leave_project_room(
         sio = get_socket_server(app)
         await sio.leave_room(socket_id, SocketIORoomStr.from_project_id(project_uuid))
     else:
-        _logger.error(
+        _logger.warning(
             "User %s/%s has no socket_id, cannot leave project room %s",
             user_id,
             client_session_id,
@@ -1786,6 +1813,10 @@ async def close_project_for_user(
             include_state=True,
         )
         await notify_project_state_update(app, project)
+
+    await conditionally_unsubscribe_project_logs_across_replicas(
+        app, project_uuid, user_id
+    )
 
 
 async def _get_project_share_state(
