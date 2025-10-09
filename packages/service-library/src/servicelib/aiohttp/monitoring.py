@@ -34,13 +34,11 @@ MONITORING_NAMESPACE_APPKEY: Final = web.AppKey("APP_MONITORING_NAMESPACE_KEY", 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
     metrics = app[PROMETHEUS_METRICS_APPKEY]
-    assert isinstance(metrics, PrometheusMetrics)  # nosec
     return metrics.registry
 
 
 async def metrics_handler(request: web.Request):
     metrics = request.app[PROMETHEUS_METRICS_APPKEY]
-    assert isinstance(metrics, PrometheusMetrics)  # nosec
     await record_asyncio_event_looop_metrics(metrics)
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
