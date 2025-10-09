@@ -32,6 +32,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     SingleStepGroup,
     StepStoreProxy,
     cancel_operation,
+    get_operation_name_or_none,
     restart_operation_step_stuck_during_revert,
     restart_operation_step_stuck_in_manual_intervention_during_execute,
     start_operation,
@@ -722,6 +723,7 @@ async def test_execute_revert_order(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:R",
                 "SCH:{schedule_id}:STEPS:test_op:0S:E:_FCR1",
@@ -740,6 +742,7 @@ async def test_execute_revert_order(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1S:R",
@@ -761,6 +764,7 @@ async def test_execute_revert_order(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:R",
@@ -786,6 +790,7 @@ async def test_execute_revert_order(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:R",
@@ -1014,6 +1019,7 @@ async def test_repeating_step(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:2S:E",
@@ -1049,6 +1055,7 @@ async def test_repeating_step(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:2P:E",
@@ -1174,6 +1181,7 @@ async def test_operation_is_not_cancellable(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:2S:E",
@@ -1213,6 +1221,7 @@ async def test_operation_is_not_cancellable(
             ],
             {
                 "SCH:{schedule_id}",
+                "SCH:{schedule_id}:OP_CTX:test_op",
                 "SCH:{schedule_id}:GROUPS:test_op:0S:E",
                 "SCH:{schedule_id}:GROUPS:test_op:1P:E",
                 "SCH:{schedule_id}:GROUPS:test_op:2P:E",
@@ -1753,3 +1762,23 @@ async def test_step_does_not_provide_declared_key_or_is_none(
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
+
+
+@pytest.mark.parametrize("app_count", [10])
+async def test_get_operation_name_or_none(
+    preserve_caplog_for_async_logging: None,
+    operation_name: OperationName,
+    selected_app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+):
+    assert (
+        await get_operation_name_or_none(selected_app, "non_existing_schedule_id")
+        is None
+    )
+
+    operation = Operation(SingleStepGroup(_S1))
+    register_operation(operation_name, operation)
+
+    schedule_id = await start_operation(selected_app, operation_name, {})
+
+    assert await get_operation_name_or_none(selected_app, schedule_id) == operation_name
