@@ -1,5 +1,6 @@
 from ._core import (
     cancel_operation,
+    get_operation_name,
     restart_operation_step_stuck_during_revert,
     restart_operation_step_stuck_in_manual_intervention_during_execute,
     start_operation,
@@ -35,6 +36,7 @@ __all__: tuple[str, ...] = (
     "cancel_operation",
     "generic_scheduler_lifespan",
     "get_operation_context_proxy",
+    "get_operation_name",
     "get_step_group_proxy",
     "get_step_store_proxy",
     "Operation",
