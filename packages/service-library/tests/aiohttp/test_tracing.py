@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import importlib
 from collections.abc import Callable
 from functools import partial
@@ -14,8 +15,8 @@ from aiohttp.test_utils import TestClient
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
-from servicelib.aiohttp.tracing import get_tracing_lifespan
-from servicelib.tracing import _OSPARC_TRACE_ID_HEADER
+from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY, setup_tracing
+from servicelib.tracing import _OSPARC_TRACE_ID_HEADER, TracingConfig
 from settings_library.tracing import TracingSettings
 
 
@@ -40,17 +41,25 @@ def set_and_clean_settings_env_vars(
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
         )
+    sampling_probability_mocked = False
+    if tracing_settings_in[2]:
+        sampling_probability_mocked = True
+        monkeypatch.setenv(
+            "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", tracing_settings_in[2]
+        )
     yield
     if endpoint_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
     if port_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
+    if sampling_probability_mocked:
+        monkeypatch.delenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY")
 
 
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 4318),
+        ("http://opentelemetry-collector", 4318, 1.0),
     ],
     indirect=True,
 )
@@ -63,18 +72,19 @@ async def test_valid_tracing_settings(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
-    async for _ in get_tracing_lifespan(
-        app=app, service_name=service_name, tracing_settings=tracing_settings
-    )(app):
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
+    async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
         pass
 
 
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 80),
-        ("opentelemetry-collector", 4318),
-        ("httsdasp://ot@##el-collector", 4318),
+        ("http://opentelemetry-collector", 80, 1.0),
+        ("opentelemetry-collector", 4318, 1.0),
+        ("httsdasp://ot@##el-collector", 4318, 1.0),
     ],
     indirect=True,
 )
@@ -111,14 +121,14 @@ def manage_package(request):
     "tracing_settings_in, manage_package",
     [
         (
-            ("http://opentelemetry-collector", 4318),
+            ("http://opentelemetry-collector", 4318, 1.0),
             (
                 "opentelemetry-instrumentation-botocore",
                 "opentelemetry.instrumentation.botocore",
             ),
         ),
         (
-            ("http://opentelemetry-collector", "4318"),
+            ("http://opentelemetry-collector", "4318", 1.0),
             (
                 "opentelemetry-instrumentation-aiopg",
                 "opentelemetry.instrumentation.aiopg",
@@ -140,24 +150,19 @@ async def test_tracing_setup_package_detection(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
-    async for _ in get_tracing_lifespan(
-        app=app,
-        service_name=service_name,
-        tracing_settings=tracing_settings,
-    )(app):
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
+    async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
         # idempotency
-        async for _ in get_tracing_lifespan(
-            app=app,
-            service_name=service_name,
-            tracing_settings=tracing_settings,
-        )(app):
+        async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
             pass
 
 
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 4318),
+        ("http://opentelemetry-collector", 4318, 1.0),
     ],
     indirect=True,
 )
@@ -174,6 +179,10 @@ async def test_trace_id_in_response_header(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
+    app[TRACING_CONFIG_KEY] = tracing_config
 
     async def handler(handler_data: dict, request: web.Request) -> web.Response:
         current_span = trace.get_current_span()
@@ -187,10 +196,9 @@ async def test_trace_id_in_response_header(
     handler_data = dict()
     app.router.add_get("/", partial(handler, handler_data))
 
-    async for _ in get_tracing_lifespan(
+    async for _ in setup_tracing(
         app=app,
-        service_name=service_name,
-        tracing_settings=tracing_settings,
+        tracing_config=tracing_config,
         add_response_trace_id_header=True,
     )(app):
         client = await aiohttp_client(app)
@@ -201,3 +209,58 @@ async def test_trace_id_in_response_header(
         assert (
             trace_id == handler_data[_OSPARC_TRACE_ID_HEADER]
         )  # Ensure trace IDs match
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 0.05),
+    ],
+    indirect=True,
+)
+async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
+    mock_otel_collector: InMemorySpanExporter,
+    aiohttp_client: Callable,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in,
+):
+    """
+    This test checks that the TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY setting in TracingSettings
+    is effective by sending 1000 requests and verifying that the number of collected traces
+    is close to 0.05 * 1000 (with some tolerance).
+    """
+    n_requests = 1000
+    tolerance_probability = 0.5
+
+    app = web.Application()
+    service_name = "simcore_service_webserver"
+    tracing_settings = TracingSettings()
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name=service_name
+    )
+    app[TRACING_CONFIG_KEY] = tracing_config
+
+    async def handler(request: web.Request) -> web.Response:
+        return web.Response(text="ok")
+
+    app.router.add_get("/", handler)
+
+    async for _ in setup_tracing(app=app, tracing_config=tracing_config)(app):
+        client = await aiohttp_client(app)
+
+        await asyncio.gather(*(client.get("/") for _ in range(n_requests)))
+        trace_ids = {
+            span.context.trace_id
+            for span in mock_otel_collector.get_finished_spans()
+            if span.context is not None
+        }
+        n_traces = len(trace_ids)
+        expected_num_traces = int(
+            tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY * n_requests
+        )
+        tolerance = int(tolerance_probability * expected_num_traces)
+        assert (
+            expected_num_traces - tolerance
+            <= n_traces
+            <= expected_num_traces + tolerance
+        ), f"Expected roughly {expected_num_traces} distinct trace ids, got {n_traces}"
