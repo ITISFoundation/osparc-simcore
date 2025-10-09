@@ -115,28 +115,35 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    renameConversation: function(conversationId, name) {
+    __patchConversation: function(conversationId, data) {
       const params = {
         url: {
           conversationId,
         },
-        data: {
-          name,
-        }
+        data,
       };
       return osparc.data.Resources.fetch("conversationsSupport", "patchConversation", params);
     },
 
-    patchExtraContext: function(conversationId, extraContext) {
-      const params = {
-        url: {
-          conversationId,
-        },
-        data: {
-          extraContext,
-        }
+    renameConversation: function(conversationId, name) {
+      const patchData = {
+        name,
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "patchConversation", params);
+      return this.__patchConversation(conversationId, patchData);
+    },
+
+    patchExtraContext: function(conversationId, extraContext) {
+      const patchData = {
+        extraContext,
+      };
+      return this.__patchConversation(conversationId, patchData);
+    },
+
+    markAsRead: function(conversationId) {
+      const patchData = {
+        readByUser: true,
+      };
+      return this.__patchConversation(conversationId, patchData);
     },
 
     fetchLastMessage: function(conversationId) {
