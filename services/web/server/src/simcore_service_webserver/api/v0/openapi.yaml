@@ -16243,8 +16243,8 @@ components:
             type: array
           - type: 'null'
           title: Missing
-          description: List of services in defined in the project but that were not
-            found in the catalog
+          description: List of services defined in the project but that were not found
+            in the catalog
       type: object
       required:
       - projectUuid
