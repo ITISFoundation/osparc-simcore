@@ -1,7 +1,14 @@
 import pytest
 from faker import Faker
+from models_library.api_schemas_webserver._base import (
+    OutputSchema as WebServerOutputSchema,
+)
+from models_library.api_schemas_webserver.projects import (
+    ProjectGet,
+)
 from models_library.batch_operations import BatchGetEnvelope, create_batch_ids_validator
 from models_library.generics import Envelope
+from models_library.projects import ProjectID
 from pydantic import TypeAdapter, ValidationError
 
 
@@ -73,13 +80,6 @@ def test_create_batch_ids_validator(
 
 
 def test_composing_schemas_for_batch_operations(faker: Faker):
-    from models_library.api_schemas_webserver._base import (  # noqa: PLC0415
-        OutputSchema as WebServerOutputSchema,
-    )
-    from models_library.api_schemas_webserver.projects import (  # noqa: PLC0415
-        ProjectGet,
-    )
-    from models_library.projects import ProjectID  # noqa: PLC0415
 
     # inner schema model
     class WebServerProjectBatchGetSchema(
