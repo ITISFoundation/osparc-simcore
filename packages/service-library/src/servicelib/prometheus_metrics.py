@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -40,6 +41,7 @@ class PrometheusMetrics:
     request_count: Counter
     in_flight_requests: Gauge
     response_latency_with_labels: Histogram
+    event_loop_tasks: Gauge
 
 
 def _get_exemplar() -> dict[str, str] | None:
@@ -89,6 +91,13 @@ def get_prometheus_metrics() -> PrometheusMetrics:
         buckets=(0.1, 1, 5, 10),
     )
 
+    event_loop_tasks = Gauge(
+        name="asyncio_event_loop_tasks",
+        documentation="Number of tasks in the asyncio event loop",
+        labelnames=[],
+        registry=registry,
+    )
+
     return PrometheusMetrics(
         registry=registry,
         process_collector=process_collector,
@@ -97,6 +106,7 @@ def get_prometheus_metrics() -> PrometheusMetrics:
         request_count=request_count,
         in_flight_requests=in_flight_requests,
         response_latency_with_labels=response_latency_with_labels,
+        event_loop_tasks=event_loop_tasks,
     )
 
 
@@ -141,3 +151,7 @@ def record_response_metrics(
     metrics.response_latency_with_labels.labels(method, endpoint, user_agent).observe(
         amount=response_latency_seconds, exemplar=exemplar
     )
+
+
+def record_non_request_related_metrics(metrics: PrometheusMetrics) -> None:
+    metrics.event_loop_tasks.set(len(asyncio.all_tasks()))
