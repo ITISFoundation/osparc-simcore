@@ -80,7 +80,7 @@ APP_OPENTELEMETRY_INSTRUMENTOR_KEY: Final = web.AppKey(
 async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler):
     """This middleware is extracted from https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/instrumentation/opentelemetry-instrumentation-aiohttp-server/src/opentelemetry/instrumentation/aiohttp_server/__init__.py
     and adapted to allow passing the tracer provider via the app instead of using the global object. The original code for the function is licensed under https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/LICENSE.
-    I have recorded this limitation in the official source here: https://github.com/open-telemetry/opentelemetry-python-contrib/issues/3801 and plan on providing a fix soon.
+    FIXME: I have recorded this limitation in the official source here: https://github.com/open-telemetry/opentelemetry-python-contrib/issues/3801 and plan on providing a fix soon.
     """
 
     span_name, additional_attributes = get_default_span_details(request)
