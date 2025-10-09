@@ -1119,7 +1119,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       searchBarTextField.addListener("tap", () => this.__extendSearchBar());
 
       const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
-      this.__header.addListener("trashEmptied", () => this.reloadResources(), this);
+      this.__header.addListener("trashEmptied", () => {
+        this.invalidateStudies();
+        this.reloadResources();
+      }, this);
       this._addToLayout(header);
 
       this._createResourcesLayout("studiesList");
