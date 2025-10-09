@@ -54,7 +54,12 @@ from servicelib.rabbitmq import RPCRouter
 
 from ...application_settings import get_application_settings
 from ...rabbitmq import get_rabbitmq_rpc_server
-from .. import _functions_repository, _functions_service
+from .. import (
+    _function_job_collections_repository,
+    _function_jobs_repository,
+    _functions_repository,
+    _functions_service,
+)
 
 router = RPCRouter()
 
@@ -354,7 +359,7 @@ async def delete_function_job(
     product_name: ProductName,
     function_job_id: FunctionJobID,
 ) -> None:
-    return await _functions_repository.delete_function_job(
+    return await _function_jobs_repository.delete_function_job(
         app=app,
         user_id=user_id,
         product_name=product_name,
@@ -377,7 +382,7 @@ async def delete_function_job_collection(
     product_name: ProductName,
     function_job_collection_id: FunctionJobID,
 ) -> None:
-    return await _functions_repository.delete_function_job_collection(
+    return await _function_job_collections_repository.delete_function_job_collection(
         app=app,
         user_id=user_id,
         product_name=product_name,
