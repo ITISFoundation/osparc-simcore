@@ -331,7 +331,7 @@ async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
 
     tracing_settings = TracingSettings()
     tracing_config = TracingConfig.create(
-        tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
+        tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest"
     )
 
     async def handler():
