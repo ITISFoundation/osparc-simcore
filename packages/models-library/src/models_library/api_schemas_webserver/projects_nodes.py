@@ -1,7 +1,6 @@
 # mypy: disable-error-code=truthy-function
 from typing import Annotated, Any, Literal, TypeAlias
 
-from models_library.services_base import ServiceKeyVersion
 from pydantic import ConfigDict, Field
 from pydantic.config import JsonDict
 
@@ -13,6 +12,7 @@ from ..projects import ProjectID
 from ..projects_nodes import InputID, InputsDict, PartialNode
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
+from ..services_base import ServiceKeyVersion
 from ..services_enums import ServiceState
 from ..services_history import ServiceRelease
 from ..services_resources import ServiceResourcesDict
