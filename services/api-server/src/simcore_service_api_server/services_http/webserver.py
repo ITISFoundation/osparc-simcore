@@ -54,7 +54,7 @@ from tenacity import TryAgain, retry_if_exception_type
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from tenacity.wait import wait_exponential
 
 from ..core.settings import WebServerSettings
 from ..exceptions.backend_errors import (
@@ -253,7 +253,7 @@ class AuthSession:
 
         # GET task status now until done
         async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.5),
+            wait=wait_exponential(multiplier=0.5, min=0.5, max=30),
             stop=stop_after_delay(_POLL_TIMEOUT),
             reraise=True,
             retry=retry_if_exception_type(TryAgain),
