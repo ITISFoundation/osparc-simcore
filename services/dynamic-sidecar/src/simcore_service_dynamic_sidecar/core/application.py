@@ -11,12 +11,14 @@ from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
 )
 from servicelib.fastapi.tracing import (
+    get_tracing_config,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingConfig
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
-from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY, __version__
+from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY, __version__
 from ..api.rest import get_main_router
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..models.schemas.application_health import ApplicationHealth
@@ -118,10 +120,13 @@ class AppState:
 def create_base_app() -> FastAPI:
     # settings
     app_settings = ApplicationSettings.create_from_envs()
+    tracing_config = TracingConfig.create(
+        service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING
+    )
     logging_shutdown_event = create_logging_shutdown_event(
         log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
-        tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING,
+        tracing_config=tracing_config,
         log_base_level=app_settings.log_level,
         noisy_loggers=_NOISY_LOGGERS,
     )
@@ -145,6 +150,7 @@ def create_base_app() -> FastAPI:
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
+    app.state.tracing_config = tracing_config
 
     app.include_router(get_main_router(app))
 
@@ -170,9 +176,10 @@ def create_app() -> FastAPI:
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
     application_settings: ApplicationSettings = app.state.settings
+    tracing_config = get_tracing_config(app)
 
-    if application_settings.DYNAMIC_SIDECAR_TRACING:
-        setup_tracing(app, application_settings.DYNAMIC_SIDECAR_TRACING, PROJECT_NAME)
+    if tracing_config.tracing_enabled:
+        setup_tracing(app, tracing_config)
 
     setup_rabbitmq(app)
     setup_rpc_api_routes(app)
@@ -194,8 +201,11 @@ def create_app() -> FastAPI:
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
 
-    if application_settings.DYNAMIC_SIDECAR_TRACING:
-        initialize_fastapi_app_tracing(app)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(
+            app,
+            tracing_config=tracing_config,
+        )
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(

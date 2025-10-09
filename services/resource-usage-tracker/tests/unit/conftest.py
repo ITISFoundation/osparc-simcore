@@ -22,6 +22,7 @@ from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.tracing import TracingConfig
 from settings_library.rabbit import RabbitSettings
 from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
@@ -121,15 +122,27 @@ def app_settings(
 
 
 @pytest.fixture
-async def initialized_app(app_settings: ApplicationSettings) -> AsyncIterator[FastAPI]:
-    app = create_app(app_settings)
+def tracing_config(app_settings: ApplicationSettings) -> TracingConfig:
+    return TracingConfig.create(
+        service_name="resource-usage-tracker-tests",
+        tracing_settings=None,  # disable tracing in tests
+    )
+
+
+@pytest.fixture
+async def initialized_app(
+    app_settings: ApplicationSettings, tracing_config: TracingConfig
+) -> AsyncIterator[FastAPI]:
+    app = create_app(app_settings, tracing_config=tracing_config)
     async with LifespanManager(app):
         yield app
 
 
 @pytest.fixture
-def client(app_settings: ApplicationSettings) -> Iterator[TestClient]:
-    app = create_app(app_settings)
+def client(
+    app_settings: ApplicationSettings, tracing_config: TracingConfig
+) -> Iterator[TestClient]:
+    app = create_app(app_settings, tracing_config=tracing_config)
     with TestClient(app, base_url="http://testserver.test") as client:
         yield client
 
