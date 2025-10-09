@@ -38,6 +38,19 @@ qx.Class.define("osparc.support.Conversations", {
     this.__listenToNewConversations();
   },
 
+  properties: {
+    currentFilter: {
+      check: [
+        "all",
+        "unread",
+        "open",
+      ],
+      init: "all",
+      event: "changeCurrentFilter",
+      apply: "__applyCurrentFilter",
+    },
+  },
+
   events: {
     "openConversation": "qx.event.type.Data",
   },
@@ -68,7 +81,7 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show all conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => this.__filterChanged("all"));
+          control.addListener("execute", () => this.setCurrentFilter("all"));
           this.getChildControl("filters-layout").add(control);
           break;
         case "filter-unread-button":
@@ -77,7 +90,7 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show only unread conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => this.__filterChanged("unread"));
+          control.addListener("execute", () => this.setCurrentFilter("unread"));
           this.getChildControl("filters-layout").add(control);
           break;
         case "filter-open-button":
@@ -86,7 +99,7 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show only open conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => this.__filterChanged("open"));
+          control.addListener("execute", () => this.setCurrentFilter("open"));
           this.getChildControl("filters-layout").add(control);
           break;
         case "loading-button":
@@ -104,7 +117,7 @@ qx.Class.define("osparc.support.Conversations", {
       return control || this.base(arguments, id);
     },
 
-    __filterChanged: function(filter) {
+    __applyCurrentFilter: function(filter) {
       this.__filterButtons.forEach(button => {
         button.setValue(false);
       });
@@ -177,6 +190,8 @@ qx.Class.define("osparc.support.Conversations", {
       conversationListItem.setConversation(conversation);
       conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationId, this));
       conversation.addListener("changeModified", () => this.__sortConversations(), this);
+      conversation.addListener("changeReadByUser", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
+      conversation.addListener("changeResolved", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       this.__conversationListItems.push(conversationListItem);
       return conversationListItem;
     },
