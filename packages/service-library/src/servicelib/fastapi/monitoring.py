@@ -92,7 +92,7 @@ def _startup(app: FastAPI) -> None:
     async def metrics_endpoint(request: Request) -> Response:
         prometheus_metrics = request.app.state.prometheus_metrics
         assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
-        record_non_request_related_metrics(prometheus_metrics)
+        await record_non_request_related_metrics(prometheus_metrics)
 
         content = await asyncio.get_event_loop().run_in_executor(
             None, generate_latest, prometheus_metrics.registry

@@ -41,7 +41,7 @@ def get_collector_registry(app: web.Application) -> CollectorRegistry:
 async def metrics_handler(request: web.Request):
     metrics = request.app[PROMETHEUS_METRICS_APPKEY]
     assert isinstance(metrics, PrometheusMetrics)  # nosec
-    record_non_request_related_metrics(metrics)
+    await record_non_request_related_metrics(metrics)
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
     result = await request.loop.run_in_executor(None, generate_latest, metrics.registry)
