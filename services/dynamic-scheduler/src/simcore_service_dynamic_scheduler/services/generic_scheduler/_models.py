@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import auto
+from enum import Enum, auto
 from typing import Annotated, Any, Final, TypeAlias
 
 from models_library.basic_types import UUIDStr
@@ -51,3 +51,10 @@ class EventType(StrAutoEnum):
 class OperationToStart:
     operation_name: OperationName
     initial_context: OperationContext
+
+
+class ReservedContextKeys(str, Enum):
+    SCHEDULE_ID = "_schedule_id"
+
+
+ALL_RESERVED_CONTEXT_KEYS: Final[set[str]] = {x.value for x in ReservedContextKeys}

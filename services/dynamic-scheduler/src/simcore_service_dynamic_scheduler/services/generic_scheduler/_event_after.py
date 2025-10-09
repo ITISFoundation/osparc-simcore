@@ -35,12 +35,23 @@ class AfterEventManager(SingletonInAppStateMixin):
         schedule_id: ScheduleId,
         event_type: EventType,
         *,
-        to_start: OperationToStart,
+        to_start: OperationToStart | None,
     ) -> None:
+
+        events_proxy = OperationEventsProxy(self._store, schedule_id, event_type)
+        if to_start is None:
+            # unregister any previously registered operation
+            await events_proxy.delete()
+            _logger.debug(
+                "Unregistered event_type='%s' to_start for schedule_id='%s'",
+                event_type,
+                schedule_id,
+            )
+            return
+
         # ensure operation exists
         OperationRegistry.get_operation(to_start.operation_name)
 
-        events_proxy = OperationEventsProxy(self._store, schedule_id, event_type)
         await events_proxy.create_or_update_multiple(
             {
                 "initial_context": to_start.initial_context,
