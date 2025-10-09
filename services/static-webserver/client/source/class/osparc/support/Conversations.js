@@ -149,6 +149,7 @@ qx.Class.define("osparc.support.Conversations", {
           if (conversations.length) {
             conversations.forEach(conversation => this.__addConversation(conversation));
           }
+          this.__sortConversations();
         })
         .finally(() => {
           loadMoreButton.setFetching(false);
@@ -159,11 +160,12 @@ qx.Class.define("osparc.support.Conversations", {
     __listenToNewConversations: function() {
       osparc.store.ConversationsSupport.getInstance().addListener("conversationCreated", e => {
         const conversation = e.getData();
-        this.__addConversation(conversation, 0);
+        this.__addConversation(conversation);
+        this.__sortConversations();
       });
     },
 
-    __addConversation: function(conversation, position) {
+    __addConversation: function(conversation) {
       // ignore it if it was already there
       const conversationId = conversation.getConversationId();
       const conversationItemFound = this.__getConversationItem(conversationId);
@@ -174,15 +176,21 @@ qx.Class.define("osparc.support.Conversations", {
       const conversationListItem = new osparc.support.ConversationListItem();
       conversationListItem.setConversation(conversation);
       conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationId, this));
-      const conversationsLayout = this.getChildControl("conversations-layout");
-      if (position !== undefined) {
-        conversationsLayout.addAt(conversationListItem, position);
-      } else {
-        conversationsLayout.add(conversationListItem);
-      }
+      conversation.addListener("changeModified", () => this.__sortConversations(), this);
       this.__conversationListItems.push(conversationListItem);
-
       return conversationListItem;
+    },
+
+    __sortConversations: function() {
+      const conversationsLayout = this.getChildControl("conversations-layout");
+      conversationsLayout.removeAll();
+      // sort them by modified date (newest first)
+      this.__conversationListItems.sort((a, b) => {
+        const aDate = new Date(a.getConversation().getModified());
+        const bDate = new Date(b.getConversation().getModified());
+        return bDate - aDate;
+      });
+      this.__conversationListItems.forEach(item => conversationsLayout.add(item));
     },
   },
 });
