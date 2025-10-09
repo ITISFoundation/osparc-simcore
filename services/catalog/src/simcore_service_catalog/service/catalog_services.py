@@ -723,6 +723,7 @@ async def batch_get_user_services(
     missing = []
 
     for service_key, service_version in unique_service_identifiers:
+        # NOTE: parallel?
         service_result = await _process_single_service(
             repo,
             product_name,
