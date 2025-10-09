@@ -163,7 +163,7 @@ def record_response_metrics(
     )
 
 
-async def record_non_request_related_metrics(metrics: PrometheusMetrics) -> None:
+async def record_asyncio_event_looop_metrics(metrics: PrometheusMetrics) -> None:
 
     metrics.event_loop_tasks.set(len(asyncio.all_tasks()))
 

@@ -23,7 +23,7 @@ from ..common_headers import (
 from ..prometheus_metrics import (
     PrometheusMetrics,
     get_prometheus_metrics,
-    record_non_request_related_metrics,
+    record_asyncio_event_looop_metrics,
     record_request_metrics,
     record_response_metrics,
 )
@@ -92,7 +92,7 @@ def _startup(app: FastAPI) -> None:
     async def metrics_endpoint(request: Request) -> Response:
         prometheus_metrics = request.app.state.prometheus_metrics
         assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
-        await record_non_request_related_metrics(prometheus_metrics)
+        await record_asyncio_event_looop_metrics(prometheus_metrics)
 
         content = await asyncio.get_event_loop().run_in_executor(
             None, generate_latest, prometheus_metrics.registry
