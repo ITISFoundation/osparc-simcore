@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Class that stores Conversation data.
+ * Class that stores Project Conversation data.
  */
 
 qx.Class.define("osparc.data.model.ConversationProject", {

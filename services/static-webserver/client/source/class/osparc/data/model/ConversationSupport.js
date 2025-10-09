@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Class that stores Conversation data.
+ * Class that stores Support Conversation data.
  */
 
 qx.Class.define("osparc.data.model.ConversationSupport", {
@@ -31,6 +31,8 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     this.set({
       projectId: conversationData.projectUuid || null,
       extraContext: conversationData.extraContext || null,
+      readByUser: Boolean(Math.random() < 0.5), // just for testing purposes
+      resolved: Boolean(Math.random() < 0.5), // just for testing purposes
     });
 
     this.__fetchFirstAndLastMessages();
@@ -71,6 +73,20 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       init: null,
       event: "changeLastMessage",
       apply: "__applyLastMessage",
+    },
+
+    readByUser: {
+      check: "Boolean",
+      nullable: false,
+      init: null,
+      event: "changeReadByUser",
+    },
+
+    resolved: {
+      check: "Boolean",
+      nullable: false,
+      init: null,
+      event: "changeResolved",
     },
   },
 
