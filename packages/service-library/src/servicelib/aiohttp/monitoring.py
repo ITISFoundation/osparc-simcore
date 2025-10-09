@@ -20,6 +20,7 @@ from ..logging_utils import log_catch
 from ..prometheus_metrics import (
     PrometheusMetrics,
     get_prometheus_metrics,
+    record_non_request_related_metrics,
     record_request_metrics,
     record_response_metrics,
 )
@@ -38,10 +39,12 @@ def get_collector_registry(app: web.Application) -> CollectorRegistry:
 
 
 async def metrics_handler(request: web.Request):
-    registry = get_collector_registry(request.app)
+    metrics = request.app[PROMETHEUS_METRICS_APPKEY]
+    assert isinstance(metrics, PrometheusMetrics)  # nosec
+    record_non_request_related_metrics(metrics)
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
-    result = await request.loop.run_in_executor(None, generate_latest, registry)
+    result = await request.loop.run_in_executor(None, generate_latest, metrics.registry)
     response = web.Response(body=result)
     response.content_type = CONTENT_TYPE_LATEST
     return response
