@@ -141,12 +141,11 @@ qx.Class.define("osparc.support.ConversationListItem", {
 
     __populateWithLastMessage: function() {
       const conversation = this.getConversation();
+      this.set({
+        role: osparc.utils.Utils.formatDateAndTime(conversation.getModified()),
+      });
       const lastMessage = conversation.getLastMessage();
       if (lastMessage) {
-        const date = osparc.utils.Utils.formatDateAndTime(lastMessage.getCreated());
-        this.set({
-          role: date,
-        });
         const userGroupId = lastMessage.getUserGroupId();
         osparc.store.Users.getInstance().getUser(userGroupId)
           .then(user => {
