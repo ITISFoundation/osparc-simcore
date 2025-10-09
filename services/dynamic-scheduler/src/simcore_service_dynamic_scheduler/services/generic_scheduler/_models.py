@@ -1,4 +1,5 @@
-from enum import auto
+from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Annotated, Any, Final, TypeAlias
 
 from models_library.basic_types import UUIDStr
@@ -15,9 +16,9 @@ StepName: TypeAlias = Annotated[str, StringConstraints(pattern=_NAME_PATTERN)]
 
 # contains all inputs and outpus of each step in the operation
 OperationContext: TypeAlias = dict[str, Any]
-# the inputs of `create` or `undo` of a step
+# the inputs of `execute` or `revert` of a step
 RequiredOperationContext: TypeAlias = dict[str, Any]
-# the outputs of `create` or `undo` of a step
+# the outputs of `execute` or `revert` of a step
 ProvidedOperationContext: TypeAlias = dict[str, Any]
 
 
@@ -39,3 +40,21 @@ class StepStatus(StrAutoEnum):
 class OperationErrorType(StrAutoEnum):
     FRAMEWORK_ISSUE = auto()
     STEP_ISSUE = auto()
+
+
+class EventType(StrAutoEnum):
+    ON_EXECUTEDD_COMPLETED = auto()
+    ON_REVERT_COMPLETED = auto()
+
+
+@dataclass(frozen=True)
+class OperationToStart:
+    operation_name: OperationName
+    initial_context: OperationContext
+
+
+class ReservedContextKeys(str, Enum):
+    SCHEDULE_ID = "_schedule_id"
+
+
+ALL_RESERVED_CONTEXT_KEYS: Final[set[str]] = {x.value for x in ReservedContextKeys}

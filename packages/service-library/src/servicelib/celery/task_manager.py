@@ -2,7 +2,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from models_library.progress_bar import ProgressReport
 
-from ..celery.models import (
+from .models import (
     ExecutionMetadata,
     OwnerMetadata,
     Task,
@@ -26,8 +26,6 @@ class TaskManager(Protocol):
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> None: ...
 
-    async def task_exists(self, task_key: TaskKey) -> bool: ...
-
     async def get_task_result(
         self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
     ) -> Any: ...
@@ -41,3 +39,5 @@ class TaskManager(Protocol):
     async def set_task_progress(
         self, task_key: TaskKey, report: ProgressReport
     ) -> None: ...
+
+    async def task_exists(self, task_key: TaskKey) -> bool: ...
