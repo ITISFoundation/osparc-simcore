@@ -46,9 +46,33 @@ qx.Class.define("osparc.support.ConversationListItem", {
       event: "changeConversation",
       apply: "__applyConversation",
     },
+
+    subSubtitle: {
+      check : "String",
+      apply : "__applySubSubtitle",
+      nullable : true
+    },
   },
 
   members: {
+    _createChildControlImpl: function(id, hash) {
+      let control;
+      switch(id) {
+        case "sub-subtitle":
+          control = new qx.ui.basic.Label().set({
+            font: "text-12",
+            selectable: true,
+            rich: true,
+          });
+          this._add(control, {
+            row: 2,
+            column: 1
+          });
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
     __applyConversation: function(conversation) {
       conversation.bind("nameAlias", this, "title");
 
@@ -101,6 +125,14 @@ qx.Class.define("osparc.support.ConversationListItem", {
             }
           });
       }
+    },
+
+    __applySubSubtitle: function(value) {
+      if (value === null) {
+        return;
+      }
+      const label = this.getChildControl("sub-subtitle");
+      label.setValue(value);
     },
   },
 });

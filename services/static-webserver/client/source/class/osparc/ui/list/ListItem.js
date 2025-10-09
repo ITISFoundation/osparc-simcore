@@ -108,12 +108,6 @@ qx.Class.define("osparc.ui.list.ListItem", {
       nullable : true
     },
 
-    subSubtitle: {
-      check : "String",
-      apply : "__applySubSubtitle",
-      nullable : true
-    },
-
     role: {
       check : "String",
       apply : "__applyRole",
@@ -189,17 +183,6 @@ qx.Class.define("osparc.ui.list.ListItem", {
             column: 1
           });
           break;
-        case "sub-subtitle":
-          control = new qx.ui.basic.Label().set({
-            font: "text-12",
-            selectable: true,
-            rich: true,
-          });
-          this._add(control, {
-            row: 2,
-            column: 1
-          });
-          break;
         case "role":
           control = new qx.ui.basic.Label().set({
             font: "text-13",
@@ -261,14 +244,6 @@ qx.Class.define("osparc.ui.list.ListItem", {
         return;
       }
       const label = this.getChildControl("subtitle-md");
-      label.setValue(value);
-    },
-
-    __applySubSubtitle: function(value) {
-      if (value === null) {
-        return;
-      }
-      const label = this.getChildControl("sub-subtitle");
       label.setValue(value);
     },
 
