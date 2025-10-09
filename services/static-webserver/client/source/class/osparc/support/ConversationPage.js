@@ -137,17 +137,6 @@ qx.Class.define("osparc.support.ConversationPage", {
           this.getChildControl("buttons-layout").addAt(control, 3);
           break;
         }
-        case "set-appointment-button": {
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/clock/12",
-            toolTipText: this.tr("Set Appointment"),
-            alignX: "center",
-            alignY: "middle",
-          });
-          control.addListener("execute", () => this.__openAppointmentDetails());
-          this.getChildControl("buttons-layout").addAt(control, 4);
-          break;
-        }
         case "main-stack":
           control = new qx.ui.container.Stack();
           this._add(control, {
@@ -300,17 +289,6 @@ qx.Class.define("osparc.support.ConversationPage", {
         const conversationId = this.getConversation().getConversationId();
         osparc.utils.Utils.copyTextToClipboard(conversationId);
       }
-    },
-
-    __openAppointmentDetails: function() {
-      const win = new osparc.widget.DateTimeChooser();
-      win.addListener("dateChanged", e => {
-        const newValue = e.getData()["newValue"];
-        this.getConversation().setAppointment(newValue)
-          .catch(err => console.error(err));
-        win.close();
-      }, this);
-      win.open();
     },
 
     __renameConversation: function() {

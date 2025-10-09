@@ -52,7 +52,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
             conversationsData.sort((a, b) => new Date(b["created"]) - new Date(a["created"]));
           }
           conversationsData.forEach(conversationData => {
-            const conversation = new osparc.data.model.Conversation(conversationData);
+            const conversation = new osparc.data.model.ConversationSupport(conversationData);
             this.__addToCache(conversation);
             conversations.push(conversation);
           });
@@ -73,7 +73,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "getConversation", params)
         .then(conversationData => {
-          const conversation = new osparc.data.model.Conversation(conversationData);
+          const conversation = new osparc.data.model.ConversationSupport(conversationData);
           this.__addToCache(conversation);
           return conversation;
         });
@@ -92,7 +92,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "postConversation", params)
         .then(conversationData => {
-          const conversation = new osparc.data.model.Conversation(conversationData);
+          const conversation = new osparc.data.model.ConversationSupport(conversationData);
           this.__addToCache(conversation);
           this.fireDataEvent("conversationCreated", conversation);
           return conversationData;

@@ -86,7 +86,7 @@ qx.Class.define("osparc.support.Conversation", {
             .then(data => {
               // clone first, it will be reset when setting the conversation
               const bookACallInfo = this.__bookACallInfo ? Object.assign({}, this.__bookACallInfo) : null;
-              const newConversation = new osparc.data.model.Conversation(data);
+              const newConversation = new osparc.data.model.ConversationSupport(data);
               this.setConversation(newConversation);
               let prePostMessagePromise = new Promise((resolve) => resolve());
               if (bookACallInfo) {
