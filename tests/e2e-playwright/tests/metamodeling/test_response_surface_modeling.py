@@ -193,15 +193,8 @@ def test_response_surface_modeling(
         # if the project is being saved, wait until it's finished
         with log_context(logging.INFO, "Wait until project is saved"):
             # Wait for the saving icon to appear (if it’s going to)
-            try:
-                page.get_by_test_id("savingStudyIcon").wait_for(
-                    state="visible", timeout=1 * SECOND
-                )
-            except TimeoutError:
-                pass  # maybe it was already saving or instantly saved
-            # Then wait for the saved icon
-            page.get_by_test_id("savedStudyIcon").wait_for(
-                state="visible", timeout=4 * SECOND
+            page.get_by_test_id("savingStudyIcon").wait_for(
+                state="hidden", timeout=4 * SECOND
             )
 
     # 2. go back to dashboard
