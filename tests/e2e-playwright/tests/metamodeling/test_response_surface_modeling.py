@@ -19,6 +19,7 @@ from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
+    SECOND,
     RobustWebSocket,
     ServiceType,
     wait_for_service_running,
@@ -188,6 +189,20 @@ def test_response_surface_modeling(
             assert (
                 patch_prj_rename_resp.status == 204
             ), f"Expected 204 from PATCH, got {patch_prj_rename_resp.status}"
+
+        # if the project is being saved, wait until it's finished
+        with log_context(logging.INFO, "Wait until project is saved"):
+            # Wait for the saving icon to appear (if it’s going to)
+            try:
+                page.get_by_test_id("savingStudyIcon").wait_for(
+                    state="visible", timeout=1 * SECOND
+                )
+            except TimeoutError:
+                pass  # maybe it was already saving or instantly saved
+            # Then wait for the saved icon
+            page.get_by_test_id("savedStudyIcon").wait_for(
+                state="visible", timeout=4 * SECOND
+            )
 
     # 2. go back to dashboard
     with (
