@@ -32,6 +32,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     SingleStepGroup,
     StepStoreProxy,
     cancel_operation,
+    get_operation_name,
     restart_operation_step_stuck_during_revert,
     restart_operation_step_stuck_in_manual_intervention_during_execute,
     start_operation,
@@ -1762,19 +1763,11 @@ async def test_get_operation_name(
     selected_app: FastAPI,
     register_operation: Callable[[OperationName, Operation], None],
 ):
-    assert (
-        await Core.get_from_app_state(selected_app).get_operation_name(
-            "non_existing_schedule_id"
-        )
-        is None
-    )
+    assert await get_operation_name(selected_app, "non_existing_schedule_id") is None
 
     operation = Operation(SingleStepGroup(_S1))
     register_operation(operation_name, operation)
 
     schedule_id = await start_operation(selected_app, operation_name, {})
 
-    assert (
-        await Core.get_from_app_state(selected_app).get_operation_name(schedule_id)
-        == operation_name
-    )
+    assert await get_operation_name(selected_app, schedule_id) == operation_name

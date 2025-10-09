@@ -748,7 +748,7 @@ async def get_operation_name(
     app: FastAPI, schedule_id: ScheduleId
 ) -> OperationName | None:
     """returns the name of the operation or None if not found"""
-    await Core.get_from_app_state(app).get_operation_name(schedule_id)
+    return await Core.get_from_app_state(app).get_operation_name(schedule_id)
 
 
 async def restart_operation_step_stuck_in_manual_intervention_during_execute(
