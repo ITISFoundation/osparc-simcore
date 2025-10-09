@@ -12,6 +12,7 @@ from ..projects import ProjectID
 from ..projects_nodes import InputID, InputsDict, PartialNode
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
+from ..services_base import ServiceKeyVersion
 from ..services_enums import ServiceState
 from ..services_history import ServiceRelease
 from ..services_resources import ServiceResourcesDict
@@ -225,3 +226,9 @@ class NodeServiceGet(OutputSchema):
 class ProjectNodeServicesGet(OutputSchema):
     project_uuid: ProjectID
     services: list[NodeServiceGet]
+    missing: Annotated[
+        list[ServiceKeyVersion] | None,
+        Field(
+            description="List of services defined in the project but that were not found in the catalog"
+        ),
+    ] = None
