@@ -115,6 +115,10 @@ qx.Class.define("osparc.ui.list.ListItem", {
     }
   },
 
+  statics: {
+    MAX_ROWS: 3,
+  },
+
   members: { // eslint-disable-line qx-rules/no-refs-in-members
     // overridden
     _forwardStates: {
@@ -146,7 +150,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
           this._add(control, {
             row: 0,
             column: 0,
-            rowSpan: 3
+            rowSpan: this.self().MAX_ROWS,
           });
           break;
         case "title":
@@ -183,15 +187,22 @@ qx.Class.define("osparc.ui.list.ListItem", {
             column: 1
           });
           break;
-        case "role":
-          control = new qx.ui.basic.Label().set({
-            font: "text-13",
+        case "third-column-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
             alignY: "middle"
-          });
+          }));
           this._add(control, {
             row: 0,
             column: 2,
-            rowSpan: 3
+            rowSpan: this.self().MAX_ROWS,
+          });
+          break;
+        case "role":
+          control = new qx.ui.basic.Label().set({
+            font: "text-13",
+          });
+          this.getChildControl("third-column-layout").add(control, {
+            flex: 1
           });
           break;
       }
