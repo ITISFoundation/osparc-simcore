@@ -39,7 +39,7 @@ function_job_collections_to_function_jobs_table = sa.Table(
         "order",
         sa.Integer,
         nullable=False,
-        doc="Order of the function job in the collection",
+        doc="Order of the function job in the collection (1-based)",
     ),
     column_created_datetime(),
     column_modified_datetime(),

@@ -234,7 +234,10 @@ async def list_function_job_collections(
                         function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
                         == row.uuid
                     )
-                    .order_by(function_job_collections_to_function_jobs_table.c.order)
+                    .order_by(
+                        function_job_collections_to_function_jobs_table.c.order,
+                        function_job_collections_to_function_jobs_table.c.function_job_uuid,
+                    )
                 )
             ]
             collections.append((collection, job_ids))
@@ -286,7 +289,10 @@ async def get_function_job_collection(
                     function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
                     == row.uuid
                 )
-                .order_by(function_job_collections_to_function_jobs_table.c.order)
+                .order_by(
+                    function_job_collections_to_function_jobs_table.c.order,
+                    function_job_collections_to_function_jobs_table.c.function_job_uuid,
+                )
             )
         ]
 

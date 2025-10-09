@@ -209,7 +209,10 @@ async def list_function_jobs_with_status(
                     function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
                     == filter_by_function_job_collection_id
                 )
-                .order_by(function_job_collections_to_function_jobs_table.c.order)
+                .order_by(
+                    function_job_collections_to_function_jobs_table.c.order,
+                    function_job_collections_to_function_jobs_table.c.function_job_uuid,
+                )
             )
             filter_conditions = sqlalchemy.and_(
                 filter_conditions,
