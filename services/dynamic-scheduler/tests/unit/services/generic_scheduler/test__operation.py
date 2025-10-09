@@ -8,8 +8,10 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import
     StepNotFoundInoperationError,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
+    ALL_RESERVERD_CONTEXT_KEYS,
     ProvidedOperationContext,
     RequiredOperationContext,
+    ReservedContextKeys,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._operation import (
     BaseStep,
@@ -57,6 +59,12 @@ class WrongBS2C(BaseBS):
         return {"execute_key"}
 
 
+class WrongBS3C(BaseBS):
+    @classmethod
+    def get_execute_provides_context_keys(cls) -> set[str]:
+        return {ReservedContextKeys.SCHEDULE_ID}
+
+
 class WrongBS1R(BaseBS):
     @classmethod
     def get_revert_provides_context_keys(cls) -> set[str]:
@@ -67,6 +75,22 @@ class WrongBS2R(BaseBS):
     @classmethod
     def get_revert_provides_context_keys(cls) -> set[str]:
         return {"revert_key"}
+
+
+class WrongBS3R(BaseBS):
+    @classmethod
+    def get_revert_provides_context_keys(cls) -> set[str]:
+        return {ReservedContextKeys.SCHEDULE_ID}
+
+
+class AllowedKeysBS(BaseBS):
+    @classmethod
+    def get_execute_requires_context_keys(cls) -> set[str]:
+        return {ReservedContextKeys.SCHEDULE_ID}
+
+    @classmethod
+    def get_revert_requires_context_keys(cls) -> set[str]:
+        return {ReservedContextKeys.SCHEDULE_ID}
 
 
 @pytest.mark.parametrize(
@@ -103,6 +127,9 @@ class WrongBS2R(BaseBS):
         ),
         Operation(
             ParallelStepGroup(BS1, BS3, repeat_steps=True),
+        ),
+        Operation(
+            SingleStepGroup(AllowedKeysBS),
         ),
     ],
 )
@@ -166,6 +193,14 @@ def test_validate_operation_passes(operation: Operation):
             ),
             "cannot have steps that require manual intervention",
         ),
+        (
+            Operation(SingleStepGroup(WrongBS3C)),
+            "which is part of reserved keys ALL_RESERVERD_CONTEXT_KEYS",
+        ),
+        (
+            Operation(SingleStepGroup(WrongBS3R)),
+            "which is part of reserved keys ALL_RESERVERD_CONTEXT_KEYS",
+        ),
     ],
 )
 def test_validate_operations_fails(operation: Operation, match: str):
@@ -204,3 +239,9 @@ def test_operation_registry_raises_errors():
 
     with pytest.raises(StepNotFoundInoperationError):
         OperationRegistry.get_step("op1", "non_existing")
+
+
+def test_reserved_context_keys_existance():
+    for e in ReservedContextKeys:
+        assert e.value in ALL_RESERVERD_CONTEXT_KEYS
+    assert "missing_key" not in ALL_RESERVERD_CONTEXT_KEYS

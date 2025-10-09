@@ -51,6 +51,7 @@ from ._models import (
     OperationErrorType,
     OperationName,
     OperationToStart,
+    ReservedContextKeys,
     ScheduleId,
     StepName,
     StepStatus,
@@ -99,6 +100,8 @@ class Core(SingletonInAppStateMixin):
     ) -> ScheduleId:
         """start an operation by it's given name and providing an initial context"""
         schedule_id: ScheduleId = f"{uuid4()}"
+
+        initial_operation_context[ReservedContextKeys.SCHEDULE_ID] = schedule_id
 
         # check if operation is registered
         operation = OperationRegistry.get_operation(operation_name)
