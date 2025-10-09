@@ -152,6 +152,13 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
         });
     },
 
+    markAsResolved: function() {
+      osparc.store.ConversationsSupport.getInstance().markAsResolved(this.getConversationId())
+        .then(() => {
+          this.setResolved(true);
+        });
+    },
+
     addMessage: function(messageData) {
       const message = this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();

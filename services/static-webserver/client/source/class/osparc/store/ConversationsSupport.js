@@ -146,6 +146,13 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       return this.__patchConversation(conversationId, patchData);
     },
 
+    markAsResolved: function(conversationId) {
+      const patchData = {
+        resolved: true,
+      };
+      return this.__patchConversation(conversationId, patchData);
+    },
+
     fetchLastMessage: function(conversationId) {
       const params = {
         url: {

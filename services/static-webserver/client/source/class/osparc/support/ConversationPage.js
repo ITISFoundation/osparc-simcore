@@ -127,13 +127,15 @@ qx.Class.define("osparc.support.ConversationPage", {
           this.getChildControl("buttons-layout").addAt(control, 2);
           break;
         }
-        case "open-ticket-link-button": {
+        case "resolve-case-button": {
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/link/12",
-            toolTipText: this.tr("Open Ticket"),
+            icon: "@FontAwesome5Solid/check/12",
+            toolTipText: this.tr("Resolve Case"),
+            appearance: "strong-button",
             alignX: "center",
             alignY: "middle",
           });
+          control.addListener("execute", () => this.__resolveCase());
           this.getChildControl("buttons-layout").addAt(control, 3);
           break;
         }
@@ -219,11 +221,10 @@ qx.Class.define("osparc.support.ConversationPage", {
         conversation.bind("nameAlias", title, "value");
       }
 
+      const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
       const extraContextLayout = this.getChildControl("conversation-extra-layout");
       extraContextLayout.removeAll();
       if (conversation) {
-        const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
-
         const createExtraContextLabel = text => {
           return new qx.ui.basic.Label(text).set({
             font: "text-12",
@@ -267,6 +268,13 @@ qx.Class.define("osparc.support.ConversationPage", {
       const openProjectButton = this.getChildControl("open-project-button");
       openProjectButton.setVisibility(conversation && conversation.getContextProjectId() ? "visible" : "excluded");
       this.getChildControl("copy-ticket-id-button");
+      if (amISupporter) {
+        const resolveCaseButton = this.getChildControl("resolve-case-button");
+        conversation.bind("resolved", resolveCaseButton, "visibility", {
+          converter: val => val !== true ? "visible" : "excluded"
+        });
+
+      }
     },
 
     __openProjectDetails: function() {
@@ -288,6 +296,14 @@ qx.Class.define("osparc.support.ConversationPage", {
       if (this.getConversation()) {
         const conversationId = this.getConversation().getConversationId();
         osparc.utils.Utils.copyTextToClipboard(conversationId);
+      }
+    },
+
+    __resolveCase: function() {
+      if (this.getConversation()) {
+        this.getConversation().resolveCase()
+          .then(() => osparc.FlashMessenger.log(this.tr("The case has been marked as resolved")))
+          .catch(err => osparc.FlashMessenger.logError(err));
       }
     },
 
