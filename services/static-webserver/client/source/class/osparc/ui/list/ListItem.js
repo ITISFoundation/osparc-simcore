@@ -201,7 +201,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
           control = new qx.ui.basic.Label().set({
             font: "text-13",
           });
-          this.getChildControl("third-column-layout").add(control, {
+          this.getChildControl("third-column-layout").addAt(control, 0, {
             flex: 1
           });
           break;

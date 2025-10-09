@@ -69,6 +69,27 @@ qx.Class.define("osparc.support.ConversationListItem", {
             column: 1
           });
           break;
+        case "unread-badge":
+          control = new osparc.ui.basic.Chip(this.tr("Unread")).set({
+            statusColor: "success",
+            font: "text-12",
+            allowGrowY: false,
+            alignX: "right",
+          });
+          this.getChildControl("third-column-layout").addAt(control, 1, {
+            flex: 1
+          });
+          break;
+        case "resolved-badge":
+          control = new osparc.ui.basic.Chip().set({
+            font: "text-12",
+            allowGrowY: false,
+            alignX: "right",
+          });
+          this.getChildControl("third-column-layout").addAt(control, 1, {
+            flex: 1
+          });
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -81,6 +102,41 @@ qx.Class.define("osparc.support.ConversationListItem", {
 
       this.__populateWithFirstMessage();
       conversation.addListener("changeFirstMessage", this.__populateWithFirstMessage, this);
+
+      const unreadBadge = this.getChildControl("unread-badge");
+      conversation.bind("readByUser", unreadBadge, "visibility", {
+        converter: val => {
+          if (val === false && !osparc.store.Groups.getInstance().amIASupportUser()) {
+            return "visible";
+          }
+          return "excluded";
+        }
+      });
+
+      const resolvedBadge = this.getChildControl("resolved-badge");
+      resolvedBadge.set({
+        visibility: osparc.store.Groups.getInstance().amIASupportUser() ? "visible" : "excluded",
+      });
+      conversation.bind("resolved", resolvedBadge, "label", {
+        converter: val => {
+          if (val === true) {
+            return this.tr("Resolved");
+          } else if (val === false) {
+            return this.tr("Open");
+          }
+          return "";
+        }
+      });
+      conversation.bind("resolved", resolvedBadge, "statusColor", {
+        converter: val => {
+          if (val === true) {
+            return "success";
+          } else if (val === false) {
+            return "warning";
+          }
+          return null;
+        }
+      });
     },
 
     __populateWithLastMessage: function() {
