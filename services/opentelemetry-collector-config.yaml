@@ -19,7 +19,7 @@ processors:
     timeout: 5s
     send_batch_size: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
   probabilistic_sampler:
-    sampling_percentage: ${TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE}
+    sampling_percentage: 100
   filter/drop_healthcheck:
     error_mode: ignore
     traces:

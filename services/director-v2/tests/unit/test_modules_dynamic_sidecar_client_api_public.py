@@ -1,23 +1,24 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from collections.abc import AsyncIterable, Callable, Iterator
 from contextlib import contextmanager
-from typing import Any, AsyncIterable, Callable, Iterator
+from typing import Any
 from unittest.mock import AsyncMock
-from models_library.api_schemas_dynamic_sidecar.containers import (
-    ActivityInfoOrNone
-)
 
 import pytest
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
+from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.http_client_thin import ClientHttpError, UnexpectedStatusError
+from servicelib.tracing import TracingConfig
+from simcore_service_director_v2._meta import APP_NAME
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
@@ -65,6 +66,10 @@ async def sidecars_client(
 ) -> AsyncIterable[SidecarsClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
+    app.state.tracing_config = TracingConfig.create(
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
+    )
 
     # WARNING: pytest gets confused with 'setup', use instead alias 'api_client_setup'
     await api_client_setup(app)
@@ -369,7 +374,9 @@ async def test_get_service_activity(
             status_code=status.HTTP_200_OK, text=json_dumps(mock_dict)
         ),
     ) as client:
-        assert await client.get_service_activity(dynamic_sidecar_endpoint) == TypeAdapter(ActivityInfoOrNone).validate_python(mock_dict)
+        assert await client.get_service_activity(
+            dynamic_sidecar_endpoint
+        ) == TypeAdapter(ActivityInfoOrNone).validate_python(mock_dict)
 
 
 async def test_free_reserved_disk_space(
