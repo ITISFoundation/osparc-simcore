@@ -15,7 +15,7 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
 
 def setup_app_logging(settings: ApplicationSettings) -> None:
     tracing_config = TracingConfig.create(
-        service_name=PROJECT_NAME, tracing_settings=None
+        service_name=PROJECT_NAME, tracing_settings=None  # no tracing for dask sidecar
     )
     setup_loggers(
         log_format_local_dev_enabled=settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED,

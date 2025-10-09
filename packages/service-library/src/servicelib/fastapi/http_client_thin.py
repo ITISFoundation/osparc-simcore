@@ -9,7 +9,6 @@ from common_library.errors_classes import OsparcErrorMixin
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
 from servicelib.tracing import TracingConfig
-from settings_library.tracing import TracingSettings
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -201,8 +200,7 @@ class BaseThinClient(BaseHTTPApi):
         self,
         *,
         total_retry_interval: float,
-        tracing_settings: TracingSettings | None,
-        tracing_config: TracingConfig | None,
+        tracing_config: TracingConfig,
         base_url: URLTypes | None = None,
         default_http_client_timeout: TimeoutTypes | None = None,
         extra_allowed_method_names: set[str] | None = None,
@@ -226,7 +224,7 @@ class BaseThinClient(BaseHTTPApi):
             client_args["timeout"] = default_http_client_timeout
 
         client = AsyncClient(**client_args)
-        if tracing_settings and tracing_config:
+        if tracing_config.tracing_enabled:
             setup_httpx_client_tracing(client, tracing_config=tracing_config)
         super().__init__(client=client)
 

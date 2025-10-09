@@ -59,7 +59,6 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
                 scheduler_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
                 connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             ),
-            tracing_settings=tracing_settings,
             tracing_config=tracing_config,
         )
 

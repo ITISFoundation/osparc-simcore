@@ -15,6 +15,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.tracing import TracingConfig
 from settings_library.docker_registry import RegistrySettings
+from simcore_service_director._meta import APP_NAME
 from simcore_service_director.core.application import create_app
 from simcore_service_director.core.settings import ApplicationSettings
 
@@ -165,7 +166,7 @@ async def app(
     app_settings: ApplicationSettings, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
     tracing_config = TracingConfig.create(
-        service_name="director", tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
     )
     the_test_app = create_app(settings=app_settings, tracing_config=tracing_config)
     async with LifespanManager(
