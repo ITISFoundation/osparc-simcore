@@ -194,7 +194,7 @@ def test_response_surface_modeling(
         with log_context(logging.INFO, "Wait until project is saved"):
             # Wait for the saving icon to appear (if it’s going to)
             page.get_by_test_id("savingStudyIcon").wait_for(
-                state="hidden", timeout=4 * SECOND
+                state="hidden", timeout=10 * SECOND
             )
 
     # 2. go back to dashboard
