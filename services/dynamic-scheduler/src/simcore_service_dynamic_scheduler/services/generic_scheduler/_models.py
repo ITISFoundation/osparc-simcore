@@ -57,4 +57,4 @@ class ReservedContextKeys(str, Enum):
     SCHEDULE_ID = "_schedule_id"
 
 
-ALL_RESERVERD_CONTEXT_KEYS: Final[set[str]] = {x.value for x in ReservedContextKeys}
+ALL_RESERVED_CONTEXT_KEYS: Final[set[str]] = {x.value for x in ReservedContextKeys}

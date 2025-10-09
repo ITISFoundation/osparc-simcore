@@ -8,7 +8,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import
     StepNotFoundInoperationError,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
-    ALL_RESERVERD_CONTEXT_KEYS,
+    ALL_RESERVED_CONTEXT_KEYS,
     ProvidedOperationContext,
     RequiredOperationContext,
     ReservedContextKeys,
@@ -195,11 +195,11 @@ def test_validate_operation_passes(operation: Operation):
         ),
         (
             Operation(SingleStepGroup(WrongBS3C)),
-            "which is part of reserved keys ALL_RESERVERD_CONTEXT_KEYS",
+            "which is part of reserved keys ALL_RESERVED_CONTEXT_KEYS",
         ),
         (
             Operation(SingleStepGroup(WrongBS3R)),
-            "which is part of reserved keys ALL_RESERVERD_CONTEXT_KEYS",
+            "which is part of reserved keys ALL_RESERVED_CONTEXT_KEYS",
         ),
     ],
 )
@@ -241,7 +241,7 @@ def test_operation_registry_raises_errors():
         OperationRegistry.get_step("op1", "non_existing")
 
 
-def test_reserved_context_keys_existance():
+def test_reserved_context_keys_existence():
     for e in ReservedContextKeys:
-        assert e.value in ALL_RESERVERD_CONTEXT_KEYS
-    assert "missing_key" not in ALL_RESERVERD_CONTEXT_KEYS
+        assert e.value in ALL_RESERVED_CONTEXT_KEYS
+    assert "missing_key" not in ALL_RESERVED_CONTEXT_KEYS

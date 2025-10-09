@@ -12,7 +12,7 @@ from ._errors import (
     StepNotFoundInoperationError,
 )
 from ._models import (
-    ALL_RESERVERD_CONTEXT_KEYS,
+    ALL_RESERVED_CONTEXT_KEYS,
     OperationName,
     ProvidedOperationContext,
     RequiredOperationContext,
@@ -286,10 +286,10 @@ def _validate_operation(  # noqa: C901, PLR0912 # pylint: disable=too-many-branc
             detected_steps_names[step_name] = step
 
             for key in step.get_execute_provides_context_keys():
-                if key in ALL_RESERVERD_CONTEXT_KEYS:
+                if key in ALL_RESERVED_CONTEXT_KEYS:
                     msg = (
                         f"Step {step_name=} provides {key=} which is part of reserved keys "
-                        f"{ALL_RESERVERD_CONTEXT_KEYS=}"
+                        f"{ALL_RESERVED_CONTEXT_KEYS=}"
                     )
                     raise ValueError(msg)
                 if key in execute_provided_keys:
@@ -299,11 +299,12 @@ def _validate_operation(  # noqa: C901, PLR0912 # pylint: disable=too-many-branc
                     )
                     raise ValueError(msg)
                 execute_provided_keys.add(key)
+
             for key in step.get_revert_provides_context_keys():
-                if key in ALL_RESERVERD_CONTEXT_KEYS:
+                if key in ALL_RESERVED_CONTEXT_KEYS:
                     msg = (
                         f"Step {step_name=} provides {key=} which is part of reserved keys "
-                        f"{ALL_RESERVERD_CONTEXT_KEYS=}"
+                        f"{ALL_RESERVED_CONTEXT_KEYS=}"
                     )
                     raise ValueError(msg)
                 if key in revert_provided_keys:
