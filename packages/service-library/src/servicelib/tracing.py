@@ -67,7 +67,9 @@ class TracingConfig(BaseModel):
         if tracing_settings:
             resource = Resource(attributes={"service.name": service_name})
             sampler = ParentBased(
-                root=TraceIdRatioBased(tracing_settings.TRACING_SAMPLING_PROBABILITY)
+                root=TraceIdRatioBased(
+                    tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY
+                )
             )
             tracer_provider = TracerProvider(resource=resource, sampler=sampler)
         return cls(

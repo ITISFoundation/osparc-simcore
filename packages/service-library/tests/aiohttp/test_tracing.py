@@ -44,14 +44,16 @@ def set_and_clean_settings_env_vars(
     sampling_probability_mocked = False
     if tracing_settings_in[2]:
         sampling_probability_mocked = True
-        monkeypatch.setenv("TRACING_SAMPLING_PROBABILITY", tracing_settings_in[2])
+        monkeypatch.setenv(
+            "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", tracing_settings_in[2]
+        )
     yield
     if endpoint_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
     if port_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
     if sampling_probability_mocked:
-        monkeypatch.delenv("TRACING_SAMPLING_PROBABILITY")
+        monkeypatch.delenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY")
 
 
 @pytest.mark.parametrize(
@@ -216,14 +218,14 @@ async def test_trace_id_in_response_header(
     ],
     indirect=True,
 )
-async def test_tracing_sampling_probability_effective(
+async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
     mock_otel_collector: InMemorySpanExporter,
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in,
 ):
     """
-    This test checks that the TRACING_SAMPLING_PROBABILITY setting in TracingSettings
+    This test checks that the TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY setting in TracingSettings
     is effective by sending 1000 requests and verifying that the number of collected traces
     is close to 0.05 * 1000 (with some tolerance).
     """
@@ -254,7 +256,7 @@ async def test_tracing_sampling_probability_effective(
         }
         n_traces = len(trace_ids)
         expected_num_traces = int(
-            tracing_settings.TRACING_SAMPLING_PROBABILITY * n_requests
+            tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY * n_requests
         )
         tolerance = int(tolerance_probability * expected_num_traces)
         assert (
