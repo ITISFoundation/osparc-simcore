@@ -13,7 +13,6 @@ from servicelib.fastapi.http_client_thin import (
     retry_on_errors,
 )
 from servicelib.fastapi.tracing import get_tracing_config
-from settings_library.tracing import TracingSettings
 
 from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -32,9 +31,6 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     def __init__(self, app: FastAPI):
         scheduler_settings: DynamicServicesSchedulerSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-        )
-        tracing_settings: TracingSettings | None = (
-            app.state.settings.DIRECTOR_V2_TRACING
         )
         tracing_config = get_tracing_config(app)
 
