@@ -14,7 +14,7 @@ from collections.abc import Callable, Iterator
 from typing import Any, Final
 
 import pytest
-from playwright.sync_api import APIRequestContext, Page, TimeoutError
+from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
@@ -193,14 +193,9 @@ def test_response_surface_modeling(
         # if the project is being saved, wait until it's finished
         with log_context(logging.INFO, "Wait until project is saved"):
             # Wait for the saving icon to disappear
-            try:
-                page.get_by_test_id("savingStudyIcon").wait_for(
-                    state="hidden", timeout=5 * SECOND
-                )
-            except TimeoutError:
-                raise AssertionError(
-                    "Saving icon did not disappear within the expected time"
-                )
+            page.get_by_test_id("savingStudyIcon").wait_for(
+                state="hidden", timeout=5 * SECOND
+            )
 
     # 2. go back to dashboard
     with (
