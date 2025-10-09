@@ -182,7 +182,11 @@ qx.Class.define("osparc.support.SupportCenter", {
 
     __showConversation: function() {
       this.__selectConversationsStackPage();
-      this.getChildControl("conversations-stack").setSelection([this.getChildControl("conversation-page")]);
+      const conversationPage = this.getChildControl("conversation-page");
+      this.getChildControl("conversations-stack").setSelection([conversationPage]);
+      if (!osparc.store.Groups.getInstance().amIASupportUser()) {
+        conversationPage.getConversation().markAsRead();
+      }
     },
 
     openConversation: function(conversationId) {
