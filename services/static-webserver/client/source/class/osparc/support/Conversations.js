@@ -42,6 +42,15 @@ qx.Class.define("osparc.support.Conversations", {
     "openConversation": "qx.event.type.Data",
   },
 
+  statics: {
+    FILTER_BUTTON_AESTHETIC: {
+      appearance: "filter-toggle-button",
+      allowGrowX: false,
+      paddingTop: 4,
+      paddingBottom: 4,
+    },
+  },
+
   members: {
     __conversationListItems: null,
 
@@ -57,7 +66,7 @@ qx.Class.define("osparc.support.Conversations", {
           control.set({
             value: true,
             toolTipText: this.tr("Show all conversations"),
-            allowGrowX: false,
+            ...this.self().FILTER_BUTTON_AESTHETIC,
           });
           control.addListener("execute", () => this.__filterChanged("all"));
           this.getChildControl("filters-layout").add(control);
@@ -66,7 +75,7 @@ qx.Class.define("osparc.support.Conversations", {
           control = new qx.ui.form.ToggleButton(this.tr("Unread"));
           control.set({
             toolTipText: this.tr("Show only unread conversations"),
-            allowGrowX: false,
+            ...this.self().FILTER_BUTTON_AESTHETIC,
           });
           control.addListener("execute", () => this.__filterChanged("unread"));
           this.getChildControl("filters-layout").add(control);
@@ -75,7 +84,7 @@ qx.Class.define("osparc.support.Conversations", {
           control = new qx.ui.form.ToggleButton(this.tr("Open"));
           control.set({
             toolTipText: this.tr("Show only open conversations"),
-            allowGrowX: false,
+            ...this.self().FILTER_BUTTON_AESTHETIC,
           });
           control.addListener("execute", () => this.__filterChanged("open"));
           this.getChildControl("filters-layout").add(control);
