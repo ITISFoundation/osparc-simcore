@@ -14,7 +14,7 @@ from collections.abc import Callable, Iterator
 from typing import Any, Final
 
 import pytest
-from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import APIRequestContext, Page, TimeoutError
 from pydantic import AnyUrl
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
