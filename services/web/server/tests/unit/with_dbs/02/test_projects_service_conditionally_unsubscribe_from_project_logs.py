@@ -4,6 +4,8 @@
 # pylint: disable=too-many-statements
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=protected-access
+
 
 import contextlib
 from collections.abc import Awaitable, Callable
