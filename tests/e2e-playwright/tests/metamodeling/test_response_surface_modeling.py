@@ -199,7 +199,7 @@ def test_response_surface_modeling(
                 )
             except TimeoutError:
                 raise AssertionError(
-                    "Saving icon did not disappear within expected time"
+                    "Saving icon did not disappear within the expected time"
                 )
 
     # 2. go back to dashboard
