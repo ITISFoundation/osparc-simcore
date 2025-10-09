@@ -4075,7 +4075,7 @@ paths:
           content:
             application/json:
               schema:
-                title: Response Get Async Job Stream
+                $ref: '#/components/schemas/Envelope_TaskStreamResponse_'
         '404':
           content:
             application/json:
@@ -11577,6 +11577,19 @@ components:
           title: Error
       type: object
       title: Envelope[TaskStatus]
+    Envelope_TaskStreamResponse_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/TaskStreamResponse'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[TaskStreamResponse]
     Envelope_Union_EmailTestFailed__EmailTestPassed__:
       properties:
         data:
@@ -18263,6 +18276,23 @@ components:
       - done
       - started
       title: TaskStatus
+    TaskStreamResponse:
+      properties:
+        items:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Items
+        end:
+          type: boolean
+          title: End
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      - end
+      title: TaskStreamResponse
     TestEmail:
       properties:
         from_:

@@ -17,6 +17,7 @@ from simcore_service_webserver.tasks._controller._rest_exceptions import (
 )
 from simcore_service_webserver.tasks._controller._rest_schemas import (
     TaskStreamQueryParams,
+    TaskStreamResponse,
 )
 
 router = APIRouter(
@@ -70,7 +71,7 @@ def get_async_job_result(
 
 @router.get(
     "/tasks/{task_id}/stream",
-    response_model=Any,
+    response_model=Envelope[TaskStreamResponse],
 )
 def get_async_job_stream(
     _path_params: Annotated[_PathParam, Depends()],

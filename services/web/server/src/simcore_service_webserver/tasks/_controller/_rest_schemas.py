@@ -14,3 +14,9 @@ class TaskPathParams(BaseModel):
 
 class TaskStreamQueryParams(BaseModel):
     limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+
+
+class TaskStreamResponse(BaseModel):
+    items: list[dict]
+    end: bool
+    model_config = ConfigDict(extra="forbid", frozen=True)

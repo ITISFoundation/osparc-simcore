@@ -29,7 +29,7 @@ from ...long_running_tasks.plugin import webserver_request_context_decorator
 from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from .. import _tasks_service
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._rest_schemas import TaskPathParams, TaskStreamQueryParams
+from ._rest_schemas import TaskPathParams, TaskStreamQueryParams, TaskStreamResponse
 
 log = logging.getLogger(__name__)
 
@@ -203,6 +203,6 @@ async def get_async_job_stream(request: web.Request) -> web.Response:
     )
 
     return create_data_response(
-        {"items": [r.data for r in task_result], "end": end},
+        TaskStreamResponse(items=[r.data for r in task_result], end=end),
         status=status.HTTP_200_OK,
     )
