@@ -22,7 +22,6 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient
-from common import SocketHandlers
 from deepdiff import DeepDiff  # type: ignore[attr-defined]
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
@@ -59,6 +58,7 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.webserver_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
+    SocketHandlers,
     standard_role_response,
     standard_user_role_response,
 )

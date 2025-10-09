@@ -44,7 +44,7 @@ from models_library.services_enums import ServiceState
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_docker.plugin import Services
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -710,13 +710,14 @@ def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
 @pytest.fixture
 def mocked_conditionally_unsubscribe_project_logs(
     mocker: MockerFixture,
-) -> dict[str, mock.Mock]:
-    mocked_unsubscribe = mocker.patch(
-        "simcore_service_webserver.projects._projects_service.conditionally_unsubscribe_project_logs_across_replicas",
+) -> dict[str, MockType]:
+    import simcore_service_webserver.projects._projects_service
+
+    return mocker.patch.object(
+        simcore_service_webserver.projects._projects_service,
+        "conditionally_unsubscribe_project_logs_across_replicas",
         autospec=True,
     )
-
-    return mocked_unsubscribe
 
 
 @pytest.fixture

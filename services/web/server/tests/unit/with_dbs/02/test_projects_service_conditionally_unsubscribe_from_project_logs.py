@@ -7,16 +7,15 @@
 
 import contextlib
 from collections.abc import Awaitable, Callable
-from unittest import mock
 
 import pytest
 import socketio
 from aiohttp.test_utils import TestClient
-from common import SocketHandlers
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.webserver_login import log_client_in
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
+    SocketHandlers,
 )
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
@@ -29,9 +28,14 @@ def max_number_of_user_sessions() -> int:
 
 
 @pytest.fixture
-def mock_publish_unsubscribe_from_project_logs_event(mocker: MockerFixture) -> None:
-    return mocker.patch(
-        "simcore_service_webserver.projects._projects_service._publish_unsubscribe_from_project_logs_event",
+def mocked_publish_unsubscribe_from_project_logs_event(
+    mocker: MockerFixture,
+) -> MockType:
+    import simcore_service_webserver.projects._projects_service
+
+    return mocker.patch.object(
+        simcore_service_webserver.projects._projects_service,
+        "_publish_unsubscribe_from_project_logs_event",  # noqa: SLF001
         autospec=True,
     )
 
@@ -56,9 +60,9 @@ async def test_conditionally_unsubscribe_from_project_logs(
         [str | None, TestClient],
         Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
-    mocked_dynamic_services_interface: dict[str, mock.Mock],
-    mock_publish_unsubscribe_from_project_logs_event: mock.Mock,
-    mock_catalog_api: dict[str, mock.Mock],
+    mocked_dynamic_services_interface: dict[str, MockType],
+    mocked_publish_unsubscribe_from_project_logs_event: MockType,
+    mock_catalog_api: dict[str, MockType],
     mocker: MockerFixture,
 ):
     # Use-case: 2 users open the same shared project, then close it
@@ -100,10 +104,10 @@ async def test_conditionally_unsubscribe_from_project_logs(
     await _close_project(
         client_1, client_id1, shared_project, status.HTTP_204_NO_CONTENT
     )
-    assert mock_publish_unsubscribe_from_project_logs_event.assert_not_called
+    assert not mocked_publish_unsubscribe_from_project_logs_event.called
 
     # 4. user 2 closes the project (now unsubscribe should happen)
     await _close_project(
         client_2, client_id2, shared_project, status.HTTP_204_NO_CONTENT
     )
-    assert mock_publish_unsubscribe_from_project_logs_event.assert_called_once
+    assert mocked_publish_unsubscribe_from_project_logs_event.called
