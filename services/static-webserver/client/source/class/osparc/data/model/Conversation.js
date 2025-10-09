@@ -210,6 +210,7 @@ qx.Class.define("osparc.data.model.Conversation", {
         message = new osparc.data.model.Message(messageData);
         this.__messages.push(message);
         osparc.data.model.Message.sortMessagesByDate(this.__messages);
+        this.setModified(new Date());
         this.fireDataEvent("messageAdded", message);
       }
       return message;
