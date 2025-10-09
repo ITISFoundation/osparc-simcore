@@ -25,6 +25,14 @@ qx.Class.define("osparc.support.Conversations", {
     this._setLayout(new qx.ui.layout.VBox(10));
     this.__conversationListItems = [];
 
+    this.__filterButtons = [];
+    this.__filterButtons.push(this.getChildControl("filter-all-button"));
+    if (osparc.store.Groups.getInstance().amIASupportUser()) {
+      this.__filterButtons.push(this.getChildControl("filter-open-button"));
+    } else {
+      this.__filterButtons.push(this.getChildControl("filter-unread-button"));
+    }
+
     this.__fetchConversations();
 
     this.__listenToNewConversations();
@@ -40,6 +48,38 @@ qx.Class.define("osparc.support.Conversations", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "filters-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
+          this._add(control);
+          break;
+        case "filter-all-button":
+          control = new qx.ui.form.ToggleButton(this.tr("All"));
+          control.set({
+            value: true,
+            toolTipText: this.tr("Show all conversations"),
+            allowGrowX: false,
+          });
+          control.addListener("execute", () => this.__filterChanged("all"));
+          this.getChildControl("filters-layout").add(control);
+          break;
+        case "filter-unread-button":
+          control = new qx.ui.form.ToggleButton(this.tr("Unread"));
+          control.set({
+            toolTipText: this.tr("Show only unread conversations"),
+            allowGrowX: false,
+          });
+          control.addListener("execute", () => this.__filterChanged("unread"));
+          this.getChildControl("filters-layout").add(control);
+          break;
+        case "filter-open-button":
+          control = new qx.ui.form.ToggleButton(this.tr("Open"));
+          control.set({
+            toolTipText: this.tr("Show only open conversations"),
+            allowGrowX: false,
+          });
+          control.addListener("execute", () => this.__filterChanged("open"));
+          this.getChildControl("filters-layout").add(control);
+          break;
         case "loading-button":
           control = new osparc.ui.form.FetchButton();
           this._add(control);
@@ -53,6 +93,38 @@ qx.Class.define("osparc.support.Conversations", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __filterChanged: function(filter) {
+      this.__filterButtons.forEach(button => {
+        button.setValue(false);
+      });
+
+      this.__conversationListItems.forEach(conversationItem => {
+        const conversation = conversationItem.getConversation();
+        switch (filter) {
+          case "all":
+            this.getChildControl("filter-all-button").setValue(true);
+            conversationItem.show();
+            break;
+          case "unread":
+            this.getChildControl("filter-unread-button").setValue(true);
+            if (conversation.getReadByUser()) {
+              conversationItem.exclude();
+            } else {
+              conversationItem.show();
+            }
+            break;
+          case "open":
+            this.getChildControl("filter-open-button").setValue(true);
+            if (conversation.getResolved() === false) {
+              conversationItem.show();
+            } else {
+              conversationItem.exclude();
+            }
+            break;
+        }
+      });
     },
 
     __getConversationItem: function(conversationId) {
