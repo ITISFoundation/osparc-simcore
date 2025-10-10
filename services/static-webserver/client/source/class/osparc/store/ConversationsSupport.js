@@ -145,9 +145,12 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     },
 
     markAsRead: function(conversationId) {
-      const patchData = {
-        readByUser: true,
-      };
+      const patchData = {};
+      if (osparc.store.Groups.getInstance().amIASupportUser()) {
+        patchData["readBySupport"] = true;
+      } else {
+        patchData["readByUser"] = true;
+      }
       return this.__patchConversation(conversationId, patchData);
     },
 

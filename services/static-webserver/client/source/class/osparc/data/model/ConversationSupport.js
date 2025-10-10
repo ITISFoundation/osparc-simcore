@@ -156,7 +156,11 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     markAsRead: function() {
       osparc.store.ConversationsSupport.getInstance().markAsRead(this.getConversationId())
         .then(() => {
-          this.setReadByUser(true);
+          if (osparc.store.Groups.getInstance().amIASupportUser()) {
+            this.setReadBySupport(true);
+          } else {
+            this.setReadByUser(true);
+          }
         });
     },
 
