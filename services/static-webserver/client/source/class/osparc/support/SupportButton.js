@@ -48,7 +48,7 @@ qx.Class.define("osparc.support.SupportButton", {
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle",
           })).set({
-            paddingLeft: 5,
+            paddingLeft: 4,
           });
           iconContainer.add(control);
           this._add(iconContainer, {
@@ -83,6 +83,7 @@ qx.Class.define("osparc.support.SupportButton", {
       const notifications = notificationManager.getNotifications();
       notifications.forEach(notification => notification.addListener("changeRead", () => this.__updateButton(), this));
 
+      this.getChildControl("icon");
       let nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
       [
         this.getChildControl("is-active-icon-outline"),

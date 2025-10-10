@@ -91,7 +91,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     RIGHT_BUTTON_OPTS: {
-      backgroundColor: "transparent",
       cursor: "pointer",
       alignX: "center",
       alignY: "middle",
@@ -307,7 +306,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         case "help-button":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Regular/question-circle/24").set({
+          control = new osparc.support.SupportButton().set({
             ...this.self().RIGHT_BUTTON_OPTS
           });
           this.getChildControl("right-items").add(control);
