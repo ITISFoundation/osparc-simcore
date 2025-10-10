@@ -30,6 +30,6 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
             startup_timeout=None,  # waits for full app initialization (DB migrations, etc.)
             shutdown_timeout=_SHUTDOWN_TIMEOUT,
         ):
-            _logger.info("fastapi app initialized")
+            _logger.info("FastAPI initialized: %s", self.app)
             startup_completed_event.set()
             await self.shutdown_event.wait()  # NOTE: wait here until shutdown is requested

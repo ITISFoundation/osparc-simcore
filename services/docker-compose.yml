@@ -1355,6 +1355,7 @@ services:
       STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
+      CELERY_POOL: "threads"
     networks: *storage_networks
 
   sto-worker-cpu-bound:
@@ -1366,7 +1367,7 @@ services:
       STORAGE_TRACING: "null"
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
-      CELERY_CONCURRENCY: 1
+      CELERY_CONCURRENCY: 2
       CELERY_QUEUES: "cpu_bound"
     networks: *storage_networks
 

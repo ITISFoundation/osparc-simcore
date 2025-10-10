@@ -1,6 +1,13 @@
 """Main application to be deployed in for example uvicorn."""
 
-from celery.signals import worker_init, worker_shutdown  # type: ignore[import-untyped]
+import logging
+from dataclasses import dataclass
+
+from celery import Celery
+from celery.signals import (  # type: ignore[import-untyped]
+    worker_process_init,
+    worker_process_shutdown,
+)
 from celery_library.common import create_app as create_celery_app
 from celery_library.signals import (
     on_worker_init,
@@ -24,18 +31,27 @@ setup_loggers(
 )
 
 
+_logger = logging.getLogger(__name__)
+
 assert _settings.STORAGE_CELERY  # nosec
 app = create_celery_app(_settings.STORAGE_CELERY)
 
-app_server = FastAPIAppServer(app=create_app(_settings))
+
+@dataclass
+class AppWrapper:
+    app: Celery
 
 
-def worker_init_wrapper(sender, **kwargs):
-    return on_worker_init(sender, app_server, **kwargs)
+def worker_init_wrapper(**kwargs):
+    kwargs.pop("sender", None)  # remove sender
+    fastapi_instance = create_app(_settings)
+    app_server = FastAPIAppServer(app=fastapi_instance)
+    assert _settings.STORAGE_CELERY  # nosec
+
+    return on_worker_init(AppWrapper(app), app_server, **kwargs)
 
 
-worker_init.connect(worker_init_wrapper)
-worker_shutdown.connect(on_worker_shutdown)
-
+worker_process_init.connect(worker_init_wrapper)
+worker_process_shutdown.connect(on_worker_shutdown)
 
 setup_worker_tasks(app)

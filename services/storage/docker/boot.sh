@@ -55,16 +55,16 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
       --recursive \
       -- \
       celery \
-      --app=simcore_service_storage.modules.celery.worker_main:app \
-      worker --pool=threads \
+      --app=simcore_service_storage.modules.celery.worker_main_"${CELERY_POOL:-prefork}":app \
+      worker --pool="${CELERY_POOL:-prefork}" \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
       --hostname="${STORAGE_WORKER_NAME}" \
       --queues="${CELERY_QUEUES:-default}"
   else
     exec celery \
-      --app=simcore_service_storage.modules.celery.worker_main:app \
-      worker --pool=threads \
+      --app=simcore_service_storage.modules.celery.worker_main_"${CELERY_POOL:-prefork}":app \
+      worker --pool="${CELERY_POOL:-prefork}" \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
       --hostname="${STORAGE_WORKER_NAME}" \
