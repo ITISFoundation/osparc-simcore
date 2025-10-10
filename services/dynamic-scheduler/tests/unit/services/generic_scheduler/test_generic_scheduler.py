@@ -387,9 +387,13 @@ async def test_can_recover_from_interruption(
     await ensure_expected_order(queue_poller.events, expected_order)
 
 
+_INITIAL_OP_NAME: OperationName = "initial"
+_AFTER_OP_NAME: OperationName = "after"
+
+
 @pytest.mark.parametrize("register_at_creation", [True, False])
 @pytest.mark.parametrize(
-    "is_executing, initial_op, after_op, expected_order",
+    "is_executing, initial_op, after_op, expected_order, to_start",
     [
         pytest.param(
             True,
@@ -399,6 +403,16 @@ async def test_can_recover_from_interruption(
                 ExecuteSequence(_ShortSleep),
                 ExecuteSequence(_S2),
             ],
+            OperationToStart(operation_name=_AFTER_OP_NAME, initial_context={}),
+        ),
+        pytest.param(
+            True,
+            Operation(SingleStepGroup(_ShortSleep)),
+            None,
+            [
+                ExecuteSequence(_ShortSleep),
+            ],
+            None,
         ),
         pytest.param(
             False,
@@ -409,6 +423,17 @@ async def test_can_recover_from_interruption(
                 RevertSequence(_ShortSleepThenRevert),
                 ExecuteSequence(_S2),
             ],
+            OperationToStart(operation_name=_AFTER_OP_NAME, initial_context={}),
+        ),
+        pytest.param(
+            False,
+            Operation(SingleStepGroup(_ShortSleepThenRevert)),
+            None,
+            [
+                ExecuteSequence(_ShortSleepThenRevert),
+                RevertSequence(_ShortSleepThenRevert),
+            ],
+            None,
         ),
     ],
 )
@@ -420,33 +445,25 @@ async def test_run_operation_after(
     register_at_creation: bool,
     is_executing: bool,
     initial_op: Operation,
-    after_op: Operation,
+    after_op: Operation | None,
     expected_order: list[BaseExpectedStepOrder],
+    to_start: OperationToStart | None,
 ):
-    initial_op_name: OperationName = "initial"
-    after_op_name: OperationName = "after"
 
-    register_operation(initial_op_name, initial_op)
-    register_operation(after_op_name, after_op)
+    register_operation(_INITIAL_OP_NAME, initial_op)
+    if after_op is not None:
+        register_operation(_AFTER_OP_NAME, after_op)
 
     if is_executing:
-        on_execute_completed = (
-            OperationToStart(operation_name=after_op_name, initial_context={})
-            if register_at_creation
-            else None
-        )
+        on_execute_completed = to_start if register_at_creation else None
         on_revert_completed = None
     else:
         on_execute_completed = None
-        on_revert_completed = (
-            OperationToStart(operation_name=after_op_name, initial_context={})
-            if register_at_creation
-            else None
-        )
+        on_revert_completed = to_start if register_at_creation else None
 
     schedule_id = await start_operation(
         app,
-        initial_op_name,
+        _INITIAL_OP_NAME,
         {},
         on_execute_completed=on_execute_completed,
         on_revert_completed=on_revert_completed,
@@ -455,19 +472,11 @@ async def test_run_operation_after(
     if register_at_creation is False:
         if is_executing:
             await register_to_start_after_on_executed_completed(
-                app,
-                schedule_id,
-                to_start=OperationToStart(
-                    operation_name=after_op_name, initial_context={}
-                ),
+                app, schedule_id, to_start=to_start
             )
         else:
             await register_to_start_after_on_reverted_completed(
-                app,
-                schedule_id,
-                to_start=OperationToStart(
-                    operation_name=after_op_name, initial_context={}
-                ),
+                app, schedule_id, to_start=to_start
             )
 
     await ensure_expected_order(steps_call_order, expected_order)
