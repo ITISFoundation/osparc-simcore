@@ -31,20 +31,26 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
     "cancel": "qx.event.type.Event"
   },
 
-  members: {
-    __form: null,
+  properties: {
+    targetUser: {
+      check: "osparc.data.model.User",
+      init: null,
+      nullable: true,
+      event: "changeTargetUser",
+    },
+  },
 
+  members: {
     _createChildControlImpl: function(id) {
       let control = null;
       switch (id) {
         case "intro-text": {
-          const supportEmail = osparc.store.VendorInfo.getSupportEmail();
-          const retentionDays = osparc.store.StaticInfo.getAccountDeletionRetentionDays();
           const text = this.tr(`\
-            This account will be <strong>deleted in ${retentionDays} days</strong>.<br>\
-            During this period, if you want to recover it or delete your\
-            data right away, please send us an email to <a href="mailto:${supportEmail}">${supportEmail}</a>.\
-            `);
+            You are about to transfer all your projects to another user.<br>
+            There are two ways to do so:<br>
+            - Share all your projects with the target user and keep the co-ownership. <br>
+            - Share all your projects with the target user and remove yourself as co-owner. <br>
+          `);
           control = new qx.ui.basic.Label().set({
             value: text,
             font: "text-14",
@@ -54,73 +60,96 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
           this._add(control);
           break;
         }
-        case "delete-form":
-          control = this.__createDeleteForm();
+        case "target-user-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle",
+          }));
+          const label = new qx.ui.basic.Label(this.tr("Target user:")).set({
+            font: "text-14"
+          });
+          control.add(label);
           this._add(control);
           break;
+        }
+        case "target-user-button":
+          control = new qx.ui.form.Button(this.tr("Select user")).set({
+            appearance: "strong-button",
+            allowGrowX: false,
+          });
+          this.bind("targetUser", control, "label", {
+            converter: targetUser => targetUser ? targetUser.getUserName() : this.tr("Select user")
+          });
+          control.addListener("execute", () => this.__selectTargetUserTapped(), this);
+          this.getChildControl("target-user-layout").add(control);
+          break;
+        case "buttons-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignX: "right"
+          }));
+          this._add(control);
+          break;
+        case "cancel-button":
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            appearance: "form-button-text",
+            allowGrowX: false,
+          });
+          control.addListener("execute", () => this.fireEvent("cancel"), this);
+          this.getChildControl("buttons-container").add(control);
+          break;
+        case "share-and-keep-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Share and keep ownership")).set({
+            appearance: "strong-button",
+            allowGrowX: false,
+          });
+          this.bind("targetUser", control, "enabled", {
+            converter: targetUser => targetUser !== null
+          });
+          control.addListener("execute", () => this.fireEvent("transferred"), this);
+          this.getChildControl("buttons-container").add(control);
+          break;
+        case "share-and-leave-button": {
+          control = new osparc.ui.form.FetchButton(this.tr("Share and remove my ownership")).set({
+            appearance: "danger-button",
+            allowGrowX: false,
+          });
+          this.bind("targetUser", control, "enabled", {
+            converter: targetUser => targetUser !== null
+          });
+          control.addListener("execute", () => this.fireEvent("transferred"), this);
+          this.getChildControl("buttons-container").add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
 
     __buildLayout: function() {
       this.getChildControl("intro-text");
-      this.getChildControl("delete-form");
+      this.getChildControl("target-user-button");
+      this.getChildControl("cancel-button");
+      this.getChildControl("share-and-keep-button");
+      this.getChildControl("share-and-leave-button");
     },
 
-    __createDeleteForm: function() {
-      const form = this.__form = new qx.ui.form.Form();
-
-      const email = new qx.ui.form.TextField().set({
-        placeholder: this.tr("Your email"),
-        required: true
+    __selectTargetUserTapped: function() {
+      const collaboratorsManager = new osparc.share.NewCollaboratorsManager({}, false, false).set({
+        acceptOnlyOne: true
       });
-      form.add(email, "Email address", qx.util.Validate.email(), "email");
-      this.addListener("appear", () => email.focus());
-
-      const password = new osparc.ui.form.PasswordField().set({
-        placeholder: this.tr("Your password"),
-        required: true
-      });
-      form.add(password, "Password", null, "password");
-
-      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
-        appearance: "form-button-text"
-      });
-      cancelBtn.addListener("execute", () => this.fireEvent("cancel"), this);
-      form.addButton(cancelBtn);
-
-      const deleteBtn = new osparc.ui.form.FetchButton(this.tr("Delete Account")).set({
-        appearance: "danger-button"
-      });
-      deleteBtn.addListener("execute", () => {
-        if (form.validate()) {
-          this.__requestDeletion(form, deleteBtn);
+      collaboratorsManager.setCaption(this.tr("Select target user"));
+      collaboratorsManager.addListener("addCollaborators", e => {
+        collaboratorsManager.close();
+        const selectedUsers = e.getData();
+        if (
+          selectedUsers &&
+          selectedUsers["selectedGids"] &&
+          selectedUsers["selectedGids"].length === 1
+        ) {
+          osparc.store.Users.getInstance().getUser(selectedUsers["selectedGids"][0])
+            .then(user => {
+              this.setTargetUser(user);
+            });
         }
       }, this);
-      form.addButton(deleteBtn);
-
-      const formRenderer = new qx.ui.form.renderer.Single(form);
-      return formRenderer;
     },
-
-    __requestDeletion: function(form, deleteBtn) {
-      deleteBtn.setFetching(true);
-      const params = {
-        data: {
-          email: form.getItem("email").getValue(),
-          password: form.getItem("password").getValue()
-        }
-      };
-      const retentionDays = osparc.store.StaticInfo.getAccountDeletionRetentionDays();
-
-      osparc.data.Resources.fetch("auth", "unregister", params)
-        .then(() => {
-          const msg = this.tr(`You account will be deleted in ${retentionDays} days`);
-          osparc.FlashMessenger.logAs(msg, "INFO");
-          this.fireEvent("transferred");
-        })
-        .catch(err => osparc.FlashMessenger.logError(err))
-        .finally(() => deleteBtn.setFetching(false));
-    }
   }
 });

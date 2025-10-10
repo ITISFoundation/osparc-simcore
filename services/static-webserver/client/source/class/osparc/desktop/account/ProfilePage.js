@@ -38,6 +38,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     }
     this._add(this.__createPasswordSection());
     this._add(this.__createContactSection());
+    this._add(this.__createTransferProjectsSection());
     this._add(this.__createDeleteAccount());
 
     this.__userProfileData = {};
@@ -664,7 +665,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
       transferBtn.addListener("execute", () => {
         const transferProjects = new osparc.desktop.account.TransferProjects();
-        const win = osparc.ui.window.Window.popUpInWindow(transferProjects, qx.locale.Manager.tr("Transfer Projects"), 430, null);
+        const win = osparc.ui.window.Window.popUpInWindow(transferProjects, qx.locale.Manager.tr("Transfer Projects"), 500, null);
         transferProjects.addListener("cancel", () => win.close());
         transferProjects.addListener("transferred", () => win.close());
       });
