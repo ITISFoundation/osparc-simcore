@@ -174,7 +174,7 @@ async def _create_support_message_with_first_check(
 
     message = await _create_support_message_and_check_if_it_is_first_message()
 
-    # NOTE: Update conversation last modified - for listing
+    # NOTE: Update conversation last modified (for frontend listing) and read states
     if is_support_user:
         _is_read_by_user = False
         _is_read_by_support = True

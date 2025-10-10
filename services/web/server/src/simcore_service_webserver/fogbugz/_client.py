@@ -91,7 +91,7 @@ class FogbugzRestClient:
             response_data: dict[str, Any] = response.json()
             return response_data
         except Exception as exc:
-            _logger.error("Failed to make API request to Fogbugz: %s", exc)
+            _logger.exception("Failed to make API request to Fogbugz: %s", exc)
             raise
 
     async def create_case(self, data: FogbugzCaseCreate) -> str:
@@ -165,12 +165,12 @@ class FogbugzRestClient:
             raise ValueError(msg)
 
         # Get the status from the found case
-        status: str = target_case.get("sStatus", "")
-        if not status:
+        _status: str = target_case.get("sStatus", "")
+        if not _status:
             msg = f"Status not found for case {case_id}"
             raise ValueError(msg)
 
-        return status
+        return _status
 
     async def reopen_case(
         self, case_id: str, assigned_fogbugz_person_id: str, reopen_msg: str = ""
@@ -182,7 +182,8 @@ class FogbugzRestClient:
         # Determine the command based on current status
         if current_status.lower().startswith("active"):
             return  # Case is already active, no action needed
-        elif current_status.lower().startswith("resolved"):
+
+        if current_status.lower().startswith("resolved"):
             cmd = "reactivate"
         elif current_status.lower().startswith("closed"):
             cmd = "reopen"
