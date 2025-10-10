@@ -180,6 +180,27 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
 
     __shareAndLeaveOwnership: function() {
       osparc.FlashMessenger.logAs(this.tr("This option is not yet enabled."), "WARNING", 10000);
+      return;
+
+      this.setEnabled(false);
+      this.getChildControl("share-and-leave-button").setFetching(true);
+      this.__shareAllProjects()
+        .then(allMyStudies => {
+          return this.__removeMyOwnerships(allMyStudies);
+        })
+        .then(() => {
+          const msg = this.tr("All projects have been shared with the target user and you have been removed as co-owner.");
+          osparc.FlashMessenger.logAs(msg, "INFO", 10000);
+          this.fireEvent("transferred");
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logError(err);
+        })
+        .finally(() => {
+          this.setEnabled(true);
+          this.getChildControl("share-and-leave-button").setFetching(false);
+        });
     },
 
     __filterMyOwnedStudies: function(allMyReadStudies) {
@@ -234,9 +255,12 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
         });
     },
 
-    __removeMyOwnership: function(study) {
+    __removeMyOwnerships: function(studies) {
       const myGroupId = osparc.store.Groups.getInstance().getMyGroupId();
-      return osparc.store.Study.getInstance().removeCollaborator(study, myGroupId)
+      const promises = studies.map(study => {
+        return osparc.store.Study.getInstance().removeCollaborator(study, myGroupId);
+      });
+      return Promise.all(promises);
     },
   }
 });
