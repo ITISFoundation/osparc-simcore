@@ -104,9 +104,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
       conversation.addListener("changeFirstMessage", this.__populateWithFirstMessage, this);
 
       const unreadBadge = this.getChildControl("unread-badge");
-      const eventName = osparc.store.Groups.getInstance().amIASupportUser() ? "changeReadBySupport" : "changeReadByUser";
       const propName = osparc.store.Groups.getInstance().amIASupportUser() ? "readBySupport" : "readByUser";
-      conversation.addListener(eventName, () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       conversation.bind(propName, unreadBadge, "visibility", {
         converter: val => val === false ? "visible" : "excluded"
       });

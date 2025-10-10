@@ -27,11 +27,12 @@ qx.Class.define("osparc.support.Conversations", {
 
     this.__filterButtons = [];
     this.__filterButtons.push(this.getChildControl("filter-all-button"));
+    this.__filterButtons.push(this.getChildControl("filter-unread-button"));
+    /*
     if (osparc.store.Groups.getInstance().amIASupportUser()) {
       this.__filterButtons.push(this.getChildControl("filter-open-button"));
-    } else {
-      this.__filterButtons.push(this.getChildControl("filter-unread-button"));
     }
+    */
 
     this.__fetchConversations();
 
