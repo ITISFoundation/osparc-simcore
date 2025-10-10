@@ -303,7 +303,7 @@ qx.Class.define("osparc.support.ConversationPage", {
 
     __resolveCase: function() {
       if (this.getConversation()) {
-        this.getConversation().markAsResolved()
+        this.getConversation().markAsResolved();
       }
     },
 
