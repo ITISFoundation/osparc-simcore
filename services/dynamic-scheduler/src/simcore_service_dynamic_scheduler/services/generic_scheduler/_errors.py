@@ -25,7 +25,7 @@ class OperationInitialContextKeyNotFoundError(BaseGenericSchedulerError):
     )
 
 
-class StepNotFoundInoperationError(BaseGenericSchedulerError):
+class StepNotFoundInOperationError(BaseGenericSchedulerError):
     msg_template: str = (
         "Step '{step_name}' not found steps_names='{steps_names}' for operation '{operation_name}'"
     )

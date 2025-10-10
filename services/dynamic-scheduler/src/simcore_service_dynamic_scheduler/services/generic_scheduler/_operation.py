@@ -9,7 +9,7 @@ from servicelib.deferred_tasks import DeferredContext
 from ._errors import (
     OperationAlreadyRegisteredError,
     OperationNotFoundError,
-    StepNotFoundInoperationError,
+    StepNotFoundInOperationError,
 )
 from ._models import (
     ALL_RESERVED_CONTEXT_KEYS,
@@ -390,7 +390,7 @@ class OperationRegistry:
 
         steps_names = set(cls._OPERATIONS[operation_name]["steps"].keys())
         if step_name not in steps_names:
-            raise StepNotFoundInoperationError(
+            raise StepNotFoundInOperationError(
                 step_name=step_name,
                 operation_name=operation_name,
                 steps_names=steps_names,

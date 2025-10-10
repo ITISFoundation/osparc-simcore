@@ -503,9 +503,9 @@ async def test_missing_initial_context_key_from_operation(
     register_operation(good_operation_name, operation)
     register_operation(bad_operation_name, operation)
 
-    common_initial_context = {"unsued1": "value1", "unsued2": "value2"}
+    common_initial_context = {"unused1": "value1", "unused2": "value2"}
     good_initial_context: OperationContext = {
-        "required_key": "soeme_value",
+        "required_key": "some_value",
         **common_initial_context,
     }
     bad_initial_context: OperationContext = {**common_initial_context}
