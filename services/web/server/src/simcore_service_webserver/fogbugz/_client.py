@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 import httpx
 from aiohttp import web
 from pydantic import AnyUrl, BaseModel, Field, SecretStr
+from servicelib.aiohttp import status
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -63,11 +64,16 @@ class FogbugzRestClient:
         response = await self._client.request(method, url, **kwargs)
 
         # Raise for 5xx server errors to trigger retry
-        if response.status_code >= 500:
+        if response.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
             response.raise_for_status()
 
         # Don't retry on 4xx client errors (except for rate limiting)
-        if 400 <= response.status_code < 500 and response.status_code != 429:
+        if (
+            status.HTTP_400_BAD_REQUEST
+            <= response.status_code
+            < status.HTTP_500_INTERNAL_SERVER_ERROR
+            and response.status_code != status.HTTP_429_TOO_MANY_REQUESTS
+        ):
             response.raise_for_status()
 
         return response
