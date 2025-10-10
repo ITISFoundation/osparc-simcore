@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 import httpx
 from aiohttp import web
+from httpx_retries import RetryClient, RetryStrategy
 from pydantic import AnyUrl, BaseModel, Field, SecretStr
 
 from ..products import products_service
@@ -28,11 +29,19 @@ class FogbugzCaseCreate(BaseModel):
     description: str = Field(description="Case description/first comment")
 
 
+retry_strategy = RetryStrategy(
+    max_attempts=3,  # Number of retries
+    allowed_methods=["GET", "POST", "PUT", "DELETE"],  # Methods to retry
+    allowed_statuses=[429, 500, 502, 503, 504],  # Status codes to retry
+    backoff_factor=0.5,  # Delay between retries
+)
+
+
 class FogbugzRestClient:
     """REST client for Fogbugz API"""
 
     def __init__(self, api_token: SecretStr, base_url: AnyUrl) -> None:
-        self._client = httpx.AsyncClient()  # MD: TODO / retry
+        self._client = RetryClient(httpx.AsyncClient(), retry_strategy=retry_strategy)
         self._api_token = api_token
         self._base_url = base_url
 
@@ -134,7 +143,9 @@ class FogbugzRestClient:
         current_status = await self.get_case_status(case_id)
 
         # Determine the command based on current status
-        if current_status.lower().startswith("resolved"):
+        if current_status.lower().startswith("active"):
+            return  # Case is already active, no action needed
+        elif current_status.lower().startswith("resolved"):
             cmd = "reactivate"
         elif current_status.lower().startswith("closed"):
             cmd = "reopen"

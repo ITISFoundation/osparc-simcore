@@ -11,6 +11,7 @@ from models_library.conversations import (
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
+    ConversationPatchDB,
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -25,7 +26,11 @@ from yarl import URL
 from ..products import products_service
 from ..redis import get_redis_lock_manager_client_sdk
 from ..users import users_service
-from . import _conversation_message_repository, _conversation_service
+from . import (
+    _conversation_message_repository,
+    _conversation_repository,
+    _conversation_service,
+)
 from ._socketio import (
     notify_conversation_message_created,
     notify_conversation_message_deleted,
@@ -106,6 +111,7 @@ async def _create_support_message_with_first_check(
     *,
     product_name: ProductName,
     user_id: UserID,
+    is_support_user: bool,
     conversation_id: ConversationID,
     # Creation attributes
     content: str,
@@ -166,7 +172,23 @@ async def _create_support_message_with_first_check(
 
         return created_message, is_first_message
 
-    return await _create_support_message_and_check_if_it_is_first_message()
+    message = await _create_support_message_and_check_if_it_is_first_message()
+
+    # NOTE: Update conversation last modified - for listing
+    if is_support_user:
+        _is_read_by_user = False
+        _is_read_by_support = True
+    else:
+        _is_read_by_user = True
+        _is_read_by_support = False
+    await _conversation_repository.update(
+        app,
+        conversation_id=conversation_id,
+        updates=ConversationPatchDB(
+            is_read_by_user=_is_read_by_user, is_read_by_support=_is_read_by_support
+        ),
+    )
+    return message
 
 
 async def create_support_message(
@@ -174,6 +196,7 @@ async def create_support_message(
     *,
     product_name: ProductName,
     user_id: UserID,
+    is_support_user: bool,
     conversation: ConversationGetDB,
     request_url: URL,
     request_host: str,
@@ -185,6 +208,7 @@ async def create_support_message(
         app=app,
         product_name=product_name,
         user_id=user_id,
+        is_support_user=is_support_user,
         conversation_id=conversation.conversation_id,
         content=content,
         type_=type_,

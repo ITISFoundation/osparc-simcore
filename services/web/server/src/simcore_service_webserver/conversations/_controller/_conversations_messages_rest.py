@@ -83,7 +83,7 @@ async def create_conversation_message(request: web.Request):
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
-    await _conversation_service.get_support_conversation_for_user(
+    _, is_support_user = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -94,6 +94,7 @@ async def create_conversation_message(request: web.Request):
         app=request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
+        is_support_user=is_support_user,
         conversation=_conversation,
         request_url=request.url,
         request_host=request.host,

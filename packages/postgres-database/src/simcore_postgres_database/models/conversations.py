@@ -84,6 +84,20 @@ conversations = sa.Table(
         nullable=True,
         doc="Fogbugz case ID associated with the conversation",
     ),
+    sa.Column(
+        "is_read_by_user",
+        sa.Boolean,
+        nullable=False,
+        server_default=sa.text("true"),
+        doc="Indicates if the message has been read by the user (true) or not (false)",
+    ),
+    sa.Column(
+        "is_read_by_support",
+        sa.Boolean,
+        nullable=False,
+        server_default=sa.text("true"),
+        doc="Indicates if the message has been read by the support user (true) or not (false)",
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
 )

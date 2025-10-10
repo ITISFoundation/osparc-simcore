@@ -30,6 +30,8 @@ class ConversationRestGet(OutputSchema):
     created: datetime
     modified: datetime
     extra_context: dict[str, str]
+    is_read_by_user: bool
+    is_read_by_support: bool
 
     @classmethod
     def from_domain_model(cls, domain: ConversationGetDB) -> Self:
@@ -44,12 +46,16 @@ class ConversationRestGet(OutputSchema):
             created=domain.created,
             modified=domain.modified,
             extra_context=domain.extra_context,
+            is_read_by_user=domain.is_read_by_user,
+            is_read_by_support=domain.is_read_by_support,
         )
 
 
 class ConversationPatch(InputSchema):
     name: str | None = None
     extra_context: dict[str, Any] | None = None
+    is_read_by_user: bool | None = None
+    is_read_by_support: bool | None = None
 
 
 ### CONVERSATION MESSAGES ---------------------------------------------------------------
