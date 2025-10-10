@@ -220,7 +220,7 @@ async def create_support_message(
 
     if (
         product.support_standard_group_id is None
-        or product.support_assigned_fogbugz_project_id
+        or product.support_assigned_fogbugz_project_id is None
         or product.support_assigned_fogbugz_person_id is None
         or fogbugz_settings_or_none is None
     ):

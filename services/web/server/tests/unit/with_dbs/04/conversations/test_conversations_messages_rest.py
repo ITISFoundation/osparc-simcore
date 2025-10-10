@@ -10,6 +10,7 @@ from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from http import HTTPStatus
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -23,10 +24,13 @@ from models_library.conversations import (
 )
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.conversations import _conversation_message_service
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.fogbugz._client import _APPKEY, FogbugzRestClient
 
 
 @pytest.fixture
@@ -450,18 +454,65 @@ async def test_conversation_messages_nonexistent_resources(
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
 
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {"FOGBUGZ_API_TOKEN": "token-12345", "FOGBUGZ_URL": "http://test.com"},
+    )
+
+
+@pytest.fixture(autouse=True)
+def mocked_fogbugz_client(client: TestClient) -> AsyncMock:
+    """Auto-mock the Fogbugz client in every test"""
+    mock_client = AsyncMock(spec=FogbugzRestClient)
+    mock_client.create_case.return_value = "test-case-12345"
+    mock_client.reopen_case.return_value = None
+    mock_client.get_case_status.return_value = "Active"
+    mock_client.resolve_case.return_value = None
+
+    # Replace the client in the app storage
+    client.app[_APPKEY] = mock_client
+
+    return mock_client
+
+
+@pytest.fixture
+def mocked_list_users_in_group(mocker: MockerFixture) -> AsyncMock:
+    """Mock the list_users_in_group function to return empty list"""
+    mock = mocker.patch(
+        "simcore_service_webserver.groups._groups_repository.list_users_in_group"
+    )
+    mock.return_value = []
+    return mock
+
+
+@pytest.fixture
+def mocked_get_current_product(mocker: MockerFixture) -> AsyncMock:
+    """Mock the get_product function to return a product with support settings"""
+    mock = mocker.patch(
+        "simcore_service_webserver.products.products_service.get_product"
+    )
+    mocked_product = mocker.Mock()
+    mocked_product.support_standard_group_id = 123
+    mocked_product.support_assigned_fogbugz_project_id = 456
+    mocked_product.support_assigned_fogbugz_person_id = 789
+    mock.return_value = mocked_product
+    return mock
+
+
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_conversation_messages_with_database(
+    app_environment: EnvVarsDict,
     client: TestClient,
+    mocked_fogbugz_client: AsyncMock,
+    mocked_list_users_in_group: AsyncMock,
+    mocked_get_current_product: AsyncMock,
     logged_user: UserInfoDict,
-    mocker: MockerFixture,
 ):
     """Test conversation messages with direct database interaction"""
-    # Mock the email service to verify it's called for first message
-    mock_send_email = mocker.patch(
-        "simcore_service_webserver.email.email_service.send_email_from_template"
-    )
-    mocker.patch("simcore_service_webserver.products.products_web.get_current_product")
     assert client.app
 
     # Create a conversation directly via API (no mocks)
@@ -491,7 +542,8 @@ async def test_conversation_messages_with_database(
     assert message_data["conversationId"] == conversation_id
 
     # Verify email was sent for first message
-    assert mock_send_email.call_count == 1
+    assert mocked_fogbugz_client.create_case.call_count == 1
+    assert not mocked_fogbugz_client.reopen_case.called
 
     # Create a second message
     second_message_body = {"content": "Second message", "type": "MESSAGE"}
@@ -505,4 +557,7 @@ async def test_conversation_messages_with_database(
     assert second_message_data["conversationId"] == conversation_id
 
     # Verify email was NOT sent again for second message (still only 1 call)
-    assert mock_send_email.call_count == 1
+    assert mocked_fogbugz_client.create_case.call_count == 1
+    assert mocked_fogbugz_client.reopen_case.called
+    assert second_message_data["type"] == "MESSAGE"
+    assert second_message_data["conversationId"] == conversation_id
