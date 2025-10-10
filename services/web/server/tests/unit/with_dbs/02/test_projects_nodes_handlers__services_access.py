@@ -17,6 +17,8 @@ from models_library.api_schemas_catalog.services import (
     MyServiceGet,
     MyServicesRpcBatchGet,
 )
+from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.products import ProductName
 from models_library.services_history import ServiceRelease
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -24,6 +26,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rabbitmq import RPCServerError
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects import _projects_service
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
 
@@ -334,7 +337,7 @@ async def test_accessible_for_one_service(
     expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
         project_id=project_id
     )
-    assert URL(f"/v0/projects/{project_id}/nodes/-/services:access") == expected_url
+    assert URL(f"/v0/projects/{project_id}/nodes/-/services") == expected_url
 
     resp = await client.get(
         f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
@@ -590,3 +593,50 @@ async def test_get_project_services_service_unavailable(
 
     assert error
     assert not data
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_project_services_empty_project(
+    client: TestClient,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    logged_user: UserInfoDict,
+    default_product_name: ProductName,
+):
+    #
+    # Clear the project's workbench to make it empty
+    # Update the project in the database to have an empty workbench
+    await _projects_service.patch_project_for_user(
+        client.app,
+        user_id=logged_user["id"],
+        project_uuid=user_project["uuid"],
+        project_patch=ProjectPatch(workbench={}),
+        product_name=default_product_name,
+        client_session_id=None,
+    )
+
+    mocker.patch(
+        "simcore_service_webserver.catalog._service.catalog_rpc.batch_get_my_services",
+        spec=True,
+        side_effect=ValueError(
+            "Bad request: cannot batch-get an empty list of name-ids"
+        ),
+    )
+
+    assert client.app
+
+    project_id = user_project["uuid"]
+
+    expected_url = client.app.router["get_project_services"].url_for(
+        project_id=project_id
+    )
+    assert URL(f"/v0/projects/{project_id}/nodes/-/services") == expected_url
+
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    assert data == {
+        "projectUuid": project_id,
+        "services": [],
+        "missing": None,
+    }
