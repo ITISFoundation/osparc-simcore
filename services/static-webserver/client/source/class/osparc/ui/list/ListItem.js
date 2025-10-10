@@ -108,17 +108,15 @@ qx.Class.define("osparc.ui.list.ListItem", {
       nullable : true
     },
 
-    subSubtitle: {
-      check : "String",
-      apply : "__applySubSubtitle",
-      nullable : true
-    },
-
     role: {
       check : "String",
       apply : "__applyRole",
       nullable : true
     }
+  },
+
+  statics: {
+    MAX_ROWS: 3,
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
@@ -152,7 +150,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
           this._add(control, {
             row: 0,
             column: 0,
-            rowSpan: 3
+            rowSpan: this.self().MAX_ROWS,
           });
           break;
         case "title":
@@ -189,26 +187,22 @@ qx.Class.define("osparc.ui.list.ListItem", {
             column: 1
           });
           break;
-        case "sub-subtitle":
-          control = new qx.ui.basic.Label().set({
-            font: "text-12",
-            selectable: true,
-            rich: true,
-          });
+        case "third-column-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+            alignY: "middle"
+          }));
           this._add(control, {
-            row: 2,
-            column: 1
+            row: 0,
+            column: 2,
+            rowSpan: this.self().MAX_ROWS,
           });
           break;
         case "role":
           control = new qx.ui.basic.Label().set({
             font: "text-13",
-            alignY: "middle"
           });
-          this._add(control, {
-            row: 0,
-            column: 2,
-            rowSpan: 3
+          this.getChildControl("third-column-layout").addAt(control, 0, {
+            flex: 1
           });
           break;
       }
@@ -261,14 +255,6 @@ qx.Class.define("osparc.ui.list.ListItem", {
         return;
       }
       const label = this.getChildControl("subtitle-md");
-      label.setValue(value);
-    },
-
-    __applySubSubtitle: function(value) {
-      if (value === null) {
-        return;
-      }
-      const label = this.getChildControl("sub-subtitle");
       label.setValue(value);
     },
 

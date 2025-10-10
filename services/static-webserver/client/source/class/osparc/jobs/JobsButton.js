@@ -53,7 +53,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
           })).set({
-            paddingLeft: 5,
+            paddingLeft: 4,
           });
           logoContainer.add(control);
           this._add(logoContainer, {

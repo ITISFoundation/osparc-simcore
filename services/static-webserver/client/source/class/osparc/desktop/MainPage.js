@@ -70,6 +70,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     preloadPromises.push(osparc.store.Products.getInstance().fetchUiConfig());
     preloadPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
     preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobsLatest());
+    preloadPromises.push(osparc.store.ConversationsSupport.getInstance().fetchConversations());
     preloadPromises.push(osparc.data.Permissions.getInstance().fetchPermissions());
     preloadPromises.push(osparc.data.Permissions.getInstance().fetchFunctionPermissions());
     Promise.all(preloadPromises)
