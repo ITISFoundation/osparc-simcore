@@ -31,6 +31,8 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.conversations import _conversation_message_service
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.fogbugz._client import _APPKEY, FogbugzRestClient
+from simcore_service_webserver.groups import _groups_repository
+from simcore_service_webserver.products import products_service
 
 
 @pytest.fixture
@@ -482,9 +484,7 @@ def mocked_fogbugz_client(client: TestClient) -> AsyncMock:
 @pytest.fixture
 def mocked_list_users_in_group(mocker: MockerFixture) -> AsyncMock:
     """Mock the list_users_in_group function to return empty list"""
-    mock = mocker.patch(
-        "simcore_service_webserver.groups._groups_repository.list_users_in_group"
-    )
+    mock = mocker.patch.object(_groups_repository, "list_users_in_group")
     mock.return_value = []
     return mock
 
@@ -492,9 +492,7 @@ def mocked_list_users_in_group(mocker: MockerFixture) -> AsyncMock:
 @pytest.fixture
 def mocked_get_current_product(mocker: MockerFixture) -> AsyncMock:
     """Mock the get_product function to return a product with support settings"""
-    mock = mocker.patch(
-        "simcore_service_webserver.products.products_service.get_product"
-    )
+    mock = mocker.patch.object(products_service, "get_product")
     mocked_product = mocker.Mock()
     mocked_product.support_standard_group_id = 123
     mocked_product.support_assigned_fogbugz_project_id = 456

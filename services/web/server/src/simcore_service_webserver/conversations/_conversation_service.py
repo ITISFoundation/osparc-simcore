@@ -185,7 +185,7 @@ async def get_support_conversation_for_user(
     user_id: UserID,
     product_name: ProductName,
     conversation_id: ConversationID,
-) -> tuple[ConversationGetDB, IsSupportUser]:  # bool indicates if user is support user
+) -> tuple[ConversationGetDB, IsSupportUser]:
     # Check if user is part of support group (in that case he has access to all support conversations)
     product = products_service.get_product(app, product_name=product_name)
     _support_standard_group_id = product.support_standard_group_id
@@ -308,7 +308,6 @@ async def create_fogbugz_case_for_support_conversation(
 async def reopen_fogbugz_case_for_support_conversation(
     app: web.Application,
     *,
-    # conversation: ConversationGetDB,
     case_id: str,
     conversation_url: str,
     product_support_assigned_fogbugz_person_id: str,
