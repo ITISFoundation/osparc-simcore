@@ -23,8 +23,8 @@ from pydantic import ValidationError
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogItemNotFoundError,
+    CatalogForbiddenRpcError,
+    CatalogItemNotFoundRpcError,
 )
 
 from ..exceptions.backend_errors import (
@@ -134,8 +134,8 @@ class CatalogService:
 
     @_exception_mapper(
         rpc_exception_map={
-            CatalogItemNotFoundError: ProgramOrSolverOrStudyNotFoundError,
-            CatalogForbiddenError: ServiceForbiddenAccessError,
+            CatalogItemNotFoundRpcError: ProgramOrSolverOrStudyNotFoundError,
+            CatalogForbiddenRpcError: ServiceForbiddenAccessError,
             ValidationError: InvalidInputError,
         }
     )
@@ -156,8 +156,8 @@ class CatalogService:
 
     @_exception_mapper(
         rpc_exception_map={
-            CatalogItemNotFoundError: ProgramOrSolverOrStudyNotFoundError,
-            CatalogForbiddenError: ServiceForbiddenAccessError,
+            CatalogItemNotFoundRpcError: ProgramOrSolverOrStudyNotFoundError,
+            CatalogForbiddenRpcError: ServiceForbiddenAccessError,
             ValidationError: InvalidInputError,
         }
     )

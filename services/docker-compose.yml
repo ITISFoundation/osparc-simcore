@@ -10,7 +10,7 @@ x-tracing-open-telemetry: &tracing_open_telemetry_environs
   TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
   TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
   TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
-  TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE: ${TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE}
+  TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY: ${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}
 
 x-webserver-diagnostics: &webserver_diagnostics_environs
   DIAGNOSTICS_HEALTHCHECK_ENABLED: ${DIAGNOSTICS_HEALTHCHECK_ENABLED}
@@ -1507,6 +1507,7 @@ services:
       - "--tracing.addinternals"
       - "--tracing.otlp=true"
       - "--tracing.otlp.http=true"
+      - "--tracing.sampleRate=${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}"
     healthcheck:
       # NOTE: this healthcheck to check if traefik is up and running must be run on the ping entrypoint defined in command!
       test: traefik healthcheck --ping --ping.entryPoint=ping --entryPoints.ping.address=:9082
