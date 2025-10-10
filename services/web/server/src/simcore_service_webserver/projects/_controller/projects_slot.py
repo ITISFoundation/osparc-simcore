@@ -20,7 +20,7 @@ from ...resource_manager.user_sessions import (
     managed_resource,
 )
 from .._projects_service import (
-    conditionally_unsubscribe_from_project_logs,
+    conditionally_unsubscribe_project_logs_across_replicas,
     retrieve_and_notify_project_locked_state,
 )
 
@@ -83,7 +83,7 @@ async def _on_user_disconnected(
     )
 
     for _project_id in projects:  # At the moment, only 1 is expected
-        await conditionally_unsubscribe_from_project_logs(
+        await conditionally_unsubscribe_project_logs_across_replicas(
             app, ProjectID(_project_id), user_id
         )
 

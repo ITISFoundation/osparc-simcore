@@ -20,6 +20,7 @@ from ..logging_utils import log_catch
 from ..prometheus_metrics import (
     PrometheusMetrics,
     get_prometheus_metrics,
+    record_asyncio_event_looop_metrics,
     record_request_metrics,
     record_response_metrics,
 )
@@ -33,15 +34,15 @@ MONITORING_NAMESPACE_APPKEY: Final = web.AppKey("APP_MONITORING_NAMESPACE_KEY", 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
     metrics = app[PROMETHEUS_METRICS_APPKEY]
-    assert isinstance(metrics, PrometheusMetrics)  # nosec
     return metrics.registry
 
 
 async def metrics_handler(request: web.Request):
-    registry = get_collector_registry(request.app)
+    metrics = request.app[PROMETHEUS_METRICS_APPKEY]
+    await record_asyncio_event_looop_metrics(metrics)
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
-    result = await request.loop.run_in_executor(None, generate_latest, registry)
+    result = await request.loop.run_in_executor(None, generate_latest, metrics.registry)
     response = web.Response(body=result)
     response.content_type = CONTENT_TYPE_LATEST
     return response

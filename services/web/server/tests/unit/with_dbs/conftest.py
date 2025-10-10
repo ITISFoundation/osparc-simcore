@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+# pylint: disable=protected-access
 
 import random
 import sys
@@ -44,7 +45,7 @@ from models_library.services_enums import ServiceState
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_docker.plugin import Services
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -53,6 +54,7 @@ from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsy
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
+from servicelib import tracing
 from servicelib.common_aiopg_utils import DSN
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
@@ -227,7 +229,10 @@ async def web_server(
     assert app_environment
 
     # original APP
-    app = create_application()
+    tracing_config = tracing.TracingConfig.create(
+        service_name="test-webserver", tracing_settings=None
+    )
+    app = create_application(tracing_config=tracing_config)
 
     disable_static_webserver(app)
 
@@ -705,6 +710,19 @@ def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
     )
 
     return {"subscribe": mocked_subscribe, "unsubscribe": mocked_unsubscribe}
+
+
+@pytest.fixture
+def mocked_conditionally_unsubscribe_project_logs(
+    mocker: MockerFixture,
+) -> MockType:
+    import simcore_service_webserver.projects._projects_service  # noqa: PLC0415
+
+    return mocker.patch.object(
+        simcore_service_webserver.projects._projects_service,  # noqa: SLF001
+        "conditionally_unsubscribe_project_logs_across_replicas",
+        autospec=True,
+    )
 
 
 @pytest.fixture
