@@ -9,9 +9,10 @@ from servicelib.deferred_tasks import DeferredContext
 from ._errors import (
     OperationAlreadyRegisteredError,
     OperationNotFoundError,
-    StepNotFoundInoperationError,
+    StepNotFoundInOperationError,
 )
 from ._models import (
+    ALL_RESERVED_CONTEXT_KEYS,
     OperationName,
     ProvidedOperationContext,
     RequiredOperationContext,
@@ -231,9 +232,17 @@ class ParallelStepGroup(BaseStepGroup):
 
 class Operation:
     def __init__(
-        self, *step_groups: BaseStepGroup, is_cancellable: bool = True
+        self,
+        *step_groups: BaseStepGroup,
+        initial_context_required_keys: set[str] | None = None,
+        is_cancellable: bool = True,
     ) -> None:
         self.step_groups = list(step_groups)
+        self.initial_context_required_keys = (
+            set()
+            if initial_context_required_keys is None
+            else initial_context_required_keys
+        )
         self.is_cancellable = is_cancellable
 
     def __repr__(self) -> str:
@@ -245,7 +254,7 @@ def _has_abstract_methods(cls: type[object]) -> bool:
 
 
 @validate_call(config={"arbitrary_types_allowed": True})
-def _validate_operation(  # noqa: C901
+def _validate_operation(  # noqa: C901, PLR0912 # pylint: disable=too-many-branches
     operation: Operation,
 ) -> dict[StepName, type[BaseStep]]:
     if len(operation.step_groups) == 0:
@@ -285,6 +294,12 @@ def _validate_operation(  # noqa: C901
             detected_steps_names[step_name] = step
 
             for key in step.get_execute_provides_context_keys():
+                if key in ALL_RESERVED_CONTEXT_KEYS:
+                    msg = (
+                        f"Step {step_name=} provides {key=} which is part of reserved keys "
+                        f"{ALL_RESERVED_CONTEXT_KEYS=}"
+                    )
+                    raise ValueError(msg)
                 if key in execute_provided_keys:
                     msg = (
                         f"Step {step_name=} provides already provided {key=} in "
@@ -292,7 +307,14 @@ def _validate_operation(  # noqa: C901
                     )
                     raise ValueError(msg)
                 execute_provided_keys.add(key)
+
             for key in step.get_revert_provides_context_keys():
+                if key in ALL_RESERVED_CONTEXT_KEYS:
+                    msg = (
+                        f"Step {step_name=} provides {key=} which is part of reserved keys "
+                        f"{ALL_RESERVED_CONTEXT_KEYS=}"
+                    )
+                    raise ValueError(msg)
                 if key in revert_provided_keys:
                     msg = (
                         f"Step {step_name=} provides already provided {key=} in "
@@ -368,7 +390,7 @@ class OperationRegistry:
 
         steps_names = set(cls._OPERATIONS[operation_name]["steps"].keys())
         if step_name not in steps_names:
-            raise StepNotFoundInoperationError(
+            raise StepNotFoundInOperationError(
                 step_name=step_name,
                 operation_name=operation_name,
                 steps_names=steps_names,

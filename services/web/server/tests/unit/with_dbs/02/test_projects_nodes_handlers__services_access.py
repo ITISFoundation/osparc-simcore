@@ -13,7 +13,10 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
-from models_library.api_schemas_catalog.services import MyServiceGet
+from models_library.api_schemas_catalog.services import (
+    MyServiceGet,
+    MyServicesRpcBatchGet,
+)
 from models_library.services_history import ServiceRelease
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -481,21 +484,23 @@ async def test_get_project_services(
     mocker.patch(
         "simcore_service_webserver.catalog._service.catalog_rpc.batch_get_my_services",
         spec=True,
-        return_value=[
-            MyServiceGet(
-                key=service_key,
-                release=ServiceRelease(
-                    version=service_version,
-                    version_display=f"v{service_version}",
-                    released="2023-01-01T00:00:00Z",
-                    retired=None,
-                    compatibility=None,
-                ),
-                owner=logged_user["primary_gid"],
-                my_access_rights={"execute": True, "write": False},
-            )
-            for service_key, service_version in fake_services_in_project
-        ],
+        return_value=MyServicesRpcBatchGet(
+            found_items=[
+                MyServiceGet(
+                    key=service_key,
+                    release=ServiceRelease(
+                        version=service_version,
+                        version_display=f"v{service_version}",
+                        released="2023-01-01T00:00:00Z",
+                        retired=None,
+                        compatibility=None,
+                    ),
+                    owner=logged_user["primary_gid"],
+                    my_access_rights={"execute": True, "write": False},
+                )
+                for service_key, service_version in fake_services_in_project
+            ]
+        ),
     )
 
     assert client.app
@@ -550,6 +555,7 @@ async def test_get_project_services(
                 },
             },
         ],
+        "missing": None,
     }
 
 

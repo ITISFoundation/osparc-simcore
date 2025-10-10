@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from typing import Any, cast
 
 from aiohttp import web
-from models_library.api_schemas_catalog.services import MyServiceGet, ServiceUpdateV2
+from models_library.api_schemas_catalog.services import ServiceUpdateV2
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
@@ -27,7 +27,9 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
 from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
-from servicelib.rabbitmq.rpc_interfaces.catalog.errors import CatalogNotAvailableError
+from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
+    CatalogNotAvailableRpcError,
+)
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -37,6 +39,7 @@ from ._controller_rest_schemas import (
     ServiceInputGetFactory,
     ServiceOutputGetFactory,
 )
+from ._models import MyServicesBatchGetResult
 from ._units_service import can_connect, replace_service_input_outputs
 
 _logger = logging.getLogger(__name__)
@@ -97,7 +100,7 @@ async def batch_get_my_services(
     user_id: UserID,
     product_name: ProductName,
     services_ids: list[tuple[ServiceKey, ServiceVersion]],
-) -> list[MyServiceGet]:
+) -> MyServicesBatchGetResult:
     try:
 
         return await catalog_rpc.batch_get_my_services(
@@ -108,7 +111,7 @@ async def batch_get_my_services(
         )
 
     except RPCServerError as err:
-        raise CatalogNotAvailableError(
+        raise CatalogNotAvailableRpcError(
             user_id=user_id,
             product_name=product_name,
             services_ids=services_ids,

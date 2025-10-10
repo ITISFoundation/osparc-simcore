@@ -16,6 +16,8 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
+from servicelib.tracing import TracingConfig
+from simcore_service_director_v2._meta import APP_NAME
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._thin import (
     ThinSidecarsClient,
@@ -52,6 +54,11 @@ def mocked_app(
 
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
+    tracing_config = TracingConfig.create(
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
+    )
+    app.state.tracing_config = tracing_config
     return app
 
 
