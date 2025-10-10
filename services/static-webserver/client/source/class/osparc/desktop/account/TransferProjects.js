@@ -206,7 +206,6 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
         .then(allMyReadStudies => {
           // filter those that I don't own (no delete right)
           const allMyStudies = this.__filterMyOwnedStudies(allMyReadStudies);
-          console.log(allMyStudies);
           const ownerAccess = osparc.data.Roles.STUDY["delete"].accessRights;
           const newAccessRights = {
             [targetGroupId]: ownerAccess
