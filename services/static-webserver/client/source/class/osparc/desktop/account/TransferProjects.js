@@ -176,8 +176,8 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
 
     __shareAndLeaveOwnership: function() {
       this.__shareAllProjects()
-        .then(sharedProjects => {
-          this.__removeMyOwnership(sharedProjects);
+        .then(allMyStudies => {
+          this.__removeMyOwnership(allMyStudies);
         });
     },
 
@@ -225,6 +225,9 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
           });
           // return only those projects that were shared
           return Promise.all(promises)
+            .then(() => {
+              return allMyStudies;
+            })
             .catch(err => {
               console.error("Error sharing projects:", err);
             });
