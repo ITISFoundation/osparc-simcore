@@ -307,11 +307,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "help-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Regular/question-circle/24").set({
-            backgroundColor: "transparent",
             ...this.self().RIGHT_BUTTON_OPTS
           });
-          osparc.utils.Utils.setIdToWidget(control, "helpNavigationBtn");
-          control.addListener("execute", () => osparc.support.SupportCenter.openWindow());
           this.getChildControl("right-items").add(control);
           break;
         case "credits-button":
