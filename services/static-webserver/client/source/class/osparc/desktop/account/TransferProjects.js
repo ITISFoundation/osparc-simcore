@@ -168,7 +168,7 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
         return;
       }
 
-      osparc.store.Study.getInstance().getAllProjects()
+      osparc.store.Study.getInstance().getAllMyStudies()
         .then(projects => {
           console.log(projects);
         });
