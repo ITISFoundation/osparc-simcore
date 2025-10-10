@@ -175,10 +175,7 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
     },
 
     __shareAndLeaveOwnership: function() {
-      this.__shareAllProjects()
-        .then(allMyStudies => {
-          this.__removeMyOwnership(allMyStudies);
-        });
+      osparc.FlashMessenger.logAs(this.tr("This option is not yet enabled."), "WARNING", 10000);
     },
 
     __filterMyOwnedStudies: function(allMyReadStudies) {
