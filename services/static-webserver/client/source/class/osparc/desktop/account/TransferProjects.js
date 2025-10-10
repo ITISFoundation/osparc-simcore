@@ -135,6 +135,9 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
       const collaboratorsManager = new osparc.share.NewCollaboratorsManager({}, false, false).set({
         acceptOnlyOne: true
       });
+      collaboratorsManager.getChildControl("intro-text").set({
+        value: this.tr("Select the user you want to transfer all your projects to.")
+      });
       collaboratorsManager.setCaption(this.tr("Select target user"));
       collaboratorsManager.addListener("addCollaborators", e => {
         collaboratorsManager.close();
