@@ -156,6 +156,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     markAsRead: function() {
       osparc.store.ConversationsSupport.getInstance().markAsRead(this.getConversationId())
         .then(() => {
+          console.log("Conversation X2", this);
           if (osparc.store.Groups.getInstance().amIASupportUser()) {
             this.setReadBySupport(true);
           } else {
