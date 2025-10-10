@@ -60,8 +60,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     acceptOnlyOne: {
       check: "Boolean",
       init: false,
-      event: "changeAcceptOnlyOne",
-    },
+      event: "changeAcceptOnlyOne"
+    }
   },
 
   members: {
