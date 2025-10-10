@@ -25,6 +25,7 @@ from ._models import (
 )
 from ._operation import (
     BaseStep,
+    BaseStepGroup,
     Operation,
     OperationRegistry,
     ParallelStepGroup,
@@ -38,6 +39,7 @@ from ._store import (
 
 __all__: tuple[str, ...] = (
     "BaseStep",
+    "BaseStepGroup",
     "cancel_operation",
     "generic_scheduler_lifespan",
     "get_operation_context_proxy",
