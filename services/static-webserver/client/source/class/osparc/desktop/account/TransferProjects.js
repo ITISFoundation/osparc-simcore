@@ -149,7 +149,11 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
         ) {
           osparc.store.Users.getInstance().getUser(selectedUsers["selectedGids"][0])
             .then(user => {
-              this.setTargetUser(user);
+              if (user.getGroupId() !== osparc.store.Groups.getInstance().getMyGroupId()) {
+                this.setTargetUser(user);
+              } else {
+                osparc.FlashMessenger.logAs(this.tr("You cannot transfer projects to yourself"), "ERROR");
+              }
             });
         }
       }, this);
