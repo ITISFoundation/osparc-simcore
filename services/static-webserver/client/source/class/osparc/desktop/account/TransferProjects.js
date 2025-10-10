@@ -235,7 +235,8 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
     },
 
     __removeMyOwnership: function(study) {
-      return osparc.store.Study.getInstance().removeCollaborator(this._serializedDataCopy, study["gid"])
+      const myGroupId = osparc.store.Groups.getInstance().getMyGroupId();
+      return osparc.store.Study.getInstance().removeCollaborator(study, myGroupId)
     },
   }
 });
