@@ -11,10 +11,8 @@ SEE for underlying psycopg: http://initd.org/psycopg/docs/module.html
 SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 """
 
-# TODO: Towards implementing https://github.com/ITISFoundation/osparc-simcore/issues/1195
-# TODO: deprecate this module. Move utils into retry_policies, simcore_postgres_database.utils_aiopg
-
 import logging
+import warnings
 from typing import Final
 
 import sqlalchemy as sa
@@ -33,6 +31,14 @@ from ..common_aiopg_utils import DataSourceName
 log = logging.getLogger(__name__)
 
 APP_AIOPG_ENGINE_KEY: Final = web.AppKey("APP_AIOPG_ENGINE_KEY", Engine)
+
+warnings.warn(
+    "This module uses aiopg which is deprecated in this repository. "
+    "Currently using sqlalchemy.ext.asyncio with asyncpg."
+    "See details of migration in https://github.com/ITISFoundation/osparc-simcore/issues/4529",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 async def raise_if_not_responsive(engine: Engine):
@@ -59,7 +65,6 @@ async def is_pg_responsive(engine: Engine, *, raise_if_fails=False) -> bool:
 def init_pg_tables(dsn: DataSourceName, schema: sa.schema.MetaData):
     try:
         # CONS: creates and disposes an engine just to create tables
-        # TODO: find a way to create all tables with aiopg engine
         sa_engine = sa.create_engine(dsn.to_uri(with_query=True))
         schema.create_all(sa_engine)
     finally:
@@ -86,7 +91,6 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
     # SEE https://aiopg.readthedocs.io/en/stable/core.html?highlight=Exception#exceptions
     # SEE http://initd.org/psycopg/docs/module.html#dbapi-exceptions
 
-    # TODO: add header with Retry-After https://tools.ietf.org/html/rfc7231#section-7.1.3
     resp = web.HTTPServiceUnavailable()
 
     # logs

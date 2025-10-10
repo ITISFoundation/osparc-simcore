@@ -24,19 +24,18 @@ def webserver_endpoint(
     return URL(f"http://{endpoint}")
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def webserver_service(webserver_endpoint: URL, docker_stack: dict) -> URL:
     await wait_till_webserver_responsive(webserver_endpoint)
+    return webserver_endpoint
 
-    yield webserver_endpoint
 
-
-# TODO: this can be used by ANY of the simcore services!
 @tenacity.retry(**ServiceRetryPolicyUponInitialization().kwargs)
 async def wait_till_webserver_responsive(webserver_endpoint: URL):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(webserver_endpoint.with_path("/v0/")) as resp:
-            # NOTE: Health-check endpoint require only a
-            # status code 200 (see e.g. services/web/server/docker/healthcheck.py)
-            # regardless of the payload content
-            assert resp.status == 200
+    async with aiohttp.ClientSession() as session, session.get(
+        webserver_endpoint.with_path("/v0/")
+    ) as resp:
+        # NOTE: Health-check endpoint require only a
+        # status code 200 (see e.g. services/web/server/docker/healthcheck.py)
+        # regardless of the payload content
+        assert resp.status == 200

@@ -116,18 +116,12 @@ def substitute_parameterized_inputs(
     """
     project = deepcopy(parameterized_project)
 
-    # TODO: optimize value normalization
-    def _num(s):
-        try:
-            return int(s)
-        except ValueError:
-            return float(s)
+    # Use smart union for type conversion - tries int, then float, then str
+    _value_adapter = TypeAdapter(int | float | str)
 
-    def _normalize_value(s):
-        try:
-            return _num(s)
-        except ValueError:
-            return s
+    def _normalize_value(value: str) -> int | float | str:
+        """Normalize string value to appropriate type using Pydantic smart unions."""
+        return _value_adapter.validate_python(value)
 
     def _get_param_input_match(name, value, access) -> Match[str] | None:
         if (
@@ -143,18 +137,16 @@ def substitute_parameterized_inputs(
         new_inputs = {}
 
         for name, value in inputs.items():
-            match = _get_param_input_match(name, value, access)
-            if match:
-                # TODO: use jinja2 to interpolate expressions?
-                value = match.group(1)
-                if value in parameters:
-                    new_inputs[name] = _normalize_value(parameters[value])
-                else:
-                    _logger.warning(
-                        "Could not resolve parameter %s. No value provided in %s",
-                        value,
-                        parameters,
-                    )
+            if (match := _get_param_input_match(name, value, access)) and (
+                param_name := match.group(1)
+            ) in parameters:
+                new_inputs[name] = _normalize_value(parameters[param_name])
+            elif match:
+                _logger.warning(
+                    "Could not resolve parameter %s. No value provided in %s",
+                    param_name,
+                    parameters,
+                )
         inputs.update(new_inputs)
 
     return project
@@ -279,7 +271,7 @@ def get_frontend_node_outputs_changes(
         """
         Checks if d1's values have changed compared to d2's.
         NOTE: Does not guarantee that d2's values have changed
-        compare to d1's.
+        compared to d1's.
         """
         for k, v in d1.items():
             if k not in d2:
@@ -354,6 +346,28 @@ def default_copy_project_name(name: str) -> str:
             )
         return f"{match.group(1)}({new_copy_index})"
     return f"{name} (Copy)"
+
+
+def replace_multiple_spaces(text: str) -> str:
+    # Use regular expression to replace multiple spaces with a single space
+    return re.sub(r"\s+", " ", text)
+
+
+def default_copy_project_name(name: str) -> str:
+    if match := COPY_SUFFIX_RE.fullmatch(name):
+        new_copy_index = 1
+        if current_copy_index := match.group(2):
+            # we receive something of type "(23)"
+            new_copy_index = (
+                TypeAdapter(int).validate_python(current_copy_index.strip("()")) + 1
+            )
+        return f"{match.group(1)}({new_copy_index})"
+    return f"{name} (Copy)"
+
+
+def replace_multiple_spaces(text: str) -> str:
+    # Use regular expression to replace multiple spaces with a single space
+    return re.sub(r"\s+", " ", text)
 
 
 def replace_multiple_spaces(text: str) -> str:
