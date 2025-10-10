@@ -32,6 +32,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       projectId: conversationData.projectUuid || null,
       extraContext: conversationData.extraContext || null,
       readByUser: Boolean(Math.random() < 0.5), // just for testing purposes
+      readBySupport: Boolean(Math.random() < 0.5), // just for testing purposes
       resolved: Boolean(Math.random() < 0.5), // just for testing purposes
     });
 
@@ -80,6 +81,13 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       nullable: false,
       init: null,
       event: "changeReadByUser",
+    },
+
+    readBySupport: {
+      check: "Boolean",
+      nullable: false,
+      init: null,
+      event: "changeReadBySupport",
     },
 
     resolved: {

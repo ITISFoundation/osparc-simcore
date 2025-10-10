@@ -26,6 +26,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   events: {
+    "conversationAdded": "qx.event.type.Data",
     "conversationCreated": "qx.event.type.Data",
     "conversationDeleted": "qx.event.type.Data",
   },
@@ -37,6 +38,10 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   members: {
+    getConversations: function() {
+      return Object.values(this.__conversationsCached);
+    },
+
     fetchConversations: function() {
       const params = {
         url: {
@@ -223,6 +228,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
 
     __addToCache: function(conversation) {
       this.__conversationsCached[conversation.getConversationId()] = conversation;
+      this.fireDataEvent("conversationAdded", conversation);
     },
   }
 });

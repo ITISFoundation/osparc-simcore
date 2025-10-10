@@ -131,10 +131,18 @@ qx.Class.define("osparc.support.Conversations", {
             break;
           case "unread":
             this.getChildControl("filter-unread-button").setValue(true);
-            if (conversation.getReadByUser()) {
-              conversationItem.exclude();
+            if (osparc.store.Groups.getInstance().amIASupportUser()) {
+              if (conversation.getReadBySupport()) {
+                conversationItem.exclude();
+              } else {
+                conversationItem.show();
+              }
             } else {
-              conversationItem.show();
+              if (conversation.getReadByUser()) {
+                conversationItem.exclude();
+              } else {
+                conversationItem.show();
+              }
             }
             break;
           case "open":
@@ -190,7 +198,11 @@ qx.Class.define("osparc.support.Conversations", {
       conversationListItem.setConversation(conversation);
       conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationId, this));
       conversation.addListener("changeModified", () => this.__sortConversations(), this);
-      conversation.addListener("changeReadByUser", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
+      if (osparc.store.Groups.getInstance().amIASupportUser()) {
+        conversation.addListener("changeReadBySupport", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
+      } else {
+        conversation.addListener("changeReadByUser", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
+      }
       conversation.addListener("changeResolved", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       this.__conversationListItems.push(conversationListItem);
       return conversationListItem;

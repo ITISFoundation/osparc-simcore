@@ -29,9 +29,7 @@ qx.Class.define("osparc.support.SupportButton", {
 
     osparc.utils.Utils.setIdToWidget(this, "helpNavigationBtn");
 
-    // this should be support conversations
-    const notifications = osparc.notification.Notifications.getInstance();
-    notifications.getNotifications().addListener("change", () => this.__updateButton(), this);
+    this.__listenToStore();
     this.__updateButton();
 
     this.addListener("tap", () => osparc.support.SupportCenter.openWindow());
@@ -76,6 +74,13 @@ qx.Class.define("osparc.support.SupportButton", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __listenToStore: function() {
+      const conversationsStore = osparc.store.ConversationsSupport.getInstance();
+      conversationsStore.getConversations().forEach(conversation => conversation.addListener("changeUnread", () => this.__updateButton(), this));
+      conversationsStore.addListener("conversationAdded", () => this.__updateButton(), this);
+      conversationsStore.addListener("conversationDeleted", () => this.__updateButton(), this);
     },
 
     __updateButton: function() {
