@@ -159,15 +159,14 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
       this.setEnabled(false);
       this.getChildControl("share-and-keep-button").setFetching(true);
       this.__shareAllProjects()
-        .then(sharedProjects => {
-          // flash a message saying how many projects were shared
-          const msg = sharedProjects.length + this.tr(" projects have been shared with the target user. You still own them.");
-          osparc.component.message.FlashMessenger.logAs(msg, "INFO", 10000);
+        .then(() => {
+          const msg = this.tr("All projects have been shared with the target user. You still own them.");
+          osparc.FlashMessenger.logAs(msg, "INFO", 10000);
           this.fireEvent("transferred");
         })
         .catch(err => {
           console.error(err);
-          osparc.component.message.FlashMessenger.logError(err);
+          osparc.FlashMessenger.logError(err);
         })
         .finally(() => {
           this.setEnabled(true);
@@ -207,31 +206,28 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
           // filter those that I don't own (no delete right)
           const allMyStudies = this.__filterMyOwnedStudies(allMyReadStudies);
           console.log(allMyStudies);
+          const ownerAccess = osparc.data.Roles.STUDY["delete"].accessRights;
           const newAccessRights = {
             [targetGroupId]: ownerAccess
           };
           const promises = [];
           allMyStudies.forEach(studyData => {
             // first check it's not already shared with the target user
-            if (targetGroupId in studyData["accessRights"] && JSON.stringify(studyData["accessRights"][targetGroupId]) !== JSON.stringify(ownerAccess)) {
-              // update access rights to owner
-              promises.push(osparc.store.Study.getInstance().updateCollaborator(studyData, targetGroupId, ownerAccess));
+            if (targetGroupId in studyData["accessRights"]) {
+              if (JSON.stringify(studyData["accessRights"][targetGroupId]) !== JSON.stringify(ownerAccess)) {
+                // update access rights to owner
+                promises.push(osparc.store.Study.getInstance().updateCollaborator(studyData, targetGroupId, ownerAccess));
+              }
             } else {
               // add as new collaborator with owner rights
               promises.push(osparc.store.Study.getInstance().addCollaborators(studyData, newAccessRights));
             }
           });
           // return only those projects that were shared
-          Promise.all(promises)
-            .then(values => {
-              console.log("All projects shared successfully");
-              return values;
-            })
+          return Promise.all(promises)
             .catch(err => {
               console.error("Error sharing projects:", err);
             });
-
-          return allMyStudies;
         });
     },
 
