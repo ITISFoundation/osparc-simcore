@@ -101,8 +101,8 @@ async def batch_get_my_services(
     product_name: ProductName,
     services_ids: list[tuple[ServiceKey, ServiceVersion]],
 ) -> MyServicesBatchGetResult:
+    assert len(services_ids) > 0  # nosec
     try:
-
         return await catalog_rpc.batch_get_my_services(
             get_rabbitmq_rpc_client(app),
             user_id=user_id,
