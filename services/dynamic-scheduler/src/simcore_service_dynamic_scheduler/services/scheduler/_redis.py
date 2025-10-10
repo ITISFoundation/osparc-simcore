@@ -56,9 +56,13 @@ class RedisStore(SingletonInAppStateMixin):
 
 class _UpdateServiceStateDict(TypedDict):
     desired_state: NotRequired[DesiredState]
+    desired_start_data: NotRequired[DynamicServiceStart]
+    desired_stop_data: NotRequired[DynamicServiceStop]
+
     start_data: NotRequired[DynamicServiceStart]
     stop_data: NotRequired[DynamicServiceStop]
-    current_operation: NotRequired[ScheduleId]
+
+    current_schedule_id: NotRequired[ScheduleId]
 
 
 class RedisServiceStateManager:
@@ -80,6 +84,14 @@ class RedisServiceStateManager:
     ) -> None: ...
     @overload
     async def create_or_update(
+        self, key: Literal["desired_start_data"], value: DynamicServiceStart
+    ) -> None: ...
+    @overload
+    async def create_or_update(
+        self, key: Literal["desired_stop_data"], value: DynamicServiceStop
+    ) -> None: ...
+    @overload
+    async def create_or_update(
         self, key: Literal["start_data"], value: DynamicServiceStart
     ) -> None: ...
     @overload
@@ -88,7 +100,7 @@ class RedisServiceStateManager:
     ) -> None: ...
     @overload
     async def create_or_update(
-        self, key: Literal["current_operation"], value: ScheduleId
+        self, key: Literal["current_schedule_id"], value: ScheduleId
     ) -> None: ...
     async def create_or_update(self, key: str, value: Any) -> None:
         await handle_redis_returns_union_types(
@@ -105,11 +117,19 @@ class RedisServiceStateManager:
     @overload
     async def read(self, key: Literal["desired_state"]) -> DesiredState | None: ...
     @overload
+    async def read(
+        self, key: Literal["desired_start_data"]
+    ) -> DynamicServiceStart | None: ...
+    @overload
+    async def read(
+        self, key: Literal["desired_stop_data"]
+    ) -> DynamicServiceStop | None: ...
+    @overload
     async def read(self, key: Literal["start_data"]) -> DynamicServiceStart | None: ...
     @overload
     async def read(self, key: Literal["stop_data"]) -> DynamicServiceStop | None: ...
     @overload
-    async def read(self, key: Literal["current_operation"]) -> ScheduleId | None: ...
+    async def read(self, key: Literal["current_schedule_id"]) -> ScheduleId | None: ...
     async def read(self, key: str) -> Any:
         list_result: list[str | None] = await handle_redis_returns_union_types(
             self.redis.hmget(self.redis_key, [key])
@@ -120,9 +140,9 @@ class RedisServiceStateManager:
         result = json_loads(serialised_result)
 
         match key:
-            case "start_data":
+            case "start_data" | "desired_start_data":
                 return DynamicServiceStart.model_validate(result)
-            case "stop_data":
+            case "stop_data" | "desired_stop_data":
                 return DynamicServiceStop.model_validate(result)
             case _:
                 return result
