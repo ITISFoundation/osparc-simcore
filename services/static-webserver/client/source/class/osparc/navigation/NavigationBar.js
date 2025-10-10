@@ -138,13 +138,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         this.getChildControl("avatar-group");
       }
+      this.getChildControl("expiration-icon");
       this.getChildControl("tasks-button");
       if (osparc.product.Utils.showComputationalActivity()) {
         this.getChildControl("jobs-button");
       }
       this.getChildControl("notifications-button");
-      this.getChildControl("expiration-icon");
-      this.getChildControl("help");
+      this.getChildControl("help-button");
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
         this.getChildControl("credits-button");
       }
@@ -261,24 +261,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         }
-        case "tasks-button":
-          control = new osparc.task.TasksButton().set({
-            ...this.self().RIGHT_BUTTON_OPTS
-          });
-          this.getChildControl("right-items").add(control);
-          break;
-        case "jobs-button":
-          control = new osparc.jobs.JobsButton().set({
-            ...this.self().RIGHT_BUTTON_OPTS
-          });
-          this.getChildControl("right-items").add(control);
-          break;
-        case "notifications-button":
-          control = new osparc.notification.NotificationsButton().set({
-            ...this.self().RIGHT_BUTTON_OPTS
-          });
-          this.getChildControl("right-items").add(control);
-          break;
         case "expiration-icon": {
           control = new qx.ui.basic.Image("@FontAwesome5Solid/hourglass-end/22").set({
             visibility: "excluded",
@@ -305,11 +287,31 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("right-items").add(control);
           break;
         }
-        case "help":
-          control = this.__createHelpBtn().set({
+        case "tasks-button":
+          control = new osparc.task.TasksButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
+          this.getChildControl("right-items").add(control);
+          break;
+        case "jobs-button":
+          control = new osparc.jobs.JobsButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
+          this.getChildControl("right-items").add(control);
+          break;
+        case "notifications-button":
+          control = new osparc.notification.NotificationsButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
+          this.getChildControl("right-items").add(control);
+          break;
+        case "help-button":
+          control = new qx.ui.form.Button(null, "@FontAwesome5Regular/question-circle/24").set({
+            backgroundColor: "transparent",
             ...this.self().RIGHT_BUTTON_OPTS
           });
           osparc.utils.Utils.setIdToWidget(control, "helpNavigationBtn");
+          control.addListener("execute", () => osparc.support.SupportCenter.openWindow());
           this.getChildControl("right-items").add(control);
           break;
         case "credits-button":
@@ -358,14 +360,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           }
         }
       }, this);
-    },
-
-    __createHelpBtn: function() {
-      const helpButton = new qx.ui.form.Button(null, "@FontAwesome5Regular/question-circle/24").set({
-        backgroundColor: "transparent"
-      });
-      helpButton.addListener("execute", () => osparc.support.SupportCenter.openWindow());
-      return helpButton;
     },
 
     __createLoginBtn: function() {
@@ -434,7 +428,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
         // right-items
         this.getChildControl("user-menu").exclude();
-        this.getChildControl("help").exclude();
+        this.getChildControl("help-button").exclude();
         this.getChildControl("user-menu-compact").show();
       } else {
         // left-items
@@ -455,7 +449,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
         // right-items
         this.getChildControl("user-menu-compact").exclude();
-        this.getChildControl("help").show();
+        this.getChildControl("help-button").show();
         this.getChildControl("user-menu").show();
       }
     }
