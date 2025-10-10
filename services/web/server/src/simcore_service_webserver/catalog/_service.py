@@ -10,6 +10,7 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceOutputGet,
     ServiceOutputKey,
 )
+from models_library.batch_operations import create_batch_ids_validator
 from models_library.products import ProductName
 from models_library.rest_pagination import (
     PageLimitInt,
@@ -25,6 +26,7 @@ from models_library.services import (
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
+from pydantic import ValidationError
 from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
@@ -94,6 +96,11 @@ async def list_latest_services(
     return page_data, page.meta
 
 
+_BatchServicesIdsValidator = create_batch_ids_validator(
+    tuple[ServiceKey, ServiceVersion]
+)
+
+
 async def batch_get_my_services(
     app: web.Application,
     *,
@@ -101,13 +108,18 @@ async def batch_get_my_services(
     product_name: ProductName,
     services_ids: list[tuple[ServiceKey, ServiceVersion]],
 ) -> MyServicesBatchGetResult:
-    assert len(services_ids) > 0  # nosec
+    try:
+        ids = _BatchServicesIdsValidator.validate_python(services_ids)
+    except ValidationError as err:
+        msg = f"Invalid 'service_ids' parameter:\n{err}"
+        raise ValueError(msg) from err
+
     try:
         return await catalog_rpc.batch_get_my_services(
             get_rabbitmq_rpc_client(app),
             user_id=user_id,
             product_name=product_name,
-            ids=services_ids,
+            ids=ids,
         )
 
     except RPCServerError as err:
