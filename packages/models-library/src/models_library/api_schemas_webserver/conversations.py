@@ -26,9 +26,12 @@ class ConversationRestGet(OutputSchema):
     project_uuid: ProjectID | None
     user_group_id: GroupID
     type: ConversationType
+    fogbugz_case_id: str | None
     created: datetime
     modified: datetime
     extra_context: dict[str, str]
+    is_read_by_user: bool
+    is_read_by_support: bool
 
     @classmethod
     def from_domain_model(cls, domain: ConversationGetDB) -> Self:
@@ -39,15 +42,20 @@ class ConversationRestGet(OutputSchema):
             project_uuid=domain.project_uuid,
             user_group_id=domain.user_group_id,
             type=domain.type,
+            fogbugz_case_id=domain.fogbugz_case_id,
             created=domain.created,
             modified=domain.modified,
             extra_context=domain.extra_context,
+            is_read_by_user=domain.is_read_by_user,
+            is_read_by_support=domain.is_read_by_support,
         )
 
 
 class ConversationPatch(InputSchema):
     name: str | None = None
     extra_context: dict[str, Any] | None = None
+    is_read_by_user: bool | None = None
+    is_read_by_support: bool | None = None
 
 
 ### CONVERSATION MESSAGES ---------------------------------------------------------------

@@ -149,7 +149,7 @@ async def get_conversation(request: web.Request):
     if conversation.type != ConversationType.SUPPORT:
         raise_unsupported_type(conversation.type)
 
-    conversation = await _conversation_service.get_support_conversation_for_user(
+    conversation, _ = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
