@@ -51,7 +51,12 @@ def worker_init_wrapper(**kwargs):
     return on_worker_init(AppWrapper(app), app_server, **kwargs)
 
 
+def worker_shutdown_wrapper(**kwargs):
+    kwargs.pop("sender", None)  # remove sender
+    return on_worker_shutdown(AppWrapper(app), **kwargs)
+
+
 worker_process_init.connect(worker_init_wrapper)
-worker_process_shutdown.connect(on_worker_shutdown)
+worker_process_shutdown.connect(worker_shutdown_wrapper)
 
 setup_worker_tasks(app)
