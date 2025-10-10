@@ -539,7 +539,7 @@ async def test_conversation_messages_with_database(
     assert message_data["type"] == "MESSAGE"
     assert message_data["conversationId"] == conversation_id
 
-    # Verify email was sent for first message
+    # Verify fogbugz case was created for first message
     assert mocked_fogbugz_client.create_case.call_count == 1
     assert not mocked_fogbugz_client.reopen_case.called
 
@@ -554,7 +554,7 @@ async def test_conversation_messages_with_database(
     assert second_message_data["type"] == "MESSAGE"
     assert second_message_data["conversationId"] == conversation_id
 
-    # Verify email was NOT sent again for second message (still only 1 call)
+    # Verify fogbugz case was NOT created again for second message (still only 1 call)
     assert mocked_fogbugz_client.create_case.call_count == 1
     assert mocked_fogbugz_client.reopen_case.called
     assert second_message_data["type"] == "MESSAGE"
