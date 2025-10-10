@@ -230,6 +230,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             opacity: 0.8,
             visibility: "excluded",
           });
+          osparc.utils.Utils.setIdToWidget(control, "savingStudyIcon");
           this.getChildControl("left-items").add(control);
           break;
         case "read-only-info": {

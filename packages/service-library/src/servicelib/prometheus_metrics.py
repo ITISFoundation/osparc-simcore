@@ -1,3 +1,5 @@
+import asyncio
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -40,6 +42,8 @@ class PrometheusMetrics:
     request_count: Counter
     in_flight_requests: Gauge
     response_latency_with_labels: Histogram
+    event_loop_tasks: Gauge
+    event_loop_lag: Gauge
 
 
 def _get_exemplar() -> dict[str, str] | None:
@@ -89,6 +93,20 @@ def get_prometheus_metrics() -> PrometheusMetrics:
         buckets=(0.1, 1, 5, 10),
     )
 
+    event_loop_tasks = Gauge(
+        name="asyncio_event_loop_tasks",
+        documentation="Total number of tasks in the asyncio event loop",
+        labelnames=[],
+        registry=registry,
+    )
+
+    event_loop_lag = Gauge(
+        name="asyncio_event_loop_lag_seconds",
+        documentation="Time between scheduling and execution of event loop callbacks. >10ms consistently indicates event loop saturation",
+        labelnames=[],
+        registry=registry,
+    )
+
     return PrometheusMetrics(
         registry=registry,
         process_collector=process_collector,
@@ -97,6 +115,8 @@ def get_prometheus_metrics() -> PrometheusMetrics:
         request_count=request_count,
         in_flight_requests=in_flight_requests,
         response_latency_with_labels=response_latency_with_labels,
+        event_loop_tasks=event_loop_tasks,
+        event_loop_lag=event_loop_lag,
     )
 
 
@@ -141,3 +161,13 @@ def record_response_metrics(
     metrics.response_latency_with_labels.labels(method, endpoint, user_agent).observe(
         amount=response_latency_seconds, exemplar=exemplar
     )
+
+
+async def record_asyncio_event_looop_metrics(metrics: PrometheusMetrics) -> None:
+
+    metrics.event_loop_tasks.set(len(asyncio.all_tasks()))
+
+    start_time = time.perf_counter()
+    await asyncio.sleep(0)  # Yield control to event loop
+    lag = time.perf_counter() - start_time
+    metrics.event_loop_lag.set(lag)

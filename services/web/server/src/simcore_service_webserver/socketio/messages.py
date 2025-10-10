@@ -7,7 +7,7 @@ from typing import Final
 
 from aiohttp.web import Application
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
-from models_library.groups import GroupID
+from models_library.groups import StandardGroupID
 from models_library.projects import ProjectID
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
@@ -82,7 +82,7 @@ async def send_message_to_user(
 
 async def send_message_to_standard_group(
     app: Application,
-    group_id: GroupID,
+    group_id: StandardGroupID,
     message: SocketMessageDict,
 ) -> None:
     """
