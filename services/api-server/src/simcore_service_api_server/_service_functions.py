@@ -5,7 +5,11 @@ from dataclasses import dataclass
 
 from common_library.exclude import as_dict_exclude_none
 from models_library.functions import FunctionClass, FunctionID, RegisteredFunction
-from models_library.functions_errors import UnsupportedFunctionClassError
+from models_library.functions_errors import (
+    FunctionExecuteAccessDeniedError,
+    FunctionsExecuteApiAccessDeniedError,
+    UnsupportedFunctionClassError,
+)
 from models_library.products import ProductName
 from models_library.rest_pagination import (
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -76,3 +80,36 @@ class FunctionService:
             product_name=self.product_name,
             function_id=function_id,
         )
+
+    async def check_execute_function_permission(
+        self,
+        *,
+        function: RegisteredFunction,
+    ) -> None:
+        """
+        Check execute permissions for a user on a function
+
+        raises FunctionsExecuteApiAccessDeniedError if user cannot execute functions
+        """
+
+        user_api_access_rights = (
+            await self._web_rpc_client.get_functions_user_api_access_rights(
+                user_id=self.user_id, product_name=self.product_name
+            )
+        )
+        if not user_api_access_rights.execute_functions:
+            raise FunctionsExecuteApiAccessDeniedError(
+                user_id=self.user_id,
+                function_id=function.uid,
+            )
+
+        user_permissions = await self._web_rpc_client.get_function_user_permissions(
+            function_id=function.uid,
+            user_id=self.user_id,
+            product_name=self.product_name,
+        )
+        if not user_permissions.execute:
+            raise FunctionExecuteAccessDeniedError(
+                user_id=self.user_id,
+                function_id=function.uid,
+            )
