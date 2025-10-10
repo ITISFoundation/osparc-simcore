@@ -10,8 +10,13 @@ from urllib.parse import urljoin
 
 import httpx
 from aiohttp import web
-from httpx_retries import RetryClient, RetryStrategy
 from pydantic import AnyUrl, BaseModel, Field, SecretStr
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from ..products import products_service
 from ..products.models import Product
@@ -29,21 +34,43 @@ class FogbugzCaseCreate(BaseModel):
     description: str = Field(description="Case description/first comment")
 
 
-retry_strategy = RetryStrategy(
-    max_attempts=3,  # Number of retries
-    allowed_methods=["GET", "POST", "PUT", "DELETE"],  # Methods to retry
-    allowed_statuses=[429, 500, 502, 503, 504],  # Status codes to retry
-    backoff_factor=0.5,  # Delay between retries
-)
-
-
 class FogbugzRestClient:
     """REST client for Fogbugz API"""
 
     def __init__(self, api_token: SecretStr, base_url: AnyUrl) -> None:
-        self._client = RetryClient(httpx.AsyncClient(), retry_strategy=retry_strategy)
+        self._client = httpx.AsyncClient(timeout=60.0)
         self._api_token = api_token
         self._base_url = base_url
+
+    @retry(
+        retry=retry_if_exception_type(
+            (
+                httpx.ConnectError,
+                httpx.TimeoutException,
+                httpx.NetworkError,
+                httpx.ProtocolError,
+                httpx.HTTPStatusError,
+            )
+        ),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        reraise=True,
+    )
+    async def _make_http_request(
+        self, method: str, url: str, **kwargs
+    ) -> httpx.Response:
+        """Make HTTP request with retry logic for network issues and server errors"""
+        response = await self._client.request(method, url, **kwargs)
+
+        # Raise for 5xx server errors to trigger retry
+        if response.status_code >= 500:
+            response.raise_for_status()
+
+        # Don't retry on 4xx client errors (except for rate limiting)
+        if 400 <= response.status_code < 500 and response.status_code != 429:
+            response.raise_for_status()
+
+        return response
 
     async def _make_api_request(self, json_payload: dict[str, Any]) -> dict[str, Any]:
         """Make a request to Fogbugz API with common formatting"""
@@ -52,10 +79,14 @@ class FogbugzRestClient:
 
         url = urljoin(f"{self._base_url}", "f/api/0/jsonapi")
 
-        response = await self._client.post(url, files=files)
-        response.raise_for_status()
-        response_data: dict[str, Any] = response.json()
-        return response_data
+        try:
+            response = await self._make_http_request("POST", url, files=files)
+            response.raise_for_status()
+            response_data: dict[str, Any] = response.json()
+            return response_data
+        except Exception as exc:
+            _logger.error("Failed to make API request to Fogbugz: %s", exc)
+            raise
 
     async def create_case(self, data: FogbugzCaseCreate) -> str:
         """Create a new case in Fogbugz"""
@@ -168,6 +199,14 @@ class FogbugzRestClient:
             error_msg = response_data.get("error", _UNKNOWN_ERROR_MESSAGE)
             msg = f"Failed to reopen case in Fogbugz: {error_msg}"
             raise ValueError(msg)
+
+    async def __aenter__(self):
+        """Async context manager entry"""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit - cleanup client"""
+        await self._client.aclose()
 
 
 _APPKEY: Final = web.AppKey(FogbugzRestClient.__name__, FogbugzRestClient)
