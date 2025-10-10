@@ -29,6 +29,8 @@ qx.Class.define("osparc.support.SupportButton", {
 
     osparc.utils.Utils.setIdToWidget(this, "helpNavigationBtn");
 
+    this.getChildControl("icon");
+
     this.__listenToStore();
     this.__updateButton();
 
@@ -77,25 +79,29 @@ qx.Class.define("osparc.support.SupportButton", {
     },
 
     __listenToStore: function() {
+      const eventName = osparc.store.Groups.getInstance().amIASupportUser() ? "changeReadBySupport" : "changeReadByUser";
       const conversationsStore = osparc.store.ConversationsSupport.getInstance();
-      conversationsStore.getConversations().forEach(conversation => conversation.addListener("changeUnread", () => this.__updateButton(), this));
-      conversationsStore.addListener("conversationAdded", () => this.__updateButton(), this);
-      conversationsStore.addListener("conversationDeleted", () => this.__updateButton(), this);
+      const cachedConversations = conversationsStore.getConversations();
+      cachedConversations.forEach(conversation => conversation.addListener(eventName, () => this.__updateButton(), this));
+      conversationsStore.addListener("conversationAdded", e => {
+        const conversation = e.getData();
+        conversation.addListener(eventName, () => this.__updateButton(), this);
+        this.__updateButton();
+      }, this);
     },
 
     __updateButton: function() {
-      const notificationManager = osparc.notification.Notifications.getInstance();
-      const notifications = notificationManager.getNotifications();
-      notifications.forEach(notification => notification.addListener("changeRead", () => this.__updateButton(), this));
+      const propName = osparc.store.Groups.getInstance().amIASupportUser() ? "readBySupport" : "readByUser";
+      const conversationsStore = osparc.store.ConversationsSupport.getInstance();
+      const cachedConversations = conversationsStore.getConversations();
+      const unread = cachedConversations.some(conversation => Boolean(conversation.get(propName) === false));
 
-      this.getChildControl("icon");
-      let nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
       [
         this.getChildControl("is-active-icon-outline"),
         this.getChildControl("is-active-icon"),
       ].forEach(control => {
         control.set({
-          visibility: nUnreadNotifications > 0 ? "visible" : "excluded"
+          visibility: unread > 0 ? "visible" : "excluded"
         });
       });
     },
