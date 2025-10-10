@@ -116,6 +116,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
         });
       }
 
+      /*
       const resolvedBadge = this.getChildControl("resolved-badge");
       resolvedBadge.set({
         visibility: osparc.store.Groups.getInstance().amIASupportUser() ? "visible" : "excluded",
@@ -140,6 +141,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
           return null;
         }
       });
+      */
     },
 
     __populateWithLastMessage: function() {

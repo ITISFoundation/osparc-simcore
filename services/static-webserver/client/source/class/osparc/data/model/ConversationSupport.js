@@ -33,7 +33,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       extraContext: conversationData.extraContext || null,
       readByUser: Boolean(Math.random() < 0.5), // just for testing purposes
       readBySupport: Boolean(Math.random() < 0.5), // just for testing purposes
-      resolved: Boolean(Math.random() < 0.5), // just for testing purposes
+      resolved: null,
     });
 
     this.__fetchFirstAndLastMessages();
@@ -92,7 +92,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
 
     resolved: {
       check: "Boolean",
-      nullable: false,
+      nullable: true,
       init: null,
       event: "changeResolved",
     },

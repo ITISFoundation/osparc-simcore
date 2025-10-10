@@ -34,7 +34,22 @@ qx.Class.define("osparc.support.SupportButton", {
     this.__listenToStore();
     this.__updateButton();
 
-    this.addListener("tap", () => osparc.support.SupportCenter.openWindow());
+    this.addListener("tap", () => {
+      const supportCenter = osparc.support.SupportCenter.openWindow();
+      if (this.isUnreadMessages()) {
+        supportCenter.showConversations();
+      }
+    });
+  },
+
+  properties: {
+    unreadMessages: {
+      check: "Boolean",
+      init: null,
+      nullable: false,
+      event: "changeUnreadMessages",
+      apply: "__applyUnreadMessages",
+    },
   },
 
   members: {
@@ -95,7 +110,10 @@ qx.Class.define("osparc.support.SupportButton", {
       const conversationsStore = osparc.store.ConversationsSupport.getInstance();
       const cachedConversations = conversationsStore.getConversations();
       const unread = cachedConversations.some(conversation => Boolean(conversation.get(propName) === false));
+      this.setUnreadMessages(unread);
+    },
 
+    __applyUnreadMessages: function(unread) {
       [
         this.getChildControl("is-active-icon-outline"),
         this.getChildControl("is-active-icon"),
