@@ -232,9 +232,17 @@ class ParallelStepGroup(BaseStepGroup):
 
 class Operation:
     def __init__(
-        self, *step_groups: BaseStepGroup, is_cancellable: bool = True
+        self,
+        *step_groups: BaseStepGroup,
+        initial_context_required_keys: set[str] | None = None,
+        is_cancellable: bool = True,
     ) -> None:
         self.step_groups = list(step_groups)
+        self.initial_context_required_keys = (
+            set()
+            if initial_context_required_keys is None
+            else initial_context_required_keys
+        )
         self.is_cancellable = is_cancellable
 
     def __repr__(self) -> str:

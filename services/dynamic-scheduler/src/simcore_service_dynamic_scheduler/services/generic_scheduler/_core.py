@@ -30,6 +30,7 @@ from ._deferred_runner import DeferredRunner
 from ._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     NoDataFoundError,
+    OperationInitialContextKeyNotFoundError,
     OperationNotCancellableError,
     StepNameNotInCurrentGroupError,
     StepNotInErrorStateError,
@@ -105,6 +106,12 @@ class Core(SingletonInAppStateMixin):
 
         # check if operation is registered
         operation = OperationRegistry.get_operation(operation_name)
+
+        for required_key in operation.initial_context_required_keys:
+            if required_key not in initial_operation_context:
+                raise OperationInitialContextKeyNotFoundError(
+                    operation_name=operation_name, required_key=required_key
+                )
 
         # NOTE: to ensure reproducibility of operations, the
         # operation steps cannot overwrite keys in the

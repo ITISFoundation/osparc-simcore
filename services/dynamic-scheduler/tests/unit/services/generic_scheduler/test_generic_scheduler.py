@@ -40,6 +40,12 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     register_to_start_after_on_reverted_completed,
     start_operation,
 )
+from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
+    OperationContext,
+)
+from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
+    OperationInitialContextKeyNotFoundError,
+)
 from utils import (
     BaseExpectedStepOrder,
     ExecuteRandom,
@@ -438,8 +444,8 @@ _AFTER_OP_NAME: OperationName = "after"
     ],
 )
 async def test_run_operation_after(
-    app: FastAPI,
     preserve_caplog_for_async_logging: None,
+    app: FastAPI,
     steps_call_order: list[tuple[str, str]],
     register_operation: Callable[[OperationName, Operation], None],
     register_at_creation: bool,
@@ -481,3 +487,67 @@ async def test_run_operation_after(
 
     await ensure_expected_order(steps_call_order, expected_order)
     await ensure_keys_in_store(app, expected_keys=set())
+
+
+async def test_missing_initial_context_key_from_operation(
+    preserve_caplog_for_async_logging: None,
+    app: FastAPI,
+    register_operation: Callable[[OperationName, Operation], None],
+):
+    good_operation_name: OperationName = "good"
+    bad_operation_name: OperationName = "bad"
+
+    operation = Operation(
+        SingleStepGroup(_ShortSleep), initial_context_required_keys={"required_key"}
+    )
+    register_operation(good_operation_name, operation)
+    register_operation(bad_operation_name, operation)
+
+    common_initial_context = {"unsued1": "value1", "unsued2": "value2"}
+    good_initial_context: OperationContext = {
+        "required_key": "soeme_value",
+        **common_initial_context,
+    }
+    bad_initial_context: OperationContext = {**common_initial_context}
+
+    bad_operation_to_start = OperationToStart(
+        operation_name=bad_operation_name, initial_context=bad_initial_context
+    )
+
+    # 1. check it works
+    await start_operation(app, bad_operation_name, good_initial_context)
+
+    # 2. check it raises with a bad context
+    with pytest.raises(OperationInitialContextKeyNotFoundError):
+        await start_operation(app, bad_operation_name, bad_initial_context)
+
+    with pytest.raises(OperationInitialContextKeyNotFoundError):
+        await start_operation(
+            app,
+            good_operation_name,
+            good_initial_context,
+            on_execute_completed=bad_operation_to_start,
+            on_revert_completed=None,
+        )
+
+    with pytest.raises(OperationInitialContextKeyNotFoundError):
+        await start_operation(
+            app,
+            good_operation_name,
+            good_initial_context,
+            on_execute_completed=None,
+            on_revert_completed=bad_operation_to_start,
+        )
+
+    # 3. register_to_start_after... raises with a bad context
+    schedule_id = await start_operation(app, bad_operation_name, good_initial_context)
+
+    with pytest.raises(OperationInitialContextKeyNotFoundError):
+        await register_to_start_after_on_executed_completed(
+            app, schedule_id, to_start=bad_operation_to_start
+        )
+
+    with pytest.raises(OperationInitialContextKeyNotFoundError):
+        await register_to_start_after_on_reverted_completed(
+            app, schedule_id, to_start=bad_operation_to_start
+        )
