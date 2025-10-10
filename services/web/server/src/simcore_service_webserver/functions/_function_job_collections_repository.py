@@ -95,12 +95,13 @@ async def create_function_job_collection(
             row
         )
         job_collection_entries: list[Row] = []
-        for job_id in job_ids:
+        for order, job_id in enumerate(job_ids, 1):
             result = await transaction.execute(
                 function_job_collections_to_function_jobs_table.insert()
                 .values(
                     function_job_collection_uuid=function_job_collection_db.uuid,
                     function_job_uuid=job_id,
+                    order=order,
                 )
                 .returning(
                     function_job_collections_to_function_jobs_table.c.function_job_collection_uuid,
@@ -228,9 +229,14 @@ async def list_function_job_collections(
             job_ids = [
                 job_row.function_job_uuid
                 async for job_row in await conn.stream(
-                    function_job_collections_to_function_jobs_table.select().where(
+                    function_job_collections_to_function_jobs_table.select()
+                    .where(
                         function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
                         == row.uuid
+                    )
+                    .order_by(
+                        function_job_collections_to_function_jobs_table.c.order,
+                        function_job_collections_to_function_jobs_table.c.function_job_uuid,
                     )
                 )
             ]
@@ -278,9 +284,14 @@ async def get_function_job_collection(
         job_ids = [
             job_row.function_job_uuid
             async for job_row in await conn.stream(
-                function_job_collections_to_function_jobs_table.select().where(
+                function_job_collections_to_function_jobs_table.select()
+                .where(
                     function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
                     == row.uuid
+                )
+                .order_by(
+                    function_job_collections_to_function_jobs_table.c.order,
+                    function_job_collections_to_function_jobs_table.c.function_job_uuid,
                 )
             )
         ]
