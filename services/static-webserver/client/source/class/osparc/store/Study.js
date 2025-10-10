@@ -73,10 +73,9 @@ qx.Class.define("osparc.store.Study", {
           text: "",
         }
       };
-      // getPageSearch with now text filter returns all studies
+      // getPageSearch with no text filter returns all studies
       return osparc.data.Resources.getInstance().getAllPages("studies", params, "getPageSearch")
         .then(allStudies => {
-          console.log(allStudies);
           return allStudies;
         });
     },
