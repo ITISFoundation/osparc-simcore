@@ -76,8 +76,12 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       let control;
       switch (id) {
         case "intro-text": {
+          let text = this.__showOrganizations ?
+            this.tr("Select organizations or users from the list or search by name, userName or email.") :
+            this.tr("Select users from the list or search by name, userName or email.");
+          text += "<br>" + this.tr("Keep in mind that users are only searchable based on the information they've chosen to make visible. To make yourself easier to find, adjust your visibility settings in My Account → Privacy.");
           control = new qx.ui.basic.Label().set({
-            value: this.__getIntroText(),
+            value: text,
             rich: true,
             wrap: true,
             paddingBottom: 5
@@ -171,14 +175,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           break;
       }
       return control || this.base(arguments, id);
-    },
-
-    __getIntroText: function() {
-      let text = this.__showOrganizations ?
-        this.tr("Select organizations or users from the list or search by name, userName or email.") :
-        this.tr("Select users from the list or search by name, userName or email.");
-      text += "<br>" + this.tr("Keep in mind that users are only searchable based on the information they've chosen to make visible. To make yourself easier to find, adjust your visibility settings in My Account → Privacy.");
-      return text;
     },
 
     getActionButton: function() {
