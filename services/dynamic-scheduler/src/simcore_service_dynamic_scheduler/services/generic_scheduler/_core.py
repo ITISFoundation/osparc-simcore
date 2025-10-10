@@ -237,6 +237,8 @@ class Core(SingletonInAppStateMixin):
         """
         Force a step stuck in an error state to retry.
         Will raise errors if step cannot be retried.
+
+        raises NoDataFoundError
         """
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
@@ -742,6 +744,8 @@ async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
 
     `reverting` refers to the act of reverting the effects of a step
     that has already been completed (eg: remove a created network)
+
+    raises NoDataFoundError
     """
     await Core.get_from_app_state(app).cancel_operation(schedule_id)
 

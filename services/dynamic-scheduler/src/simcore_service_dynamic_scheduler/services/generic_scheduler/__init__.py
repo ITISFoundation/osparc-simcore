@@ -29,7 +29,12 @@ from ._operation import (
     ParallelStepGroup,
     SingleStepGroup,
 )
-from ._store import OperationContextProxy, StepGroupProxy, StepStoreProxy
+from ._store import (
+    NoDataFoundError,
+    OperationContextProxy,
+    StepGroupProxy,
+    StepStoreProxy,
+)
 
 __all__: tuple[str, ...] = (
     "BaseStep",
@@ -42,6 +47,7 @@ __all__: tuple[str, ...] = (
     "Operation",
     "OperationContextProxy",
     "OperationName",
+    "NoDataFoundError",
     "OperationRegistry",
     "OperationToStart",
     "ParallelStepGroup",
