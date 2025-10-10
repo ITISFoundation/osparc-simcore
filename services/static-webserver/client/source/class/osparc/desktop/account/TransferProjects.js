@@ -156,13 +156,43 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
     },
 
     __shareAndKeepOwnership: function() {
-      // first share all projects with target user
-      this.__shareAllProjects();
+      this.setEnabled(false);
+      this.getChildControl("share-and-keep-button").setFetching(true);
+      this.__shareAllProjects()
+        .then(sharedProjects => {
+          // flash a message saying how many projects were shared
+          const msg = sharedProjects.length + this.tr(" projects have been shared with the target user. You still own them.");
+          osparc.component.message.FlashMessenger.logAs(msg, "INFO", 10000);
+          this.fireEvent("transferred");
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.component.message.FlashMessenger.logError(err);
+        })
+        .finally(() => {
+          this.setEnabled(true);
+          this.getChildControl("share-and-keep-button").setFetching(false);
+        });
     },
 
     __shareAndLeaveOwnership: function() {
-      // first share all projects with target user
-      this.__shareAllProjects();
+      this.__shareAllProjects()
+        .then(sharedProjects => {
+          this.__removeMyOwnership(sharedProjects);
+        });
+    },
+
+    __filterMyOwnedStudies: function(allMyReadStudies) {
+      // filter those that I don't own (no delete right)
+      const myGroupId = osparc.store.Groups.getInstance().getMyGroupId();
+      const ownerAccess = osparc.data.Roles.STUDY["delete"].accessRights;
+      const allMyStudies = allMyReadStudies.filter(studyData => {
+        return (
+          myGroupId in studyData["accessRights"] &&
+          JSON.stringify(studyData["accessRights"][myGroupId]) === JSON.stringify(ownerAccess)
+        )
+      });
+      return allMyStudies;
     },
 
     __shareAllProjects: function() {
@@ -170,11 +200,43 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
       if (targetUser === null) {
         return;
       }
+      const targetGroupId = targetUser.getGroupId();
 
-      osparc.store.Study.getInstance().getAllMyStudies()
-        .then(projects => {
-          console.log(projects);
+      return osparc.store.Study.getInstance().getAllMyStudies()
+        .then(allMyReadStudies => {
+          // filter those that I don't own (no delete right)
+          const allMyStudies = this.__filterMyOwnedStudies(allMyReadStudies);
+          console.log(allMyStudies);
+          const newAccessRights = {
+            [targetGroupId]: ownerAccess
+          };
+          const promises = [];
+          allMyStudies.forEach(studyData => {
+            // first check it's not already shared with the target user
+            if (targetGroupId in studyData["accessRights"] && JSON.stringify(studyData["accessRights"][targetGroupId]) !== JSON.stringify(ownerAccess)) {
+              // update access rights to owner
+              promises.push(osparc.store.Study.getInstance().updateCollaborator(studyData, targetGroupId, ownerAccess));
+            } else {
+              // add as new collaborator with owner rights
+              promises.push(osparc.store.Study.getInstance().addCollaborators(studyData, newAccessRights));
+            }
+          });
+          // return only those projects that were shared
+          Promise.all(promises)
+            .then(values => {
+              console.log("All projects shared successfully");
+              return values;
+            })
+            .catch(err => {
+              console.error("Error sharing projects:", err);
+            });
+
+          return allMyStudies;
         });
+    },
+
+    __removeMyOwnership: function(study) {
+      return osparc.store.Study.getInstance().removeCollaborator(this._serializedDataCopy, study["gid"])
     },
   }
 });

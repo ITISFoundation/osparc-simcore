@@ -65,9 +65,12 @@ qx.Class.define("osparc.store.Study", {
 
     getAllMyStudies: function() {
       const params = {
-        orderBy: {
-          field: "last_change_date",
-          direction: "desc"
+        url: {
+          orderBy: JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
+          text: "",
         }
       };
       // getPageSearch with now text filter returns all studies
