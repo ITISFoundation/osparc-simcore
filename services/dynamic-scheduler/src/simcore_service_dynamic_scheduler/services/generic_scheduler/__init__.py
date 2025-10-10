@@ -10,6 +10,7 @@ from ._deferred_runner import (
     get_step_group_proxy,
     get_step_store_proxy,
 )
+from ._errors import NoDataFoundError
 from ._event_after_registration import (
     register_to_start_after_on_executed_completed,
     register_to_start_after_on_reverted_completed,
@@ -30,7 +31,6 @@ from ._operation import (
     SingleStepGroup,
 )
 from ._store import (
-    NoDataFoundError,
     OperationContextProxy,
     StepGroupProxy,
     StepStoreProxy,
