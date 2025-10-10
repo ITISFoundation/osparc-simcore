@@ -39,7 +39,7 @@ class FogbugzRestClient:
     """REST client for Fogbugz API"""
 
     def __init__(self, api_token: SecretStr, base_url: AnyUrl) -> None:
-        self._client = httpx.AsyncClient(timeout=60.0)
+        self._client = httpx.AsyncClient()
         self._api_token = api_token
         self._base_url = base_url
 
