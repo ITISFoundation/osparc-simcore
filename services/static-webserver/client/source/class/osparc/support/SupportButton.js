@@ -23,10 +23,11 @@ qx.Class.define("osparc.support.SupportButton", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    osparc.utils.Utils.setIdToWidget(this, "helpNavigationBtn");
+    this.set({
+      toolTipText: this.tr("Help & Support"),
+    });
 
-    this._createChildControlImpl("icon");
-    this._createChildControlImpl("number");
+    osparc.utils.Utils.setIdToWidget(this, "helpNavigationBtn");
 
     // this should be support conversations
     const notifications = osparc.notification.Notifications.getInstance();
@@ -73,22 +74,6 @@ qx.Class.define("osparc.support.SupportButton", {
             right: -2,
           });
           break;
-        case "number":
-          control = new qx.ui.basic.Label().set({
-            backgroundColor: "error",
-            textColor: "white",
-            font: "text-12",
-            padding: [0, 4],
-            visibility: this.value > 0 ? "visible" : "hidden"
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "8px"
-          });
-          this._add(control, {
-            bottom: 8,
-            right: 4
-          });
-          break;
       }
       return control || this.base(arguments, id);
     },
@@ -107,14 +92,6 @@ qx.Class.define("osparc.support.SupportButton", {
           visibility: nUnreadNotifications > 0 ? "visible" : "excluded"
         });
       });
-    },
-
-    __buttonTapped: function() {
-      if (this.__notificationsContainer && this.__notificationsContainer.isVisible()) {
-        this.__hideNotificationsContainer();
-      } else {
-        this.__showNotificationsContainer();
-      }
     },
   }
 });

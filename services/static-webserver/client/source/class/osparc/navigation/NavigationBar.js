@@ -91,6 +91,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     RIGHT_BUTTON_OPTS: {
+      backgroundColor: "transparent",
       cursor: "pointer",
       alignX: "center",
       alignY: "middle",
