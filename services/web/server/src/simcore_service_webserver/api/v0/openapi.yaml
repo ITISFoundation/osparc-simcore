@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.79.0
+  version: 0.80.0
 servers:
 - url: ''
   description: webserver
@@ -16260,6 +16260,15 @@ components:
             $ref: '#/components/schemas/NodeServiceGet'
           type: array
           title: Services
+        missing:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ServiceKeyVersion'
+            type: array
+          - type: 'null'
+          title: Missing
+          description: List of services defined in the project but that were not found
+            in the catalog
       type: object
       required:
       - projectUuid

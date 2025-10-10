@@ -57,7 +57,7 @@ from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
-from ..tasks._exception_handlers import handle_export_data_exceptions
+from ..tasks._controller._rest_exceptions import handle_rest_requests_exceptions
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
@@ -487,7 +487,7 @@ async def delete_file(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("storage.files.*")
-@handle_export_data_exceptions
+@handle_rest_requests_exceptions
 async def export_data(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: LocationID

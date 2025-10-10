@@ -5,16 +5,22 @@ from servicelib.fastapi.http_client_thin import (
     expect_status,
     retry_on_errors,
 )
+from servicelib.tracing import TracingConfig
+
+from .._meta import APP_NAME
 
 
 class ThinDV2LocalhostClient(BaseThinClient):
     BASE_ADDRESS: str = "http://localhost:8000"  # NOSONAR
 
     def __init__(self):
+        tracing_config = TracingConfig.create(
+            service_name=APP_NAME, tracing_settings=None
+        )
         super().__init__(
             total_retry_interval=10,
             default_http_client_timeout=Timeout(5),
-            tracing_settings=None,
+            tracing_config=tracing_config,
         )
 
     def _get_url(self, postfix: str) -> str:

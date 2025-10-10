@@ -1,13 +1,42 @@
-from typing import TYPE_CHECKING
-
 from fastapi import FastAPI
 
-from ._models import ScheduleId
-
-if TYPE_CHECKING:
-    from ._event_scheduler import EventScheduler
+from ._dependencies import get_event_scheduler
+from ._event_base_queue import OperationToStartEvent
+from ._event_queues import ExecuteCompletedQueue, RevertCompletedQueue, ScheduleQueue
+from ._models import OperationContext, OperationName, ScheduleId
 
 
 async def enqueue_schedule_event(app: FastAPI, schedule_id: ScheduleId) -> None:
-    event_scheduler: EventScheduler = app.state.generic_scheduler_event_scheduler
-    await event_scheduler.enqueue_schedule_event(schedule_id)
+    await get_event_scheduler(app).enqueue_message_for(ScheduleQueue, schedule_id)
+
+
+async def enqueue_execute_completed_event(
+    app: FastAPI,
+    schedule_id: ScheduleId,
+    operation_name: OperationName,
+    initial_context: OperationContext,
+) -> None:
+    await get_event_scheduler(app).enqueue_message_for(
+        ExecuteCompletedQueue,
+        OperationToStartEvent(
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            initial_context=initial_context,
+        ),
+    )
+
+
+async def enqueue_revert_completed_event(
+    app: FastAPI,
+    schedule_id: ScheduleId,
+    operation_name: OperationName,
+    initial_context: OperationContext,
+) -> None:
+    await get_event_scheduler(app).enqueue_message_for(
+        RevertCompletedQueue,
+        OperationToStartEvent(
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            initial_context=initial_context,
+        ),
+    )

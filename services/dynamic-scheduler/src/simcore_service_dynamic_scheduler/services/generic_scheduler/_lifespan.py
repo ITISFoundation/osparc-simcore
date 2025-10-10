@@ -5,6 +5,7 @@ from fastapi_lifespan_manager import State
 
 from ...core.settings import ApplicationSettings
 from ._core import Core
+from ._event_after import AfterEventManager
 from ._event_scheduler import EventScheduler
 from ._lifecycle_protocol import SupportsLifecycle
 from ._store import Store
@@ -18,6 +19,9 @@ async def generic_scheduler_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     # core
     Core(app).set_to_app_state(app)
+
+    # after event manager
+    AfterEventManager(app).set_to_app_state(app)
 
     # event scheduler
     event_scheduler = EventScheduler(app)

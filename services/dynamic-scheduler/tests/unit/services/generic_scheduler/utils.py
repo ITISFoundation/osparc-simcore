@@ -2,7 +2,9 @@ import asyncio
 from copy import deepcopy
 from typing import Any, Final
 
+from fastapi import FastAPI
 from simcore_service_dynamic_scheduler.services.generic_scheduler import BaseStep
+from simcore_service_dynamic_scheduler.services.generic_scheduler._core import Store
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -12,12 +14,12 @@ from tenacity import (
 
 _RETRY_PARAMS: Final[dict[str, Any]] = {
     "wait": wait_fixed(0.1),
-    "stop": stop_after_delay(5),
+    "stop": stop_after_delay(10),
     "retry": retry_if_exception_type(AssertionError),
 }
 
-CREATED: Final[str] = "create"
-UNDONE: Final[str] = "undo"
+EXECUTED: Final[str] = "executed"
+REVERTED: Final[str] = "reverted"
 
 
 class BaseExpectedStepOrder:
@@ -31,20 +33,20 @@ class BaseExpectedStepOrder:
         return f"{self.__class__.__name__}({', '.join(step.get_step_name() for step in self.steps)})"
 
 
-class CreateSequence(BaseExpectedStepOrder):
-    """steps appear in a sequence as CREATE"""
+class ExecuteSequence(BaseExpectedStepOrder):
+    """steps appear in a sequence as EXECUTE"""
 
 
-class CreateRandom(BaseExpectedStepOrder):
-    """steps appear in any given order as CREATE"""
+class ExecuteRandom(BaseExpectedStepOrder):
+    """steps appear in any given order as EXECUTE"""
 
 
-class UndoSequence(BaseExpectedStepOrder):
-    """steps appear in a sequence as UNDO"""
+class RevertSequence(BaseExpectedStepOrder):
+    """steps appear in a sequence as REVERT"""
 
 
-class UndoRandom(BaseExpectedStepOrder):
-    """steps appear in any given order as UNDO"""
+class RevertRandom(BaseExpectedStepOrder):
+    """steps appear in any given order as REVERT"""
 
 
 def _assert_order_sequence(
@@ -74,7 +76,7 @@ def _assert_order_random(
 
 
 def _assert_expected_order(
-    steps_call_order: list[tuple[str, str]],
+    detected_order: list[tuple[str, str]],
     expected_order: list[BaseExpectedStepOrder],
     *,
     use_only_first_entries: bool,
@@ -85,7 +87,7 @@ def _assert_expected_order(
     expected_order_length = sum(len(x) for x in expected_order)
 
     # below operations are destructive make a copy
-    call_order = deepcopy(steps_call_order)
+    call_order = deepcopy(detected_order)
 
     if use_only_first_entries:
         call_order = call_order[:expected_order_length]
@@ -95,14 +97,14 @@ def _assert_expected_order(
     assert len(call_order) == expected_order_length
 
     for group in expected_order:
-        if isinstance(group, CreateSequence):
-            _assert_order_sequence(call_order, group.steps, expected=CREATED)
-        elif isinstance(group, CreateRandom):
-            _assert_order_random(call_order, group.steps, expected=CREATED)
-        elif isinstance(group, UndoSequence):
-            _assert_order_sequence(call_order, group.steps, expected=UNDONE)
-        elif isinstance(group, UndoRandom):
-            _assert_order_random(call_order, group.steps, expected=UNDONE)
+        if isinstance(group, ExecuteSequence):
+            _assert_order_sequence(call_order, group.steps, expected=EXECUTED)
+        elif isinstance(group, ExecuteRandom):
+            _assert_order_random(call_order, group.steps, expected=EXECUTED)
+        elif isinstance(group, RevertSequence):
+            _assert_order_sequence(call_order, group.steps, expected=REVERTED)
+        elif isinstance(group, RevertRandom):
+            _assert_order_random(call_order, group.steps, expected=REVERTED)
         else:
             msg = f"Unknown {group=}"
             raise NotImplementedError(msg)
@@ -110,7 +112,7 @@ def _assert_expected_order(
 
 
 async def ensure_expected_order(
-    detected_calls: list[tuple[str, str]],
+    detected_order: list[tuple[str, str]],
     expected_order: list[BaseExpectedStepOrder],
     *,
     use_only_first_entries: bool = False,
@@ -118,10 +120,21 @@ async def ensure_expected_order(
 ) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            await asyncio.sleep(0)  # wait for envet to trigger
+            await asyncio.sleep(0)  # wait for event to trigger
             _assert_expected_order(
-                detected_calls,
+                detected_order,
                 expected_order,
                 use_only_first_entries=use_only_first_entries,
                 use_only_last_entries=use_only_last_entries,
             )
+
+
+async def _get_keys_in_store(app: FastAPI) -> set[str]:
+    return set(await Store.get_from_app_state(app).redis.keys())
+
+
+async def ensure_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            keys_in_store = await _get_keys_in_store(app)
+            assert keys_in_store == expected_keys

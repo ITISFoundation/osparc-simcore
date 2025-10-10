@@ -100,7 +100,6 @@ def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
         SWARM_STACK_NAME=master-simcore
         TERM=xterm
         TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT=http://jaeger:4318
-        TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE=50
         TRAEFIK_SIMCORE_ZONE=master_internal_simcore_stack
         VIRTUAL_ENV=/home/scu/.venv
         LOG_FORMAT_LOCAL_DEV_ENABLED=1
@@ -150,7 +149,6 @@ def test_docker_compose_environment_sample(
             "STORAGE_ENDPOINT": "master_storage:8080",
             "SWARM_STACK_NAME": "master-simcore",
             "TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT": "http://jaeger:4318",
-            "TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE": "50",
             "TRAEFIK_SIMCORE_ZONE": "master_internal_simcore_stack",
         },
     )

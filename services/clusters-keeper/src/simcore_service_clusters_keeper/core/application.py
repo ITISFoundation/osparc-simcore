@@ -8,6 +8,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingConfig
 
 from .._meta import (
     API_VERSION,
@@ -29,7 +30,7 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:
+def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
     _logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
     app = FastAPI(
@@ -43,13 +44,13 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     )
     # STATE
     app.state.settings = settings
+    app.state.tracing_config = tracing_config
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
-    if app.state.settings.CLUSTERS_KEEPER_TRACING:
+    if tracing_config.tracing_enabled:
         setup_tracing(
             app,
-            app.state.settings.CLUSTERS_KEEPER_TRACING,
-            APP_NAME,
+            tracing_config,
         )
     if app.state.settings.CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
@@ -63,8 +64,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_redis(app)
     setup_clusters_management(app)
 
-    if app.state.settings.CLUSTERS_KEEPER_TRACING:
-        initialize_fastapi_app_tracing(app)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
     # ERROR HANDLERS
 
     # EVENTS

@@ -20,8 +20,6 @@ from models_library.functions import (
     TaskID,
 )
 from models_library.functions_errors import (
-    FunctionExecuteAccessDeniedError,
-    FunctionsExecuteApiAccessDeniedError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
 )
@@ -245,36 +243,7 @@ class FunctionJobTaskClientService:
         function: RegisteredFunction,
         job_inputs: JobInputs,
     ) -> RegisteredFunctionJob:
-        """
-        N.B. this function checks access rights
-
-        raises FunctionsExecuteApiAccessDeniedError if user cannot execute functions
-        raises FunctionJobCacheNotFoundError if no cached job is found
-
-        """
-
-        user_api_access_rights = (
-            await self._web_rpc_client.get_functions_user_api_access_rights(
-                user_id=self.user_id, product_name=self.product_name
-            )
-        )
-        if not user_api_access_rights.execute_functions:
-            raise FunctionsExecuteApiAccessDeniedError(
-                user_id=self.user_id,
-                function_id=function.uid,
-            )
-
-        user_permissions = await self._web_rpc_client.get_function_user_permissions(
-            function_id=function.uid,
-            user_id=self.user_id,
-            product_name=self.product_name,
-        )
-        if not user_permissions.execute:
-            raise FunctionExecuteAccessDeniedError(
-                user_id=self.user_id,
-                function_id=function.uid,
-            )
-
+        """Raises FunctionJobCacheNotFoundError if no cached job is found"""
         if cached_function_jobs := await self._web_rpc_client.find_cached_function_jobs(
             function_id=function.uid,
             inputs=job_inputs.values,
