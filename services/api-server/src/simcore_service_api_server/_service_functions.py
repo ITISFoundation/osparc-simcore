@@ -89,7 +89,8 @@ class FunctionService:
         """
         Check execute permissions for a user on a function
 
-        raises FunctionsExecuteApiAccessDeniedError if user cannot execute functions
+        raises FunctionsExecuteApiAccessDeniedError if user cannot execute functions via the functions API
+        raises FunctionExecuteAccessDeniedError if user cannot execute this functions
         """
 
         user_api_access_rights = (
