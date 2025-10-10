@@ -5,6 +5,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
 
 from ._core import start_operation
+from ._errors import OperationInitialContextKeyNotFoundError
 from ._models import (
     EventType,
     OperationContext,
@@ -35,12 +36,28 @@ class AfterEventManager(SingletonInAppStateMixin):
         schedule_id: ScheduleId,
         event_type: EventType,
         *,
-        to_start: OperationToStart,
+        to_start: OperationToStart | None,
     ) -> None:
-        # ensure operation exists
-        OperationRegistry.get_operation(to_start.operation_name)
 
         events_proxy = OperationEventsProxy(self._store, schedule_id, event_type)
+        if to_start is None:
+            # unregister any previously registered operation
+            await events_proxy.delete()
+            _logger.debug(
+                "Unregistered event_type='%s' to_start for schedule_id='%s'",
+                event_type,
+                schedule_id,
+            )
+            return
+
+        # ensure operation exists
+        operation = OperationRegistry.get_operation(to_start.operation_name)
+        for required_key in operation.initial_context_required_keys:
+            if required_key not in to_start.initial_context:
+                raise OperationInitialContextKeyNotFoundError(
+                    operation_name=to_start.operation_name, required_key=required_key
+                )
+
         await events_proxy.create_or_update_multiple(
             {
                 "initial_context": to_start.initial_context,

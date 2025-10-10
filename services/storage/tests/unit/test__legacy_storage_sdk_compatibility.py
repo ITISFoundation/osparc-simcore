@@ -24,6 +24,7 @@ from faker import Faker
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pytest_simcore.helpers.logging_tools import log_context
+from servicelib.tracing import TracingConfig
 from servicelib.utils import unused_port
 from simcore_service_storage._meta import API_VTAG
 from simcore_service_storage.core.application import create_app
@@ -63,7 +64,11 @@ async def _wait_for_server_ready(server: URL) -> None:
 @pytest.fixture
 async def real_storage_server(app_settings: ApplicationSettings) -> AsyncIterator[URL]:
     settings = ApplicationSettings.create_from_envs()
-    app = create_app(settings)
+    tracing_config = TracingConfig.create(
+        tracing_settings=None,  # disable tracing in tests
+        service_name="storage-api",
+    )
+    app = create_app(settings, tracing_config=tracing_config)
     storage_port = unused_port()
     with log_context(
         logging.INFO,

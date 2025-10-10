@@ -30,6 +30,7 @@ from ._deferred_runner import DeferredRunner
 from ._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     NoDataFoundError,
+    OperationInitialContextKeyNotFoundError,
     OperationNotCancellableError,
     StepNameNotInCurrentGroupError,
     StepNotInErrorStateError,
@@ -51,6 +52,7 @@ from ._models import (
     OperationErrorType,
     OperationName,
     OperationToStart,
+    ReservedContextKeys,
     ScheduleId,
     StepName,
     StepStatus,
@@ -100,8 +102,16 @@ class Core(SingletonInAppStateMixin):
         """start an operation by it's given name and providing an initial context"""
         schedule_id: ScheduleId = f"{uuid4()}"
 
+        initial_operation_context[ReservedContextKeys.SCHEDULE_ID] = schedule_id
+
         # check if operation is registered
         operation = OperationRegistry.get_operation(operation_name)
+
+        for required_key in operation.initial_context_required_keys:
+            if required_key not in initial_operation_context:
+                raise OperationInitialContextKeyNotFoundError(
+                    operation_name=operation_name, required_key=required_key
+                )
 
         # NOTE: to ensure reproducibility of operations, the
         # operation steps cannot overwrite keys in the
@@ -213,6 +223,17 @@ class Core(SingletonInAppStateMixin):
             limit=PARALLEL_REQUESTS,
         )
 
+    async def get_operation_name_or_none(
+        self, schedule_id: ScheduleId
+    ) -> OperationName | None:
+        schedule_data_proxy = ScheduleDataStoreProxy(
+            store=self._store, schedule_id=schedule_id
+        )
+        try:
+            return await schedule_data_proxy.read("operation_name")
+        except NoDataFoundError:
+            return None
+
     async def restart_operation_step_stuck_in_error(
         self,
         schedule_id: ScheduleId,
@@ -223,6 +244,8 @@ class Core(SingletonInAppStateMixin):
         """
         Force a step stuck in an error state to retry.
         Will raise errors if step cannot be retried.
+
+        raises NoDataFoundError
         """
         schedule_data_proxy = ScheduleDataStoreProxy(
             store=self._store, schedule_id=schedule_id
@@ -728,8 +751,17 @@ async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
 
     `reverting` refers to the act of reverting the effects of a step
     that has already been completed (eg: remove a created network)
+
+    raises NoDataFoundError
     """
     await Core.get_from_app_state(app).cancel_operation(schedule_id)
+
+
+async def get_operation_name_or_none(
+    app: FastAPI, schedule_id: ScheduleId
+) -> OperationName | None:
+    """returns the name of the operation or None if not found"""
+    return await Core.get_from_app_state(app).get_operation_name_or_none(schedule_id)
 
 
 async def restart_operation_step_stuck_in_manual_intervention_during_execute(
@@ -742,6 +774,8 @@ async def restart_operation_step_stuck_in_manual_intervention_during_execute(
     `waiting for manual intervention` refers to a step that has failed and exhausted
     all retries and is now waiting for a human to fix the issue (eg: storage service
     is reachable once again)
+
+    raises NoDataFoundError
     """
     await Core.get_from_app_state(app).restart_operation_step_stuck_in_error(
         schedule_id, step_name, in_manual_intervention=True
@@ -757,6 +791,8 @@ async def restart_operation_step_stuck_during_revert(
     `stuck step` is a step that has failed and exhausted all retries
     `reverting` refers to the act of reverting the effects of a step
     that has already been completed (eg: remove a created network)
+
+    raises NoDataFoundError
     """
     await Core.get_from_app_state(app).restart_operation_step_stuck_in_error(
         schedule_id, step_name, in_manual_intervention=False

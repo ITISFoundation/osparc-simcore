@@ -10,8 +10,8 @@ from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogItemNotFoundError,
+    CatalogForbiddenRpcError,
+    CatalogItemNotFoundRpcError,
 )
 
 from ..exception_handling import (
@@ -32,8 +32,8 @@ from .errors import (
 )
 
 # mypy: disable-error-code=truthy-function
-assert CatalogForbiddenError  # nosec
-assert CatalogItemNotFoundError  # nosec
+assert CatalogForbiddenRpcError  # nosec
+assert CatalogItemNotFoundRpcError  # nosec
 
 
 _logger = logging.getLogger(__name__)
@@ -90,14 +90,14 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
             _version=2,
         ),
     ),
-    CatalogForbiddenError: HttpErrorInfo(
+    CatalogForbiddenRpcError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
             "Access denied: You don't have permission to view this catalog item.",
             _version=2,
         ),
     ),
-    CatalogItemNotFoundError: HttpErrorInfo(
+    CatalogItemNotFoundRpcError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
             "This catalog item does not exist or has been removed.", _version=2

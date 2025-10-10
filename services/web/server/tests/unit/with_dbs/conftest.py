@@ -54,6 +54,7 @@ from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsy
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
+from servicelib import tracing
 from servicelib.common_aiopg_utils import DSN
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
@@ -228,7 +229,10 @@ async def web_server(
     assert app_environment
 
     # original APP
-    app = create_application()
+    tracing_config = tracing.TracingConfig.create(
+        service_name="test-webserver", tracing_settings=None
+    )
+    app = create_application(tracing_config=tracing_config)
 
     disable_static_webserver(app)
 
