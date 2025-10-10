@@ -104,7 +104,7 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
           this.bind("targetUser", control, "enabled", {
             converter: targetUser => targetUser !== null
           });
-          control.addListener("execute", () => this.fireEvent("transferred"), this);
+          control.addListener("execute", () => this.__shareAndKeepOwnership(), this);
           this.getChildControl("buttons-container").add(control);
           break;
         case "share-and-leave-button": {
@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
           this.bind("targetUser", control, "enabled", {
             converter: targetUser => targetUser !== null
           });
-          control.addListener("execute", () => this.fireEvent("transferred"), this);
+          control.addListener("execute", () => this.__shareAndLeaveOwnership(), this);
           this.getChildControl("buttons-container").add(control);
           break;
         }
@@ -150,6 +150,28 @@ qx.Class.define("osparc.desktop.account.TransferProjects", {
             });
         }
       }, this);
+    },
+
+    __shareAndKeepOwnership: function() {
+      // first share all projects with target user
+      this.__shareAllProjects();
+    },
+
+    __shareAndLeaveOwnership: function() {
+      // first share all projects with target user
+      this.__shareAllProjects();
+    },
+
+    __shareAllProjects: function() {
+      const targetUser = this.getTargetUser();
+      if (targetUser === null) {
+        return;
+      }
+
+      osparc.store.Study.getAllProjects()
+        .then(projects => {
+          console.log(projects);
+        });
     },
   }
 });

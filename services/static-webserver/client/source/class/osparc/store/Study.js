@@ -63,6 +63,21 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "getOne", params)
     },
 
+    getAllMyStudies: function() {
+      const params = {
+        orderBy: {
+          field: "last_change_date",
+          direction: "desc"
+        }
+      };
+      // getPageSearch with now text filter returns all studies
+      return osparc.data.Resources.getInstance().getAllPages("studies", params, "getPageSearch")
+        .then(allStudies => {
+          console.log(allStudies);
+          return allStudies;
+        });
+    },
+
     openStudy: function(studyId, autoStart = true) {
       const params = {
         url: {
