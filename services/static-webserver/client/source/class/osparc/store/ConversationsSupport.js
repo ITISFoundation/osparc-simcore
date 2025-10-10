@@ -144,9 +144,9 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     markAsRead: function(conversationId) {
       const patchData = {};
       if (osparc.store.Groups.getInstance().amIASupportUser()) {
-        patchData["readBySupport"] = true;
+        patchData["isReadBySupport"] = true;
       } else {
-        patchData["readByUser"] = true;
+        patchData["isReadByUser"] = true;
       }
       return this.__patchConversation(conversationId, patchData);
     },
