@@ -10,7 +10,6 @@ from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from http import HTTPStatus
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -22,7 +21,7 @@ from models_library.conversations import (
     ConversationMessageGetDB,
     ConversationMessageType,
 )
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -467,9 +466,9 @@ def app_environment(
 
 
 @pytest.fixture(autouse=True)
-def mocked_fogbugz_client(client: TestClient) -> AsyncMock:
+def mocked_fogbugz_client(client: TestClient, mocker: MockerFixture) -> MockType:
     """Auto-mock the Fogbugz client in every test"""
-    mock_client = AsyncMock(spec=FogbugzRestClient)
+    mock_client = mocker.AsyncMock(spec=FogbugzRestClient)
     mock_client.create_case.return_value = "test-case-12345"
     mock_client.reopen_case.return_value = None
     mock_client.get_case_status.return_value = "Active"
@@ -482,7 +481,7 @@ def mocked_fogbugz_client(client: TestClient) -> AsyncMock:
 
 
 @pytest.fixture
-def mocked_list_users_in_group(mocker: MockerFixture) -> AsyncMock:
+def mocked_list_users_in_group(mocker: MockerFixture) -> MockType:
     """Mock the list_users_in_group function to return empty list"""
     mock = mocker.patch.object(_groups_repository, "list_users_in_group")
     mock.return_value = []
@@ -490,7 +489,7 @@ def mocked_list_users_in_group(mocker: MockerFixture) -> AsyncMock:
 
 
 @pytest.fixture
-def mocked_get_current_product(mocker: MockerFixture) -> AsyncMock:
+def mocked_get_current_product(mocker: MockerFixture) -> MockType:
     """Mock the get_product function to return a product with support settings"""
     mock = mocker.patch.object(products_service, "get_product")
     mocked_product = mocker.Mock()
@@ -505,9 +504,9 @@ def mocked_get_current_product(mocker: MockerFixture) -> AsyncMock:
 async def test_conversation_messages_with_database(
     app_environment: EnvVarsDict,
     client: TestClient,
-    mocked_fogbugz_client: AsyncMock,
-    mocked_list_users_in_group: AsyncMock,
-    mocked_get_current_product: AsyncMock,
+    mocked_fogbugz_client: MockType,
+    mocked_list_users_in_group: MockType,
+    mocked_get_current_product: MockType,
     logged_user: UserInfoDict,
 ):
     """Test conversation messages with direct database interaction"""

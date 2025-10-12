@@ -3,6 +3,7 @@
 import logging
 
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.basic_types import IDStr
 from models_library.conversations import (
     ConversationGetDB,
@@ -248,10 +249,18 @@ async def create_support_message(
                 product_support_assigned_fogbugz_project_id=product.support_assigned_fogbugz_project_id,
                 fogbugz_url=str(fogbugz_settings_or_none.FOGBUGZ_URL),
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception as err:  # pylint: disable=broad-except
             _logger.exception(
-                "Failed to create support request FogBugz case for conversation %s.",
-                conversation.conversation_id,
+                **create_troubleshooting_log_kwargs(
+                    f"Failed to create support request FogBugz case for conversation {conversation.conversation_id}.",
+                    error=err,
+                    error_context={
+                        "conversation": conversation,
+                        "user_id": user_id,
+                        "fogbugz_url": str(fogbugz_settings_or_none.FOGBUGZ_URL),
+                    },
+                    tip="Check conversation in the database and inform support team (create Fogbugz case manually if needed).",
+                )
             )
     else:
         assert not is_first_message  # nosec
@@ -270,10 +279,18 @@ async def create_support_message(
                 conversation_url=_conversation_url,
                 product_support_assigned_fogbugz_person_id=f"{product.support_assigned_fogbugz_person_id}",
             )
-        except Exception:  # pylint: disable=broad-except
+        except Exception as err:  # pylint: disable=broad-except
             _logger.exception(
-                "Failed to reopen support request FogBugz case for conversation %s.",
-                conversation.conversation_id,
+                **create_troubleshooting_log_kwargs(
+                    f"Failed to reopen support request FogBugz case for conversation {conversation.conversation_id}",
+                    error=err,
+                    error_context={
+                        "conversation": conversation,
+                        "user_id": user_id,
+                        "fogbugz_url": str(fogbugz_settings_or_none.FOGBUGZ_URL),
+                    },
+                    tip="Check conversation in the database and corresponding Fogbugz case",
+                )
             )
 
     return message

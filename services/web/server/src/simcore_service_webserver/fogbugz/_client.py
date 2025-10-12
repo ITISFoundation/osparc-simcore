@@ -15,6 +15,7 @@ from servicelib.aiohttp import status
 from tenacity import (
     retry,
     retry_if_exception_type,
+    retry_if_result,
     stop_after_attempt,
     wait_exponential,
 )
@@ -29,10 +30,23 @@ _JSON_CONTENT_TYPE = "application/json"
 _UNKNOWN_ERROR_MESSAGE = "Unknown error occurred"
 
 
+class FogbugzClientBaseError(Exception):
+    """Base exception class for Fogbugz client errors"""
+
+
 class FogbugzCaseCreate(BaseModel):
     fogbugz_project_id: int = Field(description="Project ID in Fogbugz")
     title: str = Field(description="Case title")
     description: str = Field(description="Case description/first comment")
+
+
+def _should_retry(response: httpx.Response | None) -> bool:
+    if response is None:
+        return True
+    return (
+        response.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR
+        or response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+    )
 
 
 class FogbugzRestClient:
@@ -44,40 +58,21 @@ class FogbugzRestClient:
         self._base_url = base_url
 
     @retry(
-        retry=retry_if_exception_type(
-            (
-                httpx.ConnectError,
-                httpx.TimeoutException,
-                httpx.NetworkError,
-                httpx.ProtocolError,
-                httpx.HTTPStatusError,
+        retry=(
+            retry_if_result(_should_retry)
+            | retry_if_exception_type(
+                (
+                    httpx.ConnectError,
+                    httpx.TimeoutException,
+                    httpx.NetworkError,
+                    httpx.ProtocolError,
+                )
             )
         ),
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
         reraise=True,
     )
-    async def _make_http_request(
-        self, method: str, url: str, **kwargs
-    ) -> httpx.Response:
-        """Make HTTP request with retry logic for network issues and server errors"""
-        response = await self._client.request(method, url, **kwargs)
-
-        # Raise for 5xx server errors to trigger retry
-        if response.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
-            response.raise_for_status()
-
-        # Don't retry on 4xx client errors (except for rate limiting)
-        if (
-            status.HTTP_400_BAD_REQUEST
-            <= response.status_code
-            < status.HTTP_500_INTERNAL_SERVER_ERROR
-            and response.status_code != status.HTTP_429_TOO_MANY_REQUESTS
-        ):
-            response.raise_for_status()
-
-        return response
-
     async def _make_api_request(self, json_payload: dict[str, Any]) -> dict[str, Any]:
         """Make a request to Fogbugz API with common formatting"""
         # Fogbugz requires multipart/form-data with stringified JSON
@@ -86,12 +81,14 @@ class FogbugzRestClient:
         url = urljoin(f"{self._base_url}", "f/api/0/jsonapi")
 
         try:
-            response = await self._make_http_request("POST", url, files=files)
+            response = await self._client.post(url, files=files)
             response.raise_for_status()
             response_data: dict[str, Any] = response.json()
             return response_data
-        except Exception as exc:
-            _logger.exception("Failed to make API request to Fogbugz: %s", exc)
+        except Exception:
+            _logger.error(  # noqa: TRY400
+                "Failed to make API request to Fogbugz with payload: %s", json_payload
+            )
             raise
 
     async def create_case(self, data: FogbugzCaseCreate) -> str:
@@ -110,7 +107,7 @@ class FogbugzRestClient:
         case_id = response_data.get("data", {}).get("case", {}).get("ixBug", None)
         if case_id is None:
             msg = "Failed to create case in Fogbugz"
-            raise ValueError(msg)
+            raise FogbugzClientBaseError(msg)
 
         return str(case_id)
 
@@ -128,7 +125,7 @@ class FogbugzRestClient:
         if response_data.get("error"):
             error_msg = response_data.get("error", _UNKNOWN_ERROR_MESSAGE)
             msg = f"Failed to resolve case in Fogbugz: {error_msg}"
-            raise ValueError(msg)
+            raise FogbugzClientBaseError(msg)
 
     async def get_case_status(self, case_id: str) -> str:
         """Get the status of a case in Fogbugz"""
@@ -145,13 +142,13 @@ class FogbugzRestClient:
         if response_data.get("error"):
             error_msg = response_data.get("error", _UNKNOWN_ERROR_MESSAGE)
             msg = f"Failed to get case status from Fogbugz: {error_msg}"
-            raise ValueError(msg)
+            raise FogbugzClientBaseError(msg)
 
         # Extract the status from the search results
         cases = response_data.get("data", {}).get("cases", [])
         if not cases:
             msg = f"Case {case_id} not found in Fogbugz"
-            raise ValueError(msg)
+            raise FogbugzClientBaseError(msg)
 
         # Find the case with matching ixBug
         target_case = None
@@ -162,13 +159,13 @@ class FogbugzRestClient:
 
         if target_case is None:
             msg = f"Case {case_id} not found in search results"
-            raise ValueError(msg)
+            raise FogbugzClientBaseError(msg)
 
         # Get the status from the found case
         _status: str = target_case.get("sStatus", "")
         if not _status:
             msg = f"Status not found for case {case_id}"
-            raise ValueError(msg)
+            raise FogbugzClientBaseError(msg)
 
         return _status
 
@@ -189,7 +186,7 @@ class FogbugzRestClient:
             cmd = "reopen"
         else:
             msg = f"Cannot reopen case {case_id} with status '{current_status}'. Only resolved or closed cases can be reopened."
-            raise ValueError(msg)
+            raise FogbugzClientBaseError(msg)
 
         json_payload = {
             "cmd": cmd,
@@ -205,7 +202,7 @@ class FogbugzRestClient:
         if response_data.get("error"):
             error_msg = response_data.get("error", _UNKNOWN_ERROR_MESSAGE)
             msg = f"Failed to reopen case in Fogbugz: {error_msg}"
-            raise ValueError(msg)
+            raise FogbugzClientBaseError(msg)
 
     async def __aenter__(self):
         """Async context manager entry"""
@@ -232,13 +229,13 @@ async def setup_fogbugz_rest_client(app: web.Application) -> None:
                     f"Product '{product.name}' has support_standard_group_id set "
                     "but `support_assigned_fogbugz_person_id` is not configured."
                 )
-                raise ValueError(msg)
+                raise FogbugzClientBaseError(msg)
             if product.support_assigned_fogbugz_project_id is None:
                 msg = (
                     f"Product '{product.name}' has support_standard_group_id set "
                     "but `support_assigned_fogbugz_project_id` is not configured."
                 )
-                raise ValueError(msg)
+                raise FogbugzClientBaseError(msg)
         else:
             _logger.info(
                 "Product '%s' has support conversation disabled (therefore Fogbugz integration is not necessary for this product)",
