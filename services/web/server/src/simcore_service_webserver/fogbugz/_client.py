@@ -57,31 +57,34 @@ class FogbugzRestClient:
         self._api_token = api_token
         self._base_url = base_url
 
-    @retry(
-        retry=(
-            retry_if_result(_should_retry)
-            | retry_if_exception_type(
-                (
-                    httpx.ConnectError,
-                    httpx.TimeoutException,
-                    httpx.NetworkError,
-                    httpx.ProtocolError,
-                )
-            )
-        ),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        reraise=True,
-    )
     async def _make_api_request(self, json_payload: dict[str, Any]) -> dict[str, Any]:
         """Make a request to Fogbugz API with common formatting"""
-        # Fogbugz requires multipart/form-data with stringified JSON
-        files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
 
-        url = urljoin(f"{self._base_url}", "f/api/0/jsonapi")
+        @retry(
+            retry=(
+                retry_if_result(_should_retry)
+                | retry_if_exception_type(
+                    (
+                        httpx.ConnectError,
+                        httpx.TimeoutException,
+                        httpx.NetworkError,
+                        httpx.ProtocolError,
+                    )
+                )
+            ),
+            stop=stop_after_attempt(3),
+            wait=wait_exponential(multiplier=1, min=1, max=10),
+            reraise=True,
+        )
+        async def _request() -> httpx.Response:
+            # Fogbugz requires multipart/form-data with stringified JSON
+            files = {"request": (None, json.dumps(json_payload), _JSON_CONTENT_TYPE)}
+            url = urljoin(f"{self._base_url}", "f/api/0/jsonapi")
+
+            return await self._client.post(url, files=files)
 
         try:
-            response = await self._client.post(url, files=files)
+            response = await _request()
             response.raise_for_status()
             response_data: dict[str, Any] = response.json()
             return response_data
