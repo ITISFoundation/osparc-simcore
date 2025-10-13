@@ -166,8 +166,9 @@ async def pull_file_from_remote(
     s3_settings: S3Settings | None,
 ) -> None:
     assert src_url.path  # nosec
+    src_location_str = f"{src_url.path.strip('/')} on {src_url.host}:{src_url.port}"
     await log_publishing_cb(
-        f"Downloading '{src_url}' into local file '{dst_path}'...",
+        f"Downloading '{src_location_str}' into local file '{dst_path}'...",
         logging.INFO,
     )
     if not dst_path.parent.exists():
@@ -196,11 +197,11 @@ async def pull_file_from_remote(
             TypeAdapter(FileUrl).validate_python(f"{download_dst_path.as_uri()}"),
             src_storage_cfg=cast(dict[str, Any], storage_kwargs),
             log_publishing_cb=log_publishing_cb,
-            text_prefix=f"Downloading '{src_url.path.strip('/')}':",
+            text_prefix=f"Downloading '{src_location_str}':",
         )
 
         await log_publishing_cb(
-            f"Download of '{src_url}' into local file '{download_dst_path}' complete.",
+            f"Download of '{src_location_str}' into local file '{download_dst_path}' complete.",
             logging.INFO,
         )
 
