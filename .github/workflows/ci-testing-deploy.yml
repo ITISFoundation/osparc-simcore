@@ -1786,6 +1786,7 @@ jobs:
       [
         integration-test-director-v2-01,
         integration-test-director-v2-02,
+        integration-test-director-v2-03,
         integration-test-dynamic-sidecar,
         integration-test-docker-api-proxy,
         integration-test-simcore-sdk,
