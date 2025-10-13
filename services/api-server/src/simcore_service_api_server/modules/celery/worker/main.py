@@ -46,7 +46,7 @@ the_app = get_app()
 
 
 @worker_init.connect
-def worker_init_wrapper(**kwargs):
+def _worker_init_wrapper(**kwargs):
     _settings = ApplicationSettings.create_from_envs()
     assert _settings.API_SERVER_CELERY  # nosec
     app_server = FastAPIAppServer(app=create_app(_settings))
@@ -55,6 +55,6 @@ def worker_init_wrapper(**kwargs):
 
 
 @worker_shutdown.connect
-def worker_shutdown_wrapper(**kwargs):
+def _worker_shutdown_wrapper(**kwargs):
     app_server = get_app_server(the_app)
     return on_worker_shutdown(app_server, **kwargs)

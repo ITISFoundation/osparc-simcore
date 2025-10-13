@@ -56,7 +56,7 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
       -- \
       celery \
       --app=simcore_service_storage.modules.celery.worker.main:the_app \
-      worker --pool="${CELERY_POOL:-prefork}" \
+      worker --pool="${CELERY_POOL}" \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
       --hostname="${STORAGE_WORKER_NAME}" \
@@ -64,7 +64,7 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
   else
     exec celery \
       --app=simcore_service_storage.modules.celery.worker.main:the_app \
-      worker --pool="${CELERY_POOL:-prefork}" \
+      worker --pool="${CELERY_POOL}" \
       --loglevel="${SERVER_LOG_LEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
       --hostname="${STORAGE_WORKER_NAME}" \

@@ -49,7 +49,7 @@ if [ "${API_SERVER_WORKER_MODE}" = "true" ]; then
       -- \
       celery \
       --app=simcore_service_api_server.modules.celery.worker.main:the_app \
-      worker --pool="${CELERY_POOL:-prefork}" \
+      worker --pool="${CELERY_POOL}" \
       --loglevel="${API_SERVER_LOGLEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
       --hostname="${API_SERVER_WORKER_NAME}" \
@@ -57,7 +57,7 @@ if [ "${API_SERVER_WORKER_MODE}" = "true" ]; then
   else
     exec celery \
       --app=simcore_service_api_server.modules.celery.worker.main:the_app \
-      worker --pool="${CELERY_POOL:-prefork}" \
+      worker --pool="${CELERY_POOL}" \
       --loglevel="${API_SERVER_LOGLEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
       --hostname="${API_SERVER_WORKER_NAME}" \
