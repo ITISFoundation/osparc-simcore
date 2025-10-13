@@ -15,6 +15,11 @@ from .._redis import RedisServiceStateManager
 _logger = logging.getLogger(__name__)
 
 
+async def _remove_schedule_id(app: FastAPI, *, node_id: NodeID) -> None:
+    service_state_manager = RedisServiceStateManager(app=app, node_id=node_id)
+    await service_state_manager.delete_key("current_schedule_id")
+
+
 class RegisterScheduleId(BaseStep):
     @classmethod
     def get_execute_requires_context_keys(cls) -> set[str]:
@@ -32,6 +37,13 @@ class RegisterScheduleId(BaseStep):
 
         return None
 
+    @classmethod
+    async def revert(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        await _remove_schedule_id(app, node_id=required_context["node_id"])
+        return None
+
 
 class UnRegisterScheduleId(BaseStep):
     @classmethod
@@ -42,11 +54,7 @@ class UnRegisterScheduleId(BaseStep):
     async def execute(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
-        node_id: NodeID = required_context["node_id"]
-
-        service_state_manager = RedisServiceStateManager(app=app, node_id=node_id)
-        await service_state_manager.delete_key("current_schedule_id")
-
+        await _remove_schedule_id(app, node_id=required_context["node_id"])
         return None
 
 
@@ -57,6 +65,7 @@ class DoNothing(BaseStep):
     ) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
-        _logger.debug("does nothing")
+
+        _logger.debug("doing nothing, just a placeholder")
 
         return None
