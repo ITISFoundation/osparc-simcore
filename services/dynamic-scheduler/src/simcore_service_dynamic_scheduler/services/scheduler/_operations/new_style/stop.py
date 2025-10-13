@@ -5,4 +5,5 @@ operation = Operation(
     SingleStepGroup(RegisterScheduleId),
     SingleStepGroup(DoNothing),
     SingleStepGroup(UnRegisterScheduleId),
+    is_cancellable=False,
 )

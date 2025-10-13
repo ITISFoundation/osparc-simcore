@@ -17,6 +17,7 @@ from tenacity import (
 )
 
 from ..generic_scheduler import (
+    NoDataFoundError,
     OperationToStart,
     ScheduleId,
     cancel_operation,
@@ -75,14 +76,19 @@ async def _get_schedule_id_and_opration_type(
 async def _switch_to_enforce(
     app: FastAPI, schedule_id: ScheduleId, node_id: NodeID
 ) -> None:
-    enforce_operation = OperationToStart(_opration_names.ENFORCE, {"node_id": node_id})
-    await register_to_start_after_on_executed_completed(
-        app, schedule_id, to_start=enforce_operation
-    )
-    await register_to_start_after_on_reverted_completed(
-        app, schedule_id, to_start=enforce_operation
-    )
-    await cancel_operation(app, schedule_id)
+    try:
+        enforce_operation = OperationToStart(
+            _opration_names.ENFORCE, {"node_id": node_id}
+        )
+        await register_to_start_after_on_executed_completed(
+            app, schedule_id, to_start=enforce_operation
+        )
+        await register_to_start_after_on_reverted_completed(
+            app, schedule_id, to_start=enforce_operation
+        )
+        await cancel_operation(app, schedule_id)
+    except NoDataFoundError:
+        _logger.debug("Could not switch schedule_id='%s' to ENFORCE.", schedule_id)
 
 
 async def start_service(app: FastAPI, start_data: DynamicServiceStart) -> None:
@@ -115,10 +121,11 @@ async def start_service(app: FastAPI, start_data: DynamicServiceStart) -> None:
     )
 
     match operation_type:
+        # NOTE: STOP opreration cannot be cancelled
         case OperationType.ENFORCE | OperationType.START:
             if await service_state_manager.read("current_start_data") != start_data:
                 await _switch_to_enforce(app, current_schedule_id, node_id)
-        case OperationType.STOP | OperationType.MONITOR:
+        case OperationType.MONITOR:
             await _switch_to_enforce(app, current_schedule_id, node_id)
 
     # set as current
@@ -155,7 +162,8 @@ async def stop_service(app: FastAPI, stop_data: DynamicServiceStop) -> None:
     )
 
     match operation_type:
-        case OperationType.ENFORCE | OperationType.STOP:
+        # NOTE: STOP opreration cannot be cancelled
+        case OperationType.ENFORCE:
             if await service_state_manager.read("current_stop_data") != stop_data:
                 await _switch_to_enforce(app, current_schedule_id, node_id)
         case OperationType.START | OperationType.MONITOR:
