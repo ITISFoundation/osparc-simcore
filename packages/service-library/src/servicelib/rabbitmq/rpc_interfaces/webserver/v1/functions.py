@@ -20,6 +20,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     FunctionClass,
     FunctionGroupAccessRights,
+    FunctionInputsList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
@@ -462,16 +463,18 @@ class FunctionsRpcApi(BaseRpcApi):
         product_name: ProductName,
         user_id: UserID,
         function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> list[RegisteredFunctionJob] | None:
+        inputs: FunctionInputsList,
+        status_filter: list[FunctionJobStatus] | None = None,
+    ) -> list[RegisteredFunctionJob | None]:
         """Find cached function jobs."""
-        return TypeAdapter(list[RegisteredFunctionJob] | None).validate_python(
+        return TypeAdapter(list[RegisteredFunctionJob | None]).validate_python(
             await self._request(
                 "find_cached_function_jobs",
                 product_name=product_name,
                 user_id=user_id,
                 function_id=function_id,
                 inputs=inputs,
+                status_filter=status_filter,
             ),
         )
 

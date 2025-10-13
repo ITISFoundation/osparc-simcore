@@ -8,6 +8,7 @@ from models_library.functions import (
     FunctionClass,
     FunctionID,
     FunctionInputs,
+    FunctionInputsList,
     FunctionJobClassSpecificData,
     FunctionJobCollectionID,
     FunctionJobID,
@@ -19,7 +20,6 @@ from models_library.functions import (
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
-    FunctionJobReadAccessDeniedError,
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -291,36 +291,55 @@ async def find_cached_function_jobs(
     user_id: UserID,
     function_id: FunctionID,
     product_name: ProductName,
-    inputs: FunctionInputs,
-) -> list[RegisteredFunctionJobDB] | None:
+    inputs: FunctionInputsList,
+    status_filter: list[FunctionJobStatus] | None = None,
+) -> list[RegisteredFunctionJobDB | None]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        jobs: list[RegisteredFunctionJobDB] = []
-        async for row in await conn.stream(
-            function_jobs_table.select().where(
-                function_jobs_table.c.function_uuid == function_id,
-                cast(function_jobs_table.c.inputs, Text) == json.dumps(inputs),
+        # Get user groups for access check
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+
+        # Create access subquery
+        access_subquery = (
+            function_jobs_access_rights_table.select()
+            .with_only_columns(function_jobs_access_rights_table.c.function_job_uuid)
+            .where(
+                function_jobs_access_rights_table.c.group_id.in_(user_groups),
+                function_jobs_access_rights_table.c.product_name == product_name,
+                function_jobs_access_rights_table.c.read,
             )
-        ):
-            job = RegisteredFunctionJobDB.model_validate(row)
-            try:
-                await check_user_permissions(
-                    app,
-                    connection=conn,
-                    user_id=user_id,
-                    product_name=product_name,
-                    object_id=job.uuid,
-                    object_type="function_job",
-                    permissions=["read"],
+        )
+
+        # Create list of JSON dumped inputs for comparison
+        json_inputs = [json.dumps(inp) for inp in inputs]
+
+        # Build filter conditions
+        filter_conditions = sqlalchemy.and_(
+            function_jobs_table.c.function_uuid == function_id,
+            cast(function_jobs_table.c.inputs, Text).in_(json_inputs),
+            function_jobs_table.c.uuid.in_(access_subquery),
+            (
+                function_jobs_table.c.status.in_(
+                    [status.status for status in status_filter]
                 )
-            except FunctionJobReadAccessDeniedError:
-                continue
+                if status_filter is not None
+                else sqlalchemy.sql.true()
+            ),
+        )
 
-            jobs.append(job)
+        # Single query to find all jobs matching any of the inputs with access check
+        results = await conn.execute(
+            function_jobs_table.select().where(filter_conditions)
+        )
 
-        if len(jobs) > 0:
-            return jobs
+        # Create a mapping from JSON inputs to jobs
+        _ensure_str = lambda x: x if isinstance(x, str) else json.dumps(x)
+        jobs_by_input: dict[str, RegisteredFunctionJobDB] = {
+            _ensure_str(row.inputs): RegisteredFunctionJobDB.model_validate(row)
+            for row in results
+        }
 
-        return None
+        # Return results in the same order as inputs, with None for missing jobs
+        return [jobs_by_input.get(json_input, None) for json_input in json_inputs]
 
 
 async def get_function_job_status(

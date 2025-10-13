@@ -9,8 +9,8 @@ from models_library.functions import (
     FunctionDB,
     FunctionGroupAccessRights,
     FunctionID,
-    FunctionInputs,
     FunctionInputSchema,
+    FunctionInputsList,
     FunctionJob,
     FunctionJobClassSpecificData,
     FunctionJobCollection,
@@ -423,62 +423,58 @@ async def find_cached_function_jobs(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    inputs: FunctionInputs,
-) -> list[RegisteredFunctionJob] | None:
+    inputs: FunctionInputsList,
+    status_filter: list[FunctionJobStatus] | None = None,
+) -> list[RegisteredFunctionJob | None]:
     returned_function_jobs = await _function_jobs_repository.find_cached_function_jobs(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
         inputs=inputs,
+        status_filter=status_filter,
     )
-    if returned_function_jobs is None or len(returned_function_jobs) == 0:
-        return None
+    assert len(returned_function_jobs) == len(inputs)  # nosec
 
-    to_return_function_jobs: list[RegisteredFunctionJob] = []
-    for returned_function_job in returned_function_jobs:
-        if returned_function_job.function_class == FunctionClass.PROJECT:
-            to_return_function_jobs.append(
-                RegisteredProjectFunctionJob(
-                    uid=returned_function_job.uuid,
-                    title=returned_function_job.title,
-                    description=returned_function_job.description,
-                    function_uid=returned_function_job.function_uuid,
-                    inputs=returned_function_job.inputs,
-                    outputs=None,
-                    project_job_id=returned_function_job.class_specific_data[
-                        "project_job_id"
-                    ],
-                    job_creation_task_id=returned_function_job.class_specific_data.get(
-                        "job_creation_task_id"
-                    ),
-                    created_at=returned_function_job.created,
-                )
+    def _map_db_model_to_domain_model(
+        job: RegisteredFunctionJobDB | None,
+    ) -> RegisteredFunctionJob | None:
+        if job is None:
+            return None
+        if job.function_class == FunctionClass.PROJECT:
+            return RegisteredProjectFunctionJob(
+                uid=job.uuid,
+                title=job.title,
+                description=job.description,
+                function_uid=job.function_uuid,
+                inputs=job.inputs,
+                outputs=None,
+                project_job_id=job.class_specific_data["project_job_id"],
+                job_creation_task_id=job.class_specific_data.get(
+                    "job_creation_task_id"
+                ),
+                created_at=job.created,
             )
-        elif returned_function_job.function_class == FunctionClass.SOLVER:
-            to_return_function_jobs.append(
-                RegisteredSolverFunctionJob(
-                    uid=returned_function_job.uuid,
-                    title=returned_function_job.title,
-                    description=returned_function_job.description,
-                    function_uid=returned_function_job.function_uuid,
-                    inputs=returned_function_job.inputs,
-                    outputs=None,
-                    solver_job_id=returned_function_job.class_specific_data.get(
-                        "solver_job_id"
-                    ),
-                    job_creation_task_id=returned_function_job.class_specific_data.get(
-                        "job_creation_task_id"
-                    ),
-                    created_at=returned_function_job.created,
-                )
+        elif job.function_class == FunctionClass.SOLVER:
+            return RegisteredSolverFunctionJob(
+                uid=job.uuid,
+                title=job.title,
+                description=job.description,
+                function_uid=job.function_uuid,
+                inputs=job.inputs,
+                outputs=None,
+                solver_job_id=job.class_specific_data.get("solver_job_id"),
+                job_creation_task_id=job.class_specific_data.get(
+                    "job_creation_task_id"
+                ),
+                created_at=job.created,
             )
         else:
             raise UnsupportedFunctionJobClassError(
-                function_job_class=returned_function_job.function_class
+                function_job_class=job.function_class
             )
 
-    return to_return_function_jobs
+    return [_map_db_model_to_domain_model(job) for job in returned_function_jobs]
 
 
 async def get_function_input_schema(

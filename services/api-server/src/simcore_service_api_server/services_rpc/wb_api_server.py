@@ -24,6 +24,7 @@ from models_library.api_schemas_api_server.functions import (
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.functions import (
+    FunctionInputsList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
@@ -588,13 +589,15 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
         function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> list[RegisteredFunctionJob] | None:
+        inputs: FunctionInputsList,
+        status_filter: list[FunctionJobStatus] | None,
+    ) -> list[RegisteredFunctionJob | None]:
         return await self._rpc_client.functions.find_cached_function_jobs(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
             inputs=inputs,
+            status_filter=status_filter,
         )
 
     async def get_function_job_collection(

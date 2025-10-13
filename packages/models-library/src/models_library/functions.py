@@ -80,7 +80,7 @@ FunctionInputs: TypeAlias = dict[str, Any] | None
 
 FunctionInputsList: TypeAlias = Annotated[
     list[FunctionInputs],
-    Field(max_length=50),
+    Field(max_length=50, min_length=1),
 ]
 
 FunctionOutputs: TypeAlias = dict[str, Any] | None

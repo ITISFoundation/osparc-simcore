@@ -443,7 +443,7 @@ async def test_find_cached_function_jobs(
     # Find cached function jobs
     cached_jobs = await webserver_rpc_client.functions.find_cached_function_jobs(
         function_id=registered_function.uid,
-        inputs={"input1": 1},
+        inputs=[{"input1": 1}, {"input1": 10}],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
@@ -451,20 +451,91 @@ async def test_find_cached_function_jobs(
     # Assert the cached jobs contain the registered job
     assert cached_jobs is not None
     assert len(cached_jobs) == 2
-    assert {job.uid for job in cached_jobs} == {
-        registered_function_jobs[1].uid,
-        registered_function_jobs[4].uid,
-    }
+    job0 = cached_jobs[0]
+    assert job0 is not None
+    assert job0.inputs == {"input1": 1}
+    assert cached_jobs[1] is None
 
     cached_jobs = await webserver_rpc_client.functions.find_cached_function_jobs(
         function_id=registered_function.uid,
-        inputs={"input1": 1},
+        inputs=[{"input1": 1}, {"input1": 10}],
         user_id=other_logged_user["id"],
         product_name=osparc_product_name,
     )
 
     # Assert the cached jobs does not contain the registered job for the other user
-    assert cached_jobs is None
+    assert len(cached_jobs) == 2
+    assert all(elm is None for elm in cached_jobs)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_find_cached_function_jobs_with_status(
+    client: TestClient,
+    webserver_rpc_client: WebServerRpcClient,
+    add_user_function_api_access_rights: None,
+    logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    create_fake_function_obj: Callable[[FunctionClass], Function],
+    clean_functions: None,
+):
+    # Register the function first
+    job_statuses = [
+        FunctionJobStatus(status="RUNNING"),
+        FunctionJobStatus(status="FAILED"),
+    ]
+    registered_function = await webserver_rpc_client.functions.register_function(
+        function=create_fake_function_obj(FunctionClass.PROJECT),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    input = {"input1": 1.0}
+
+    for status in job_statuses:
+        function_job = ProjectFunctionJob(
+            function_uid=registered_function.uid,
+            title="Test Function Job",
+            description="A test function job",
+            project_job_id=uuid4(),
+            inputs=input,
+            outputs={"output1": "result1"},
+            job_creation_task_id=None,
+        )
+
+        # Register the function job
+        registered_job = await webserver_rpc_client.functions.register_function_job(
+            function_job=function_job,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
+        await webserver_rpc_client.functions.update_function_job_status(
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            function_job_id=registered_job.uid,
+            job_status=status,
+        )
+
+    status = job_statuses[0]
+    cached_jobs = await webserver_rpc_client.functions.find_cached_function_jobs(
+        function_id=registered_function.uid,
+        product_name=osparc_product_name,
+        user_id=logged_user["id"],
+        inputs=[input],
+        status_filter=[status],
+    )
+    assert len(cached_jobs) == 1
+    cached_job = cached_jobs[0]
+    assert cached_job is not None
+    assert cached_job.inputs == input
+    cached_job_status = await webserver_rpc_client.functions.get_function_job_status(
+        product_name=osparc_product_name,
+        function_job_id=cached_job.uid,
+        user_id=logged_user["id"],
+    )
+    assert status == cached_job_status
 
 
 @pytest.mark.parametrize(

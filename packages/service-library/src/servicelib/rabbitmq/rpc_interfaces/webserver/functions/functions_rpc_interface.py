@@ -21,6 +21,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     FunctionClass,
     FunctionGroupAccessRights,
+    FunctionInputsList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
@@ -512,20 +513,20 @@ async def find_cached_function_jobs(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    inputs: FunctionInputs,
-) -> list[RegisteredFunctionJob] | None:
+    inputs: FunctionInputsList,
+    status_filter: list[FunctionJobStatus] | None = None,
+) -> list[RegisteredFunctionJob | None]:
     result = await rabbitmq_rpc_client.request(
         DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("find_cached_function_jobs"),
         function_id=function_id,
         inputs=inputs,
+        status_filter=status_filter,
         user_id=user_id,
         product_name=product_name,
         timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
     )
-    if result is None:
-        return None
-    return TypeAdapter(list[RegisteredFunctionJob]).validate_python(result)
+    return TypeAdapter(list[RegisteredFunctionJob | None]).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

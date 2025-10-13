@@ -7,8 +7,8 @@ from models_library.functions import (
     FunctionClass,
     FunctionGroupAccessRights,
     FunctionID,
-    FunctionInputs,
     FunctionInputSchema,
+    FunctionInputsList,
     FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
@@ -445,15 +445,19 @@ async def find_cached_function_jobs(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    inputs: FunctionInputs,
-) -> list[RegisteredFunctionJob] | None:
-    return await _functions_service.find_cached_function_jobs(
+    inputs: FunctionInputsList,
+    status_filter: list[FunctionJobStatus] | None,
+) -> list[RegisteredFunctionJob | None]:
+    jobs = await _functions_service.find_cached_function_jobs(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
         inputs=inputs,
+        status_filter=status_filter,
     )
+    assert len(jobs) == len(inputs)  # nosec
+    return jobs
 
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
