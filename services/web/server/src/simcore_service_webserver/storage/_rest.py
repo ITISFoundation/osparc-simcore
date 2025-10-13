@@ -501,7 +501,7 @@ def _allow_only_simcore(v: int) -> int:
 
 
 @routes.post(
-    _storage_locations_prefix + "/{location_id}/export-data", name="export_data"
+    _storage_locations_prefix + "/{location_id}:export-data", name="export_data"
 )
 @login_required
 @permission_required("storage.files.*")

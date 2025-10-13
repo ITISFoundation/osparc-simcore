@@ -7972,7 +7972,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
-  /v0/storage/locations/{location_id}/export-data:
+  /v0/storage/locations/{location_id}:export-data:
     post:
       tags:
       - storage

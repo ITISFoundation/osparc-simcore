@@ -472,7 +472,7 @@ async def test_export_data(
         paths=[Path(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")]
     )
     response = await client.post(
-        f"/{API_VERSION}/storage/locations/0/export-data", data=_body.model_dump_json()
+        f"/{API_VERSION}/storage/locations/0:export-data", data=_body.model_dump_json()
     )
     assert response.status == expected_status
     if response.status == status.HTTP_202_ACCEPTED:
@@ -614,7 +614,7 @@ async def test_get_async_job_links(
         paths=[PathToExport(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")]
     )
     response = await client.post(
-        f"/{API_VERSION}/storage/locations/0/export-data", data=_body.model_dump_json()
+        f"/{API_VERSION}/storage/locations/0:export-data", data=_body.model_dump_json()
     )
     assert response.status == status.HTTP_202_ACCEPTED
     response_body_data = Envelope[TaskGet].model_validate(await response.json()).data

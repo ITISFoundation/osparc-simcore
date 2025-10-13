@@ -225,7 +225,7 @@ _RESPONSES: Final[dict[int | str, dict[str, Any]]] = {
 
 
 @router.post(
-    "/storage/locations/{location_id}/export-data",
+    "/storage/locations/{location_id}:export-data",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=Envelope[TaskGet],
     name="export_data",
