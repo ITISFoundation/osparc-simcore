@@ -703,6 +703,7 @@ async def batch_get_user_services(
 
     Raises:
         CatalogItemNotFoundError: When no services are found at all
+        ValidationError: if the ids are empty
     """
     unique_service_identifiers = _BatchIdsValidator.validate_python(ids)
 
