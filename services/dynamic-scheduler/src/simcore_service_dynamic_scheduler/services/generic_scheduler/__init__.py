@@ -20,6 +20,7 @@ from ._models import (
     OperationToStart,
     ProvidedOperationContext,
     RequiredOperationContext,
+    ReservedContextKeys,
     ScheduleId,
 )
 from ._operation import (
@@ -44,10 +45,10 @@ __all__: tuple[str, ...] = (
     "get_operation_name_or_none",
     "get_step_group_proxy",
     "get_step_store_proxy",
+    "NoDataFoundError",
     "Operation",
     "OperationContextProxy",
     "OperationName",
-    "NoDataFoundError",
     "OperationRegistry",
     "OperationToStart",
     "ParallelStepGroup",
@@ -55,6 +56,7 @@ __all__: tuple[str, ...] = (
     "register_to_start_after_on_executed_completed",
     "register_to_start_after_on_reverted_completed",
     "RequiredOperationContext",
+    "ReservedContextKeys",
     "restart_operation_step_stuck_during_revert",
     "restart_operation_step_stuck_in_manual_intervention_during_execute",
     "ScheduleId",
