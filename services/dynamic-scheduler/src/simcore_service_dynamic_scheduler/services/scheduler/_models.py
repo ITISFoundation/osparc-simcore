@@ -1,6 +1,9 @@
 from enum import auto
+from typing import TypeAlias
 
 from models_library.utils.enums import StrAutoEnum
+
+SchedulerOperationName: TypeAlias = str
 
 
 class DesiredState(StrAutoEnum):

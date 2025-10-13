@@ -1,4 +1,4 @@
-from ._error import UnexpectedCouldNotDetermineOperationTypeError
+from ._errors import UnexpectedCouldNotDetermineOperationTypeError
 from ._models import OperationType, SchedulerOperationName
 
 

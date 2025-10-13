@@ -3,7 +3,7 @@
 
 
 import pytest
-from simcore_service_dynamic_scheduler.services.scheduler._error import (
+from simcore_service_dynamic_scheduler.services.scheduler._errors import (
     UnexpectedCouldNotDetermineOperationTypeError,
 )
 from simcore_service_dynamic_scheduler.services.scheduler._models import OperationType
