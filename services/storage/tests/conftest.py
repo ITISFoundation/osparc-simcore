@@ -24,8 +24,8 @@ from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
-from celery.worker.worker import WorkController
 from celery_library.signals import on_worker_init, on_worker_shutdown
+from celery_library.utils import set_app_server
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -1027,8 +1027,9 @@ async def with_storage_celery_worker(
         app=create_app(app_settings, tracing_config=tracing_config)
     )
 
-    def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
-        return on_worker_init(sender, app_server, **_kwargs)
+    def _on_worker_init_wrapper(**kwargs):
+        set_app_server(celery_app, app_server)
+        return on_worker_init(app_server, **kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)
