@@ -1,5 +1,4 @@
 # pylint: disable=too-many-instance-attributes
-import contextlib
 import logging
 from dataclasses import dataclass
 
@@ -10,6 +9,7 @@ from models_library.functions import (
     FunctionClass,
     FunctionID,
     FunctionInputs,
+    FunctionInputsList,
     FunctionJobCollectionID,
     FunctionJobID,
     FunctionJobStatus,
@@ -329,7 +329,7 @@ class FunctionJobTaskClientService:
         self,
         *,
         function: RegisteredFunction,
-        function_inputs: FunctionInputs,
+        function_inputs: FunctionInputsList,
         user_identity: Identity,
         pricing_spec: JobPricingSpecification | None,
         job_links: JobLinks,
@@ -340,12 +340,13 @@ class FunctionJobTaskClientService:
             function=function, function_inputs=function_inputs
         )
 
-        # check if results are cached
-        with contextlib.suppress(FunctionJobCacheNotFoundError):
-            return await self.get_cached_function_job(
-                function=function,
-                job_inputs=job_inputs,
-            )
+        cached_jobs = await self._web_rpc_client.find_cached_function_jobs(
+            user_id=user_identity.user_id,
+            product_name=user_identity.product_name,
+            function_id=function.uid,
+            inputs=function_inputs,
+            status_filter=[FunctionJobStatus(status=RunningState.SUCCESS)],
+        )
 
         pre_registered_function_job_data = (
             await self._function_job_service.pre_register_function_job(
