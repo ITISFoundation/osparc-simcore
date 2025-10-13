@@ -33,7 +33,6 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from tenacity import (
     AsyncRetrying,
-    Retrying,
     retry_if_exception_type,
     stop_after_delay,
     wait_fixed,
@@ -157,7 +156,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
         files=[f"file{n}" for n in range(5)],
     )
 
-    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
@@ -184,12 +183,7 @@ async def test_submitting_task_with_failure_results_with_error(
         owner_metadata=owner_metadata,
     )
 
-    for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(1),
-        stop=stop_after_delay(30),
-    ):
-
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             raw_result = await task_manager.get_task_result(owner_metadata, task_uuid)
             assert isinstance(raw_result, TransferrableCeleryError)
@@ -238,7 +232,7 @@ async def test_listing_task_uuids_contains_submitted_task(
         owner_metadata=owner_metadata,
     )
 
-    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             tasks = await task_manager.list_tasks(owner_metadata)
             assert any(task.uuid == task_uuid for task in tasks)
@@ -372,7 +366,7 @@ async def test_pull_task_stream_items_with_limit(
     )
 
     # Wait for task to complete
-    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
