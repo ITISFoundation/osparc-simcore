@@ -94,7 +94,7 @@ def list_pre_pulled_images_tag_keys(tags: EC2Tags) -> list[AWSTagKey]:
     return [
         TypeAdapter(AWSTagKey).validate_python(key)
         for key in tags
-        if PRE_PULLED_IMAGES_RE.match(key)
+        if PRE_PULLED_IMAGES_EC2_TAG_KEY in key
     ]
 
 
