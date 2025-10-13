@@ -2,8 +2,8 @@
 
 from dataclasses import dataclass
 
-from celery import Celery
-from celery.signals import (  # type: ignore[import-untyped]
+from celery import Celery  # pylint: disable=no-name-in-module
+from celery.signals import (  # pylint: disable=no-name-in-module
     worker_process_init,
     worker_process_shutdown,
 )
