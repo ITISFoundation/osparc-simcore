@@ -131,6 +131,20 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control.addListener("execute", this.__addCommentPressed, this);
           this.getChildControl("add-comment-layout").add(control);
           break;
+        case "footer-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignY: "middle"
+          }));
+          this._add(control);
+          break;
+        case "no-permission-label":
+          control = new qx.ui.basic.Label(this.tr("Only users with write access can add comments.")).set({
+            allowGrowX: true,
+          });
+          this.getChildControl("footer-layout").addAt(control, 0, {
+            flex: 1
+          });
+          break;
         case "notify-user-button":
           control = new qx.ui.form.Button("🔔 " + this.tr("Notify user")).set({
             appearance: "form-button",
@@ -138,7 +152,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
             alignX: "right",
           });
           control.addListener("execute", () => this.__notifyUserTapped());
-          this._add(control);
+          this.getChildControl("footer-layout").addAt(control, 1);
           break;
       }
 
@@ -152,13 +166,16 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __applyStudyData: function(studyData) {
+      const noPermissionLabel = this.getChildControl("no-permission-label");
       const notifyUserButton = this.getChildControl("notify-user-button");
       if (studyData) {
         const canIWrite = osparc.data.model.Study.canIWrite(studyData["accessRights"])
         this.getChildControl("add-comment-button").setEnabled(canIWrite);
+        noPermissionLabel.setVisibility(canIWrite ? "hidden" : "visible");
         notifyUserButton.show();
         notifyUserButton.setEnabled(canIWrite);
       } else {
+        noPermissionLabel.hide();
         notifyUserButton.exclude();
       }
     },

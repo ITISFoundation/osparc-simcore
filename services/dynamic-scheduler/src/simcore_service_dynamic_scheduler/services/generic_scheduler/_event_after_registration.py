@@ -16,7 +16,7 @@ def _get_after_event_manager(app: FastAPI) -> "AfterEventManager":
 
 
 async def register_to_start_after_on_executed_completed(
-    app: FastAPI, schedule_id: ScheduleId, *, to_start: OperationToStart
+    app: FastAPI, schedule_id: ScheduleId, *, to_start: OperationToStart | None
 ) -> None:
     await _get_after_event_manager(app).register_to_start_after(
         schedule_id, EventType.ON_EXECUTEDD_COMPLETED, to_start=to_start
@@ -24,7 +24,7 @@ async def register_to_start_after_on_executed_completed(
 
 
 async def register_to_start_after_on_reverted_completed(
-    app: FastAPI, schedule_id: ScheduleId, *, to_start: OperationToStart
+    app: FastAPI, schedule_id: ScheduleId, *, to_start: OperationToStart | None
 ) -> None:
     await _get_after_event_manager(app).register_to_start_after(
         schedule_id, EventType.ON_REVERT_COMPLETED, to_start=to_start
