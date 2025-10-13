@@ -299,12 +299,13 @@ async def get_function_outputschema(
 async def validate_function_inputs(
     function_id: FunctionID,
     inputs: FunctionInputs,
+    function: Annotated[RegisteredFunction, Depends(get_function)],
     function_job_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
 ) -> tuple[bool, str]:
     return await function_job_service.validate_function_inputs(
-        function_id=function_id,
+        function=function,
         inputs=inputs,
     )
 

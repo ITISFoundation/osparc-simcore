@@ -358,10 +358,10 @@ class FunctionJobTaskClientService:
             input_ for input_, job in zip(inputs, cached_jobs) if job is None
         ]
 
-        pre_registered_function_job_data = (
+        pre_registered_function_job_data_list = (
             await self._function_job_service.pre_register_function_job(
                 function=function,
-                job_inputs=job_inputs,
+                job_inputs=uncached_inputs,
             )
         )
 
@@ -370,27 +370,29 @@ class FunctionJobTaskClientService:
         owner_metadata = ApiServerOwnerMetadata(
             user_id=user_identity.user_id, product_name=user_identity.product_name
         )
-
-        task_uuid = await self._celery_task_manager.submit_task(
-            ExecutionMetadata(
-                name="run_function",
-                ephemeral=False,
-                queue=TasksQueue.API_WORKER_QUEUE,
-            ),
-            owner_metadata=owner_metadata,
-            user_identity=user_identity,
-            function=function,
-            pre_registered_function_job_data=pre_registered_function_job_data,
-            pricing_spec=pricing_spec,
-            job_links=job_links,
-            x_simcore_parent_project_uuid=parent_project_uuid,
-            x_simcore_parent_node_id=parent_node_id,
-        )
+        task_uuids = [
+            await self._celery_task_manager.submit_task(
+                ExecutionMetadata(
+                    name="run_function",
+                    ephemeral=False,
+                    queue=TasksQueue.API_WORKER_QUEUE,
+                ),
+                owner_metadata=owner_metadata,
+                user_identity=user_identity,
+                function=function,
+                pre_registered_function_job_data=pre_registered_function_job_data,
+                pricing_spec=pricing_spec,
+                job_links=job_links,
+                x_simcore_parent_project_uuid=parent_project_uuid,
+                x_simcore_parent_node_id=parent_node_id,
+            )
+            for pre_registered_function_job_data in pre_registered_function_job_data_list
+        ]
 
         return await self._function_job_service.patch_registered_function_job(
             user_id=user_identity.user_id,
             product_name=user_identity.product_name,
-            function_job_id=pre_registered_function_job_data.function_job_id,
+            function_job_id=pre_registered_function_job_data_list.function_job_id,
             function_class=function.function_class,
             job_creation_task_id=TaskID(task_uuid),
         )

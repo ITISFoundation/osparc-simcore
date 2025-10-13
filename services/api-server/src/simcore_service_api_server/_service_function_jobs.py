@@ -9,6 +9,7 @@ from models_library.functions import (
     FunctionInputs,
     FunctionJobCollectionID,
     FunctionJobID,
+    FunctionJobList,
     FunctionSchemaClass,
     ProjectFunctionJob,
     RegisteredFunction,
@@ -30,7 +31,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
 
@@ -91,13 +92,8 @@ class FunctionJobService:
         )
 
     async def validate_function_inputs(
-        self, *, function_id: FunctionID, inputs: FunctionInputs
+        self, *, function: RegisteredFunction, job_inputs: list[JobInputs]
     ) -> tuple[bool, str]:
-        function = await self._web_rpc_client.get_function(
-            function_id=function_id,
-            user_id=self.user_id,
-            product_name=self.product_name,
-        )
 
         if (
             function.input_schema is None
@@ -107,8 +103,12 @@ class FunctionJobService:
 
         if function.input_schema.schema_class == FunctionSchemaClass.json_schema:
             try:
-                jsonschema.validate(
-                    instance=inputs, schema=function.input_schema.schema_content
+                all(
+                    jsonschema.validate(
+                        instance=input.values,
+                        schema=function.input_schema.schema_content,
+                    )
+                    for input in job_inputs
                 )
             except ValidationError as err:
                 return False, str(err)
@@ -137,42 +137,54 @@ class FunctionJobService:
         self,
         *,
         function: RegisteredFunction,
-        job_inputs: JobInputs,
-    ) -> PreRegisteredFunctionJobData:
+        job_inputs: list[JobInputs],
+    ) -> list[PreRegisteredFunctionJobData]:
 
         if function.input_schema is not None:
             is_valid, validation_str = await self.validate_function_inputs(
-                function_id=function.uid,
-                inputs=job_inputs.values,
+                function=function,
+                job_inputs=job_inputs,
             )
             if not is_valid:
                 raise FunctionInputsValidationError(error=validation_str)
 
         if function.function_class == FunctionClass.PROJECT:
-            job = await self._web_rpc_client.register_function_job(
-                function_job=ProjectFunctionJob(
+            function_jobs = [
+                ProjectFunctionJob(
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=job_inputs.values,
+                    inputs=input_.values,
                     outputs=None,
                     project_job_id=None,
                     job_creation_task_id=None,
+                )
+                for input_ in job_inputs
+            ]
+            jobs = await self._web_rpc_client.register_function_job(
+                function_jobs=TypeAdapter(FunctionJobList).validate_python(
+                    function_jobs
                 ),
                 user_id=self.user_id,
                 product_name=self.product_name,
             )
 
         elif function.function_class == FunctionClass.SOLVER:
-            job = await self._web_rpc_client.register_function_job(
-                function_job=SolverFunctionJob(
+            function_jobs = [
+                SolverFunctionJob(
                     function_uid=function.uid,
                     title=f"Function job of function {function.uid}",
                     description=function.description,
-                    inputs=job_inputs.values,
+                    inputs=input_.values,
                     outputs=None,
                     solver_job_id=None,
                     job_creation_task_id=None,
+                )
+                for input_ in job_inputs
+            ]
+            jobs = await self._web_rpc_client.register_function_job(
+                function_jobs=TypeAdapter(FunctionJobList).validate_python(
+                    function_jobs
                 ),
                 user_id=self.user_id,
                 product_name=self.product_name,
@@ -182,10 +194,13 @@ class FunctionJobService:
                 function_class=function.function_class,
             )
 
-        return PreRegisteredFunctionJobData(
-            function_job_id=job.uid,
-            job_inputs=job_inputs,
-        )
+        return [
+            PreRegisteredFunctionJobData(
+                function_job_id=job.uid,
+                job_inputs=input_,
+            )
+            for job, input_ in zip(jobs, job_inputs)
+        ]
 
     @overload
     async def patch_registered_function_job(

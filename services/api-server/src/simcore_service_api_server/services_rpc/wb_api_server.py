@@ -12,7 +12,6 @@ from models_library.api_schemas_api_server.functions import (
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
-    FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
@@ -25,10 +24,12 @@ from models_library.api_schemas_api_server.functions import (
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.functions import (
     FunctionInputsList,
+    FunctionJobList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
+    RegisteredFunctionJobList,
     RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
 )
@@ -482,12 +483,16 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         )
 
     async def register_function_job(
-        self, *, user_id: UserID, function_job: FunctionJob, product_name: ProductName
-    ) -> RegisteredFunctionJob:
+        self,
+        *,
+        user_id: UserID,
+        function_jobs: FunctionJobList,
+        product_name: ProductName,
+    ) -> RegisteredFunctionJobList:
         return await self._rpc_client.functions.register_function_job(
             user_id=user_id,
             product_name=product_name,
-            function_job=function_job,
+            function_jobs=function_jobs,
         )
 
     async def patch_registered_function_job(
