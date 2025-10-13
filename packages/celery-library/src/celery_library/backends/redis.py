@@ -205,14 +205,13 @@ class RedisTaskStore:
             pipe.lpop(stream_key, limit)
             pipe.hget(meta_key, _CELERY_TASK_STREAM_DONE_KEY)
             pipe.hget(meta_key, _CELERY_TASK_STREAM_LAST_UPDATE_KEY)
-            raw_items, _, done, last_update = await pipe.execute()
+            raw_items, done, last_update = await pipe.execute()
 
-        stream_items = [TaskStreamItem.model_validate_json(item) for item in raw_items]
-
-        if stream_items:
-            await handle_redis_returns_union_types(
-                self._redis_client_sdk.redis.ltrim(stream_key, len(stream_items), -1)
-            )
+        stream_items = (
+            [TaskStreamItem.model_validate_json(item) for item in raw_items]
+            if raw_items
+            else []
+        )
 
         empty = (
             await handle_redis_returns_union_types(

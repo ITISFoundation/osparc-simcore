@@ -318,7 +318,7 @@ async def test_push_task_result_streams_data_during_execution(
 
     # Pull results while task is running, retry until is_done is True
     results = []
-    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             result, is_done, _ = await task_manager.pull_task_stream_items(
                 owner_metadata, task_uuid, limit=10
@@ -334,7 +334,7 @@ async def test_push_task_result_streams_data_during_execution(
         assert result.data.startswith("result-")
 
     # Wait for task completion
-    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
