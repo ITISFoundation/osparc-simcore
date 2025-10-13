@@ -121,7 +121,7 @@ qx.Class.define("osparc.support.SupportButton", {
         this.getChildControl("is-active-icon"),
       ].forEach(control => {
         control.set({
-          visibility: unread > 0 ? "visible" : "excluded"
+          visibility: unread ? "visible" : "excluded"
         });
       });
     },

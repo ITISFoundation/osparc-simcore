@@ -32,8 +32,8 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       projectId: conversationData.projectUuid || null,
       extraContext: conversationData.extraContext || null,
       fogbugzCaseId: conversationData.fogbugz_case_id || null,
-      readByUser: "isReadByUser" in conversationData ? Boolean(conversationData.isReadByUser) : false,
-      readBySupport: "isReadBySupport" in conversationData ? Boolean(conversationData.isReadBySupport) : false,
+      readByUser: Boolean(conversationData.isReadByUser),
+      readBySupport: Boolean(conversationData.isReadBySupport),
       resolved: null,
     });
 
