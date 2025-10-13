@@ -1049,9 +1049,13 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     )
                     yield file_meta
 
-        except S3KeyNotFoundError:
+        except S3KeyNotFoundError as exc:
             with log_context(
-                _logger, logging.DEBUG, f"Failed to search S3 for project {proj_id}"
+                _logger,
+                logging.DEBUG,
+                "Failed to search S3 for project %s: %s",
+                proj_id,
+                exc,
             ):
                 return
 
