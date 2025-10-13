@@ -48,7 +48,6 @@ qx.Class.define("osparc.support.Conversations", {
       ],
       init: "all",
       event: "changeCurrentFilter",
-      apply: "__applyCurrentFilter",
     },
   },
 
@@ -73,7 +72,7 @@ qx.Class.define("osparc.support.Conversations", {
       switch (id) {
         case "filters-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
-          this._add(control);
+          this._addAt(control, 0);
           break;
         case "filter-all-button":
           control = new qx.ui.form.ToggleButton(this.tr("All"));
@@ -82,7 +81,10 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show all conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => this.setCurrentFilter("all"));
+          control.addListener("execute", () => {
+            this.setCurrentFilter("all");
+            this.__applyCurrentFilter("all");
+          });
           this.getChildControl("filters-layout").add(control);
           break;
         case "filter-unread-button":
@@ -91,7 +93,10 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show only unread conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => this.setCurrentFilter("unread"));
+          control.addListener("execute", () => {
+            this.setCurrentFilter("unread");
+            this.__applyCurrentFilter("unread");
+          });
           this.getChildControl("filters-layout").add(control);
           break;
         case "filter-open-button":
@@ -100,16 +105,26 @@ qx.Class.define("osparc.support.Conversations", {
             toolTipText: this.tr("Show only open conversations"),
             ...this.self().FILTER_BUTTON_AESTHETIC,
           });
-          control.addListener("execute", () => this.setCurrentFilter("open"));
+          control.addListener("execute", () => {
+            this.setCurrentFilter("open");
+            this.__applyCurrentFilter("open");
+          });
           this.getChildControl("filters-layout").add(control);
           break;
         case "loading-button":
           control = new osparc.ui.form.FetchButton();
-          this._add(control);
+          this._addAt(control, 1);
+          break;
+        case "no-messages-label":
+          control = new qx.ui.basic.Label().set({
+            alignX: "center",
+            visibility: "excluded",
+          });
+          this._addAt(control, 2);
           break;
         case "conversations-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this._add(control, {
+          this._addAt(control, 3, {
             flex: 1
           });
           break;
@@ -119,19 +134,30 @@ qx.Class.define("osparc.support.Conversations", {
     },
 
     __applyCurrentFilter: function(filter) {
+      this.getChildControl("no-messages-label").exclude();
+
       this.__filterButtons.forEach(button => {
         button.setValue(false);
       });
+      switch (filter) {
+        case "all":
+          this.getChildControl("filter-all-button").setValue(true);
+          break;
+        case "unread":
+          this.getChildControl("filter-unread-button").setValue(true);
+          break;
+        case "open":
+          this.getChildControl("filter-open-button").setValue(true);
+          break;
+      }
 
       this.__conversationListItems.forEach(conversationItem => {
         const conversation = conversationItem.getConversation();
         switch (filter) {
           case "all":
-            this.getChildControl("filter-all-button").setValue(true);
             conversationItem.show();
             break;
           case "unread":
-            this.getChildControl("filter-unread-button").setValue(true);
             if (osparc.store.Groups.getInstance().amIASupportUser()) {
               if (conversation.getReadBySupport()) {
                 conversationItem.exclude();
@@ -147,7 +173,6 @@ qx.Class.define("osparc.support.Conversations", {
             }
             break;
           case "open":
-            this.getChildControl("filter-open-button").setValue(true);
             if (conversation.getResolved() === false) {
               conversationItem.show();
             } else {
@@ -156,6 +181,26 @@ qx.Class.define("osparc.support.Conversations", {
             break;
         }
       });
+
+      const hasVisibleConversations = this.__conversationListItems.some(conversationItem => conversationItem.isVisible());
+      if (!hasVisibleConversations) {
+        let msg = "";
+        switch (filter) {
+          case "all":
+            msg = this.tr("No conversations yet");
+            break;
+          case "unread":
+            msg = this.tr("No unread conversations");
+            break;
+          case "open":
+            msg = this.tr("No open conversations");
+            break;
+        }
+        this.getChildControl("no-messages-label").set({
+          value: msg,
+          visibility: "visible",
+        });
+      }
     },
 
     __getConversationItem: function(conversationId) {
@@ -176,6 +221,7 @@ qx.Class.define("osparc.support.Conversations", {
         .finally(() => {
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
+          this.__applyCurrentFilter(this.getCurrentFilter());
         });
     },
 
@@ -200,9 +246,7 @@ qx.Class.define("osparc.support.Conversations", {
       conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationId, this));
       conversation.addListener("changeModified", () => this.__sortConversations(), this);
       const eventName = osparc.store.Groups.getInstance().amIASupportUser() ? "changeReadBySupport" : "changeReadByUser";
-      conversation.addListener(eventName, e => {
-        this.__applyCurrentFilter(this.getCurrentFilter());
-      }, this);
+      conversation.addListener(eventName, () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       conversation.addListener("changeResolved", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       this.__conversationListItems.push(conversationListItem);
       return conversationListItem;
