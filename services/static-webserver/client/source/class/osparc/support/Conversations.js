@@ -257,8 +257,10 @@ qx.Class.define("osparc.support.Conversations", {
       conversationsLayout.removeAll();
       // sort them by modified date (newest first)
       this.__conversationListItems.sort((a, b) => {
-        const aDate = new Date(a.getConversation().getModified());
-        const bDate = new Date(b.getConversation().getModified());
+        const aConversation = a.getConversation();
+        const bConversation = b.getConversation();
+        const aDate = aConversation.getLastMessageCreatedAt() || aConversation.getModified();
+        const bDate = bConversation.getLastMessageCreatedAt() || bConversation.getModified();
         return bDate - aDate;
       });
       this.__conversationListItems.forEach(item => conversationsLayout.add(item));
