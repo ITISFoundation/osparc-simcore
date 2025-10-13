@@ -407,17 +407,17 @@ async def _cancel_previous_pulling_command_if_any(
     ssm_client = get_ssm_client(app)
     ec2_client = get_ec2_client(app)
     command_id = instance.tags[MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY]
-    command = await ssm_client.get_command(instance.id, command_id)
+    command = await ssm_client.get_command(instance.id, command_id=command_id)
     if command.status in ("Pending", "InProgress"):
         with log_context(
             _logger,
             logging.INFO,
             msg=f"cancelling previous pulling {command_id} on {instance.id}",
         ):
-            await ssm_client.cancel_command(instance.id, command_id)
+            await ssm_client.cancel_command(instance.id, command_id=command_id)
         await ec2_client.remove_instances_tags(
             [instance],
-            tags=[
+            tag_keys=[
                 MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
                 MACHINE_PULLING_EC2_TAG_KEY,
                 *list_pre_pulled_images_tag_keys(instance.tags),
