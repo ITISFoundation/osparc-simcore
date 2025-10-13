@@ -271,7 +271,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         if (amISupporter) {
           const resolveCaseButton = this.getChildControl("resolve-case-button");
           conversation.bind("resolved", resolveCaseButton, "visibility", {
-            converter: val => val !== true ? "visible" : "excluded"
+            converter: val => val === false ? "visible" : "excluded"
           });
         }
       }
