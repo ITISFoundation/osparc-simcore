@@ -30,7 +30,7 @@ def test_equivalent_enums_are_not_strictly_equal():
 #
 # Here two equivalent enum BUT of type str-enum
 #
-# SEE from models_library.utils.enums.AutoStrEnum
+# SEE from models_library.utils.enums.StrAutoEnum
 # SEE https://docs.pydantic.dev/dev-v2/usage/types/enums/
 #
 

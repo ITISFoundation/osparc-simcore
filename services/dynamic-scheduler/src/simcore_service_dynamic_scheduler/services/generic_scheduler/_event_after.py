@@ -5,6 +5,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
 
 from ._core import start_operation
+from ._errors import OperationInitialContextKeyNotFoundError
 from ._models import (
     EventType,
     OperationContext,
@@ -50,7 +51,12 @@ class AfterEventManager(SingletonInAppStateMixin):
             return
 
         # ensure operation exists
-        OperationRegistry.get_operation(to_start.operation_name)
+        operation = OperationRegistry.get_operation(to_start.operation_name)
+        for required_key in operation.initial_context_required_keys:
+            if required_key not in to_start.initial_context:
+                raise OperationInitialContextKeyNotFoundError(
+                    operation_name=to_start.operation_name, required_key=required_key
+                )
 
         await events_proxy.create_or_update_multiple(
             {

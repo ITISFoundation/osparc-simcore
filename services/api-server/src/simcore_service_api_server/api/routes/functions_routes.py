@@ -343,6 +343,10 @@ async def run_function(
         else None
     )
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
+
+    await function_service.check_execute_function_permission(
+        function=to_run_function,
+    )
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
 
     return await function_job_task_client_service.create_function_job_creation_task(
@@ -418,6 +422,10 @@ async def map_function(
         else None
     )
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
+
+    await function_service.check_execute_function_permission(
+        function=to_run_function,
+    )
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
 
     async def _run_single_function(function_inputs: FunctionInputs) -> FunctionJobID:
