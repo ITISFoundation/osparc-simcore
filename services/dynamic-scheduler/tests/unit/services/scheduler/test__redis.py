@@ -81,8 +81,8 @@ async def test_redis_service_state(
     assert await state_manager.read("desired_state") is None
     assert await state_manager.read("desired_start_data") is None
     assert await state_manager.read("desired_stop_data") is None
-    assert await state_manager.read("curent_start_data") is None
-    assert await state_manager.read("curent_stop_data") is None
+    assert await state_manager.read("current_start_data") is None
+    assert await state_manager.read("current_stop_data") is None
     assert await state_manager.read("current_schedule_id") is None
     # reading does not create items
     assert await state_manager.exists() is False
@@ -93,16 +93,19 @@ async def test_redis_service_state(
     assert await state_manager.exists() is True
     assert await state_manager.read("desired_state") == DesiredState.RUNNING
 
+    await state_manager.create_or_update("current_state", DesiredState.STOPPED)
+    assert await state_manager.read("current_state") == DesiredState.STOPPED
+
     await state_manager.create_or_update("current_schedule_id", schedule_id)
     assert await state_manager.read("current_schedule_id") == schedule_id
 
-    await state_manager.create_or_update("curent_start_data", dynamic_service_start)
-    assert await state_manager.read("curent_start_data") == dynamic_service_start
+    await state_manager.create_or_update("current_start_data", dynamic_service_start)
+    assert await state_manager.read("current_start_data") == dynamic_service_start
     await state_manager.create_or_update("desired_start_data", dynamic_service_start)
     assert await state_manager.read("desired_start_data") == dynamic_service_start
 
-    await state_manager.create_or_update("curent_stop_data", dynamic_service_stop)
-    assert await state_manager.read("curent_stop_data") == dynamic_service_stop
+    await state_manager.create_or_update("current_stop_data", dynamic_service_stop)
+    assert await state_manager.read("current_stop_data") == dynamic_service_stop
     await state_manager.create_or_update("desired_stop_data", dynamic_service_stop)
     assert await state_manager.read("desired_stop_data") == dynamic_service_stop
     # still true regardless of how many entries
@@ -120,8 +123,9 @@ async def test_redis_service_state(
             "desired_stop_data": dynamic_service_stop,
             "desired_start_data": dynamic_service_start,
             "current_schedule_id": schedule_id,
-            "curent_start_data": dynamic_service_start,
-            "curent_stop_data": dynamic_service_stop,
+            "current_state": DesiredState.STOPPED,
+            "current_start_data": dynamic_service_start,
+            "current_stop_data": dynamic_service_stop,
         }
     )
     assert await state_manager.exists() is True
@@ -129,8 +133,9 @@ async def test_redis_service_state(
     assert await state_manager.read("desired_start_data") == dynamic_service_start
     assert await state_manager.read("desired_stop_data") == dynamic_service_stop
     assert await state_manager.read("current_schedule_id") == schedule_id
-    assert await state_manager.read("curent_start_data") == dynamic_service_start
-    assert await state_manager.read("curent_stop_data") == dynamic_service_stop
+    assert await state_manager.read("current_state") == DesiredState.STOPPED
+    assert await state_manager.read("current_start_data") == dynamic_service_start
+    assert await state_manager.read("current_stop_data") == dynamic_service_stop
 
     # 5. remove nothig is presnet any longer
     await state_manager.delete()
