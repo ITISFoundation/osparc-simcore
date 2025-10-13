@@ -74,7 +74,7 @@ qx.Class.define("osparc.store.Groups", {
   members: {
     groupsCached: null,
 
-    __fetchGroups: function() {
+    fetchGroups: function() {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
           resolve([]);
@@ -142,7 +142,7 @@ qx.Class.define("osparc.store.Groups", {
 
     fetchGroupsAndMembers: function() {
       return new Promise(resolve => {
-        this.__fetchGroups()
+        this.fetchGroups()
           .then(orgs => {
             // reset Users
             const usersStore = osparc.store.Users.getInstance();

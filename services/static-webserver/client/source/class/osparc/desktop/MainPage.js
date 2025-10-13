@@ -52,6 +52,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
     navBar.addListener("openLogger", () => this.__openLogger(), this);
     this._add(navBar);
+    navBarPromises.push(osparc.store.Groups.getInstance().fetchGroups());
     navBarPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
     navBarPromises.push(osparc.store.Jobs.getInstance().fetchJobsLatest());
     navBarPromises.push(osparc.store.ConversationsSupport.getInstance().fetchConversations());
