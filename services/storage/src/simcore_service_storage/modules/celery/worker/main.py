@@ -24,16 +24,24 @@ _tracing_config = TracingConfig.create(
     service_name="storage-celery-worker",
 )
 
-setup_loggers(
-    log_format_local_dev_enabled=_settings.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
-    logger_filter_mapping=_settings.STORAGE_LOG_FILTER_MAPPING,
-    tracing_config=_tracing_config,
-    log_base_level=_settings.log_level,
-    noisy_loggers=None,
-)
 
-assert _settings.STORAGE_CELERY  # nosec
-app = create_celery_app(_settings.STORAGE_CELERY)
+def get_app():
+    setup_loggers(
+        log_format_local_dev_enabled=_settings.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=_settings.STORAGE_LOG_FILTER_MAPPING,
+        tracing_config=_tracing_config,
+        log_base_level=_settings.log_level,
+        noisy_loggers=None,
+    )
+
+    assert _settings.STORAGE_CELERY  # nosec
+    app = create_celery_app(_settings.STORAGE_CELERY)
+    setup_worker_tasks(app)
+
+    return app
+
+
+the_app = get_app()
 
 
 @worker_init.connect
@@ -41,15 +49,12 @@ app = create_celery_app(_settings.STORAGE_CELERY)
 def worker_init_wrapper(**kwargs):
     fastapi_app = create_app(_settings, tracing_config=_tracing_config)
     app_server = FastAPIAppServer(app=fastapi_app)
-    set_app_server(app, app_server)
+    set_app_server(the_app, app_server)
     return on_worker_init(app_server, **kwargs)
 
 
 @worker_shutdown.connect
 @worker_process_shutdown.connect
 def worker_shutdown_wrapper(**kwargs):
-    app_server = get_app_server(app)
+    app_server = get_app_server(the_app)
     return on_worker_shutdown(app_server, **kwargs)
-
-
-setup_worker_tasks(app)

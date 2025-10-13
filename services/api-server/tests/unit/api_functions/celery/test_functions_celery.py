@@ -52,7 +52,7 @@ from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.api.dependencies.celery import (
     get_task_manager,
 )
-from simcore_service_api_server.celery_worker.worker_tasks.functions_tasks import (
+from simcore_service_api_server.celery.worker_tasks.functions_tasks import (
     run_function as run_function_task,
 )
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError

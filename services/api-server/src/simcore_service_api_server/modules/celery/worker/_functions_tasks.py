@@ -9,9 +9,9 @@ from models_library.projects_nodes_io import NodeID
 from servicelib.celery.models import TaskKey
 from simcore_service_api_server._service_function_jobs import FunctionJobService
 
-from ...api.dependencies.authentication import Identity
-from ...api.dependencies.rabbitmq import get_rabbitmq_rpc_client
-from ...api.dependencies.services import (
+from ....api.dependencies.authentication import Identity
+from ....api.dependencies.rabbitmq import get_rabbitmq_rpc_client
+from ....api.dependencies.services import (
     get_catalog_service,
     get_directorv2_service,
     get_function_job_service,
@@ -20,13 +20,16 @@ from ...api.dependencies.services import (
     get_solver_service,
     get_storage_service,
 )
-from ...api.dependencies.webserver_http import get_session_cookie, get_webserver_session
-from ...api.dependencies.webserver_rpc import get_wb_api_rpc_client
-from ...models.api_resources import JobLinks
-from ...models.domain.functions import PreRegisteredFunctionJobData
-from ...models.schemas.jobs import JobPricingSpecification
-from ...services_http.director_v2 import DirectorV2Api
-from ...services_http.storage import StorageApi
+from ....api.dependencies.webserver_http import (
+    get_session_cookie,
+    get_webserver_session,
+)
+from ....api.dependencies.webserver_rpc import get_wb_api_rpc_client
+from ....models.api_resources import JobLinks
+from ....models.domain.functions import PreRegisteredFunctionJobData
+from ....models.schemas.jobs import JobPricingSpecification
+from ....services_http.director_v2 import DirectorV2Api
+from ....services_http.storage import StorageApi
 
 
 async def _assemble_function_job_service(

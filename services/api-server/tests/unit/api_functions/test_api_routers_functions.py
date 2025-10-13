@@ -46,7 +46,7 @@ from servicelib.common_headers import (
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
-from simcore_service_api_server.celery_worker.worker_tasks import functions_tasks
+from simcore_service_api_server.celery.worker_tasks import functions_tasks
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.domain.functions import (
     PreRegisteredFunctionJobData,
