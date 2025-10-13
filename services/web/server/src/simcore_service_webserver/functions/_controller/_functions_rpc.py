@@ -22,6 +22,7 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
+    RegisteredFunctionJobList,
     RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
 )
@@ -93,10 +94,10 @@ async def register_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job: FunctionJobList,
-) -> RegisteredFunctionJob:
+    function_jobs: FunctionJobList,
+) -> RegisteredFunctionJobList:
     return await _functions_service.register_function_job(
-        app=app, user_id=user_id, product_name=product_name, function_job=function_job
+        app=app, user_id=user_id, product_name=product_name, function_jobs=function_jobs
     )
 
 

@@ -73,11 +73,13 @@ async def test_register_get_delete_function_job(
     )
 
     # Register the function job
-    registered_job = await webserver_rpc_client.functions.register_function_job(
-        function_job=function_job,
+    registered_jobs = await webserver_rpc_client.functions.register_function_job(
+        function_jobs=[function_job],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
 
     # Assert the registered job matches the input job
     assert registered_job.function_uid == function_job.function_uid
@@ -191,11 +193,13 @@ async def test_list_function_jobs(
     )
 
     # Register the function job
-    registered_job = await webserver_rpc_client.functions.register_function_job(
-        function_job=function_job,
+    registered_jobs = await webserver_rpc_client.functions.register_function_job(
+        function_jobs=[function_job],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
 
     # List function jobs
     jobs, _ = await webserver_rpc_client.functions.list_function_jobs(
@@ -241,11 +245,13 @@ async def test_list_function_jobs_with_status(
     )
 
     # Register the function job
-    registered_job = await webserver_rpc_client.functions.register_function_job(
-        function_job=function_job,
+    registered_jobs = await webserver_rpc_client.functions.register_function_job(
+        function_jobs=[function_job],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
 
     # List function jobs
     jobs, _ = await webserver_rpc_client.functions.list_function_jobs_with_status(
@@ -299,9 +305,9 @@ async def test_list_function_jobs_filtering(
                 job_creation_task_id=None,
             )
             # Register the function job
-            first_registered_function_jobs.append(
+            first_registered_function_jobs += (
                 await webserver_rpc_client.functions.register_function_job(
-                    function_job=function_job,
+                    function_jobs=[function_job],
                     user_id=logged_user["id"],
                     product_name=osparc_product_name,
                 )
@@ -317,9 +323,9 @@ async def test_list_function_jobs_filtering(
                 job_creation_task_id=None,
             )
             # Register the function job
-            second_registered_function_jobs.append(
+            second_registered_function_jobs += (
                 await webserver_rpc_client.functions.register_function_job(
-                    function_job=function_job,
+                    function_jobs=[function_job],
                     user_id=logged_user["id"],
                     product_name=osparc_product_name,
                 )
@@ -433,12 +439,12 @@ async def test_find_cached_function_jobs(
         )
 
         # Register the function job
-        registered_job = await webserver_rpc_client.functions.register_function_job(
-            function_job=function_job,
+        registered_jobs = await webserver_rpc_client.functions.register_function_job(
+            function_jobs=[function_job],
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
-        registered_function_jobs.append(registered_job)
+        registered_function_jobs += registered_jobs
 
     # Find cached function jobs
     cached_jobs = await webserver_rpc_client.functions.find_cached_function_jobs(
@@ -506,11 +512,13 @@ async def test_find_cached_function_jobs_with_status(
         )
 
         # Register the function job
-        registered_job = await webserver_rpc_client.functions.register_function_job(
-            function_job=function_job,
+        registered_jobs = await webserver_rpc_client.functions.register_function_job(
+            function_jobs=[function_job],
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
+        assert len(registered_jobs) == 1
+        registered_job = registered_jobs[0]
         await webserver_rpc_client.functions.update_function_job_status(
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -607,11 +615,13 @@ async def test_patch_registered_function_jobs(
 
     # Register the function job
     function_job.function_uid = registered_function.uid
-    registered_job = await webserver_rpc_client.functions.register_function_job(
-        function_job=function_job,
+    registered_jobs = await webserver_rpc_client.functions.register_function_job(
+        function_jobs=[function_job],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
 
     registered_job = await webserver_rpc_client.functions.patch_registered_function_job(
         user_id=logged_user["id"],
@@ -681,11 +691,13 @@ async def test_incompatible_patch_model_error(
         product_name=osparc_product_name,
     )
     function_job.function_uid = registered_function.uid
-    registered_job = await webserver_rpc_client.functions.register_function_job(
-        function_job=function_job,
+    registered_jobs = await webserver_rpc_client.functions.register_function_job(
+        function_jobs=[function_job],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
     with pytest.raises(FunctionJobPatchModelIncompatibleError):
         registered_job = (
             await webserver_rpc_client.functions.patch_registered_function_job(
@@ -740,11 +752,13 @@ async def test_update_function_job_status_output(
     )
 
     # Register the function job
-    registered_job = await webserver_rpc_client.functions.register_function_job(
-        function_job=function_job,
+    registered_jobs = await webserver_rpc_client.functions.register_function_job(
+        function_jobs=[function_job],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
 
     old_job_status = await webserver_rpc_client.functions.get_function_job_status(
         function_job_id=registered_job.uid,
@@ -830,11 +844,13 @@ async def test_update_function_job_outputs(
     )
 
     # Register the function job
-    registered_job = await webserver_rpc_client.functions.register_function_job(
-        function_job=function_job,
+    registered_jobs = await webserver_rpc_client.functions.register_function_job(
+        function_jobs=[function_job],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
 
     received_outputs = await webserver_rpc_client.functions.get_function_job_outputs(
         function_job_id=registered_job.uid,

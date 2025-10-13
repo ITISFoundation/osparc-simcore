@@ -95,7 +95,9 @@ async def create_function_jobs(  # noqa: PLR0913
         )
 
         # Get all created jobs
-        created_jobs = [RegisteredFunctionJobDB.model_validate(row) for row in result]
+        created_jobs = TypeAdapter(list[RegisteredFunctionJobDB]).validate_python(
+            list(result)
+        )
 
         # Get user primary group and set permissions for all jobs
         user_primary_group_id = await users_service.get_user_primary_group_id(

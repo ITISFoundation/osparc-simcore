@@ -7,7 +7,6 @@ from models_library.api_schemas_webserver.functions import (
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
-    FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
@@ -21,10 +20,12 @@ from models_library.functions import (
     FunctionClass,
     FunctionGroupAccessRights,
     FunctionInputsList,
+    FunctionJobList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
+    RegisteredFunctionJobList,
     RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
 )
@@ -318,15 +319,15 @@ class FunctionsRpcApi(BaseRpcApi):
         *,
         product_name: ProductName,
         user_id: UserID,
-        function_job: FunctionJob,
-    ) -> RegisteredFunctionJob:
+        function_jobs: FunctionJobList,
+    ) -> RegisteredFunctionJobList:
         """Register a function job."""
-        return TypeAdapter(RegisteredFunctionJob).validate_python(
+        return TypeAdapter(RegisteredFunctionJobList).validate_python(
             await self._request(
                 "register_function_job",
                 product_name=product_name,
                 user_id=user_id,
-                function_job=function_job,
+                function_jobs=function_jobs,
             ),
         )
 
