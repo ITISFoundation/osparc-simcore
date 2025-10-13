@@ -110,7 +110,7 @@ def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) 
     async def _stream_results(sleep_interval: float) -> None:
         app_server = get_app_server(task.app)
         for i in range(num_results):
-            result_data = f"result-{i}-{_faker.word()}"
+            result_data = f"result-{i}"
             result_item = TaskStreamItem(data=result_data)
             await app_server.task_manager.push_task_stream_items(
                 task_key,
@@ -301,13 +301,15 @@ async def test_push_task_result_streams_data_during_execution(
 ):
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
+    num_results = 3
+
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=streaming_results_task.__name__,
             ephemeral=False,  # Keep task available after completion for result pulling
         ),
         owner_metadata=owner_metadata,
-        num_results=3,
+        num_results=num_results,
     )
 
     # Pull results while task is running, retry until is_done is True
@@ -321,11 +323,7 @@ async def test_push_task_result_streams_data_during_execution(
             assert is_done
 
     # Should have at least some results streamed
-    assert len(results) >= 1
-
-    # Verify result format
-    for result in results:
-        assert result.data.startswith("result-")
+    assert results == [TaskStreamItem(data=f"result-{i}") for i in range(num_results)]
 
     # Wait for task completion
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
@@ -335,17 +333,13 @@ async def test_push_task_result_streams_data_during_execution(
 
     # Final task result should be available
     final_result = await task_manager.get_task_result(owner_metadata, task_uuid)
-    assert final_result == "completed-3-results"
+    assert final_result == f"completed-{num_results}-results"
 
     # After task completion, try to pull any remaining results
-    remaining_results, is_done, _last_update = (
-        await task_manager.pull_task_stream_items(owner_metadata, task_uuid, limit=10)
+    remaining_results, is_done, _ = await task_manager.pull_task_stream_items(
+        owner_metadata, task_uuid, limit=10
     )
-    # The total number of results we got should be 3 (across all pulls)
-    # However, due to stream consumption, we might get fewer if items were consumed
-    total_results = len(results) + len(remaining_results)
-    assert total_results <= 3  # Can't have more than created
-    assert total_results >= 0  # Should have at least some results (or none if consumed)
+    assert remaining_results == []
     assert is_done
 
 
