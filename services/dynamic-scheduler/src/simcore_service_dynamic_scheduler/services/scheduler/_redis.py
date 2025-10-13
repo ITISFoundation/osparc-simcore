@@ -59,8 +59,8 @@ class _UpdateServiceStateDict(TypedDict):
     desired_start_data: NotRequired[DynamicServiceStart]
     desired_stop_data: NotRequired[DynamicServiceStop]
 
-    start_data: NotRequired[DynamicServiceStart]
-    stop_data: NotRequired[DynamicServiceStop]
+    curent_start_data: NotRequired[DynamicServiceStart]
+    curent_stop_data: NotRequired[DynamicServiceStop]
 
     current_schedule_id: NotRequired[ScheduleId]
 
@@ -95,11 +95,11 @@ class RedisServiceStateManager:
     ) -> None: ...
     @overload
     async def create_or_update(
-        self, key: Literal["start_data"], value: DynamicServiceStart
+        self, key: Literal["curent_start_data"], value: DynamicServiceStart
     ) -> None: ...
     @overload
     async def create_or_update(
-        self, key: Literal["stop_data"], value: DynamicServiceStop
+        self, key: Literal["curent_stop_data"], value: DynamicServiceStop
     ) -> None: ...
     @overload
     async def create_or_update(
@@ -128,9 +128,13 @@ class RedisServiceStateManager:
         self, key: Literal["desired_stop_data"]
     ) -> DynamicServiceStop | None: ...
     @overload
-    async def read(self, key: Literal["start_data"]) -> DynamicServiceStart | None: ...
+    async def read(
+        self, key: Literal["curent_start_data"]
+    ) -> DynamicServiceStart | None: ...
     @overload
-    async def read(self, key: Literal["stop_data"]) -> DynamicServiceStop | None: ...
+    async def read(
+        self, key: Literal["curent_stop_data"]
+    ) -> DynamicServiceStop | None: ...
     @overload
     async def read(self, key: Literal["current_schedule_id"]) -> ScheduleId | None: ...
     async def read(self, key: str) -> Any:
@@ -143,9 +147,9 @@ class RedisServiceStateManager:
         result = json_loads(serialised_result)
 
         match key:
-            case "start_data" | "desired_start_data":
+            case "curent_start_data" | "desired_start_data":
                 return DynamicServiceStart.model_validate(result)
-            case "stop_data" | "desired_stop_data":
+            case "curent_stop_data" | "desired_stop_data":
                 return DynamicServiceStop.model_validate(result)
             case _:
                 return result
