@@ -84,7 +84,7 @@ class _Enforce(BaseStep):
         )
 
         initial_context = {"node_id": node_id}
-        to_start_enforce = OperationToStart(
+        enforce_operation = OperationToStart(
             _opration_names.ENFORCE, initial_context=initial_context
         )
 
@@ -93,8 +93,8 @@ class _Enforce(BaseStep):
                 app,
                 monitor_name,
                 initial_context,
-                on_execute_completed=to_start_enforce,
-                on_revert_completed=to_start_enforce,
+                on_execute_completed=enforce_operation,
+                on_revert_completed=enforce_operation,
             )
             return None
 
@@ -110,17 +110,19 @@ class _Enforce(BaseStep):
                     app,
                     start_name,
                     initial_context,
-                    on_execute_completed=to_start_enforce,
-                    on_revert_completed=to_start_enforce,
+                    on_execute_completed=enforce_operation,
+                    on_revert_completed=enforce_operation,
                 )
             case DesiredState.STOPPED:
                 await start_operation(
                     app,
                     stop_name,
                     initial_context,
-                    on_execute_completed=to_start_enforce,
-                    on_revert_completed=to_start_enforce,
+                    on_execute_completed=enforce_operation,
+                    on_revert_completed=enforce_operation,
                 )
+
+        return None
 
 
 operation = Operation(

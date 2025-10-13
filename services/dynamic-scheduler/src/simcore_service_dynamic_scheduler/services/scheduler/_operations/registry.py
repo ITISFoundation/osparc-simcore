@@ -4,7 +4,7 @@ from pydantic import NonNegativeInt
 
 from ...generic_scheduler import Operation, OperationRegistry, SingleStepGroup
 from .. import _opration_names
-from . import enforce
+from . import enforce, legacy, new_style
 from ._common_steps import RegisterScheduleId, UnRegisterScheduleId
 
 _MIN_STEPS_IN_OPERATION: Final[NonNegativeInt] = 3
@@ -44,10 +44,24 @@ def _validate_operation(operation: Operation) -> None:
 
 
 def register_operataions() -> None:
-    for opration_name, operation in ((_opration_names.ENFORCE, enforce.operation),):
+    for opration_name, operation in (
+        (_opration_names.ENFORCE, enforce.operation),
+        (_opration_names.LEGACY_MONITOR, legacy.monitor.operation),
+        (_opration_names.LEGACY_START, legacy.start.operation),
+        (_opration_names.LEGACY_STOP, legacy.stop.operation),
+        (_opration_names.NEW_STYLE_MONITOR, new_style.monitor.operation),
+        (_opration_names.NEW_STYLE_START, new_style.start.operation),
+        (_opration_names.NEW_STYLE_STOP, new_style.start.operation),
+    ):
         _validate_operation(operation)
         OperationRegistry.register(opration_name, operation)
 
 
 def unregister_operations() -> None:
     OperationRegistry.unregister(_opration_names.ENFORCE)
+    OperationRegistry.unregister(_opration_names.LEGACY_MONITOR)
+    OperationRegistry.unregister(_opration_names.LEGACY_START)
+    OperationRegistry.unregister(_opration_names.LEGACY_STOP)
+    OperationRegistry.unregister(_opration_names.NEW_STYLE_MONITOR)
+    OperationRegistry.unregister(_opration_names.NEW_STYLE_START)
+    OperationRegistry.unregister(_opration_names.NEW_STYLE_STOP)

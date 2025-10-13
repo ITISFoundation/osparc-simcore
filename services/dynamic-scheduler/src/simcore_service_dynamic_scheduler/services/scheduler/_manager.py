@@ -61,6 +61,8 @@ async def _get_schedule_id_and_opration_type(
             if current_schedule_id is None:
                 raise UnexpectedCouldNotFindCurrentScheduledIdError
 
+    assert current_schedule_id is not None  # nosec
+
     opration_name = await get_operation_name_or_none(app, current_schedule_id)
     if opration_name is None:
         raise UnexpectedCouldNotFindOperationNameError(schedule_id=current_schedule_id)
@@ -73,14 +75,12 @@ async def _get_schedule_id_and_opration_type(
 async def _switch_to_enforce(
     app: FastAPI, schedule_id: ScheduleId, node_id: NodeID
 ) -> None:
-    to_start = OperationToStart(
-        _opration_names.ENFORCE, initial_context={"node_id": node_id}
-    )
+    enforce_operation = OperationToStart(_opration_names.ENFORCE, {"node_id": node_id})
     await register_to_start_after_on_executed_completed(
-        app, schedule_id, to_start=to_start
+        app, schedule_id, to_start=enforce_operation
     )
     await register_to_start_after_on_reverted_completed(
-        app, schedule_id, to_start=to_start
+        app, schedule_id, to_start=enforce_operation
     )
     await cancel_operation(app, schedule_id)
 
@@ -97,7 +97,16 @@ async def start_service(app: FastAPI, start_data: DynamicServiceStart) -> None:
                 "desired_start_data": start_data,
             }
         )
-        await start_operation(app, _opration_names.ENFORCE, {"node_id": node_id})
+        enforce_operation = OperationToStart(
+            _opration_names.ENFORCE, {"node_id": node_id}
+        )
+        await start_operation(
+            app,
+            _opration_names.ENFORCE,
+            {"node_id": node_id},
+            on_execute_completed=enforce_operation,
+            on_revert_completed=enforce_operation,
+        )
         _logger.debug("node_di='%s' added to tracking", node_id)
         return
 
@@ -129,7 +138,16 @@ async def stop_service(app: FastAPI, stop_data: DynamicServiceStop) -> None:
                 "desired_stop_data": stop_data,
             }
         )
-        await start_operation(app, _opration_names.ENFORCE, {"node_id": node_id})
+        enforce_operation = OperationToStart(
+            _opration_names.ENFORCE, {"node_id": node_id}
+        )
+        await start_operation(
+            app,
+            _opration_names.ENFORCE,
+            {"node_id": node_id},
+            on_execute_completed=enforce_operation,
+            on_revert_completed=enforce_operation,
+        )
         return
 
     current_schedule_id, operation_type = await _get_schedule_id_and_opration_type(
