@@ -1,24 +1,22 @@
-"""Main application to be deployed in for example uvicorn."""
-
-from dataclasses import dataclass
-
-from celery import Celery  # type: ignore[import-untyped]
 from celery.signals import (  # type: ignore[import-untyped]
+    worker_init,
     worker_process_init,
     worker_process_shutdown,
+    worker_shutdown,
 )
 from celery_library.common import create_app as create_celery_app
 from celery_library.signals import (
     on_worker_init,
     on_worker_shutdown,
 )
+from celery_library.utils import get_app_server, set_app_server
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.logging_utils import setup_loggers
 from servicelib.tracing import TracingConfig
 
-from ...api._worker_tasks.tasks import setup_worker_tasks
-from ...core.application import create_app
-from ...core.settings import ApplicationSettings
+from ....api._worker_tasks.tasks import setup_worker_tasks
+from ....core.application import create_app
+from ....core.settings import ApplicationSettings
 
 _settings = ApplicationSettings.create_from_envs()
 _tracing_config = TracingConfig.create(
@@ -38,26 +36,20 @@ assert _settings.STORAGE_CELERY  # nosec
 app = create_celery_app(_settings.STORAGE_CELERY)
 
 
-@dataclass
-class AppWrapper:
-    app: Celery
-
-
+@worker_init.connect
+@worker_process_init.connect
 def worker_init_wrapper(**kwargs):
-    kwargs.pop("sender", None)  # remove sender
-    fastapi_instance = create_app(_settings, tracing_config=_tracing_config)
-    app_server = FastAPIAppServer(app=fastapi_instance)
-    assert _settings.STORAGE_CELERY  # nosec
-
-    return on_worker_init(AppWrapper(app), app_server, **kwargs)
+    fastapi_app = create_app(_settings, tracing_config=_tracing_config)
+    app_server = FastAPIAppServer(app=fastapi_app)
+    set_app_server(app, app_server)
+    return on_worker_init(app_server, **kwargs)
 
 
+@worker_shutdown.connect
+@worker_process_shutdown.connect
 def worker_shutdown_wrapper(**kwargs):
-    kwargs.pop("sender", None)  # remove sender
-    return on_worker_shutdown(AppWrapper(app), **kwargs)
+    app_server = get_app_server(app)
+    return on_worker_shutdown(app_server, **kwargs)
 
-
-worker_process_init.connect(worker_init_wrapper)
-worker_process_shutdown.connect(worker_shutdown_wrapper)
 
 setup_worker_tasks(app)

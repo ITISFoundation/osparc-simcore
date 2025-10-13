@@ -1,32 +1,19 @@
 import asyncio
 import logging
 import threading
-from typing import Any
 
-from celery import Celery  # type: ignore[import-untyped]
 from servicelib.celery.app_server import BaseAppServer
 from servicelib.logging_utils import log_context
-
-from .utils import get_app_server, set_app_server
 
 _logger = logging.getLogger(__name__)
 
 
-def on_worker_init(
-    sender: Any,
-    app_server: BaseAppServer,
-    **_kwargs,
-) -> None:
+def on_worker_init(app_server: BaseAppServer, **_kwargs) -> None:
     startup_complete_event = threading.Event()
 
     def _init(startup_complete_event: threading.Event) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-
-        assert sender.app  # nosec
-        assert isinstance(sender.app, Celery)  # nosec
-
-        set_app_server(sender.app, app_server)
 
         app_server.event_loop = loop
 
@@ -44,9 +31,6 @@ def on_worker_init(
     startup_complete_event.wait()
 
 
-def on_worker_shutdown(sender, **_kwargs) -> None:
+def on_worker_shutdown(app_server: BaseAppServer, **_kwargs) -> None:
     with log_context(_logger, logging.INFO, "Worker shutdown"):
-        assert isinstance(sender.app, Celery)
-        app_server = get_app_server(sender.app)
-
         app_server.shutdown_event.set()
