@@ -6,7 +6,7 @@ from models_library.projects import ProjectID
 from models_library.utils.common_validators import (
     MIN_NON_WILDCARD_CHARS,
     WILDCARD_CHARS,
-    ensure_pattern_has_enough_characters,
+    ensure_pattern_has_enough_characters_pre_validator,
 )
 from pydantic import BaseModel, Field, model_validator
 
@@ -81,7 +81,7 @@ class SearchTimerangeFilter(InputSchema):
 class SearchFilters(InputSchema):
     name_pattern: Annotated[
         str,
-        ensure_pattern_has_enough_characters(),
+        ensure_pattern_has_enough_characters_pre_validator(),
         Field(
             description=f"Name pattern with wildcard support ({', '.join(WILDCARD_CHARS)}). "
             f"Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
