@@ -43,8 +43,6 @@ def _async_task_wrapper(
     ) -> Callable[Concatenate[Task, P], R]:
         @wraps(coro)
         def wrapper(task: Task, *args: P.args, **kwargs: P.kwargs) -> R:
-            _logger.info("App inside task: %s", app)
-
             app_server = get_app_server(app)
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
