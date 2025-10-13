@@ -36,19 +36,15 @@ _logger = logging.getLogger(__name__)
 
 
 def _build_redis_task_key(task_key: TaskKey) -> str:
-    return _CELERY_TASK_PREFIX + task_key
+    return f"{_CELERY_TASK_PREFIX}{task_key}"
 
 
 def _build_redis_stream_key(task_key: TaskKey) -> str:
-    return _CELERY_TASK_STREAM_PREFIX + task_key
+    return f"{_CELERY_TASK_STREAM_PREFIX}{task_key}"
 
 
 def _build_redis_stream_meta_key(task_key: TaskKey) -> str:
-    return (
-        _build_redis_stream_key(task_key)
-        + _CELERY_TASK_DELIMTATOR
-        + _CELERY_TASK_STREAM_METADATA
-    )
+    return f"{_build_redis_stream_key(task_key)}{_CELERY_TASK_DELIMTATOR}{_CELERY_TASK_STREAM_METADATA}"
 
 
 @dataclass(frozen=True)
@@ -181,7 +177,7 @@ class RedisTaskStore:
         stream_meta_key = _build_redis_stream_meta_key(task_key)
 
         pipe = self._redis_client_sdk.redis.pipeline()
-        pipe.rpush(stream_key, *[r.model_dump_json(by_alias=True) for r in result])
+        pipe.rpush(stream_key, *(r.model_dump_json(by_alias=True) for r in result))
         pipe.hset(
             stream_meta_key, mapping={"last_update": datetime.now(UTC).isoformat()}
         )
@@ -206,8 +202,7 @@ class RedisTaskStore:
         meta_key = _build_redis_stream_meta_key(task_key)
 
         async with self._redis_client_sdk.redis.pipeline(transaction=True) as pipe:
-            pipe.lrange(stream_key, 0, limit - 1)
-            pipe.ltrim(stream_key, limit, -1)
+            pipe.lpop(stream_key, limit)
             pipe.hget(meta_key, _CELERY_TASK_STREAM_DONE_KEY)
             pipe.hget(meta_key, _CELERY_TASK_STREAM_LAST_UPDATE_KEY)
             raw_items, _, done, last_update = await pipe.execute()
