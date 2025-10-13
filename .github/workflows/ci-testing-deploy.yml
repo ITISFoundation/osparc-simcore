@@ -1618,7 +1618,7 @@ jobs:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' }}
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] director-v2 02"
+    name: "[int] director-v2 03"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
