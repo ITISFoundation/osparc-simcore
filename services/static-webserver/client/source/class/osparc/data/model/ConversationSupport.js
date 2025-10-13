@@ -31,6 +31,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     this.set({
       projectId: conversationData.projectUuid || null,
       extraContext: conversationData.extraContext || null,
+      fogbugzCaseId: conversationData.fogbugz_case_id || null,
       readByUser: "isReadByUser" in conversationData ? Boolean(conversationData.isReadByUser) : false,
       readBySupport: "isReadBySupport" in conversationData ? Boolean(conversationData.isReadBySupport) : false,
       resolved: null,
@@ -59,6 +60,13 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       nullable: true,
       init: null,
       event: "changeExtraContext",
+    },
+
+    fogbugzCaseId: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeFogbugzCaseId",
     },
 
     firstMessage: {
@@ -205,6 +213,9 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     },
 
     getFogbugzLink: function() {
+      if (this.getFogbugzCaseId()) {
+        return this.getFogbugzCaseId();
+      }
       if (this.getExtraContext() && "fogbugz_case_url" in this.getExtraContext()) {
         return this.getExtraContext()["fogbugz_case_url"];
       }
