@@ -83,6 +83,7 @@ FunctionInputsList: TypeAlias = Annotated[
     Field(max_length=50, min_length=1),
 ]
 
+
 FunctionOutputs: TypeAlias = dict[str, Any] | None
 
 FunctionOutputsLogfile: TypeAlias = Any
@@ -238,6 +239,9 @@ FunctionJob: TypeAlias = Annotated[
     ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
     Field(discriminator="function_class"),
 ]
+FunctionJobList: TypeAlias = Annotated[
+    list[FunctionJob], Field(max_length=50, min_length=1)
+]
 
 
 class RegisteredFunctionJobBase(FunctionJobBase):
@@ -263,6 +267,10 @@ RegisteredFunctionJob: TypeAlias = Annotated[
     | RegisteredSolverFunctionJob,
     Field(discriminator="function_class"),
 ]
+RegisteredFunctionJobList: TypeAlias = Annotated[
+    list[RegisteredFunctionJob], Field(max_length=50, min_length=1)
+]
+
 
 RegisteredFunctionJobPatch = Annotated[
     RegisteredProjectFunctionJobPatch

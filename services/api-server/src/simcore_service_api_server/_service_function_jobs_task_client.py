@@ -354,7 +354,7 @@ class FunctionJobTaskClientService:
 
         assert len(cached_jobs) == len(inputs)  # nosec
 
-        yet_to_run_inputs = [
+        uncached_inputs = [
             input_ for input_, job in zip(inputs, cached_jobs) if job is None
         ]
 

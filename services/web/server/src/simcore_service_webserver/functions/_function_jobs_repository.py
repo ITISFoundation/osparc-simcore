@@ -5,12 +5,10 @@ import json
 import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
-    FunctionClass,
     FunctionID,
-    FunctionInputs,
     FunctionInputsList,
-    FunctionJobClassSpecificData,
     FunctionJobCollectionID,
+    FunctionJobDB,
     FunctionJobID,
     FunctionJobStatus,
     FunctionOutputs,
@@ -55,20 +53,14 @@ from ._functions_table_cols import (
 )
 
 
-async def create_function_job(  # noqa: PLR0913
+async def create_function_jobs(  # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_class: FunctionClass,
-    function_uid: FunctionID,
-    title: str,
-    description: str,
-    inputs: FunctionInputs,
-    outputs: FunctionOutputs,
-    class_specific_data: FunctionJobClassSpecificData,
-) -> RegisteredFunctionJobDB:
+    function_jobs: list[FunctionJobDB],
+) -> list[RegisteredFunctionJobDB]:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
             app,
@@ -79,40 +71,51 @@ async def create_function_job(  # noqa: PLR0913
                 FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
             ],
         )
+
+        # Prepare values for batch insert
+        values_to_insert = [
+            {
+                "function_uuid": job.function_uuid,
+                "inputs": job.inputs,
+                "outputs": job.outputs,
+                "function_class": job.function_class,
+                "class_specific_data": job.class_specific_data,
+                "title": job.title,
+                "description": job.description,
+                "status": "created",
+            }
+            for job in function_jobs
+        ]
+
+        # Batch insert all function jobs in a single query
         result = await transaction.execute(
             function_jobs_table.insert()
-            .values(
-                function_uuid=function_uid,
-                inputs=inputs,
-                outputs=outputs,
-                function_class=function_class,
-                class_specific_data=class_specific_data,
-                title=title,
-                description=description,
-                status="created",
-            )
+            .values(values_to_insert)
             .returning(*_FUNCTION_JOBS_TABLE_COLS)
         )
-        row = result.one()
 
-        registered_function_job = RegisteredFunctionJobDB.model_validate(row)
+        # Get all created jobs
+        created_jobs = [RegisteredFunctionJobDB.model_validate(row) for row in result]
 
+        # Get user primary group and set permissions for all jobs
         user_primary_group_id = await users_service.get_user_primary_group_id(
             app, user_id=user_id
         )
+        job_uuids = [job.uuid for job in created_jobs]
+
         await _internal_set_group_permissions(
             app,
             connection=transaction,
             permission_group_id=user_primary_group_id,
             product_name=product_name,
             object_type="function_job",
-            object_ids=[registered_function_job.uuid],
+            object_ids=job_uuids,
             read=True,
             write=True,
             execute=True,
         )
 
-    return registered_function_job
+    return created_jobs
 
 
 async def patch_function_job(

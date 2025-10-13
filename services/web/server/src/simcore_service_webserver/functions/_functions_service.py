@@ -18,6 +18,7 @@ from models_library.functions import (
     FunctionJobCollectionsListFilters,
     FunctionJobDB,
     FunctionJobID,
+    FunctionJobList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionOutputSchema,
@@ -29,6 +30,7 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     RegisteredFunctionJobDB,
+    RegisteredFunctionJobList,
     RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
     RegisteredFunctionJobWithStatusDB,
@@ -49,6 +51,7 @@ from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from servicelib.rabbitmq import RPCRouter
 
 from . import (
@@ -90,22 +93,17 @@ async def register_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job: FunctionJob,
-) -> RegisteredFunctionJob:
-    encoded_function_job = _encode_functionjob(function_job)
-    created_function_job_db = await _function_jobs_repository.create_function_job(
+    function_jobs: FunctionJobList,
+) -> RegisteredFunctionJobList:
+    TypeAdapter(FunctionJobList).validate_python(function_jobs)
+    encoded_function_jobs = [_encode_functionjob(job) for job in function_jobs]
+    created_function_jobs_db = await _function_jobs_repository.create_function_jobs(
         app=app,
         user_id=user_id,
         product_name=product_name,
-        function_class=encoded_function_job.function_class,
-        title=encoded_function_job.title,
-        description=encoded_function_job.description,
-        function_uid=encoded_function_job.function_uuid,
-        inputs=encoded_function_job.inputs,
-        outputs=encoded_function_job.outputs,
-        class_specific_data=encoded_function_job.class_specific_data,
+        function_jobs=encoded_function_jobs,
     )
-    return _decode_functionjob(created_function_job_db)
+    return [_decode_functionjob(job) for job in created_function_jobs_db]
 
 
 async def patch_registered_function_job(

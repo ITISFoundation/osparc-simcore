@@ -9,11 +9,11 @@ from models_library.functions import (
     FunctionID,
     FunctionInputSchema,
     FunctionInputsList,
-    FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
+    FunctionJobList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionOutputSchema,
@@ -93,7 +93,7 @@ async def register_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job: FunctionJob,
+    function_job: FunctionJobList,
 ) -> RegisteredFunctionJob:
     return await _functions_service.register_function_job(
         app=app, user_id=user_id, product_name=product_name, function_job=function_job
