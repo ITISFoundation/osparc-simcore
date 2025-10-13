@@ -169,7 +169,7 @@ services:
       API_SERVER_WORKER_MODE: "true"
       CELERY_CONCURRENCY: ${API_SERVER_CELERY_CONCURRENCY}
       CELERY_POOL: threads
-      CELERY_QUEUES: "api_worker_queue"
+      CELERY_QUEUES: api_worker_queue
     networks: *api_server_networks
 
 
@@ -1255,7 +1255,7 @@ services:
       STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
-      CELERY_POOL: "threads"
+      CELERY_POOL: threads
     networks: *storage_networks
 
   sto-worker-cpu-bound:
@@ -1268,7 +1268,8 @@ services:
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 1
-      CELERY_QUEUES: "cpu_bound"
+      CELERY_QUEUES: cpu_bound
+      CELERY_POOL: prefork
     networks: *storage_networks
 
   rabbit:
