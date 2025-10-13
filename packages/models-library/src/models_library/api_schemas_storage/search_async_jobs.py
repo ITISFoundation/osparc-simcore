@@ -9,7 +9,7 @@ from pydantic.alias_generators import to_camel
 class SearchResultItem(BaseModel):
     name: str
     created_at: datetime.datetime
-    last_modified: datetime.datetime
+    modified_at: datetime.datetime
     size: ByteSize | Literal[-1]
     path: str
     is_directory: bool
