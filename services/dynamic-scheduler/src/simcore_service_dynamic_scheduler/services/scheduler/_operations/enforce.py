@@ -1,10 +1,45 @@
 from fastapi import FastAPI
+from models_library.projects_nodes_io import NodeID
 
 from ...generic_scheduler import (
     BaseStep,
+    Operation,
     ProvidedOperationContext,
     RequiredOperationContext,
+    SingleStepGroup,
 )
+from ._common_steps import RegisterScheduleId, UnRegisterScheduleId
+
+
+class _Prepare(BaseStep):
+    """
+    Figures if a service is legacy or not,
+    only if it was not previously detenrimined
+    """
+
+    @classmethod
+    def get_execute_requires_context_keys(cls) -> set[str]:
+        return {"node_id", "is_legacy"}
+
+    @classmethod
+    def get_execute_provides_context_keys(cls) -> set[str]:
+        return {"is_legacy"}
+
+    @classmethod
+    async def execute(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        node_id: NodeID = required_context["node_id"]
+        is_legacy: bool | None = required_context["is_legacy"]
+
+        # allows to skip lengthy check
+        if is_legacy is not None:
+            return {"is_legacy": is_legacy}
+
+        # TODO: this will be done in a future PR, for now it stays mocked
+        is_legacy = True
+
+        return {"is_legacy": is_legacy}
 
 
 class _SEnforce(BaseStep):
@@ -17,8 +52,16 @@ class _SEnforce(BaseStep):
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         _ = app
-        sad_thing: str | None = required_context["node_id"]
+        node_id: NodeID = required_context["node_id"]
+        is_legacy: bool = required_context["is_legacy"]
 
-        # what if a key is not present in the context, it can be set to None in the initial context and we rxpect it to be None
+        # do somehting here based on desired state or not
+        # TODO: implement here
 
-        pass
+
+operation = Operation(
+    SingleStepGroup(RegisterScheduleId),
+    SingleStepGroup(_Prepare),
+    SingleStepGroup(_SEnforce),
+    SingleStepGroup(UnRegisterScheduleId),
+)
