@@ -1,9 +1,11 @@
 import datetime
-from typing import Literal
+from typing import Final, Literal
 
 from models_library.projects import ProjectID
 from pydantic import BaseModel, ByteSize, ConfigDict
 from pydantic.alias_generators import to_camel
+
+SEARCH_TASK_NAME: Final[str] = "files.search"
 
 
 class SearchResultItem(BaseModel):

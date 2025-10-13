@@ -15,6 +15,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
 )
+from models_library.api_schemas_storage.search_async_jobs import SEARCH_TASK_NAME
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
@@ -47,8 +48,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
-from servicelib.celery.models import OwnerMetadata
-from servicelib.celery.tasks.storage import SEARCH_EXECUTION_METADATA, SEARCH_TASK_NAME
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size as remote_compute_path_size,
@@ -556,7 +556,9 @@ async def search(request: web.Request) -> web.Response:
     )
 
     task_uuid = await get_task_manager(request.app).submit_task(
-        SEARCH_EXECUTION_METADATA,
+        ExecutionMetadata(
+            name=SEARCH_TASK_NAME,
+        ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=_req_ctx.user_id,

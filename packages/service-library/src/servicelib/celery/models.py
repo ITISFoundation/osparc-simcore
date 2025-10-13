@@ -138,7 +138,6 @@ class TasksQueue(StrEnum):
 class ExecutionMetadata(BaseModel):
     name: TaskName
     ephemeral: bool = True
-    streamed_result: bool = False
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
