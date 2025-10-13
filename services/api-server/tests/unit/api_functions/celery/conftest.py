@@ -19,6 +19,7 @@ from celery.signals import (  # pylint: disable=no-name-in-module
     worker_shutdown,
 )
 from celery_library.signals import on_worker_init, on_worker_shutdown
+from celery_library.utils import set_app_server
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -124,6 +125,7 @@ async def with_api_server_celery_worker(
     app_server = FastAPIAppServer(app=create_app(app_settings))
 
     def _on_worker_init_wrapper(**kwargs):
+        set_app_server(celery_app, app_server)
         return on_worker_init(app_server, **kwargs)
 
     def _on_worker_shutdown_wrapper(**kwargs):
