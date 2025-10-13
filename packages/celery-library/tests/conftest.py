@@ -18,6 +18,7 @@ from celery_library.backends.redis import RedisTaskStore
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
+from celery_library.utils import set_app_server
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer
@@ -131,10 +132,14 @@ async def with_celery_worker(
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     def _on_worker_init_wrapper(**kwargs):
+        set_app_server(celery_app, app_server)
         return on_worker_init(app_server, **kwargs)
 
+    def _on_worker_shutdown_wrapper(**kwargs):
+        return on_worker_shutdown(app_server, **kwargs)
+
     worker_init.connect(_on_worker_init_wrapper)
-    worker_shutdown.connect(on_worker_shutdown)
+    worker_shutdown.connect(_on_worker_shutdown_wrapper)
 
     register_celery_tasks(celery_app)
 
