@@ -31,7 +31,13 @@ from servicelib.celery.models import (
 )
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
-from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
+from tenacity import (
+    AsyncRetrying,
+    Retrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 _faker = Faker()
 
@@ -39,6 +45,13 @@ _logger = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = ["redis"]
 pytest_simcore_ops_services_selection = []
+
+_TENACITY_RETRY_PARAMS = {
+    "reraise": True,
+    "retry": retry_if_exception_type(AssertionError),
+    "stop": stop_after_delay(30),
+    "wait": wait_fixed(0.1),
+}
 
 
 class MyOwnerMetadata(OwnerMetadata):
@@ -144,11 +157,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
         files=[f"file{n}" for n in range(5)],
     )
 
-    for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(1),
-        stop=stop_after_delay(30),
-    ):
+    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
@@ -229,11 +238,7 @@ async def test_listing_task_uuids_contains_submitted_task(
         owner_metadata=owner_metadata,
     )
 
-    for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(10),
-    ):
+    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             tasks = await task_manager.list_tasks(owner_metadata)
             assert any(task.uuid == task_uuid for task in tasks)
@@ -314,10 +319,15 @@ async def test_push_task_result_streams_data_during_execution(
     # Wait for task to start streaming results
     await asyncio.sleep(2.0)
 
-    # Pull results while task is running
-    results, is_done, _ = await task_manager.pull_task_stream_items(
-        owner_metadata, task_uuid, limit=10
-    )
+    # Pull results while task is running, retry until is_done is True
+    results = []
+    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            result, is_done, _ = await task_manager.pull_task_stream_items(
+                owner_metadata, task_uuid, limit=10
+            )
+            results.extend(result)
+            assert is_done
 
     # Should have at least some results streamed
     assert len(results) >= 1
@@ -327,11 +337,7 @@ async def test_push_task_result_streams_data_during_execution(
         assert result.data.startswith("result-")
 
     # Wait for task completion
-    for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(1),
-        stop=stop_after_delay(30),
-    ):
+    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
@@ -369,11 +375,7 @@ async def test_pull_task_stream_items_with_limit(
     )
 
     # Wait for task to complete
-    for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(1),
-        stop=stop_after_delay(30),
-    ):
+    for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
