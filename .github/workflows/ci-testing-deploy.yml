@@ -1614,6 +1614,52 @@ jobs:
         with:
           flags: integrationtests #optional
 
+  integration-test-director-v2-03:
+    needs: [changes, build-test-images]
+    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    name: "[int] director-v2 02"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    env:
+      # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
+      DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
+      DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+      - name: setup rclone docker volume plugin
+        run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: install
+        run: ./ci/github/integration-testing/director-v2.bash install
+      - name: test
+        run: ./ci/github/integration-testing/director-v2.bash test 03
+      - name: upload failed tests logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/director-v2/test_failures
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: integrationtests #optional
+
   integration-test-dynamic-sidecar:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push'}}
