@@ -46,6 +46,7 @@ class _Prepare(BaseStep):
             return {"is_legacy": is_legacy}
 
         # TODO: this will be done in a future PR, for now it stays mocked
+        _ = app
         _ = node_id
         is_legacy = True
 
