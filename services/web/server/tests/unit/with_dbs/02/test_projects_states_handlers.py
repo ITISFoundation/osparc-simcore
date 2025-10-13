@@ -8,12 +8,12 @@
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from http import HTTPStatus
-from typing import Any, TypedDict
+from typing import Any
 from unittest import mock
 from unittest.mock import call
 
@@ -21,7 +21,7 @@ import pytest
 import socketio
 import sqlalchemy as sa
 from aiohttp import ClientResponse
-from aiohttp.test_utils import TestClient, TestServer
+from aiohttp.test_utils import TestClient
 from deepdiff import DeepDiff  # type: ignore[attr-defined]
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
@@ -49,6 +49,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -57,6 +58,7 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.webserver_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
+    SocketHandlers,
     standard_role_response,
     standard_user_role_response,
 )
@@ -149,39 +151,6 @@ async def _replace_project(
         get_data, _ = await assert_status(resp, HTTPStatus.OK)
         assert_replaced(current_project=get_data, update_data=project_update)
     return data
-
-
-class _SocketHandlers(TypedDict):
-    SOCKET_IO_PROJECT_UPDATED_EVENT: mock.Mock
-
-
-@pytest.fixture
-async def create_socketio_connection_with_handlers(
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
-    mocker: MockerFixture,
-) -> Callable[
-    [str | None, TestClient],
-    Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
-]:
-    async def _(
-        client_session_id: str | None, client: TestClient
-    ) -> tuple[socketio.AsyncClient, str, _SocketHandlers]:
-        sio, received_client_id = await create_socketio_connection(
-            client_session_id, client
-        )
-        assert sio.sid
-
-        event_handlers = _SocketHandlers(
-            **{SOCKET_IO_PROJECT_UPDATED_EVENT: mocker.Mock()}
-        )
-
-        for event, handler in event_handlers.items():
-            sio.on(event, handler=handler)
-        return sio, received_client_id, event_handlers
-
-    return _
 
 
 async def _open_project(
@@ -471,7 +440,7 @@ async def test_open_project(
     user_project: ProjectDict,
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     expected: HTTPStatus,
     save_state: bool,
@@ -564,7 +533,7 @@ async def test_open_project__in_debt(
     user_project: ProjectDict,
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     expected: HTTPStatus,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -628,7 +597,7 @@ async def test_open_template_project_for_edition(
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     expected: HTTPStatus,
     save_state: bool,
@@ -715,7 +684,7 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     expected: HTTPStatus,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -749,7 +718,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -802,7 +771,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -855,7 +824,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -909,7 +878,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -964,7 +933,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     user_project,
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -1023,7 +992,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     logged_user,
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     user_project: ProjectDict,
     shared_project: ProjectDict,
@@ -1072,6 +1041,7 @@ async def test_close_project(
     fake_services: Callable[..., Awaitable[list[DynamicServiceGet]]],
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
+    mocked_conditionally_unsubscribe_project_logs: mock.Mock,
 ):
     # POST /v0/projects/{project_id}:close
     fake_dynamic_services = await fake_services(number_services=5)
@@ -1109,8 +1079,10 @@ async def test_close_project(
     await assert_status(resp, expected.no_content)
 
     if resp.status == status.HTTP_204_NO_CONTENT:
-        mocked_notifications_plugin["unsubscribe"].assert_called_once_with(
-            client.app, ProjectID(user_project["uuid"])
+        mocked_conditionally_unsubscribe_project_logs.assert_called_once_with(
+            client.app,
+            project_id=ProjectID(user_project["uuid"]),
+            user_id=UserID(user_id),
         )
         # These checks are after a fire&forget, so we wait a moment
         await asyncio.sleep(2)
@@ -1409,45 +1381,6 @@ async def test_project_node_lifetime(  # noqa: PLR0915
 
 
 @pytest.fixture
-async def client_on_running_server_factory(
-    client: TestClient,
-) -> AsyncIterator[Callable[[], TestClient]]:
-    # Creates clients connected to the same server as the reference client
-    #
-    # Implemented as aihttp_client but creates a client using a running server,
-    #  i.e. avoid client.start_server
-
-    assert isinstance(client.server, TestServer)
-
-    clients = []
-
-    def go() -> TestClient:
-        cli = TestClient(client.server, loop=asyncio.get_event_loop())
-        assert client.server.started
-        # AVOIDS client.start_server
-        clients.append(cli)
-        return cli
-
-    yield go
-
-    async def close_client_but_not_server(cli: TestClient) -> None:
-        # pylint: disable=protected-access
-        if not cli._closed:  # noqa: SLF001
-            for resp in cli._responses:  # noqa: SLF001
-                resp.close()
-            for ws in cli._websockets:  # noqa: SLF001
-                await ws.close()
-            await cli._session.close()  # noqa: SLF001
-            cli._closed = True  # noqa: SLF001
-
-    async def finalize():
-        while clients:
-            await close_client_but_not_server(clients.pop())
-
-    await finalize()
-
-
-@pytest.fixture
 def clean_redis_table(redis_client) -> None:
     """this just ensures the redis table is cleaned up between test runs"""
 
@@ -1465,7 +1398,7 @@ async def test_open_shared_project_multiple_users(
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -1506,7 +1439,7 @@ async def test_open_shared_project_multiple_users(
 
     # now we create more users and open the same project until we reach the maximum number of user sessions
     other_users: list[
-        tuple[UserInfoDict, TestClient, str, socketio.AsyncClient, _SocketHandlers]
+        tuple[UserInfoDict, TestClient, str, socketio.AsyncClient, SocketHandlers]
     ] = []
     for user_session in range(1, max_number_of_user_sessions):
         client_i = client_on_running_server_factory()
@@ -1635,7 +1568,7 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
     expected: ExpectedResponse,
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -1729,7 +1662,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -1819,7 +1752,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
@@ -2060,7 +1993,7 @@ async def test_open_shared_project_at_same_time(
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection_with_handlers: Callable[
         [str | None, TestClient],
-        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+        Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
     ],
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 10

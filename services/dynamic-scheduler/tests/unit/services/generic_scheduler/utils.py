@@ -136,5 +136,5 @@ async def _get_keys_in_store(app: FastAPI) -> set[str]:
 async def ensure_keys_in_store(app: FastAPI, *, expected_keys: set[str]) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            keys_instore = await _get_keys_in_store(app)
-            assert keys_instore == expected_keys
+            keys_in_store = await _get_keys_in_store(app)
+            assert keys_in_store == expected_keys

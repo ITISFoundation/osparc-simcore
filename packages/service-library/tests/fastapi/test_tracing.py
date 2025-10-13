@@ -24,7 +24,8 @@ from servicelib.fastapi.tracing import (
 from servicelib.tracing import (
     _OSPARC_TRACE_ID_HEADER,
     _PROFILE_ATTRIBUTE_NAME,
-    with_profiled_span,
+    TracingConfig,
+    profiled_span,
 )
 from settings_library.tracing import TracingSettings
 
@@ -55,18 +56,26 @@ def set_and_clean_settings_env_vars(
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
         )
+    sampling_probability_mocked = False
+    if tracing_settings_in[2]:
+        sampling_probability_mocked = True
+        monkeypatch.setenv(
+            "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{tracing_settings_in[2]}"
+        )
     yield
     if endpoint_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
     if port_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
+    if sampling_probability_mocked:
+        monkeypatch.delenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY")
 
 
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 4318),
-        ("http://opentelemetry-collector", "4318"),
+        ("http://opentelemetry-collector", 4318, 1.0),
+        ("http://opentelemetry-collector", "4318", 1.0),
     ],
     indirect=True,
 )
@@ -77,13 +86,14 @@ async def test_valid_tracing_settings(
     tracing_settings_in: Callable[[], dict[str, Any]],
 ):
     tracing_settings = TracingSettings()
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
+    )
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_settings=tracing_settings,
-        service_name="Mock-Openetlemetry-Pytest",
+        tracing_config=tracing_config,
     )(app=mocked_app):
         async for _ in get_tracing_instrumentation_lifespan(
-            tracing_settings=tracing_settings,
-            service_name="Mock-Openetlemetry-Pytest",
+            tracing_config=tracing_config,
         )(app=mocked_app):
             pass
 
@@ -91,15 +101,16 @@ async def test_valid_tracing_settings(
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 80),
-        ("http://opentelemetry-collector", 1238712936),
-        ("opentelemetry-collector", 4318),
-        ("httsdasp://ot@##el-collector", 4318),
-        (" !@#$%^&*()[]{};:,<>?\\|`~+=/'\"", 4318),
+        ("http://opentelemetry-collector", 80, 0.5),
+        ("http://opentelemetry-collector", 1238712936, 0.5),
+        ("opentelemetry-collector", 4318, 0.5),
+        ("httsdasp://ot@##el-collector", 4318, 0.5),
+        (" !@#$%^&*()[]{};:,<>?\\|`~+=/'\"", 4318, 0.5),
         # The following exceeds max DNS name length
         (
             "".join(random.choice(string.ascii_letters) for _ in range(300)),
             "1238712936",
+            0.5,
         ),  # noqa: S311
     ],
     indirect=True,
@@ -113,9 +124,11 @@ async def test_invalid_tracing_settings(
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings()
+        tracing_config = TracingConfig.create(
+            tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
+        )
         async for _ in get_tracing_instrumentation_lifespan(
-            tracing_settings=tracing_settings,
-            service_name="Mock-Openetlemetry-Pytest",
+            tracing_config=tracing_config,
         )(app=app):
             pass
 
@@ -143,14 +156,14 @@ def manage_package(request):
     "tracing_settings_in, manage_package",
     [
         (
-            ("http://opentelemetry-collector", 4318),
+            ("http://opentelemetry-collector", 4318, 1.0),
             (
                 "opentelemetry-instrumentation-botocore",
                 "opentelemetry.instrumentation.botocore",
             ),
         ),
         (
-            ("http://opentelemetry-collector", "4318"),
+            ("http://opentelemetry-collector", "4318", 1.0),
             (
                 "opentelemetry-instrumentation-aiopg",
                 "opentelemetry.instrumentation.aiopg",
@@ -169,14 +182,15 @@ async def test_tracing_setup_package_detection(
     package_name = manage_package
     importlib.import_module(package_name)
     tracing_settings = TracingSettings()
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
+    )
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_settings=tracing_settings,
-        service_name="Mock-Openetlemetry-Pytest",
+        tracing_config=tracing_config,
     )(app=mocked_app):
         # idempotency check
         async for _ in get_tracing_instrumentation_lifespan(
-            tracing_settings=tracing_settings,
-            service_name="Mock-Openetlemetry-Pytest",
+            tracing_config=tracing_config,
         )(app=mocked_app):
             pass
 
@@ -184,7 +198,7 @@ async def test_tracing_setup_package_detection(
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 4318),
+        ("http://opentelemetry-collector", 4318, 1.0),
     ],
     indirect=True,
 )
@@ -203,6 +217,9 @@ async def test_trace_id_in_response_header(
     server_response: PlainTextResponse | HTTPException,
 ) -> None:
     tracing_settings = TracingSettings()
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
+    )
 
     handler_data = dict()
 
@@ -218,10 +235,11 @@ async def test_trace_id_in_response_header(
     mocked_app.get("/")(partial(handler, handler_data))
 
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_settings=tracing_settings,
-        service_name="Mock-OpenTelemetry-Pytest",
+        tracing_config=tracing_config,
     )(app=mocked_app):
-        initialize_fastapi_app_tracing(mocked_app, add_response_trace_id_header=True)
+        initialize_fastapi_app_tracing(
+            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
+        )
         client = TestClient(mocked_app)
         response = client.get("/")
         assert _OSPARC_TRACE_ID_HEADER in response.headers
@@ -233,7 +251,7 @@ async def test_trace_id_in_response_header(
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://opentelemetry-collector", 4318),
+        ("http://opentelemetry-collector", 4318, 1.0),
     ],
     indirect=True,
 )
@@ -252,26 +270,30 @@ async def test_with_profile_span(
     server_response: PlainTextResponse | HTTPException,
 ):
     tracing_settings = TracingSettings()
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
+    )
 
     handler_data = dict()
 
-    @with_profiled_span
     async def handler(handler_data: dict):
-        current_span = trace.get_current_span()
-        handler_data[_OSPARC_TRACE_ID_HEADER] = format(
-            current_span.get_span_context().trace_id, "032x"
-        )
-        if isinstance(server_response, HTTPException):
-            raise server_response
-        return server_response
+        with profiled_span(tracing_config=tracing_config, span_name="my favorite span"):
+            current_span = trace.get_current_span()
+            handler_data[_OSPARC_TRACE_ID_HEADER] = format(
+                current_span.get_span_context().trace_id, "032x"
+            )
+            if isinstance(server_response, HTTPException):
+                raise server_response
+            return server_response
 
     mocked_app.get("/")(partial(handler, handler_data))
 
     async for _ in get_tracing_instrumentation_lifespan(
-        tracing_settings=tracing_settings,
-        service_name="Mock-OpenTelemetry-Pytest",
+        tracing_config=tracing_config,
     )(app=mocked_app):
-        initialize_fastapi_app_tracing(mocked_app, add_response_trace_id_header=True)
+        initialize_fastapi_app_tracing(
+            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
+        )
         client = TestClient(mocked_app)
         _ = client.get("/")
         trace_id = handler_data.get(_OSPARC_TRACE_ID_HEADER)
@@ -284,3 +306,61 @@ async def test_with_profile_span(
             for span in spans
             if span.context is not None and span.attributes is not None
         )
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 0.05),
+    ],
+    indirect=True,
+)
+async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in: Callable[[], dict[str, Any]],
+):
+    """
+    This test checks that the TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY setting in TracingSettings
+    is effective by sending 1000 requests and verifying that the number of collected traces
+    is close to 0.05 * 1000 (with some tolerance).
+    """
+    n_requests = 1000
+    tolerance_probability = 0.5
+
+    tracing_settings = TracingSettings()
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest"
+    )
+
+    async def handler():
+        return PlainTextResponse("ok")
+
+    mocked_app.get("/")(handler)
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        initialize_fastapi_app_tracing(
+            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
+        )
+        client = TestClient(mocked_app)
+        for _ in range(n_requests):
+            client.get("/")
+        trace_ids = {
+            span.context.trace_id
+            for span in mock_otel_collector.get_finished_spans()
+            if span.context is not None
+        }
+        n_traces = len(trace_ids)
+        expected_num_traces = int(
+            tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY * n_requests
+        )
+        # Allow a 50% tolerance due to randomness
+        tolerance = int(tolerance_probability * expected_num_traces)
+        assert (
+            expected_num_traces - tolerance
+            <= n_traces
+            <= expected_num_traces + tolerance
+        ), f"Expected roughly {expected_num_traces} distinct trace ids, got {n_traces}"
