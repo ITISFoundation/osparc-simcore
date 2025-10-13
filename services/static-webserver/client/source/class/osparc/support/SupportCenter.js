@@ -184,16 +184,14 @@ qx.Class.define("osparc.support.SupportCenter", {
       this.__selectConversationsStackPage();
       const conversationPage = this.getChildControl("conversation-page");
       this.getChildControl("conversations-stack").setSelection([conversationPage]);
-      if (
-        osparc.store.Groups.getInstance().amIASupportUser() &&
-        conversationPage.getConversation().isReadBySupport() === false
-      ) {
-        conversationPage.getConversation().markAsRead();
-      } else if (
-        !osparc.store.Groups.getInstance().amIASupportUser() &&
-        conversationPage.getConversation().isReadByUser() === false
-      ) {
-        conversationPage.getConversation().markAsRead();
+
+      const conversation = conversationPage.getConversation();
+      if (conversation) {
+        if (osparc.store.Groups.getInstance().amIASupportUser() && conversation.isReadBySupport() === false) {
+          conversation.markAsRead();
+        } else if (!osparc.store.Groups.getInstance().amIASupportUser() && conversation.isReadByUser() === false) {
+          conversation.markAsRead();
+        }
       }
     },
 
