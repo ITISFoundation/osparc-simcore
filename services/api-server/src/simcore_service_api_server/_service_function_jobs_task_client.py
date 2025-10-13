@@ -30,6 +30,7 @@ from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from servicelib.celery.models import ExecutionMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server.models.schemas.functions import (
@@ -336,17 +337,26 @@ class FunctionJobTaskClientService:
         parent_project_uuid: ProjectID | None = None,
         parent_node_id: NodeID | None = None,
     ) -> RegisteredFunctionJob:
-        job_inputs = await self._function_job_service.create_function_job_inputs(
-            function=function, function_inputs=function_inputs
-        )
+        inputs = [
+            self._function_job_service.create_function_job_inputs(
+                function=function, function_inputs=input_
+            )
+            for input_ in function_inputs
+        ]
 
         cached_jobs = await self._web_rpc_client.find_cached_function_jobs(
             user_id=user_identity.user_id,
             product_name=user_identity.product_name,
             function_id=function.uid,
-            inputs=function_inputs,
+            inputs=TypeAdapter(FunctionInputsList).validate_python(inputs),
             status_filter=[FunctionJobStatus(status=RunningState.SUCCESS)],
         )
+
+        assert len(cached_jobs) == len(inputs)  # nosec
+
+        yet_to_run_inputs = [
+            input_ for input_, job in zip(inputs, cached_jobs) if job is None
+        ]
 
         pre_registered_function_job_data = (
             await self._function_job_service.pre_register_function_job(

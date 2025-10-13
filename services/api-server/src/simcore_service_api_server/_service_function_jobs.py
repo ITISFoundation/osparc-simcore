@@ -119,7 +119,7 @@ class FunctionJobService:
             f"Unsupported function schema class {function.input_schema.schema_class}",
         )
 
-    async def create_function_job_inputs(  # pylint: disable=no-self-use
+    def create_function_job_inputs(  # pylint: disable=no-self-use
         self,
         *,
         function: RegisteredFunction,
