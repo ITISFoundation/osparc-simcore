@@ -125,7 +125,7 @@ async def with_api_server_celery_worker(
     app_server = FastAPIAppServer(app=create_app(app_settings))
 
     def _on_worker_init_wrapper(sender: WorkController, **kwargs):
-        return on_worker_init(sender, app_server=app_server, **kwargs)
+        return on_worker_init(app_server, **kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)
