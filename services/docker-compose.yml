@@ -66,10 +66,6 @@ x-s3-settings: &s3_settings
   S3_REGION: ${S3_REGION}
   S3_SECRET_KEY: ${S3_SECRET_KEY}
 
-x-ec2-access-settings: &ec2_access_settings
-  EC2_ACCESS_KEY_ID: ${AUTOSCALING_EC2_ACCESS_KEY_ID}
-  EC2_SECRET_ACCESS_KEY: ${AUTOSCALING_EC2_SECRET_ACCESS_KEY}
-  EC2_REGION_NAME: ${AUTOSCALING_EC2_REGION_NAME}
 
 x-smtp-settings: &smtp_settings
   SMTP_HOST: ${SMTP_HOST}
@@ -129,6 +125,8 @@ services:
         - *tracing_open_telemetry_environs
 
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
+      API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      API_SERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       API_SERVER_TRACING: ${API_SERVER_TRACING}
       API_SERVER_LOGLEVEL: ${API_SERVER_LOGLEVEL}
       API_SERVER_PROFILING: ${API_SERVER_PROFILING}
@@ -183,7 +181,6 @@ services:
     environment:
       <<:
         - *common_logging_environs
-        - *ec2_access_settings
         - *rabbit_settings
         - *redis_settings
         - *registry_settings
@@ -252,7 +249,6 @@ services:
       <<:
         - *catalog_settings
         - *common_logging_environs
-        - *director_v2_settings
         - *postgres_settings
         - *rabbit_settings
         - *tracing_open_telemetry_environs
