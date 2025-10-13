@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
@@ -34,6 +34,13 @@ class CelerySettings(BaseCustomSettings):
             description="If set to True, result messages will be persistent (after a broker restart)."
         ),
     ] = True
+
+    CELERY_POOL: Annotated[
+        Literal["prefork", "eventlet", "gevent", "solo", "threads"],
+        Field(
+            description="Type of pool to use. One of: prefork, eventlet, gevent, solo, threads. See https://docs.celeryq.dev/en/stable/userguide/workers.html#choosing-a-concurrency-implementation for details.",
+        ),
+    ] = "prefork"
 
     model_config = SettingsConfigDict(
         json_schema_extra={
