@@ -95,7 +95,7 @@ def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) 
     assert task_key
     assert task.name
 
-    async def _stream_results() -> None:
+    async def _stream_results(sleep_interval: float) -> None:
         app_server = get_app_server(task.app)
         for i in range(num_results):
             result_data = f"result-{i}-{_faker.word()}"
@@ -105,14 +105,14 @@ def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) 
                 result_item,
             )
             _logger.info("Pushed result %d: %s", i, result_data)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(sleep_interval)
 
         # Mark the stream as done
         await app_server.task_manager.set_task_stream_done(task_key)
 
     # Run the streaming in the event loop
     asyncio.run_coroutine_threadsafe(
-        _stream_results(), get_app_server(task.app).event_loop
+        _stream_results(0.5), get_app_server(task.app).event_loop
     ).result()
 
     return f"completed-{num_results}-results"
