@@ -141,3 +141,5 @@ async def test_redis_service_state(
     assert await state_manager.read("current_schedule_id") == schedule_id
     await state_manager.delete_key("current_schedule_id")
     assert await state_manager.read("current_schedule_id") is None
+    # can also delete unexising key withtout errors
+    await state_manager.delete_key("current_schedule_id")
