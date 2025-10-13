@@ -65,6 +65,9 @@ class _UpdateServiceStateDict(TypedDict):
     current_schedule_id: NotRequired[ScheduleId]
 
 
+_AllowedDeleteKeys = Literal["current_schedule_id"]
+
+
 class RedisServiceStateManager:
     def __init__(self, *, app: FastAPI, node_id: NodeID) -> None:
         self.resis_store = RedisStore.get_from_app_state(app)
@@ -146,6 +149,9 @@ class RedisServiceStateManager:
                 return DynamicServiceStop.model_validate(result)
             case _:
                 return result
+
+    async def delete_key(self, key: _AllowedDeleteKeys) -> None:
+        await handle_redis_returns_union_types(self.redis.hdel(self.redis_key, key))
 
     async def exists(self) -> bool:
         result: int = await handle_redis_returns_union_types(

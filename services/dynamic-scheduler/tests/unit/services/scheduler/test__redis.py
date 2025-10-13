@@ -135,3 +135,9 @@ async def test_redis_service_state(
     # 5. remove nothig is presnet any longer
     await state_manager.delete()
     assert await state_manager.exists() is False
+
+    # 6. deleting a key
+    await state_manager.create_or_update("current_schedule_id", schedule_id)
+    assert await state_manager.read("current_schedule_id") == schedule_id
+    await state_manager.delete_key("current_schedule_id")
+    assert await state_manager.read("current_schedule_id") is None
