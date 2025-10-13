@@ -239,7 +239,8 @@ async def list_support_conversations_for_user(
                 offset=offset,
                 limit=limit,
                 order_by=OrderBy(
-                    field=IDStr("modified"), direction=OrderDirection.DESC
+                    field=IDStr("last_message_created_at"),
+                    direction=OrderDirection.DESC,
                 ),
             )
 
@@ -249,7 +250,9 @@ async def list_support_conversations_for_user(
         user_group_id=_user_group_id,
         offset=offset,
         limit=limit,
-        order_by=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
+        order_by=OrderBy(
+            field=IDStr("last_message_created_at"), direction=OrderDirection.DESC
+        ),
     )
 
 

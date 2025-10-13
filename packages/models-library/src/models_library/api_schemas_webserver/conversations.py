@@ -32,6 +32,7 @@ class ConversationRestGet(OutputSchema):
     extra_context: dict[str, str]
     is_read_by_user: bool
     is_read_by_support: bool
+    last_message_created_at: datetime
 
     @classmethod
     def from_domain_model(cls, domain: ConversationGetDB) -> Self:
@@ -48,6 +49,7 @@ class ConversationRestGet(OutputSchema):
             extra_context=domain.extra_context,
             is_read_by_user=domain.is_read_by_user,
             is_read_by_support=domain.is_read_by_support,
+            last_message_created_at=domain.last_message_created_at,
         )
 
 

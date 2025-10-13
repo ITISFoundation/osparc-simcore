@@ -173,7 +173,9 @@ async def _create_support_message_with_first_check(
 
         return created_message, is_first_message
 
-    message = await _create_support_message_and_check_if_it_is_first_message()
+    message, is_first_message = (
+        await _create_support_message_and_check_if_it_is_first_message()
+    )
 
     # NOTE: Update conversation last modified (for frontend listing) and read states
     if is_support_user:
@@ -186,10 +188,12 @@ async def _create_support_message_with_first_check(
         app,
         conversation_id=conversation_id,
         updates=ConversationPatchDB(
-            is_read_by_user=_is_read_by_user, is_read_by_support=_is_read_by_support
+            is_read_by_user=_is_read_by_user,
+            is_read_by_support=_is_read_by_support,
+            last_message_created_at=message.created,
         ),
     )
-    return message
+    return message, is_first_message
 
 
 async def create_support_message(

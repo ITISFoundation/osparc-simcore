@@ -10389,6 +10389,10 @@ components:
         isReadBySupport:
           type: boolean
           title: Isreadbysupport
+        lastMessageCreatedAt:
+          type: string
+          format: date-time
+          title: Lastmessagecreatedat
       type: object
       required:
       - conversationId
@@ -10403,6 +10407,7 @@ components:
       - extraContext
       - isReadByUser
       - isReadBySupport
+      - lastMessageCreatedAt
       title: ConversationRestGet
     ConversationType:
       type: string

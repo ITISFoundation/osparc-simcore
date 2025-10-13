@@ -98,6 +98,13 @@ conversations = sa.Table(
         server_default=sa.text("true"),
         doc="Indicates if the message has been read by the support user (true) or not (false)",
     ),
+    sa.Column(
+        "last_message_created_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.sql.func.now(),
+        doc="Timestamp of the last message created in this conversation",
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
 )
