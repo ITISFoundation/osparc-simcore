@@ -19,19 +19,12 @@ def on_worker_init(
 ) -> None:
     startup_complete_event = threading.Event()
 
-    _logger.info("Worker init")
-    _logger.info("Sender: %s", sender)
-    _logger.info("App server: %s", app_server)
-    _logger.info("App server _kwargs: %s", _kwargs)
-
     def _init(startup_complete_event: threading.Event) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
         assert sender.app  # nosec
         assert isinstance(sender.app, Celery)  # nosec
-
-        _logger.info("App inside on_worker_init: %s", sender.app)
 
         set_app_server(sender.app, app_server)
 
