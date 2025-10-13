@@ -199,9 +199,11 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
 
     __evalFirstAndLastMessage: function() {
       if (this.__messages && this.__messages.length) {
+        // sort messages by date just in case
+        osparc.data.model.Message.sortMessagesByDate(this.__messages);
         // newest first
-        this.setFirstMessage(this.__messages[this.__messages.length - 1]);
-        this.setLastMessage(this.__messages[0]);
+        this.setFirstMessage(this.__messages[0]);
+        this.setLastMessage(this.__messages[this.__messages.length - 1]);
       }
     },
 
