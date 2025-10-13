@@ -1,22 +1,15 @@
 """
-    Establishes which services can consume a given filetype
+Establishes which services can consume a given filetype
 
-    The relation is N-N because
-    - a service could handle one or more filetypes and
-    - one filetype could be handled by one or more services
+The relation is N-N because
+- a service could handle one or more filetypes and
+- one filetype could be handled by one or more services
 """
+
 import sqlalchemy as sa
 
 from ._common import RefActions
 from .base import metadata
-
-#
-# TODO: This information SHALL be defined in service metadata upon publication
-#       and the catalog service, using e.g. a background task,
-#       can automatically fill this table with services that elligable (e.g. shared with everybody)
-#       to consume given filetypes. Notice also that service "matching" will also be determined in a near
-#       future by more complex metadata
-#
 
 services_consume_filetypes = sa.Table(
     "services_consume_filetypes",

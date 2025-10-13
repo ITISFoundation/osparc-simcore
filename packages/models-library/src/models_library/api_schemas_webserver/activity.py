@@ -18,7 +18,7 @@ class Limits(BaseModel):
 class Activity(BaseModel):
     stats: Stats
     limits: Limits
-    queued: bool | None = None  # TODO: review since it in NOT filled
+    queued: bool | None = None
 
 
 ActivityStatusDict: TypeAlias = dict[NodeID, Activity]

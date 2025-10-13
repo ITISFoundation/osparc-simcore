@@ -27,10 +27,7 @@ class AppSettings(BaseSettings):
     COMPOSE_VERSION: str = Field(
         "3.7", description="version of the docker-compose spec"
     )
+
     model_config = SettingsConfigDict(
         env_file_encoding="utf-8",
     )
-
-    # TODO: load from ~/.osparc/service-integration.json or env file
-    # TODO: add access to secrets
-    # SEE https://pydantic-docs.helpmanual.io/usage/settings/#adding-sources

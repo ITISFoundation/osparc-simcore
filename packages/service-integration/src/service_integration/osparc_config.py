@@ -139,7 +139,6 @@ class MetadataConfig(ServiceMetaDataPublished):
         service_path = self.key
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
-            # TODO: check thisname is compatible with REGEX
             service_path = TypeAdapter(ServiceKey).validate_python(
                 service_path.replace("/", ".")
             )

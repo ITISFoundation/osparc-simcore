@@ -1,4 +1,4 @@
-""" Support for Open Container Initiative (OCI)
+"""Support for Open Container Initiative (OCI)
 
 SEE https://opencontainers.org
 SEE https://github.com/opencontainers
@@ -45,7 +45,6 @@ def _underscore_as_dot(field_name: str):
 
 
 class OciImageSpecAnnotations(BaseModel):
-    # TODO: review and polish constraints
 
     created: Annotated[
         datetime | None,
@@ -99,13 +98,12 @@ class OciImageSpecAnnotations(BaseModel):
         ),
     ] = None
 
-    # SEE https://spdx.dev/spdx-specification-21-web-version/#h.jxpfx0ykyb60
     licenses: Annotated[
         str,
         Field(
-            description="License(s) under which contained software is distributed as an SPDX License Expression.",
+            description="License(s) under which contained software is distributed as an SPDX License Expression. See https://spdx.org/licenses/",
         ),
-    ] = "MIT"
+    ] = "MIT"  # https://spdx.org/licenses/MIT.html
 
     ref_name: Annotated[
         str | None,
@@ -131,7 +129,11 @@ class OciImageSpecAnnotations(BaseModel):
     ] = None
 
     model_config = ConfigDict(
-        alias_generator=_underscore_as_dot, populate_by_name=True, extra="forbid"
+        alias_generator=_underscore_as_dot,
+        populate_by_name=True,
+        extra="forbid",
+        str_strip_whitespace=True,
+        str_min_length=1,
     )
 
     @classmethod

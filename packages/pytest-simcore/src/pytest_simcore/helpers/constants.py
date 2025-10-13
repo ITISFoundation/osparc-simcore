@@ -1,10 +1,7 @@
-#
-# TODO: for the moment, it has to be py3.6 compatible. Please do not use e.g. Final
+from typing import Final
 
 # time
-
-MINUTE: int = 60  # secs
-
+MINUTE: Final[int] = 60  # in seconds
 
 # string templates
-HEADER_STR: str = "{:-^100}\n"
+HEADER_STR: Final[str] = "{:-^100}\n"

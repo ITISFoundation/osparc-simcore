@@ -112,8 +112,6 @@ class JobInputs(BaseModel):
     # NOTE: this is different from the resource JobInput (TBD)
     values: KeywordArguments
 
-    # TODO: gibt es platz fuer metadata?
-
     model_config = ConfigDict(
         frozen=True,
         json_schema_extra={
