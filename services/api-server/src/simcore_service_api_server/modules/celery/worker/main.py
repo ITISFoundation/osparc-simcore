@@ -1,6 +1,6 @@
 """Main application to be deployed in for example uvicorn."""
 
-from celery.signals import (  # type: ignore[import-untyped]
+from celery.signals import (  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
     worker_init,
     worker_shutdown,
 )
