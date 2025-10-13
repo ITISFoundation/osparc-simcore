@@ -244,7 +244,7 @@ qx.Class.define("osparc.support.Conversations", {
       const conversationListItem = new osparc.support.ConversationListItem();
       conversationListItem.setConversation(conversation);
       conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationId, this));
-      conversation.addListener("changeModified", () => this.__sortConversations(), this);
+      conversation.addListener("changeLastMessageCreatedAt", () => this.__sortConversations(), this);
       const eventName = osparc.store.Groups.getInstance().amIASupportUser() ? "changeReadBySupport" : "changeReadByUser";
       conversation.addListener(eventName, () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
       conversation.addListener("changeResolved", () => this.__applyCurrentFilter(this.getCurrentFilter()), this);
