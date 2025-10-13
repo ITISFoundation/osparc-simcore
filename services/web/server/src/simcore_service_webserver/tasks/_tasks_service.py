@@ -1,5 +1,6 @@
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from typing import Final
 
 from celery_library.errors import (
     TaskManagerError,
@@ -18,6 +19,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
+from pydantic import NonNegativeFloat
 from servicelib.celery.models import (
     OwnerMetadata,
     TaskState,
@@ -30,7 +32,7 @@ from servicelib.logging_utils import log_catch
 _logger = logging.getLogger(__name__)
 
 
-_STREAM_STALL_THRESHOLD = 60  # seconds
+_STREAM_STALL_THRESHOLD: Final[NonNegativeFloat] = timedelta(minutes=1).total_seconds()
 
 
 async def cancel_task(
