@@ -31,11 +31,8 @@ qx.Class.define("osparc.support.SupportButton", {
 
     this.getChildControl("icon");
 
-    // improve this
-    setTimeout(() => {
-      this.__listenToStore();
-      this.__updateButton();
-    }, 2000); // wait for store to be ready
+    this.__listenToStore();
+    this.__updateButton();
 
     this.addListener("tap", () => {
       const supportCenter = osparc.support.SupportCenter.openWindow();
@@ -103,9 +100,7 @@ qx.Class.define("osparc.support.SupportButton", {
       cachedConversations.forEach(conversation => conversation.addListener(eventName, () => this.__updateButton(), this));
       conversationsStore.addListener("conversationAdded", e => {
         const conversation = e.getData();
-        console.log("Conversation X1", conversation);
         conversation.addListener(eventName, e => {
-          console.log("Conversation X4", conversation, e.getData());
           this.__updateButton();
         }, this);
         this.__updateButton();
