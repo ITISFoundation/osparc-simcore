@@ -1050,14 +1050,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     yield file_meta
 
         except S3KeyNotFoundError as exc:
-            with log_context(
-                _logger,
-                logging.DEBUG,
-                "Failed to search S3 for project %s: %s",
-                proj_id,
-                exc,
-            ):
-                return
+            _logger.debug("No files found in S3 for project %s: %s", proj_id, exc)
 
     async def search(
         self,
