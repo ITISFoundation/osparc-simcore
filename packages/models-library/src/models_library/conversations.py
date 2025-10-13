@@ -56,6 +56,7 @@ class ConversationGetDB(BaseModel):
     # states
     created: datetime
     modified: datetime
+    last_message_created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -80,6 +81,7 @@ class ConversationPatchDB(BaseModel):
     fogbugz_case_id: str | None = None
     is_read_by_user: bool | None = None
     is_read_by_support: bool | None = None
+    last_message_created_at: datetime | None = None
 
 
 class ConversationMessagePatchDB(BaseModel):

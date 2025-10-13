@@ -60,6 +60,7 @@ async def create(
                 extra_context=extra_context,
                 is_read_by_user=False,  # New conversation is unread
                 is_read_by_support=False,  # New conversation is unread
+                last_message_created_at=func.now(),  # No messages yet
             )
             .returning(*_SELECTION_ARGS)
         )
