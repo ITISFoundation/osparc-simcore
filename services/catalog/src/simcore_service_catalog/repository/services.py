@@ -657,12 +657,14 @@ class ServicesRepository(BaseRepository):
                 async for row in await conn.stream(query)
             ]
 
-    async def batch_get_services_access_rights(
+    async def batch_get_services_access_rights_or_none(
         self,
         key_versions: Iterable[tuple[str, str]],
         product_name: str | None = None,
-    ) -> dict[tuple[str, str], list[ServiceAccessRightsDB]]:
-        """Batch version of get_service_access_rights"""
+    ) -> dict[tuple[str, str], list[ServiceAccessRightsDB]] | None:
+        """
+        Returns only found. If None found, then None
+        """
         service_to_access_rights = defaultdict(list)
         query = (
             sa.select(services_access_rights)
@@ -681,7 +683,7 @@ class ServicesRepository(BaseRepository):
                 service_to_access_rights[(row.key, row.version)].append(
                     ServiceAccessRightsDB.model_validate(row)
                 )
-        return service_to_access_rights
+        return service_to_access_rights or None
 
     async def upsert_service_access_rights(
         self, new_access_rights: list[ServiceAccessRightsDB]
