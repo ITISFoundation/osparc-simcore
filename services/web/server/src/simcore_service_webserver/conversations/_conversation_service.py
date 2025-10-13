@@ -12,6 +12,7 @@ from models_library.conversations import (
     ConversationID,
     ConversationPatchDB,
     ConversationType,
+    IsSupportUser,
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -184,7 +185,7 @@ async def get_support_conversation_for_user(
     user_id: UserID,
     product_name: ProductName,
     conversation_id: ConversationID,
-):
+) -> tuple[ConversationGetDB, IsSupportUser]:
     # Check if user is part of support group (in that case he has access to all support conversations)
     product = products_service.get_product(app, product_name=product_name)
     _support_standard_group_id = product.support_standard_group_id
@@ -194,16 +195,22 @@ async def get_support_conversation_for_user(
         )
         if _support_standard_group_id in _user_group_ids:
             # I am a support user
-            return await get_conversation(
-                app, conversation_id=conversation_id, type_=ConversationType.SUPPORT
+            return (
+                await get_conversation(
+                    app, conversation_id=conversation_id, type_=ConversationType.SUPPORT
+                ),
+                True,
             )
 
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
-    return await get_conversation_for_user(
-        app,
-        conversation_id=conversation_id,
-        user_group_id=_user_group_id,
-        type_=ConversationType.SUPPORT,
+    return (
+        await get_conversation_for_user(
+            app,
+            conversation_id=conversation_id,
+            user_group_id=_user_group_id,
+            type_=ConversationType.SUPPORT,
+        ),
+        False,
     )
 
 
@@ -228,10 +235,11 @@ async def list_support_conversations_for_user(
             # I am a support user
             return await _conversation_repository.list_all_support_conversations_for_support_user(
                 app,
+                product_name=product_name,
                 offset=offset,
                 limit=limit,
                 order_by=OrderBy(
-                    field=IDStr("conversation_id"), direction=OrderDirection.DESC
+                    field=IDStr("modified"), direction=OrderDirection.DESC
                 ),
             )
 
@@ -241,7 +249,7 @@ async def list_support_conversations_for_user(
         user_group_id=_user_group_id,
         offset=offset,
         limit=limit,
-        order_by=OrderBy(field=IDStr("conversation_id"), direction=OrderDirection.DESC),
+        order_by=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
     )
 
 
@@ -292,5 +300,28 @@ async def create_fogbugz_case_for_support_conversation(
                     f"f/cases/{case_id}",
                 )
             },
+            fogbugz_case_id=case_id,
         ),
+    )
+
+
+async def reopen_fogbugz_case_for_support_conversation(
+    app: web.Application,
+    *,
+    case_id: str,
+    conversation_url: str,
+    product_support_assigned_fogbugz_person_id: str,
+) -> None:
+    """Reopen a FogBugz case for a support conversation"""
+    description = f"""
+    Dear Support Team,
+
+    We have received a follow up request in this conversation {conversation_url}.
+    """
+
+    fogbugz_client = get_fogbugz_rest_client(app)
+    await fogbugz_client.reopen_case(
+        case_id=case_id,
+        assigned_fogbugz_person_id=product_support_assigned_fogbugz_person_id,
+        reopen_msg=description,
     )

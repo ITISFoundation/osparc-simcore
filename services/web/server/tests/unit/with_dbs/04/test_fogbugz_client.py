@@ -120,6 +120,10 @@ async def test_fogubugz_client(
     status = await fogbugz_client.get_case_status(case_id)
     assert status == "Resolved (Completed)"
 
-    await fogbugz_client.reopen_case(case_id, assigned_fogbugz_person_id="281")
+    await fogbugz_client.reopen_case(
+        case_id,
+        assigned_fogbugz_person_id="281",
+        reopen_msg="Reopening the case with customer request",
+    )
     status = await fogbugz_client.get_case_status(case_id)
     assert status == "Active"

@@ -10327,6 +10327,16 @@ components:
             type: object
           - type: 'null'
           title: Extracontext
+        isReadByUser:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Isreadbyuser
+        isReadBySupport:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Isreadbysupport
       type: object
       title: ConversationPatch
     ConversationRestGet:
@@ -10355,6 +10365,11 @@ components:
           minimum: 0
         type:
           $ref: '#/components/schemas/ConversationType'
+        fogbugzCaseId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Fogbugzcaseid
         created:
           type: string
           format: date-time
@@ -10368,6 +10383,12 @@ components:
             type: string
           type: object
           title: Extracontext
+        isReadByUser:
+          type: boolean
+          title: Isreadbyuser
+        isReadBySupport:
+          type: boolean
+          title: Isreadbysupport
       type: object
       required:
       - conversationId
@@ -10376,9 +10397,12 @@ components:
       - projectUuid
       - userGroupId
       - type
+      - fogbugzCaseId
       - created
       - modified
       - extraContext
+      - isReadByUser
+      - isReadBySupport
       title: ConversationRestGet
     ConversationType:
       type: string

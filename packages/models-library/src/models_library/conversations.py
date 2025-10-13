@@ -38,6 +38,9 @@ class ConversationMessageType(StrAutoEnum):
 #
 
 
+IsSupportUser: TypeAlias = bool
+
+
 class ConversationGetDB(BaseModel):
     conversation_id: ConversationID
     product_name: ProductName
@@ -46,6 +49,9 @@ class ConversationGetDB(BaseModel):
     user_group_id: GroupID
     type: ConversationType
     extra_context: dict[str, Any]
+    fogbugz_case_id: str | None
+    is_read_by_user: bool
+    is_read_by_support: bool
 
     # states
     created: datetime
@@ -71,6 +77,9 @@ class ConversationMessageGetDB(BaseModel):
 class ConversationPatchDB(BaseModel):
     name: ConversationName | None = None
     extra_context: dict[str, Any] | None = None
+    fogbugz_case_id: str | None = None
+    is_read_by_user: bool | None = None
+    is_read_by_support: bool | None = None
 
 
 class ConversationMessagePatchDB(BaseModel):
