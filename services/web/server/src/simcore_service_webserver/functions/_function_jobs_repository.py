@@ -326,9 +326,15 @@ async def find_cached_function_jobs(
             ),
         )
 
-        # Single query to find all jobs matching any of the inputs with access check
+        # Use DISTINCT ON to get only one job per input (the most recent one)
         results = await conn.execute(
-            function_jobs_table.select().where(filter_conditions)
+            function_jobs_table.select()
+            .distinct(cast(function_jobs_table.c.inputs, Text))
+            .where(filter_conditions)
+            .order_by(
+                cast(function_jobs_table.c.inputs, Text),
+                function_jobs_table.c.created.desc(),
+            )
         )
 
         # Create a mapping from JSON inputs to jobs
