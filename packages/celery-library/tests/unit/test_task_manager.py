@@ -316,9 +316,6 @@ async def test_push_task_result_streams_data_during_execution(
         num_results=3,
     )
 
-    # Wait for task to start streaming results
-    await asyncio.sleep(2.0)
-
     # Pull results while task is running, retry until is_done is True
     results = []
     for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
