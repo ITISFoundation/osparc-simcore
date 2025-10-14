@@ -25,7 +25,7 @@ from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery_library.signals import on_worker_init, on_worker_shutdown
-from celery_library.utils import set_app_server
+from celery_library.worker.app_server import set_app_server
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI

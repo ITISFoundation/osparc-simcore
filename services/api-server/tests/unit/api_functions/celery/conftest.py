@@ -19,7 +19,7 @@ from celery.signals import (  # pylint: disable=no-name-in-module
     worker_shutdown,
 )
 from celery_library.signals import on_worker_init, on_worker_shutdown
-from celery_library.utils import set_app_server
+from celery_library.worker.app_server import set_app_server
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
