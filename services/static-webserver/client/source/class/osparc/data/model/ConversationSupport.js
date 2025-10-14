@@ -189,7 +189,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       this.__evalFirstAndLastMessage();
 
       // mark conversation as unread if the message is from the other party
-      if (osparc.data.model.Message.isMyMessage(message)) {
+      if (!osparc.data.model.Message.isMyMessage(message)) {
         this.setReadBy(false);
       }
       return message;
