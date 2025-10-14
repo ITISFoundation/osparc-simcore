@@ -155,6 +155,8 @@ def ensure_pattern_has_enough_characters_before(  # pylint: disable=dangerous-de
     wildcard_chars: list[str] | None = WILDCARD_CHARS,
 ) -> BeforeValidator:
     def _validator(value):
+        assert wildcard_chars  # nosec
+
         non_wildcard_chars = len([c for c in value if c not in wildcard_chars])
 
         if non_wildcard_chars < min_non_wildcard_chars:
