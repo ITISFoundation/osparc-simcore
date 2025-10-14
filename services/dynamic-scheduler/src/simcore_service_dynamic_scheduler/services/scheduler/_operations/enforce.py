@@ -2,13 +2,11 @@ import logging
 
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
-    OperationContext,
-)
 
 from ...generic_scheduler import (
     BaseStep,
     Operation,
+    OperationContext,
     OperationToStart,
     ProvidedOperationContext,
     RequiredOperationContext,
@@ -134,9 +132,10 @@ class _Enforce(BaseStep):
         return None
 
 
-operation = Operation(
-    SingleStepGroup(RegisterScheduleId),
-    SingleStepGroup(_Prepare),
-    SingleStepGroup(_Enforce),
-    SingleStepGroup(UnRegisterScheduleId),
-)
+def get_operation() -> Operation:
+    return Operation(
+        SingleStepGroup(RegisterScheduleId),
+        SingleStepGroup(_Prepare),
+        SingleStepGroup(_Enforce),
+        SingleStepGroup(UnRegisterScheduleId),
+    )

@@ -10,6 +10,7 @@ from ...generic_scheduler import (
     ReservedContextKeys,
     ScheduleId,
 )
+from .._models import DesiredState
 from .._redis import RedisServiceStateManager
 
 _logger = logging.getLogger(__name__)
@@ -38,6 +39,10 @@ class RegisterScheduleId(BaseStep):
         return None
 
     @classmethod
+    def get_revert_requires_context_keys(cls) -> set[str]:
+        return {"node_id"}
+
+    @classmethod
     async def revert(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
@@ -56,6 +61,40 @@ class UnRegisterScheduleId(BaseStep):
     ) -> ProvidedOperationContext | None:
         await _remove_schedule_id(app, node_id=required_context["node_id"])
         return None
+
+
+class SetCurrentStateRunning(BaseStep):
+    @classmethod
+    def get_execute_requires_context_keys(cls) -> set[str]:
+        return {"node_id"}
+
+    @classmethod
+    async def execute(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        node_id: NodeID = required_context["node_id"]
+
+        service_state_manager = RedisServiceStateManager(app=app, node_id=node_id)
+        await service_state_manager.create_or_update(
+            "current_state", DesiredState.RUNNING
+        )
+
+
+class SetCurrentStateStopped(BaseStep):
+    @classmethod
+    def get_execute_requires_context_keys(cls) -> set[str]:
+        return {"node_id"}
+
+    @classmethod
+    async def execute(
+        cls, app: FastAPI, required_context: RequiredOperationContext
+    ) -> ProvidedOperationContext | None:
+        node_id: NodeID = required_context["node_id"]
+
+        service_state_manager = RedisServiceStateManager(app=app, node_id=node_id)
+        await service_state_manager.create_or_update(
+            "current_state", DesiredState.STOPPED
+        )
 
 
 class DoNothing(BaseStep):
