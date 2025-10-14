@@ -13,6 +13,7 @@ from typing import Final, cast
 import arrow
 import yaml
 from aws_library.ec2 import EC2InstanceData, Resources
+from aws_library.ec2._models import EC2InstanceBootSpecific
 from models_library.docker import (
     DockerGenericTag,
     DockerLabelKey,
@@ -703,3 +704,13 @@ async def attach_node(
 def is_node_ready(node: Node) -> bool:
     assert node.status  # nosec
     return bool(node.status.state is NodeState.ready)
+
+
+def compute_full_list_of_pre_pulled_images(
+    ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
+) -> list[DockerGenericTag]:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    common_images = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+    )
+    return sorted(set(common_images) | set(ec2_boot_specific.pre_pull_images))

@@ -1243,3 +1243,24 @@ async def create_buffer_machines(
         return instance_ids
 
     return _do
+
+
+@pytest.fixture
+def with_ec2_instances_cold_start_docker_images_pre_pulling(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+) -> EnvVarsDict:
+    images = TypeAdapter(list[DockerGenericTag]).validate_python(
+        [
+            "nginx:latest",
+            "itisfoundation/my-very-nice-service-in-common:latest",
+            "simcore/services/dynamic/another-nice-one:2.4.5161",
+            "asd",
+        ]
+    )
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING": json.dumps(images),
+        },
+    )
+    return app_environment | envs
