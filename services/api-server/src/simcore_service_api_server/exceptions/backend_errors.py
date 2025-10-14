@@ -154,10 +154,10 @@ class CeleryTaskNotFoundError(BaseBackEndError):
 
 
 class SolverJobOutputRequestButNotSucceededError(BaseBackEndError):
-    msg_template = "Solver job '{job_id}' not finished. Current state: {state}"
+    msg_template = "Solver job '{job_id}' not succeeded, when output is requested. Current state: {state}"
     status_code = status.HTTP_409_CONFLICT
 
 
 class StudyJobOutputRequestButNotSucceededError(BaseBackEndError):
-    msg_template = "Study job '{job_id}' not finished. Current state: {state}"
+    msg_template = "Study job '{job_id}' not succeeded, when output is requested. Current state: {state}"
     status_code = status.HTTP_409_CONFLICT
