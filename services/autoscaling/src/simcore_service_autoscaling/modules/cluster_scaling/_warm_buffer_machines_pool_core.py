@@ -42,6 +42,7 @@ from ...constants import (
 )
 from ...core.settings import get_application_settings
 from ...models import WarmBufferPool, WarmBufferPoolManager
+from ...utils import utils_docker
 from ...utils.warm_buffer_machines import (
     dump_pre_pulled_images_as_tags,
     ec2_warm_buffer_startup_script,
@@ -76,10 +77,13 @@ def _handle_completed_cloud_init_instance(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
     _record_instance_ready_metrics(app, instance=instance)
-
-    if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-        instance.type
-    ].pre_pull_images:
+    pre_pull_images = utils_docker.compute_full_list_of_pre_pulled_images(
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            instance.type
+        ],
+        app_settings,
+    )
+    if pre_pull_images:
         buffer_pool.waiting_to_pull_instances.add(instance)
     else:
         buffer_pool.waiting_to_stop_instances.add(instance)
@@ -230,14 +234,18 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
             instance_type
         ].pre_pulled_instances()
 
+        desired_pre_pull_images = utils_docker.compute_full_list_of_pre_pulled_images(
+            ec2_boot_config, app_settings
+        )
+
         for instance in all_pre_pulled_instances:
             pre_pulled_images = load_pre_pulled_images_from_tags(instance.tags)
             if (
                 pre_pulled_images is not None
-            ) and pre_pulled_images != ec2_boot_config.pre_pull_images:
+            ) and pre_pulled_images != desired_pre_pull_images:
                 _logger.info(
                     "%s",
-                    f"{instance.id=} has invalid {pre_pulled_images=}, expected is {ec2_boot_config.pre_pull_images=}",
+                    f"{instance.id=} has invalid {pre_pulled_images=}, expected is {desired_pre_pull_images=}",
                 )
                 terminateable_instances.add(instance)
 
@@ -387,9 +395,12 @@ async def _handle_pool_image_pulling(
         await ec2_client.set_instances_tags(
             tuple(instances_to_stop),
             tags=dump_pre_pulled_images_as_tags(
-                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                    instance_type
-                ].pre_pull_images
+                utils_docker.compute_full_list_of_pre_pulled_images(
+                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                        instance_type
+                    ],
+                    app_settings,
+                )
             ),
         )
     return instances_to_stop, broken_instances_to_terminate

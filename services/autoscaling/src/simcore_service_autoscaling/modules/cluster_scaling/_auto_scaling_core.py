@@ -1518,12 +1518,10 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(
                 updated_node.ec2_instance.type
             ]
         )
-        desired_pre_pulled_images = list(
-            set(
-                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-            )
-            | set(ec2_boot_specific.pre_pull_images),
+        desired_pre_pulled_images = utils_docker.compute_full_list_of_pre_pulled_images(
+            ec2_boot_specific, app_settings
         )
+
         if pre_pulled_images != desired_pre_pulled_images:
             _logger.info(
                 "%s needs to pre-pull images %s, currently has %s",
@@ -1540,11 +1538,8 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(
                 node.ec2_instance.type
             ]
         )
-        desired_pre_pulled_images = list(
-            set(
-                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-            )
-            | set(ec2_boot_specific.pre_pull_images),
+        desired_pre_pulled_images = utils_docker.compute_full_list_of_pre_pulled_images(
+            ec2_boot_specific, app_settings
         )
         _logger.info(
             "triggering pre-pull of images %s on %s of type %s",
