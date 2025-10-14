@@ -32,6 +32,7 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .application_keys import APP_SETTINGS_APPKEY
 from .catalog.settings import CatalogSettings
+from .chatbot.settings import ChatbotSettings
 from .collaboration.settings import RealTimeCollaborationSettings
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
@@ -255,6 +256,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     WEBSERVER_FOGBUGZ: Annotated[
         FogbugzSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
+    WEBSERVER_CHATBOT: Annotated[
+        ChatbotSettings | None,
         Field(
             json_schema_extra={"auto_default_from_env": True},
         ),
