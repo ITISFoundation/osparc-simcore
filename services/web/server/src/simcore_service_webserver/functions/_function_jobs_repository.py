@@ -1,9 +1,11 @@
 # pylint: disable=too-many-arguments
 
 import json
+import logging
 
 import sqlalchemy
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -22,6 +24,7 @@ from models_library.functions import (
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
     FunctionJobPatchModelIncompatibleError,
+    FunctionUnrecoverableError,
     UnsupportedFunctionJobClassError,
 )
 from models_library.products import ProductName
@@ -56,6 +59,8 @@ from ._functions_permissions_repository import (
 from ._functions_table_cols import (
     _FUNCTION_JOBS_TABLE_COLS,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 async def create_function_jobs(  # noqa: PLR0913
@@ -251,8 +256,19 @@ async def patch_function_job(
                     function_id=missing_uid,
                     product_name=product_name,
                 )
-            # reaching this far means the uid is missing for other reasons
-            raise FunctionJobIDNotFoundError(function_job_id=missing_uid)
+            # Should not reach this far
+            exception = FunctionUnrecoverableError()
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    user_error_msg="Inconsistent state detected, please contact support.",
+                    error=exception,
+                    error_context={
+                        "function_job_uid": missing_uid,
+                        "used_function_class": f"{used_function_class}",
+                    },
+                )
+            )
+            raise exception
 
         return [jobs[patch.uid] for patch in registered_function_job_patch_inputs]
 
