@@ -237,7 +237,7 @@ async def export_data(export_data: DataExportPost, location_id: LocationID):
 
 
 @router.post(
-    "/storage/locations/{location_id}/search",
+    "/storage/locations/{location_id}:search",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=Envelope[TaskGet],
     name="search",

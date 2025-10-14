@@ -541,7 +541,7 @@ async def export_data(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(_storage_locations_prefix + "/{location_id}/search", name="search")
+@routes.post(_storage_locations_prefix + "/{location_id}:search", name="search")
 @login_required
 @permission_required("storage.files.*")
 @handle_rest_requests_exceptions

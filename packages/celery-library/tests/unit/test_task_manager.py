@@ -356,7 +356,7 @@ async def test_pull_task_stream_items_with_limit(
             ephemeral=False,  # Keep task available after completion for result pulling
         ),
         owner_metadata=owner_metadata,
-        num_results=5,  # Reduced from 8 to make test more reliable
+        num_results=5,
     )
 
     # Wait for task to complete
