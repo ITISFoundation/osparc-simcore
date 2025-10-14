@@ -3,5 +3,3 @@
 --constraint _test.txt
 
 --requirement ../../../requirements/devenv.txt
-
-watchdog[watchmedo]

@@ -57,7 +57,6 @@ pyyaml==6.0.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pre-commit
-    #   watchdog
 ruff==0.14.0
     # via -r requirements/../../../requirements/devenv.txt
 tomlkit==0.13.3
@@ -69,5 +68,3 @@ typing-extensions==4.15.0
     #   mypy
 virtualenv==20.35.3
     # via pre-commit
-watchdog==6.0.0
-    # via -r requirements/_tools.in
