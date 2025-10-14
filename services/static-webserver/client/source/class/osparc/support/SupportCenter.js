@@ -146,7 +146,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "conversation-page":
           control = new osparc.support.ConversationPage();
-          control.addListener("showConversations", () => this.showConversations(), this);
+          control.addListener("backToConversations", () => this.showConversations(), this);
           this.getChildControl("conversations-stack").add(control);
           break;
       }

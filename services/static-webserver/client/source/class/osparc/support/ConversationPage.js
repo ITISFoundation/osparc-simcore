@@ -44,7 +44,7 @@ qx.Class.define("osparc.support.ConversationPage", {
   },
 
   events: {
-    "showConversations": "qx.event.type.Event",
+    "backToConversations": "qx.event.type.Event",
   },
 
   members: {
@@ -68,8 +68,9 @@ qx.Class.define("osparc.support.ConversationPage", {
             backgroundColor: "transparent"
           });
           control.addListener("execute", () => {
+            this.getConversation().setReadBy(true);
             this.setConversation(null);
-            this.fireEvent("showConversations");
+            this.fireEvent("backToConversations");
           });
           this.getChildControl("conversation-header-layout").addAt(control, 0);
           break;
