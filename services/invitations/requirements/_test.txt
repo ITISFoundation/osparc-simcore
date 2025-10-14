@@ -1,12 +1,12 @@
-anyio==4.8.0
+anyio==4.11.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-attrs==25.2.0
+attrs==25.4.0
     # via
     #   -c requirements/_base.txt
     #   hypothesis
-certifi==2025.1.31
+certifi==2025.10.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -16,7 +16,7 @@ coverage==7.10.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==37.8.0
+faker==37.11.0
     # via -r requirements/_test.in
 h11==0.16.0
     # via
@@ -31,16 +31,16 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-hypothesis==6.140.2
+hypothesis==6.140.3
     # via -r requirements/_test.in
-idna==3.10
+idna==3.11
     # via
     #   -c requirements/_base.txt
     #   anyio
     #   httpx
 iniconfig==2.1.0
     # via pytest
-packaging==24.2
+packaging==25.0
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -48,7 +48,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -69,7 +69,7 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.1.1
     # via -r requirements/_test.in
-python-dotenv==1.0.1
+python-dotenv==1.1.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -81,7 +81,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
     #   anyio
