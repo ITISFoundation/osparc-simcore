@@ -1457,40 +1457,39 @@ async def _handle_pre_pull_status(
                 *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
             ],
         )
-    else:
-        match ssm_command.status:
-            case "Success":
-                _logger.info("%s finished pre-pulling images", node.ec2_instance.id)
-                return await _remove_tags_and_return(
-                    node,
-                    [
-                        MACHINE_PULLING_EC2_TAG_KEY,
-                        MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-                    ],
-                )
-            case "Failed" | "TimedOut":
-                _logger.error(
-                    "%s failed pre-pulling images, status is %s. this will be retried later",
-                    node.ec2_instance.id,
-                    ssm_command.status,
-                )
-                return await _remove_tags_and_return(
-                    node,
-                    [
-                        MACHINE_PULLING_EC2_TAG_KEY,
-                        MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-                        *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
-                    ],
-                )
-            case _:
-                _logger.info(
-                    "%s is pre-pulling %s, status is %s",
-                    node.ec2_instance.id,
-                    load_pre_pulled_images_from_tags(node.ec2_instance.tags),
-                    ssm_command.status,
-                )
-                # skip the instance this time as this is still ongoing
-                return node
+    match ssm_command.status:
+        case "Success":
+            _logger.info("%s finished pre-pulling images", node.ec2_instance.id)
+            return await _remove_tags_and_return(
+                node,
+                [
+                    MACHINE_PULLING_EC2_TAG_KEY,
+                    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                ],
+            )
+        case "Failed" | "TimedOut":
+            _logger.error(
+                "%s failed pre-pulling images, status is %s. this will be retried later",
+                node.ec2_instance.id,
+                ssm_command.status,
+            )
+            return await _remove_tags_and_return(
+                node,
+                [
+                    MACHINE_PULLING_EC2_TAG_KEY,
+                    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                    *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
+                ],
+            )
+        case _:
+            _logger.info(
+                "%s is pre-pulling %s, status is %s",
+                node.ec2_instance.id,
+                load_pre_pulled_images_from_tags(node.ec2_instance.tags),
+                ssm_command.status,
+            )
+            # skip the instance this time as this is still ongoing
+            return node
 
 
 async def _pre_pull_docker_images_on_idle_hot_buffers(
