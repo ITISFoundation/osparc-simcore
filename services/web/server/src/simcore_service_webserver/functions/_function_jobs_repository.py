@@ -15,11 +15,13 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionsApiAccessRights,
     RegisteredFunctionJobDB,
-    RegisteredFunctionJobPatchInput,
     RegisteredFunctionJobWithStatusDB,
+    RegisteredProjectFunctionJobPatchInputList,
+    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
+    FunctionJobPatchModelIncompatibleError,
     UnsupportedFunctionJobClassError,
 )
 from models_library.products import ProductName
@@ -129,8 +131,18 @@ async def patch_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    registered_function_job_patch_inputs: list[RegisteredFunctionJobPatchInput],
+    registered_function_job_patch_inputs: (
+        RegisteredProjectFunctionJobPatchInputList
+        | RegisteredSolverFunctionJobPatchInputList
+    ),
 ) -> list[RegisteredFunctionJobDB]:
+
+    # check only a single function class is used
+    TypeAdapter(
+        RegisteredProjectFunctionJobPatchInputList
+        | RegisteredSolverFunctionJobPatchInputList
+    ).validate_python(registered_function_job_patch_inputs)
+    used_function_class = registered_function_job_patch_inputs[0].patch.function_class
 
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
@@ -217,15 +229,32 @@ async def patch_function_job(
                 class_specific_data=case_class_specific_data,
             )
             .where(function_jobs_table.c.uuid.in_(function_job_uids))
+            .where(function_jobs_table.c.function_class == used_function_class)
             .returning(*_FUNCTION_JOBS_TABLE_COLS)
         )
         jobs = {
             row.uuid: RegisteredFunctionJobDB.model_validate(row)
             for row in result.fetchall()
         }
-        assert {patch.uid for patch in registered_function_job_patch_inputs} == set(
-            jobs.keys()
-        )
+        if set(function_job_uids) != set(jobs.keys()):
+            # ensure meaningful error message is raised
+            missing_uids = {
+                patch.uid for patch in registered_function_job_patch_inputs
+            } - set(jobs.keys())
+            missing_uid = missing_uids.pop()
+            function_job = await get_function_job(
+                app,
+                user_id=user_id,
+                product_name=product_name,
+                function_job_id=missing_uid,
+            )
+            if function_job.function_class != used_function_class:
+                raise FunctionJobPatchModelIncompatibleError(
+                    function_id=missing_uid,
+                    product_name=product_name,
+                )
+            # reaching this far means the uid is missing for other reasons
+            raise FunctionJobIDNotFoundError(function_job_id=missing_uid)
 
         return [jobs[patch.uid] for patch in registered_function_job_patch_inputs]
 
