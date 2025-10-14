@@ -44,8 +44,6 @@ def get_app():
 the_app = get_app()
 
 
-@worker_init.connect
-@worker_process_init.connect
 def worker_init_wrapper(**kwargs):
     fastapi_app = create_app(_settings, tracing_config=_tracing_config)
     app_server = FastAPIAppServer(app=fastapi_app)
@@ -53,8 +51,15 @@ def worker_init_wrapper(**kwargs):
     return on_worker_init(app_server, **kwargs)
 
 
-@worker_shutdown.connect
-@worker_process_shutdown.connect
 def worker_shutdown_wrapper(**kwargs):
     app_server = get_app_server(the_app)
     return on_worker_shutdown(app_server, **kwargs)
+
+
+assert _settings.STORAGE_CELERY  # nosec
+if _settings.STORAGE_CELERY.CELERY_POOL == "prefork":
+    worker_process_init.connect(worker_init_wrapper)
+    worker_process_shutdown.connect(worker_shutdown_wrapper)
+else:
+    worker_init.connect(worker_init_wrapper)
+    worker_shutdown.connect(worker_shutdown_wrapper)
