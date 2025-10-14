@@ -1,3 +1,28 @@
+"""
+
+# Batch Operations Rationale:
+
+Please preserve the following behaviors when implementing batch operations:
+
+| Case           | Behavior                                   | Justification               |
+| -------------- | ------------------------------------------ | --------------------------- |
+| Empty `names`  | `400 Bad Request`                          | Invalid input               |
+| Some missing   | `200 OK`, with `missing` field             | Partial success             |
+| Duplicates     | Silently deduplicate                       | Idempotent, client-friendly |
+| Response order | Preserve request order (excluding missing) | Deterministic, ergonomic    |
+
+
+- `BatchGet` is semantically distinct from `List`.
+  - `List` means “give me everything you have, maybe filtered.”
+  - `BatchGet` means “give me these specific known resources.”
+- Passing an empty list means you’re not actually identifying anything to fetch — so it’s a client error (bad request), not a legitimate “empty result.”
+- This aligns with the principle: If the request parameters are syntactically valid but semantically meaningless, return 400 Bad Request.
+
+# References:
+    - https://google.aip.dev/130
+    - https://google.aip.dev/231
+"""
+
 from typing import Annotated, Generic, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY

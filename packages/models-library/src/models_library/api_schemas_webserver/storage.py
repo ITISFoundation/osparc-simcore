@@ -1,7 +1,14 @@
+import datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Self
 
-from pydantic import BaseModel, Field
+from models_library.projects import ProjectID
+from models_library.utils.common_validators import (
+    MIN_NON_WILDCARD_CHARS,
+    WILDCARD_CHARS,
+    ensure_pattern_has_enough_characters_before,
+)
+from pydantic import BaseModel, Field, model_validator
 
 from ..api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,
@@ -42,3 +49,57 @@ PathToExport = Path
 
 class DataExportPost(InputSchema):
     paths: list[PathToExport]
+
+
+class SearchTimerangeFilter(InputSchema):
+    from_: Annotated[
+        datetime.datetime | None,
+        Field(
+            alias="from",
+            description="Filter results before this date",
+        ),
+    ] = None
+    until: Annotated[
+        datetime.datetime | None,
+        Field(
+            description="Filter results after this date",
+        ),
+    ] = None
+
+    @model_validator(mode="after")
+    def _validate_date_range(self) -> Self:
+        if (
+            self.from_ is not None
+            and self.until is not None
+            and self.from_ > self.until
+        ):
+            msg = f"Invalid date range: '{self.from_}' must be before '{self.until}'"
+            raise ValueError(msg)
+        return self
+
+
+class SearchFilters(InputSchema):
+    name_pattern: Annotated[
+        str,
+        ensure_pattern_has_enough_characters_before(),
+        Field(
+            description=f"Name pattern with wildcard support ({', '.join(WILDCARD_CHARS)}). "
+            f"Minimum of {MIN_NON_WILDCARD_CHARS} non-wildcard characters required.",
+        ),
+    ]
+    modified_at: Annotated[
+        SearchTimerangeFilter | None,
+        Field(
+            description="Filter results based on modification date range",
+        ),
+    ] = None
+    project_id: Annotated[
+        ProjectID | None,
+        Field(
+            description="If provided, only files within this project are searched",
+        ),
+    ] = None
+
+
+class SearchBodyParams(InputSchema):
+    filters: SearchFilters

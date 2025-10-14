@@ -14,8 +14,6 @@ from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 
-from ...models import FileMetaData
-
 _logger = logging.getLogger(__name__)
 
 
@@ -38,7 +36,7 @@ def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
             )
 
             register_celery_types()
-            register_pydantic_types(FileUploadCompletionBody, FileMetaData, FoldersBody)
+            register_pydantic_types(FileUploadCompletionBody, FoldersBody)
 
     async def on_shutdown() -> None:
         with log_context(_logger, logging.INFO, "Shutting down Celery"):

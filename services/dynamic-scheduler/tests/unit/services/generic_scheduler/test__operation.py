@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     OperationAlreadyRegisteredError,
     OperationNotFoundError,
-    StepNotFoundInoperationError,
+    StepNotFoundInOperationError,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     ALL_RESERVED_CONTEXT_KEYS,
@@ -237,7 +237,7 @@ def test_operation_registry_raises_errors():
     with pytest.raises(OperationNotFoundError):
         OperationRegistry.get_step("non_existing", "BS1")
 
-    with pytest.raises(StepNotFoundInoperationError):
+    with pytest.raises(StepNotFoundInOperationError):
         OperationRegistry.get_step("op1", "non_existing")
 
 

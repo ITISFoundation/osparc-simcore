@@ -19,7 +19,13 @@ class OperationNotFoundError(BaseGenericSchedulerError):
     )
 
 
-class StepNotFoundInoperationError(BaseGenericSchedulerError):
+class OperationInitialContextKeyNotFoundError(BaseGenericSchedulerError):
+    msg_template: str = (
+        "Operation '{operation_name}' required_key='{required_key}' not in initial_operation_context"
+    )
+
+
+class StepNotFoundInOperationError(BaseGenericSchedulerError):
     msg_template: str = (
         "Step '{step_name}' not found steps_names='{steps_names}' for operation '{operation_name}'"
     )

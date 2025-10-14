@@ -9,7 +9,7 @@ from servicelib.deferred_tasks import DeferredContext
 from ._errors import (
     OperationAlreadyRegisteredError,
     OperationNotFoundError,
-    StepNotFoundInoperationError,
+    StepNotFoundInOperationError,
 )
 from ._models import (
     ALL_RESERVED_CONTEXT_KEYS,
@@ -232,9 +232,17 @@ class ParallelStepGroup(BaseStepGroup):
 
 class Operation:
     def __init__(
-        self, *step_groups: BaseStepGroup, is_cancellable: bool = True
+        self,
+        *step_groups: BaseStepGroup,
+        initial_context_required_keys: set[str] | None = None,
+        is_cancellable: bool = True,
     ) -> None:
         self.step_groups = list(step_groups)
+        self.initial_context_required_keys = (
+            set()
+            if initial_context_required_keys is None
+            else initial_context_required_keys
+        )
         self.is_cancellable = is_cancellable
 
     def __repr__(self) -> str:
@@ -382,7 +390,7 @@ class OperationRegistry:
 
         steps_names = set(cls._OPERATIONS[operation_name]["steps"].keys())
         if step_name not in steps_names:
-            raise StepNotFoundInoperationError(
+            raise StepNotFoundInOperationError(
                 step_name=step_name,
                 operation_name=operation_name,
                 steps_names=steps_names,
