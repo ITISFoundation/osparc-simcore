@@ -140,13 +140,13 @@ qx.Class.define("osparc.data.model.Conversation", {
             if (conversationId === this.getConversationId()) {
               switch (eventName) {
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
-                  this.addMessage(messageData);
+                  this._addMessage(messageData);
                   break;
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED:
-                  this.updateMessage(messageData);
+                  this._updateMessage(messageData);
                   break;
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED:
-                  this.deleteMessage(messageData);
+                  this._deleteMessage(messageData);
                   break;
               }
             }
@@ -187,7 +187,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       return promise
         .then(resp => {
           const messagesData = resp["data"];
-          messagesData.forEach(messageData => this.addMessage(messageData));
+          messagesData.forEach(messageData => this._addMessage(messageData));
           this.__nextRequestParams = resp["_links"]["next"];
           return resp;
         })
@@ -212,7 +212,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       return this.__messages.some(msg => msg.getMessageId() === messageId);
     },
 
-    addMessage: function(messageData) {
+    _addMessage: function(messageData) {
       let message = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
       if (!message) {
         message = new osparc.data.model.Message(messageData);
@@ -224,7 +224,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       return message;
     },
 
-    updateMessage: function(messageData) {
+    _updateMessage: function(messageData) {
       if (messageData) {
         const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
         if (found) {
@@ -234,7 +234,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       }
     },
 
-    deleteMessage: function(messageData) {
+    _deleteMessage: function(messageData) {
       if (messageData) {
         const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
         if (found) {

@@ -181,9 +181,11 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    addMessage: function(messageData) {
+    // overriden
+    _addMessage: function(messageData) {
       const message = this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();
+
       // mark conversation as unread if the message is from the other party
       const userGroupId = message.getUserGroupId();
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
@@ -197,12 +199,14 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       return message;
     },
 
-    updateMessage: function(messageData) {
+    // overriden
+    _updateMessage: function(messageData) {
       this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();
     },
 
-    deleteMessage: function(messageData) {
+    // overriden
+    _deleteMessage: function(messageData) {
       this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();
     },

@@ -100,7 +100,7 @@ qx.Class.define("osparc.conversation.MessageList", {
       if (conversation) {
         conversation.addListener("messageAdded", e => {
           const data = e.getData();
-          this.__messageAdded(data);
+          this._messageAdded(data);
         });
         conversation.addListener("messageDeleted", e => {
           const data = e.getData();
@@ -120,7 +120,7 @@ qx.Class.define("osparc.conversation.MessageList", {
         return;
       }
 
-      this.getConversation().getMessages().forEach(message => this.__messageAdded(message));
+      this.getConversation().getMessages().forEach(message => this._messageAdded(message));
 
       loadMoreMessages.show();
       loadMoreMessages.setFetching(true);
@@ -153,7 +153,7 @@ qx.Class.define("osparc.conversation.MessageList", {
       );
     },
 
-    __messageAdded: function(message) {
+    _messageAdded: function(message) {
       // ignore it if it was already there
       const existingMessageUI = this.__getMessageUI(message.getMessageId());
       if (existingMessageUI) {

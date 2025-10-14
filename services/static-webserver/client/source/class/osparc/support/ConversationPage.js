@@ -63,11 +63,14 @@ qx.Class.define("osparc.support.ConversationPage", {
         }
         case "back-button":
           control = new qx.ui.form.Button().set({
-            toolTipText: this.tr("Return to Messages"),
+            toolTipText: this.tr("Return to Conversations"),
             icon: "@FontAwesome5Solid/arrow-left/16",
             backgroundColor: "transparent"
           });
-          control.addListener("execute", () => this.fireEvent("showConversations"));
+          control.addListener("execute", () => {
+            this.setConversation(null);
+            this.fireEvent("showConversations");
+          });
           this.getChildControl("conversation-header-layout").addAt(control, 0);
           break;
         case "conversation-header-center-layout":

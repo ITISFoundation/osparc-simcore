@@ -133,6 +133,22 @@ qx.Class.define("osparc.support.Conversation", {
       this.__evaluateShareProject();
     },
 
+    // overridden
+    _messageAdded: function(message) {
+      this.base(arguments, message);
+
+      // keep conversation read
+      const conversation = this.getConversation();
+      if (conversation) {
+        if (osparc.store.Groups.getInstance().amIASupportUser()) {
+          conversation.setReadBySupport(true);
+        } else {
+          conversation.setReadByUser(true);
+        }
+        console.log("marked as read:", message);
+      }
+    },
+
     __postMessage: function(content) {
       const conversationId = this.getConversation().getConversationId();
       return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
