@@ -210,6 +210,7 @@ def minimal_configuration(
     mocked_ssm_server_envs: EnvVarsDict,
     enabled_dynamic_mode: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,
+    with_ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
     disabled_rabbitmq: None,
     disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
@@ -340,30 +341,6 @@ async def test_cluster_scaling_with_no_services_does_nothing(
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message, app_settings, initialized_app
     )
-
-
-@pytest.fixture
-def hot_buffer_has_pre_pull(
-    app_settings: ApplicationSettings,
-    hot_buffer_instance_type: InstanceTypeType,
-) -> bool:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return bool(
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            hot_buffer_instance_type
-        ].pre_pull_images
-    )
-
-
-@pytest.fixture
-def hot_buffer_expected_pre_pulled_images(
-    app_settings: ApplicationSettings,
-    hot_buffer_instance_type: InstanceTypeType,
-) -> list[DockerGenericTag]:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-        hot_buffer_instance_type
-    ].pre_pull_images
 
 
 @pytest.mark.parametrize(

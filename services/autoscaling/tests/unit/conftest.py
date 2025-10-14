@@ -1035,6 +1035,38 @@ def hot_buffer_instance_type(app_settings: ApplicationSettings) -> InstanceTypeT
 
 
 @pytest.fixture
+def hot_buffer_has_pre_pull(
+    app_settings: ApplicationSettings,
+    hot_buffer_instance_type: InstanceTypeType,
+) -> bool:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return bool(
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+        or app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            hot_buffer_instance_type
+        ].pre_pull_images
+    )
+
+
+@pytest.fixture
+def hot_buffer_expected_pre_pulled_images(
+    app_settings: ApplicationSettings,
+    hot_buffer_instance_type: InstanceTypeType,
+) -> list[DockerGenericTag]:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return sorted(
+        set(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+        )
+        | set(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                hot_buffer_instance_type
+            ].pre_pull_images
+        )
+    )
+
+
+@pytest.fixture
 def mock_find_node_with_name_returns_none(mocker: MockerFixture) -> Iterator[mock.Mock]:
     return mocker.patch(
         "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.find_node_with_name",
