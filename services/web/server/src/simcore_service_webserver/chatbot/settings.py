@@ -13,7 +13,7 @@ class ChatbotSettings(BaseCustomSettings, MixinServiceSettings):
 
     @cached_property
     def base_url(self) -> str:
-        # http://chatbot:8000/v1
+        # http://chatbot:8000
         return self._compose_url(
             prefix="CHATBOT",
             port=URLPart.REQUIRED,
