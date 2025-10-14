@@ -170,7 +170,7 @@ def test_dump_load_pre_pulled_images_as_tags(
     images: list[DockerGenericTag], expected_tags: EC2Tags
 ):
     assert dump_pre_pulled_images_as_tags(images) == expected_tags
-    assert load_pre_pulled_images_from_tags(expected_tags) == images
+    assert load_pre_pulled_images_from_tags(expected_tags) == sorted(images)
 
 
 def test_load_pre_pulled_images_as_tags_no_tag_present_returns_empty_list(faker: Faker):
