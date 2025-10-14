@@ -157,7 +157,7 @@ class EC2InstanceBootSpecific(BaseModel):
         list[DockerGenericTag],
         Field(
             default_factory=list,
-            description="a list of docker image/tags to pull on instance cold start",
+            description="a list of docker image/tags to pull on the instance",
         ),
     ] = DEFAULT_FACTORY
     buffer_count: Annotated[
