@@ -68,8 +68,10 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
     # AWS Tag values are limited to 256 characters so we chunk the images
     if PRE_PULLED_IMAGES_EC2_TAG_KEY in tags:
         # read directly
-        return TypeAdapter(list[DockerGenericTag]).validate_json(
-            tags[PRE_PULLED_IMAGES_EC2_TAG_KEY]
+        return sorted(
+            TypeAdapter(list[DockerGenericTag]).validate_json(
+                tags[PRE_PULLED_IMAGES_EC2_TAG_KEY]
+            )
         )
 
     assembled_json = "".join(
@@ -86,7 +88,7 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
         )
     )
     if assembled_json:
-        return TypeAdapter(list[DockerGenericTag]).validate_json(assembled_json)
+        return sorted(TypeAdapter(list[DockerGenericTag]).validate_json(assembled_json))
     return []
 
 
