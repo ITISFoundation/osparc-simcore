@@ -238,9 +238,7 @@ async def patch_function_job(
         }
         if set(function_job_uids) != set(jobs.keys()):
             # ensure meaningful error message is raised
-            missing_uids = {
-                patch.uid for patch in registered_function_job_patch_inputs
-            } - set(jobs.keys())
+            missing_uids = set(function_job_uids) - set(jobs.keys())
             missing_uid = missing_uids.pop()
             function_job = await get_function_job(
                 app,
