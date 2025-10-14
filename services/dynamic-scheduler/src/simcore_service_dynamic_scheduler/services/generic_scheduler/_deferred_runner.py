@@ -5,13 +5,9 @@ from pydantic import NonNegativeInt
 from servicelib.deferred_tasks import BaseDeferredHandler, DeferredContext, TaskUID
 from servicelib.deferred_tasks._models import TaskResultError
 
-from ._errors import (
-    OperationContextValueIsNoneError,
-    ProvidedOperationContextKeysAreMissingError,
-)
+from ._errors import ProvidedOperationContextKeysAreMissingError
 from ._event import enqueue_schedule_event
 from ._models import (
-    OperationContext,
     OperationName,
     ProvidedOperationContext,
     ScheduleId,
@@ -93,14 +89,7 @@ async def _enqueue_schedule_event_if_group_is_done(context: DeferredContext) -> 
         await enqueue_schedule_event(app, schedule_id)
 
 
-def _raise_if_any_context_value_is_none(
-    operation_context: OperationContext,
-) -> None:
-    if any(value is None for value in operation_context.values()):
-        raise OperationContextValueIsNoneError(operation_context=operation_context)
-
-
-def _raise_if_provided_context_keys_are_missing_or_none(
+def _raise_if_provided_context_keys_are_missing(
     provided_context: ProvidedOperationContext,
     expected_keys: set[str],
 ) -> None:
@@ -111,8 +100,6 @@ def _raise_if_provided_context_keys_are_missing_or_none(
             missing_keys=missing_keys,
             expected_keys=expected_keys,
         )
-
-    _raise_if_any_context_value_is_none(provided_context)
 
 
 class DeferredRunner(BaseDeferredHandler[None]):
@@ -179,26 +166,24 @@ class DeferredRunner(BaseDeferredHandler[None]):
             required_context = await operation_context_proxy.read(
                 *step.get_execute_requires_context_keys()
             )
-            _raise_if_any_context_value_is_none(required_context)
 
             step_provided_operation_context = await step.execute(app, required_context)
             provided_operation_context = step_provided_operation_context or {}
             execute_provides_keys = step.get_execute_provides_context_keys()
 
-            _raise_if_provided_context_keys_are_missing_or_none(
+            _raise_if_provided_context_keys_are_missing(
                 provided_operation_context, execute_provides_keys
             )
         else:
             required_context = await operation_context_proxy.read(
                 *step.get_revert_requires_context_keys()
             )
-            _raise_if_any_context_value_is_none(required_context)
 
             step_provided_operation_context = await step.revert(app, required_context)
             provided_operation_context = step_provided_operation_context or {}
             revert_provides_keys = step.get_revert_provides_context_keys()
 
-            _raise_if_provided_context_keys_are_missing_or_none(
+            _raise_if_provided_context_keys_are_missing(
                 provided_operation_context, revert_provides_keys
             )
 

@@ -17,6 +17,7 @@ from ._event_after_registration import (
 )
 from ._lifespan import generic_scheduler_lifespan
 from ._models import (
+    OperationContext,
     OperationName,
     OperationToStart,
     ProvidedOperationContext,
@@ -26,6 +27,7 @@ from ._models import (
 )
 from ._operation import (
     BaseStep,
+    BaseStepGroup,
     Operation,
     OperationRegistry,
     ParallelStepGroup,
@@ -39,6 +41,7 @@ from ._store import (
 
 __all__: tuple[str, ...] = (
     "BaseStep",
+    "BaseStepGroup",
     "cancel_operation",
     "generic_scheduler_lifespan",
     "get_operation_context_proxy",
@@ -47,6 +50,7 @@ __all__: tuple[str, ...] = (
     "get_step_store_proxy",
     "NoDataFoundError",
     "Operation",
+    "OperationContext",
     "OperationContextProxy",
     "OperationName",
     "OperationRegistry",

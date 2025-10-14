@@ -19,6 +19,14 @@ from asgi_lifespan import LifespanManager
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from pydantic import NonNegativeFloat, NonNegativeInt
+from pytest_simcore.helpers.dynamic_scheduler import (
+    BaseExpectedStepOrder,
+    ExecuteRandom,
+    ExecuteSequence,
+    RevertSequence,
+    ensure_expected_order,
+    ensure_keys_in_store,
+)
 from pytest_simcore.helpers.paused_container import pause_rabbit, pause_redis
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.deferred_tasks import DeferredContext
@@ -39,14 +47,6 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     register_to_start_after_on_executed_completed,
     register_to_start_after_on_reverted_completed,
     start_operation,
-)
-from utils import (
-    BaseExpectedStepOrder,
-    ExecuteRandom,
-    ExecuteSequence,
-    RevertSequence,
-    ensure_expected_order,
-    ensure_keys_in_store,
 )
 
 pytest_simcore_core_services_selection = [
@@ -74,6 +74,7 @@ def _get_random_interruption_duration() -> NonNegativeFloat:
 
 @pytest.fixture
 def app_environment(
+    disable_scheduler_lifespan: None,
     disable_postgres_lifespan: None,
     disable_service_tracker_lifespan: None,
     disable_notifier_lifespan: None,

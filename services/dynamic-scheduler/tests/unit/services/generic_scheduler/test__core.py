@@ -16,6 +16,17 @@ from asgi_lifespan import LifespanManager
 from asyncpg import NoDataFoundError
 from fastapi import FastAPI
 from pydantic import NonNegativeInt, TypeAdapter
+from pytest_simcore.helpers.dynamic_scheduler import (
+    EXECUTED,
+    REVERTED,
+    BaseExpectedStepOrder,
+    ExecuteRandom,
+    ExecuteSequence,
+    RevertRandom,
+    RevertSequence,
+    ensure_expected_order,
+    ensure_keys_in_store,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
@@ -47,7 +58,6 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._deferred_runn
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     InitialOperationContextKeyNotAllowedError,
-    OperationContextValueIsNoneError,
     OperationNotCancellableError,
     ProvidedOperationContextKeysAreMissingError,
     StepNameNotInCurrentGroupError,
@@ -62,17 +72,6 @@ from tenacity import (
     retry_if_exception_type,
     stop_after_delay,
     wait_fixed,
-)
-from utils import (
-    EXECUTED,
-    REVERTED,
-    BaseExpectedStepOrder,
-    ExecuteRandom,
-    ExecuteSequence,
-    RevertRandom,
-    RevertSequence,
-    ensure_expected_order,
-    ensure_keys_in_store,
 )
 
 pytest_simcore_core_services_selection = [
@@ -97,6 +96,7 @@ _PARALLEL_RESTARTS: Final[NonNegativeInt] = 5
 
 @pytest.fixture
 def app_environment(
+    disable_scheduler_lifespan: None,
     disable_postgres_lifespan: None,
     disable_service_tracker_lifespan: None,
     disable_notifier_lifespan: None,
@@ -1460,7 +1460,6 @@ async def test_operation_context_usage(
 
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
-    assert f"{OperationContextValueIsNoneError.__name__}" not in caplog.text
     assert f"{ProvidedOperationContextKeysAreMissingError.__name__}" not in caplog.text
 
 
@@ -1509,62 +1508,6 @@ async def test_operation_initial_context_using_key_provided_by_step(
 
     with pytest.raises(InitialOperationContextKeyNotAllowedError):
         await start_operation(selected_app, operation_name, initial_context)
-
-    await ensure_keys_in_store(selected_app, expected_keys=set())
-
-
-@pytest.mark.parametrize("app_count", [10])
-@pytest.mark.parametrize(
-    "operation, initial_context, expected_order",
-    [
-        pytest.param(
-            Operation(
-                SingleStepGroup(RPCtxS1),
-            ),
-            {
-                # `bs__c_req_1` is missing
-            },
-            [
-                RevertSequence(RPCtxS1),
-            ],
-            id="missing_context_key",
-        ),
-        pytest.param(
-            Operation(
-                SingleStepGroup(RPCtxS1),
-            ),
-            {
-                "bs__e_req_1": None,
-            },
-            [
-                RevertSequence(RPCtxS1),
-            ],
-            id="context_key_is_none",
-        ),
-    ],
-)
-async def test_step_does_not_receive_context_key_or_is_none(
-    preserve_caplog_for_async_logging: None,
-    caplog: pytest.LogCaptureFixture,
-    steps_call_order: list[tuple[str, str]],
-    selected_app: FastAPI,
-    register_operation: Callable[[OperationName, Operation], None],
-    operation: Operation,
-    operation_name: OperationName,
-    initial_context: OperationContext,
-    expected_order: list[BaseExpectedStepOrder],
-):
-    caplog.at_level(logging.DEBUG)
-    caplog.clear()
-
-    register_operation(operation_name, operation)
-
-    schedule_id = await start_operation(selected_app, operation_name, initial_context)
-    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
-
-    await _ensure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
-
-    await ensure_expected_order(steps_call_order, expected_order)
 
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
@@ -1638,32 +1581,6 @@ class _BadImplementedStep(BaseStep):
             {
                 "trigger_revert": False,
                 "to_return": {
-                    "add_to_return": True,
-                    "keys": {"a_key": None},
-                },
-            },
-            f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
-            [
-                ExecuteSequence(_BadImplementedStep),
-                RevertSequence(_BadImplementedStep),
-            ],
-            {
-                "SCH:{schedule_id}",
-                "SCH:{schedule_id}:GROUPS:test_op:0S:E",
-                "SCH:{schedule_id}:GROUPS:test_op:0S:R",
-                "SCH:{schedule_id}:OP_CTX:test_op",
-                "SCH:{schedule_id}:STEPS:test_op:0S:E:_BadImplementedStep",
-                "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
-            },
-            id="execute-returns-key-set-to-None",
-        ),
-        pytest.param(
-            Operation(
-                SingleStepGroup(_BadImplementedStep),
-            ),
-            {
-                "trigger_revert": False,
-                "to_return": {
                     "add_to_return": False,
                 },
             },
@@ -1681,32 +1598,6 @@ class _BadImplementedStep(BaseStep):
                 "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
             },
             id="execute-does-not-set-the-key-to-return",
-        ),
-        pytest.param(
-            Operation(
-                SingleStepGroup(_BadImplementedStep),
-            ),
-            {
-                "trigger_revert": True,
-                "to_return": {
-                    "add_to_return": True,
-                    "keys": {"a_key": None},
-                },
-            },
-            f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
-            [
-                ExecuteSequence(_BadImplementedStep),
-                RevertSequence(_BadImplementedStep),
-            ],
-            {
-                "SCH:{schedule_id}",
-                "SCH:{schedule_id}:GROUPS:test_op:0S:E",
-                "SCH:{schedule_id}:GROUPS:test_op:0S:R",
-                "SCH:{schedule_id}:OP_CTX:test_op",
-                "SCH:{schedule_id}:STEPS:test_op:0S:E:_BadImplementedStep",
-                "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
-            },
-            id="revert-returns-key-set-to-None",
         ),
         pytest.param(
             Operation(

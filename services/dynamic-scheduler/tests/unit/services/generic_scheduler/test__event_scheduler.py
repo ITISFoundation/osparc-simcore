@@ -58,6 +58,7 @@ def disable_other_generic_scheduler_modules(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def app_environment(
+    disable_scheduler_lifespan: None,
     disable_other_generic_scheduler_modules: None,
     disable_redis_lifespan: None,
     disable_postgres_lifespan: None,
