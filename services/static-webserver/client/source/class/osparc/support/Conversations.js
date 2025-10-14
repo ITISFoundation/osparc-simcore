@@ -158,19 +158,7 @@ qx.Class.define("osparc.support.Conversations", {
             conversationItem.show();
             break;
           case "unread":
-            if (osparc.store.Groups.getInstance().amIASupportUser()) {
-              if (conversation.getReadBySupport()) {
-                conversationItem.exclude();
-              } else {
-                conversationItem.show();
-              }
-            } else {
-              if (conversation.getReadByUser()) {
-                conversationItem.exclude();
-              } else {
-                conversationItem.show();
-              }
-            }
+            conversation.getReadBy() ? conversationItem.exclude() : conversationItem.show();
             break;
           case "open":
             if (conversation.getResolved() === false) {

@@ -140,12 +140,7 @@ qx.Class.define("osparc.support.Conversation", {
       // keep conversation read
       const conversation = this.getConversation();
       if (conversation) {
-        if (osparc.store.Groups.getInstance().amIASupportUser()) {
-          conversation.setReadBySupport(true);
-        } else {
-          conversation.setReadByUser(true);
-        }
-        console.log("marked as read:", message);
+        conversation.setReadBy(true);
       }
     },
 

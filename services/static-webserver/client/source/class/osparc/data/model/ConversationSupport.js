@@ -161,15 +161,17 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
         });
     },
 
+    setReadBy: function(isRead) {
+      osparc.store.Groups.getInstance().amIASupportUser() ? this.setReadBySupport(isRead) : this.setReadByUser(isRead);
+    },
+
+    getReadBy: function() {
+      return osparc.store.Groups.getInstance().amIASupportUser() ? this.getReadBySupport() : this.getReadByUser();
+    },
+
     markAsRead: function() {
       osparc.store.ConversationsSupport.getInstance().markAsRead(this.getConversationId())
-        .then(() => {
-          if (osparc.store.Groups.getInstance().amIASupportUser()) {
-            this.setReadBySupport(true);
-          } else {
-            this.setReadByUser(true);
-          }
-        });
+        .then(() => this.setReadBy(true));
     },
 
     markAsResolved: function() {
@@ -190,11 +192,7 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       const userGroupId = message.getUserGroupId();
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       if (userGroupId !== myGroupId) {
-        if (osparc.store.Groups.getInstance().amIASupportUser()) {
-          this.setReadBySupport(false);
-        } else {
-          this.setReadByUser(false);
-        }
+        this.setReadBy(false);
       }
       return message;
     },
