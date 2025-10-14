@@ -242,7 +242,7 @@ async def patch_function_job(
             for row in result.fetchall()
         }
         if set(function_job_uids) != set(jobs.keys()):
-            # ensure meaningful error message is raised
+            # ensure meaningful error is raised
             missing_uids = set(function_job_uids) - set(jobs.keys())
             missing_uid = missing_uids.pop()
             function_job = await get_function_job(
