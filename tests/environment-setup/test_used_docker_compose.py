@@ -1,6 +1,7 @@
-# pylint: disable=unused-argument
-# pylint: disable=bare-except
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
 import re
 import shutil
@@ -110,7 +111,7 @@ def docker_compose_config_bash(osparc_simcore_scripts_dir: Path) -> Path:
 def test_validate_compose_file(
     compose_path: Path,
     env_devel_file: Path,
-    ensure_env_file,
+    ensure_env_file: Path,
     docker_compose_config_bash: Path,
 ):
     assert compose_path.exists()
@@ -119,7 +120,7 @@ def test_validate_compose_file(
 
     # NOTE: with docker stack config, the .env file MUST be alongside the docker-compose file
 
-    subprocess.run(
+    subprocess.run(  # noqa: S602
         " ".join(
             [
                 f"{docker_compose_config_bash}",
@@ -135,3 +136,30 @@ def test_validate_compose_file(
 
     # About versioning https://docs.docker.com/compose/compose-file/compose-file-v3/
     assert "version" not in compose
+
+
+@pytest.mark.parametrize(
+    "compose_path", compose_paths, ids=lambda p: str(p.relative_to(repo_dir))
+)
+def test_network_names_contain_only_letters_and_underscores(
+    compose_path: Path,
+):
+    """Ensure all network names only contain letters and underscores (no hyphens or other symbols).
+
+
+    NOTE: Our docker compose cannot resolve network names with hyphens
+
+    e.g. `make .stack-simcore-development.yml` produces a compose file that do not include these networks which
+    results in an error when the stack starts that prints something like
+
+    ERROR: failed to create service master-simcore_docker-api-proxy: Error response from daemon: network master-simcore_docker-api-network not found
+    """
+    assert compose_path.exists()
+    compose = yaml.safe_load(compose_path.read_text())
+
+    networks = compose.get("networks", {})
+
+    for network_name in networks:
+        assert re.match(
+            r"^[a-zA-Z_]+$", network_name
+        ), f"Network name '{network_name}' in {compose_path.relative_to(repo_dir)} contains invalid characters. Only letters and underscores are allowed."
