@@ -94,24 +94,18 @@ qx.Class.define("osparc.conversation.MessageList", {
       this.getChildControl("add-message");
     },
 
-    _applyConversation: function(conversation, oldConversation) {
+    _applyConversation: function(conversation) {
       this.__reloadMessages(true);
 
-      const messageAdded = e => {
-        const data = e.getData();
-        this._messageAdded(data);
-      };
-      const messageDeleted = e => {
-        const data = e.getData();
-        this.__messageDeleted(data);
-      };
       if (conversation) {
-        conversation.addListener("messageAdded", messageAdded);
-        conversation.addListener("messageDeleted", messageDeleted);
-      }
-      if (oldConversation) {
-        oldConversation.removeListener("messageAdded", messageAdded);
-        oldConversation.removeListener("messageDeleted", messageDeleted);
+        conversation.addListener("messageAdded", e => {
+          const data = e.getData();
+          this._messageAdded(data);
+        });
+        conversation.addListener("messageDeleted", e => {
+          const data = e.getData();
+          this.__messageDeleted(data);
+        });
       }
     },
 
@@ -177,7 +171,7 @@ qx.Class.define("osparc.conversation.MessageList", {
           control = new osparc.conversation.NotificationUI(message);
           break;
       }
-      if (control) {
+      if (control && this.getConversation()) {
         // insert into the UI at the same position
         const insertAt = this.getConversation().getMessageIndex(message.getMessageId());
         const messagesContainer = this.getChildControl("messages-container");
