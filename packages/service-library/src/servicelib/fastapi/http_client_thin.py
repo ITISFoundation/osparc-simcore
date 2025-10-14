@@ -134,7 +134,6 @@ def retry_on_errors(
 
         @functools.wraps(request_func)
         async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
-            # pylint: disable=protected-access
             try:
                 async for attempt in AsyncRetrying(
                     stop=stop_after_delay(
