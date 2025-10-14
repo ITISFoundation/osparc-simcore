@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.79.0
+  version: 0.80.0
 servers:
 - url: ''
   description: webserver
@@ -10432,6 +10432,16 @@ components:
             type: object
           - type: 'null'
           title: Extracontext
+        isReadByUser:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Isreadbyuser
+        isReadBySupport:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Isreadbysupport
       type: object
       title: ConversationPatch
     ConversationRestGet:
@@ -10460,6 +10470,11 @@ components:
           minimum: 0
         type:
           $ref: '#/components/schemas/ConversationType'
+        fogbugzCaseId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Fogbugzcaseid
         created:
           type: string
           format: date-time
@@ -10473,6 +10488,16 @@ components:
             type: string
           type: object
           title: Extracontext
+        isReadByUser:
+          type: boolean
+          title: Isreadbyuser
+        isReadBySupport:
+          type: boolean
+          title: Isreadbysupport
+        lastMessageCreatedAt:
+          type: string
+          format: date-time
+          title: Lastmessagecreatedat
       type: object
       required:
       - conversationId
@@ -10481,9 +10506,13 @@ components:
       - projectUuid
       - userGroupId
       - type
+      - fogbugzCaseId
       - created
       - modified
       - extraContext
+      - isReadByUser
+      - isReadBySupport
+      - lastMessageCreatedAt
       title: ConversationRestGet
     ConversationType:
       type: string
@@ -16354,6 +16383,15 @@ components:
             $ref: '#/components/schemas/NodeServiceGet'
           type: array
           title: Services
+        missing:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ServiceKeyVersion'
+            type: array
+          - type: 'null'
+          title: Missing
+          description: List of services defined in the project but that were not found
+            in the catalog
       type: object
       required:
       - projectUuid

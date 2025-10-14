@@ -34,7 +34,6 @@ from ...socketio.server import get_socket_server
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
-from .._projects_service import conditionally_unsubscribe_from_project_logs
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
@@ -221,10 +220,6 @@ async def close_project(request: web.Request) -> web.Response:
         simcore_user_agent=request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
-    )
-
-    await conditionally_unsubscribe_from_project_logs(
-        request.app, path_params.project_id, req_ctx.user_id
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

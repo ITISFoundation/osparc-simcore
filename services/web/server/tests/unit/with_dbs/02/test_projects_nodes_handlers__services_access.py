@@ -4,8 +4,10 @@
 # pylint: disable=unused-variable
 # type: ignore
 
+from collections.abc import AsyncIterator
 from copy import deepcopy
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -13,10 +15,14 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
-from models_library.api_schemas_catalog.services import MyServiceGet
+from models_library.api_schemas_catalog.services import (
+    MyServiceGet,
+    MyServicesRpcBatchGet,
+)
 from models_library.services_history import ServiceRelease
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rabbitmq import RPCServerError
@@ -481,21 +487,23 @@ async def test_get_project_services(
     mocker.patch(
         "simcore_service_webserver.catalog._service.catalog_rpc.batch_get_my_services",
         spec=True,
-        return_value=[
-            MyServiceGet(
-                key=service_key,
-                release=ServiceRelease(
-                    version=service_version,
-                    version_display=f"v{service_version}",
-                    released="2023-01-01T00:00:00Z",
-                    retired=None,
-                    compatibility=None,
-                ),
-                owner=logged_user["primary_gid"],
-                my_access_rights={"execute": True, "write": False},
-            )
-            for service_key, service_version in fake_services_in_project
-        ],
+        return_value=MyServicesRpcBatchGet(
+            found_items=[
+                MyServiceGet(
+                    key=service_key,
+                    release=ServiceRelease(
+                        version=service_version,
+                        version_display=f"v{service_version}",
+                        released="2023-01-01T00:00:00Z",
+                        retired=None,
+                        compatibility=None,
+                    ),
+                    owner=logged_user["primary_gid"],
+                    my_access_rights={"execute": True, "write": False},
+                )
+                for service_key, service_version in fake_services_in_project
+            ]
+        ),
     )
 
     assert client.app
@@ -550,6 +558,7 @@ async def test_get_project_services(
                 },
             },
         ],
+        "missing": None,
     }
 
 
@@ -584,3 +593,66 @@ async def test_get_project_services_service_unavailable(
 
     assert error
     assert not data
+
+
+@pytest.fixture
+async def empty_project(
+    client,
+    fake_project: dict,
+    logged_user: dict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+) -> AsyncIterator[dict]:
+    fake_project["prjOwner"] = logged_user["name"]
+    fake_project["workbench"] = {}
+    async with NewProject(
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        tests_data_dir=tests_data_dir,
+    ) as project:
+        yield project
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_project_services_empty_project(
+    client: TestClient,
+    empty_project: ProjectDict,
+    mocker: MockerFixture,
+):
+    # NOTE: Tests bug described in https://github.com/ITISFoundation/osparc-simcore/pull/8501
+    assert empty_project["workbench"] == {}
+
+    # MOCK CATALOG TO RAISE IF CALLED (it should not be called)
+    from simcore_service_webserver.catalog._service import catalog_rpc  # noqa: PLC0415
+
+    mocker.patch.object(
+        catalog_rpc,
+        "batch_get_my_services",
+        spec=True,
+        side_effect=ValueError(
+            "Bad request: cannot batch-get an empty list of name-ids"
+        ),
+    )
+
+    assert client.app
+
+    # ACT
+    project_id = empty_project["uuid"]
+
+    expected_url = client.app.router["get_project_services"].url_for(
+        project_id=project_id
+    )
+    assert URL(f"/v0/projects/{project_id}/nodes/-/services") == expected_url
+
+    resp = await client.get(f"/v0/projects/{project_id}/nodes/-/services")
+
+    # ASSERT
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    assert data == {
+        "projectUuid": project_id,
+        "services": [],
+        "missing": None,
+    }

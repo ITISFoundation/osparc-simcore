@@ -325,15 +325,14 @@ async def test_list_function_jobs_filtering(
                 )
             )
 
+    job_ids = [
+        job.uid
+        for job in first_registered_function_jobs[1:2]
+        + second_registered_function_jobs[0:1]
+    ]
     function_job_collection = (
         await webserver_rpc_client.functions.register_function_job_collection(
-            function_job_collection=FunctionJobCollection(
-                job_ids=[
-                    job.uid
-                    for job in first_registered_function_jobs[1:2]
-                    + second_registered_function_jobs[0:1]
-                ]
-            ),
+            function_job_collection=FunctionJobCollection(job_ids=job_ids),
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
@@ -381,6 +380,7 @@ async def test_list_function_jobs_filtering(
 
     # Assert the list contains the registered job
     assert len(jobs) == 2
+    assert [job.uid for job in jobs] == job_ids
     assert jobs[0].uid == first_registered_function_jobs[1].uid
     assert jobs[1].uid == second_registered_function_jobs[0].uid
 
