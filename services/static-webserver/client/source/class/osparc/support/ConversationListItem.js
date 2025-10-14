@@ -104,7 +104,9 @@ qx.Class.define("osparc.support.ConversationListItem", {
       conversation.addListener("changeFirstMessage", this.__firstMessageChanged, this);
 
       conversation.bind("lastMessageCreatedAt", this, "role", {
-        converter: val => osparc.utils.Utils.formatDateAndTime(val),
+        converter: val => {
+          return osparc.utils.Utils.formatDateAndTime(val);
+        },
       });
 
       const unreadBadge = this.getChildControl("unread-badge");

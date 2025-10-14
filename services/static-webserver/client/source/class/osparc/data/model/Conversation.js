@@ -141,6 +141,7 @@ qx.Class.define("osparc.data.model.Conversation", {
               switch (eventName) {
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
                   this._addMessage(messageData);
+                  this.setLastMessageCreatedAt(new Date(messageData.created));
                   break;
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED:
                   this._updateMessage(messageData);
@@ -218,7 +219,6 @@ qx.Class.define("osparc.data.model.Conversation", {
         message = new osparc.data.model.Message(messageData);
         this.__messages.push(message);
         osparc.data.model.Message.sortMessagesByDate(this.__messages);
-        this.setLastMessageCreatedAt(new Date());
         this.fireDataEvent("messageAdded", message);
       }
       return message;
