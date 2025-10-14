@@ -144,10 +144,9 @@ async def _assert_reservation(
                 iter(filter(_by_pre_pull_image, instance["Tags"]))
             )
             assert "Value" in instance_pre_pulled_images_aws_tag
-            assert (
-                json_loads(instance_pre_pulled_images_aws_tag["Value"]).sort()
-                == expected_pre_pulled_images.sort()
-            )
+            assert sorted(
+                json_loads(instance_pre_pulled_images_aws_tag["Value"])
+            ) == sorted(expected_pre_pulled_images)
 
         assert "PrivateDnsName" in instance
         instance_private_dns_name = instance["PrivateDnsName"]
