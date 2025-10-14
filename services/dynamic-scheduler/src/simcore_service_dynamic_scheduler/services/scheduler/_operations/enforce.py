@@ -2,6 +2,9 @@ import logging
 
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
+from simcore_service_dynamic_scheduler.services.generic_scheduler._core import (
+    OperationContext,
+)
 
 from ...generic_scheduler import (
     BaseStep,
@@ -53,6 +56,10 @@ class _Prepare(BaseStep):
         return {"is_legacy": is_legacy}
 
 
+def _get_start_monitor_stop_initial_context(node_id: NodeID) -> OperationContext:
+    return {"node_id": node_id}
+
+
 class _Enforce(BaseStep):
     @classmethod
     def get_execute_requires_context_keys(cls) -> set[str]:
@@ -85,7 +92,7 @@ class _Enforce(BaseStep):
             _opration_names.LEGACY_STOP if is_legacy else _opration_names.NEW_STYLE_STOP
         )
 
-        initial_context = {"node_id": node_id}
+        initial_context = _get_start_monitor_stop_initial_context(node_id)
         enforce_operation = OperationToStart(
             _opration_names.ENFORCE, initial_context=initial_context
         )
