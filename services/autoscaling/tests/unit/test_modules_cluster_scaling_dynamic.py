@@ -440,7 +440,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         expected_additional_tag_keys=list(
             ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys
         ),
-        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images,
+        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
         instance_filters=instance_type_filters,
     )
     assert fake_node.description
