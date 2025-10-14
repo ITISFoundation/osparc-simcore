@@ -37,6 +37,7 @@ from ._utils import get_scheduler_operation_type_or_raise
 
 _logger = logging.getLogger(__name__)
 
+_WAIT_BETWEEN_RETRIES: Final[NonNegativeFloat] = 0.1
 _MAX_WAIT_TIME_FOR_SCHEDULE_ID: Final[NonNegativeFloat] = timedelta(
     seconds=5
 ).total_seconds()
@@ -50,7 +51,7 @@ async def _get_schedule_id_and_opration_type(
     # while oprations are switching.
     # Waiting a very short time should usually fix the issue.
     async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
+        wait=wait_fixed(_WAIT_BETWEEN_RETRIES),
         stop=stop_after_delay(_MAX_WAIT_TIME_FOR_SCHEDULE_ID),
         reraise=True,
         retry=retry_if_exception_type(UnexpectedCouldNotFindOperationNameError),
