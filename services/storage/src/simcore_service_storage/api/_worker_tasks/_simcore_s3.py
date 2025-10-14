@@ -1,3 +1,4 @@
+import datetime
 import functools
 import logging
 from typing import Any
@@ -5,6 +6,7 @@ from typing import Any
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.utils import get_app_server
+from models_library.api_schemas_storage.search_async_jobs import SearchResultItem
 from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
     LinkType,
@@ -12,10 +14,14 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskKey
+from servicelib.celery.models import (
+    TaskKey,
+    TaskStreamItem,
+)
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
@@ -128,3 +134,53 @@ async def export_data_as_download_link(
         user_id=user_id, file_id=s3_object, link_type=LinkType.PRESIGNED
     )
     return PresignedLink(link=download_link)
+
+
+async def search(
+    task: Task,
+    task_key: TaskKey,
+    *,
+    user_id: UserID,
+    project_id: ProjectID | None,
+    name_pattern: str,
+    modified_at: tuple[datetime.datetime | None, datetime.datetime | None] | None,
+) -> None:
+    with log_context(
+        _logger,
+        logging.INFO,
+        f"'{task_key}' search file {name_pattern=}",
+    ):
+        app_server = get_app_server(task.app)
+        dsm = get_dsm_provider(app_server.app).get(
+            SimcoreS3DataManager.get_location_id()
+        )
+
+        assert isinstance(dsm, SimcoreS3DataManager)  # nosec
+
+        async for items in dsm.search(
+            user_id=user_id,
+            project_id=project_id,
+            name_pattern=name_pattern,
+            modified_at=modified_at,
+        ):
+            data = [
+                TaskStreamItem(
+                    data=SearchResultItem(
+                        name=item.file_name,
+                        project_id=item.project_id,
+                        created_at=item.created_at,
+                        modified_at=item.last_modified,
+                        is_directory=item.is_directory,
+                        size=item.file_size,
+                        path=item.object_name,
+                    )
+                )
+                for item in items
+            ]
+
+            await app_server.task_manager.push_task_stream_items(
+                task_key,
+                *data,
+            )
+
+    await app_server.task_manager.set_task_stream_done(task_key)
