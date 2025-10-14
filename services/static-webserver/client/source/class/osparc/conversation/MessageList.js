@@ -94,18 +94,24 @@ qx.Class.define("osparc.conversation.MessageList", {
       this.getChildControl("add-message");
     },
 
-    _applyConversation: function(conversation) {
+    _applyConversation: function(conversation, oldConversation) {
       this.__reloadMessages(true);
 
+      const messageAdded = e => {
+        const data = e.getData();
+        this._messageAdded(data);
+      };
+      const messageDeleted = e => {
+        const data = e.getData();
+        this.__messageDeleted(data);
+      };
       if (conversation) {
-        conversation.addListener("messageAdded", e => {
-          const data = e.getData();
-          this._messageAdded(data);
-        });
-        conversation.addListener("messageDeleted", e => {
-          const data = e.getData();
-          this.__messageDeleted(data);
-        });
+        conversation.addListener("messageAdded", messageAdded);
+        conversation.addListener("messageDeleted", messageDeleted);
+      }
+      if (oldConversation) {
+        oldConversation.removeListener("messageAdded", messageAdded);
+        oldConversation.removeListener("messageDeleted", messageDeleted);
       }
     },
 

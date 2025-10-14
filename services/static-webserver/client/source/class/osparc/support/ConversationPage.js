@@ -267,7 +267,14 @@ qx.Class.define("osparc.support.ConversationPage", {
         this.getChildControl("rename-conversation-button");
 
         const openProjectButton = this.getChildControl("open-project-button");
-        openProjectButton.setVisibility(conversation && conversation.getContextProjectId() ? "visible" : "excluded");
+        if (conversation && conversation.getContextProjectId()) {
+          openProjectButton.setVisibility("visible");
+          osparc.store.Study.getInstance().getOne(conversation.getContextProjectId())
+            .then(() => openProjectButton.setEnabled(true))
+            .catch(() => openProjectButton.setEnabled(false));
+        } else {
+          openProjectButton.setVisibility("excluded");
+        }
 
         this.getChildControl("copy-ticket-id-button");
 
