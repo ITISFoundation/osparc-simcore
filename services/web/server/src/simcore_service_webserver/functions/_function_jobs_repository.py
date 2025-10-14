@@ -5,6 +5,7 @@ import json
 import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
+    FunctionClass,
     FunctionID,
     FunctionInputsList,
     FunctionJobCollectionID,
@@ -14,10 +15,12 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionsApiAccessRights,
     RegisteredFunctionJobDB,
+    RegisteredFunctionJobPatchInput,
     RegisteredFunctionJobWithStatusDB,
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
+    UnsupportedFunctionJobClassError,
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -36,7 +39,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import Text, cast
+from sqlalchemy import Text, case, cast, func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import func
 
@@ -126,8 +129,8 @@ async def patch_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    registered_function_job_db: RegisteredFunctionJobDB,
-) -> RegisteredFunctionJobDB:
+    registered_function_job_patch_inputs: list[RegisteredFunctionJobPatchInput],
+) -> list[RegisteredFunctionJobDB]:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
@@ -139,23 +142,92 @@ async def patch_function_job(
                 FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
             ],
         )
+
+        case_inputs = case(value=function_jobs_table.c.uuid)
+        case_outputs = case(value=function_jobs_table.c.uuid)
+        case_class_specific_data = case(value=function_jobs_table.c.uuid)
+        case_title = case(value=function_jobs_table.c.uuid)
+        case_description = case(value=function_jobs_table.c.uuid)
+
+        function_job_uids = []
+        for patch in registered_function_job_patch_inputs:
+            function_job_uids.append(patch.uid)
+            if patch.patch.inputs is not None:
+                case_inputs = case_inputs.when(patch.uid, patch.patch.inputs)
+            if patch.patch.outputs is not None:
+                case_outputs = case_outputs.when(patch.uid, patch.patch.outputs)
+            if patch.patch.title is not None:
+                case_title = case_title.when(patch.uid, patch.patch.title)
+            if patch.patch.description is not None:
+                case_description = case_description.when(
+                    patch.uid, patch.patch.description
+                )
+
+            # patch class specific data
+            if patch.patch.function_class == FunctionClass.PROJECT:
+                if patch.patch.project_job_id is not None:
+                    case_class_specific_data = case_class_specific_data.when(
+                        patch.uid,
+                        func.jsonb_set(
+                            function_jobs_table.c.class_specific_data,
+                            "{project_job_id}",
+                            f'"{patch.patch.project_job_id}"',
+                        ),
+                    )
+                if patch.patch.job_creation_task_id is not None:
+                    case_class_specific_data = case_class_specific_data.when(
+                        patch.uid,
+                        func.jsonb_set(
+                            function_jobs_table.c.class_specific_data,
+                            "{job_creation_task_id}",
+                            f'"{patch.patch.job_creation_task_id}"',
+                        ),
+                    )
+            elif patch.patch.function_class == FunctionClass.SOLVER:
+                if patch.patch.solver_job_id is not None:
+                    case_class_specific_data = case_class_specific_data.when(
+                        patch.uid,
+                        func.jsonb_set(
+                            function_jobs_table.c.class_specific_data,
+                            "{solver_job_id}",
+                            f'"{patch.patch.solver_job_id}"',
+                        ),
+                    )
+                if patch.patch.job_creation_task_id is not None:
+                    case_class_specific_data = case_class_specific_data.when(
+                        patch.uid,
+                        func.jsonb_set(
+                            function_jobs_table.c.class_specific_data,
+                            "{job_creation_task_id}",
+                            f'"{patch.patch.job_creation_task_id}"',
+                        ),
+                    )
+            else:
+                raise UnsupportedFunctionJobClassError(
+                    function_job_class=patch.patch.function_class
+                )
+
         result = await transaction.execute(
             function_jobs_table.update()
-            .where(function_jobs_table.c.uuid == f"{registered_function_job_db.uuid}")
             .values(
-                inputs=registered_function_job_db.inputs,
-                outputs=registered_function_job_db.outputs,
-                function_class=registered_function_job_db.function_class,
-                class_specific_data=registered_function_job_db.class_specific_data,
-                title=registered_function_job_db.title,
-                description=registered_function_job_db.description,
-                status="created",
+                inputs=case_inputs,
+                outputs=case_outputs,
+                title=case_title,
+                description=case_description,
+                class_specific_data=case_class_specific_data,
             )
+            .where(function_jobs_table.c.uuid.in_(function_job_uids))
             .returning(*_FUNCTION_JOBS_TABLE_COLS)
         )
-        row = result.one()
+        jobs = {
+            row.uuid: RegisteredFunctionJobDB.model_validate(row)
+            for row in result.fetchall()
+        }
+        assert {patch.uid for patch in registered_function_job_patch_inputs} == set(
+            jobs.keys()
+        )
 
-        return RegisteredFunctionJobDB.model_validate(row)
+        return [jobs[patch.uid] for patch in registered_function_job_patch_inputs]
 
 
 async def list_function_jobs_with_status(
