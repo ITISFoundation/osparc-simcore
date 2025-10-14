@@ -54,7 +54,12 @@ from pytest_simcore.helpers.aws_ec2 import (
 )
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
-from simcore_service_autoscaling.constants import BUFFER_MACHINE_TAG_KEY
+from simcore_service_autoscaling.constants import (
+    BUFFER_MACHINE_TAG_KEY,
+    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    MACHINE_PULLING_EC2_TAG_KEY,
+    PRE_PULLED_IMAGES_EC2_TAG_KEY,
+)
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
 from simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core import (
@@ -365,6 +370,10 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     ec2_instance_custom_tags: dict[str, str],
     instance_type_filters: Sequence[FilterTypeDef],
 ):
+    hot_buffer_instance_type = cast(
+        InstanceTypeType,
+        next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
+    )
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
@@ -373,12 +382,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(
-                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
-            ),
-        ),
+        expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
@@ -391,6 +395,21 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     )
     mock_rabbitmq_post_message.reset_mock()
     # calling again should attach the new nodes to the reserve, but nothing should start
+    # it will also trigger pre-pulling of images if there is pre-pulling
+    hot_buffer_has_pre_pull = bool(
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            hot_buffer_instance_type
+        ].pre_pull_images
+    )
+    expected_pre_pull_tag_keys = (
+        [
+            MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+            MACHINE_PULLING_EC2_TAG_KEY,
+            PRE_PULLED_IMAGES_EC2_TAG_KEY,
+        ]
+        if hot_buffer_has_pre_pull
+        else []
+    )
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
     )
@@ -398,14 +417,14 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(
-                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
-            ),
-        ),
+        expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=list(
+            ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys
+        ),
+        expected_pre_pulled_images=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            hot_buffer_instance_type
+        ].pre_pull_images,
         instance_filters=instance_type_filters,
     )
     assert fake_node.description
@@ -428,7 +447,10 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         },
     )
 
-    # calling it again should not create anything new
+    # calling it again should not create anything new, pre-pulling should be done
+    expected_pre_pull_tag_keys = (
+        [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull else []
+    )
     for _ in range(10):
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
@@ -437,14 +459,15 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(
-                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
-            ),
-        ),
+        expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=list(
+            ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys
+        ),
+        expected_pre_pulled_images=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            hot_buffer_instance_type
+        ].pre_pull_images
+        or None,
         instance_filters=instance_type_filters,
     )
 
