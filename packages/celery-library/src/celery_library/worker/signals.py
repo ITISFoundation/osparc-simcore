@@ -3,7 +3,7 @@ import threading
 from collections.abc import Callable
 
 from celery import Celery  # type: ignore[import-untyped]
-from celery.signals import (
+from celery.signals import (  # type: ignore[import-untyped]
     worker_init,
     worker_process_init,
     worker_process_shutdown,

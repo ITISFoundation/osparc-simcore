@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from celery import Celery
+from celery import Celery  # type: ignore[import-untyped]
 from servicelib.celery.app_server import BaseAppServer
 from settings_library.celery import CelerySettings
 
