@@ -20,7 +20,7 @@ async def copy_folders_from_project(
     *,
     body: FoldersBody,
     owner_metadata: OwnerMetadata,
-    user_id: UserID
+    user_id: UserID,
 ) -> tuple[AsyncJobGet, OwnerMetadata]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
@@ -41,7 +41,7 @@ async def start_export_data(
     paths_to_export: list[PathToExport],
     export_as: Literal["path", "download_link"],
     owner_metadata: OwnerMetadata,
-    user_id: UserID
+    user_id: UserID,
 ) -> tuple[AsyncJobGet, OwnerMetadata]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,

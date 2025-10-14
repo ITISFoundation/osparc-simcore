@@ -25,12 +25,18 @@ from servicelib.celery.models import (
     OwnerMetadata,
     TaskKey,
     TaskState,
+    TaskStreamItem,
     TaskUUID,
     Wildcard,
 )
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
-from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 _faker = Faker()
 
@@ -38,6 +44,13 @@ _logger = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = ["redis"]
 pytest_simcore_ops_services_selection = []
+
+_TENACITY_RETRY_PARAMS = {
+    "reraise": True,
+    "retry": retry_if_exception_type(AssertionError),
+    "stop": stop_after_delay(30),
+    "wait": wait_fixed(0.1),
+}
 
 
 class MyOwnerMetadata(OwnerMetadata):
@@ -90,12 +103,40 @@ async def dreamer_task(task: Task, task_key: TaskKey) -> list[int]:
     return numbers
 
 
+def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) -> str:
+    assert task_key
+    assert task.name
+
+    async def _stream_results(sleep_interval: float) -> None:
+        app_server = get_app_server(task.app)
+        for i in range(num_results):
+            result_data = f"result-{i}"
+            result_item = TaskStreamItem(data=result_data)
+            await app_server.task_manager.push_task_stream_items(
+                task_key,
+                result_item,
+            )
+            _logger.info("Pushed result %d: %s", i, result_data)
+            await asyncio.sleep(sleep_interval)
+
+        # Mark the stream as done
+        await app_server.task_manager.set_task_stream_done(task_key)
+
+    # Run the streaming in the event loop
+    asyncio.run_coroutine_threadsafe(
+        _stream_results(0.5), get_app_server(task.app).event_loop
+    ).result()
+
+    return f"completed-{num_results}-results"
+
+
 @pytest.fixture
 def register_celery_tasks() -> Callable[[Celery], None]:
     def _(celery_app: Celery) -> None:
         register_task(celery_app, fake_file_processor)
         register_task(celery_app, failure_task)
         register_task(celery_app, dreamer_task)
+        register_task(celery_app, streaming_results_task)
 
     return _
 
@@ -115,11 +156,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
         files=[f"file{n}" for n in range(5)],
     )
 
-    for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(1),
-        stop=stop_after_delay(30),
-    ):
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
@@ -146,12 +183,7 @@ async def test_submitting_task_with_failure_results_with_error(
         owner_metadata=owner_metadata,
     )
 
-    for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(1),
-        stop=stop_after_delay(30),
-    ):
-
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             raw_result = await task_manager.get_task_result(owner_metadata, task_uuid)
             assert isinstance(raw_result, TransferrableCeleryError)
@@ -181,6 +213,8 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
     with pytest.raises(TaskNotFoundError):
         await task_manager.get_task_status(owner_metadata, task_uuid)
 
+    tasks = await task_manager.list_tasks(owner_metadata)
+    assert task_uuid not in [task.uuid for task in tasks]
     assert task_uuid not in await task_manager.list_tasks(owner_metadata)
 
 
@@ -198,11 +232,7 @@ async def test_listing_task_uuids_contains_submitted_task(
         owner_metadata=owner_metadata,
     )
 
-    for attempt in Retrying(
-        retry=retry_if_exception_type(AssertionError),
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(10),
-    ):
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             tasks = await task_manager.list_tasks(owner_metadata)
             assert any(task.uuid == task_uuid for task in tasks)
@@ -263,3 +293,111 @@ async def test_filtering_listing_tasks(
         # clean up all tasks. this should ideally be done in the fixture
         for task_uuid, owner_metadata in all_tasks:
             await task_manager.cancel_task(owner_metadata, task_uuid)
+
+
+async def test_push_task_result_streams_data_during_execution(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    num_results = 3
+
+    task_uuid = await task_manager.submit_task(
+        ExecutionMetadata(
+            name=streaming_results_task.__name__,
+            ephemeral=False,  # Keep task available after completion for result pulling
+        ),
+        owner_metadata=owner_metadata,
+        num_results=num_results,
+    )
+
+    # Pull results while task is running, retry until is_done is True
+    results = []
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            result, is_done, _ = await task_manager.pull_task_stream_items(
+                owner_metadata, task_uuid, limit=10
+            )
+            results.extend(result)
+            assert is_done
+
+    # Should have at least some results streamed
+    assert results == [TaskStreamItem(data=f"result-{i}") for i in range(num_results)]
+
+    # Wait for task completion
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            assert status.task_state == TaskState.SUCCESS
+
+    # Final task result should be available
+    final_result = await task_manager.get_task_result(owner_metadata, task_uuid)
+    assert final_result == f"completed-{num_results}-results"
+
+    # After task completion, try to pull any remaining results
+    remaining_results, is_done, _ = await task_manager.pull_task_stream_items(
+        owner_metadata, task_uuid, limit=10
+    )
+    assert remaining_results == []
+    assert is_done
+
+
+async def test_pull_task_stream_items_with_limit(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit task with fewer results to make it more predictable
+    task_uuid = await task_manager.submit_task(
+        ExecutionMetadata(
+            name=streaming_results_task.__name__,
+            ephemeral=False,  # Keep task available after completion for result pulling
+        ),
+        owner_metadata=owner_metadata,
+        num_results=5,
+    )
+
+    # Wait for task to complete
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            assert status.task_state == TaskState.SUCCESS
+
+    # Pull all results in one go to avoid consumption issues
+    all_results, is_done_final, _last_update_final = (
+        await task_manager.pull_task_stream_items(
+            owner_metadata, task_uuid, limit=20  # High limit to get all items
+        )
+    )
+
+    assert all_results is not None
+
+    assert len(all_results) == 5  # Can't have more than what was created
+    assert is_done_final
+
+    # Verify result format for any results we got
+    for result in all_results:
+        assert result.data.startswith("result-")
+
+
+async def test_pull_task_stream_items_from_nonexistent_task_raises_error(
+    task_manager: CeleryTaskManager,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+    fake_task_uuid = TaskUUID(_faker.uuid4())
+
+    with pytest.raises(TaskNotFoundError):
+        await task_manager.pull_task_stream_items(owner_metadata, fake_task_uuid)
+
+
+async def test_push_task_stream_items_to_nonexistent_task_raises_error(
+    task_manager: CeleryTaskManager,
+):
+    not_existing_task_id = "not_existing"
+
+    with pytest.raises(TaskNotFoundError):
+        await task_manager.push_task_stream_items(
+            not_existing_task_id, TaskStreamItem(data="some-result")
+        )
