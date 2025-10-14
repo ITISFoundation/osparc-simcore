@@ -4,7 +4,7 @@ from typing import Final
 from ....generic_scheduler import Operation, SingleStepGroup
 from .._common_steps import DoNothing, RegisterScheduleId, UnRegisterScheduleId
 
-_WAIT_BEFORE_REPEAT: Final[timedelta] = timedelta(seconds=10)
+_WAIT_BEFORE_REPEAT: Final[timedelta] = timedelta(seconds=5)
 
 operation = Operation(
     SingleStepGroup(RegisterScheduleId),
