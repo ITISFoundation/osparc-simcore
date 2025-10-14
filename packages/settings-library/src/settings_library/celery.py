@@ -38,7 +38,7 @@ class CelerySettings(BaseCustomSettings):
     CELERY_POOL: Annotated[
         Literal["prefork", "eventlet", "gevent", "solo", "threads"],
         Field(
-            description="Type of pool to use. One of: prefork, eventlet, gevent, solo, threads. See https://docs.celeryq.dev/en/stable/userguide/workers.html#choosing-a-concurrency-implementation for details.",
+            description="Type of pool to use. One of: prefork, eventlet, gevent, solo, threads. See https://docs.celeryq.dev/en/stable/userguide/concurrency/index.html for details.",
         ),
     ] = "prefork"
 
