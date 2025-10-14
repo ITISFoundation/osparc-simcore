@@ -97,11 +97,15 @@ qx.Class.define("osparc.support.ConversationListItem", {
     __applyConversation: function(conversation) {
       conversation.bind("nameAlias", this, "title");
 
-      this.__populateWithLastMessage();
-      conversation.addListener("changeLastMessage", this.__populateWithLastMessage, this);
+      this.__lastMessageChanged();
+      conversation.addListener("changeLastMessage", this.__lastMessageChanged, this);
 
-      this.__populateWithFirstMessage();
-      conversation.addListener("changeFirstMessage", this.__populateWithFirstMessage, this);
+      this.__firstMessageChanged();
+      conversation.addListener("changeFirstMessage", this.__firstMessageChanged, this);
+
+      conversation.bind("lastMessageCreatedAt", this, "role", {
+        converter: val => osparc.utils.Utils.formatDateAndTime(val),
+      });
 
       const unreadBadge = this.getChildControl("unread-badge");
       const propName = osparc.store.Groups.getInstance().amIASupportUser() ? "readBySupport" : "readByUser";
@@ -137,11 +141,8 @@ qx.Class.define("osparc.support.ConversationListItem", {
       */
     },
 
-    __populateWithLastMessage: function() {
+    __lastMessageChanged: function() {
       const conversation = this.getConversation();
-      this.set({
-        role: osparc.utils.Utils.formatDateAndTime(conversation.getLastMessageCreatedAt()),
-      });
       const lastMessage = conversation.getLastMessage();
       if (lastMessage) {
         const userGroupId = lastMessage.getUserGroupId();
@@ -157,7 +158,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
       }
     },
 
-    __populateWithFirstMessage: function() {
+    __firstMessageChanged: function() {
       const conversation = this.getConversation();
       const firstMessage = conversation.getFirstMessage();
       if (firstMessage) {
