@@ -861,7 +861,7 @@ services:
           PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:close`) ||
           PathRegexp(`^/v0/storage/locations/[0-9]+/paths/.+:size`) ||
           PathRegexp(`^/v0/storage/locations/[0-9]+/-/paths:batchDelete`) ||
-          PathRegexp(`^/v0/storage/locations/[0-9]+/export-data`) ||
+          PathRegexp(`^/v0/storage/locations/[0-9]+:export-data`) ||
           PathRegexp(`^/v0/tasks-legacy/.+`)
         # NOTE: the sticky router must have a higher priority than the webserver router but below dy-proxies
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.priority=8
