@@ -36,7 +36,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       type: conversationData.type,
       created: new Date(conversationData.created),
       modified: new Date(conversationData.modified),
-      lastMessageCreatedAt: conversationData.last_message_created_at ? new Date(conversationData.last_message_created_at) : null
+      lastMessageCreatedAt: conversationData.lastMessageCreatedAt ? new Date(conversationData.lastMessageCreatedAt) : null
     });
 
     this.__messages = [];

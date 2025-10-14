@@ -140,7 +140,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
     __populateWithLastMessage: function() {
       const conversation = this.getConversation();
       this.set({
-        role: osparc.utils.Utils.formatDateAndTime(conversation.getModified()),
+        role: osparc.utils.Utils.formatDateAndTime(conversation.getLastMessageCreatedAt()),
       });
       const lastMessage = conversation.getLastMessage();
       if (lastMessage) {

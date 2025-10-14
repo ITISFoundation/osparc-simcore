@@ -184,6 +184,16 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     addMessage: function(messageData) {
       const message = this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();
+      // mark conversation as unread if the message is from the other party
+      const userGroupId = message.getUserGroupId();
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      if (userGroupId !== myGroupId) {
+        if (osparc.store.Groups.getInstance().amIASupportUser()) {
+          this.setReadBySupport(false);
+        } else {
+          this.setReadByUser(false);
+        }
+      }
       return message;
     },
 
