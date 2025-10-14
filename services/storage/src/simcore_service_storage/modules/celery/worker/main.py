@@ -1,20 +1,9 @@
-from celery.signals import (  # type: ignore[import-untyped]
-    worker_init,
-    worker_process_init,
-    worker_process_shutdown,
-    worker_shutdown,
-)
-from celery_library.common import create_app as create_celery_app
-from celery_library.signals import (
-    on_worker_init,
-    on_worker_shutdown,
-)
-from celery_library.utils import get_app_server, set_app_server
+from celery_library.worker.app import create_worker_app
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.logging_utils import setup_loggers
 from servicelib.tracing import TracingConfig
 
-from ....api._worker_tasks.tasks import setup_worker_tasks
+from ....api._worker_tasks.tasks import register_worker_tasks
 from ....core.application import create_app
 from ....core.settings import ApplicationSettings
 
@@ -34,32 +23,16 @@ def get_app():
         noisy_loggers=None,
     )
 
+    def _app_server_factory() -> FastAPIAppServer:
+        fastapi_app = create_app(_settings, tracing_config=_tracing_config)
+        return FastAPIAppServer(app=fastapi_app)
+
     assert _settings.STORAGE_CELERY  # nosec
-    app = create_celery_app(_settings.STORAGE_CELERY)
-    setup_worker_tasks(app)
-
-    return app
-
-
-the_app = get_app()
+    return create_worker_app(
+        _settings.STORAGE_CELERY,
+        register_worker_tasks_cb=register_worker_tasks,
+        app_server_factory_cb=_app_server_factory,
+    )
 
 
-def worker_init_wrapper(**kwargs):
-    fastapi_app = create_app(_settings, tracing_config=_tracing_config)
-    app_server = FastAPIAppServer(app=fastapi_app)
-    set_app_server(the_app, app_server)
-    return on_worker_init(app_server, **kwargs)
-
-
-def worker_shutdown_wrapper(**kwargs):
-    app_server = get_app_server(the_app)
-    return on_worker_shutdown(app_server, **kwargs)
-
-
-assert _settings.STORAGE_CELERY  # nosec
-if _settings.STORAGE_CELERY.CELERY_POOL == "prefork":
-    worker_process_init.connect(worker_init_wrapper)
-    worker_process_shutdown.connect(worker_shutdown_wrapper)
-else:
-    worker_init.connect(worker_init_wrapper)
-    worker_shutdown.connect(worker_shutdown_wrapper)
+app = get_app()

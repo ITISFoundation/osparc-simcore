@@ -18,7 +18,7 @@ from celery_library.backends.redis import RedisTaskStore
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
-from celery_library.utils import set_app_server
+from celery_library.worker.app_server import set_app_server
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer

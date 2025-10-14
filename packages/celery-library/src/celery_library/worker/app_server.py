@@ -1,4 +1,4 @@
-from celery import Celery  # type: ignore[import-untyped]
+from celery import Celery
 from servicelib.celery.app_server import BaseAppServer
 
 _APP_SERVER_KEY = "app_server"

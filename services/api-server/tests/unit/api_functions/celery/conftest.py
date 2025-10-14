@@ -28,7 +28,7 @@ from settings_library.redis import RedisSettings
 from simcore_service_api_server.clients import celery_task_manager
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
-from simcore_service_api_server.modules.celery.worker.tasks import setup_worker_tasks
+from simcore_service_api_server.modules.celery.worker.tasks import register_worker_tasks
 
 
 @pytest.fixture(scope="session")
@@ -135,7 +135,7 @@ async def with_api_server_celery_worker(
     worker_shutdown.connect(_on_worker_shutdown_wrapper)
 
     if add_worker_tasks:
-        setup_worker_tasks(celery_app)
+        register_worker_tasks(celery_app)
     register_celery_tasks(celery_app)
 
     with start_worker(

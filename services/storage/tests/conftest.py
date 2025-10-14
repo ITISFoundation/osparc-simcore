@@ -70,7 +70,7 @@ from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
-from simcore_service_storage.api._worker_tasks.tasks import setup_worker_tasks
+from simcore_service_storage.api._worker_tasks.tasks import register_worker_tasks
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.datcore_dsm import DatCoreDataManager
@@ -1034,7 +1034,7 @@ async def with_storage_celery_worker(
     worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)
 
-    setup_worker_tasks(celery_app)
+    register_worker_tasks(celery_app)
     register_celery_tasks(celery_app)
 
     with start_worker(

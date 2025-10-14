@@ -1,22 +1,11 @@
-"""Main application to be deployed in for example uvicorn."""
-
-from celery.signals import (  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
-    worker_init,
-    worker_shutdown,
-)
-from celery_library.common import create_app as create_celery_app
-from celery_library.signals import (
-    on_worker_init,
-    on_worker_shutdown,
-)
-from celery_library.utils import get_app_server, set_app_server
+from celery_library.worker.app import create_worker_app
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.logging_utils import setup_loggers
 from servicelib.tracing import TracingConfig
 
 from ....core.application import create_app
 from ....core.settings import ApplicationSettings
-from .tasks import setup_worker_tasks
+from .tasks import register_worker_tasks
 
 _settings = ApplicationSettings.create_from_envs()
 _tracing_settings = _settings.API_SERVER_TRACING
@@ -35,26 +24,16 @@ def get_app():
         noisy_loggers=None,
     )
 
+    def _app_server_factory() -> FastAPIAppServer:
+        fastapi_app = create_app(_settings, tracing_config=_tracing_config)
+        return FastAPIAppServer(app=fastapi_app)
+
     assert _settings.API_SERVER_CELERY  # nosec
-    app = create_celery_app(_settings.API_SERVER_CELERY)
-    setup_worker_tasks(app)
-
-    return app
-
-
-the_app = get_app()
+    return create_worker_app(
+        _settings.API_SERVER_CELERY,
+        register_worker_tasks,
+        _app_server_factory,
+    )
 
 
-@worker_init.connect
-def _worker_init_wrapper(**kwargs):
-    _settings = ApplicationSettings.create_from_envs()
-    assert _settings.API_SERVER_CELERY  # nosec
-    app_server = FastAPIAppServer(app=create_app(_settings))
-    set_app_server(the_app, app_server)
-    return on_worker_init(app_server, **kwargs)
-
-
-@worker_shutdown.connect
-def _worker_shutdown_wrapper(**kwargs):
-    app_server = get_app_server(the_app)
-    return on_worker_shutdown(app_server, **kwargs)
+app = get_app()

@@ -1,7 +1,7 @@
 from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
     Task,
 )
-from celery_library.utils import get_app_server  # pylint: disable=no-name-in-module
+from celery_library.worker.app_server import get_app_server
 from fastapi import FastAPI
 from models_library.functions import RegisteredFunction, RegisteredFunctionJob
 from models_library.projects import ProjectID

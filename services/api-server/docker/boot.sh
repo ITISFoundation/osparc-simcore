@@ -48,7 +48,7 @@ if [ "${API_SERVER_WORKER_MODE}" = "true" ]; then
       --recursive \
       -- \
       celery \
-      --app=simcore_service_api_server.modules.celery.worker.main:the_app \
+      --app=simcore_service_api_server.modules.celery.worker.main:app \
       worker --pool="${CELERY_POOL}" \
       --loglevel="${API_SERVER_LOGLEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
@@ -56,7 +56,7 @@ if [ "${API_SERVER_WORKER_MODE}" = "true" ]; then
       --queues="${CELERY_QUEUES:-default}"
   else
     exec celery \
-      --app=simcore_service_api_server.modules.celery.worker.main:the_app \
+      --app=simcore_service_api_server.modules.celery.worker.main:app \
       worker --pool="${CELERY_POOL}" \
       --loglevel="${API_SERVER_LOGLEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
