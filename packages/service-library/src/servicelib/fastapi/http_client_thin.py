@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from common_library.errors_classes import OsparcErrorMixin
-from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
+from httpx import AsyncClient, HTTPError, PoolTimeout, Response, TransportError
 from httpx._types import TimeoutTypes, URLTypes
 from servicelib.tracing import TracingConfig
 from tenacity import RetryCallState
@@ -143,7 +143,7 @@ def retry_on_errors(
                         else zelf.total_retry_interval
                     ),
                     wait=wait_exponential(min=1),
-                    retry=retry_if_exception_type((ConnectError, PoolTimeout)),
+                    retry=retry_if_exception_type(TransportError),
                     before_sleep=before_sleep_log(_logger, logging.WARNING),
                     after=_after_log(_logger),
                     reraise=True,
