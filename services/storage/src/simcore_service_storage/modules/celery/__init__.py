@@ -38,7 +38,7 @@ def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
             )
 
             register_celery_types()
-            register_pydantic_types(FileUploadCompletionBody, FileMetaData, FoldersBody)
+            # NOTE: remove register_pydantic_types(FileUploadCompletionBody, FileMetaData, FoldersBody)
 
     async def on_shutdown() -> None:
         with log_context(_logger, logging.INFO, "Shutting down Celery"):
