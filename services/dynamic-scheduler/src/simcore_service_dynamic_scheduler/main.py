@@ -9,10 +9,9 @@ from servicelib.fastapi.logging_lifespan import (
     create_logging_lifespan,
 )
 from servicelib.tracing import TracingConfig
+from simcore_service_dynamic_scheduler._meta import APP_NAME
 from simcore_service_dynamic_scheduler.core.application import create_app
 from simcore_service_dynamic_scheduler.core.settings import ApplicationSettings
-
-from ._meta import APP_NAME
 
 _logger = logging.getLogger(__name__)
 
