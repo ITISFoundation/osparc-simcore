@@ -41,6 +41,10 @@ from ._service_function_jobs import FunctionJobService
 from ._service_functions import FunctionService
 from ._service_jobs import JobService
 from .api.dependencies.authentication import Identity
+from .exceptions.backend_errors import (
+    SolverJobOutputRequestButNotSucceededError,
+    StudyJobOutputRequestButNotSucceededError,
+)
 from .exceptions.function_errors import FunctionJobCacheNotFoundError
 from .models.api_resources import JobLinks
 from .models.domain.celery_models import ApiServerOwnerMetadata
@@ -257,7 +261,7 @@ class FunctionJobTaskClientService:
 
         raise FunctionJobCacheNotFoundError
 
-    async def function_job_outputs(
+    async def function_job_outputs(  # noqa: PLR0911 # too-many-return-statements
         self,
         *,
         function: RegisteredFunction,
@@ -280,30 +284,36 @@ class FunctionJobTaskClientService:
         ):
             if function_job.project_job_id is None:
                 return None
-            new_outputs = dict(
-                (
-                    await self._job_service.get_study_job_outputs(
-                        study_id=function.project_id,
-                        job_id=function_job.project_job_id,
-                    )
-                ).results
-            )
+            try:
+                new_outputs = dict(
+                    (
+                        await self._job_service.get_study_job_outputs(
+                            study_id=function.project_id,
+                            job_id=function_job.project_job_id,
+                        )
+                    ).results
+                )
+            except StudyJobOutputRequestButNotSucceededError:
+                return None
         elif (
             function.function_class == FunctionClass.SOLVER
             and function_job.function_class == FunctionClass.SOLVER
         ):
             if function_job.solver_job_id is None:
                 return None
-            new_outputs = dict(
-                (
-                    await self._job_service.get_solver_job_outputs(
-                        solver_key=function.solver_key,
-                        version=function.solver_version,
-                        job_id=function_job.solver_job_id,
-                        async_pg_engine=self._async_pg_engine,
-                    )
-                ).results
-            )
+            try:
+                new_outputs = dict(
+                    (
+                        await self._job_service.get_solver_job_outputs(
+                            solver_key=function.solver_key,
+                            version=function.solver_version,
+                            job_id=function_job.solver_job_id,
+                            async_pg_engine=self._async_pg_engine,
+                        )
+                    ).results
+                )
+            except SolverJobOutputRequestButNotSucceededError:
+                return None
         else:
             raise UnsupportedFunctionClassError(function_class=function.function_class)
 

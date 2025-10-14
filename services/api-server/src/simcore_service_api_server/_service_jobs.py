@@ -29,7 +29,11 @@ from servicelib.logging_utils import log_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_solvers import SolverService
-from .exceptions.backend_errors import JobAssetsMissingError
+from .exceptions.backend_errors import (
+    JobAssetsMissingError,
+    SolverJobOutputRequestButNotSucceededError,
+    StudyJobOutputRequestButNotSucceededError,
+)
 from .exceptions.custom_errors import (
     InsufficientCreditsError,
     MissingWalletError,
@@ -313,9 +317,8 @@ class JobService:
         )
 
         if job_status.state != "SUCCESS":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Solver job '{job_id}' not finished. Current state: {job_status.state}",
+            raise SolverJobOutputRequestButNotSucceededError(
+                job_id=job_id, state=job_status.state
             )
 
         project_marked_as_job = await self.get_job(
@@ -392,9 +395,8 @@ class JobService:
         job_status = await self.inspect_study_job(job_id=job_id)
 
         if job_status.state != "SUCCESS":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Study job '{job_id}' not finished. Current state: {job_status.state}",
+            raise StudyJobOutputRequestButNotSucceededError(
+                job_id=job_id, state=job_status.state
             )
         project_outputs = await self._web_rest_client.get_project_outputs(
             project_id=job_id
