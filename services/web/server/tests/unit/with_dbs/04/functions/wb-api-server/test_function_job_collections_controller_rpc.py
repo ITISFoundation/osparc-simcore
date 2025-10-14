@@ -163,6 +163,69 @@ async def test_function_job_collection(
     "user_role",
     [UserRole.USER],
 )
+async def test_create_function_job_collection_same_function_job_uuid(
+    client: TestClient,
+    add_user_function_api_access_rights: None,
+    create_fake_function_obj: Callable[[FunctionClass], Function],
+    webserver_rpc_client: WebServerRpcClient,
+    logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+    user_without_function_api_access_rights: UserInfoDict,
+    osparc_product_name: ProductName,
+):
+    # Register the function first
+    registered_function = await webserver_rpc_client.functions.register_function(
+        function=create_fake_function_obj(FunctionClass.PROJECT),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert registered_function.uid is not None
+
+    registered_function_job = ProjectFunctionJob(
+        function_uid=registered_function.uid,
+        title="Test Function Job",
+        description="A test function job",
+        project_job_id=uuid4(),
+        inputs={"input1": "value1"},
+        outputs={"output1": "result1"},
+        job_creation_task_id=None,
+    )
+    # Register the function job
+    function_job_ids = []
+    registered_function_job = ProjectFunctionJob(
+        function_uid=registered_function.uid,
+        title="Test Function Job",
+        description="A test function job",
+        project_job_id=uuid4(),
+        inputs={"input1": "value1"},
+        outputs={"output1": "result1"},
+        job_creation_task_id=None,
+    )
+    # Register the function job
+    registered_job = await webserver_rpc_client.functions.register_function_job(
+        function_job=registered_function_job,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert registered_job.uid is not None
+
+    function_job_ids = [registered_job.uid] * 3
+
+    function_job_collection = FunctionJobCollection(
+        title="Test Function Job Collection",
+        description="A test function job collection",
+        job_ids=function_job_ids,
+    )
+
+    assert function_job_collection.job_ids[0] == registered_job.uid
+    assert function_job_collection.job_ids[1] == registered_job.uid
+    assert function_job_collection.job_ids[2] == registered_job.uid
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_list_function_job_collections(
     client: TestClient,
     add_user_function_api_access_rights: None,
