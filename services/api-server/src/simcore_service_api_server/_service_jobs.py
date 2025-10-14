@@ -20,6 +20,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import BaseFileLink, NodeID
+from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.rpc_pagination import PageLimitInt
@@ -316,7 +317,7 @@ class JobService:
             solver_key=solver_key, version=version, job_id=job_id
         )
 
-        if job_status.state != "SUCCESS":
+        if job_status.state != RunningState.SUCCESS:
             raise SolverJobOutputRequestButNotSucceededError(
                 job_id=job_id, state=job_status.state
             )
@@ -394,7 +395,7 @@ class JobService:
 
         job_status = await self.inspect_study_job(job_id=job_id)
 
-        if job_status.state != "SUCCESS":
+        if job_status.state != RunningState.SUCCESS:
             raise StudyJobOutputRequestButNotSucceededError(
                 job_id=job_id, state=job_status.state
             )
