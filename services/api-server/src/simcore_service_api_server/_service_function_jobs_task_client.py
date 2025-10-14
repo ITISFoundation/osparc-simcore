@@ -41,12 +41,9 @@ from ._service_function_jobs import FunctionJobService
 from ._service_functions import FunctionService
 from ._service_jobs import JobService
 from .api.dependencies.authentication import Identity
-from .exceptions.function_errors import (
-    FunctionJobCacheNotFoundError,
-)
+from .exceptions.function_errors import FunctionJobCacheNotFoundError
 from .models.api_resources import JobLinks
 from .models.domain.celery_models import ApiServerOwnerMetadata
-from .models.schemas.functions import FunctionJobCreationTaskStatus
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.storage import StorageService

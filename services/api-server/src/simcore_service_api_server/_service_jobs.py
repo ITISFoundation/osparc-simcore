@@ -308,6 +308,16 @@ class JobService:
         job_name = compose_solver_job_resource_name(solver_key, version, job_id)
         _logger.debug("Get Job '%s' outputs", job_name)
 
+        job_status = await self.inspect_solver_job(
+            solver_key=solver_key, version=version, job_id=job_id
+        )
+
+        if job_status.state != "SUCCESS":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Solver job '{job_id}' not finished. Current state: {job_status.state}",
+            )
+
         project_marked_as_job = await self.get_job(
             job_id=job_id,
             job_parent_resource_name=Solver.compose_resource_name(
@@ -379,9 +389,17 @@ class JobService:
         job_name = compose_study_job_resource_name(study_id, job_id)
         _logger.debug("Getting Job Outputs for '%s'", job_name)
 
+        job_status = await self.inspect_study_job(job_id=job_id)
+
+        if job_status.state != "SUCCESS":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Study job '{job_id}' not finished. Current state: {job_status.state}",
+            )
         project_outputs = await self._web_rest_client.get_project_outputs(
             project_id=job_id
         )
+
         return await create_job_outputs_from_project_outputs(
             job_id, project_outputs, self.user_id, self._storage_rest_client
         )
