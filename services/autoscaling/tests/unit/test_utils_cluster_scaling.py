@@ -145,7 +145,7 @@ async def test_ec2_startup_script_just_ami(
     )
     assert not instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-    assert len(startup_script.split("&&")) == 1
+    assert len(startup_script.split("&&")) == 2
     assert re.fullmatch(
         r"^docker swarm join --availability=drain --token .*$", startup_script
     )
@@ -235,7 +235,7 @@ async def test_ec2_startup_script_with_custom_scripts(
         )
         assert not instance_boot_specific.pre_pull_images
         startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-        assert len(startup_script.split("&&")) == 1 + len(
+        assert len(startup_script.split("&&")) == 2 + len(
             ec2_instances_boot_ami_scripts
         )
         assert re.fullmatch(
