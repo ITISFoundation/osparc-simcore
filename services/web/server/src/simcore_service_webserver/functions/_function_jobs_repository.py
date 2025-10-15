@@ -177,18 +177,19 @@ async def patch_function_job(
             class_specific_data = _update_class_specific_data(
                 class_specific_data=job.class_specific_data, patch=patch_input.patch
             )
+            update_values = {
+                "inputs": patch_input.patch.inputs,
+                "outputs": patch_input.patch.outputs,
+                "class_specific_data": class_specific_data,
+                "title": patch_input.patch.title,
+                "description": patch_input.patch.description,
+                "status": "created",
+            }
 
             result = await transaction.execute(
                 function_jobs_table.update()
                 .where(function_jobs_table.c.uuid == f"{patch_input.uid}")
-                .values(
-                    inputs=patch_input.patch.inputs,
-                    outputs=patch_input.patch.outputs,
-                    class_specific_data=class_specific_data,
-                    title=patch_input.patch.title,
-                    description=patch_input.patch.description,
-                    status="created",
-                )
+                .values(**{k: v for k, v in update_values.items() if v is not None})
                 .returning(*_FUNCTION_JOBS_TABLE_COLS)
             )
             updated_jobs.append(RegisteredFunctionJobDB.model_validate(result.one()))
