@@ -32,7 +32,8 @@ qx.Class.define("osparc.data.PollTask", {
         taskId: taskData["task_id"],
         taskName: taskData["task_name"] || "",
         statusHref: taskData["status_href"],
-        resultHref: taskData["result_href"],
+        resultHref: taskData["result_href"] || null,
+        streamHref: taskData["stream_href"] || null,
       });
 
       if ("abort_href" in taskData) {
@@ -77,7 +78,12 @@ qx.Class.define("osparc.data.PollTask", {
 
     resultHref: {
       check: "String",
-      nullable: false
+      nullable: true
+    },
+
+    streamHref: {
+      check: "String",
+      nullable: true
     },
 
     abortHref: {
@@ -92,7 +98,7 @@ qx.Class.define("osparc.data.PollTask", {
       nullable: false,
       init: false,
       event: "changeDone",
-      apply: "__fetchResults"
+      apply: "__fetchOutcome"
     }
   },
 
@@ -164,6 +170,16 @@ qx.Class.define("osparc.data.PollTask", {
         });
     },
 
+    __fetchOutcome: function() {
+      if (this.getDone()) {
+        if (this.getResultHref()) {
+          this.__fetchResults();
+        } else if (this.getStreamHref()) {
+          this.__fetchStream();
+        }
+      }
+    },
+
     __fetchResults: function() {
       if (this.isDone()) {
         const resultPath = this.self().extractPathname(this.getResultHref());
@@ -179,6 +195,29 @@ qx.Class.define("osparc.data.PollTask", {
               return;
             }
             throw new Error("Missing result data");
+          })
+          .catch(err => {
+            this.fireDataEvent("pollingError", err);
+            throw err;
+          });
+      }
+    },
+
+    __fetchStream: function() {
+      if (this.isDone()) {
+        const streamPath = this.self().extractPathname(this.getStreamHref());
+        fetch(streamPath)
+          .then(res => res.json())
+          .then(result => {
+            if ("error" in result && result["error"]) {
+              throw result["error"];
+            }
+            if ("data" in result && result["data"]) {
+              const resultData = result["data"];
+              this.fireDataEvent("resultReceived", resultData);
+              return;
+            }
+            throw new Error("Missing stream data");
           })
           .catch(err => {
             this.fireDataEvent("pollingError", err);
