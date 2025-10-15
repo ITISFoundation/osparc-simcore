@@ -19,6 +19,7 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.functions import (
+    FunctionJobList,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     ProjectFunction,
@@ -26,11 +27,14 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
+    RegisteredProjectFunctionJobPatchInputList,
+    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
 )
+from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import EmailStr
@@ -471,8 +475,16 @@ async def test_run_project_function(
         "get_function", fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [])
+
+    async def _register_function_job_side_effect(
+        user_id: UserID,
+        function_jobs: FunctionJobList,
+        product_name: ProductName,
+    ):
+        return [fake_registered_project_function_job] * len(function_jobs)
+
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", fake_registered_project_function_job
+        "register_function_job", side_effect=_register_function_job_side_effect
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -483,8 +495,28 @@ async def test_run_project_function(
             read_functions=True,
         ),
     )
+
+    async def _patch_registered_function_job_side_effect(
+        product_name: ProductName,
+        user_id: UserID,
+        registered_function_job_patch_inputs: (
+            RegisteredProjectFunctionJobPatchInputList
+            | RegisteredSolverFunctionJobPatchInputList
+        ),
+    ):
+        return [
+            fake_registered_project_function_job.model_copy(
+                update={
+                    "job_creation_task_id": patch.patch.job_creation_task_id,
+                    "uid": patch.uid,
+                }
+            )
+            for patch in registered_function_job_patch_inputs
+        ]
+
     mock_handler_in_functions_rpc_interface(
-        "patch_registered_function_job", fake_registered_project_function_job
+        "patch_registered_function_job",
+        side_effect=_patch_registered_function_job_side_effect,
     )
 
     pre_registered_function_job_data = PreRegisteredFunctionJobData(

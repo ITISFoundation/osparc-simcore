@@ -28,7 +28,7 @@ from ..._service_function_jobs_task_client import FunctionJobTaskClientService
 from ..._service_functions import FunctionService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.jobs import JobPricingSpecification
+from ...models.schemas.jobs import JobInputs, JobPricingSpecification
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import (
     Identity,
@@ -305,7 +305,7 @@ async def validate_function_inputs(
 ) -> tuple[bool, str]:
     return await function_job_service.validate_function_inputs(
         function=function,
-        inputs=inputs,
+        job_inputs=[JobInputs(values=inputs or {})],
     )
 
 
