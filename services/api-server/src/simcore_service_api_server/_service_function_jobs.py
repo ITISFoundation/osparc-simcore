@@ -216,7 +216,7 @@ class FunctionJobService:
         patch_inputs = []
         for patch in patches:
             if patch.function_class == FunctionClass.PROJECT:
-                patch_inputs.append(
+                patch_inputs.append(  # type: ignore
                     RegisteredProjectFunctionJobPatchInput(
                         uid=patch.function_job_id,
                         patch=RegisteredProjectFunctionJobPatch(
@@ -230,7 +230,7 @@ class FunctionJobService:
                     )
                 )
             elif patch.function_class == FunctionClass.SOLVER:
-                patch_inputs.append(
+                patch_inputs.append(  # type: ignore
                     RegisteredSolverFunctionJobPatchInput(
                         uid=patch.function_job_id,
                         patch=RegisteredSolverFunctionJobPatch(

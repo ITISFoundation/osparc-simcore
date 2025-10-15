@@ -446,7 +446,7 @@ async def map_function(
         function_job_collection=FunctionJobCollection(
             title="Function job collection of function map",
             description=function_job_collection_description,
-            job_ids=[job.uid for job in jobs],  # type: ignore
+            job_ids=[job.uid for job in jobs],
         ),
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
