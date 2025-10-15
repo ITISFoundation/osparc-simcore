@@ -53,7 +53,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         "searchProjects",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
         "searchTemplates",       // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
         "searchPublicTemplates", // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
-        "searchFunctions"        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS
+        "searchFunctions",       // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
+        "searchFiles",           // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES,
       ],
       init: null,
       nullable: false,
