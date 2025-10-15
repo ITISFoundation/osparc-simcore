@@ -1263,6 +1263,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
           curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS;
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES;
+          break;
         default:
           curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
           break;
@@ -1293,6 +1296,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES,
         ].includes(searchContext)) {
           this._changeContext(searchContext);
         }
@@ -1495,7 +1499,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__reloadStudies();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
-          this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search Files");
           // Files can't be sorted and don't support list view
           this._toolbar.exclude();

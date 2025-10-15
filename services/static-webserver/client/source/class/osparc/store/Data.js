@@ -250,15 +250,22 @@ qx.Class.define("osparc.store.Data", {
       return osparc.data.Resources.fetch("storagePaths", "multiDownload", params);
     },
 
-    searchFiles: function(searchText) {
+    searchFiles: function(searchText, modifiedAtFrom = null, modifiedAtTo = null) {
       const params = {
         url: {
           locationId: 0,
         },
         data: {
-          searchText,
+          filters: {
+            namePattern: searchText
+          }
         }
       };
+      if (modifiedAtFrom && modifiedAtFrom) {
+        // OM todo
+        params.data["filters"]["modifiedAtFrom"] = modifiedAtFrom;
+        params.data["filters"]["modifiedAtTo"] = modifiedAtTo;
+      }
       return osparc.data.Resources.fetch("storagePaths", "searchFiles", params);
     },
 
