@@ -19,7 +19,11 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobPatch,
     RegisteredProjectFunctionJobPatch,
+    RegisteredProjectFunctionJobPatchInput,
+    RegisteredProjectFunctionJobPatchInputList,
     RegisteredSolverFunctionJobPatch,
+    RegisteredSolverFunctionJobPatchInput,
+    RegisteredSolverFunctionJobPatchInputList,
     SolverFunctionJob,
 )
 from models_library.functions_errors import (
@@ -622,13 +626,33 @@ async def test_patch_registered_function_jobs(
     )
     assert len(registered_jobs) == 1
     registered_job = registered_jobs[0]
-
-    registered_job = await webserver_rpc_client.functions.patch_registered_function_job(
-        user_id=logged_user["id"],
-        function_job_uuid=registered_job.uid,
-        product_name=osparc_product_name,
-        registered_function_job_patch=patch,
+    patch_inputs: (
+        RegisteredProjectFunctionJobPatchInputList
+        | RegisteredSolverFunctionJobPatchInputList
     )
+    if function.function_class == FunctionClass.PROJECT:
+        assert isinstance(patch, RegisteredProjectFunctionJobPatch)
+        patch_inputs = [
+            RegisteredProjectFunctionJobPatchInput(uid=registered_job.uid, patch=patch)
+        ]
+    elif function.function_class == FunctionClass.SOLVER:
+        assert isinstance(patch, RegisteredSolverFunctionJobPatch)
+        patch_inputs = [
+            RegisteredSolverFunctionJobPatchInput(uid=registered_job.uid, patch=patch)
+        ]
+    else:
+        pytest.fail("Unsupported function class")
+
+    registered_jobs = (
+        await webserver_rpc_client.functions.patch_registered_function_job(
+            user_id=logged_user["id"],
+            function_job_uuid=registered_job.uid,
+            product_name=osparc_product_name,
+            registered_function_job_patch_inputs=patch_inputs,
+        )
+    )
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
     assert registered_job.title == patch.title
     assert registered_job.description == patch.description
     assert registered_job.inputs == patch.inputs

@@ -31,18 +31,18 @@ from models_library.functions import (
     RegisteredFunctionJobCollection,
     RegisteredFunctionJobDB,
     RegisteredFunctionJobList,
-    RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
     RegisteredFunctionJobWithStatusDB,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
+    RegisteredProjectFunctionJobPatchInputList,
     RegisteredProjectFunctionJobWithStatus,
     RegisteredSolverFunction,
     RegisteredSolverFunctionJob,
+    RegisteredSolverFunctionJobPatchInputList,
     RegisteredSolverFunctionJobWithStatus,
 )
 from models_library.functions_errors import (
-    FunctionJobPatchModelIncompatibleError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
@@ -111,30 +111,19 @@ async def patch_registered_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_uuid: FunctionJobID,
-    registered_function_job_patch: RegisteredFunctionJobPatch,
-) -> RegisteredFunctionJob:
-    job = await _function_jobs_repository.get_function_job(
-        app=app,
-        user_id=user_id,
-        product_name=product_name,
-        function_job_id=function_job_uuid,
-    )
-    if job.function_class != registered_function_job_patch.function_class:
-        raise FunctionJobPatchModelIncompatibleError(
-            function_id=job.function_uuid,
-            product_name=product_name,
-        )
-
-    patched_job = _patch_functionjob(job, registered_function_job_patch)
+    registered_function_job_patch_inputs: (
+        RegisteredProjectFunctionJobPatchInputList
+        | RegisteredSolverFunctionJobPatchInputList
+    ),
+) -> list[RegisteredFunctionJob]:
 
     result = await _function_jobs_repository.patch_function_job(
         app=app,
         user_id=user_id,
         product_name=product_name,
-        registered_function_job_db=patched_job,
+        registered_function_job_patch_inputs=registered_function_job_patch_inputs,
     )
-    return _decode_functionjob(result)
+    return [_decode_functionjob(job) for job in result]
 
 
 async def register_function_job_collection(
@@ -923,74 +912,4 @@ def _decode_functionjob_wso(
 
     raise UnsupportedFunctionJobClassError(
         function_job_class=functionjob_db.function_class
-    )
-
-
-def _patch_functionjob(
-    function_job_db: RegisteredFunctionJobDB,
-    patch: RegisteredFunctionJobPatch,
-) -> RegisteredFunctionJobDB:
-    if function_job_db.function_class == FunctionClass.PROJECT:
-        assert patch.function_class == FunctionClass.PROJECT  # nosec
-        return RegisteredFunctionJobDB(
-            function_class=FunctionClass.PROJECT,
-            function_uuid=function_job_db.function_uuid,
-            title=patch.title or function_job_db.title,
-            uuid=function_job_db.uuid,
-            description=patch.description or function_job_db.description,
-            inputs=patch.inputs or function_job_db.inputs,
-            outputs=patch.outputs or function_job_db.outputs,
-            created=function_job_db.created,
-            class_specific_data=FunctionClassSpecificData(
-                project_job_id=(
-                    f"{patch.project_job_id}"
-                    if patch.project_job_id
-                    else function_job_db.class_specific_data.get("project_job_id")
-                ),
-                job_creation_task_id=(
-                    f"{patch.job_creation_task_id}"
-                    if patch.job_creation_task_id
-                    else function_job_db.class_specific_data.get("job_creation_task_id")
-                ),
-            ),
-        )
-    if function_job_db.function_class == FunctionClass.SOLVER:
-        assert patch.function_class == FunctionClass.SOLVER  # nosec
-        return RegisteredFunctionJobDB(
-            function_class=FunctionClass.SOLVER,
-            function_uuid=function_job_db.function_uuid,
-            title=patch.title or function_job_db.title,
-            uuid=function_job_db.uuid,
-            description=patch.description or function_job_db.description,
-            inputs=patch.inputs or function_job_db.inputs,
-            outputs=patch.outputs or function_job_db.outputs,
-            created=function_job_db.created,
-            class_specific_data=FunctionClassSpecificData(
-                solver_job_id=(
-                    f"{patch.solver_job_id}"
-                    if patch.solver_job_id
-                    else function_job_db.class_specific_data.get("solver_job_id")
-                ),
-                job_creation_task_id=(
-                    f"{patch.job_creation_task_id}"
-                    if patch.job_creation_task_id
-                    else function_job_db.class_specific_data.get("job_creation_task_id")
-                ),
-            ),
-        )
-    if function_job_db.function_class == FunctionClass.PYTHON_CODE:
-        assert patch.function_class == FunctionClass.PYTHON_CODE  # nosec
-        return RegisteredFunctionJobDB(
-            function_class=FunctionClass.PYTHON_CODE,
-            function_uuid=function_job_db.function_uuid,
-            title=patch.title or function_job_db.title,
-            uuid=function_job_db.uuid,
-            description=patch.description or function_job_db.description,
-            inputs=patch.inputs or function_job_db.inputs,
-            outputs=patch.outputs or function_job_db.outputs,
-            created=function_job_db.created,
-            class_specific_data=function_job_db.class_specific_data,
-        )
-    raise UnsupportedFunctionJobClassError(
-        function_job_class=function_job_db.function_class
     )

@@ -24,6 +24,7 @@ from models_library.functions import (
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
+    FunctionJobPatchModelIncompatibleError,
     UnsupportedFunctionJobClassError,
 )
 from models_library.products import ProductName
@@ -188,7 +189,11 @@ async def patch_function_job(
                 )
                 .returning(*_FUNCTION_JOBS_TABLE_COLS)
             )
-            row = result.one()
+            row = result.one_or_none()
+            if row is None:
+                raise FunctionJobPatchModelIncompatibleError(
+                    function_id=job.function_uuid, product_name=product_name
+                )
             updated_jobs.append(RegisteredFunctionJobDB.model_validate(row))
 
         return updated_jobs

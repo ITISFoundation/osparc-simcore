@@ -23,8 +23,9 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     RegisteredFunctionJobList,
-    RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
+    RegisteredProjectFunctionJobPatchInputList,
+    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
@@ -113,16 +114,17 @@ async def patch_registered_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_uuid: FunctionJobID,
-    registered_function_job_patch: RegisteredFunctionJobPatch,
-) -> RegisteredFunctionJob:
+    registered_function_job_patch_inputs: (
+        RegisteredProjectFunctionJobPatchInputList
+        | RegisteredSolverFunctionJobPatchInputList
+    ),
+) -> list[RegisteredFunctionJob]:
 
     return await _functions_service.patch_registered_function_job(
         app=app,
         user_id=user_id,
         product_name=product_name,
-        function_job_uuid=function_job_uuid,
-        registered_function_job_patch=registered_function_job_patch,
+        registered_function_job_patch_inputs=registered_function_job_patch_inputs,
     )
 
 
