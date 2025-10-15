@@ -169,6 +169,11 @@ async def patch_function_job(
                 product_name=product_name,
                 function_job_id=patch_input.uid,
             )
+            if job.function_class != used_function_class:
+                raise FunctionJobPatchModelIncompatibleError(
+                    function_id=job.function_uuid, product_name=product_name
+                )
+
             class_specific_data = _update_class_specific_data(
                 class_specific_data=job.class_specific_data, patch=patch_input.patch
             )
@@ -176,9 +181,6 @@ async def patch_function_job(
             result = await transaction.execute(
                 function_jobs_table.update()
                 .where(function_jobs_table.c.uuid == f"{patch_input.uid}")
-                .where(
-                    function_jobs_table.c.function_class == used_function_class.value
-                )
                 .values(
                     inputs=patch_input.patch.inputs,
                     outputs=patch_input.patch.outputs,
@@ -189,12 +191,7 @@ async def patch_function_job(
                 )
                 .returning(*_FUNCTION_JOBS_TABLE_COLS)
             )
-            row = result.one_or_none()
-            if row is None:
-                raise FunctionJobPatchModelIncompatibleError(
-                    function_id=job.function_uuid, product_name=product_name
-                )
-            updated_jobs.append(RegisteredFunctionJobDB.model_validate(row))
+            updated_jobs.append(RegisteredFunctionJobDB.model_validate(result.one()))
 
         return updated_jobs
 
