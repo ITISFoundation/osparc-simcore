@@ -433,8 +433,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       pollTasks.createPollingTask(searchFilesPromise)
         .then(task => {
           task.addListener("resultReceived", e => {
-            const files = e.getData();
-            this.__setFilesToList(files);
+            const streamData = e.getData();
+            if ("items" in streamData) {
+              this.__setFilesToList(streamData["items"]);
+            }
           }, this);
         })
         .catch(err => console.log(err))

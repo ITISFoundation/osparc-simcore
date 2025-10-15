@@ -257,7 +257,7 @@ qx.Class.define("osparc.store.Data", {
         },
         data: {
           filters: {
-            namePattern: searchText
+            namePattern: "*" + searchText + "*",
           }
         }
       };
