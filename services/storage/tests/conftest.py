@@ -1015,34 +1015,37 @@ async def with_storage_celery_worker(
     monkeypatch: pytest.MonkeyPatch,
     register_test_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
-    app_settings = ApplicationSettings.create_from_envs()
-    tracing_config = TracingConfig.create(
-        tracing_settings=None,  # disable tracing in tests
-        service_name="storage-api",
-    )
+    with monkeypatch.context() as patch:
+        patch.setenv("STORAGE_WORKER_MODE", "true")
+        patch.setenv("CELERY_POOL", "threads")
+        app_settings = ApplicationSettings.create_from_envs()
 
-    def _app_server_factory() -> FastAPIAppServer:
-        return FastAPIAppServer(app=create_app(app_settings, tracing_config))
+        tracing_config = TracingConfig.create(
+            tracing_settings=None,  # disable tracing in tests
+            service_name="storage-api",
+        )
 
-    # NOTE: explicitly connect the signals in tests
-    worker_init.connect(
-        _worker_init_wrapper(celery_app, _app_server_factory), weak=False
-    )
-    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
+        def _app_server_factory() -> FastAPIAppServer:
+            return FastAPIAppServer(app=create_app(app_settings, tracing_config))
 
-    register_worker_tasks(celery_app)
-    register_test_tasks(celery_app)
+        # NOTE: explicitly connect the signals in tests
+        worker_init.connect(
+            _worker_init_wrapper(celery_app, _app_server_factory), weak=False
+        )
+        worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
-    with start_worker(
-        celery_app,
-        pool=CeleryPoolType.THREADS,
-        concurrency=1,
-        loglevel="info",
-        perform_ping_check=False,
-        queues="default,cpu_bound",
-    ) as worker:
-        yield worker
+        register_worker_tasks(celery_app)
+        register_test_tasks(celery_app)
+
+        with start_worker(
+            celery_app,
+            pool=CeleryPoolType.THREADS,
+            concurrency=1,
+            loglevel="info",
+            perform_ping_check=False,
+            queues="default,cpu_bound",
+        ) as worker:
+            yield worker
 
 
 @pytest.fixture
