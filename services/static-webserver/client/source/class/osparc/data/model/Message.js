@@ -92,6 +92,17 @@ qx.Class.define("osparc.data.model.Message", {
       // oldest first: higher in the list. Latest at the bottom
       messages.sort((a, b) => a.getCreated() - b.getCreated());
     },
+
+    isSupportMessage: function(message) {
+      return message.getUserGroupId() === osparc.data.model.Message.SYSTEM_MESSAGE_ID;
+    },
+
+    isMyMessage: function(message) {
+      if (osparc.data.model.Message.isSupportMessage(message)) {
+        return false;
+      }
+      return message && osparc.auth.Data.getInstance().getGroupId() === message.getUserGroupId();
+    },
   },
 
   members: {
