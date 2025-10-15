@@ -261,7 +261,7 @@ class FunctionJobTaskClientService:
 
         raise FunctionJobCacheNotFoundError
 
-    async def function_job_outputs(  # noqa: PLR0911 # too-many-return-statements
+    async def function_job_outputs(  # noqa: PLR0911 # pylint: disable=too-many-return-statements
         self,
         *,
         function: RegisteredFunction,
