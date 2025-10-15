@@ -94,7 +94,7 @@ class FunctionJobService:
             **pagination_kwargs,
         )
 
-    async def validate_function_inputs(
+    async def validate_function_inputs(  # pylint: disable=no-self-use
         self, *, function: RegisteredFunction, job_inputs: list[JobInputs]
     ) -> tuple[bool, str]:
 
@@ -106,9 +106,9 @@ class FunctionJobService:
 
         if function.input_schema.schema_class == FunctionSchemaClass.json_schema:
             try:
-                for input in job_inputs:
+                for input_ in job_inputs:
                     jsonschema.validate(
-                        instance=input.values,
+                        instance=input_.values,
                         schema=function.input_schema.schema_content,
                     )
             except ValidationError as err:

@@ -241,7 +241,7 @@ class FunctionJobTaskClientService:
             check_write_permissions=False,
         )
 
-    async def function_job_outputs(
+    async def function_job_outputs(  # pylint: disable=too-many-return-statements
         self,
         *,
         function: RegisteredFunction,

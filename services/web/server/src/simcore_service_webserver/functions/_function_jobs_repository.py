@@ -46,7 +46,6 @@ from simcore_postgres_database.utils_repos import (
 )
 from sqlalchemy import Text, cast, func
 from sqlalchemy.ext.asyncio import AsyncConnection
-from sqlalchemy.sql import func
 
 from ..db.plugin import get_asyncpg_engine
 from ..groups.api import list_all_user_groups_ids
