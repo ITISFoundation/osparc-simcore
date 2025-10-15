@@ -61,7 +61,7 @@ qx.Class.define("osparc.data.StreamTask", {
     },
 
     fetchStream: function() {
-      if (!this.isDone()) {
+      if (!this.isEnd()) {
         const streamPath = osparc.data.PollTask.extractPathname(this.getStreamHref());
         const url = `${streamPath}?limit=${this.getPageSize()}`;
         fetch(url)
@@ -89,7 +89,6 @@ qx.Class.define("osparc.data.StreamTask", {
               this.fireDataEvent("streamReceived", items);
               if (end) {
                 this.setEnd(true);
-                this.setDone(true);
               }
               return;
             }
