@@ -16,8 +16,10 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredProjectFunctionJobPatch,
     RegisteredProjectFunctionJobPatchInput,
+    RegisteredProjectFunctionJobPatchInputList,
     RegisteredSolverFunctionJobPatch,
     RegisteredSolverFunctionJobPatchInput,
+    RegisteredSolverFunctionJobPatchInputList,
     SolverFunctionJob,
 )
 from models_library.functions_errors import (
@@ -216,8 +218,8 @@ class FunctionJobService:
         patch_inputs = []
         for patch in patches:
             if patch.function_class == FunctionClass.PROJECT:
-                patch_inputs.append(  # type: ignore
-                    RegisteredProjectFunctionJobPatchInput(
+                patch_inputs.append(
+                    RegisteredProjectFunctionJobPatchInput(  # type: ignore
                         uid=patch.function_job_id,
                         patch=RegisteredProjectFunctionJobPatch(
                             title=None,
@@ -230,8 +232,8 @@ class FunctionJobService:
                     )
                 )
             elif patch.function_class == FunctionClass.SOLVER:
-                patch_inputs.append(  # type: ignore
-                    RegisteredSolverFunctionJobPatchInput(
+                patch_inputs.append(
+                    RegisteredSolverFunctionJobPatchInput(  # type: ignore
                         uid=patch.function_job_id,
                         patch=RegisteredSolverFunctionJobPatch(
                             title=None,
@@ -247,10 +249,14 @@ class FunctionJobService:
                 raise UnsupportedFunctionClassError(
                     function_class=patch.function_class,
                 )
+
         return await self._web_rpc_client.patch_registered_function_job(
             user_id=user_id,
             product_name=product_name,
-            registered_function_job_patch_inputs=patch_inputs,
+            registered_function_job_patch_inputs=TypeAdapter(
+                RegisteredProjectFunctionJobPatchInputList
+                | RegisteredSolverFunctionJobPatchInputList
+            ).validate_python(patch_inputs),
         )
 
     async def run_function(
