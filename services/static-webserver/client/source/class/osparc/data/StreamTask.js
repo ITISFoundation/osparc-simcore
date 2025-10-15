@@ -22,12 +22,12 @@
 qx.Class.define("osparc.data.StreamTask", {
   extend: osparc.data.PollTask,
 
-  construct: function(taskData, interval = 2000) {
+  construct: function(streamData, interval = 500) {
     this.set({
-      streamHref: taskData["stream_href"] || null,
+      streamHref: streamData["stream_href"] || null,
     });
 
-    this.base(arguments, taskData, interval);
+    this.base(arguments, streamData, interval);
   },
 
   events: {
@@ -35,11 +35,6 @@ qx.Class.define("osparc.data.StreamTask", {
   },
 
   properties: {
-    resultHref: {
-      refine: true,
-      nullable: true
-    },
-
     streamHref: {
       check: "String",
       nullable: false,
@@ -53,8 +48,17 @@ qx.Class.define("osparc.data.StreamTask", {
 
     __fetchStream: function() {
       if (!this.isDone()) {
-        const streamPath = this.self().extractPathname(this.getStreamHref());
+        const streamPath = osparc.data.PollTask.extractPathname(this.getStreamHref());
         fetch(streamPath)
+          .then(resp => {
+            if (resp.status === 200) {
+              return resp.json();
+            }
+            const errMsg = qx.locale.Manager.tr("Unsuccessful streaming");
+            const err = new Error(errMsg);
+            this.fireDataEvent("pollingError", err);
+            throw err;
+          })
           .then(streamData => {
             if ("error" in streamData && streamData["error"]) {
               throw streamData["error"];
@@ -62,6 +66,11 @@ qx.Class.define("osparc.data.StreamTask", {
             if ("data" in streamData && streamData["data"]) {
               const data = streamData["data"];
               this.fireDataEvent("streamReceived", data);
+              if ("end" in data && data["end"] === false) {
+                setTimeout(() => this.__fetchStream(), this.getPollInterval());
+              } else {
+                this.setDone(true);
+              }
               return;
             }
             throw new Error("Missing stream data");

@@ -76,7 +76,7 @@ qx.Class.define("osparc.data.PollTask", {
 
     resultHref: {
       check: "String",
-      nullable: false
+      nullable: true
     },
 
     abortHref: {
@@ -189,28 +189,6 @@ qx.Class.define("osparc.data.PollTask", {
               return;
             }
             throw new Error("Missing result data");
-          })
-          .catch(err => {
-            this.fireDataEvent("pollingError", err);
-            throw err;
-          });
-      }
-    },
-
-    __fetchStream: function() {
-      if (this.isDone()) {
-        const streamPath = this.self().extractPathname(this.getStreamHref());
-        fetch(streamPath)
-          .then(streamData => {
-            if ("error" in streamData && streamData["error"]) {
-              throw streamData["error"];
-            }
-            if ("data" in streamData && streamData["data"]) {
-              const resultData = streamData["data"];
-              this.fireDataEvent("resultReceived", resultData);
-              return;
-            }
-            throw new Error("Missing stream data");
           })
           .catch(err => {
             this.fireDataEvent("pollingError", err);

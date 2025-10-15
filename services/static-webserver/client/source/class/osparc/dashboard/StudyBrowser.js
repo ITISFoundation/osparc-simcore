@@ -428,14 +428,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const filterData = this._searchBarFilter.getFilterData();
       const text = filterData.text ? encodeURIComponent(filterData.text) : "";
 
-      const searchFilesPromise = osparc.store.Data.getInstance().searchFiles(text);
-      const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(searchFilesPromise)
-        .then(task => {
-          task.addListener("resultReceived", e => {
-            const streamData = e.getData();
-            if ("items" in streamData) {
-              this.__setFilesToList(streamData["items"]);
+      osparc.store.Data.getInstance().searchFiles(text)
+        .then(streamData => {
+          const stream = new osparc.data.StreamTask(streamData);
+          stream.addListener("streamReceived", e => {
+            const data = e.getData();
+            if ("items" in data) {
+              this.__setFilesToList(data["items"]);
             }
           }, this);
         })
