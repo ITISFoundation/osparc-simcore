@@ -419,10 +419,14 @@ async def test_run_project_function_parent_info(
         "get_function", return_value=fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
-        "find_cached_function_jobs", return_value=[]
+        "find_cached_function_jobs", side_effect=_find_cached_function_jobs_side_effect
     )
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", return_value=fake_registered_project_function_job
+        "register_function_job",
+        side_effect=partial(
+            _register_function_job_side_effect,
+            fake_registered_project_function_job,
+        ),
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -539,10 +543,14 @@ async def test_map_function_parent_info(
         "get_function", return_value=fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
-        "find_cached_function_jobs", return_value=[]
+        "find_cached_function_jobs", side_effect=_find_cached_function_jobs_side_effect
     )
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", return_value=fake_registered_project_function_job
+        "register_function_job",
+        side_effect=partial(
+            _register_function_job_side_effect,
+            fake_registered_project_function_job,
+        ),
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -593,9 +601,10 @@ async def test_map_function_parent_info(
 
     if expected_status_code == status.HTTP_200_OK:
         FunctionJobCollection.model_validate(response.json())
-        task_id = patch_mock.call_args.kwargs[
-            "registered_function_job_patch"
-        ].job_creation_task_id
+        task_id = patch_mock.call_args.kwargs["registered_function_job_patch_inputs"][
+            0
+        ].patch.job_creation_task_id
+        assert task_id is not None
         await _wait_for_task_result(client, auth, f"{task_id}")
         assert side_effect_checks["headers_checked"] is True
 
