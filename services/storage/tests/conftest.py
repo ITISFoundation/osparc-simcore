@@ -1015,9 +1015,12 @@ async def with_storage_celery_worker(
     monkeypatch: pytest.MonkeyPatch,
     register_test_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
+
     with monkeypatch.context() as patch:
+        pool = f"{CeleryPoolType.THREADS.value}"
+
         patch.setenv("STORAGE_WORKER_MODE", "true")
-        patch.setenv("CELERY_POOL", "threads")
+        patch.setenv("CELERY_POOL", pool)
         app_settings = ApplicationSettings.create_from_envs()
 
         tracing_config = TracingConfig.create(
@@ -1039,7 +1042,7 @@ async def with_storage_celery_worker(
 
         with start_worker(
             celery_app,
-            pool=CeleryPoolType.THREADS,
+            pool=pool,
             concurrency=1,
             loglevel="info",
             perform_ping_check=False,
