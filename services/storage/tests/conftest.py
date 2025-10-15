@@ -1008,44 +1008,61 @@ def register_test_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
-async def with_storage_celery_worker(
+def storage_worker_mode(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
+
+
+@pytest.fixture
+def worker_app_settings(
+    enable_tracing,
     app_environment: EnvVarsDict,
+    enabled_rabbitmq: RabbitSettings,
+    sqlalchemy_async_engine: AsyncEngine,
+    postgres_host_config: dict[str, str],
+    mocked_s3_server_envs: EnvVarsDict,
+    datcore_adapter_service_mock: respx.MockRouter,
+    mocked_redis_server: None,
+    storage_worker_mode: None,
+) -> ApplicationSettings:
+    test_app_settings = ApplicationSettings.create_from_envs()
+    print(f"{test_app_settings.model_dump_json(indent=2)=}")
+    return test_app_settings
+
+
+@pytest.fixture
+async def with_storage_celery_worker(
+    worker_app_settings: ApplicationSettings,
     celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
     register_test_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
 
-    with monkeypatch.context() as patch:
-        patch.setenv("STORAGE_WORKER_MODE", "true")
-        patch.setenv("CELERY_POOL", "threads")
-        app_settings = ApplicationSettings.create_from_envs()
+    tracing_config = TracingConfig.create(
+        tracing_settings=None,  # disable tracing in tests
+        service_name="storage-api",
+    )
 
-        tracing_config = TracingConfig.create(
-            tracing_settings=None,  # disable tracing in tests
-            service_name="storage-api",
-        )
+    def _app_server_factory() -> FastAPIAppServer:
+        return FastAPIAppServer(app=create_app(worker_app_settings, tracing_config))
 
-        def _app_server_factory() -> FastAPIAppServer:
-            return FastAPIAppServer(app=create_app(app_settings, tracing_config))
+    # NOTE: explicitly connect the signals in tests
+    worker_init.connect(
+        _worker_init_wrapper(celery_app, _app_server_factory), weak=False
+    )
+    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
-        # NOTE: explicitly connect the signals in tests
-        worker_init.connect(
-            _worker_init_wrapper(celery_app, _app_server_factory), weak=False
-        )
-        worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
+    register_worker_tasks(celery_app)
+    register_test_tasks(celery_app)
 
-        register_worker_tasks(celery_app)
-        register_test_tasks(celery_app)
-
-        with start_worker(
-            celery_app,
-            pool="threads",
-            concurrency=1,
-            loglevel="info",
-            perform_ping_check=False,
-            queues="default,cpu_bound",
-        ) as worker:
-            yield worker
+    with start_worker(
+        celery_app,
+        pool="threads",
+        concurrency=1,
+        loglevel="info",
+        perform_ping_check=False,
+        queues="default,cpu_bound",
+    ) as worker:
+        yield worker
 
 
 @pytest.fixture
