@@ -1010,7 +1010,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     filename = Path(s3_obj.object_key).name
 
                     if not (
-                        fnmatch.fnmatch(filename, name_pattern)
+                        fnmatch.fnmatch(filename.lower(), name_pattern.lower())
                         and len(s3_obj.object_key.split("/"))
                         >= min_parts_for_valid_s3_object
                     ):
