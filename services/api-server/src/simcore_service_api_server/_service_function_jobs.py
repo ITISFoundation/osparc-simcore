@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import overload
+from typing import Annotated
 
 import jsonschema
 from common_library.exclude import as_dict_exclude_none
@@ -14,30 +14,30 @@ from models_library.functions import (
     ProjectFunctionJob,
     RegisteredFunction,
     RegisteredFunctionJob,
-    RegisteredFunctionJobPatch,
     RegisteredProjectFunctionJobPatch,
     RegisteredSolverFunctionJobPatch,
     SolverFunctionJob,
-    SolverJobID,
-    TaskID,
 )
 from models_library.functions_errors import (
     FunctionInputsValidationError,
     UnsupportedFunctionClassError,
 )
 from models_library.products import ProductName
-from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from pydantic import TypeAdapter, ValidationError
+from pydantic import Field, TypeAdapter, ValidationError, validate_call
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
 
 from ._service_jobs import JobService
 from .models.api_resources import JobLinks
-from .models.domain.functions import PreRegisteredFunctionJobData
+from .models.domain.functions import (
+    PreRegisteredFunctionJobData,
+    ProjectFunctionJobPatch,
+    SolverFunctionJobPatch,
+)
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.wb_api_server import WbApiRpcClient
@@ -202,81 +202,51 @@ class FunctionJobService:
             for job, input_ in zip(jobs, job_inputs)
         ]
 
-    @overload
+    @validate_call
     async def patch_registered_function_job(
         self,
         *,
         user_id: UserID,
         product_name: ProductName,
-        function_job_id: FunctionJobID,
-        function_class: FunctionClass,
-        job_creation_task_id: TaskID | None,
-    ) -> RegisteredFunctionJob: ...
-
-    @overload
-    async def patch_registered_function_job(
-        self,
-        *,
-        user_id: UserID,
-        product_name: ProductName,
-        function_job_id: FunctionJobID,
-        function_class: FunctionClass,
-        job_creation_task_id: TaskID | None,
-        project_job_id: ProjectID | None,
-    ) -> RegisteredFunctionJob: ...
-
-    @overload
-    async def patch_registered_function_job(
-        self,
-        *,
-        user_id: UserID,
-        product_name: ProductName,
-        function_job_id: FunctionJobID,
-        function_class: FunctionClass,
-        job_creation_task_id: TaskID | None,
-        solver_job_id: SolverJobID | None,
-    ) -> RegisteredFunctionJob: ...
-
-    async def patch_registered_function_job(
-        self,
-        *,
-        user_id: UserID,
-        product_name: ProductName,
-        function_job_id: FunctionJobID,
-        function_class: FunctionClass,
-        job_creation_task_id: TaskID | None,
-        project_job_id: ProjectID | None = None,
-        solver_job_id: SolverJobID | None = None,
-    ) -> RegisteredFunctionJob:
-        # Only allow one of project_job_id or solver_job_id depending on function_class
-        patch: RegisteredFunctionJobPatch
-        if function_class == FunctionClass.PROJECT:
-            patch = RegisteredProjectFunctionJobPatch(
-                title=None,
-                description=None,
-                inputs=None,
-                outputs=None,
-                job_creation_task_id=job_creation_task_id,
-                project_job_id=project_job_id,
-            )
-        elif function_class == FunctionClass.SOLVER:
-            patch = RegisteredSolverFunctionJobPatch(
-                title=None,
-                description=None,
-                inputs=None,
-                outputs=None,
-                job_creation_task_id=job_creation_task_id,
-                solver_job_id=solver_job_id,
-            )
-        else:
-            raise UnsupportedFunctionClassError(
-                function_class=function_class,
-            )
+        patches: Annotated[
+            list[ProjectFunctionJobPatch] | list[SolverFunctionJobPatch],
+            Field(max_length=50, min_length=1),
+        ],
+    ) -> list[RegisteredFunctionJob]:
+        patch_inputs = []
+        for patch in patches:
+            if patch.function_class == FunctionClass.PROJECT:
+                assert isinstance(patch, ProjectFunctionJobPatch)  # nosec
+                patch_inputs.append(
+                    RegisteredProjectFunctionJobPatch(
+                        title=None,
+                        description=None,
+                        inputs=None,
+                        outputs=None,
+                        job_creation_task_id=patch.job_creation_task_id,
+                        project_job_id=patch.project_job_id,
+                    )
+                )
+            elif patch.function_class == FunctionClass.SOLVER:
+                assert isinstance(patch, SolverFunctionJobPatch)  # nosec
+                patch_inputs.append(
+                    RegisteredSolverFunctionJobPatch(
+                        title=None,
+                        description=None,
+                        inputs=None,
+                        outputs=None,
+                        job_creation_task_id=patch.job_creation_task_id,
+                        solver_job_id=patch.solver_job_id,
+                    )
+                )
+            else:
+                raise UnsupportedFunctionClassError(
+                    function_class=patch.function_class,
+                )
         return await self._web_rpc_client.patch_registered_function_job(
             user_id=user_id,
             product_name=product_name,
-            function_job_id=function_job_id,
-            registered_function_job_patch=patch,
+            registered_function_job_patch_inputs=patch_inputs,
         )
 
     async def run_function(
@@ -305,14 +275,19 @@ class FunctionJobService:
                 job_id=study_job.id,
                 pricing_spec=pricing_spec,
             )
-            return await self.patch_registered_function_job(
+            registered_jobs = await self.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
-                function_job_id=pre_registered_function_job_data.function_job_id,
-                function_class=FunctionClass.PROJECT,
-                job_creation_task_id=None,
-                project_job_id=study_job.id,
+                patches=[
+                    ProjectFunctionJobPatch(
+                        function_job_id=pre_registered_function_job_data.function_job_id,
+                        job_creation_task_id=None,
+                        project_job_id=study_job.id,
+                    )
+                ],
             )
+            assert len(registered_jobs) == 1
+            return registered_jobs[0]
 
         if function.function_class == FunctionClass.SOLVER:
             solver_job = await self._job_service.create_solver_job(
@@ -330,14 +305,19 @@ class FunctionJobService:
                 job_id=solver_job.id,
                 pricing_spec=pricing_spec,
             )
-            return await self.patch_registered_function_job(
+            registered_jobs = await self.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
-                function_job_id=pre_registered_function_job_data.function_job_id,
-                function_class=FunctionClass.SOLVER,
-                job_creation_task_id=None,
-                solver_job_id=solver_job.id,
+                patches=[
+                    SolverFunctionJobPatch(
+                        function_job_id=pre_registered_function_job_data.function_job_id,
+                        job_creation_task_id=None,
+                        solver_job_id=solver_job.id,
+                    )
+                ],
             )
+            assert len(registered_jobs) == 1
+            return registered_jobs[0]
 
         raise UnsupportedFunctionClassError(
             function_class=function.function_class,

@@ -337,7 +337,6 @@ class FunctionsRpcApi(BaseRpcApi):
         *,
         product_name: ProductName,
         user_id: UserID,
-        function_job_uuid: FunctionJobID,
         registered_function_job_patch_inputs: (
             RegisteredProjectFunctionJobPatchInputList
             | RegisteredSolverFunctionJobPatchInputList
