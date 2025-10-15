@@ -1,5 +1,6 @@
 import functools
 import logging
+import typing
 from typing import TypeAlias
 
 from aws_library.ec2 import (
@@ -85,6 +86,7 @@ async def ec2_startup_script(
     return " && ".join(startup_commands)
 
 
+@typing.no_type_check  # NOTE: This disable checking by mypy as it cannot handle checking this in reasonable time (>5 minutes) since 1.18.0 (due to large Literal Union it seems)
 def _instance_type_by_type_name(
     ec2_type: EC2InstanceType, *, type_name: InstanceTypeType | None
 ) -> bool:
