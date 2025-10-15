@@ -536,7 +536,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this.__filesList = filesList;
     },
 
-    reloadFolders: function() {
+    reloadFiles: function() {
       if (this.__filesContainer) {
         this.__filesContainer.removeAll();
         this.__filesContainer.exclude();
