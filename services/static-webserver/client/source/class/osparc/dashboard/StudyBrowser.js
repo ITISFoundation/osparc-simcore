@@ -436,6 +436,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             if ("items" in data) {
               this.__setFilesToList(data["items"]);
             }
+            if (stream.isEnd() === false) {
+              setTimeout(() => stream.fetchStream(), 2000);
+            }
           }, this);
         })
         .catch(err => console.log(err))
