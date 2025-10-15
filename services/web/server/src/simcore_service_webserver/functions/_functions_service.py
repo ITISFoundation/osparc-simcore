@@ -442,7 +442,7 @@ async def find_cached_function_jobs(
                 ),
                 created_at=job.created,
             )
-        elif job.function_class == FunctionClass.SOLVER:
+        if job.function_class == FunctionClass.SOLVER:
             return RegisteredSolverFunctionJob(
                 uid=job.uuid,
                 title=job.title,
@@ -456,10 +456,7 @@ async def find_cached_function_jobs(
                 ),
                 created_at=job.created,
             )
-        else:
-            raise UnsupportedFunctionJobClassError(
-                function_job_class=job.function_class
-            )
+        raise UnsupportedFunctionJobClassError(function_job_class=job.function_class)
 
     return [_map_db_model_to_domain_model(job) for job in returned_function_jobs]
 
