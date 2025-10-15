@@ -23,9 +23,7 @@ from asgi_lifespan import LifespanManager
 from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
-from celery.signals import worker_init, worker_shutdown
-from celery_library.signals import on_worker_init, on_worker_shutdown
-from celery_library.worker.app_server import set_app_server
+from celery_library.worker.signals import register_worker_signals
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -67,6 +65,7 @@ from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.tracing import TracingConfig
 from servicelib.utils import limited_gather
+from settings_library.celery import CeleryPoolType
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
@@ -1000,7 +999,7 @@ def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Cel
 
 
 @pytest.fixture
-def register_celery_tasks() -> Callable[[Celery], None]:
+def register_test_tasks() -> Callable[[Celery], None]:
     """override if tasks are needed"""
 
     def _(celery_app: Celery) -> None: ...
@@ -1013,7 +1012,7 @@ async def with_storage_celery_worker(
     app_environment: EnvVarsDict,
     celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
-    register_celery_tasks: Callable[[Celery], None],
+    register_test_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     # Signals must be explicitily connected
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
@@ -1023,23 +1022,23 @@ async def with_storage_celery_worker(
         service_name="storage-api",
     )
 
-    app_server = FastAPIAppServer(
-        app=create_app(app_settings, tracing_config=tracing_config)
+    def _app_server_factory() -> FastAPIAppServer:
+        return FastAPIAppServer(
+            app=create_app(app_settings, tracing_config=tracing_config)
+        )
+
+    assert app_settings.STORAGE_CELERY
+
+    register_worker_signals(
+        celery_app, app_settings.STORAGE_CELERY, _app_server_factory
     )
 
-    def _on_worker_init_wrapper(**kwargs):
-        set_app_server(celery_app, app_server)
-        return on_worker_init(app_server, **kwargs)
-
-    worker_init.connect(_on_worker_init_wrapper)
-    worker_shutdown.connect(on_worker_shutdown)
-
     register_worker_tasks(celery_app)
-    register_celery_tasks(celery_app)
+    register_test_tasks(celery_app)
 
     with start_worker(
         celery_app,
-        pool="threads",
+        pool=CeleryPoolType.THREADS,
         concurrency=1,
         loglevel="info",
         perform_ping_check=False,

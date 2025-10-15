@@ -1,5 +1,6 @@
 from datetime import timedelta
-from typing import Annotated, Literal
+from enum import StrEnum
+from typing import Annotated
 
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
@@ -7,6 +8,13 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 from .base import BaseCustomSettings
+
+
+class CeleryPoolType(StrEnum):
+    PREFORK = "prefork"
+    EVENTLET = "eventlet"
+    GEVENT = "gevent"
+    THREADS = "threads"
 
 
 class CelerySettings(BaseCustomSettings):
@@ -36,11 +44,11 @@ class CelerySettings(BaseCustomSettings):
     ] = True
 
     CELERY_POOL: Annotated[
-        Literal["prefork", "eventlet", "gevent", "solo", "threads"],
+        CeleryPoolType,
         Field(
-            description="Type of pool to use. One of: prefork, eventlet, gevent, solo, threads. See https://docs.celeryq.dev/en/stable/userguide/concurrency/index.html for details.",
+            description="Type of pool to use. One of: prefork, eventlet, gevent, threads. See https://docs.celeryq.dev/en/stable/userguide/concurrency/index.html for details.",
         ),
-    ] = "prefork"
+    ] = CeleryPoolType.PREFORK
 
     model_config = SettingsConfigDict(
         json_schema_extra={

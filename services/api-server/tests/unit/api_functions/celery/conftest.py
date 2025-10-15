@@ -14,12 +14,7 @@ from celery.contrib.testing.worker import (  # pylint: disable=no-name-in-module
     TestWorkController,
     start_worker,
 )
-from celery.signals import (  # pylint: disable=no-name-in-module
-    worker_init,
-    worker_shutdown,
-)
-from celery_library.signals import on_worker_init, on_worker_shutdown
-from celery_library.worker.app_server import set_app_server
+from celery_library.worker.signals import register_worker_signals
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -122,17 +117,12 @@ async def with_api_server_celery_worker(
     monkeypatch.setenv("API_SERVER_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
 
-    app_server = FastAPIAppServer(app=create_app(app_settings))
+    def _app_server_factory() -> FastAPIAppServer:
+        return FastAPIAppServer(app=create_app(app_settings))
 
-    def _on_worker_init_wrapper(**kwargs):
-        set_app_server(celery_app, app_server)
-        return on_worker_init(app_server, **kwargs)
-
-    def _on_worker_shutdown_wrapper(**kwargs):
-        return on_worker_shutdown(app_server, **kwargs)
-
-    worker_init.connect(_on_worker_init_wrapper)
-    worker_shutdown.connect(_on_worker_shutdown_wrapper)
+    celery_settings = app_settings.API_SERVER_CELERY
+    assert celery_settings
+    register_worker_signals(celery_app, celery_settings, _app_server_factory)
 
     if add_worker_tasks:
         register_worker_tasks(celery_app)
