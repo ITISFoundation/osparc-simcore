@@ -70,7 +70,8 @@ class ChatbotRestClient:
         try:
             response = await _request()
             response.raise_for_status()
-            return response.json()
+            response_data: dict[str, Any] = response.json()
+            return response_data
         except Exception:
             _logger.error(  # noqa: TRY400
                 "Failed to fetch chatbot settings from %s", url
@@ -132,7 +133,7 @@ async def setup_chatbot_rest_client(app: web.Application) -> None:
     async def cleanup_chatbot_client(app: web.Application) -> None:
         client = app.get(_APPKEY)
         if client:
-            await client._client.aclose()  # noqa: SLF001
+            await client._client.aclose()  # pylint: disable=protected-access  # noqa: SLF001
 
     app.on_cleanup.append(cleanup_chatbot_client)
 
