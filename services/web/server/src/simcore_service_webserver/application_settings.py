@@ -207,6 +207,12 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="catalog service client's plugin",
         ),
     ]
+    WEBSERVER_CHATBOT: Annotated[
+        ChatbotSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
     WEBSERVER_CELERY: Annotated[
         CelerySettings | None,
         Field(
@@ -256,13 +262,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     WEBSERVER_FOGBUGZ: Annotated[
         FogbugzSettings | None,
-        Field(
-            json_schema_extra={"auto_default_from_env": True},
-        ),
-    ]
-
-    WEBSERVER_CHATBOT: Annotated[
-        ChatbotSettings | None,
         Field(
             json_schema_extra={"auto_default_from_env": True},
         ),
