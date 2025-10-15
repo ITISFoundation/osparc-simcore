@@ -66,7 +66,6 @@ from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.tracing import TracingConfig
 from servicelib.utils import limited_gather
-from settings_library.celery import CeleryPoolType
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
@@ -1017,10 +1016,8 @@ async def with_storage_celery_worker(
 ) -> AsyncIterator[TestWorkController]:
 
     with monkeypatch.context() as patch:
-        pool = f"{CeleryPoolType.THREADS.value}"
-
         patch.setenv("STORAGE_WORKER_MODE", "true")
-        patch.setenv("CELERY_POOL", pool)
+        patch.setenv("CELERY_POOL", "threads")
         app_settings = ApplicationSettings.create_from_envs()
 
         tracing_config = TracingConfig.create(
@@ -1042,7 +1039,7 @@ async def with_storage_celery_worker(
 
         with start_worker(
             celery_app,
-            pool=pool,
+            pool="threads",
             concurrency=1,
             loglevel="info",
             perform_ping_check=False,
