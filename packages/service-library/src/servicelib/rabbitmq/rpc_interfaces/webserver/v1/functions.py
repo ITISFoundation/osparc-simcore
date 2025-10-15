@@ -26,8 +26,9 @@ from models_library.functions import (
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     RegisteredFunctionJobList,
-    RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
+    RegisteredProjectFunctionJobPatchInputList,
+    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
@@ -337,16 +338,18 @@ class FunctionsRpcApi(BaseRpcApi):
         product_name: ProductName,
         user_id: UserID,
         function_job_uuid: FunctionJobID,
-        registered_function_job_patch: RegisteredFunctionJobPatch,
-    ) -> RegisteredFunctionJob:
+        registered_function_job_patch_inputs: (
+            RegisteredProjectFunctionJobPatchInputList
+            | RegisteredSolverFunctionJobPatchInputList
+        ),
+    ) -> list[RegisteredFunctionJob]:
         """Patch a registered function job."""
-        return TypeAdapter(RegisteredFunctionJob).validate_python(
+        return TypeAdapter(list[RegisteredFunctionJob]).validate_python(
             await self._request(
                 "patch_registered_function_job",
                 product_name=product_name,
                 user_id=user_id,
-                function_job_uuid=function_job_uuid,
-                registered_function_job_patch=registered_function_job_patch,
+                registered_function_job_patch_inputs=registered_function_job_patch_inputs,
             ),
         )
 

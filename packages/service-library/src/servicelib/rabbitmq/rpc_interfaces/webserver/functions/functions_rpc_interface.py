@@ -26,8 +26,9 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
-    RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
+    RegisteredProjectFunctionJobPatchInputList,
+    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -366,19 +367,20 @@ async def patch_registered_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_uuid: FunctionJobID,
-    registered_function_job_patch: RegisteredFunctionJobPatch,
-) -> RegisteredFunctionJob:
+    registered_function_job_patch_inputs: (
+        RegisteredProjectFunctionJobPatchInputList
+        | RegisteredSolverFunctionJobPatchInputList
+    ),
+) -> list[RegisteredFunctionJob]:
     result = await rabbitmq_rpc_client.request(
         DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("patch_registered_function_job"),
         user_id=user_id,
         product_name=product_name,
-        function_job_uuid=function_job_uuid,
-        registered_function_job_patch=registered_function_job_patch,
+        registered_function_job_patch_inputs=registered_function_job_patch_inputs,
         timeout_s=_FUNCTION_RPC_TIMEOUT_SEC,
     )
-    return TypeAdapter(RegisteredFunctionJob).validate_python(
+    return TypeAdapter(list[RegisteredFunctionJob]).validate_python(
         result
     )  # Validates the result as a RegisteredFunctionJob
 
