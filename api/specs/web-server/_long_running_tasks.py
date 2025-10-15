@@ -15,6 +15,10 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.tasks._controller._rest_exceptions import (
     _TO_HTTP_ERROR_MAP,
 )
+from simcore_service_webserver.tasks._controller._rest_schemas import (
+    TaskStreamQueryParams,
+    TaskStreamResponse,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -63,3 +67,14 @@ def get_async_job_result(
     _path_params: Annotated[_PathParam, Depends()],
 ):
     """Retrieves the result of a task"""
+
+
+@router.get(
+    "/tasks/{task_id}/stream",
+    response_model=Envelope[TaskStreamResponse],
+)
+def get_async_job_stream(
+    _path_params: Annotated[_PathParam, Depends()],
+    _query_params: Annotated[TaskStreamQueryParams, Depends()],
+):
+    """Retrieves the stream of a task"""

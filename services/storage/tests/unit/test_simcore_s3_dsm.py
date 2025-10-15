@@ -168,6 +168,153 @@ async def test_upload_and_search(
         assert file.file_name in {"file1", "file2"}
 
 
+async def _search_files_by_pattern(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    name_pattern: str,
+    project_id: ProjectID | None = None,
+    items_per_page: int = 10,
+) -> list[FileMetaData]:
+    """Helper function to search files and collect all results."""
+    results = []
+    async for page in simcore_s3_dsm.search(
+        user_id=user_id,
+        name_pattern=name_pattern,
+        project_id=project_id,
+        limit=items_per_page,
+    ):
+        results.extend(page)
+    return results
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_search_files(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+    user_id: UserID,
+    project_id: ProjectID,
+    faker: Faker,
+):
+    # Upload files with different patterns
+    test_files = [
+        ("test_file1.txt", "*.txt"),
+        ("test_file2.txt", "*.txt"),
+        ("document.pdf", "*.pdf"),
+        ("data_file.csv", "data_*.csv"),
+        ("backup_file.bak", "backup_*"),
+        ("config.json", "*.json"),
+        ("temp_data.tmp", "temp_*"),
+        ("file_a.log", "file_?.log"),
+        ("file_b.log", "file_?.log"),
+        ("file_10.log", "file_??.log"),
+        ("report1.txt", "report?.txt"),
+        ("report2.txt", "report?.txt"),
+    ]
+
+    uploaded_files = []
+    for file_name, _ in test_files:
+        checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
+        _, file_id = await upload_file(file_size, file_name, sha256_checksum=checksum)
+        uploaded_files.append((file_name, file_id, checksum))
+
+    # Test 1: Search for all .txt files
+    txt_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*.txt", project_id
+    )
+    assert (
+        len(txt_results) == 4
+    )  # test_file1.txt, test_file2.txt, report1.txt, report2.txt
+    txt_names = {file.file_name for file in txt_results}
+    assert txt_names == {
+        "test_file1.txt",
+        "test_file2.txt",
+        "report1.txt",
+        "report2.txt",
+    }
+
+    # Test 2: Search with specific prefix pattern
+    data_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "data_*", project_id
+    )
+    assert len(data_results) == 1
+    assert data_results[0].file_name == "data_file.csv"
+
+    # Test 3: Search with pattern that matches multiple extensions
+    temp_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "temp_*", project_id
+    )
+    assert len(temp_results) == 1
+    assert temp_results[0].file_name == "temp_data.tmp"
+
+    # Test 4: Search with pattern that doesn't match anything
+    no_match_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "nonexistent_*", project_id
+    )
+    assert len(no_match_results) == 0
+
+    # Test 5: Search without project_id restriction (all accessible projects)
+    all_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, "*")
+    assert len(all_results) >= len(test_files)
+
+    # Verify that each result has expected FileMetaData structure
+    for file_meta in all_results:
+        assert isinstance(file_meta, FileMetaData)
+        assert file_meta.file_name is not None
+        assert file_meta.file_id is not None
+        assert file_meta.user_id == user_id
+        assert file_meta.project_id is not None
+
+    # Test 6: Test ? wildcard - single character match
+    single_char_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "file_?.log", project_id
+    )
+    # Should find 2 files: file_a.log and file_b.log (but not file_10.log)
+    assert len(single_char_results) == 2
+    single_char_names = {file.file_name for file in single_char_results}
+    assert single_char_names == {"file_a.log", "file_b.log"}
+
+    # Test 7: Test ?? wildcard - two character match
+    double_char_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "file_??.log", project_id
+    )
+    # Should find 1 file: file_10.log
+    assert len(double_char_results) == 1
+    assert double_char_results[0].file_name == "file_10.log"
+
+    # Test 8: Test ? wildcard with specific prefix and suffix
+    report_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "report?.txt", project_id
+    )
+    # Should find 2 files: report1.txt and report2.txt
+    assert len(report_results) == 2
+    report_names = {file.file_name for file in report_results}
+    assert report_names == {"report1.txt", "report2.txt"}
+
+    # Test 9: Test pagination with small page size
+    paginated_results = []
+    page_count = 0
+    async for page in simcore_s3_dsm.search(
+        user_id=user_id,
+        name_pattern="*",
+        project_id=project_id,
+        limit=2,  # Small page size to test pagination
+    ):
+        paginated_results.extend(page)
+        page_count += 1
+        # Each page should have at most 2 items
+        assert len(page) <= 2
+
+    # Should have multiple pages and all our files
+    assert page_count >= 6  # At least 12 files / 2 per page = 6 pages
+    assert len(paginated_results) == len(test_files)
+
+
 @pytest.fixture
 async def paths_for_export(
     random_project_with_files: Callable[

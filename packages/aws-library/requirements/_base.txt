@@ -389,13 +389,13 @@ typer==0.19.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-types-aiobotocore==2.24.2
+types-aiobotocore==2.25.0
     # via -r requirements/_base.in
-types-aiobotocore-ec2==2.24.2
+types-aiobotocore-ec2==2.25.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.24.2
+types-aiobotocore-s3==2.25.0
     # via types-aiobotocore
-types-aiobotocore-ssm==2.24.2
+types-aiobotocore-ssm==2.25.0
     # via types-aiobotocore
 types-awscrt==0.27.6
     # via botocore-stubs
