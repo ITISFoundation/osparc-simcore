@@ -296,7 +296,7 @@ async def get_function_outputschema(
     ),
 )
 async def validate_function_inputs(
-    function_id: FunctionID,
+    function_id: FunctionID,  # pylint: disable=unused-argument
     inputs: FunctionInputs,
     function: Annotated[RegisteredFunction, Depends(get_function)],
     function_job_service: Annotated[
