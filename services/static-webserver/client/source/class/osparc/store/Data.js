@@ -250,6 +250,18 @@ qx.Class.define("osparc.store.Data", {
       return osparc.data.Resources.fetch("storagePaths", "multiDownload", params);
     },
 
+    searchFiles: function(searchText) {
+      const params = {
+        url: {
+          locationId: 0,
+        },
+        data: {
+          searchText,
+        }
+      };
+      return osparc.data.Resources.fetch("storagePaths", "searchFiles", params);
+    },
+
     deleteFiles: function(paths) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.data.delete", true)) {
         return null;
