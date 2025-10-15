@@ -21,7 +21,7 @@
  */
 
 qx.Class.define("osparc.dashboard.FileButtonItem", {
-  extend: osparc.dashboard.FolderButtonBase,
+  extend: osparc.dashboard.FileButtonBase,
 
   /**
     * @param file {osparc.data.model.File} The file to display
@@ -37,7 +37,7 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
 
     this.set({
-      folder: folder
+      file: file
     });
   },
 
