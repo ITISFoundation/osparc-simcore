@@ -163,11 +163,15 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           contextDropDown.add(control);
           break;
         }
+        case "filters-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this._add(control);
+          break;
         case "filter-buttons":
           control = new qx.ui.toolbar.ToolBar().set({
             backgroundColor: osparc.dashboard.SearchBarFilter.BG_COLOR,
           });
-          this._add(control);
+          this.getChildControl("filters-layout").add(control);
           break;
         case "shared-with-button":
           control = new qx.ui.toolbar.MenuButton(this.tr("Shared with"), "@FontAwesome5Solid/share-alt/12");
@@ -178,6 +182,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           control = new qx.ui.toolbar.MenuButton(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
           this.__addTagsMenu(control);
           this.getChildControl("filter-buttons").add(control);
+          break;
+        case "date-filters":
+          control = new osparc.desktop.credits.DateFilters();
+          control.addListener("change", e => {
+            console.log(e.getData());
+          });
+          this.getChildControl("filters-layout").add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -275,36 +286,42 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       const searchBarFilter = this.getChildControl("search-bar-filter");
       const sharedWithButton = this.getChildControl("shared-with-button");
       const tagsButton = this.getChildControl("tags-button");
+      const dateFilters = this.getChildControl("date-filters");
       switch (value) {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
           contextDropDown.setSelection([this.getChildControl("my-projects-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My projects"));
-          sharedWithButton.setVisibility("visible");
-          tagsButton.setVisibility("visible");
+          sharedWithButton.show();
+          tagsButton.show();
+          dateFilters.exclude();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
           contextDropDown.setSelection([this.getChildControl("templates-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Templates"));
-          sharedWithButton.setVisibility("excluded");
-          tagsButton.setVisibility("visible");
+          sharedWithButton.exclude();
+          tagsButton.show();
+          dateFilters.exclude();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
           contextDropDown.setSelection([this.getChildControl("public-projects-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Public Projects"));
-          sharedWithButton.setVisibility("excluded");
-          tagsButton.setVisibility("visible");
+          sharedWithButton.exclude();
+          tagsButton.show();
+          dateFilters.exclude();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
           contextDropDown.setSelection([this.getChildControl("functions-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Functions"));
-          sharedWithButton.setVisibility("excluded");
-          tagsButton.setVisibility("excluded");
+          sharedWithButton.exclude();
+          tagsButton.exclude();
+          dateFilters.exclude();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
           contextDropDown.setSelection([this.getChildControl("files-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Files"));
-          sharedWithButton.setVisibility("excluded");
-          tagsButton.setVisibility("excluded");
+          sharedWithButton.exclude();
+          tagsButton.exclude();
+          // dateFilters.show();
           break;
       }
     },
