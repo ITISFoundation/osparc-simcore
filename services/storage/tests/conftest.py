@@ -1017,6 +1017,9 @@ async def with_storage_celery_worker(
 ) -> AsyncIterator[TestWorkController]:
     # Signals must be explicitily connected
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
+    monkeypatch.setenv("STORAGE_RABBIT", "null")
+    monkeypatch.setenv("STORAGE_REDIS", "null")
+
     app_settings = ApplicationSettings.create_from_envs()
     tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
@@ -1024,9 +1027,7 @@ async def with_storage_celery_worker(
     )
 
     def _app_server_factory() -> FastAPIAppServer:
-        return FastAPIAppServer(
-            app=create_app(app_settings, tracing_config=tracing_config)
-        )
+        return FastAPIAppServer(app=create_app(app_settings, tracing_config))
 
     # NOTE: explicitly connect the signals in tests
     worker_init.connect(
