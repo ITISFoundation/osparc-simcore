@@ -1010,6 +1010,7 @@ def register_test_tasks() -> Callable[[Celery], None]:
 @pytest.fixture
 def storage_worker_mode(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
+    monkeypatch.setenv("CELERY_POOL", "threads")
 
 
 @pytest.fixture
