@@ -502,7 +502,7 @@ async def test_find_cached_function_jobs_with_status(
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
-    input = {"input1": 1.0}
+    input_ = {"input1": 1.0}
 
     for status in job_statuses:
         function_job = ProjectFunctionJob(
@@ -510,7 +510,7 @@ async def test_find_cached_function_jobs_with_status(
             title="Test Function Job",
             description="A test function job",
             project_job_id=uuid4(),
-            inputs=input,
+            inputs=input_,
             outputs={"output1": "result1"},
             job_creation_task_id=None,
         )
@@ -535,13 +535,13 @@ async def test_find_cached_function_jobs_with_status(
         function_id=registered_function.uid,
         product_name=osparc_product_name,
         user_id=logged_user["id"],
-        inputs=[input],
+        inputs=[input_],
         status_filter=[status],
     )
     assert len(cached_jobs) == 1
     cached_job = cached_jobs[0]
     assert cached_job is not None
-    assert cached_job.inputs == input
+    assert cached_job.inputs == input_
     cached_job_status = await webserver_rpc_client.functions.get_function_job_status(
         product_name=osparc_product_name,
         function_job_id=cached_job.uid,
