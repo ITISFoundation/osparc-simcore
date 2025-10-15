@@ -15,7 +15,9 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredProjectFunctionJobPatch,
+    RegisteredProjectFunctionJobPatchInput,
     RegisteredSolverFunctionJobPatch,
+    RegisteredSolverFunctionJobPatchInput,
     SolverFunctionJob,
 )
 from models_library.functions_errors import (
@@ -215,24 +217,30 @@ class FunctionJobService:
         for patch in patches:
             if patch.function_class == FunctionClass.PROJECT:
                 patch_inputs.append(
-                    RegisteredProjectFunctionJobPatch(
-                        title=None,
-                        description=None,
-                        inputs=None,
-                        outputs=None,
-                        job_creation_task_id=patch.job_creation_task_id,
-                        project_job_id=patch.project_job_id,
+                    RegisteredProjectFunctionJobPatchInput(
+                        uid=patch.function_job_id,
+                        patch=RegisteredProjectFunctionJobPatch(
+                            title=None,
+                            description=None,
+                            inputs=None,
+                            outputs=None,
+                            job_creation_task_id=patch.job_creation_task_id,
+                            project_job_id=patch.project_job_id,
+                        ),
                     )
                 )
             elif patch.function_class == FunctionClass.SOLVER:
                 patch_inputs.append(
-                    RegisteredSolverFunctionJobPatch(
-                        title=None,
-                        description=None,
-                        inputs=None,
-                        outputs=None,
-                        job_creation_task_id=patch.job_creation_task_id,
-                        solver_job_id=patch.solver_job_id,
+                    RegisteredSolverFunctionJobPatchInput(
+                        uid=patch.function_job_id,
+                        patch=RegisteredSolverFunctionJobPatch(
+                            title=None,
+                            description=None,
+                            inputs=None,
+                            outputs=None,
+                            job_creation_task_id=patch.job_creation_task_id,
+                            solver_job_id=patch.solver_job_id,
+                        ),
                     )
                 )
             else:

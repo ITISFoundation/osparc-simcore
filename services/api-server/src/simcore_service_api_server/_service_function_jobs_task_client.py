@@ -331,7 +331,9 @@ class FunctionJobTaskClientService:
             user_id=user_identity.user_id,
             product_name=user_identity.product_name,
             function_id=function.uid,
-            inputs=TypeAdapter(FunctionInputsList).validate_python(inputs),
+            inputs=TypeAdapter(FunctionInputsList).validate_python(
+                [input_.values for input_ in inputs]
+            ),
             status_filter=[FunctionJobStatus(status=RunningState.SUCCESS)],
         )
 

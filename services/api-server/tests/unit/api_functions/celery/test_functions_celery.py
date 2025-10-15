@@ -26,8 +26,11 @@ from models_library.api_schemas_long_running_tasks.tasks import TaskResult, Task
 from models_library.functions import (
     FunctionClass,
     FunctionID,
+    FunctionInputsList,
     FunctionJobCollection,
     FunctionJobID,
+    FunctionJobList,
+    FunctionJobStatus,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     RegisteredFunction,
@@ -35,8 +38,10 @@ from models_library.functions import (
     RegisteredFunctionJobCollection,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
-    RegisteredProjectFunctionJobPatch,
+    RegisteredProjectFunctionJobPatchInputList,
+    RegisteredSolverFunctionJobPatchInputList,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockType
@@ -151,15 +156,48 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
 
 
 async def _patch_registered_function_job_side_effect(
-    mock_registered_project_function_job: RegisteredFunctionJob, *args, **kwargs
+    mock_registered_project_function_job: RegisteredFunctionJob,
+    product_name: ProductName,
+    user_id: UserID,
+    registered_function_job_patch_inputs: (
+        RegisteredProjectFunctionJobPatchInputList
+        | RegisteredSolverFunctionJobPatchInputList
+    ),
 ):
-    registered_function_job_patch = kwargs["registered_function_job_patch"]
-    assert isinstance(registered_function_job_patch, RegisteredProjectFunctionJobPatch)
-    job_creation_task_id = registered_function_job_patch.job_creation_task_id
-    uid = kwargs["function_job_uuid"]
-    return mock_registered_project_function_job.model_copy(
-        update={"job_creation_task_id": job_creation_task_id, "uid": uid}
-    )
+    return [
+        mock_registered_project_function_job.model_copy(
+            update={
+                "job_creation_task_id": patch.patch.job_creation_task_id,
+                "uid": patch.uid,
+            }
+        )
+        for patch in registered_function_job_patch_inputs
+    ]
+
+
+async def _find_cached_function_jobs_side_effect(
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    inputs: FunctionInputsList,
+    status_filter: list[FunctionJobStatus] | None,
+):
+    return [None] * len(inputs)
+
+
+async def _register_function_job_side_effect(
+    registered_function_job: RegisteredFunctionJob,
+    user_id: UserID,
+    function_jobs: FunctionJobList,
+    product_name: ProductName,
+):
+    return [
+        registered_function_job.model_copy(
+            update={"uid": FunctionJobID(_faker.uuid4())}
+        )
+        for _ in function_jobs
+    ]
 
 
 @pytest.mark.parametrize("register_celery_tasks", [_register_fake_run_function_task()])
@@ -216,10 +254,14 @@ async def test_with_fake_run_function(
         "get_function", return_value=fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
-        "find_cached_function_jobs", return_value=[]
+        "find_cached_function_jobs", side_effect=_find_cached_function_jobs_side_effect
     )
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", return_value=fake_registered_project_function_job
+        "register_function_job",
+        side_effect=partial(
+            _register_function_job_side_effect,
+            fake_registered_project_function_job,
+        ),
     )
 
     mock_handler_in_functions_rpc_interface(
