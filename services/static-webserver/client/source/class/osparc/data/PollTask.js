@@ -32,7 +32,7 @@ qx.Class.define("osparc.data.PollTask", {
         taskId: taskData["task_id"],
         taskName: taskData["task_name"] || "",
         statusHref: taskData["status_href"],
-        resultHref: taskData["result_href"] || null,
+        resultHref: taskData["result_href"],
       });
 
       if ("abort_href" in taskData) {
