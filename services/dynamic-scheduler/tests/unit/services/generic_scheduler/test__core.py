@@ -420,7 +420,7 @@ async def _ensure_one_step_in_manual_intervention(
     ]
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:  # noqa: SIM117
+        with attempt:
             reuires_intervention = False
             for proxy in store_proxies:
                 try:
