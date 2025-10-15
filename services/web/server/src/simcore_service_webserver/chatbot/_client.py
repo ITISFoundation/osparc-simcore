@@ -61,14 +61,13 @@ def _chatbot_retry():
 
 
 class ChatbotRestClient:
-    def __init__(self, base_url: str, chatbot_settings: ChatbotSettings) -> None:
+    def __init__(self, chatbot_settings: ChatbotSettings) -> None:
         self._client = httpx.AsyncClient()
-        self._base_url = base_url
         self._chatbot_settings = chatbot_settings
 
     async def get_settings(self) -> dict[str, Any]:
         """Fetches chatbot settings"""
-        url = urljoin(f"{self._base_url}", "/v1/chat/settings")
+        url = urljoin(f"{self._chatbot_settings.base_url}", "/v1/chat/settings")
 
         @_chatbot_retry()
         async def _request() -> httpx.Response:
@@ -87,7 +86,7 @@ class ChatbotRestClient:
 
     async def ask_question(self, question: str) -> ChatResponse:
         """Asks a question to the chatbot"""
-        url = urljoin(f"{self._base_url}", "/v1/chat")
+        url = urljoin(f"{self._chatbot_settings.base_url}", "/v1/chat")
 
         @_chatbot_retry()
         async def _request() -> httpx.Response:
@@ -131,7 +130,6 @@ async def setup_chatbot_rest_client(app: web.Application) -> None:
     chatbot_settings = get_plugin_settings(app)
 
     client = ChatbotRestClient(
-        base_url=chatbot_settings.base_url,
         chatbot_settings=chatbot_settings,
     )
 
