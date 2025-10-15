@@ -10,7 +10,6 @@ import httpx
 import pytest
 import respx
 from aiohttp.test_utils import TestClient
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.chatbot._client import (
@@ -24,7 +23,6 @@ from simcore_service_webserver.chatbot.settings import ChatbotSettings
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    mocker: MockerFixture,
 ):
     return app_environment | setenvs_from_dict(
         monkeypatch,
