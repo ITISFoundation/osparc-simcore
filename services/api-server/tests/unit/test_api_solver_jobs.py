@@ -3,6 +3,9 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import datetime as datetime_main
+import uuid
+from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -17,6 +20,7 @@ from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
 from models_library.generics import Envelope
 from models_library.projects_nodes import Node
+from models_library.projects_state import RunningState
 from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from pydantic import TypeAdapter
 from pytest_mock import MockType
@@ -460,6 +464,7 @@ async def test_get_solver_job_outputs(
     project_tests_dir: Path,
     sufficient_credits: bool,
     expected_status_code: int,
+    mock_method_in_jobs_service: Callable[[str, Any], MockType],
 ):
     def _sf(
         request: httpx.Request,
@@ -486,18 +491,35 @@ async def test_get_solver_job_outputs(
         envelope.data = wallet
         return jsonable_encoder(envelope)
 
+    _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
+
+    job_status = JobStatus(
+        state=RunningState.SUCCESS,
+        job_id=uuid.UUID(_job_id),
+        submitted_at=datetime.now(tz=datetime_main.UTC),
+        started_at=datetime.now(tz=datetime_main.UTC),
+        stopped_at=datetime.now(tz=datetime_main.UTC),
+        progress=0,
+    )
+    mock_method_in_jobs_service("inspect_solver_job", job_status)
+
     create_respx_mock_from_capture(
         respx_mocks=[
             mocked_webserver_rest_api_base,
             mocked_storage_rest_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / "get_solver_outputs.json",
-        side_effects_callbacks=[_sf, _sf, _sf, _wallet_side_effect, _sf],
+        side_effects_callbacks=[
+            _sf,
+            _sf,
+            _sf,
+            _wallet_side_effect,
+            _sf,
+        ],
     )
 
     _solver_key: Final[str] = "simcore/services/comp/isolve"
     _version: Final[str] = "2.1.24"
-    _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
     response = await client.get(
         f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}/outputs",
         auth=auth,
@@ -534,6 +556,7 @@ async def test_get_solver_job_outputs_assets_deleted(
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    mock_method_in_jobs_service: Callable[[str, Any], MockType],
 ):
     def _sf(
         request: httpx.Request,
@@ -542,18 +565,28 @@ async def test_get_solver_job_outputs_assets_deleted(
     ) -> Any:
         return capture.response_body
 
+    _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
+
+    job_status = JobStatus(
+        state=RunningState.SUCCESS,
+        job_id=uuid.UUID(_job_id),
+        submitted_at=datetime.now(tz=datetime_main.UTC),
+        started_at=datetime.now(tz=datetime_main.UTC),
+        stopped_at=datetime.now(tz=datetime_main.UTC),
+        progress=0,
+    )
+    mock_method_in_jobs_service("inspect_solver_job", job_status)
     create_respx_mock_from_capture(
         respx_mocks=[
             mocked_webserver_rest_api_base,
             mocked_storage_rest_api_base,
         ],
         capture_path=project_tests_dir / "mocks" / "get_solver_outputs.json",
-        side_effects_callbacks=[_sf, _sf, _sf, _sf, _sf],
+        side_effects_callbacks=[_sf, _sf, _sf, _sf, _sf],  # type: ignore
     )
 
     _solver_key: Final[str] = "simcore/services/comp/isolve"
     _version: Final[str] = "2.1.24"
-    _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
     response = await client.get(
         f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}/outputs",
         auth=auth,
