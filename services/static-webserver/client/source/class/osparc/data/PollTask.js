@@ -207,13 +207,12 @@ qx.Class.define("osparc.data.PollTask", {
       if (this.isDone()) {
         const streamPath = this.self().extractPathname(this.getStreamHref());
         fetch(streamPath)
-          .then(res => res.json())
-          .then(result => {
-            if ("error" in result && result["error"]) {
-              throw result["error"];
+          .then(streamData => {
+            if ("error" in streamData && streamData["error"]) {
+              throw streamData["error"];
             }
-            if ("data" in result && result["data"]) {
-              const resultData = result["data"];
+            if ("data" in streamData && streamData["data"]) {
+              const resultData = streamData["data"];
               this.fireDataEvent("resultReceived", resultData);
               return;
             }
