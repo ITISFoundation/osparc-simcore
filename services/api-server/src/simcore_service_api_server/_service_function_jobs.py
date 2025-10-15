@@ -215,11 +215,14 @@ class FunctionJobService:
             Field(max_length=50, min_length=1),
         ],
     ) -> list[RegisteredFunctionJob]:
-        patch_inputs = []
+        patch_inputs: list[
+            RegisteredProjectFunctionJobPatchInput
+            | RegisteredSolverFunctionJobPatchInput
+        ] = []
         for patch in patches:
             if patch.function_class == FunctionClass.PROJECT:
                 patch_inputs.append(
-                    RegisteredProjectFunctionJobPatchInput(  # type: ignore
+                    RegisteredProjectFunctionJobPatchInput(
                         uid=patch.function_job_id,
                         patch=RegisteredProjectFunctionJobPatch(
                             title=None,
@@ -233,7 +236,7 @@ class FunctionJobService:
                 )
             elif patch.function_class == FunctionClass.SOLVER:
                 patch_inputs.append(
-                    RegisteredSolverFunctionJobPatchInput(  # type: ignore
+                    RegisteredSolverFunctionJobPatchInput(
                         uid=patch.function_job_id,
                         patch=RegisteredSolverFunctionJobPatch(
                             title=None,
