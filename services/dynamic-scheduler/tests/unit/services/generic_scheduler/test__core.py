@@ -399,6 +399,43 @@ async def _esnure_steps_have_status(
                     raise AssertionError(msg) from None
 
 
+async def _ensure_one_step_in_manual_intervention(
+    app: FastAPI,
+    schedule_id: ScheduleId,
+    operation_name: OperationName,
+    *,
+    step_group_name: StepGroupName,
+    steps: Iterable[type[BaseStep]],
+) -> None:
+    store_proxies = [
+        StepStoreProxy(
+            store=Store.get_from_app_state(app),
+            schedule_id=schedule_id,
+            operation_name=operation_name,
+            step_group_name=step_group_name,
+            step_name=step.get_step_name(),
+            is_executing=True,
+        )
+        for step in steps
+    ]
+
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:  # noqa: SIM117
+            reuires_intervention = False
+            for proxy in store_proxies:
+                try:
+                    requires_manual_intervention = await proxy.read(
+                        "requires_manual_intervention"
+                    )
+                    if requires_manual_intervention:
+                        reuires_intervention = True
+                        break
+                except NoDataFoundError:
+                    pass
+
+            assert reuires_intervention is True
+
+
 ############## TESTS ##############
 
 
@@ -853,7 +890,7 @@ async def test_fails_during_revert_is_in_error_state(
                 RevertRandom(_S2, _S3, _S4),
                 RevertSequence(_S1),
             ],
-            id="s1p3s1(1s)",
+            id="s1p3s1(1sf)",
         ),
         pytest.param(
             Operation(
@@ -870,7 +907,7 @@ async def test_fails_during_revert_is_in_error_state(
                 RevertRandom(_S2, _S3, _S4, _SF2, _SF1),
                 RevertSequence(_S1),
             ],
-            id="s1p4(1s)",
+            id="s1p5(2sf)",
         ),
     ],
 )
@@ -1105,21 +1142,28 @@ async def test_wait_for_manual_intervention(
 
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
+    group_index = len(expected_order) - 1
+    step_group_name = operation.step_groups[group_index].get_step_group_name(
+        index=group_index
+    )
     await _esnure_steps_have_status(
         selected_app,
         schedule_id,
         operation_name,
-        step_group_name=operation.step_groups[
-            len(expected_order) - 1
-        ].get_step_group_name(index=len(expected_order) - 1),
+        step_group_name=step_group_name,
         steps=expected_order[-1].steps,
     )
 
     # even if cancelled, state of waiting for manual intervention remains the same
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:  # noqa: SIM117
-            with pytest.raises(CannotCancelWhileWaitingForManualInterventionError):
-                await cancel_operation(selected_app, schedule_id)
+    await _ensure_one_step_in_manual_intervention(
+        selected_app,
+        schedule_id,
+        operation_name,
+        step_group_name=step_group_name,
+        steps=expected_order[-1].steps,
+    )
+    with pytest.raises(CannotCancelWhileWaitingForManualInterventionError):
+        await cancel_operation(selected_app, schedule_id)
 
     await ensure_keys_in_store(selected_app, expected_keys=formatted_expected_keys)
 
