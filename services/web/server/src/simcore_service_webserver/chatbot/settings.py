@@ -10,6 +10,8 @@ from ..application_keys import APP_SETTINGS_APPKEY
 class ChatbotSettings(BaseCustomSettings, MixinServiceSettings):
     CHATBOT_HOST: str
     CHATBOT_PORT: int
+    CHATBOT_LLM_MODEL: str = "gpt-3.5-turbo"
+    CHATBOT_EMBEDDING_MODEL: str = "openai/text-embedding-3-large"
 
     @cached_property
     def base_url(self) -> str:

@@ -19,7 +19,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from .settings import get_plugin_settings
+from .settings import ChatbotSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -61,9 +61,10 @@ def _chatbot_retry():
 
 
 class ChatbotRestClient:
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, base_url: str, chatbot_settings: ChatbotSettings) -> None:
         self._client = httpx.AsyncClient()
         self._base_url = base_url
+        self._chatbot_settings = chatbot_settings
 
     async def get_settings(self) -> dict[str, Any]:
         """Fetches chatbot settings"""
@@ -94,8 +95,8 @@ class ChatbotRestClient:
                 url,
                 json={
                     "question": question,
-                    "llm": "gpt-3.5-turbo",
-                    "embedding_model": "openai/text-embedding-3-large",
+                    "llm": self._chatbot_settings.CHATBOT_LLM_MODEL,
+                    "embedding_model": self._chatbot_settings.CHATBOT_EMBEDDING_MODEL,
                 },
                 headers={
                     "Content-Type": _JSON_CONTENT_TYPE,
@@ -129,7 +130,10 @@ _APPKEY: Final = web.AppKey(ChatbotRestClient.__name__, ChatbotRestClient)
 async def setup_chatbot_rest_client(app: web.Application) -> None:
     chatbot_settings = get_plugin_settings(app)
 
-    client = ChatbotRestClient(base_url=chatbot_settings.base_url)
+    client = ChatbotRestClient(
+        base_url=chatbot_settings.base_url,
+        chatbot_settings=chatbot_settings,
+    )
 
     app[_APPKEY] = client
 
