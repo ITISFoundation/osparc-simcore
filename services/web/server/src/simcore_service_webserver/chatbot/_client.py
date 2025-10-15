@@ -140,4 +140,3 @@ async def setup_chatbot_rest_client(app: web.Application) -> None:
 def get_chatbot_rest_client(app: web.Application) -> ChatbotRestClient:
     app_key: ChatbotRestClient = app[_APPKEY]
     return app_key
-    return app_key
