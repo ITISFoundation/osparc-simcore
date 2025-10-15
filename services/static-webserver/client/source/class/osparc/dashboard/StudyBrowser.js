@@ -115,8 +115,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __sortByButton: null,
     __workspacesList: null,
     __foldersList: null,
-    __loadingFolders: null,
+    __filesList: null,
     __loadingWorkspaces: null,
+    __loadingFolders: null,
+    __loadingFiles: null,
     __lastUrlParams: null,
 
     // overridden
@@ -412,6 +414,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
+    __reloadFiles: function() {
+      if (
+        !osparc.auth.Manager.getInstance().isLoggedIn() ||
+        osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES !== this.getCurrentContext() ||
+        this.__loadingFiles
+      ) {
+        return;
+      }
+
+      this.__loadingFiles = true;
+      this.__setFilesToList([]);
+      const filterData = this._searchBarFilter.getFilterData();
+      const text = filterData.text ? encodeURIComponent(filterData.text) : "";
+      osparc.store.Data.getInstance().searchFiles(text)
+        .then(files => {
+          this.__setFilesToList(files);
+        })
+        .catch(console.error)
+        .finally(() => this.__loadingFiles = null);
+    },
+
     __resetStudiesList: function() {
       this._resourcesList = [];
       // It will remove the study cards
@@ -455,6 +478,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__workspacesList = workspaces;
       workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
       this.__reloadWorkspaceCards();
+    },
+
+    __setFilesToList: function(files) {
+      this.__filesList = files;
+      files.forEach(file => file["resourceType"] = "file");
+      this.__reloadFileCards();
     },
 
     _reloadCards: function() {
@@ -697,6 +726,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => console.error(err));
     },
     // /FOLDERS
+
+    // FILES
+    __reloadFileCards: function() {
+      this._resourcesContainer.setFilesToList(this.__filesList);
+      this._resourcesContainer.reloadFiles();
+    },
+    // /FILES
 
     __configureStudyCards: function(cards) {
       cards.forEach(card => {
@@ -1383,6 +1419,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // reset lists
       this.__setWorkspacesToList([]);
       this.__setFoldersToList([]);
+      this.__setFilesToList([]);
       this._resourcesList = [];
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       this._resourcesContainer.reloadCards("studies");
@@ -1449,6 +1486,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateFunctions();
           this.__reloadStudies();
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          this._searchBarFilter.resetFilters();
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search Files");
+          // Files can't be sorted and don't support list view
+          this._toolbar.exclude();
+          this.__reloadFiles();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
           this._searchBarFilter.resetFilters();
