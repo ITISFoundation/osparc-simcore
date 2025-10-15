@@ -36,15 +36,6 @@ qx.Class.define("osparc.conversation.MessageUI", {
     });
   },
 
-  statics: {
-    isMyMessage: function(message) {
-      if (message.getUserGroupId() === osparc.data.model.Message.SYSTEM_MESSAGE_ID) {
-        return false;
-      }
-      return message && osparc.auth.Data.getInstance().getGroupId() === message.getUserGroupId();
-    }
-  },
-
   events: {
     "messageUpdated": "qx.event.type.Data",
     "messageDeleted": "qx.event.type.Data",
@@ -61,7 +52,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
   members: {
     _createChildControlImpl: function(id) {
-      const isMyMessage = this.self().isMyMessage(this.getMessage());
+      const isMyMessage = osparc.data.model.Message.isMyMessage(this.getMessage());
       let control;
       switch (id) {
         case "avatar":
@@ -154,7 +145,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
       const avatar = this.getChildControl("avatar");
       const userName = this.getChildControl("user-name");
-      if (message.getUserGroupId() === osparc.data.model.Message.SYSTEM_MESSAGE_ID) {
+      if (osparc.data.model.Message.isSupportMessage(message)) {
         userName.setValue("Support");
       } else {
         osparc.store.Users.getInstance().getUser(message.getUserGroupId())
@@ -168,7 +159,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           });
       }
 
-      if (this.self().isMyMessage(message)) {
+      if (osparc.data.model.Message.isMyMessage(message)) {
         const menuButton = this.getChildControl("menu-button");
 
         const menu = new qx.ui.menu.Menu().set({
