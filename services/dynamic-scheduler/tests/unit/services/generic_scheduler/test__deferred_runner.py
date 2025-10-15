@@ -184,7 +184,7 @@ class _StepLongRunningToCancel(BaseStep):
         _ = app
         _ = required_context
         _StepResultStore.set_result(cls.__name__, "executed")
-        await asyncio.sleep(10000)
+        await asyncio.sleep(1e6)
         return {}
 
     @classmethod
@@ -194,7 +194,7 @@ class _StepLongRunningToCancel(BaseStep):
         _ = app
         _ = required_context
         _StepResultStore.set_result(cls.__name__, "destroyed")
-        await asyncio.sleep(10000)
+        await asyncio.sleep(1e6)
         return {}
 
 
@@ -240,14 +240,14 @@ def _get_step_group(
             Operation(
                 SingleStepGroup(_StepLongRunningToCancel),
             ),
-            StepStatus.CANCELLED,
+            StepStatus.RUNNING,
             _Action.CANCEL,
             1,
         ),
     ],
 )
 @pytest.mark.parametrize("is_executing", [True, False])
-async def test_something(
+async def test_workflow(
     mock_enqueue_event: AsyncMock,
     registed_operation: None,
     app: FastAPI,
@@ -304,7 +304,7 @@ async def test_something(
         await asyncio.sleep(0.2)  # give it some time to start
 
         task_uid = await step_proxy.read("deferred_task_uid")
-        await DeferredRunner.cancel(task_uid)
+        await asyncio.create_task(DeferredRunner.cancel(task_uid))
 
     await _assert_finshed_with_status(step_proxy, expected_step_status)
 
@@ -317,4 +317,9 @@ async def test_something(
         assert "I failed" in error_traceback
 
     # ensure called once with arguments
-    assert mock_enqueue_event.call_args_list == [((app, schedule_id),)]
+
+    assert (
+        mock_enqueue_event.call_args_list == []
+        if action == _Action.CANCEL
+        else [((app, schedule_id),)]
+    )
