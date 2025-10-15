@@ -19,7 +19,6 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
-from models_library.services import ServiceMetaDataPublished
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from pytest_mock import MockType
@@ -134,23 +133,8 @@ def mocked_directorv2_rest_api(
 def test_download_presigned_link(
     presigned_download_link: AnyUrl, tmp_path: Path, project_id: str, node_id: str
 ):
-    """Cheks that the generation of presigned_download_link works as expected"""
+    """Checks that the generation of presigned_download_link works as expected"""
     r = httpx.get(f"{presigned_download_link}")
-    ## pprint(dict(r.headers))
-    # r.headers looks like:
-    # {
-    #  'access-control-allow-origin': '*',
-    #  'connection': 'close',
-    #  'content-length': '491',
-    #  'content-md5': 'HoY5Kfgqb9VSdS44CYBxnA==',
-    #  'content-type': 'binary/octet-stream',
-    #  'date': 'Thu, 19 May 2022 22:16:48 GMT',
-    #  'etag': '"1e863929f82a6fd552752e380980719c"',
-    #  'last-modified': 'Thu, 19 May 2022 22:16:48 GMT',
-    #  'server': 'Werkzeug/2.1.2 Python/3.9.12',
-    #  'x-amz-version-id': 'null',
-    #  'x-amzn-requestid': 'WMAPXWFR2G4EJRVYBNJDRHTCXJ7NBRMDN7QQNHTQ5RYAQ34ZZNAL'
-    # }
     assert r.status_code == status.HTTP_200_OK
 
     expected_fname = f"{project_id}-{node_id}.log"
@@ -218,11 +202,11 @@ async def test_solver_job_outputs(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     job_outputs: dict[str, Any] | None,
-    project_id: ProjectID | None,
+    project_id: ProjectID,
     job_state: RunningState,
     expected_output: dict[str, Any] | None,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
-    expected_status_code: status.HTTP_200_OK | status.HTTP_404_NOT_FOUND,
+    expected_status_code: int,
     expected_error_message: str | None,
     solver_key: str,
     solver_version: str,
@@ -232,7 +216,9 @@ async def test_solver_job_outputs(
         state=job_state,
         job_id=project_id,
         submitted_at=datetime.datetime.now(tz=datetime.UTC),
-        progress=0.0,
+        started_at=datetime.datetime.now(tz=datetime.UTC),
+        stopped_at=datetime.datetime.now(tz=datetime.UTC),
+        progress=0,
     )
     mock_method_in_jobs_service("inspect_solver_job", job_status)
 
@@ -362,12 +348,6 @@ async def test_run_solver_job(
         "classifiers",
         "owner",
     } == set(oas["components"]["schemas"]["ServiceGet"]["required"])
-
-    example = next(
-        e
-        for e in ServiceMetaDataPublished.model_json_schema()["examples"]
-        if "boot-options" in e
-    )
 
     # ---------------------------------------------------------------------------------------------------------
 

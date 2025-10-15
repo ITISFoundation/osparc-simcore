@@ -186,7 +186,7 @@ async def client(
         yield httpx_async_client
 
 
-## MOCKED Repositories --------------------------------------------------
+# MOCKED Repositories --------------------------------------------------
 
 
 @pytest.fixture
@@ -228,7 +228,7 @@ def auth(
     return HTTPBasicAuth(user_api_key, user_api_secret)
 
 
-## MOCKED S3 service --------------------------------------------------
+# MOCKED S3 service --------------------------------------------------
 
 
 @pytest.fixture
@@ -256,7 +256,7 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
     print(f"<-- stopped mock S3 server on {endpoint_url}")
 
 
-## MOCKED res/web APIs from simcore services ------------------------------------------
+# MOCKED res/web APIs from simcore services ------------------------------------------
 
 
 @pytest.fixture
