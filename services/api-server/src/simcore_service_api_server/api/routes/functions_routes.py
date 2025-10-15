@@ -16,13 +16,12 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
 )
-from models_library.functions import FunctionJobCollection, FunctionJobID
+from models_library.functions import FunctionJobCollection
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
-from servicelib.utils import limited_gather
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_function_jobs_task_client import FunctionJobTaskClientService
@@ -350,15 +349,17 @@ async def run_function(
     )
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
 
-    return await function_job_task_client_service.create_function_job_creation_task(
+    jobs = await function_job_task_client_service.create_function_job_creation_tasks(
         function=to_run_function,
-        function_inputs=function_inputs,
+        function_inputs=[function_inputs],
         user_identity=user_identity,
         pricing_spec=pricing_spec,
         job_links=job_links,
         parent_project_uuid=parent_project_uuid,
         parent_node_id=parent_node_id,
     )
+    assert len(jobs) == 1  # nosec
+    return jobs[0]
 
 
 @function_router.delete(
@@ -429,34 +430,15 @@ async def map_function(
     )
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
 
-    async def _run_single_function(function_inputs: FunctionInputs) -> FunctionJobID:
-        result = (
-            await function_job_task_client_service.create_function_job_creation_task(
-                function=to_run_function,
-                function_inputs=function_inputs,
-                user_identity=user_identity,
-                pricing_spec=pricing_spec,
-                job_links=job_links,
-                parent_project_uuid=parent_project_uuid,
-                parent_node_id=parent_node_id,
-            )
-        )
-        return result.uid
-
-    # Run all tasks concurrently, allowing them to complete even if some fail
-    results = await limited_gather(
-        *[
-            _run_single_function(function_inputs)
-            for function_inputs in function_inputs_list
-        ],
-        reraise=False,
-        limit=1,
+    jobs = await function_job_task_client_service.create_function_job_creation_tasks(
+        function=to_run_function,
+        function_inputs=function_inputs_list,
+        user_identity=user_identity,
+        pricing_spec=pricing_spec,
+        job_links=job_links,
+        parent_project_uuid=parent_project_uuid,
+        parent_node_id=parent_node_id,
     )
-
-    # Check if any tasks raised exceptions and raise the first one found
-    for result in results:
-        if isinstance(result, BaseException):
-            raise result
 
     # At this point, all results are FunctionJobID since we've checked for exceptions
     function_job_collection_description = f"Function job collection of map of function {to_run_function.uid} with {len(function_inputs_list)} inputs"
@@ -464,7 +446,7 @@ async def map_function(
         function_job_collection=FunctionJobCollection(
             title="Function job collection of function map",
             description=function_job_collection_description,
-            job_ids=results,  # type: ignore
+            job_ids=jobs,  # type: ignore
         ),
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,

@@ -34,9 +34,8 @@ from simcore_service_api_server.services_rpc.storage import StorageService
 from ._service_jobs import JobService
 from .models.api_resources import JobLinks
 from .models.domain.functions import (
+    FunctionJobPatch,
     PreRegisteredFunctionJobData,
-    ProjectFunctionJobPatch,
-    SolverFunctionJobPatch,
 )
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
@@ -209,14 +208,13 @@ class FunctionJobService:
         user_id: UserID,
         product_name: ProductName,
         patches: Annotated[
-            list[ProjectFunctionJobPatch] | list[SolverFunctionJobPatch],
+            list[FunctionJobPatch],
             Field(max_length=50, min_length=1),
         ],
     ) -> list[RegisteredFunctionJob]:
         patch_inputs = []
         for patch in patches:
             if patch.function_class == FunctionClass.PROJECT:
-                assert isinstance(patch, ProjectFunctionJobPatch)  # nosec
                 patch_inputs.append(
                     RegisteredProjectFunctionJobPatch(
                         title=None,
@@ -228,7 +226,6 @@ class FunctionJobService:
                     )
                 )
             elif patch.function_class == FunctionClass.SOLVER:
-                assert isinstance(patch, SolverFunctionJobPatch)  # nosec
                 patch_inputs.append(
                     RegisteredSolverFunctionJobPatch(
                         title=None,
@@ -279,7 +276,8 @@ class FunctionJobService:
                 user_id=self.user_id,
                 product_name=self.product_name,
                 patches=[
-                    ProjectFunctionJobPatch(
+                    FunctionJobPatch(
+                        function_class=FunctionClass.PROJECT,
                         function_job_id=pre_registered_function_job_data.function_job_id,
                         job_creation_task_id=None,
                         project_job_id=study_job.id,
@@ -309,7 +307,8 @@ class FunctionJobService:
                 user_id=self.user_id,
                 product_name=self.product_name,
                 patches=[
-                    SolverFunctionJobPatch(
+                    FunctionJobPatch(
+                        function_class=FunctionClass.SOLVER,
                         function_job_id=pre_registered_function_job_data.function_job_id,
                         job_creation_task_id=None,
                         solver_job_id=solver_job.id,

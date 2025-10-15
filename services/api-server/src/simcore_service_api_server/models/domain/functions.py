@@ -1,5 +1,3 @@
-from typing import NamedTuple
-
 from models_library.functions import (
     FunctionClass,
     FunctionJobID,
@@ -9,7 +7,7 @@ from models_library.functions import (
     TaskID,
 )
 from models_library.projects import ProjectID
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from ...models.pagination import Page
 from ...models.schemas.jobs import JobInputs
@@ -28,15 +26,28 @@ class PageRegisteredFunctionJobWithorWithoutStatus(
     pass
 
 
-class ProjectFunctionJobPatch(NamedTuple):
-    function_class = FunctionClass.PROJECT
+class FunctionJobPatch(BaseModel):
+    function_class: FunctionClass
     function_job_id: FunctionJobID
-    job_creation_task_id: TaskID | None
-    project_job_id: ProjectID | None
+    job_creation_task_id: TaskID | None = None
+    project_job_id: ProjectID | None = None
+    solver_job_id: SolverJobID | None = None
 
+    @model_validator(mode="after")
+    def validate_function_class_consistency(self) -> "FunctionJobPatch":
+        """Validate consistency between function_class and job IDs."""
+        if (
+            self.solver_job_id is not None
+            and self.function_class != FunctionClass.SOLVER
+        ):
+            msg = f"solver_job_id must be None when function_class is {self.function_class}, expected {FunctionClass.SOLVER}"
+            raise ValueError(msg)
 
-class SolverFunctionJobPatch(NamedTuple):
-    function_class = FunctionClass.SOLVER
-    function_job_id: FunctionJobID
-    job_creation_task_id: TaskID | None
-    solver_job_id: SolverJobID | None
+        if (
+            self.project_job_id is not None
+            and self.function_class != FunctionClass.PROJECT
+        ):
+            msg = f"project_job_id must be None when function_class is {self.function_class}, expected {FunctionClass.PROJECT}"
+            raise ValueError(msg)
+
+        return self
