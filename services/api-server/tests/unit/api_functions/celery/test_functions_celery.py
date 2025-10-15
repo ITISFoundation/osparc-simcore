@@ -655,7 +655,7 @@ async def test_map_function(
         "get_function", return_value=fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
-        "find_cached_function_jobs", return_value=[]
+        "find_cached_function_jobs", side_effect=_find_cached_function_jobs_side_effect
     )
 
     mock_handler_in_projects_rpc_interface("mark_project_as_job", return_value=None)
@@ -663,11 +663,19 @@ async def test_map_function(
     _generated_function_job_ids: list[FunctionJobID] = []
 
     async def _register_function_job_side_effect(
-        generated_function_job_ids: list[FunctionJobID], *args, **kwargs
+        generated_function_job_ids: list,
+        user_id: UserID,
+        function_jobs: FunctionJobList,
+        product_name: ProductName,
     ):
-        uid = FunctionJobID(_faker.uuid4())
-        generated_function_job_ids.append(uid)
-        return fake_registered_project_function_job.model_copy(update={"uid": uid})
+        registered_jobs = []
+        for _ in function_jobs:
+            uid = FunctionJobID(_faker.uuid4())
+            generated_function_job_ids.append(uid)
+            registered_jobs.append(
+                fake_registered_project_function_job.model_copy(update={"uid": uid})
+            )
+        return registered_jobs
 
     mock_handler_in_functions_rpc_interface(
         "register_function_job",
@@ -726,10 +734,17 @@ async def test_map_function(
     assert (
         job_collection.job_ids == _generated_function_job_ids
     ), "Job ID did not preserve order or were incorrectly propagated"
-    celery_task_ids = {
-        elm.kwargs["registered_function_job_patch"].job_creation_task_id
-        for elm in patch_mock.call_args_list
-    }
+
+    celery_task_ids = set()
+    for args in patch_mock.call_args_list:
+        inputs = args.kwargs["registered_function_job_patch_inputs"]
+        celery_task_ids = celery_task_ids.union(
+            {
+                input_.patch.job_creation_task_id
+                for input_ in inputs
+                if input_.patch.job_creation_task_id
+            }
+        )
     assert len(celery_task_ids) == len(_inputs)
     for task_id in celery_task_ids:
         await _wait_for_task_result(client, auth, f"{task_id}")
