@@ -2,7 +2,8 @@ from functools import cached_property
 
 from aiohttp import web
 from models_library.basic_types import PortInt
-from settings_library.base import BaseCustomSettings, SettingsConfigDict
+from pydantic_settings import SettingsConfigDict
+from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings, URLPart
 
 from ..application_keys import APP_SETTINGS_APPKEY
