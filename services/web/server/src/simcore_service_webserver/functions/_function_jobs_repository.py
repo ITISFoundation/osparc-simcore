@@ -5,9 +5,9 @@ import logging
 
 import sqlalchemy
 from aiohttp import web
-from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.functions import (
     FunctionClass,
+    FunctionClassSpecificData,
     FunctionID,
     FunctionInputsList,
     FunctionJobCollectionID,
@@ -17,14 +17,13 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionsApiAccessRights,
     RegisteredFunctionJobDB,
+    RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatusDB,
     RegisteredProjectFunctionJobPatchInputList,
     RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
-    FunctionJobPatchModelIncompatibleError,
-    FunctionUnrecoverableError,
     UnsupportedFunctionJobClassError,
 )
 from models_library.products import ProductName
@@ -44,7 +43,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import Text, case, cast, func
+from sqlalchemy import Text, cast, func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import func
 
@@ -159,118 +158,40 @@ async def patch_function_job(
                 FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
             ],
         )
+        updated_jobs = []
+        for patch_input in registered_function_job_patch_inputs:
 
-        case_inputs = case(value=function_jobs_table.c.uuid)
-        case_outputs = case(value=function_jobs_table.c.uuid)
-        case_class_specific_data = case(value=function_jobs_table.c.uuid)
-        case_title = case(value=function_jobs_table.c.uuid)
-        case_description = case(value=function_jobs_table.c.uuid)
-
-        function_job_uids = []
-        for patch in registered_function_job_patch_inputs:
-            function_job_uids.append(patch.uid)
-            if patch.patch.inputs is not None:
-                case_inputs = case_inputs.when(patch.uid, patch.patch.inputs)
-            if patch.patch.outputs is not None:
-                case_outputs = case_outputs.when(patch.uid, patch.patch.outputs)
-            if patch.patch.title is not None:
-                case_title = case_title.when(patch.uid, patch.patch.title)
-            if patch.patch.description is not None:
-                case_description = case_description.when(
-                    patch.uid, patch.patch.description
-                )
-
-            # patch class specific data
-            if patch.patch.function_class == FunctionClass.PROJECT:
-                if patch.patch.project_job_id is not None:
-                    case_class_specific_data = case_class_specific_data.when(
-                        patch.uid,
-                        func.jsonb_set(
-                            function_jobs_table.c.class_specific_data,
-                            "{project_job_id}",
-                            f'"{patch.patch.project_job_id}"',
-                        ),
-                    )
-                if patch.patch.job_creation_task_id is not None:
-                    case_class_specific_data = case_class_specific_data.when(
-                        patch.uid,
-                        func.jsonb_set(
-                            function_jobs_table.c.class_specific_data,
-                            "{job_creation_task_id}",
-                            f'"{patch.patch.job_creation_task_id}"',
-                        ),
-                    )
-            elif patch.patch.function_class == FunctionClass.SOLVER:
-                if patch.patch.solver_job_id is not None:
-                    case_class_specific_data = case_class_specific_data.when(
-                        patch.uid,
-                        func.jsonb_set(
-                            function_jobs_table.c.class_specific_data,
-                            "{solver_job_id}",
-                            f'"{patch.patch.solver_job_id}"',
-                        ),
-                    )
-                if patch.patch.job_creation_task_id is not None:
-                    case_class_specific_data = case_class_specific_data.when(
-                        patch.uid,
-                        func.jsonb_set(
-                            function_jobs_table.c.class_specific_data,
-                            "{job_creation_task_id}",
-                            f'"{patch.patch.job_creation_task_id}"',
-                        ),
-                    )
-            else:
-                raise UnsupportedFunctionJobClassError(
-                    function_job_class=patch.patch.function_class
-                )
-
-        result = await transaction.execute(
-            function_jobs_table.update()
-            .values(
-                inputs=case_inputs,
-                outputs=case_outputs,
-                title=case_title,
-                description=case_description,
-                class_specific_data=case_class_specific_data,
-            )
-            .where(function_jobs_table.c.uuid.in_(function_job_uids))
-            .where(function_jobs_table.c.function_class == used_function_class)
-            .returning(*_FUNCTION_JOBS_TABLE_COLS)
-        )
-        jobs = {
-            row.uuid: RegisteredFunctionJobDB.model_validate(row)
-            for row in result.fetchall()
-        }
-        if set(function_job_uids) != set(jobs.keys()):
-            # ensure meaningful error is raised
-            missing_uids = set(function_job_uids) - set(jobs.keys())
-            missing_uid = missing_uids.pop()
-            function_job = await get_function_job(
+            job = await get_function_job(
                 app,
+                connection=transaction,
                 user_id=user_id,
                 product_name=product_name,
-                function_job_id=missing_uid,
+                function_job_id=patch_input.uid,
             )
-            if function_job.function_class != used_function_class:
-                raise FunctionJobPatchModelIncompatibleError(
-                    function_id=missing_uid,
-                    product_name=product_name,
-                )
-            # Should not reach this far
-            exception = FunctionUnrecoverableError()
-            _logger.exception(
-                **create_troubleshooting_log_kwargs(
-                    user_error_msg="Inconsistent state detected, please contact support.",
-                    error=exception,
-                    error_context={
-                        "function_job_uid": missing_uid,
-                        "used_function_class": f"{used_function_class}",
-                    },
-                )
+            class_specific_data = _update_class_specific_data(
+                class_specific_data=job.class_specific_data, patch=patch_input.patch
             )
-            raise exception
 
-        return [jobs[patch.uid] for patch in registered_function_job_patch_inputs]
+            result = await transaction.execute(
+                function_jobs_table.update()
+                .where(function_jobs_table.c.uuid == f"{patch_input.uid}")
+                .where(
+                    function_jobs_table.c.function_class == used_function_class.value
+                )
+                .values(
+                    inputs=patch_input.patch.inputs,
+                    outputs=patch_input.patch.outputs,
+                    class_specific_data=class_specific_data,
+                    title=patch_input.patch.title,
+                    description=patch_input.patch.description,
+                    status="created",
+                )
+                .returning(*_FUNCTION_JOBS_TABLE_COLS)
+            )
+            row = result.one()
+            updated_jobs.append(RegisteredFunctionJobDB.model_validate(row))
+
+        return updated_jobs
 
 
 async def list_function_jobs_with_status(
@@ -606,3 +527,36 @@ async def update_function_job_outputs(
             raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
 
         return TypeAdapter(FunctionOutputs).validate_python(row.outputs)
+
+
+def _update_class_specific_data(
+    class_specific_data: dict,
+    patch: RegisteredFunctionJobPatch,
+) -> FunctionClassSpecificData:
+    if patch.function_class == FunctionClass.PROJECT:
+        return FunctionClassSpecificData(
+            project_job_id=(
+                f"{patch.project_job_id}"
+                if patch.project_job_id
+                else class_specific_data.get("project_job_id")
+            ),
+            job_creation_task_id=(
+                f"{patch.job_creation_task_id}"
+                if patch.job_creation_task_id
+                else class_specific_data.get("job_creation_task_id")
+            ),
+        )
+    if patch.function_class == FunctionClass.SOLVER:
+        return FunctionClassSpecificData(
+            solver_job_id=(
+                f"{patch.solver_job_id}"
+                if patch.solver_job_id
+                else class_specific_data.get("solver_job_id")
+            ),
+            job_creation_task_id=(
+                f"{patch.job_creation_task_id}"
+                if patch.job_creation_task_id
+                else class_specific_data.get("job_creation_task_id")
+            ),
+        )
+    raise UnsupportedFunctionJobClassError(function_job_class=patch.function_class)
