@@ -33,7 +33,6 @@ qx.Class.define("osparc.data.PollTask", {
         taskName: taskData["task_name"] || "",
         statusHref: taskData["status_href"],
         resultHref: taskData["result_href"] || null,
-        streamHref: taskData["stream_href"] || null,
       });
 
       if ("abort_href" in taskData) {
@@ -42,8 +41,7 @@ qx.Class.define("osparc.data.PollTask", {
         });
       }
 
-      this.__retries = 3;
-      this.__pollTaskState();
+      this._startPolling();
     }
   },
 
@@ -78,12 +76,7 @@ qx.Class.define("osparc.data.PollTask", {
 
     resultHref: {
       check: "String",
-      nullable: true
-    },
-
-    streamHref: {
-      check: "String",
-      nullable: true
+      nullable: false
     },
 
     abortHref: {
@@ -98,7 +91,7 @@ qx.Class.define("osparc.data.PollTask", {
       nullable: false,
       init: false,
       event: "changeDone",
-      apply: "__fetchOutcome"
+      apply: "_applyDone",
     }
   },
 
@@ -130,6 +123,11 @@ qx.Class.define("osparc.data.PollTask", {
   members: {
     __retries: null,
     __aborting: null,
+
+    _startPolling: function() {
+      this.__retries = 3;
+      this.__pollTaskState();
+    },
 
     __pollTaskState: function() {
       const statusPath = this.self().extractPathname(this.getStatusHref());
@@ -170,13 +168,9 @@ qx.Class.define("osparc.data.PollTask", {
         });
     },
 
-    __fetchOutcome: function() {
-      if (this.getDone()) {
-        if (this.getResultHref()) {
-          this.__fetchResults();
-        } else if (this.getStreamHref()) {
-          this.__fetchStream();
-        }
+    _applyDone: function(done) {
+      if (done && this.getResultHref()) {
+        this.__fetchResults();
       }
     },
 
