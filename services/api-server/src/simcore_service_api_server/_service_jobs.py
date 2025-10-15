@@ -20,6 +20,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import BaseFileLink, NodeID
+from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.rpc_pagination import PageLimitInt
@@ -29,7 +30,11 @@ from servicelib.logging_utils import log_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._service_solvers import SolverService
-from .exceptions.backend_errors import JobAssetsMissingError
+from .exceptions.backend_errors import (
+    JobAssetsMissingError,
+    SolverJobOutputRequestButNotSucceededError,
+    StudyJobOutputRequestButNotSucceededError,
+)
 from .exceptions.custom_errors import (
     InsufficientCreditsError,
     MissingWalletError,
@@ -308,6 +313,15 @@ class JobService:
         job_name = compose_solver_job_resource_name(solver_key, version, job_id)
         _logger.debug("Get Job '%s' outputs", job_name)
 
+        job_status = await self.inspect_solver_job(
+            solver_key=solver_key, version=version, job_id=job_id
+        )
+
+        if job_status.state != RunningState.SUCCESS:
+            raise SolverJobOutputRequestButNotSucceededError(
+                job_id=job_id, state=job_status.state
+            )
+
         project_marked_as_job = await self.get_job(
             job_id=job_id,
             job_parent_resource_name=Solver.compose_resource_name(
@@ -379,9 +393,16 @@ class JobService:
         job_name = compose_study_job_resource_name(study_id, job_id)
         _logger.debug("Getting Job Outputs for '%s'", job_name)
 
+        job_status = await self.inspect_study_job(job_id=job_id)
+
+        if job_status.state != RunningState.SUCCESS:
+            raise StudyJobOutputRequestButNotSucceededError(
+                job_id=job_id, state=job_status.state
+            )
         project_outputs = await self._web_rest_client.get_project_outputs(
             project_id=job_id
         )
+
         return await create_job_outputs_from_project_outputs(
             job_id, project_outputs, self.user_id, self._storage_rest_client
         )
