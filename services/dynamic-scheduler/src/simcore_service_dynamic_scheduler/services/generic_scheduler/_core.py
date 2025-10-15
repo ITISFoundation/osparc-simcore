@@ -180,14 +180,14 @@ class Core(SingletonInAppStateMixin):
         if operation.is_cancellable is False:
             raise OperationNotCancellableError(operation_name=operation_name)
 
-        group = operation.step_groups[group_index]
+        step_group = operation.step_groups[group_index]
 
         group_step_proxies = get_group_step_proxies(
             self._store,
             schedule_id=schedule_id,
             operation_name=operation_name,
             group_index=group_index,
-            step_group=group,
+            step_group=step_group,
             is_executing=is_executing,
         )
 
@@ -204,6 +204,8 @@ class Core(SingletonInAppStateMixin):
                 schedule_id=schedule_id
             )
 
+        expected_steps_count = len(step_group)
+
         async def _cancel_step(step_name: StepName, step_proxy: StepStoreProxy) -> None:
             with log_context(  # noqa: SIM117
                 _logger,
@@ -212,8 +214,25 @@ class Core(SingletonInAppStateMixin):
             ):
                 with suppress(NoDataFoundError):
                     deferred_task_uid = await step_proxy.read("deferred_task_uid")
+                    # the deferred task might not be running when this is called
+                    # e.g. cancelling a repeating operation
                     await DeferredRunner.cancel(deferred_task_uid)
-                    await step_proxy.create_or_update("status", StepStatus.CANCELLED)
+
+                await step_proxy.create_or_update("status", StepStatus.CANCELLED)
+
+                step_group_name = step_group.get_step_group_name(index=group_index)
+                group_proxy = StepGroupProxy(
+                    store=self._store,
+                    schedule_id=schedule_id,
+                    operation_name=operation_name,
+                    step_group_name=step_group_name,
+                    is_executing=is_executing,
+                )
+                if (
+                    await group_proxy.increment_and_get_done_steps_count()
+                    == expected_steps_count
+                ):
+                    await enqueue_schedule_event(self.app, schedule_id)
 
         await limited_gather(
             *(
