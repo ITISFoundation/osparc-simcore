@@ -1,11 +1,5 @@
-"""Interface to communicate with Fogbugz API
-
-- Simple client to create cases in Fogbugz
-"""
-
 import logging
 from typing import Annotated, Any, Final
-from urllib.parse import urljoin
 
 import httpx
 from aiohttp import web
@@ -67,7 +61,7 @@ class ChatbotRestClient:
 
     async def get_settings(self) -> dict[str, Any]:
         """Fetches chatbot settings"""
-        url = urljoin(f"{self._chatbot_settings.base_url}", "/v1/chat/settings")
+        url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat/settings")
 
         @_chatbot_retry()
         async def _request() -> httpx.Response:
@@ -85,7 +79,7 @@ class ChatbotRestClient:
 
     async def ask_question(self, question: str) -> ChatResponse:
         """Asks a question to the chatbot"""
-        url = urljoin(self._chatbot_settings.base_url, "/v1/chat")
+        url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat")
 
         @_chatbot_retry()
         async def _request() -> httpx.Response:
@@ -145,4 +139,5 @@ async def setup_chatbot_rest_client(app: web.Application) -> None:
 
 def get_chatbot_rest_client(app: web.Application) -> ChatbotRestClient:
     app_key: ChatbotRestClient = app[_APPKEY]
+    return app_key
     return app_key
