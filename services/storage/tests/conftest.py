@@ -1015,12 +1015,9 @@ async def with_storage_celery_worker(
     monkeypatch: pytest.MonkeyPatch,
     register_test_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-    # Signals must be explicitily connected
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
-    monkeypatch.setenv("STORAGE_RABBIT", "null")
-    monkeypatch.setenv("STORAGE_REDIS", "null")
-
     app_settings = ApplicationSettings.create_from_envs()
+    app_settings.STORAGE_WORKER_MODE = True
+
     tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
