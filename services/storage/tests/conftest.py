@@ -1015,9 +1015,8 @@ async def with_storage_celery_worker(
     monkeypatch: pytest.MonkeyPatch,
     register_test_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")  # disable rabbit in celery worker
+    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
-
     tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
