@@ -14,11 +14,13 @@ from celery.contrib.testing.worker import (  # pylint: disable=no-name-in-module
     TestWorkController,
     start_worker,
 )
-from celery_library.worker.signals import register_worker_signals
+from celery.signals import worker_init, worker_shutdown
+from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
+from settings_library.celery import CeleryPoolType
 from settings_library.redis import RedisSettings
 from simcore_service_api_server.clients import celery_task_manager
 from simcore_service_api_server.core.application import create_app
@@ -120,9 +122,11 @@ async def with_api_server_celery_worker(
     def _app_server_factory() -> FastAPIAppServer:
         return FastAPIAppServer(app=create_app(app_settings))
 
-    celery_settings = app_settings.API_SERVER_CELERY
-    assert celery_settings
-    register_worker_signals(celery_app, celery_settings, _app_server_factory)
+    # NOTE: explicitly connect the signals in tests
+    worker_init.connect(
+        _worker_init_wrapper(celery_app, _app_server_factory), weak=False
+    )
+    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
     if add_worker_tasks:
         register_worker_tasks(celery_app)
@@ -130,7 +134,7 @@ async def with_api_server_celery_worker(
 
     with start_worker(
         celery_app,
-        pool="threads",
+        pool=CeleryPoolType.THREADS,
         concurrency=1,
         loglevel="info",
         perform_ping_check=False,
