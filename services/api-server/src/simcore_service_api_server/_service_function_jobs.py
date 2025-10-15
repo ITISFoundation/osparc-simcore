@@ -102,13 +102,11 @@ class FunctionJobService:
 
         if function.input_schema.schema_class == FunctionSchemaClass.json_schema:
             try:
-                all(
+                for input in job_inputs:
                     jsonschema.validate(
                         instance=input.values,
                         schema=function.input_schema.schema_content,
                     )
-                    for input in job_inputs
-                )
             except ValidationError as err:
                 return False, str(err)
             return True, "Inputs are valid"
@@ -147,6 +145,7 @@ class FunctionJobService:
             if not is_valid:
                 raise FunctionInputsValidationError(error=validation_str)
 
+        function_jobs: list[ProjectFunctionJob | SolverFunctionJob]
         if function.function_class == FunctionClass.PROJECT:
             function_jobs = [
                 ProjectFunctionJob(
