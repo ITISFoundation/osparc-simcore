@@ -146,7 +146,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case "functions-button": {
           control = this.self().createListItem(
             this.tr("Functions"),
-            "@MaterialIcons/functions/18",
+            "@MaterialIcons/functions/16",
             "functions"
           );
           const contextDropDown = this.getChildControl("context-drop-down");
@@ -156,7 +156,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case "files-button": {
           control = this.self().createListItem(
             this.tr("Files"),
-            "@MaterialIcons/file/18",
+            "@FontAwesome5Solid/file-alt/14",
             "files"
           );
           const contextDropDown = this.getChildControl("context-drop-down");
