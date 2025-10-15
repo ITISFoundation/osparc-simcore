@@ -3,6 +3,9 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import datetime
+import uuid
+from collections.abc import Callable
 from pathlib import Path
 from pprint import pprint
 from typing import Any
@@ -14,6 +17,8 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.projects import ProjectID
+from models_library.projects_state import RunningState
 from models_library.services import ServiceMetaDataPublished
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
@@ -194,6 +199,53 @@ async def test_solver_logs(
 
     assert f"{resp.url}" == f"{presigned_download_link}"
     pprint(dict(resp.headers))  # noqa: T203
+
+
+@pytest.mark.parametrize(
+    "job_outputs, project_id, job_state, expected_output, expected_status_code, expected_error_message",
+    [
+        (
+            None,
+            uuid.uuid4(),
+            RunningState.STARTED,
+            None,
+            status.HTTP_409_CONFLICT,
+            "not succeeded, when output is requested",
+        ),
+    ],
+)
+async def test_solver_job_outputs(
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+    job_outputs: dict[str, Any] | None,
+    project_id: ProjectID | None,
+    job_state: RunningState,
+    expected_output: dict[str, Any] | None,
+    mock_method_in_jobs_service: Callable[[str, Any], MockType],
+    expected_status_code: status.HTTP_200_OK | status.HTTP_404_NOT_FOUND,
+    expected_error_message: str | None,
+    solver_key: str,
+    solver_version: str,
+) -> None:
+
+    job_status = JobStatus(
+        state=job_state,
+        job_id=project_id,
+        submitted_at=datetime.datetime.now(tz=datetime.UTC),
+        progress=0.0,
+    )
+    mock_method_in_jobs_service("inspect_solver_job", job_status)
+
+    response = await client.get(
+        f"{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{project_id}/outputs",
+        auth=auth,
+    )
+    assert response.status_code == expected_status_code
+    data = response.json()
+    if expected_error_message:
+        assert "not succeeded, when output is requested" in data["errors"][0]
+    if expected_output:
+        assert data == expected_output
 
 
 @pytest.mark.acceptance_test(
