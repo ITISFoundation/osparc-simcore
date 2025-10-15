@@ -59,6 +59,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       SEARCH_TEMPLATES: "searchTemplates",
       SEARCH_PUBLIC_TEMPLATES: "searchPublicTemplates",
       SEARCH_FUNCTIONS: "searchFunctions",
+      SEARCH_FILES: "searchFiles",
     }
   },
 
@@ -920,6 +921,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
           requestParams.type = "user";
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          // nothing to add
           break;
       }
 

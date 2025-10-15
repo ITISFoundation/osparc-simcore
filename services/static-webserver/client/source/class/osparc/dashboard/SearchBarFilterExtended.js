@@ -153,6 +153,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           contextDropDown.add(control);
           break;
         }
+        case "files-button": {
+          control = this.self().createListItem(
+            this.tr("Files"),
+            "@MaterialIcons/file/18",
+            "files"
+          );
+          const contextDropDown = this.getChildControl("context-drop-down");
+          contextDropDown.add(control);
+          break;
+        }
         case "filter-buttons":
           control = new qx.ui.toolbar.ToolBar().set({
             backgroundColor: osparc.dashboard.SearchBarFilter.BG_COLOR,
@@ -187,6 +197,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       if (osparc.product.Utils.showFunctions()) {
         this.getChildControl("functions-button");
       }
+      this.getChildControl("files-button");
       if (contextDropDown.getChildren().length === 1) {
         contextDropDown.hide();
       }
@@ -206,6 +217,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
               break;
             case "functions":
               this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS);
+              break;
+            case "files":
+              this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES);
               break;
           }
         }
@@ -283,6 +297,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
           contextDropDown.setSelection([this.getChildControl("functions-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Functions"));
+          sharedWithButton.setVisibility("excluded");
+          tagsButton.setVisibility("excluded");
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          contextDropDown.setSelection([this.getChildControl("files-button")]);
+          searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Files"));
           sharedWithButton.setVisibility("excluded");
           tagsButton.setVisibility("excluded");
           break;
