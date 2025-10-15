@@ -411,7 +411,7 @@ async def test_run_project_function(
     mocked_webserver_rpc_api: dict[str, MockType],
     app: FastAPI,
     client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_handler_in_functions_rpc_interface: Callable,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
