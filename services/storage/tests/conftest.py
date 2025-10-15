@@ -23,7 +23,8 @@ from asgi_lifespan import LifespanManager
 from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
-from celery_library.worker.signals import register_worker_signals
+from celery.signals import worker_init, worker_shutdown
+from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -1027,11 +1028,11 @@ async def with_storage_celery_worker(
             app=create_app(app_settings, tracing_config=tracing_config)
         )
 
-    assert app_settings.STORAGE_CELERY
-
-    register_worker_signals(
-        celery_app, app_settings.STORAGE_CELERY, _app_server_factory
+    # NOTE: explicitly connect the signals in tests
+    worker_init.connect(
+        _worker_init_wrapper(celery_app, _app_server_factory), weak=False
     )
+    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
     register_worker_tasks(celery_app)
     register_test_tasks(celery_app)
