@@ -1013,27 +1013,10 @@ def storage_worker_mode(app_environment: EnvVarsDict, monkeypatch: pytest.Monkey
 
 
 @pytest.fixture
-def worker_app_settings(
-    enable_tracing,
-    app_environment: EnvVarsDict,
-    enabled_rabbitmq: RabbitSettings,
-    sqlalchemy_async_engine: AsyncEngine,
-    postgres_host_config: dict[str, str],
-    mocked_s3_server_envs: EnvVarsDict,
-    datcore_adapter_service_mock: respx.MockRouter,
-    mocked_redis_server: None,
-    storage_worker_mode: None,
-) -> ApplicationSettings:
-    test_app_settings = ApplicationSettings.create_from_envs()
-    print(f"{test_app_settings.model_dump_json(indent=2)=}")
-    return test_app_settings
-
-
-@pytest.fixture
 async def with_storage_celery_worker(
-    worker_app_settings: ApplicationSettings,
     celery_app: Celery,
-    monkeypatch: pytest.MonkeyPatch,
+    storage_worker_mode: None,
+    app_settings: ApplicationSettings,
     register_test_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
 
@@ -1043,7 +1026,7 @@ async def with_storage_celery_worker(
     )
 
     def _app_server_factory() -> FastAPIAppServer:
-        return FastAPIAppServer(app=create_app(worker_app_settings, tracing_config))
+        return FastAPIAppServer(app=create_app(app_settings, tracing_config))
 
     # NOTE: explicitly connect the signals in tests
     worker_init.connect(
