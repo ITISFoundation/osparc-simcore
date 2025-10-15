@@ -1368,6 +1368,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             backToContext = osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS;
           }
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          if (isSearchContext) {
+            searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES;
+          } else {
+            backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
+          }
+          break;
         default:
           if (isSearchContext) {
             searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
