@@ -1,6 +1,8 @@
 from functools import cached_property
 
 from aiohttp import web
+from models_library.basic_types import PortInt
+from pydantic import ConfigDict
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings, URLPart
 
@@ -8,8 +10,10 @@ from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class ChatbotSettings(BaseCustomSettings, MixinServiceSettings):
+    model_config = ConfigDict(str_strip_whitespace=True, str_min_length=1)
+
     CHATBOT_HOST: str
-    CHATBOT_PORT: int
+    CHATBOT_PORT: PortInt
     CHATBOT_LLM_MODEL: str = "gpt-3.5-turbo"
     CHATBOT_EMBEDDING_MODEL: str = "openai/text-embedding-3-large"
 

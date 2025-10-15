@@ -4,7 +4,7 @@
 """
 
 import logging
-from typing import Any, Final
+from typing import Annotated, Any, Final
 from urllib.parse import urljoin
 
 import httpx
@@ -28,7 +28,7 @@ _JSON_CONTENT_TYPE = "application/json"
 
 
 class ChatResponse(BaseModel):
-    answer: str = Field(description="Answer from the chatbot")
+    answer: Annotated[str, Field(description="Answer from the chatbot")]
 
 
 def _should_retry(response: httpx.Response | None) -> bool:
@@ -76,8 +76,7 @@ class ChatbotRestClient:
         try:
             response = await _request()
             response.raise_for_status()
-            response_data: dict[str, Any] = response.json()
-            return response_data
+            return response.json()
         except Exception:
             _logger.error(  # noqa: TRY400
                 "Failed to fetch chatbot settings from %s", url
@@ -86,7 +85,7 @@ class ChatbotRestClient:
 
     async def ask_question(self, question: str) -> ChatResponse:
         """Asks a question to the chatbot"""
-        url = urljoin(f"{self._chatbot_settings.base_url}", "/v1/chat")
+        url = urljoin(self._chatbot_settings.base_url, "/v1/chat")
 
         @_chatbot_retry()
         async def _request() -> httpx.Response:
@@ -134,6 +133,14 @@ async def setup_chatbot_rest_client(app: web.Application) -> None:
     )
 
     app[_APPKEY] = client
+
+    # Add cleanup on app shutdown
+    async def cleanup_chatbot_client(app: web.Application) -> None:
+        client = app.get(_APPKEY)
+        if client:
+            await client._client.aclose()  # noqa: SLF001
+
+    app.on_cleanup.append(cleanup_chatbot_client)
 
 
 def get_chatbot_rest_client(app: web.Application) -> ChatbotRestClient:
