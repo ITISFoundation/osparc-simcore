@@ -87,7 +87,7 @@ ShortTruncatedStr: TypeAlias = Annotated[
         """
         A truncated string used to input e.g. titles or display names.
         Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
-        Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently,
+        Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs SILENTLY,
         i.e. without raising errors.
         """
         # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5989#discussion_r1650506583
@@ -104,7 +104,7 @@ LongTruncatedStr: TypeAlias = Annotated[
         """
         A truncated string used to input e.g. descriptions or summaries.
         Strips whitespaces and truncate strings that exceed the specified characters limit (curtail_length).
-        Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs silently,
+        Ensures that the **input** data length to the API is controlled and prevents exceeding large inputs SILENTLY,
         i.e. without raising errors.
         """
     ),
