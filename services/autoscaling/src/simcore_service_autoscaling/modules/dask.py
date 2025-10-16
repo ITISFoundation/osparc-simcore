@@ -121,17 +121,18 @@ def _dask_worker_from_ec2_instance(
     return next(iter(filtered_workers.items()))
 
 
-class DaskClusterTasks(TypedDict):
+class _DaskClusterTasks(TypedDict):
     processing: dict[DaskWorkerUrl, list[tuple[dask.typing.Key, DaskTaskResources]]]
     unrunnable: dict[dask.typing.Key, DaskTaskResources]
 
 
 async def _list_cluster_known_tasks(
     client: distributed.Client,
-) -> DaskClusterTasks:
+) -> _DaskClusterTasks:
     def _list_on_scheduler(
         dask_scheduler: distributed.Scheduler,
-    ) -> DaskClusterTasks:
+    ) -> _DaskClusterTasks:
+
         worker_to_processing_tasks = defaultdict(list)
         unrunnable_tasks = {}
         for task_key, task_state in dask_scheduler.tasks.items():
@@ -148,12 +149,12 @@ async def _list_cluster_known_tasks(
                     task_state.resource_restrictions or {}
                 ) | {DASK_WORKER_THREAD_RESOURCE_NAME: 1}
 
-        return DaskClusterTasks(
+        return _DaskClusterTasks(
             processing=worker_to_processing_tasks,  # type: ignore[typeddict-item]
             unrunnable=unrunnable_tasks,  # type: ignore[typeddict-item]
         )
 
-    list_of_tasks: DaskClusterTasks = await client.run_on_scheduler(_list_on_scheduler)
+    list_of_tasks: _DaskClusterTasks = await client.run_on_scheduler(_list_on_scheduler)
     _logger.debug("found tasks: %s", list_of_tasks)
 
     return list_of_tasks
