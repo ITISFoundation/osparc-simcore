@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self, TypeAlias
+from typing import Annotated, Any, Literal, Self
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
@@ -15,7 +15,6 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
-    StringConstraints,
     ValidationInfo,
     field_validator,
     model_validator,
@@ -27,6 +26,7 @@ from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
+from ..string_types import GlobPatternSafeStr, NameSafeStr
 from ..users import (
     FirstNameStr,
     LastNameStr,
@@ -202,9 +202,11 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
 
 
 class MyProfileRestPatch(InputSchemaWithoutCamelCase):
-    first_name: FirstNameStr | None = None
-    last_name: LastNameStr | None = None
-    user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
+    first_name: NameSafeStr | None = None
+    last_name: NameSafeStr | None = None
+    user_name: Annotated[NameSafeStr | None, Field(alias="userName", min_length=4)] = (
+        None
+    )
     # NOTE: phone is updated via a dedicated endpoint!
 
     privacy: MyProfilePrivacyPatch | None = None
@@ -262,8 +264,7 @@ class UsersGetParams(RequestParameters):
 
 class UsersSearch(InputSchema):
     match_: Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, min_length=1, max_length=80),
+        NameSafeStr,
         Field(
             description="Search string to match with usernames and public profiles (e.g. emails, first/last name)",
             alias="match",
@@ -314,17 +315,9 @@ class UserAccountReject(InputSchema):
     email: EmailStr
 
 
-GlobString: TypeAlias = Annotated[
-    str,
-    StringConstraints(
-        min_length=3, max_length=200, strip_whitespace=True, pattern=r"^[^%]*$"
-    ),
-]
-
-
 class UserAccountSearchQueryParams(RequestParameters):
     email: Annotated[
-        GlobString | None,
+        GlobPatternSafeStr | None,
         Field(
             description="complete or glob pattern for an email",
         ),
@@ -336,7 +329,7 @@ class UserAccountSearchQueryParams(RequestParameters):
         ),
     ] = None
     user_name: Annotated[
-        GlobString | None,
+        GlobPatternSafeStr | None,
         Field(
             description="complete or glob pattern for a username",
         ),
