@@ -1001,6 +1001,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         min_parts_for_valid_s3_object = 2
 
         try:
+            name_pattern_lower = name_pattern.lower()
             async for s3_objects in s3_client.list_objects_paginated(
                 bucket=self.simcore_bucket_name,
                 prefix=f"{proj_id}/",
@@ -1010,7 +1011,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     filename = Path(s3_obj.object_key).name
 
                     if not (
-                        fnmatch.fnmatch(filename, name_pattern)
+                        fnmatch.fnmatch(filename.lower(), name_pattern_lower)
                         and len(s3_obj.object_key.split("/"))
                         >= min_parts_for_valid_s3_object
                     ):

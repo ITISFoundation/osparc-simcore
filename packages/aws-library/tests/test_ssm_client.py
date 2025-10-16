@@ -37,8 +37,7 @@ async def simcore_ssm_api(
     await ec2.close()
 
 
-async def test_ssm_client_lifespan(simcore_ssm_api: SimcoreSSMAPI):
-    ...
+async def test_ssm_client_lifespan(simcore_ssm_api: SimcoreSSMAPI): ...
 
 
 async def test_aiobotocore_ssm_client_when_ssm_server_goes_up_and_down(
@@ -123,6 +122,30 @@ async def test_send_command(
         await simcore_ssm_api.get_command(
             target_instance_id, command_id=fake_command_id
         )
+
+
+async def test_cancel_command(
+    mocked_aws_server: ThreadedMotoServer,
+    simcore_ssm_api: SimcoreSSMAPI,
+    faker: Faker,
+):
+    command_name = faker.word()
+    target_instance_id = faker.pystr()
+    sent_command = await simcore_ssm_api.send_command(
+        instance_ids=[target_instance_id],
+        command=faker.text(),
+        command_name=command_name,
+    )
+    assert sent_command
+    assert sent_command.command_id
+    assert sent_command.name == command_name
+    assert sent_command.instance_ids == [target_instance_id]
+    assert sent_command.status == "Success"
+
+    # cancelling a finished command is a no-op but is a bit of a joke as moto does not implement cancel command yet
+    await simcore_ssm_api.cancel_command(
+        instance_id=target_instance_id, command_id=sent_command.command_id
+    )
 
 
 async def test_is_instance_connected_to_ssm_server(
