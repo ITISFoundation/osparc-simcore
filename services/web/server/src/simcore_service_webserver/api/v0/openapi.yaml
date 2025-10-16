@@ -18098,10 +18098,15 @@ components:
       properties:
         name:
           type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[A-Za-z0-9 ._\-]+$
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         color:
@@ -18190,11 +18195,16 @@ components:
         name:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
+            pattern: ^[A-Za-z0-9 ._\-]+$
           - type: 'null'
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         color:
