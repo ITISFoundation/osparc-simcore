@@ -13167,7 +13167,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         email:
@@ -13195,7 +13195,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
           description: None if private
@@ -14088,7 +14088,6 @@ components:
           - type: string
             maxLength: 100
             minLength: 4
-            pattern: ^[A-Za-z0-9 ._\-]+$
           - type: 'null'
           title: Username
         privacy:
@@ -18646,7 +18645,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Invitedby
         accountRequestStatus:
@@ -18657,7 +18656,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Accountrequestreviewedby
         accountRequestReviewedAt:
@@ -18694,7 +18693,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
           description: Username of the user if an account was created
@@ -18806,7 +18805,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         firstName:
