@@ -2,47 +2,73 @@ import re
 from typing import Annotated, Final, TypeAlias
 
 import annotated_types
-from pydantic import AfterValidator, StringConstraints
+from pydantic import (
+    AfterValidator,
+    StringConstraints,
+)
+from pydantic_core import PydanticCustomError
 
 from .utils.common_validators import trim_string_before
 
-# --- heuristics ---
-SQL_INJECTION_PATTERN = re.compile(
+# --- shared heuristics ---
+MIN_DESCRIPTION_LENGTH: Final[int] = 3
+MAX_DESCRIPTION_LENGTH: Final[int] = 5000
+MAX_NAME_LENGTH: Final[int] = 100
+
+_SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
+_LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github descriptions
+
+_SQL_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
     r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|EXEC)\b|--|;|'|\")",
     re.IGNORECASE,
 )
-JS_INJECTION_PATTERN = re.compile(
-    r"(<script.*?>|</script>|on\w+\s*=|javascript:)", re.IGNORECASE
+_JS_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
+    r"(<\s*script.*?>|</\s*script\s*>|on\w+\s*=|javascript:|data:text/html)",
+    re.IGNORECASE,
 )
 
-MIN_DESCRIPTION_LENGTH = 3  # minimum length for description strings without whitespaces
+STRING_UNSAFE_CONTENT_ERROR_CODE: Final[str] = "string_unsafe_content"
 
 
 def _validate_input_safety(value: str) -> str:
-    # reject likely injection content
-    if SQL_INJECTION_PATTERN.search(value) or JS_INJECTION_PATTERN.search(value):
-        msg = "Potentially unsafe content detected."
-        raise ValueError(msg)
+    if _SQL_INJECTION_PATTERN.search(value) or _JS_INJECTION_PATTERN.search(value):
+        msg_template = "This input contains potentially unsafe content."
+        raise PydanticCustomError(STRING_UNSAFE_CONTENT_ERROR_CODE, msg_template, {})
     return value
 
 
-def _strip_all_whitespaces(value: str) -> str:
-    # normalize whitespaces
-    return re.sub(r"\s+", " ", value).strip()
+# --- core composition primitives ---
+#
+# *SafeStr types MUST be used for INPUT string fields that will be stored in the DB or shown in the UI
+#
 
-
-DescriptionSafeStr: TypeAlias = Annotated[
+NameSafeStr: TypeAlias = Annotated[
     str,
-    StringConstraints(strip_whitespace=True, min_length=MIN_DESCRIPTION_LENGTH),
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=MAX_NAME_LENGTH,
+        pattern=r"^[A-Za-z0-9 ._\-]+$",  # strict whitelist
+    ),
     AfterValidator(_validate_input_safety),
 ]
 
+DescriptionSafeStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=MIN_DESCRIPTION_LENGTH,
+        max_length=MAX_DESCRIPTION_LENGTH,
+    ),
+    AfterValidator(_validate_input_safety),
+]
 
-_SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
+# --- truncating string types ---
 ShortTruncatedStr: TypeAlias = Annotated[
     str,
     StringConstraints(strip_whitespace=True),
     trim_string_before(max_length=_SHORT_TRUNCATED_STR_MAX_LENGTH),
+    AfterValidator(_validate_input_safety),
     annotated_types.doc(
         """
         A truncated string used to input e.g. titles or display names.
@@ -54,11 +80,12 @@ ShortTruncatedStr: TypeAlias = Annotated[
     ),
 ]
 
-_LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github description
+
 LongTruncatedStr: TypeAlias = Annotated[
     str,
     StringConstraints(strip_whitespace=True),
     trim_string_before(max_length=_LONG_TRUNCATED_STR_MAX_LENGTH),
+    AfterValidator(_validate_input_safety),
     annotated_types.doc(
         """
         A truncated string used to input e.g. descriptions or summaries.
