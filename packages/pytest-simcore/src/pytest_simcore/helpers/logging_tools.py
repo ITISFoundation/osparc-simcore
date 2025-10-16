@@ -81,7 +81,6 @@ class DynamicIndentFormatter(logging.Formatter):
         _handler = logging.StreamHandler()
         _handler.setFormatter(_formatter)
         logger.addHandler(_handler)
-        logger.setLevel(logging.INFO)
 
 
 test_logger = logging.getLogger(__name__)
@@ -95,6 +94,7 @@ _DONE_PREFIX: Final[str] = "<-- "
 _DONE_SUFFIX: Final[str] = " ✅"
 _RAISED_PREFIX: Final[str] = "❌❌❌ Error: "
 _RAISED_SUFFIX: Final[str] = " ❌❌❌"
+_STACK_LEVEL_OFFSET: Final[int] = 3
 
 
 @dataclass
@@ -170,25 +170,28 @@ def log_context(
             _resolve(ctx_msg.starting, _STARTING_PREFIX, _STARTING_SUFFIX),
             *args,
             **kwargs,
+            stacklevel=_STACK_LEVEL_OFFSET,
         )
         with _increased_logger_indent(logger):
             yield SimpleNamespace(logger=logger, messages=ctx_msg)
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        done_message = f"{_resolve(ctx_msg.done, _DONE_PREFIX, _DONE_SUFFIX)} ({_timedelta_as_minute_second_ms(elapsed_time)})"
+        done_message = f"{_resolve(ctx_msg.done, _DONE_PREFIX, _DONE_SUFFIX)} (total time spent: {_timedelta_as_minute_second_ms(elapsed_time)})"
         logger.log(
             level,
             done_message,
             *args,
             **kwargs,
+            stacklevel=_STACK_LEVEL_OFFSET,
         )
 
     except:
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        error_message = f"{_resolve(ctx_msg.raised, _RAISED_PREFIX, _RAISED_SUFFIX)} ({_timedelta_as_minute_second_ms(elapsed_time)})"
+        error_message = f"{_resolve(ctx_msg.raised, _RAISED_PREFIX, _RAISED_SUFFIX)} (total time spent: {_timedelta_as_minute_second_ms(elapsed_time)})"
         logger.exception(
             error_message,
             *args,
             **kwargs,
+            stacklevel=_STACK_LEVEL_OFFSET,
         )
         raise
 
