@@ -18963,9 +18963,9 @@ components:
       properties:
         match:
           type: string
-          maxLength: 100
+          maxLength: 200
           minLength: 1
-          pattern: ^[A-Za-z0-9 ._\-]+$
+          pattern: ^[^\%]+$
           title: Match
           description: Search string to match with usernames and public profiles (e.g.
             emails, first/last name)
