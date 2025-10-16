@@ -1,5 +1,6 @@
 import logging
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
@@ -32,7 +33,7 @@ from ..modules.redis import setup as setup_redis
 from ..modules.ssm import setup as setup_ssm
 from .settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
@@ -49,6 +50,10 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     app.state.settings = settings
     app.state.tracing_config = tracing_config
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
+    _logger.info(
+        "Application settings: %s",
+        json_dumps(settings, indent=2, sort_keys=True),
+    )
 
     # PLUGINS SETUP
     if tracing_config.tracing_enabled:
