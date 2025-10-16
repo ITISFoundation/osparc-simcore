@@ -1017,6 +1017,7 @@ def app_server_factory_with_worker_mode(
     mocked_s3_server_envs: EnvVarsDict,
     datcore_adapter_service_mock: respx.MockRouter,
     mocked_redis_server: None,
+    mock_celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
 ) -> Callable[[], FastAPIAppServer]:
     with monkeypatch.context() as patch:
