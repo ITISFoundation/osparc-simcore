@@ -722,18 +722,18 @@ async def test_incompatible_patch_model_error(
     )
     assert len(registered_jobs) == 1
     registered_job = registered_jobs[0]
+    patch_input = None
     if function.function_class == FunctionClass.PROJECT:
         assert isinstance(patch, RegisteredSolverFunctionJobPatch)
         patch_input = RegisteredSolverFunctionJobPatchInput(
             uid=registered_job.uid, patch=patch
         )
-    elif function.function_class == FunctionClass.SOLVER:
+    if function.function_class == FunctionClass.SOLVER:
         assert isinstance(patch, RegisteredProjectFunctionJobPatch)
         patch_input = RegisteredProjectFunctionJobPatchInput(
             uid=registered_job.uid, patch=patch
         )
-    else:
-        pytest.fail("Unsupported function class")
+    assert patch_input is not None
     with pytest.raises(FunctionJobPatchModelIncompatibleError):
         registered_job = (
             await webserver_rpc_client.functions.patch_registered_function_job(
