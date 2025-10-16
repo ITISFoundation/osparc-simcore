@@ -1008,35 +1008,41 @@ def register_test_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
-def app_server_with_worker_mode(
+def app_server_factory_with_worker_mode(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-) -> FastAPIAppServer:
+) -> Callable[[], FastAPIAppServer]:
     monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
 
-    app_settings = ApplicationSettings.create_from_envs()
-    assert app_settings.STORAGE_WORKER_MODE is True
+    # Cache to ensure we create the app server only once per test
+    _app_server_cache: list[FastAPIAppServer] = []
 
-    tracing_config = TracingConfig.create(
-        tracing_settings=None,  # disable tracing in tests
-        service_name="storage-worker",
-    )
-    return FastAPIAppServer(app=create_app(app_settings, tracing_config))
+    def _app_server_factory() -> FastAPIAppServer:
+        if not _app_server_cache:
+            app_settings = ApplicationSettings.create_from_envs()
+            assert app_settings.STORAGE_WORKER_MODE is True
+
+            tracing_config = TracingConfig.create(
+                tracing_settings=None,  # disable tracing in tests
+                service_name="storage-worker",
+            )
+            _app_server_cache.append(
+                FastAPIAppServer(app=create_app(app_settings, tracing_config))
+            )
+        return _app_server_cache[0]
+
+    return _app_server_factory
 
 
 @pytest.fixture
 async def with_storage_celery_worker(
     celery_app: Celery,
-    app_server_with_worker_mode: FastAPIAppServer,
+    app_server_factory_with_worker_mode: Callable[[], FastAPIAppServer],
     register_test_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
 
-    def _app_server_factory() -> FastAPIAppServer:
-        return app_server_with_worker_mode
-
-    # NOTE: explicitly connect the signals in tests
     worker_init.connect(
-        _worker_init_wrapper(celery_app, _app_server_factory),
+        _worker_init_wrapper(celery_app, app_server_factory_with_worker_mode),
         weak=False,
     )
     worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
@@ -1054,7 +1060,6 @@ async def with_storage_celery_worker(
     ) as worker:
         yield worker
 
-        # Explicitly trigger shutdown signal for proper cleanup
         _worker_shutdown_wrapper(celery_app)()
 
 
