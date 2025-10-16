@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * @asset(DOMPurify/purify.min.js)
+ * @asset(DOMPurify/purify-3.2.7.min.js)
  * @ignore(DOMPurify)
  */
 
@@ -63,12 +63,10 @@ qx.Class.define("osparc.wrapper.DOMPurify", {
   },
 
   members: {
-    __diffPatcher: null,
-
     init: function() {
       // initialize the script loading
-      let purifyPath = "DOMPurify/purify.min.js";
-      let dynLoader = new qx.util.DynamicScriptLoader([
+      const purifyPath = "DOMPurify/purify-3.2.7.min.js";
+      const dynLoader = new qx.util.DynamicScriptLoader([
         purifyPath
       ]);
 
