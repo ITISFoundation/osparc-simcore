@@ -174,7 +174,7 @@ _run-test-ci: _check_venv_active
 		--keep-docker-up \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
 		--log-format="%(asctime)s %(levelname)s %(message)s" \
-		$(if $(filter simcore_service_storage,$(APP_PACKAGE_NAME)),-vv,--verbose) \
+		--verbose \
 		-m "not heavy_load" \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)
