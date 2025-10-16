@@ -170,10 +170,11 @@ qx.Class.define("osparc.ui.form.renderer.DoubleV", {
      * @return {qx.ui.basic.Label} The label for the given item.
      */
     _createLabel: function(name, item) {
-      const label = new qx.ui.basic.Label(this._createLabelText(name, item));
+      const label = new qx.ui.basic.Label(this._createLabelText(name, item)).set({
+        rich: true,
+      });
       // store labels for disposal
       this._labels.push(label);
-      label.setRich(true);
       return label;
     },
 
