@@ -24,8 +24,7 @@ from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
-from celery.worker.worker import WorkController
-from celery_library.signals import on_worker_init, on_worker_shutdown
+from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -70,7 +69,7 @@ from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
-from simcore_service_storage.api._worker_tasks.tasks import setup_worker_tasks
+from simcore_service_storage.api._worker_tasks.tasks import register_worker_tasks
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.datcore_dsm import DatCoreDataManager
@@ -1023,17 +1022,14 @@ async def with_storage_celery_worker(
         service_name="storage-api",
     )
 
-    app_server = FastAPIAppServer(
-        app=create_app(app_settings, tracing_config=tracing_config)
+    app_server = FastAPIAppServer(app=create_app(app_settings, tracing_config))
+
+    worker_init.connect(
+        _worker_init_wrapper(celery_app, lambda: app_server), weak=False
     )
+    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
-    def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
-        return on_worker_init(sender, app_server, **_kwargs)
-
-    worker_init.connect(_on_worker_init_wrapper)
-    worker_shutdown.connect(on_worker_shutdown)
-
-    setup_worker_tasks(celery_app)
+    register_worker_tasks(celery_app)
     register_celery_tasks(celery_app)
 
     with start_worker(
