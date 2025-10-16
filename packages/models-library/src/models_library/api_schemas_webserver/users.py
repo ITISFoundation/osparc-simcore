@@ -11,6 +11,7 @@ from models_library.groups import AccessRightsDict
 from models_library.rest_filters import Filters
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     EmailStr,
@@ -26,7 +27,7 @@ from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
-from ..string_types import GlobPatternSafeStr, NameSafeStr
+from ..string_types import GlobPatternSafeStr, NameSafeStr, validate_input_safety
 from ..users import (
     FirstNameStr,
     LastNameStr,
@@ -201,9 +202,20 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         )
 
 
+FirstNameSafeStr = Annotated[
+    FirstNameStr,
+    AfterValidator(validate_input_safety),
+]
+
+LastNameSafeStr = Annotated[
+    LastNameStr,
+    AfterValidator(validate_input_safety),
+]
+
+
 class MyProfileRestPatch(InputSchemaWithoutCamelCase):
-    first_name: NameSafeStr | None = None
-    last_name: NameSafeStr | None = None
+    first_name: FirstNameSafeStr | None = None
+    last_name: LastNameSafeStr | None = None
     user_name: Annotated[NameSafeStr | None, Field(alias="userName", min_length=4)] = (
         None
     )

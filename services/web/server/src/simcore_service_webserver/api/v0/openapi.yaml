@@ -14076,6 +14076,7 @@ components:
           - type: string
             maxLength: 100
             minLength: 4
+            pattern: ^[A-Za-z0-9 ._\-]+$
           - type: 'null'
           title: Username
         privacy:
@@ -18941,8 +18942,9 @@ components:
       properties:
         match:
           type: string
-          maxLength: 80
+          maxLength: 100
           minLength: 1
+          pattern: ^[A-Za-z0-9 ._\-]+$
           title: Match
           description: Search string to match with usernames and public profiles (e.g.
             emails, first/last name)
