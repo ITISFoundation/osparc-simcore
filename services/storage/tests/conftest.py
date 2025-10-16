@@ -219,9 +219,9 @@ def app_settings(
     enabled_rabbitmq: RabbitSettings,
     sqlalchemy_async_engine: AsyncEngine,
     postgres_host_config: dict[str, str],
-    mocked_s3_server_envs: EnvVarsDict,
     datcore_adapter_service_mock: respx.MockRouter,
     mocked_redis_server: None,
+    mocked_s3_server_envs: EnvVarsDict,  # Moved to end to ensure S3_ENDPOINT override happens last
 ) -> ApplicationSettings:
     test_app_settings = ApplicationSettings.create_from_envs()
     print(f"{test_app_settings.model_dump_json(indent=2)=}")
@@ -1009,34 +1009,26 @@ def register_test_tasks() -> Callable[[Celery], None]:
 
 @pytest.fixture
 def app_server_factory_with_worker_mode(
-    enable_tracing,
     app_environment: EnvVarsDict,
-    enabled_rabbitmq: RabbitSettings,
-    sqlalchemy_async_engine: AsyncEngine,
-    postgres_host_config: dict[str, str],
-    mocked_s3_server_envs: EnvVarsDict,
-    datcore_adapter_service_mock: respx.MockRouter,
-    mocked_redis_server: None,
-    mock_celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
 ) -> Callable[[], FastAPIAppServer]:
-    with monkeypatch.context() as patch:
-        patch.setenv("STORAGE_WORKER_MODE", "true")
-        patch.setenv("CELERY_POOL", "threads")
+    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
 
-        # Create settings with worker mode enabled
-        worker_mode_app_settings = ApplicationSettings.create_from_envs()
+    def _app_server_factory() -> FastAPIAppServer:
+        app_settings = ApplicationSettings.create_from_envs()
 
-        def _app_server_factory() -> FastAPIAppServer:
-            tracing_config = TracingConfig.create(
-                tracing_settings=None,  # disable tracing in tests
-                service_name="storage-api",
-            )
-            return FastAPIAppServer(
-                app=create_app(worker_mode_app_settings, tracing_config)
-            )
+        # Verify that worker mode is actually enabled
+        assert app_settings.STORAGE_WORKER_MODE is True
 
-        return _app_server_factory
+        print(f"Worker: {app_settings.model_dump_json(indent=2)=}")
+
+        tracing_config = TracingConfig.create(
+            tracing_settings=None,  # disable tracing in tests
+            service_name="storage-api",
+        )
+        return FastAPIAppServer(app=create_app(app_settings, tracing_config))
+
+    return _app_server_factory
 
 
 @pytest.fixture
