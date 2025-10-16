@@ -427,9 +427,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._loadingResourcesBtn.setVisibility("visible");
       const filterData = this._searchBarFilter.getFilterData();
       const text = filterData.text ? encodeURIComponent(filterData.text) : "";
-      osparc.store.Data.getInstance().searchFiles(text)
-        .then(streamData => {
-          const stream = new osparc.data.StreamTask(streamData);
+      const streamPromise = osparc.store.Data.getInstance().searchFiles(text);
+      osparc.store.StreamTasks.getInstance().createStreamTask(streamPromise, 500)
+        .then(stream => {
+          // const stream = new osparc.data.StreamTask(streamData);
           stream.addListener("streamReceived", e => {
             const data = e.getData();
             if ("items" in data) {
