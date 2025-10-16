@@ -12828,6 +12828,7 @@ components:
           type: string
           maxLength: 100
           minLength: 1
+          pattern: ^[A-Za-z0-9 ._\-]+$
           title: Name
         parentFolderId:
           anyOf:
@@ -12919,6 +12920,7 @@ components:
           type: string
           maxLength: 100
           minLength: 1
+          pattern: ^[A-Za-z0-9 ._\-]+$
           title: Name
         parentFolderId:
           anyOf:
@@ -13038,9 +13040,14 @@ components:
       properties:
         label:
           type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[A-Za-z0-9 ._\-]+$
           title: Label
         description:
           type: string
+          maxLength: 5000
+          minLength: 3
           title: Description
         thumbnail:
           anyOf:
@@ -13126,11 +13133,16 @@ components:
         label:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
+            pattern: ^[A-Za-z0-9 ._\-]+$
           - type: 'null'
           title: Label
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         thumbnail:
