@@ -20,7 +20,7 @@ from .emails import LowerCaseEmailStr
 
 UserID: TypeAlias = PositiveInt
 UserNameID: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)
+    str, StringConstraints(strip_whitespace=True, min_length=4, max_length=100)
 ]
 UserNameSafeID: TypeAlias = Annotated[UserNameID, AfterValidator(validate_input_safety)]
 

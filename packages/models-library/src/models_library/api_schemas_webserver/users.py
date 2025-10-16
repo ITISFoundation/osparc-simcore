@@ -34,6 +34,7 @@ from ..users import (
     MyProfile,
     UserID,
     UserNameID,
+    UserNameSafeID,
     UserPermission,
     UserThirdPartyToken,
 )
@@ -216,9 +217,7 @@ LastNameSafeStr = Annotated[
 class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameSafeStr | None = None
     last_name: LastNameSafeStr | None = None
-    user_name: Annotated[NameSafeStr | None, Field(alias="userName", min_length=4)] = (
-        None
-    )
+    user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     # NOTE: phone is updated via a dedicated endpoint!
 
     privacy: MyProfilePrivacyPatch | None = None
