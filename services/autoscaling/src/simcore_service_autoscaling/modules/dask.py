@@ -104,8 +104,8 @@ def _dask_worker_from_ec2_instance(
         _, details = dask_worker
         if match := re.match(DASK_NAME_PATTERN, details["name"]):
             return bool(match.group("private_ip") == node_hostname)
-        _logger.warning(
-            "Unexpected worker name format: %s. TIP: this should be investigated",
+        _logger.error(
+            "Unexpected worker name format: %s. TIP: this should be investigated as this is unexpected",
             details["name"],
         )
         return False
