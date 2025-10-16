@@ -75,13 +75,7 @@ qx.Class.define("osparc.file.FolderContent", {
         maxWidth: 100,
         maxHeight: 33 // two lines
       });
-      toggleLabel.addListener("changeValue", e => {
-        const val = e.getData();
-        const sanitized = osparc.wrapper.DOMPurify.sanitize(val);
-        if (sanitized !== val) {
-          toggleLabel.setValue(sanitized);
-        }
-      });
+      osparc.wrapper.DOMPurify.sanitizeLabel(toggleLabel);
       osparc.utils.Utils.setIdToWidget(item, "FolderViewerItem");
       return item;
     },

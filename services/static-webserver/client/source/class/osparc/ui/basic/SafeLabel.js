@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * A Label that sanitizes its value when in rich mode to avoid XSS attacks
+ * A Label that sanitizes its value to avoid XSS attacks
  */
 
 qx.Class.define("osparc.ui.basic.SafeLabel", {

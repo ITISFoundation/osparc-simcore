@@ -167,12 +167,10 @@ qx.Class.define("osparc.ui.form.renderer.DoubleV", {
      * @param name {String} The content of the label without the
      *   trailing * and :
      * @param item {qx.ui.core.Widget} The item, which has the required state.
-     * @return {qx.ui.basic.Label} The label for the given item.
+     * @return {osparc.ui.basic.SafeLabel} The label for the given item.
      */
     _createLabel: function(name, item) {
-      const label = new qx.ui.basic.Label(this._createLabelText(name, item)).set({
-        rich: true,
-      });
+      const label = new osparc.ui.basic.SafeLabel(this._createLabelText(name, item));
       // store labels for disposal
       this._labels.push(label);
       return label;

@@ -106,13 +106,7 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
             rich: true,
             wrap: true
           });
-          atomLabel.addListener("changeValue", e => {
-            const val = e.getData();
-            const sanitized = osparc.wrapper.DOMPurify.sanitize(val);
-            if (sanitized !== val) {
-              atomLabel.setValue(sanitized);
-            }
-          });
+          osparc.wrapper.DOMPurify.sanitizeLabel(atomLabel);
           control.getContentElement().setStyles({
             "border-top-left-radius": "4px",
             "border-top-right-radius": "4px"

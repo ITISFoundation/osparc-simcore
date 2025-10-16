@@ -48,6 +48,16 @@ qx.Class.define("osparc.wrapper.DOMPurify", {
     sanitize: function(html) {
       return osparc.wrapper.DOMPurify.getInstance().sanitize(html);
     },
+
+    sanitizeLabel: function(label) {
+      label.addListener("changeValue", e => {
+        const val = e.getData();
+        const sanitized = osparc.wrapper.DOMPurify.sanitize(val);
+        if (sanitized !== val) {
+          label.setValue(sanitized);
+        }
+      });
+    },
   },
 
   construct: function() {

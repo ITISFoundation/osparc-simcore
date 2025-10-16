@@ -70,8 +70,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     const captionTitle = this.getChildControl("title");
     captionTitle.set({
+      rich: true,
       cursor: "move"
     });
+    osparc.wrapper.DOMPurify.sanitizeLabel(captionTitle);
 
     this.__nodeMoving = false;
 

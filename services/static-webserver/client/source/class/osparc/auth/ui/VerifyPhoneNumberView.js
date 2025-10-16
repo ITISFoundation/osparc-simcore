@@ -45,6 +45,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           control = new qx.ui.basic.Label().set({
             value: this.tr("Two-Factor Authentication (2FA)"),
             allowGrowX: true,
+            rich: true,
             font: "text-16"
           });
           this.add(control);
