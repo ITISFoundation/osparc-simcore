@@ -38,6 +38,9 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1.functions import FunctionsRpcApi
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1.projects import ProjectsRpcApi
+from simcore_service_api_server.api.dependencies import services
 
 
 @pytest.fixture
@@ -61,8 +64,6 @@ async def mock_dependency_get_celery_task_manager(
 ) -> MockType:
     def _new(app: FastAPI):
         return None
-
-    from simcore_service_api_server.api.dependencies import services
 
     return mocker.patch.object(services, services.get_task_manager.__name__, _new)
 
@@ -243,9 +244,6 @@ def mock_handler_in_functions_rpc_interface(
         exception: Exception | None = None,
         side_effect: Callable | None = None,
     ) -> MockType:
-        from servicelib.rabbitmq.rpc_interfaces.webserver.v1.functions import (
-            FunctionsRpcApi,
-        )
 
         assert exception is None or side_effect is None
 
@@ -272,9 +270,6 @@ def mock_handler_in_projects_rpc_interface(
         exception: Exception | None = None,
         side_effect: Callable | None = None,
     ) -> MockType:
-        from servicelib.rabbitmq.rpc_interfaces.webserver.v1.projects import (
-            ProjectsRpcApi,
-        )
 
         assert exception is None or side_effect is None
 
@@ -283,28 +278,6 @@ def mock_handler_in_projects_rpc_interface(
             handler_name,
             return_value=return_value,
             side_effect=exception or side_effect,
-        )
-
-    return _create
-
-
-@pytest.fixture()
-def mock_method_in_jobs_service(
-    mocked_app_rpc_dependencies: None,
-    mocker: MockerFixture,
-) -> Callable[[str, Any, Exception | None], MockType]:
-    def _create(
-        method_name: str = "",
-        return_value: Any = None,
-        exception: Exception | None = None,
-    ) -> MockType:
-        from simcore_service_api_server._service_jobs import JobService
-
-        return mocker.patch.object(
-            JobService,
-            method_name,
-            return_value=return_value,
-            side_effect=exception,
         )
 
     return _create

@@ -55,6 +55,16 @@ def _patch_describe_instance_information(
     return {"InstanceInformationList": [{"PingStatus": "Online"}]}
 
 
+def _patch_cancel_command(self, operation_name, api_params) -> dict[str, Any]:
+    warnings.warn(
+        "moto is missing the cancel_command function, therefore it is manually mocked."
+        "TIP: periodically check if it gets updated https://docs.getmoto.org/en/latest/docs/services/ssm.html#ssm",
+        UserWarning,
+        stacklevel=1,
+    )
+    return {}
+
+
 # Mocked aiobotocore _make_api_call function
 async def patched_aiobotocore_make_api_call(self, operation_name, api_params):
     # For example for the Access Analyzer service
@@ -63,6 +73,8 @@ async def patched_aiobotocore_make_api_call(self, operation_name, api_params):
     # Rationale -> https://github.com/boto/botocore/blob/develop/botocore/client.py#L810:L816
     if operation_name == "SendCommand":
         return await _patch_send_command(self, operation_name, api_params)
+    if operation_name == "CancelCommand":
+        return _patch_cancel_command(self, operation_name, api_params)
     if operation_name == "DescribeInstanceInformation":
         return _patch_describe_instance_information(self, operation_name, api_params)
 
