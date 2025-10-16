@@ -34,7 +34,20 @@ qx.Class.define("osparc.wrapper.DOMPurify", {
   statics: {
     NAME: "DOMPurify",
     VERSION: "2.0.0",
-    URL: "https://github.com/cure53/DOMPurify"
+    URL: "https://github.com/cure53/DOMPurify",
+
+    sanitizeUrl: function(url) {
+      const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(url);
+      if ((url && url !== clean) || (clean !== "" && !osparc.utils.Utils.isValidHttpUrl(clean))) {
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Error checking link"), "WARNING");
+        return null;
+      }
+      return clean;
+    },
+
+    sanitize: function(html) {
+      return osparc.wrapper.DOMPurify.getInstance().sanitize(html);
+    },
   },
 
   construct: function() {
