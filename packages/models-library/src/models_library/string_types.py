@@ -109,3 +109,10 @@ LongTruncatedStr: TypeAlias = Annotated[
         """
     ),
 ]
+
+#  --- tag color string (hex format) ---
+
+ColorStr = Annotated[
+    str,
+    StringConstraints(pattern=re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")),
+]
