@@ -315,6 +315,77 @@ async def test_search_files(
     assert len(paginated_results) == len(test_files)
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_search_files_case_insensitive(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+    user_id: UserID,
+    project_id: ProjectID,
+    faker: Faker,
+):
+    mixed_case_files = [
+        ("TestFile.TXT", "*.txt"),
+        ("MyDocument.PDF", "*.pdf"),
+        ("DataFile.CSV", "data*.csv"),
+        ("ConfigFile.JSON", "config*"),
+        ("BackupData.BAK", "*.bak"),
+        ("CamelCaseFile.txt", "camelcase*"),
+        ("XMLDataFile.xml", "*.XML"),
+        ("config.json", "CONFIG*"),
+    ]
+
+    for file_name, _ in mixed_case_files:
+        checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
+        await upload_file(file_size, file_name, sha256_checksum=checksum)
+
+    # Test case-insensitive extension matching
+    case_insensitive_txt = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*.txt", project_id
+    )
+    txt_file_names = {file.file_name for file in case_insensitive_txt}
+    assert "TestFile.TXT" in txt_file_names
+    assert "CamelCaseFile.txt" in txt_file_names
+
+    # Test case-insensitive prefix matching
+    case_insensitive_data = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "data*", project_id
+    )
+    data_file_names = {file.file_name for file in case_insensitive_data}
+    assert "DataFile.CSV" in data_file_names
+
+    # Test mixed case pattern matching
+    case_insensitive_config = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "CONFIG*", project_id
+    )
+    config_file_names = {file.file_name for file in case_insensitive_config}
+    assert "ConfigFile.JSON" in config_file_names
+    assert "config.json" in config_file_names
+
+    case_insensitive_xml = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*.XML", project_id
+    )
+    xml_file_names = {file.file_name for file in case_insensitive_xml}
+    assert "XMLDataFile.xml" in xml_file_names
+
+    camelcase_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "camelcase*", project_id
+    )
+    assert len(camelcase_results) == 1
+    assert camelcase_results[0].file_name == "CamelCaseFile.txt"
+
+    pdf_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*.PDF", project_id
+    )
+    pdf_file_names = {file.file_name for file in pdf_results}
+    assert "MyDocument.PDF" in pdf_file_names
+
+
 @pytest.fixture
 async def paths_for_export(
     random_project_with_files: Callable[
