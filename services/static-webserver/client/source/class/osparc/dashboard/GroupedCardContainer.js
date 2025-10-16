@@ -101,10 +101,18 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
             allowGrowX: false
           });
           control.getChildControl("icon").set(osparc.utils.Utils.getThumbnailProps(32));
-          control.getChildControl("label").set({
+          const atomLabel = control.getChildControl("label");
+          atomLabel.set({
             rich: true,
             wrap: true
-          })
+          });
+          atomLabel.addListener("changeValue", e => {
+            const val = e.getData();
+            const sanitized = osparc.wrapper.DOMPurify.sanitize(val);
+            if (sanitized !== val) {
+              atomLabel.setValue(sanitized);
+            }
+          });
           control.getContentElement().setStyles({
             "border-top-left-radius": "4px",
             "border-top-right-radius": "4px"
