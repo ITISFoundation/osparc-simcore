@@ -59,7 +59,7 @@ class Resources(BaseModel, frozen=True):
             a = self.generic_resources.get(k)
             b = other.generic_resources.get(
                 k, a
-            )  # NOTE: get from other, default to a so that non-existing keys are considered equal
+            )  # NOTE: get from other, default to "a" resources so that non-existing keys can be compared as equal
             if isinstance(a, int | float) and isinstance(b, int | float):
                 if not (a >= b):
                     return False
