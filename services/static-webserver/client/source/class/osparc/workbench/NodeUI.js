@@ -70,7 +70,6 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     const captionTitle = this.getChildControl("title");
     captionTitle.set({
-      rich: true,
       cursor: "move"
     });
 

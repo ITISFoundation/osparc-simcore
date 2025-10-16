@@ -197,9 +197,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
             id: "Image_based_Modeling",
             label: "Image-based Modeling"
           }].forEach(appData => {
-            const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
-              rich: true
-            });
+            const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id);
             application.add(lItem);
           });
           doubleSpaced.push(application);
