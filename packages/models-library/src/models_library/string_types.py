@@ -30,7 +30,7 @@ _JS_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
 STRING_UNSAFE_CONTENT_ERROR_CODE: Final[str] = "string_unsafe_content"
 
 
-def _validate_input_safety(value: str) -> str:
+def validate_input_safety(value: str) -> str:
     if _SQL_INJECTION_PATTERN.search(value) or _JS_INJECTION_PATTERN.search(value):
         msg_template = "This input contains potentially unsafe content."
         raise PydanticCustomError(STRING_UNSAFE_CONTENT_ERROR_CODE, msg_template, {})
@@ -39,7 +39,7 @@ def _validate_input_safety(value: str) -> str:
 
 # --- core composition primitives ---
 #
-# *SafeStr types MUST be used for INPUT string fields that will be stored in the DB or shown in the UI
+# `*SafeStr` types MUST be used for INPUT string fields in the external APIs
 #
 
 NameSafeStr: TypeAlias = Annotated[
@@ -50,8 +50,9 @@ NameSafeStr: TypeAlias = Annotated[
         max_length=MAX_NAME_LENGTH,
         pattern=r"^[A-Za-z0-9 ._\-]+$",  # strict whitelist
     ),
-    AfterValidator(_validate_input_safety),
+    AfterValidator(validate_input_safety),
 ]
+
 
 DescriptionSafeStr: TypeAlias = Annotated[
     str,
@@ -60,15 +61,28 @@ DescriptionSafeStr: TypeAlias = Annotated[
         min_length=MIN_DESCRIPTION_LENGTH,
         max_length=MAX_DESCRIPTION_LENGTH,
     ),
-    AfterValidator(_validate_input_safety),
+    AfterValidator(validate_input_safety),
 ]
+
+
+GlobPatternSafeStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        min_length=3,
+        max_length=200,
+        strip_whitespace=True,
+        pattern=r"^[^%]*$",
+    ),
+    AfterValidator(validate_input_safety),
+]
+
 
 # --- truncating string types ---
 ShortTruncatedStr: TypeAlias = Annotated[
     str,
     StringConstraints(strip_whitespace=True),
     trim_string_before(max_length=_SHORT_TRUNCATED_STR_MAX_LENGTH),
-    AfterValidator(_validate_input_safety),
+    AfterValidator(validate_input_safety),
     annotated_types.doc(
         """
         A truncated string used to input e.g. titles or display names.
@@ -85,7 +99,7 @@ LongTruncatedStr: TypeAlias = Annotated[
     str,
     StringConstraints(strip_whitespace=True),
     trim_string_before(max_length=_LONG_TRUNCATED_STR_MAX_LENGTH),
-    AfterValidator(_validate_input_safety),
+    AfterValidator(validate_input_safety),
     annotated_types.doc(
         """
         A truncated string used to input e.g. descriptions or summaries.
