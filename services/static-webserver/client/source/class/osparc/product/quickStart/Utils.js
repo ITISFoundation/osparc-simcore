@@ -52,8 +52,7 @@ qx.Class.define("osparc.product.quickStart.Utils", {
     },
 
     createTitle: function(title) {
-      const label = new qx.ui.basic.Label(title).set({
-        rich: true,
+      const label = new osparc.ui.basic.SafeLabel().set({
         font: "text-14"
       });
       if (title) {
@@ -63,8 +62,7 @@ qx.Class.define("osparc.product.quickStart.Utils", {
     },
 
     createLabel: function(text) {
-      const label = new qx.ui.basic.Label().set({
-        rich: true,
+      const label = new osparc.ui.basic.SafeLabel().set({
         wrap: true,
         selectable: true,
         font: "text-14"

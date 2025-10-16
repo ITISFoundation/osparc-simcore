@@ -215,10 +215,9 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     __createHeader: function(label, showCurrently) {
       const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      const userWallets = new qx.ui.basic.Label().set({
+      const userWallets = new osparc.ui.basic.SafeLabel().set({
         value: label,
         alignX: "left",
-        rich: true,
         font: "text-14"
       });
       header.add(userWallets);

@@ -23,6 +23,8 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     Once the tags are created, they can be assigned to the ") + studyLabel + this.tr("  via 'More options...' on the ") + studyLabel + this.tr(" cards.");
     const intro = new qx.ui.basic.Label(msg).set({
       font: "text-13",
+      rich: true,
+      wrap: true
     });
     this._add(intro);
 
