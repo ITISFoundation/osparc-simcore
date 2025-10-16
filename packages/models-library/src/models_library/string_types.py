@@ -19,10 +19,10 @@ _SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
 _LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github descriptions
 
 _SQL_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
-    r"(?i)\b(?:SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|EXEC|TRUNCATE|MERGE|GRANT|REVOKE|COMMIT|ROLLBACK|DECLARE|CAST|CONVERT)\b|--|;|/\*|\*/|'",
+    r"(?i)(?:\b(?:SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|EXEC|TRUNCATE|MERGE|GRANT|REVOKE|COMMIT|ROLLBACK|DECLARE|CAST|CONVERT)\b|--|;|/\*|\*/|')",
 )
 _JS_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
-    r"(?i)<(?:script|iframe|object|embed)\b[^>]*>|</(?:script|iframe|object|embed)>|<link\b[^>]*href\s*=\s*[\"']?\s*javascript:|(?:vb|java)script:|data:text/html|&#(?:x6A|106);avascript:|<(?:img|svg)\b[^>]*on\w+\s*=|on[a-z]+\s*=",
+    r"(?i)<(?:script|iframe|object|embed)(?:\s[^>]{0,100})?>|</(?:script|iframe|object|embed)>|<link(?:\s[^>]{0,200})?href\s*=\s*[\"']?\s*javascript:|(?:vb|java)script:|data:text/html|&#(?:x6A|106);avascript:|<(?:img|svg)(?:\s[^>]{0,200})?on\w+\s*=|on[a-z]+\s*=",
 )
 STRING_UNSAFE_CONTENT_ERROR_CODE: Final[str] = "string_unsafe_content"
 

@@ -115,15 +115,27 @@ class InputRequestModel(BaseModel):
         # ❌ ReDoS (Regular expression Denial of Service) test patterns
         pytest.param(
             "SafeName",
-            "<script" + ">" * 1000 + "alert(1)</script>",
+            "<script" + " " * 200 + ">alert(1)</script>",
             False,
-            id="redos-nested-tags",
+            id="redos-script-spaces",
         ),
         pytest.param(
             "SafeName",
-            "SELECT " + "a" * 10000 + " FROM users",
+            "<img" + " src='x'" * 100 + " onerror='alert(1)'>",
             False,
-            id="redos-long-sql-keyword",
+            id="redos-img-attributes",
+        ),
+        pytest.param(
+            "SafeName",
+            "SELECT" + " " * 1000 + "* FROM users",
+            False,
+            id="redos-sql-spaces",
+        ),
+        pytest.param(
+            "SafeName",
+            "/*" + "*" * 500 + "*/ SELECT data",
+            False,
+            id="redos-sql-nested-comments",
         ),
     ],
 )
