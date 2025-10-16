@@ -74,6 +74,44 @@ class InputRequestModel(BaseModel):
         ),
         pytest.param("SafeName", "  ", False, id="invalid-desc-whitespace"),
         pytest.param("SafeName", "a" * 6000, False, id="invalid-desc-too-long"),
+        # ❌ additional SQL injection patterns that should be caught
+        pytest.param(
+            "SafeName",
+            "/* comment */ SELECT * FROM users",
+            False,
+            id="invalid-desc-sql-comment",
+        ),
+        pytest.param(
+            "SafeName", "TRUNCATE TABLE logs", False, id="invalid-desc-sql-truncate"
+        ),
+        pytest.param(
+            "SafeName", "DECLARE @var INT", False, id="invalid-desc-sql-declare"
+        ),
+        # ❌ additional JS injection patterns that should be caught
+        pytest.param(
+            "SafeName",
+            "<iframe src='javascript:alert(1)'></iframe>",
+            False,
+            id="invalid-desc-iframe",
+        ),
+        pytest.param(
+            "SafeName",
+            "<img onerror='alert(1)' src='x'>",
+            False,
+            id="invalid-desc-img-onerror",
+        ),
+        pytest.param(
+            "SafeName",
+            "<svg onload='alert(1)'></svg>",
+            False,
+            id="invalid-desc-svg-onload",
+        ),
+        pytest.param(
+            "SafeName", "vbscript:msgbox(1)", False, id="invalid-desc-vbscript"
+        ),
+        pytest.param(
+            "SafeName", "&#106;avascript:alert(1)", False, id="invalid-desc-encoded-js"
+        ),
     ],
 )
 def test_safe_string_types(name: str, description: str, should_pass: bool):

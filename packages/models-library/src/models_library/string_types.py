@@ -19,25 +19,12 @@ _SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
 _LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github descriptions
 
 _SQL_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
-    r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|EXEC|TRUNCATE|MERGE|GRANT|REVOKE|COMMIT|ROLLBACK|DECLARE|CAST|CONVERT)\b|--|;|/\*|\*/)",
+    r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|EXEC|TRUNCATE|MERGE|GRANT|REVOKE|COMMIT|ROLLBACK|DECLARE|CAST|CONVERT)\b|--|;|/\*|\*/|')",
     re.IGNORECASE,
 )
 _JS_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
-    r"""(
-        <\s*script.*?>|</\s*script\s*>|
-        <\s*iframe.*?>|</\s*iframe\s*>|
-        <\s*object.*?>|</\s*object\s*>|
-        <\s*embed.*?>|</\s*embed\s*>|
-        <\s*link[^>]*href\s*=\s*["']?\s*javascript:.*?>|
-        vbscript:|
-        javascript:|
-        data:text/html|
-        &#x6A;avascript:|&#106;avascript:|  # encoded 'javascript:'
-        <\s*img[^>]*onerror\s*=|
-        <\s*svg[^>]*onload\s*=|
-        on[a-z]+\s*=  # any event handler
-    )""",
-    re.IGNORECASE | re.VERBOSE,
+    r"(<\s*script.*?>|</\s*script\s*>|<\s*iframe.*?>|</\s*iframe\s*>|<\s*object.*?>|</\s*object\s*>|<\s*embed.*?>|</\s*embed\s*>|<\s*link[^>]*href\s*=\s*[\"']?\s*javascript:|vbscript:|javascript:|data:text/html|&#x6A;avascript:|&#106;avascript:|<\s*img[^>]*onerror\s*=|<\s*svg[^>]*onload\s*=|on[a-z]+\s*=)",
+    re.IGNORECASE,
 )
 STRING_UNSAFE_CONTENT_ERROR_CODE: Final[str] = "string_unsafe_content"
 
