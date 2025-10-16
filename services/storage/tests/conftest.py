@@ -1008,30 +1008,47 @@ def register_test_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
-def storage_worker_mode(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
-    monkeypatch.setenv("CELERY_POOL", "threads")
+def app_server_factory_with_worker_mode(
+    enable_tracing,
+    app_environment: EnvVarsDict,
+    enabled_rabbitmq: RabbitSettings,
+    sqlalchemy_async_engine: AsyncEngine,
+    postgres_host_config: dict[str, str],
+    mocked_s3_server_envs: EnvVarsDict,
+    datcore_adapter_service_mock: respx.MockRouter,
+    mocked_redis_server: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[[], FastAPIAppServer]:
+    with monkeypatch.context() as patch:
+        patch.setenv("STORAGE_WORKER_MODE", "true")
+        patch.setenv("CELERY_POOL", "threads")
+
+        # Create settings with worker mode enabled
+        worker_mode_app_settings = ApplicationSettings.create_from_envs()
+
+        def _app_server_factory() -> FastAPIAppServer:
+            tracing_config = TracingConfig.create(
+                tracing_settings=None,  # disable tracing in tests
+                service_name="storage-api",
+            )
+            return FastAPIAppServer(
+                app=create_app(worker_mode_app_settings, tracing_config)
+            )
+
+        return _app_server_factory
 
 
 @pytest.fixture
 async def with_storage_celery_worker(
     celery_app: Celery,
-    storage_worker_mode: None,
-    app_settings: ApplicationSettings,
+    app_server_factory_with_worker_mode: Callable[[], FastAPIAppServer],
     register_test_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
 
-    tracing_config = TracingConfig.create(
-        tracing_settings=None,  # disable tracing in tests
-        service_name="storage-api",
-    )
-
-    def _app_server_factory() -> FastAPIAppServer:
-        return FastAPIAppServer(app=create_app(app_settings, tracing_config))
-
     # NOTE: explicitly connect the signals in tests
     worker_init.connect(
-        _worker_init_wrapper(celery_app, _app_server_factory), weak=False
+        _worker_init_wrapper(celery_app, app_server_factory_with_worker_mode),
+        weak=False,
     )
     worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
