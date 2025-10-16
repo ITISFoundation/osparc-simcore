@@ -19,14 +19,26 @@ _SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
 _LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github descriptions
 
 _SQL_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
-    r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|EXEC)\b|--|;|'|\")",
+    r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|EXEC|TRUNCATE|MERGE|GRANT|REVOKE|COMMIT|ROLLBACK|DECLARE|CAST|CONVERT)\b|--|;|/\*|\*/)",
     re.IGNORECASE,
 )
 _JS_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
-    r"(<\s*script.*?>|</\s*script\s*>|on\w+\s*=|javascript:|data:text/html)",
-    re.IGNORECASE,
+    r"""(
+        <\s*script.*?>|</\s*script\s*>|
+        <\s*iframe.*?>|</\s*iframe\s*>|
+        <\s*object.*?>|</\s*object\s*>|
+        <\s*embed.*?>|</\s*embed\s*>|
+        <\s*link[^>]*href\s*=\s*["']?\s*javascript:.*?>|
+        vbscript:|
+        javascript:|
+        data:text/html|
+        &#x6A;avascript:|&#106;avascript:|  # encoded 'javascript:'
+        <\s*img[^>]*onerror\s*=|
+        <\s*svg[^>]*onload\s*=|
+        on[a-z]+\s*=  # any event handler
+    )""",
+    re.IGNORECASE | re.VERBOSE,
 )
-
 STRING_UNSAFE_CONTENT_ERROR_CODE: Final[str] = "string_unsafe_content"
 
 
@@ -72,6 +84,19 @@ GlobPatternSafeStr: TypeAlias = Annotated[
         max_length=200,
         strip_whitespace=True,
         pattern=r"^[^%]*$",
+    ),
+    AfterValidator(validate_input_safety),
+]
+
+
+SearchPatternSafeStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=200,
+        # Allow most printable unicode characters except percent (for LIKE), still block injection via validator
+        pattern=r"^[^\%]+$",
     ),
     AfterValidator(validate_input_safety),
 ]
