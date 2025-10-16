@@ -5,6 +5,7 @@ from common_library.groups_dicts import AccessRightsDict
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.groups import GroupID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
+from models_library.string_types import DescriptionSafeStr, NameSafeStr
 from models_library.users import UserID
 from pydantic import Field, PositiveInt, StringConstraints
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
@@ -25,15 +26,15 @@ ColorStr = Annotated[
 
 
 class TagUpdate(InputSchema):
-    name: str | None = None
-    description: str | None = None
+    name: NameSafeStr | None = None
+    description: DescriptionSafeStr | None = None
     color: ColorStr | None = None
     priority: int | None = None
 
 
 class TagCreate(InputSchema):
-    name: str
-    description: str | None = None
+    name: NameSafeStr
+    description: DescriptionSafeStr | None = None
     color: ColorStr
     priority: int | None = None
 
