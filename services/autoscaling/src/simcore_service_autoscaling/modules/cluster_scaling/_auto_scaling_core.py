@@ -1553,12 +1553,12 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(
             )
         )
         ssm_command = await ssm_client.send_command(
-            tuple(node.ec2_instance.id),
+            (node.ec2_instance.id,),
             command=change_docker_compose_and_pull_command,
             command_name=PREPULL_COMMAND_NAME,
         )
         await ec2_client.set_instances_tags(
-            tuple(node.ec2_instance.id),
+            (node.ec2_instance,),
             tags={
                 MACHINE_PULLING_EC2_TAG_KEY: "true",
                 MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
