@@ -46,27 +46,107 @@ qx.Class.define("osparc.support.ConversationListItem", {
       event: "changeConversation",
       apply: "__applyConversation",
     },
+
+    subSubtitle: {
+      check : "String",
+      apply : "__applySubSubtitle",
+      nullable : true
+    },
   },
 
   members: {
+    _createChildControlImpl: function(id, hash) {
+      let control;
+      switch(id) {
+        case "sub-subtitle":
+          control = new qx.ui.basic.Label().set({
+            font: "text-12",
+            selectable: true,
+            rich: true,
+          });
+          this._add(control, {
+            row: 2,
+            column: 1
+          });
+          break;
+        case "unread-badge":
+          control = new osparc.ui.basic.Chip(this.tr("Unread")).set({
+            statusColor: "success",
+            font: "text-12",
+            allowGrowY: false,
+            alignX: "right",
+          });
+          this.getChildControl("third-column-layout").addAt(control, 1, {
+            flex: 1
+          });
+          break;
+        case "resolved-badge":
+          control = new osparc.ui.basic.Chip().set({
+            font: "text-12",
+            allowGrowY: false,
+            alignX: "right",
+          });
+          this.getChildControl("third-column-layout").addAt(control, 1, {
+            flex: 1
+          });
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
     __applyConversation: function(conversation) {
       conversation.bind("nameAlias", this, "title");
 
-      this.__populateWithLastMessage();
-      conversation.addListener("changeLastMessage", this.__populateWithLastMessage, this);
+      this.__lastMessageChanged();
+      conversation.addListener("changeLastMessage", this.__lastMessageChanged, this);
 
-      this.__populateWithFirstMessage();
-      conversation.addListener("changeFirstMessage", this.__populateWithFirstMessage, this);
+      this.__firstMessageChanged();
+      conversation.addListener("changeFirstMessage", this.__firstMessageChanged, this);
+
+      conversation.bind("lastMessageCreatedAt", this, "role", {
+        converter: val => {
+          return osparc.utils.Utils.formatDateAndTime(val);
+        },
+      });
+
+      const unreadBadge = this.getChildControl("unread-badge");
+      const propName = osparc.store.Groups.getInstance().amIASupportUser() ? "readBySupport" : "readByUser";
+      conversation.bind(propName, unreadBadge, "visibility", {
+        converter: val => val === false ? "visible" : "excluded"
+      });
+
+      /*
+      const resolvedBadge = this.getChildControl("resolved-badge");
+      resolvedBadge.set({
+        visibility: osparc.store.Groups.getInstance().amIASupportUser() ? "visible" : "excluded",
+      });
+      conversation.bind("resolved", resolvedBadge, "label", {
+        converter: val => {
+          if (val === true) {
+            return this.tr("Resolved");
+          } else if (val === false) {
+            return this.tr("Open");
+          }
+          return "";
+        }
+      });
+      conversation.bind("resolved", resolvedBadge, "statusColor", {
+        converter: val => {
+          if (val === true) {
+            return "success";
+          } else if (val === false) {
+            return "warning";
+          }
+          return null;
+        }
+      });
+      */
     },
 
-    __populateWithLastMessage: function() {
+    __lastMessageChanged: function() {
       const conversation = this.getConversation();
       const lastMessage = conversation.getLastMessage();
       if (lastMessage) {
-        const date = osparc.utils.Utils.formatDateAndTime(lastMessage.getCreated());
-        this.set({
-          role: date,
-        });
         const userGroupId = lastMessage.getUserGroupId();
         osparc.store.Users.getInstance().getUser(userGroupId)
           .then(user => {
@@ -80,7 +160,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
       }
     },
 
-    __populateWithFirstMessage: function() {
+    __firstMessageChanged: function() {
       const conversation = this.getConversation();
       const firstMessage = conversation.getFirstMessage();
       if (firstMessage) {
@@ -101,6 +181,14 @@ qx.Class.define("osparc.support.ConversationListItem", {
             }
           });
       }
+    },
+
+    __applySubSubtitle: function(value) {
+      if (value === null) {
+        return;
+      }
+      const label = this.getChildControl("sub-subtitle");
+      label.setValue(value);
     },
   },
 });

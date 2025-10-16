@@ -26,6 +26,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   events: {
+    "conversationAdded": "qx.event.type.Data",
     "conversationCreated": "qx.event.type.Data",
     "conversationDeleted": "qx.event.type.Data",
   },
@@ -37,6 +38,10 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   members: {
+    getConversations: function() {
+      return Object.values(this.__conversationsCached);
+    },
+
     fetchConversations: function() {
       const params = {
         url: {
@@ -52,8 +57,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
             conversationsData.sort((a, b) => new Date(b["created"]) - new Date(a["created"]));
           }
           conversationsData.forEach(conversationData => {
-            const conversation = new osparc.data.model.Conversation(conversationData);
-            this.__addToCache(conversation);
+            const conversation = this.__addToCache(conversationData);
             conversations.push(conversation);
           });
           return conversations;
@@ -73,8 +77,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "getConversation", params)
         .then(conversationData => {
-          const conversation = new osparc.data.model.Conversation(conversationData);
-          this.__addToCache(conversation);
+          const conversation = this.__addToCache(conversationData);
           return conversation;
         });
     },
@@ -92,8 +95,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "postConversation", params)
         .then(conversationData => {
-          const conversation = new osparc.data.model.Conversation(conversationData);
-          this.__addToCache(conversation);
+          const conversation = this.__addToCache(conversationData);
           this.fireDataEvent("conversationCreated", conversation);
           return conversationData;
         })
@@ -115,28 +117,45 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    renameConversation: function(conversationId, name) {
+    __patchConversation: function(conversationId, data) {
       const params = {
         url: {
           conversationId,
         },
-        data: {
-          name,
-        }
+        data,
       };
       return osparc.data.Resources.fetch("conversationsSupport", "patchConversation", params);
     },
 
-    patchExtraContext: function(conversationId, extraContext) {
-      const params = {
-        url: {
-          conversationId,
-        },
-        data: {
-          extraContext,
-        }
+    renameConversation: function(conversationId, name) {
+      const patchData = {
+        name,
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "patchConversation", params);
+      return this.__patchConversation(conversationId, patchData);
+    },
+
+    patchExtraContext: function(conversationId, extraContext) {
+      const patchData = {
+        extraContext,
+      };
+      return this.__patchConversation(conversationId, patchData);
+    },
+
+    markAsRead: function(conversationId) {
+      const patchData = {};
+      if (osparc.store.Groups.getInstance().amIASupportUser()) {
+        patchData["isReadBySupport"] = true;
+      } else {
+        patchData["isReadByUser"] = true;
+      }
+      return this.__patchConversation(conversationId, patchData);
+    },
+
+    markAsResolved: function(conversationId) {
+      const patchData = {
+        resolved: true,
+      };
+      return this.__patchConversation(conversationId, patchData);
     },
 
     fetchLastMessage: function(conversationId) {
@@ -207,8 +226,16 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __addToCache: function(conversation) {
+    __addToCache: function(conversationData) {
+      // check if already cached
+      if (conversationData["conversationId"] in this.__conversationsCached) {
+        return this.__conversationsCached[conversationData["conversationId"]];
+      }
+      // add to cache
+      const conversation = new osparc.data.model.ConversationSupport(conversationData);
       this.__conversationsCached[conversation.getConversationId()] = conversation;
+      this.fireDataEvent("conversationAdded", conversation);
+      return conversation;
     },
   }
 });

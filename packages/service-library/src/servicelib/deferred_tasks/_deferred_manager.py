@@ -585,20 +585,19 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         self, task_uid: TaskUID
     ) -> None:
         _log_state(TaskState.MANUALLY_CANCELLED, task_uid)
-        _logger.info("Attempting to cancel task_uid '%s'", task_uid)
+        _logger.info("Recevied a cancel request for task_uid '%s'", task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.MANUALLY_CANCELLED
         )
 
-        if task_schedule.state == TaskState.WORKER:
-            run_was_cancelled = self._worker_tracker.cancel_run(task_uid)
-            if not run_was_cancelled:
-                _logger.debug(
-                    "Currently not handling task related to '%s'. Did not cancel it.",
-                    task_uid,
-                )
-                return
+        run_was_cancelled = self._worker_tracker.cancel_run(task_uid)
+        if not run_was_cancelled:
+            _logger.debug(
+                "Currently not handling task related to '%s'. Did not cancel it.",
+                task_uid,
+            )
+            return
 
         _logger.info("Found and cancelled run for '%s'", task_uid)
         await self.__remove_task(task_uid, task_schedule)

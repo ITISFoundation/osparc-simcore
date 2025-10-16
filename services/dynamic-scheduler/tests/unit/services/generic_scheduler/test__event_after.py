@@ -137,7 +137,7 @@ class _BS(BaseStep):
         {"key": "value", "dict": {"some": "thing"}, "list": [1, 2, 3]},
     ],
 )
-async def test_something(
+async def test_workflow(
     after_event_manager: AfterEventManager,
     store: Store,
     schedule_id: ScheduleId,

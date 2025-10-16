@@ -222,11 +222,3 @@ class DeferredRunner(BaseDeferredHandler[None]):
         )
 
         await _enqueue_schedule_event_if_group_is_done(context)
-
-    @classmethod
-    async def on_cancelled(cls, context: DeferredContext) -> None:
-        await get_step_store_proxy(context).create_or_update(
-            "status", StepStatus.CANCELLED
-        )
-
-        await _enqueue_schedule_event_if_group_is_done(context)

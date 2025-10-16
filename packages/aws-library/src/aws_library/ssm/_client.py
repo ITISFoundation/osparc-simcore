@@ -107,7 +107,6 @@ class SimcoreSSMAPI:
     @log_decorator(_logger, logging.DEBUG)
     @ssm_exception_handler(_logger)
     async def get_command(self, instance_id: str, *, command_id: str) -> SSMCommand:
-
         response = await self._client.get_command_invocation(
             CommandId=command_id, InstanceId=instance_id
         )
@@ -128,6 +127,13 @@ class SimcoreSSMAPI:
                 if response.get("ExecutionEndDateTime")
                 else None
             ),
+        )
+
+    @log_decorator(_logger, logging.DEBUG)
+    @ssm_exception_handler(_logger)
+    async def cancel_command(self, instance_id: str, *, command_id: str) -> None:
+        await self._client.cancel_command(
+            CommandId=command_id, InstanceIds=[instance_id]
         )
 
     @log_decorator(_logger, logging.DEBUG)

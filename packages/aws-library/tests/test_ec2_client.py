@@ -604,7 +604,11 @@ async def test_set_instance_tags(
     # now remove some real ones
     tag_key_to_remove = random.choice(list(new_tags))  # noqa: S311
     await simcore_ec2_api.remove_instances_tags(
-        created_instances, tag_keys=[tag_key_to_remove]
+        created_instances,
+        tag_keys=[
+            tag_key_to_remove,
+            TypeAdapter(AWSTagKey).validate_python("whatever_i_dont_exist"),
+        ],
     )
     new_tags.pop(tag_key_to_remove)
     await _assert_instances_in_ec2(

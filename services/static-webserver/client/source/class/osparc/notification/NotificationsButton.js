@@ -49,7 +49,7 @@ qx.Class.define("osparc.notification.NotificationsButton", {
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle",
           })).set({
-            paddingLeft: 5,
+            paddingLeft: 4,
           });
           iconContainer.add(control);
           this._add(iconContainer, {

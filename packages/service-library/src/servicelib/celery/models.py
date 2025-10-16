@@ -1,6 +1,6 @@
-import datetime
+from datetime import datetime, timedelta
 from enum import StrEnum
-from typing import Annotated, Final, Literal, Protocol, Self, TypeAlias, TypeVar
+from typing import Annotated, Any, Final, Literal, Protocol, Self, TypeAlias, TypeVar
 from uuid import UUID
 
 import orjson
@@ -141,6 +141,10 @@ class ExecutionMetadata(BaseModel):
     queue: TasksQueue = TasksQueue.DEFAULT
 
 
+class TaskStreamItem(BaseModel):
+    data: Any
+
+
 class Task(BaseModel):
     uuid: TaskUUID
     metadata: ExecutionMetadata
@@ -186,7 +190,7 @@ class TaskStore(Protocol):
         self,
         task_key: TaskKey,
         execution_metadata: ExecutionMetadata,
-        expiry: datetime.timedelta,
+        expiry: timedelta,
     ) -> None: ...
 
     async def task_exists(self, task_key: TaskKey) -> bool: ...
@@ -206,6 +210,16 @@ class TaskStore(Protocol):
         task_key: TaskKey,
         report: ProgressReport,
     ) -> None: ...
+
+    async def set_task_stream_done(self, task_key: TaskKey) -> None: ...
+
+    async def push_task_stream_items(
+        self, task_key: TaskKey, *item: TaskStreamItem
+    ) -> None: ...
+
+    async def pull_task_stream_items(
+        self, task_key: TaskKey, limit: int
+    ) -> tuple[list[TaskStreamItem], bool, datetime | None]: ...
 
 
 class TaskStatus(BaseModel):

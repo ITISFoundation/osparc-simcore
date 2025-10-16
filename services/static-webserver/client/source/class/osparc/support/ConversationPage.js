@@ -44,7 +44,7 @@ qx.Class.define("osparc.support.ConversationPage", {
   },
 
   events: {
-    "showConversations": "qx.event.type.Event",
+    "backToConversations": "qx.event.type.Event",
   },
 
   members: {
@@ -63,11 +63,15 @@ qx.Class.define("osparc.support.ConversationPage", {
         }
         case "back-button":
           control = new qx.ui.form.Button().set({
-            toolTipText: this.tr("Return to Messages"),
+            toolTipText: this.tr("Return to Conversations"),
             icon: "@FontAwesome5Solid/arrow-left/16",
             backgroundColor: "transparent"
           });
-          control.addListener("execute", () => this.fireEvent("showConversations"));
+          control.addListener("execute", () => {
+            this.getConversation().setReadBy(true);
+            this.setConversation(null);
+            this.fireEvent("backToConversations");
+          });
           this.getChildControl("conversation-header-layout").addAt(control, 0);
           break;
         case "conversation-header-center-layout":
@@ -127,25 +131,16 @@ qx.Class.define("osparc.support.ConversationPage", {
           this.getChildControl("buttons-layout").addAt(control, 2);
           break;
         }
-        case "open-ticket-link-button": {
+        case "resolve-case-button": {
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/link/12",
-            toolTipText: this.tr("Open Ticket"),
+            icon: "@FontAwesome5Solid/check/12",
+            toolTipText: this.tr("Resolve Case"),
+            appearance: "strong-button",
             alignX: "center",
             alignY: "middle",
           });
+          control.addListener("execute", () => this.__resolveCase());
           this.getChildControl("buttons-layout").addAt(control, 3);
-          break;
-        }
-        case "set-appointment-button": {
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/clock/12",
-            toolTipText: this.tr("Set Appointment"),
-            alignX: "center",
-            alignY: "middle",
-          });
-          control.addListener("execute", () => this.__openAppointmentDetails());
-          this.getChildControl("buttons-layout").addAt(control, 4);
           break;
         }
         case "main-stack":
@@ -225,15 +220,14 @@ qx.Class.define("osparc.support.ConversationPage", {
     },
 
     __applyConversation: function(conversation) {
-      const title = this.getChildControl("conversation-title");
-      if (conversation) {
-        conversation.bind("nameAlias", title, "value");
-      }
-
       const extraContextLayout = this.getChildControl("conversation-extra-layout");
       extraContextLayout.removeAll();
+
       if (conversation) {
         const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
+
+        const title = this.getChildControl("conversation-title");
+        conversation.bind("nameAlias", title, "value");
 
         const createExtraContextLabel = text => {
           return new qx.ui.basic.Label(text).set({
@@ -270,14 +264,30 @@ qx.Class.define("osparc.support.ConversationPage", {
         };
         updateExtraContext();
         conversation.addListener("changeExtraContext", () => updateExtraContext(), this);
+
+        this.getChildControl("rename-conversation-button");
+
+        const openProjectButton = this.getChildControl("open-project-button");
+        if (conversation && conversation.getContextProjectId()) {
+          openProjectButton.setVisibility("visible");
+          osparc.store.Study.getInstance().getOne(conversation.getContextProjectId())
+            .then(() => openProjectButton.setEnabled(true))
+            .catch(() => openProjectButton.setEnabled(false));
+        } else {
+          openProjectButton.setVisibility("excluded");
+        }
+
+        this.getChildControl("copy-ticket-id-button");
+
+        if (amISupporter) {
+          const resolveCaseButton = this.getChildControl("resolve-case-button");
+          conversation.bind("resolved", resolveCaseButton, "visibility", {
+            converter: val => val === false ? "visible" : "excluded"
+          });
+        }
       }
 
       this.getChildControl("buttons-layout").setVisibility(conversation ? "visible" : "excluded");
-
-      this.getChildControl("rename-conversation-button");
-      const openProjectButton = this.getChildControl("open-project-button");
-      openProjectButton.setVisibility(conversation && conversation.getContextProjectId() ? "visible" : "excluded");
-      this.getChildControl("copy-ticket-id-button");
     },
 
     __openProjectDetails: function() {
@@ -302,15 +312,10 @@ qx.Class.define("osparc.support.ConversationPage", {
       }
     },
 
-    __openAppointmentDetails: function() {
-      const win = new osparc.widget.DateTimeChooser();
-      win.addListener("dateChanged", e => {
-        const newValue = e.getData()["newValue"];
-        this.getConversation().setAppointment(newValue)
-          .catch(err => console.error(err));
-        win.close();
-      }, this);
-      win.open();
+    __resolveCase: function() {
+      if (this.getConversation()) {
+        this.getConversation().markAsResolved();
+      }
     },
 
     __renameConversation: function() {
