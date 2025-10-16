@@ -197,11 +197,13 @@ async def test_create_function_job_collection_same_function_job_uuid(
         job_creation_task_id=None,
     )
     # Register the function job
-    registered_job = await webserver_rpc_client.functions.register_function_job(
-        function_job=registered_function_job,
+    registered_jobs = await webserver_rpc_client.functions.register_function_job(
+        function_jobs=[registered_function_job],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
     assert registered_job.uid is not None
 
     function_job_ids = [registered_job.uid] * 3

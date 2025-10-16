@@ -35,6 +35,7 @@ from models_library.functions_errors import (
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.celery.models import TaskKey
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
@@ -646,7 +647,6 @@ async def test_patch_registered_function_jobs(
     registered_jobs = (
         await webserver_rpc_client.functions.patch_registered_function_job(
             user_id=logged_user["id"],
-            function_job_uuid=registered_job.uid,
             product_name=osparc_product_name,
             registered_function_job_patch_inputs=patch_inputs,
         )
@@ -705,7 +705,7 @@ async def test_incompatible_patch_model_error(
     create_fake_function_obj: Callable[[FunctionClass], Function],
     clean_functions: None,
     function_job: RegisteredFunctionJob,
-    patch: RegisteredFunctionJobPatch,
+    patch: RegisteredProjectFunctionJobPatch | RegisteredSolverFunctionJobPatch,
 ):
     function = create_fake_function_obj(function_job.function_class)
 
@@ -722,13 +722,25 @@ async def test_incompatible_patch_model_error(
     )
     assert len(registered_jobs) == 1
     registered_job = registered_jobs[0]
+    if function.function_class == FunctionClass.PROJECT:
+        assert isinstance(patch, RegisteredSolverFunctionJobPatch)
+        patch_input = RegisteredSolverFunctionJobPatchInput(
+            uid=registered_job.uid, patch=patch
+        )
+    elif function.function_class == FunctionClass.SOLVER:
+        assert isinstance(patch, RegisteredProjectFunctionJobPatch)
+        patch_input = RegisteredProjectFunctionJobPatchInput(
+            uid=registered_job.uid, patch=patch
+        )
     with pytest.raises(FunctionJobPatchModelIncompatibleError):
         registered_job = (
             await webserver_rpc_client.functions.patch_registered_function_job(
                 user_id=logged_user["id"],
-                function_job_uuid=registered_job.uid,
                 product_name=osparc_product_name,
-                registered_function_job_patch=patch,
+                registered_function_job_patch_inputs=TypeAdapter(
+                    RegisteredSolverFunctionJobPatchInputList
+                    | RegisteredSolverFunctionJobPatchInputList
+                ).validate_python([patch_input]),
             )
         )
 
