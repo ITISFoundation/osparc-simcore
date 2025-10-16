@@ -112,6 +112,19 @@ class InputRequestModel(BaseModel):
         pytest.param(
             "SafeName", "&#106;avascript:alert(1)", False, id="invalid-desc-encoded-js"
         ),
+        # ❌ ReDoS (Regular expression Denial of Service) test patterns
+        pytest.param(
+            "SafeName",
+            "<script" + ">" * 1000 + "alert(1)</script>",
+            False,
+            id="redos-nested-tags",
+        ),
+        pytest.param(
+            "SafeName",
+            "SELECT " + "a" * 10000 + " FROM users",
+            False,
+            id="redos-long-sql-keyword",
+        ),
     ],
 )
 def test_safe_string_types(name: str, description: str, should_pass: bool):
