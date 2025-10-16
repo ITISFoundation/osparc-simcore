@@ -12,7 +12,7 @@ certifi==2025.10.5
     #   -c requirements/_base.txt
     #   httpcore
     #   httpx
-coverage==7.10.7
+coverage==7.11.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -31,7 +31,7 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-hypothesis==6.140.3
+hypothesis==6.142.0
     # via -r requirements/_test.in
 idna==3.11
     # via
