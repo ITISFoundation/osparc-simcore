@@ -20,7 +20,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
-from settings_library.celery import CeleryPoolType
+from servicelib.tracing import TracingConfig
 from settings_library.redis import RedisSettings
 from simcore_service_api_server.clients import celery_task_manager
 from simcore_service_api_server.core.application import create_app
@@ -108,23 +108,37 @@ def add_worker_tasks() -> bool:
 
 
 @pytest.fixture
-async def with_api_server_celery_worker(
+def app_server_factory_with_worker_mode(
     app_environment: EnvVarsDict,
-    celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
+) -> Callable[[], FastAPIAppServer]:
+    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
+
+    def _app_server_factory() -> FastAPIAppServer:
+        app_settings = ApplicationSettings.create_from_envs()
+
+        assert app_settings.API_SERVER_WORKER_MODE is True
+
+        tracing_config = TracingConfig.create(
+            tracing_settings=None,
+            service_name="api-worker",
+        )
+        return FastAPIAppServer(app=create_app(app_settings, tracing_config))
+
+    return _app_server_factory
+
+
+@pytest.fixture
+async def with_api_server_celery_worker(
+    celery_app: Celery,
+    app_server_factory_with_worker_mode: Callable[[], FastAPIAppServer],
     register_celery_tasks: Callable[[Celery], None],
     add_worker_tasks: bool,
 ) -> AsyncIterator[TestWorkController]:
-    # Signals must be explicitily connected
-    monkeypatch.setenv("API_SERVER_WORKER_MODE", "true")
-    app_settings = ApplicationSettings.create_from_envs()
-
-    def _app_server_factory() -> FastAPIAppServer:
-        return FastAPIAppServer(app=create_app(app_settings))
-
     # NOTE: explicitly connect the signals in tests
     worker_init.connect(
-        _worker_init_wrapper(celery_app, _app_server_factory), weak=False
+        _worker_init_wrapper(celery_app, app_server_factory_with_worker_mode),
+        weak=False,
     )
     worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
@@ -134,7 +148,7 @@ async def with_api_server_celery_worker(
 
     with start_worker(
         celery_app,
-        pool=CeleryPoolType.THREADS,
+        pool="threads",
         concurrency=1,
         loglevel="info",
         perform_ping_check=False,

@@ -1017,14 +1017,11 @@ def app_server_factory_with_worker_mode(
     def _app_server_factory() -> FastAPIAppServer:
         app_settings = ApplicationSettings.create_from_envs()
 
-        # Verify that worker mode is actually enabled
         assert app_settings.STORAGE_WORKER_MODE is True
-
-        print(f"Worker: {app_settings.model_dump_json(indent=2)=}")
 
         tracing_config = TracingConfig.create(
             tracing_settings=None,  # disable tracing in tests
-            service_name="storage-api",
+            service_name="storage-worker",
         )
         return FastAPIAppServer(app=create_app(app_settings, tracing_config))
 
