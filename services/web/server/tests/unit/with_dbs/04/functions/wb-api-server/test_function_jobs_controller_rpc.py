@@ -732,6 +732,8 @@ async def test_incompatible_patch_model_error(
         patch_input = RegisteredProjectFunctionJobPatchInput(
             uid=registered_job.uid, patch=patch
         )
+    else:
+        pytest.fail("Unsupported function class")
     with pytest.raises(FunctionJobPatchModelIncompatibleError):
         registered_job = (
             await webserver_rpc_client.functions.patch_registered_function_job(
