@@ -1,5 +1,5 @@
 import logging
-from typing import Final, cast
+from typing import Final
 
 from aws_library.ec2 import Resources
 from dask_task_models_library.resource_constraints import (
@@ -30,10 +30,7 @@ def resources_from_dask_task(task: DaskTask) -> Resources:
     )  # merge with defaults to ensure there is always some minimal resource defined
 
     return Resources.from_flat_dict(
-        {
-            _DASK_TO_RESOURCE_NAME_MAPPING.get(k, k): cast(int | float | str, v)
-            for k, v in task_resources.items()
-        }
+        task_resources.items(), mapping=_DASK_TO_RESOURCE_NAME_MAPPING
     )
 
 
