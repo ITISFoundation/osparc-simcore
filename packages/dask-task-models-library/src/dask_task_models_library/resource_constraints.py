@@ -1,4 +1,4 @@
-from typing import Final, Literal, TypedDict
+from typing import Final, Literal, Required, TypedDict
 
 from .constants import DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY
 
@@ -6,10 +6,13 @@ DASK_WORKER_THREAD_RESOURCE_NAME: Final[str] = "threads"
 
 
 class DaskTaskResources(TypedDict, total=False):
-    CPU: float
-    RAM: int  # in bytes
+    CPU: Required[float]
+    RAM: Required[int]  # in bytes
     # threads is a constant of 1 (enforced by static type checkers via Literal)
-    threads: Literal[1]
+    # NOTE: a dask worker can take a task if it has a free thread,
+    # regardless of its resources so we need to be careful when interpreting
+    # the resources, adding the thread here will mimick this
+    threads: Required[Literal[1]]
 
 
 def create_ec2_resource_constraint_key(ec2_instance_type: str) -> str:
