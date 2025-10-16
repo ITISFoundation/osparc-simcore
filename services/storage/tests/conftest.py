@@ -24,7 +24,8 @@ from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
-from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
+from celery.worker.worker import WorkController
+from celery_library.signals import on_worker_init, on_worker_shutdown
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -69,7 +70,7 @@ from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
-from simcore_service_storage.api._worker_tasks.tasks import register_worker_tasks
+from simcore_service_storage.api._worker_tasks.tasks import setup_worker_tasks
 from simcore_service_storage.core.application import create_app
 from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.datcore_dsm import DatCoreDataManager
@@ -219,9 +220,9 @@ def app_settings(
     enabled_rabbitmq: RabbitSettings,
     sqlalchemy_async_engine: AsyncEngine,
     postgres_host_config: dict[str, str],
+    mocked_s3_server_envs: EnvVarsDict,
     datcore_adapter_service_mock: respx.MockRouter,
     mocked_redis_server: None,
-    mocked_s3_server_envs: EnvVarsDict,  # Moved to end to ensure S3_ENDPOINT override happens last
 ) -> ApplicationSettings:
     test_app_settings = ApplicationSettings.create_from_envs()
     print(f"{test_app_settings.model_dump_json(indent=2)=}")
@@ -999,7 +1000,7 @@ def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Cel
 
 
 @pytest.fixture
-def register_test_tasks() -> Callable[[Celery], None]:
+def register_celery_tasks() -> Callable[[Celery], None]:
     """override if tasks are needed"""
 
     def _(celery_app: Celery) -> None: ...
@@ -1008,47 +1009,32 @@ def register_test_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
-def app_server_factory_with_worker_mode(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> Callable[[], FastAPIAppServer]:
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
-
-    # Cache to ensure we create the app server only once per test
-    _app_server_cache: list[FastAPIAppServer] = []
-
-    def _app_server_factory() -> FastAPIAppServer:
-        if not _app_server_cache:
-            app_settings = ApplicationSettings.create_from_envs()
-            assert app_settings.STORAGE_WORKER_MODE is True
-
-            tracing_config = TracingConfig.create(
-                tracing_settings=None,  # disable tracing in tests
-                service_name="storage-worker",
-            )
-            _app_server_cache.append(
-                FastAPIAppServer(app=create_app(app_settings, tracing_config))
-            )
-        return _app_server_cache[0]
-
-    return _app_server_factory
-
-
-@pytest.fixture
 async def with_storage_celery_worker(
+    app_environment: EnvVarsDict,
     celery_app: Celery,
-    app_server_factory_with_worker_mode: Callable[[], FastAPIAppServer],
-    register_test_tasks: Callable[[Celery], None],
+    monkeypatch: pytest.MonkeyPatch,
+    register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-
-    worker_init.connect(
-        _worker_init_wrapper(celery_app, app_server_factory_with_worker_mode),
-        weak=False,
+    # Signals must be explicitily connected
+    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
+    app_settings = ApplicationSettings.create_from_envs()
+    tracing_config = TracingConfig.create(
+        tracing_settings=None,  # disable tracing in tests
+        service_name="storage-api",
     )
-    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
-    register_worker_tasks(celery_app)
-    register_test_tasks(celery_app)
+    app_server = FastAPIAppServer(
+        app=create_app(app_settings, tracing_config=tracing_config)
+    )
+
+    def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
+        return on_worker_init(sender, app_server, **_kwargs)
+
+    worker_init.connect(_on_worker_init_wrapper)
+    worker_shutdown.connect(on_worker_shutdown)
+
+    setup_worker_tasks(celery_app)
+    register_celery_tasks(celery_app)
 
     with start_worker(
         celery_app,
@@ -1059,8 +1045,6 @@ async def with_storage_celery_worker(
         queues="default,cpu_bound",
     ) as worker:
         yield worker
-
-        _worker_shutdown_wrapper(celery_app)()
 
 
 @pytest.fixture
