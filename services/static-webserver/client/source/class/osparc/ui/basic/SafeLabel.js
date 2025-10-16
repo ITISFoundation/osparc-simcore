@@ -35,7 +35,7 @@ qx.Class.define("osparc.ui.basic.SafeLabel", {
   members: {
     _onChangeValue(e) {
       const val = e.getData();
-      if (this.getRich() && typeof val === "string") {
+      if (typeof val === "string") {
         const sanitized = osparc.wrapper.DOMPurify.sanitize(val);
         if (sanitized !== val) {
           this.setValue(sanitized);
