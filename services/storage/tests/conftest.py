@@ -23,7 +23,7 @@ from asgi_lifespan import LifespanManager
 from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
-from celery.signals import worker_init, worker_shutdown
+from celery.signals import worker_init
 from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -1040,7 +1040,7 @@ async def with_storage_celery_worker(
         _worker_init_wrapper(celery_app, app_server_factory_with_worker_mode),
         weak=False,
     )
-    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
+    # worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
     register_worker_tasks(celery_app)
     register_test_tasks(celery_app)
@@ -1054,6 +1054,8 @@ async def with_storage_celery_worker(
         queues="default,cpu_bound",
     ) as worker:
         yield worker
+
+        _worker_shutdown_wrapper(celery_app)()
 
 
 @pytest.fixture
