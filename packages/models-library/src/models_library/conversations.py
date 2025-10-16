@@ -38,7 +38,10 @@ class ConversationMessageType(StrAutoEnum):
 #
 
 
-IsSupportUser: TypeAlias = bool
+class ConversationUserType(StrAutoEnum):
+    SUPPORT_USER = auto()
+    CHATBOT_USER = auto()
+    REGULAR_USER = auto()
 
 
 class ConversationGetDB(BaseModel):

@@ -19,6 +19,7 @@ from ._common import RefActions
 from .base import metadata
 from .groups import groups
 from .jinja2_templates import jinja2_templates
+from .users import users
 
 # NOTE: a default entry is created in the table Product
 # see packages/postgres-database/src/simcore_postgres_database/migration/versions/350103a7efbd_modified_products_table.py
@@ -280,6 +281,19 @@ products = sa.Table(
         unique=False,
         nullable=True,
         doc="Group associated to this product support",
+    ),
+    sa.Column(
+        "support_chatbot_user_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            users.c.id,
+            name="fk_products_support_chatbot_user_id",
+            ondelete=RefActions.SET_NULL,
+            onupdate=RefActions.CASCADE,
+        ),
+        unique=False,
+        nullable=True,
+        doc="User associated to this product chatbot user",
     ),
     sa.Column(
         "support_assigned_fogbugz_person_id",

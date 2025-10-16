@@ -24,7 +24,6 @@ x-tracing-open-telemetry: &tracing_open_telemetry_environments
   TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
   TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY: ${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}
 
-
 ## third-party party services
 x-postgres-settings: &postgres_settings
   POSTGRES_DB: ${POSTGRES_DB}
@@ -66,14 +65,12 @@ x-s3-settings: &s3_settings
   S3_REGION: ${S3_REGION}
   S3_SECRET_KEY: ${S3_SECRET_KEY}
 
-
 x-smtp-settings: &smtp_settings
   SMTP_HOST: ${SMTP_HOST}
   SMTP_PORT: ${SMTP_PORT}
   SMTP_USERNAME: ${SMTP_USERNAME}
   SMTP_PASSWORD: ${SMTP_PASSWORD}
   SMTP_PROTOCOL: ${SMTP_PROTOCOL}
-
 
 ## simcore stack services
 
@@ -107,7 +104,6 @@ x-invitations-settings: &invitations_settings
   INVITATIONS_PASSWORD: ${INVITATIONS_PASSWORD}
   INVITATIONS_SECRET_KEY: ${INVITATIONS_SECRET_KEY}
   INVITATIONS_OSPARC_URL: ${INVITATIONS_OSPARC_URL}
-
 
 services:
   api-server:
@@ -157,7 +153,6 @@ services:
     networks: &api_server_networks
       - default
 
-
   api-worker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -170,7 +165,6 @@ services:
       CELERY_CONCURRENCY: ${API_SERVER_CELERY_CONCURRENCY}
       CELERY_QUEUES: "api_worker_queue"
     networks: *api_server_networks
-
 
   autoscaling:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
@@ -430,7 +424,6 @@ services:
       RESOURCE_USAGE_TRACKER_HOST: ${RESOURCE_USAGE_TRACKER_HOST}
       RESOURCE_USAGE_TRACKER_PORT: ${RESOURCE_USAGE_TRACKER_EXTERNAL_PORT}
 
-
       STORAGE_HOST: ${STORAGE_HOST}
       STORAGE_PORT: ${STORAGE_PORT}
       DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH: ${DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH}
@@ -559,7 +552,6 @@ services:
       RESOURCE_USAGE_TRACKER_TRACING: ${RESOURCE_USAGE_TRACKER_TRACING}
       RESOURCE_USAGE_TRACKER_PORT: ${RESOURCE_USAGE_TRACKER_PORT}
 
-
   dynamic-schdlr:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -593,8 +585,6 @@ services:
       DYNAMIC_SCHEDULER_UI_STORAGE_SECRET: ${DYNAMIC_SCHEDULER_UI_STORAGE_SECRET}
       DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: ${DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER}
       DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
-
-
 
   docker-api-proxy:
     image: ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:${DOCKER_IMAGE_TAG:-latest}
@@ -714,6 +704,7 @@ services:
 
       WEBSERVER_CATALOG: ${WEBSERVER_CATALOG}
       WEBSERVER_CHATBOT: ${WEBSERVER_CHATBOT}
+      WEBSERVER_CONVERSATIONS: "true"
 
       # WEBSERVER_CREDIT_COMPUTATION
       WEBSERVER_CREDIT_COMPUTATION_ENABLED: ${WEBSERVER_CREDIT_COMPUTATION_ENABLED}
@@ -883,6 +874,9 @@ services:
       WEBSERVER_PORT: ${WB_API_WEBSERVER_PORT}
       WEBSERVER_RPC_NAMESPACE: ${WB_API_WEBSERVER_HOST}
       WEBSERVER_STATICWEB: "null"
+      WEBSERVER_CONVERSATIONS: "false" # override *webserver_environment
+      WEBSERVER_CHATBOT: "null" # override *webserver_environment
+      WEBSERVER_FOGBUGZ: "null" # override *webserver_environment
 
       # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: api
@@ -925,6 +919,7 @@ services:
       WEBSERVER_ANNOUNCEMENTS: ${WB_DB_EL_ANNOUNCEMENTS}
       WEBSERVER_CATALOG: ${WB_DB_EL_CATALOG}
       WEBSERVER_CHATBOT: "null"
+      WEBSERVER_CONVERSATIONS: "false"
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: ${WB_DB_EL_DB_LISTENER}
       WEBSERVER_DIAGNOSTICS: ${WB_DB_EL_DIAGNOSTICS}
@@ -953,7 +948,6 @@ services:
       WEBSERVER_TRACING: ${WB_DB_EL_TRACING}
       WEBSERVER_USERS: ${WB_DB_EL_USERS}
       WEBSERVER_WALLETS: ${WB_DB_EL_WALLETS}
-
 
       RESOURCE_MANAGER_RESOURCE_TTL_S: ${RESOURCE_MANAGER_RESOURCE_TTL_S}
 
@@ -984,7 +978,6 @@ services:
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
 
-
       # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: gc
 
@@ -1009,6 +1002,7 @@ services:
       WEBSERVER_ANNOUNCEMENTS: ${WB_GC_ANNOUNCEMENTS}
       WEBSERVER_CATALOG: ${WB_GC_CATALOG}
       WEBSERVER_CHATBOT: "null"
+      WEBSERVER_CONVERSATIONS: "false"
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: ${WB_GC_DB_LISTENER}
       WEBSERVER_DIAGNOSTICS: ${WB_GC_DIAGNOSTICS}
@@ -1081,11 +1075,11 @@ services:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE}
       SESSION_COOKIE_HTTPONLY: ${SESSION_COOKIE_HTTPONLY}
 
-
       WEBSERVER_ACTIVITY: "null"
       WEBSERVER_ANNOUNCEMENTS: 0
       WEBSERVER_CATALOG: "null"
       WEBSERVER_CHATBOT: "null"
+      WEBSERVER_CONVERSATIONS: "false"
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: 0
       WEBSERVER_DIRECTOR_V2: "null"
@@ -1223,7 +1217,6 @@ services:
       DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       DATCORE_ADAPTER_TRACING: ${DATCORE_ADAPTER_TRACING}
 
-
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -1322,7 +1315,15 @@ services:
       - default
       - interactive_services_subnet
     healthcheck:
-      test: [ "CMD", "pg_isready", "--username", "${POSTGRES_USER}", "--dbname", "${POSTGRES_DB}" ]
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "--username",
+          "${POSTGRES_USER}",
+          "--dbname",
+          "${POSTGRES_DB}",
+        ]
       interval: 5s
       retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
@@ -1336,19 +1337,24 @@ services:
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
     #
-    command:
-      [
+    command: [
         "postgres",
-        "-c", "tcp_keepalives_idle=600",
-        "-c", "tcp_keepalives_interval=600",
-        "-c", "tcp_keepalives_count=5",
-        "-c", "max_connections=413",
-        "-c", "shared_buffers=256MB",
+        "-c",
+        "tcp_keepalives_idle=600",
+        "-c",
+        "tcp_keepalives_interval=600",
+        "-c",
+        "tcp_keepalives_count=5",
+        "-c",
+        "max_connections=413",
+        "-c",
+        "shared_buffers=256MB",
         # statement_timeout is set to 120 seconds (120_000 in ms), so that long running queries
         # are killed after 2 minutes. Since simcore services have timeout of 1 minute, so longer
         # queries will not be used. Setting >1 minutes to be safe
         # https://github.com/ITISFoundation/osparc-simcore/issues/7682#issuecomment-2923048445
-        "-c", "statement_timeout=120000"
+        "-c",
+        "statement_timeout=120000",
       ]
 
   redis:
@@ -1360,7 +1366,19 @@ services:
       # also aof (append only) is also enabled such that we get full durability at the expense
       # of backup size. The backup is written into /data.
       # https://redis.io/topics/persistence
-      [ "redis-server", "--save", "60 1", "--loglevel", "verbose", "--databases", "11", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}" ]
+      [
+        "redis-server",
+        "--save",
+        "60 1",
+        "--loglevel",
+        "verbose",
+        "--databases",
+        "11",
+        "--appendonly",
+        "yes",
+        "--requirepass",
+        "${REDIS_PASSWORD}",
+      ]
     networks:
       - default
       - autoscaling_subnet
@@ -1368,7 +1386,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 30s
       retries: 50

@@ -54,6 +54,7 @@ _PRODUCTS_COLUMNS = [
     products.c.max_open_studies_per_user,
     products.c.group_id,
     products.c.support_standard_group_id,
+    products.c.support_chatbot_user_id,
     products.c.support_assigned_fogbugz_person_id,
     products.c.support_assigned_fogbugz_project_id,
 ]
