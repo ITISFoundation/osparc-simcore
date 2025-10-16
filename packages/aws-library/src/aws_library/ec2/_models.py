@@ -69,6 +69,15 @@ class Resources(BaseModel, frozen=True):
                 return False
         return True
 
+    def __gt__(self, other: "Resources") -> bool:
+        """operator for > comparison
+        if self has greater resources than other, returns True
+        Note that generic_resources are compared only if they are numeric
+        Non-numeric generic resources must be equal in both or only defined in self
+        to be considered greater
+        """
+        return self >= other and self != other
+
     def __add__(self, other: "Resources") -> "Resources":
         """operator for adding two Resources
         Note that only numeric generic resources are added

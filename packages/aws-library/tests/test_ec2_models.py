@@ -97,6 +97,85 @@ def test_resources_ge_operator(
 
 
 @pytest.mark.parametrize(
+    "a,b,a_greater_than_b",
+    [
+        (
+            Resources(cpus=0.2, ram=ByteSize(0)),
+            Resources(cpus=0.1, ram=ByteSize(0)),
+            True,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(0)),
+            Resources(cpus=0.1, ram=ByteSize(0)),
+            False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1)),
+            Resources(cpus=0.1, ram=ByteSize(0)),
+            True,
+        ),
+        (
+            Resources(cpus=0.05, ram=ByteSize(1)),
+            Resources(cpus=0.1, ram=ByteSize(0)),
+            False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(0)),
+            Resources(cpus=0.1, ram=ByteSize(1)),
+            False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(0), generic_resources={"GPU": 1}),
+            Resources(cpus=0.1, ram=ByteSize(1)),
+            False,  # ram is not enough
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            Resources(cpus=0.1, ram=ByteSize(1)),
+            True,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
+            False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1)),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
+            False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "2"}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
+            False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
+            Resources(cpus=0.1, ram=ByteSize(1)),
+            True,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
+            False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1)),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
+            False,
+        ),
+    ],
+)
+def test_resources_gt_operator(a: Resources, b: Resources, a_greater_than_b: bool):
+    assert (a > b) is a_greater_than_b
+
+
+@pytest.mark.parametrize(
     "a,b,result",
     [
         (
