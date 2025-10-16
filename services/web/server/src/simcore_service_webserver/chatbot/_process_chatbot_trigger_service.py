@@ -14,6 +14,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from yarl import URL
 
 from ..conversations import conversations_service
+from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
 from .chatbot_service import get_chatbot_rest_client
 
@@ -30,6 +31,16 @@ _CHATBOT_PROCESS_MESSAGE_TTL_IN_MS = 2 * 60 * 60 * 1000  # 2 hours
 async def _process_chatbot_trigger_message(app: web.Application, data: bytes) -> bool:
     rabbit_message = TypeAdapter(WebserverChatbotRabbitMessage).validate_json(data)
     assert app  # nosec
+
+    _product_name = rabbit_message.conversation.product_name
+    _product = products_service.get_product(app, product_name=_product_name)
+
+    if _product.support_chatbot_user_id is None:
+        _logger.error(
+            "Product %s does not have support_chatbot_user_id configured, cannot process chatbot message. (This should not happen)",
+            _product_name,
+        )
+        return True  # return true to avoid re-processing
 
     # Get last 20 messages for the conversation ID
     messages = await conversations_service.list_messages_for_conversation(
@@ -51,7 +62,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
     await conversations_service.create_support_message(
         app=app,
         product_name=rabbit_message.conversation.product_name,
-        user_id=1,
+        user_id=_product.support_chatbot_user_id,
         conversation_user_type=ConversationUserType.CHATBOT_USER,
         conversation=rabbit_message.conversation,
         request_url=URL("http://dummy"),
