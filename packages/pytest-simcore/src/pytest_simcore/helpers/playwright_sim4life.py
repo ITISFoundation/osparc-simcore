@@ -49,46 +49,46 @@ class S4LWaitForWebsocket:
 @dataclass(kw_only=True)
 class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
     min_waiting_time_before_checking_bitrate: datetime.timedelta
-    logger: logging.Logger
     _initial_bit_rate: float = 0
     _initial_bit_rate_time: datetime.datetime = arrow.utcnow().datetime
 
     def __call__(self, message: str) -> bool:
-        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
-            decoded_message: SocketIOEvent = decode_socketio_42_message(message)
-            if (
-                decoded_message.name == "server.video_stream.bitrate_data"
-                and "bitrate" in decoded_message.obj
-            ):
-                current_bit_rate = decoded_message.obj["bitrate"]
-                if self._initial_bit_rate == 0:
-                    self._initial_bit_rate = current_bit_rate
-                    self._initial_bit_rate_time = arrow.utcnow().datetime
-                    self.logger.info(
-                        "%s",
-                        f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
-                    )
-                    return False
-
-                # NOTE: MaG says the value might also go down, but it shall definitely change,
-                # if this code proves unsafe we should change it.
-                if "bitrate" in decoded_message.obj:
-                    self.logger.info(
-                        "bitrate: %s",
-                        f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s",
-                    )
-                elapsed_time = arrow.utcnow().datetime - self._initial_bit_rate_time
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+                decoded_message: SocketIOEvent = decode_socketio_42_message(message)
                 if (
-                    elapsed_time > self.min_waiting_time_before_checking_bitrate
+                    decoded_message.name == "server.video_stream.bitrate_data"
                     and "bitrate" in decoded_message.obj
                 ):
                     current_bit_rate = decoded_message.obj["bitrate"]
-                    bitrate_test = bool(self._initial_bit_rate != current_bit_rate)
-                    self.logger.info(
-                        "%s",
-                        f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
-                    )
-                    return bitrate_test
+                    if self._initial_bit_rate == 0:
+                        self._initial_bit_rate = current_bit_rate
+                        self._initial_bit_rate_time = arrow.utcnow().datetime
+                        ctx.logger.info(
+                            "%s",
+                            f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
+                        )
+                        return False
+
+                    # NOTE: MaG says the value might also go down, but it shall definitely change,
+                    # if this code proves unsafe we should change it.
+                    if "bitrate" in decoded_message.obj:
+                        ctx.logger.info(
+                            "bitrate: %s",
+                            f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s",
+                        )
+                    elapsed_time = arrow.utcnow().datetime - self._initial_bit_rate_time
+                    if (
+                        elapsed_time > self.min_waiting_time_before_checking_bitrate
+                        and "bitrate" in decoded_message.obj
+                    ):
+                        current_bit_rate = decoded_message.obj["bitrate"]
+                        bitrate_test = bool(self._initial_bit_rate != current_bit_rate)
+                        ctx.logger.info(
+                            "%s",
+                            f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
+                        )
+                        return bitrate_test
 
         return False
 
@@ -158,12 +158,11 @@ def check_video_streaming(
         _S4L_STREAMING_ESTABLISHMENT_MIN_WAITING_TIME
         < _S4L_STREAMING_ESTABLISHMENT_MAX_TIME
     )
-    with log_context(logging.INFO, "Check videostreaming works") as ctx:
+    with log_context(logging.INFO, "Check videostreaming works"):
         waiter = _S4LSocketIOCheckBitRateIncreasesMessagePrinter(
             min_waiting_time_before_checking_bitrate=datetime.timedelta(
                 milliseconds=_S4L_STREAMING_ESTABLISHMENT_MIN_WAITING_TIME,
             ),
-            logger=ctx.logger,
         )
         with s4l_websocket.expect_event(
             "framereceived",
