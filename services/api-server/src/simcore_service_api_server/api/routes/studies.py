@@ -4,9 +4,9 @@ from typing import Annotated, Final
 from fastapi import APIRouter, Body, Depends, Header, Query, status
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet, ProjectPatch
-from models_library.basic_types import LongTruncatedStr, ShortTruncatedStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.string_types import LongTruncatedStr, ShortTruncatedStr
 
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
