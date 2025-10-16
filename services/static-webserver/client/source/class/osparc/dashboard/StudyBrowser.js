@@ -417,17 +417,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadFiles: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES !== this.getCurrentContext() ||
-        this.__loadingFiles
+        this.getCurrentContext() !== osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES ||
+        this._loadingResourcesBtn.isFetching()
       ) {
         return;
       }
 
-      this.__loadingFiles = true;
-      this.__setFilesToList([]);
+      this._loadingResourcesBtn.setFetching(true);
+      this._loadingResourcesBtn.setVisibility("visible");
       const filterData = this._searchBarFilter.getFilterData();
       const text = filterData.text ? encodeURIComponent(filterData.text) : "";
-
       osparc.store.Data.getInstance().searchFiles(text)
         .then(streamData => {
           const stream = new osparc.data.StreamTask(streamData);
