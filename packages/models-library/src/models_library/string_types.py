@@ -95,10 +95,18 @@ SearchPatternSafeStr: TypeAlias = Annotated[
         strip_whitespace=True,
         min_length=1,
         max_length=200,
-        # Allow most printable unicode characters except percent (for LIKE), still block injection via validator
         pattern=r"^[^\%]+$",
     ),
     AfterValidator(validate_input_safety),
+    annotated_types.doc(
+        """
+        A safe string used for search patterns.
+        Strips whitespaces and enforces a length between 1 and 200 characters.
+        Ensures that the input does not contain percent signs (%) to prevent wildcard searches.
+        Additionally, it validates the input to ensure it does not contain potentially unsafe content such as SQL
+        or JavaScript injection patterns.
+        """
+    ),
 ]
 
 

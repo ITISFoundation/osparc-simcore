@@ -27,7 +27,11 @@ from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
-from ..string_types import GlobPatternSafeStr, NameSafeStr, validate_input_safety
+from ..string_types import (
+    GlobPatternSafeStr,
+    SearchPatternSafeStr,
+    validate_input_safety,
+)
 from ..users import (
     FirstNameStr,
     LastNameStr,
@@ -275,7 +279,7 @@ class UsersGetParams(RequestParameters):
 
 class UsersSearch(InputSchema):
     match_: Annotated[
-        NameSafeStr,
+        SearchPatternSafeStr,
         Field(
             description="Search string to match with usernames and public profiles (e.g. emails, first/last name)",
             alias="match",
