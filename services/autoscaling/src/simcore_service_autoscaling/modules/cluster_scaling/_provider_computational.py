@@ -90,10 +90,7 @@ class ComputationalAutoscalingProvider:
         assert self  # nosec
         # NOTE: a dask worker can take a task if it has a free thread, regardless of its resources
         #       so we need to be careful when interpreting the resources, adding the thread here will mimick this
-        task_required_resources = utils.resources_from_dask_task(task)
-        # TODO: should we add a generic resource for threads?
-        # task_required_resources.generic_resources[_DASK_WORKER_THREAD_RESOURCE_NAME] = 1
-        return task_required_resources
+        return utils.resources_from_dask_task(task)
 
     async def get_task_defined_instance(
         self, app: FastAPI, task
