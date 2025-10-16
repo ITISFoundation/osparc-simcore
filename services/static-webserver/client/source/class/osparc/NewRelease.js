@@ -65,7 +65,6 @@ qx.Class.define("osparc.NewRelease", {
       const introText = qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
       const introLabel = new qx.ui.basic.Label(introText).set({
         font: "text-14",
-        rich: true,
         wrap: true
       });
       this._add(introLabel);
