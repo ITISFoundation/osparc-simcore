@@ -141,12 +141,23 @@ class Resources(BaseModel, frozen=True):
         return base
 
     @classmethod
-    def from_flat_dict(cls, data: dict[str, int | float | str]) -> "Resources":
-        """Inverse of as_flat_dict"""
-        generic_resources = {k: v for k, v in data.items() if k not in {"cpus", "ram"}}
+    def from_flat_dict(
+        cls,
+        data: dict[str, int | float | str],
+        *,
+        mapping: dict[str, str] | None = None,
+    ) -> "Resources":
+        """Inverse of as_flat_dict with optional key mapping"""
+        mapped_data = data
+        if mapping:
+            mapped_data = {mapping.get(k, k): v for k, v in data.items()}
+        generic_resources = {
+            k: v for k, v in mapped_data.items() if k not in {"cpus", "ram"}
+        }
+
         return cls(
-            cpus=float(data.get("cpus", 0)),
-            ram=ByteSize(data.get("ram", 0)),
+            cpus=float(mapped_data.get("cpus", 0)),
+            ram=ByteSize(mapped_data.get("ram", 0)),
             generic_resources=generic_resources,
         )
 

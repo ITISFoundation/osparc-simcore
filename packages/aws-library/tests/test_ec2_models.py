@@ -298,6 +298,13 @@ def test_resources_flat_dict():
     reconstructed = Resources.from_flat_dict(flat)
     assert reconstructed == r
 
+    # test with mapping
+    flat_with_oter_names = {"CPU": 0.1, "RAM": 1024, "GPU": 2, "SSE": "yes"}
+    reconstructed2 = Resources.from_flat_dict(
+        flat_with_oter_names, mapping={"CPU": "cpus", "RAM": "ram"}
+    )
+    assert reconstructed2 == r
+
 
 @pytest.mark.parametrize("ec2_tag_key", ["", "/", " ", ".", "..", "_index"])
 def test_aws_tag_key_invalid(ec2_tag_key: str):
