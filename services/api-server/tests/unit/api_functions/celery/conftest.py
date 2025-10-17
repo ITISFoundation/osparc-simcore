@@ -108,29 +108,21 @@ def add_worker_tasks() -> bool:
 
 
 @pytest.fixture
-def worker_app_settings(
-    app_settings: ApplicationSettings,
-) -> ApplicationSettings:
-    worker_test_app_settings = app_settings.model_copy(
-        update={"API_SERVER_WORKER_MODE": True}, deep=True
-    )
-    print(f"{worker_test_app_settings.model_dump_json(indent=2)=}")
-    return worker_test_app_settings
-
-
-@pytest.fixture
 async def with_api_server_celery_worker(
     celery_app: Celery,
-    worker_app_settings: ApplicationSettings,
     register_celery_tasks: Callable[[Celery], None],
     add_worker_tasks: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterator[TestWorkController]:
     tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="api-server-worker-test",
     )
+     # Signals must be explicitily connected
+    monkeypatch.setenv("API_SERVER_WORKER_MODE", "true")
+    app_settings = ApplicationSettings.create_from_envs()
 
-    app_server = FastAPIAppServer(app=create_app(worker_app_settings, tracing_config))
+    app_server = FastAPIAppServer(app=create_app(app_settings, tracing_config))
 
     _init_wrapper = _worker_init_wrapper(celery_app, lambda: app_server)
     _shutdown_wrapper = _worker_shutdown_wrapper(celery_app)
