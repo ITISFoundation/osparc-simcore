@@ -1804,7 +1804,7 @@ paths:
           - type: string
             minLength: 3
             maxLength: 200
-            pattern: ^[^%]*$
+            pattern: ^[A-Za-z0-9 ._\*-]*$
           - type: 'null'
           title: Email
       - name: primary_group_id
@@ -1825,7 +1825,7 @@ paths:
           - type: string
             minLength: 3
             maxLength: 200
-            pattern: ^[^%]*$
+            pattern: ^[A-Za-z0-9 ._\*-]*$
           - type: 'null'
           title: User Name
       responses:
@@ -12828,7 +12828,7 @@ components:
           type: string
           maxLength: 100
           minLength: 1
-          pattern: ^[A-Za-z0-9 ._\-]+$
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Name
         parentFolderId:
           anyOf:
@@ -12920,7 +12920,7 @@ components:
           type: string
           maxLength: 100
           minLength: 1
-          pattern: ^[A-Za-z0-9 ._\-]+$
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Name
         parentFolderId:
           anyOf:
@@ -13042,7 +13042,7 @@ components:
           type: string
           maxLength: 100
           minLength: 1
-          pattern: ^[A-Za-z0-9 ._\-]+$
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Label
         description:
           type: string
@@ -13135,7 +13135,7 @@ components:
           - type: string
             maxLength: 100
             minLength: 1
-            pattern: ^[A-Za-z0-9 ._\-]+$
+            pattern: ^[A-Za-z0-9 ._-]+$
           - type: 'null'
           title: Label
         description:
@@ -18111,7 +18111,7 @@ components:
           type: string
           maxLength: 100
           minLength: 1
-          pattern: ^[A-Za-z0-9 ._\-]+$
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Name
         description:
           anyOf:
@@ -18208,7 +18208,7 @@ components:
           - type: string
             maxLength: 100
             minLength: 1
-            pattern: ^[A-Za-z0-9 ._\-]+$
+            pattern: ^[A-Za-z0-9 ._-]+$
           - type: 'null'
           title: Name
         description:
@@ -18965,7 +18965,7 @@ components:
           type: string
           maxLength: 200
           minLength: 1
-          pattern: ^[^\%]+$
+          pattern: ^[A-Za-z0-9 ._-]*$
           title: Match
           description: Search string to match with usernames and public profiles (e.g.
             emails, first/last name)
