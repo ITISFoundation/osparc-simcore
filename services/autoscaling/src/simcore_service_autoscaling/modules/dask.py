@@ -320,7 +320,7 @@ async def compute_cluster_total_resources(
             # get dask information about resources
             worker_dask_resources = worker_details["resources"]
             worker_threads = worker_details["nthreads"]
-            worker_dask_resources = {
+            worker_dask_resources: dict[str, int | float | str] = {
                 **worker_dask_resources,
                 DASK_WORKER_THREAD_RESOURCE_NAME: worker_threads,
             }
