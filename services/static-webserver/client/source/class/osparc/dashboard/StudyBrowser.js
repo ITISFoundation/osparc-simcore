@@ -179,7 +179,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     reloadMoreResources: function() {
-      this.__reloadStudies();
+      if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES) {
+        this.__reloadSearchFiles();
+      } else {
+        this.__reloadStudies();
+      }
     },
 
     __reloadWorkspaces: function() {
@@ -413,7 +417,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __reloadFiles: function() {
+    __reloadSearchFiles: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         this.getCurrentContext() !== osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES ||
@@ -427,6 +431,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const filterData = this._searchBarFilter.getFilterData();
       const text = filterData.text ? encodeURIComponent(filterData.text) : "";
       const existingStream = osparc.store.StreamTasks.getInstance().getStreamTask("files_search", text);
+      // TODO: abort last stream if it changed
       if (existingStream) {
         this.__fetchFilesFromStream(existingStream);
       } else {
@@ -445,20 +450,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.__setFilesToList(items);
           }
           const end = streamData["data"]["end"] || false;
-          if (end === false || items.length === 0) {
-            // nothing to stream yet, try again later
-            const pollingInterval = 2000;
-            setTimeout(() => this.__reloadFiles(), pollingInterval);
-          }
+          stream.setEnd(end);
+
+          // a bit hacky
+          this._resourcesContainer.getFlatList().nextRequest = !end;
         })
         .catch(err => console.log(err))
         .finally(() => {
           this._loadingResourcesBtn.setFetching(false);
-          /*
-          if (stream.isEnd() === false) {
-            setTimeout(() => this.__reloadFiles(), 500);
+          if (this._resourcesContainer.getFlatList()) {
+            this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest ? "visible" : "excluded");
           }
-          */
+          // delay the next request to avoid flooding the server
+          setTimeout(() => this._moreResourcesRequired(), 100);
         });
     },
 
@@ -515,7 +519,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _reloadCards: function() {
       const fetching = this._loadingResourcesBtn ? this._loadingResourcesBtn.getFetching() : false;
-      const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
+      // const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
+      const visibility = true;
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("studies");
@@ -1069,6 +1074,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    invalidateFiles: function() {
+      // this.__resetStudiesList();
+      if (this._resourcesContainer.getFlatList()) {
+        this._resourcesContainer.getFlatList().nextRequest = null;
+      }
+    },
+
     __addNewPlusButton: function() {
       const newPlusButton = new osparc.dashboard.NewPlusButton();
       this._leftFilters.add(newPlusButton);
@@ -1529,7 +1541,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search Files");
           // Files can't be sorted and don't support list view
           this._toolbar.exclude();
-          this.__reloadFiles();
+          this._loadingResourcesBtn.setFetching(false);
+          this.invalidateFiles();
+          this.__reloadSearchFiles();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
           this._searchBarFilter.resetFilters();
