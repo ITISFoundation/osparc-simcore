@@ -30,7 +30,7 @@ def resources_from_dask_task(task: DaskTask) -> Resources:
     )  # merge with defaults to ensure there is always some minimal resource defined
 
     return Resources.from_flat_dict(
-        task_resources.items(), mapping=DASK_TO_RESOURCE_NAME_MAPPING
+        task_resources, mapping=DASK_TO_RESOURCE_NAME_MAPPING
     )
 
 
