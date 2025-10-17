@@ -2,13 +2,13 @@ import logging
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.error_messages import MSG_TRY_AGAIN_OR_SUPPORT
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
 from models_library.rest_error import ErrorGet
 from servicelib import status_codes_utils
 from servicelib.aiohttp import status
 
-from ...constants import MSG_TRY_AGAIN_OR_SUPPORT
 from ...exception_handling import (
     ExceptionHandlersMap,
     ExceptionToHttpErrorMap,

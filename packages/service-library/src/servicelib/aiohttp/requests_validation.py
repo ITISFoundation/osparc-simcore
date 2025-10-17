@@ -15,6 +15,7 @@ from typing import Final, TypeVar
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.error_messages import MSG_TRY_AGAIN_OR_SUPPORT
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
 from models_library.rest_error import EnvelopedError
@@ -200,7 +201,8 @@ async def parse_request_body_as(
             except json.decoder.JSONDecodeError as err:
                 error_code = create_error_code(err)
                 user_error_msg = user_message(
-                    "The request contains invalid JSON data which is unsusual. Please try again and if the problem persists, contact support.",
+                    "The request contains invalid JSON data which is unsusual. "
+                    + MSG_TRY_AGAIN_OR_SUPPORT,
                     _version=1,
                 )
                 _logger.exception(

@@ -1,8 +1,7 @@
 from typing import Final
 
+from common_library.error_messages import MSG_TRY_AGAIN_OR_SUPPORT
 from common_library.user_messages import user_message
-
-from ..constants import MSG_TRY_AGAIN_OR_SUPPORT
 
 MSG_CATALOG_SERVICE_UNAVAILABLE: Final[str] = user_message(
     # Most likely the director service is down or misconfigured so the user is asked to try again later.
