@@ -77,9 +77,8 @@ qx.Class.define("osparc.notification.NotificationUI", {
           });
           break;
         case "title":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             font: "text-13",
-            rich: true,
             wrap: true
           });
           this._add(control, {
@@ -88,9 +87,8 @@ qx.Class.define("osparc.notification.NotificationUI", {
           });
           break;
         case "text":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             font: "text-12",
-            rich: true,
             wrap: true
           });
           this._add(control, {
@@ -99,9 +97,8 @@ qx.Class.define("osparc.notification.NotificationUI", {
           });
           break;
         case "date":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             font: "text-11",
-            rich: true,
             wrap: true
           });
           this._add(control, {

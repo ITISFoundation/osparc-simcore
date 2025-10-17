@@ -67,13 +67,15 @@ qx.Class.define("osparc.file.FolderContent", {
         height: 80,
         padding: 2
       });
-      item.getChildControl("label").set({
+      const toggleLabel = item.getChildControl("label");
+      toggleLabel.set({
         font: "text-12",
         rich: true,
         textAlign: "center",
         maxWidth: 100,
         maxHeight: 33 // two lines
       });
+      osparc.wrapper.DOMPurify.sanitizeLabel(toggleLabel);
       osparc.utils.Utils.setIdToWidget(item, "FolderViewerItem");
       return item;
     },

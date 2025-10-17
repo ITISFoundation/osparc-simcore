@@ -20,6 +20,9 @@ from aws_library.ec2._errors import (
     EC2InsufficientCapacityError,
     EC2TooManyInstancesError,
 )
+from aws_library.ec2._models import AWSTagKey
+from aws_library.ssm._errors import SSMAccessError
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
@@ -28,7 +31,14 @@ from servicelib.utils import limited_gather
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ...constants import DOCKER_JOIN_COMMAND_EC2_TAG_KEY, DOCKER_JOIN_COMMAND_NAME
+from ...constants import (
+    DOCKER_JOIN_COMMAND_EC2_TAG_KEY,
+    DOCKER_JOIN_COMMAND_NAME,
+    DOCKER_PULL_COMMAND,
+    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    MACHINE_PULLING_EC2_TAG_KEY,
+    PREPULL_COMMAND_NAME,
+)
 from ...core.errors import (
     Ec2InvalidDnsNameError,
     TaskBestFittingInstanceNotFoundError,
@@ -56,9 +66,12 @@ from ...utils.rabbitmq import (
     post_tasks_progress_message,
 )
 from ...utils.warm_buffer_machines import (
+    dump_pre_pulled_images_as_tags,
     get_activated_warm_buffer_ec2_tags,
     get_deactivated_warm_buffer_ec2_tags,
     is_warm_buffer_machine,
+    list_pre_pulled_images_tag_keys,
+    load_pre_pulled_images_from_tags,
 )
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
@@ -383,6 +396,38 @@ async def _activate_and_notify(
     return dataclasses.replace(drained_node, node=updated_node)
 
 
+async def _cancel_previous_pulling_command_if_any(
+    app: FastAPI,
+    instance: EC2InstanceData,
+) -> None:
+    if not (
+        (MACHINE_PULLING_EC2_TAG_KEY in instance.tags)
+        and (MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY in instance.tags)
+    ):
+        # nothing to do
+        return
+
+    ssm_client = get_ssm_client(app)
+    ec2_client = get_ec2_client(app)
+    command_id = instance.tags[MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY]
+    command = await ssm_client.get_command(instance.id, command_id=command_id)
+    if command.status in ("Pending", "InProgress"):
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"cancelling previous pulling {command_id} on {instance.id}",
+        ):
+            await ssm_client.cancel_command(instance.id, command_id=command_id)
+        await ec2_client.remove_instances_tags(
+            [instance],
+            tag_keys=[
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                MACHINE_PULLING_EC2_TAG_KEY,
+                *list_pre_pulled_images_tag_keys(instance.tags),
+            ],
+        )
+
+
 async def _activate_drained_nodes(
     app: FastAPI,
     cluster: Cluster,
@@ -403,6 +448,12 @@ async def _activate_drained_nodes(
         logging.INFO,
         f"activate {len(nodes_to_activate)} drained nodes {[n.ec2_instance.id for n in nodes_to_activate]}",
     ):
+        await asyncio.gather(
+            *(
+                _cancel_previous_pulling_command_if_any(app, n.ec2_instance)
+                for n in nodes_to_activate
+            )
+        )
         activated_nodes = await asyncio.gather(
             *(_activate_and_notify(app, node) for node in nodes_to_activate)
         )
@@ -1348,6 +1399,174 @@ async def _notify_autoscaling_status(
             get_instrumentation(app).cluster_metrics.update_from_cluster(cluster)
 
 
+async def _handle_pre_pull_status(
+    app: FastAPI, node: AssociatedInstance
+) -> AssociatedInstance:
+    if MACHINE_PULLING_EC2_TAG_KEY not in node.ec2_instance.tags:
+        return node
+
+    ssm_client = get_ssm_client(app)
+    ec2_client = get_ec2_client(app)
+    ssm_command_id = node.ec2_instance.tags.get(MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY)
+
+    async def _remove_tags_and_return(
+        node: AssociatedInstance, tag_keys: list[AWSTagKey]
+    ) -> AssociatedInstance:
+        await ec2_client.remove_instances_tags(
+            [node.ec2_instance],
+            tag_keys=tag_keys,
+        )
+        for tag_key in tag_keys:
+            node.ec2_instance.tags.pop(tag_key, None)
+        return node
+
+    if not ssm_command_id:
+        _logger.error(
+            "%s has '%s' tag key set but no associated command id '%s' tag key, "
+            "this is unexpected but will be cleaned now. Pre-pulling will be retried again later.",
+            node.ec2_instance.id,
+            MACHINE_PULLING_EC2_TAG_KEY,
+            MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+        )
+        return await _remove_tags_and_return(
+            node,
+            [
+                MACHINE_PULLING_EC2_TAG_KEY,
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
+            ],
+        )
+
+    try:
+        ssm_command = await ssm_client.get_command(
+            node.ec2_instance.id, command_id=ssm_command_id
+        )
+    except SSMAccessError as exc:
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                f"Unexpected SSM access error to get status of command {ssm_command_id} on {node.ec2_instance.id}",
+                error=exc,
+                tip="Pre-pulling will be retried again later.",
+            )
+        )
+        return await _remove_tags_and_return(
+            node,
+            [
+                MACHINE_PULLING_EC2_TAG_KEY,
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
+            ],
+        )
+    match ssm_command.status:
+        case "Success":
+            _logger.info("%s finished pre-pulling images", node.ec2_instance.id)
+            return await _remove_tags_and_return(
+                node,
+                [
+                    MACHINE_PULLING_EC2_TAG_KEY,
+                    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                ],
+            )
+        case "Failed" | "TimedOut":
+            _logger.error(
+                "%s failed pre-pulling images, status is %s. this will be retried later",
+                node.ec2_instance.id,
+                ssm_command.status,
+            )
+            return await _remove_tags_and_return(
+                node,
+                [
+                    MACHINE_PULLING_EC2_TAG_KEY,
+                    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                    *list_pre_pulled_images_tag_keys(node.ec2_instance.tags),
+                ],
+            )
+        case _:
+            _logger.info(
+                "%s is pre-pulling %s, status is %s",
+                node.ec2_instance.id,
+                load_pre_pulled_images_from_tags(node.ec2_instance.tags),
+                ssm_command.status,
+            )
+            # skip the instance this time as this is still ongoing
+            return node
+
+
+async def _pre_pull_docker_images_on_idle_hot_buffers(
+    app: FastAPI, cluster: Cluster
+) -> None:
+    if not cluster.hot_buffer_drained_nodes:
+        return
+    ssm_client = get_ssm_client(app)
+    ec2_client = get_ec2_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    # check if we have hot buffers that need to pull images
+    hot_buffer_nodes_needing_pre_pull = []
+    for node in cluster.hot_buffer_drained_nodes:
+        updated_node = await _handle_pre_pull_status(app, node)
+        if MACHINE_PULLING_EC2_TAG_KEY in updated_node.ec2_instance.tags:
+            continue  # skip this one as it is still pre-pulling
+
+        # check what they have
+        pre_pulled_images = load_pre_pulled_images_from_tags(
+            updated_node.ec2_instance.tags
+        )
+        ec2_boot_specific = (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                updated_node.ec2_instance.type
+            ]
+        )
+        desired_pre_pulled_images = utils_docker.compute_full_list_of_pre_pulled_images(
+            ec2_boot_specific, app_settings
+        )
+
+        if pre_pulled_images != desired_pre_pulled_images:
+            _logger.info(
+                "%s needs to pre-pull images %s, currently has %s",
+                updated_node.ec2_instance.id,
+                desired_pre_pulled_images,
+                pre_pulled_images,
+            )
+            hot_buffer_nodes_needing_pre_pull.append(updated_node)
+
+    # now trigger pre-pull on these nodes
+    for node in hot_buffer_nodes_needing_pre_pull:
+        ec2_boot_specific = (
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                node.ec2_instance.type
+            ]
+        )
+        desired_pre_pulled_images = utils_docker.compute_full_list_of_pre_pulled_images(
+            ec2_boot_specific, app_settings
+        )
+        _logger.info(
+            "triggering pre-pull of images %s on %s of type %s",
+            desired_pre_pulled_images,
+            node.ec2_instance.id,
+            node.ec2_instance.type,
+        )
+        change_docker_compose_and_pull_command = " && ".join(
+            (
+                utils_docker.write_compose_file_command(desired_pre_pulled_images),
+                DOCKER_PULL_COMMAND,
+            )
+        )
+        ssm_command = await ssm_client.send_command(
+            (node.ec2_instance.id,),
+            command=change_docker_compose_and_pull_command,
+            command_name=PREPULL_COMMAND_NAME,
+        )
+        await ec2_client.set_instances_tags(
+            (node.ec2_instance,),
+            tags={
+                MACHINE_PULLING_EC2_TAG_KEY: "true",
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
+            }
+            | dump_pre_pulled_images_as_tags(desired_pre_pulled_images),
+        )
+
+
 async def auto_scale_cluster(
     *, app: FastAPI, auto_scaling_mode: AutoscalingProvider
 ) -> None:
@@ -1375,6 +1594,8 @@ async def auto_scale_cluster(
         app, cluster, auto_scaling_mode, allowed_instance_types
     )
 
+    # take care of hot buffer pre-pulling
+    await _pre_pull_docker_images_on_idle_hot_buffers(app, cluster)
     # notify
     await _notify_machine_creation_progress(app, cluster)
     await _notify_autoscaling_status(app, cluster, auto_scaling_mode)
