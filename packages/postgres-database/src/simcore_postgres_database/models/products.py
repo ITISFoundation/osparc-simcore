@@ -154,6 +154,12 @@ products = sa.Table(
         nullable=False,
         doc="Regular expression that matches product hostname from an url string",
     ),
+    sa.Column(
+        "base_url",
+        sa.String,
+        nullable=False,
+        doc="Product base URL (scheme + host), ex. https://osparc.io",
+    ),
     # EMAILS --------------------
     sa.Column(
         "support_email",
