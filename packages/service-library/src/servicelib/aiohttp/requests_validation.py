@@ -201,9 +201,9 @@ async def parse_request_body_as(
             except json.decoder.JSONDecodeError as err:
                 error_code = create_error_code(err)
                 user_error_msg = user_message(
-                    "The request contains invalid JSON data which is unsusual. "
+                    "The request contains data that is not in a valid format. "
                     + MSG_TRY_AGAIN_OR_SUPPORT,
-                    _version=1,
+                    _version=2,
                 )
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
