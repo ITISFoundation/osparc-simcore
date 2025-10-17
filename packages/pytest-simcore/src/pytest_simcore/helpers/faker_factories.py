@@ -306,6 +306,7 @@ def random_product(
         "display_name": suffix.capitalize().replace("_", " "),
         "short_name": suffix[:4],
         "host_regex": r"[a-zA-Z0-9]+\.com",
+        "base_url": f"https://{suffix}.com",
         "support_email": f"support@{suffix}.io",
         "product_owners_email": fake.random_element(
             elements=[f"product-owners@{suffix}.io", None]
