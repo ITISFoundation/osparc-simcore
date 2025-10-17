@@ -27,45 +27,33 @@ qx.Class.define("osparc.store.StreamTasks", {
     }
   },
 
-  members: {
-    getStreamTask: function(action, params, streamPromise, interval) {
-      const internalId = action + "_" + JSON.stringify(params);
-      const task = this.__getStreamTask(internalId);
-      if (task) {
-        console.log("Reusing existing stream task:", internalId);
-        return Promise.resolve(task);
-      }
-      return this.__createStreamTask(internalId, streamPromise, interval)
-        .then(streamTask => {
-          console.log("Creating new stream task:", internalId);
-          return streamTask;
-        })
-        .catch(err => Promise.reject(err));
+  statics: {
+    actionToInternalId: function(action, params) {
+      return action + "_" + JSON.stringify(params);
     },
+  },
 
-    __createStreamTask: function(internalId, streamPromise, interval) {
+  members: {
+    createStreamTask: function(action, params, streamPromise, interval) {
       return streamPromise
         .then(streamData => {
           console.log("Stream data received:", streamData);
           if (!("stream_href" in streamData)) {
             throw new Error("Stream href missing");
           }
-          return this.__addStreamTask(internalId, streamData, interval);
+          return this.__addStreamTask(action, params, streamData, interval);
         })
         .catch(err => Promise.reject(err));
     },
 
-    __getStreamTask: function(internalId) {
+    getStreamTask: function(action, params) {
+      const internalId = osparc.store.StreamTasks.actionToInternalId(action, params);
       const tasks = this.getTasks();
       return tasks[internalId] || null;
     },
 
-    __addStreamTask: function(internalId, streamData, interval) {
-      const task = this.__getStreamTask(internalId);
-      if (task) {
-        return task;
-      }
-
+    __addStreamTask: function(action, params, streamData, interval) {
+      const internalId = osparc.store.StreamTasks.actionToInternalId(action, params);
       const stream = new osparc.data.StreamTask(streamData, interval);
       // stream.addListener("resultReceived", () => this.__removeStreamTask(stream), this);
       stream.addListener("taskAborted", () => this.__removeStreamTask(stream), this);

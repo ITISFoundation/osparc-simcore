@@ -131,6 +131,8 @@ qx.Class.define("osparc.data.PollTask", {
 
     __pollTaskState: function() {
       const statusPath = this.self().extractPathname(this.getStatusHref());
+      // OM remove
+      return;
       fetch(statusPath)
         .then(resp => {
           if (this.__aborting || this.getDone()) {

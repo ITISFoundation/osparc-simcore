@@ -426,23 +426,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._loadingResourcesBtn.setVisibility("visible");
       const filterData = this._searchBarFilter.getFilterData();
       const text = filterData.text ? encodeURIComponent(filterData.text) : "";
-      const streamPromise = osparc.store.Data.getInstance().searchFiles(text);
-      let stream = null;
-      const pollingInterval = 2000;
-      osparc.store.StreamTasks.getInstance().getStreamTask("files_search", text, streamPromise, pollingInterval)
-        .then(strm => {
-          stream = strm;
-          console.log("Streaming files search...", stream);
-          return stream.fetchStream()
-        })
+      const existingStream = osparc.store.StreamTasks.getInstance().getStreamTask("files_search", text);
+      if (existingStream) {
+        this.__fetchFilesFromStream(existingStream);
+      } else {
+        const streamPromise = osparc.store.Data.getInstance().searchFiles(text);
+        const pollingInterval = 2000;
+        osparc.store.StreamTasks.getInstance().createStreamTask("files_search", text, streamPromise, pollingInterval)
+          .then(newStream => this.__fetchFilesFromStream(newStream));
+      }
+    },
+
+    __fetchFilesFromStream: function(stream) {
+      stream.fetchStream()
         .then(streamData => {
           const items = streamData["data"]["items"] || [];
           if (items.length) {
             this.__setFilesToList(items);
           }
           const end = streamData["data"]["end"] || false;
-          if (end === false && items.length === 0 && stream) {
+          if (end === false || items.length === 0) {
             // nothing to stream yet, try again later
+            const pollingInterval = 2000;
             setTimeout(() => this.__reloadFiles(), pollingInterval);
           }
         })
@@ -450,7 +455,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .finally(() => {
           this._loadingResourcesBtn.setFetching(false);
           /*
-          if (stream && stream.isEnd() === false) {
+          if (stream.isEnd() === false) {
             setTimeout(() => this.__reloadFiles(), 500);
           }
           */
