@@ -33,8 +33,8 @@ qx.Class.define("osparc.data.model.File", {
       projectId: fileData.projectId || null,
       createdAt: new Date(fileData.createdAt),
       modifiedAt: new Date(fileData.modifiedAt),
-      size: fileData.size,
-      path: fileData.path || null,
+      size: fileData.size || null,
+      path: fileData.path,
       isDirectory: fileData.isDirectory || false,
     });
   },
@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.File", {
 
     projectId: {
       check: "String",
-      nullable: null,
+      nullable: true,
       init: null,
       event: "changeProjectId"
     },
@@ -77,7 +77,7 @@ qx.Class.define("osparc.data.model.File", {
 
     path: {
       check: "String",
-      nullable: true,
+      nullable: false,
       init: null,
       event: "changePath"
     },

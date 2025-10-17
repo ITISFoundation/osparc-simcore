@@ -427,22 +427,33 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const filterData = this._searchBarFilter.getFilterData();
       const text = filterData.text ? encodeURIComponent(filterData.text) : "";
       const streamPromise = osparc.store.Data.getInstance().searchFiles(text);
-      osparc.store.StreamTasks.getInstance().getStreamTask("files_search", text, streamPromise, 500)
-        .then(stream => {
-          // const stream = new osparc.data.StreamTask(streamData);
-          stream.addListener("streamReceived", e => {
-            const data = e.getData();
-            if ("items" in data) {
-              this.__setFilesToList(data["items"]);
-            }
-          }, this);
+      let stream = null;
+      const pollingInterval = 2000;
+      osparc.store.StreamTasks.getInstance().getStreamTask("files_search", text, streamPromise, pollingInterval)
+        .then(strm => {
+          stream = strm;
+          console.log("Streaming files search...", stream);
+          return stream.fetchStream()
+        })
+        .then(streamData => {
+          const items = streamData["data"]["items"] || [];
+          if (items.length) {
+            this.__setFilesToList(items);
+          }
+          const end = streamData["data"]["end"] || false;
+          if (end === false && items.length === 0 && stream) {
+            // nothing to stream yet, try again later
+            setTimeout(() => this.__reloadFiles(), pollingInterval);
+          }
         })
         .catch(err => console.log(err))
         .finally(() => {
           this._loadingResourcesBtn.setFetching(false);
-          if (stream.isEnd() === false) {
+          /*
+          if (stream && stream.isEnd() === false) {
             setTimeout(() => this.__reloadFiles(), 500);
           }
+          */
         });
     },
 
