@@ -73,6 +73,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       rich: true,
       cursor: "move"
     });
+    osparc.wrapper.DOMPurify.sanitizeLabel(captionTitle);
 
     this.__nodeMoving = false;
 
