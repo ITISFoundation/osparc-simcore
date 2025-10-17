@@ -7,14 +7,14 @@ from ....api._worker_tasks.tasks import register_worker_tasks
 from ....core.application import create_app
 from ....core.settings import ApplicationSettings
 
-_settings = ApplicationSettings.create_from_envs()
-_tracing_config = TracingConfig.create(
-    tracing_settings=_settings.STORAGE_TRACING,
-    service_name="storage-celery-worker",
-)
-
 
 def get_app():
+    _settings = ApplicationSettings.create_from_envs()
+    _tracing_config = TracingConfig.create(
+        tracing_settings=_settings.STORAGE_TRACING,
+        service_name="storage-celery-worker",
+    )
+
     setup_loggers(
         log_format_local_dev_enabled=_settings.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=_settings.STORAGE_LOG_FILTER_MAPPING,

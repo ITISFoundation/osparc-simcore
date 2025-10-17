@@ -67,7 +67,5 @@ def register_worker_signals(
             )
             worker_process_shutdown.connect(_worker_shutdown_wrapper(app), weak=False)
         case _:
-            worker_init.connect(
-                _worker_init_wrapper(app, app_server_factory), weak=False
-            )
-            worker_shutdown.connect(_worker_shutdown_wrapper(app), weak=False)
+            worker_init.connect(_worker_init_wrapper(app, app_server_factory))
+            worker_shutdown.connect(_worker_shutdown_wrapper(app))

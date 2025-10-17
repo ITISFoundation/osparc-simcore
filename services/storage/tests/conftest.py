@@ -1008,26 +1008,38 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
+def worker_app_settings(
+    app_settings: ApplicationSettings,
+) -> ApplicationSettings:
+    worker_test_app_settings = app_settings.model_copy(
+        update={"STORAGE_WORKER_MODE": True}, deep=True
+    )
+    print(f"{worker_test_app_settings.model_dump_json(indent=2)=}")
+    return worker_test_app_settings
+
+
+_logger = logging.getLogger(__name__)
+
+
+@pytest.fixture
 async def with_storage_celery_worker(
-    app_environment: EnvVarsDict,
     celery_app: Celery,
+    worker_app_settings: ApplicationSettings,
     monkeypatch: pytest.MonkeyPatch,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     # Signals must be explicitily connected
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
-    app_settings = ApplicationSettings.create_from_envs()
     tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
     )
 
-    app_server = FastAPIAppServer(app=create_app(app_settings, tracing_config))
+    app_server = FastAPIAppServer(app=create_app(worker_app_settings, tracing_config))
 
-    worker_init.connect(
-        _worker_init_wrapper(celery_app, lambda: app_server), weak=False
-    )
-    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
+    init_wrapper = _worker_init_wrapper(celery_app, lambda: app_server)
+    worker_init.connect(init_wrapper, weak=False)
+    shutdown_wrapper = _worker_shutdown_wrapper(celery_app)
+    worker_shutdown.connect(shutdown_wrapper, weak=False)
 
     register_worker_tasks(celery_app)
     register_celery_tasks(celery_app)
@@ -1041,6 +1053,9 @@ async def with_storage_celery_worker(
         queues="default,cpu_bound",
     ) as worker:
         yield worker
+
+    worker_init.disconnect(init_wrapper)
+    worker_shutdown.disconnect(shutdown_wrapper)
 
 
 @pytest.fixture
