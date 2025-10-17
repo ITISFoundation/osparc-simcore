@@ -114,6 +114,7 @@ def find_selected_instance_type_for_task(
             task=task,
             instance_type=selected_instance,
             resources=task_required_resources,
+            resources_diff=task_required_resources - selected_instance.resources,
         )
 
     return selected_instance
