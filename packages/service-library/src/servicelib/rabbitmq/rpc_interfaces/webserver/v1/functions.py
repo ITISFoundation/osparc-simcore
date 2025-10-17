@@ -343,7 +343,7 @@ class FunctionsRpcApi(BaseRpcApi):
         """Register a function job."""
         return TypeAdapter(RegisteredFunctionJobList).validate_python(
             await self._request(
-                "register_function_job_map",
+                "register_function_job_batch",
                 product_name=product_name,
                 user_id=user_id,
                 function_jobs=function_jobs,
