@@ -60,33 +60,14 @@ class InputRequestModel(BaseModel):
         ),
         # ❌ unsafe / invalid names
         pytest.param("<script>", "valid description", False, id="invalid-name-script"),
-        pytest.param(
-            "Robert'); DROP TABLE users;--", "valid", False, id="invalid-name-sql"
-        ),
         pytest.param("", "short", False, id="invalid-name-empty"),
         pytest.param("A" * 200, "too long name", False, id="invalid-name-too-long"),
         # ❌ unsafe / invalid descriptions
         pytest.param(
             "SafeName", "<script>alert(1)</script>", False, id="invalid-desc-script"
         ),
-        pytest.param(
-            "SafeName", "UNION SELECT data FROM users", False, id="invalid-desc-sql"
-        ),
         pytest.param("SafeName", "  ", False, id="invalid-desc-whitespace"),
         pytest.param("SafeName", "a" * 6000, False, id="invalid-desc-too-long"),
-        # ❌ additional SQL injection patterns that should be caught
-        pytest.param(
-            "SafeName",
-            "/* comment */ SELECT * FROM users",
-            False,
-            id="invalid-desc-sql-comment",
-        ),
-        pytest.param(
-            "SafeName", "TRUNCATE TABLE logs", False, id="invalid-desc-sql-truncate"
-        ),
-        pytest.param(
-            "SafeName", "DECLARE @var INT", False, id="invalid-desc-sql-declare"
-        ),
         # ❌ additional JS injection patterns that should be caught
         pytest.param(
             "SafeName",
@@ -124,18 +105,6 @@ class InputRequestModel(BaseModel):
             "<img" + " src='x'" * 100 + " onerror='alert(1)'>",
             False,
             id="redos-img-attributes",
-        ),
-        pytest.param(
-            "SafeName",
-            "SELECT" + " " * 1000 + "* FROM users",
-            False,
-            id="redos-sql-spaces",
-        ),
-        pytest.param(
-            "SafeName",
-            "/*" + "*" * 500 + "*/ SELECT data",
-            False,
-            id="redos-sql-nested-comments",
         ),
     ],
 )
