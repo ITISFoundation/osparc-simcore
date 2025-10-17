@@ -4,13 +4,12 @@ from typing import Any
 from aiohttp import web
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from pydantic import HttpUrl, ValidationError
+from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
-from yarl import URL
 
 from ._application_keys import PRODUCTS_APPKEY, PRODUCTS_URL_MAPPING_APPKEY
-from ._models import CreditResult, Product, ProductStripeInfo
+from ._models import CreditResult, Product, ProductBaseUrl, ProductStripeInfo
 from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
@@ -44,10 +43,14 @@ def get_product(app: web.Application, product_name: ProductName) -> Product:
         raise ProductNotFoundError(product_name=product_name) from exc
 
 
-def get_product_url(app: web.Application, product_name: ProductName) -> URL:
+def get_product_base_url(
+    app: web.Application, product_name: ProductName
+) -> ProductBaseUrl:
     try:
-        product_url: HttpUrl = app[PRODUCTS_URL_MAPPING_APPKEY][product_name]
-        return product_url
+        product_base_url: ProductBaseUrl = app[PRODUCTS_URL_MAPPING_APPKEY][
+            product_name
+        ]
+        return product_base_url
     except KeyError as exc:
         raise ProductNotFoundError(product_name=product_name) from exc
 

@@ -24,7 +24,6 @@ from models_library.users import UserID
 from servicelib.redis import exclusive
 from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.groups import api as group_service
-from yarl import URL
 
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
@@ -233,7 +232,8 @@ async def create_support_message(
     user_id: UserID,
     conversation_user_type: ConversationUserType,
     conversation: ConversationGetDB,
-    request_url: URL,
+    request_scheme: str,
+    request_host: str,
     # Creation attributes
     content: str,
     type_: ConversationMessageType,
@@ -250,7 +250,7 @@ async def create_support_message(
 
     product = products_service.get_product(app, product_name=product_name)
     fogbugz_settings_or_none = app[APP_SETTINGS_APPKEY].WEBSERVER_FOGBUGZ
-    _conversation_url = f"{request_url.scheme}://{request_url.host}/#/conversation/{conversation.conversation_id}"
+    _conversation_url = f"{request_scheme}://{request_host}/#/conversation/{conversation.conversation_id}"
 
     if (
         product.support_standard_group_id is None
@@ -278,7 +278,7 @@ async def create_support_message(
                 user_id=user_id,
                 message_content=message.content,
                 conversation_url=_conversation_url,
-                host=request_url.host or "unknown",
+                host=request_host,
                 product_support_assigned_fogbugz_project_id=product.support_assigned_fogbugz_project_id,
                 fogbugz_url=str(fogbugz_settings_or_none.FOGBUGZ_URL),
             )

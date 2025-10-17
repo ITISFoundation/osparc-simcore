@@ -91,7 +91,8 @@ async def create_conversation_message(request: web.Request):
         user_id=req_ctx.user_id,
         conversation_user_type=conversation_user_type,
         conversation=_conversation,
-        request_url=request.url,
+        request_scheme=request.url.scheme,
+        request_host=request.url.host or "unknown",
         content=body_params.content,
         type_=body_params.type,
     )

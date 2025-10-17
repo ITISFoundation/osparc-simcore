@@ -53,7 +53,7 @@ def set_product_url(request: web.Request, product_name: ProductName) -> None:
         and request.url.host
     ):
         request.app[PRODUCTS_URL_MAPPING_APPKEY][product_name] = ProductBaseUrl(
-            schema=request.url.scheme, host=request.url.host
+            scheme=request.url.scheme, host=request.url.host
         )
         _logger.debug(
             "Set product url for %s to %s://%s",

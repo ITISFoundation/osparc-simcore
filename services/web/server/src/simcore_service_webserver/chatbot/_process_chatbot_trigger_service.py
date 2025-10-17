@@ -11,7 +11,8 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
-from yarl import URL
+from simcore_service_webserver.products._models import ProductBaseUrl
+from simcore_service_webserver.products.errors import ProductNotFoundError
 
 from ..conversations import conversations_service
 from ..products import products_service
@@ -59,14 +60,25 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
     chat_response = await chatbot_client.ask_question(_question_for_chatbot)
 
     # After I got respond, create a new support message in the conversation
-    _product_url = products_service.get_product_url(app, product_name=_product_name)
+    try:
+        _product_base_url = products_service.get_product_base_url(
+            app, product_name=_product_name
+        )
+    except ProductNotFoundError:
+        _logger.warning(
+            "Product %s does not have base URL configured, cannot process chatbot message.",
+            _product_name,
+        )
+        _product_base_url = ProductBaseUrl(scheme="http", host="unknown")
+
     await conversations_service.create_support_message(
         app=app,
         product_name=rabbit_message.conversation.product_name,
         user_id=_product.support_chatbot_user_id,
         conversation_user_type=ConversationUserType.CHATBOT_USER,
         conversation=rabbit_message.conversation,
-        request_url=_product_url or URL("http://unknown"),
+        request_scheme=_product_base_url.scheme,
+        request_host=_product_base_url.host or "unknown",
         content=chat_response.answer,
         type_=ConversationMessageType.MESSAGE,
     )

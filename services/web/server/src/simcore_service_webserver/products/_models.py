@@ -354,5 +354,5 @@ class Product(BaseModel):
 
 
 class ProductBaseUrl(BaseModel):
-    schema: str
+    scheme: str
     host: str
