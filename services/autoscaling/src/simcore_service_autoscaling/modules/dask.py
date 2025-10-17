@@ -12,6 +12,7 @@ from aws_library.ec2 import EC2InstanceData, Resources
 from dask_task_models_library.resource_constraints import (
     DASK_WORKER_THREAD_RESOURCE_NAME,
     DaskTaskResources,
+    create_ec2_resource_constraint_key,
 )
 from distributed.core import Status
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
@@ -339,6 +340,9 @@ async def try_retire_nodes(
         )
 
 
+_LARGE_RESOURCE: Final[int] = 99999
+
+
 def add_instance_generic_resources(
     settings: DaskMonitoringSettings, instance: EC2InstanceData
 ) -> None:
@@ -351,3 +355,7 @@ def add_instance_generic_resources(
     instance.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] = (
         instance_threads
     )
+
+    instance.resources.generic_resources[
+        create_ec2_resource_constraint_key(instance.type)
+    ] = _LARGE_RESOURCE
