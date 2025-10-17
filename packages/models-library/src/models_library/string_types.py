@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, Final, NamedTuple, TypeAlias
 
 import annotated_types
 from pydantic import (
@@ -19,56 +19,141 @@ _SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
 _LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github descriptions
 
 
-# Detect potentially malicious HTML or JavaScript code — specifically cross-site scripting (XSS) vectors
-_XSS_PATTERN: Final = re.compile(
-    r"""
-    (?ix)                                   # i: case-insensitive, x: verbose (allow comments/whitespace)
-
-    # --- Dangerous tags (open or close) ---
-    <
-    (?:script|iframe|object|embed)          # tag names
-    (?:\s[^>]{0,100})?>                     # optional attributes before '>'
-    |
-    </(?:script|iframe|object|embed)>       # closing tags
-
-    # --- <link> tags with javascript: href ---
-    |
-    <link
-    (?:\s[^>]{0,200})?                      # optional attributes
-    href\s*=\s*["']?\s*javascript:
-
-    # --- Scripting protocols ---
-    |
-    (?:vb|java)script:
-
-    # --- Data URI containing HTML ---
-    |
-    data:text/html
-
-    # --- Obfuscated 'javascript:' using HTML entities ---
-    |
-    &#(?:x6A|106);avascript:
-
-    # --- <img> or <svg> tags with event handlers ---
-    |
-    <(?:img|svg)
-    (?:\s[^>]{0,200})?
-    on\w+\s*=
-
-    # --- Any inline event handler (e.g., onload=, onclick=) ---
-    |
-    on[a-z]+\s*=
-""",
-    re.VERBOSE | re.IGNORECASE,
-)
 STRING_UNSAFE_CONTENT_ERROR_CODE: Final[str] = "string_unsafe_content"
 
 
+class XSSPattern(NamedTuple):
+    pattern: re.Pattern
+    message: str
+
+
+_SAFE_XSS_PATTERNS: Final[list[XSSPattern]] = [
+    # === Lightweight, non-backtracking safe checks (bounded / literal / simple alternations) ===
+    XSSPattern(
+        re.compile(r"(?i)<\s*(?:script|iframe|object|embed|link|meta|base)\b"),
+        "Contains potentially dangerous HTML tags",
+    ),
+    XSSPattern(
+        re.compile(r"(?i)</\s*(?:script|iframe|object|embed|link|meta|base)\s*>"),
+        "Contains potentially dangerous HTML closing tags",
+    ),
+    XSSPattern(
+        re.compile(
+            r"(?i)\b(?:src|href|xlink:href|srcdoc)\s*=\s*['\"]?\s*(?:javascript:|vbscript:|data:)",
+            re.IGNORECASE,
+        ),
+        "Contains unsafe URL protocols in attributes",
+    ),
+    XSSPattern(
+        re.compile(r"(?i)javascript%3a|vbscript%3a|data%3a"),
+        "Contains encoded malicious protocols",
+    ),
+    XSSPattern(
+        re.compile(
+            r"(?ix)&#\s*(?:x[0-9a-f]{1,6}|[0-9]{1,6})\s*;\s*(?:javascript:|vbscript:|data:)",
+            re.IGNORECASE,
+        ),
+        "Contains encoded characters followed by unsafe protocols",
+    ),
+    XSSPattern(
+        re.compile(r"(?i)\bon[a-z]{1,20}\s*="),
+        "Contains inline event handlers",
+    ),
+    XSSPattern(
+        re.compile(
+            r"(?ix)style\s*=\s*['\"][^'\"]{0,500}\b(?:expression\(|url\s*\()",
+            re.IGNORECASE,
+        ),
+        "Contains potentially dangerous CSS expressions",
+    ),
+    XSSPattern(
+        re.compile(
+            r"(?ix)<\s*(?:img|svg)\b[^>]{0,500}\b(?:src|xlink:href)\s*=\s*['\"]?(?:javascript:|data:)",
+            re.IGNORECASE,
+        ),
+        "Contains unsafe protocols in image or SVG tags",
+    ),
+    XSSPattern(
+        re.compile(
+            r"(?ix)<\s*meta\b[^>]{0,200}\bhttp-equiv\s*=\s*['\"]?refresh['\"]?",
+            re.IGNORECASE,
+        ),
+        "Contains meta refresh directives",
+    ),
+    XSSPattern(
+        re.compile(r"(?i)\bsrcdoc\s*=\s*['\"]"),
+        "Contains srcdoc attribute which may execute arbitrary HTML",
+    ),
+    XSSPattern(
+        re.compile(r"[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]"),
+        "Contains control or invisible characters",
+    ),
+    XSSPattern(
+        re.compile(
+            r"(?i)(\$\{[^}]{0,200}\}|\#\{[^}]{0,200}\}|<%[^%]{0,200}%>|{{[^}]{0,200}})"
+        ),
+        "Contains template injection patterns",
+    ),
+    XSSPattern(
+        re.compile(r"(?i)\bvbscript\s*:"),
+        "Contains VBScript protocol",
+    ),
+]
+
+
+def _contains_percent_or_entity_obfuscation(value_lower: str) -> bool:
+    # simple substring checks — no heavy regex backtracking
+    if (
+        "javascript%3a" in value_lower
+        or "vbscript%3a" in value_lower
+        or "data%3a" in value_lower
+    ):
+        return True
+    return "data:text/html" in value_lower
+
+
+def _contains_obfuscated_protocol_by_normalization(value: str) -> bool:
+    # remove common separators/control chars and check for plain protocols in the normalized stream
+    # this avoids complex interleaved-regexes that cause backtracking
+    norm = re.sub(r"[\s\x00-\x1f\x7f\W]+", "", value).lower()
+    return (
+        norm.startswith("javascript:")
+        or "javascript:" in norm
+        or "vbscript:" in norm
+        or "data:text/html" in norm
+        or "data:" in norm
+    )
+
+
 def validate_input_safety(value: str) -> str:
-    # NOTE: Don't sanitize against SL injects since underlying repository layer does it
-    if _XSS_PATTERN.search(value):
-        msg_template = "This input contains potentially unsafe content."
-        raise PydanticCustomError(STRING_UNSAFE_CONTENT_ERROR_CODE, msg_template, {})
+    # Run fast, simple regex checks first (fail-fast).
+    for xss_pattern in _SAFE_XSS_PATTERNS:
+        if xss_pattern.pattern.search(value):
+            raise PydanticCustomError(
+                STRING_UNSAFE_CONTENT_ERROR_CODE,
+                "{details}",
+                {"details": xss_pattern.message},
+            )
+
+    # Lowercase once for substring checks
+    vlow = value.lower()
+
+    # Fast substring / percent-encoding checks (no backtracking risk)
+    if _contains_percent_or_entity_obfuscation(vlow):
+        raise PydanticCustomError(
+            STRING_UNSAFE_CONTENT_ERROR_CODE,
+            "Contains encoded malicious content",
+            {},
+        )
+
+    # Normalization-based obfuscation detection (de-duplicates heavy regex)
+    if _contains_obfuscated_protocol_by_normalization(value):
+        raise PydanticCustomError(
+            STRING_UNSAFE_CONTENT_ERROR_CODE,
+            "Contains obfuscated unsafe protocols",
+            {},
+        )
+
     return value
 
 
@@ -83,7 +168,7 @@ NameSafeStr: TypeAlias = Annotated[
         strip_whitespace=True,
         min_length=1,
         max_length=MAX_NAME_LENGTH,
-        pattern=r"^[A-Za-z0-9 ._\-]+$",  # strict whitelist
+        pattern=r"^[A-Za-z0-9 ._-]+$",  # string that ONLY contains alphanumeric characters, spaces, dots, underscores, or hyphens
     ),
     AfterValidator(validate_input_safety),
 ]
@@ -106,7 +191,7 @@ GlobPatternSafeStr: TypeAlias = Annotated[
         min_length=3,
         max_length=200,
         strip_whitespace=True,
-        pattern=r"^[^%]*$",
+        pattern=r"^[A-Za-z0-9 ._\*-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and asterisks
     ),
     AfterValidator(validate_input_safety),
 ]
@@ -118,7 +203,7 @@ SearchPatternSafeStr: TypeAlias = Annotated[
         strip_whitespace=True,
         min_length=1,
         max_length=200,
-        pattern=r"^[^\%]+$",
+        pattern=r"^[A-Za-z0-9 ._\-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and asterisks
     ),
     AfterValidator(validate_input_safety),
     annotated_types.doc(
