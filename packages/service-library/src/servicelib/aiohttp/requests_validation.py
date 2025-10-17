@@ -18,11 +18,14 @@ from common_library.error_codes import create_error_code
 from common_library.error_messages import MSG_TRY_AGAIN_OR_SUPPORT
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
-from models_library.rest_error import EnvelopedError
+from models_library.basic_types import IDStr
+from models_library.rest_error import EnvelopedError, ErrorGet
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
+from ..rest_constants import RESPONSE_MODEL_POLICY
 from . import status
+from .web_exceptions_handling import create_error_context_from_request
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
@@ -86,6 +89,49 @@ def handle_validation_as_http_error(
 
         raise web.HTTPUnprocessableEntity(  # 422
             text=error_json_str,
+            content_type=MIMETYPE_APPLICATION_JSON,
+        ) from err
+
+
+@contextmanager
+def _handle_json_decode_as_http_error(request: web.Request) -> Iterator[None]:
+    """Context manager to handle JSONDecodeError and reraise them as HTTPBadRequest error
+
+    Arguments:
+        request -- web request with JSON body
+
+    Raises:
+        web.HTTPBadRequest: (400) raised from a JSONDecodeError including a SupportID
+    """
+    try:
+        yield
+
+    except json.decoder.JSONDecodeError as err:
+        # This error is really unusual so we create an OEC to help troubleshooting it
+        error_code = create_error_code(err)
+        user_error_msg = user_message(
+            "The request contains data that is not in a valid format. "
+            + MSG_TRY_AGAIN_OR_SUPPORT,
+            _version=1,
+        )
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                user_error_msg,
+                error=err,
+                error_code=error_code,
+                error_context=create_error_context_from_request(request),
+            )
+        )
+        error_model = EnvelopedError(
+            error=ErrorGet(
+                message=user_error_msg,
+                support_id=IDStr(error_code),
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        )
+        # 400 with a support ID!
+        raise web.HTTPBadRequest(
+            text=error_model.model_dump_json(**RESPONSE_MODEL_POLICY),
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
@@ -194,26 +240,8 @@ async def parse_request_body_as(
             # requests w/o body e.g. when model-schema is fully optional
             body = {}
         else:
-            try:
-
+            with _handle_json_decode_as_http_error(request):
                 body = await request.json()
-
-            except json.decoder.JSONDecodeError as err:
-                error_code = create_error_code(err)
-                user_error_msg = user_message(
-                    "The request contains data that is not in a valid format. "
-                    + MSG_TRY_AGAIN_OR_SUPPORT,
-                    _version=2,
-                )
-                _logger.exception(
-                    **create_troubleshooting_log_kwargs(
-                        user_error_msg,
-                        error=err,
-                        error_code=error_code,
-                        error_context={"request": request.url},
-                    )
-                )
-                raise web.HTTPBadRequest(text=user_error_msg) from err
 
         if hasattr(model_schema_cls, "model_validate"):
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError

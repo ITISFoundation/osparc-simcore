@@ -20,6 +20,9 @@ def create_error_context_from_request(request: web.Request) -> dict[str, Any]:
     }
 
 
+# TODO: HttpJsonError(error = ErrorGet)
+
+
 def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
     assert is_error(status_code), f"{status_code=} must be an error [{error=}]"  # nosec
 

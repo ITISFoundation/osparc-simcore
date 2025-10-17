@@ -56,7 +56,10 @@ def create_error_code(exception: BaseException) -> ErrorCodeStr:
     """
     Generates a unique error code for the given exception.
 
-    The error code follows the format: `OEC:{traceback}-{timestamp}`.
+    The error code follows the format: `OEC:{traceback}-{timestamp}`, i.e.
+    error with the same traceback fingerprint will have the same first part
+    and only the timestamp will differ.
+
     This code is intended to be shared with the front-end as a `SupportID`
     for debugging and support purposes.
     """
