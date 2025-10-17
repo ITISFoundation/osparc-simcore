@@ -39,7 +39,7 @@ _SAFE_XSS_PATTERNS: Final[list[XSSPattern]] = [
     ),
     XSSPattern(
         re.compile(
-            r"(?i)\b(?:src|href|xlink:href|srcdoc)\s*=\s*['\"]?\s*(?:javascript:|vbscript:|data:)",
+            r"(?i)\b(?:src|href|xlink:href|srcdoc)\s*=\s*(?:['\"]\s*)?(?:javascript:|vbscript:|data:)",
             re.IGNORECASE,
         ),
         "Contains unsafe URL protocols in attributes",
