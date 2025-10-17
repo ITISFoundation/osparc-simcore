@@ -56,8 +56,10 @@ qx.Class.define("osparc.data.StreamTask", {
   },
 
   members: {
+    // override
     _startPolling: function() {
-      this.fetchStream();
+      return;
+      // this.fetchStream();
     },
 
     fetchStream: function() {
