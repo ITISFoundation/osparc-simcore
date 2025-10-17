@@ -232,8 +232,6 @@ async def create_support_message(
     user_id: UserID,
     conversation_user_type: ConversationUserType,
     conversation: ConversationGetDB,
-    product_url_scheme: str,
-    product_url_host: str,
     # Creation attributes
     content: str,
     type_: ConversationMessageType,
@@ -250,7 +248,9 @@ async def create_support_message(
 
     product = products_service.get_product(app, product_name=product_name)
     fogbugz_settings_or_none = app[APP_SETTINGS_APPKEY].WEBSERVER_FOGBUGZ
-    _conversation_url = f"{product_url_scheme}://{product_url_host}/#/conversation/{conversation.conversation_id}"
+    _conversation_url = (
+        f"{product.base_url}#/conversation/{conversation.conversation_id}"
+    )
 
     if (
         product.support_standard_group_id is None
@@ -278,7 +278,7 @@ async def create_support_message(
                 user_id=user_id,
                 message_content=message.content,
                 conversation_url=_conversation_url,
-                host=product_url_host,
+                host=product.base_url.host or "unknown",
                 product_support_assigned_fogbugz_project_id=product.support_assigned_fogbugz_project_id,
                 fogbugz_url=str(fogbugz_settings_or_none.FOGBUGZ_URL),
             )

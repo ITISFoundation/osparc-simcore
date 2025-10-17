@@ -8,8 +8,8 @@ from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
-from ._application_keys import PRODUCTS_APPKEY, PRODUCTS_URL_MAPPING_APPKEY
-from ._models import CreditResult, Product, ProductBaseUrl, ProductStripeInfo
+from ._application_keys import PRODUCTS_APPKEY
+from ._models import CreditResult, Product, ProductStripeInfo
 from ._repository import ProductRepository
 from .errors import (
     BelowMinimumPaymentError,
@@ -39,18 +39,6 @@ def get_product(app: web.Application, product_name: ProductName) -> Product:
     try:
         product: Product = app[PRODUCTS_APPKEY][product_name]
         return product
-    except KeyError as exc:
-        raise ProductNotFoundError(product_name=product_name) from exc
-
-
-def get_product_base_url(
-    app: web.Application, product_name: ProductName
-) -> ProductBaseUrl:
-    try:
-        product_base_url: ProductBaseUrl = app[PRODUCTS_URL_MAPPING_APPKEY][
-            product_name
-        ]
-        return product_base_url
     except KeyError as exc:
         raise ProductNotFoundError(product_name=product_name) from exc
 

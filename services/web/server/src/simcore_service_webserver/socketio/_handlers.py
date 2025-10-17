@@ -149,8 +149,6 @@ async def connect(
             extra=get_log_record_extra(user_id=user_id),
         )
 
-        products_web.set_product_base_url(_request, product_name)
-
         await _set_user_in_group_rooms(app, user_id, socket_id)
         await _set_user_in_project_rooms(app, user_id, client_session_id, socket_id)
 

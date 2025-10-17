@@ -17,6 +17,7 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
+    HttpUrl,
     PositiveInt,
     field_serializer,
     field_validator,
@@ -85,6 +86,11 @@ class Product(BaseModel):
         re.Pattern,
         BeforeValidator(lambda s: s.strip() if isinstance(s, str) else s),
         Field(description="Host regex"),
+    ]
+
+    base_url: Annotated[
+        HttpUrl,
+        Field(description="Product Base URL"),
     ]
 
     support_email: Annotated[
