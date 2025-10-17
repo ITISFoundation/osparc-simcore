@@ -34,7 +34,7 @@ def parse_dask_job_id(
     job_id: str,
 ) -> tuple[ServiceKey, ServiceVersion, UserID, ProjectID, NodeID]:
     parts = job_id.split(":")
-    assert len(parts) == _JOB_ID_PARTS  # nosec
+    assert len(parts) == _JOB_ID_PARTS, f"unexpected job id {parts=}"  # nosec
     return (
         parts[0],
         parts[1],
