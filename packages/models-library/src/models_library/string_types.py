@@ -18,17 +18,55 @@ MAX_NAME_LENGTH: Final[int] = 100
 _SHORT_TRUNCATED_STR_MAX_LENGTH: Final[int] = 600
 _LONG_TRUNCATED_STR_MAX_LENGTH: Final[int] = 65536  # same as github descriptions
 
-_SQL_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
-    r"(?i)(?:\b(?:SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|EXEC|TRUNCATE|MERGE|GRANT|REVOKE|COMMIT|ROLLBACK|DECLARE|CAST|CONVERT)\b|--|;|/\*|\*/|')",
-)
-_JS_INJECTION_PATTERN: Final[re.Pattern] = re.compile(
-    r"(?i)<(?:script|iframe|object|embed)(?:\s[^>]{0,100})?>|</(?:script|iframe|object|embed)>|<link(?:\s[^>]{0,200})?href\s*=\s*[\"']?\s*javascript:|(?:vb|java)script:|data:text/html|&#(?:x6A|106);avascript:|<(?:img|svg)(?:\s[^>]{0,200})?on\w+\s*=|on[a-z]+\s*=",
+
+# Detect potentially malicious HTML or JavaScript code — specifically cross-site scripting (XSS) vectors
+_XSS_PATTERN: Final = re.compile(
+    r"""
+    (?ix)                                   # i: case-insensitive, x: verbose (allow comments/whitespace)
+
+    # --- Dangerous tags (open or close) ---
+    <
+    (?:script|iframe|object|embed)          # tag names
+    (?:\s[^>]{0,100})?>                     # optional attributes before '>'
+    |
+    </(?:script|iframe|object|embed)>       # closing tags
+
+    # --- <link> tags with javascript: href ---
+    |
+    <link
+    (?:\s[^>]{0,200})?                      # optional attributes
+    href\s*=\s*["']?\s*javascript:
+
+    # --- Scripting protocols ---
+    |
+    (?:vb|java)script:
+
+    # --- Data URI containing HTML ---
+    |
+    data:text/html
+
+    # --- Obfuscated 'javascript:' using HTML entities ---
+    |
+    &#(?:x6A|106);avascript:
+
+    # --- <img> or <svg> tags with event handlers ---
+    |
+    <(?:img|svg)
+    (?:\s[^>]{0,200})?
+    on\w+\s*=
+
+    # --- Any inline event handler (e.g., onload=, onclick=) ---
+    |
+    on[a-z]+\s*=
+""",
+    re.VERBOSE | re.IGNORECASE,
 )
 STRING_UNSAFE_CONTENT_ERROR_CODE: Final[str] = "string_unsafe_content"
 
 
 def validate_input_safety(value: str) -> str:
-    if _SQL_INJECTION_PATTERN.search(value) or _JS_INJECTION_PATTERN.search(value):
+    # NOTE: Don't sanitize against SL injects since underlying repository layer does it
+    if _XSS_PATTERN.search(value):
         msg_template = "This input contains potentially unsafe content."
         raise PydanticCustomError(STRING_UNSAFE_CONTENT_ERROR_CODE, msg_template, {})
     return value
