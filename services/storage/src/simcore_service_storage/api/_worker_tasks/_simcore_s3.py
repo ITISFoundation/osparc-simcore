@@ -162,6 +162,7 @@ async def search(
             project_id=project_id,
             name_pattern=name_pattern,
             modified_at=modified_at,
+            limit=1,  # NOTE: yield items as they come
         ):
             data = [
                 TaskStreamItem(
