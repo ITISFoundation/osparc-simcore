@@ -3,6 +3,7 @@ import logging
 from typing import Any, cast
 
 from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
+from aws_library.ec2._models import EC2InstanceType
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication
 from models_library.docker import DockerLabelKey
@@ -191,3 +192,14 @@ class ComputationalAutoscalingProvider:
         app_settings = get_application_settings(app)
         assert app_settings.AUTOSCALING_DASK  # nosec
         dask.add_instance_generic_resources(app_settings.AUTOSCALING_DASK, instance)
+
+    def add_instance_type_generic_resource(
+        self, app: FastAPI, instance_type: EC2InstanceType
+    ) -> None:
+        assert self  # nosec
+        assert app  # nosec
+        app_settings = get_application_settings(app)
+        assert app_settings.AUTOSCALING_DASK  # nosec
+        dask.add_instance_type_generic_resource(
+            app_settings.AUTOSCALING_DASK, instance_type
+        )

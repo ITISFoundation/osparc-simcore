@@ -9,6 +9,7 @@ from typing import Any, Final, TypeAlias, TypedDict
 import dask.typing
 import distributed
 from aws_library.ec2 import EC2InstanceData, Resources
+from aws_library.ec2._models import EC2InstanceType
 from dask_task_models_library.resource_constraints import (
     DASK_WORKER_THREAD_RESOURCE_NAME,
     DaskTaskResources,
@@ -358,4 +359,23 @@ def add_instance_generic_resources(
 
     instance.resources.generic_resources[
         create_ec2_resource_constraint_key(instance.type)
+    ] = _LARGE_RESOURCE
+
+
+def add_instance_type_generic_resource(
+    settings: DaskMonitoringSettings, instance_type: EC2InstanceType
+) -> None:
+    instance_threads = round(instance_type.resources.cpus)
+    if settings.DASK_NTHREADS > 0:
+        # this overrides everything
+        instance_threads = settings.DASK_NTHREADS
+    if settings.DASK_NTHREADS_MULTIPLIER > 1:
+        instance_threads = instance_threads * settings.DASK_NTHREADS_MULTIPLIER
+
+    instance_type.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] = (
+        instance_threads
+    )
+
+    instance_type.resources.generic_resources[
+        create_ec2_resource_constraint_key(instance_type.name)
     ] = _LARGE_RESOURCE

@@ -346,7 +346,9 @@ async def _try_attach_pending_ec2s(
     )
 
 
-async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
+async def _sorted_allowed_instance_types(
+    app: FastAPI, auto_scaling_mode: AutoscalingProvider
+) -> list[EC2InstanceType]:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
@@ -370,6 +372,8 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         return allowed_instance_type_names.index(f"{instance_type.name}")
 
     allowed_instance_types.sort(key=_as_selection)
+    for instance_type in allowed_instance_types:
+        auto_scaling_mode.add_instance_type_generic_resource(app, instance_type)
     return allowed_instance_types
 
 
@@ -1578,7 +1582,10 @@ async def auto_scale_cluster(
     the additional load.
     """
     # current state
-    allowed_instance_types = await _sorted_allowed_instance_types(app)
+    allowed_instance_types = await _sorted_allowed_instance_types(
+        app, auto_scaling_mode
+    )
+
     cluster = await _analyze_current_cluster(
         app, auto_scaling_mode, allowed_instance_types
     )
