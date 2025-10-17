@@ -28,12 +28,21 @@ qx.Class.define("osparc.store.StreamTasks", {
   },
 
   members: {
-    createStreamTask: function(streamPromise, interval) {
+    getStreamTask: function(action, params, streamPromise, interval) {
+      const internalId = action + "_" + JSON.stringify(params);
+      const task = this.__getStreamTask(internalId);
+      if (task) {
+        return Promise.resolve(task);
+      }
+      return this.__createStreamTask(internalId, streamPromise, interval);
+    },
+
+    __createStreamTask: function(internalId, streamPromise, interval) {
       return new Promise((resolve, reject) => {
         streamPromise
           .then(streamData => {
             if ("status_href" in streamData) {
-              const task = this.__addTask(streamData, interval);
+              const task = this.__addStreamTask(internalId, streamData, interval);
               resolve(task);
             } else {
               throw Error("Status missing");
@@ -43,32 +52,33 @@ qx.Class.define("osparc.store.StreamTasks", {
       });
     },
 
-    __removeTask: function(task) {
+    __getStreamTask: function(internalId) {
       const tasks = this.getTasks();
-      const index = tasks.findIndex(t => t.getTaskId() === task.getTaskId());
-      if (index > -1) {
-        tasks.splice(index, 1);
+      if (internalId in tasks) {
+        return tasks[internalId];
       }
+      return null;
     },
 
-    __addTask: function(streamData, interval) {
-      const tasks = this.getTasks();
-      if (streamData["task_id"] in tasks) {
-        return tasks[streamData["task_id"]];
+    __addStreamTask: function(internalId, streamData, interval) {
+      const task = this.__getStreamTask(internalId);
+      if (task) {
+        return task;
       }
 
       const stream = new osparc.data.StreamTask(streamData, interval);
-      stream.addListener("resultReceived", () => this.__removeTask(stream), this);
-      stream.addListener("taskAborted", () => this.__removeTask(stream), this);
-      tasks[stream.getTaskId()] = stream;
+      stream.addListener("resultReceived", () => this.__removeStreamTask(stream), this);
+      stream.addListener("taskAborted", () => this.__removeStreamTask(stream), this);
+      const tasks = this.getTasks();
+      tasks[internalId] = stream;
       return stream;
     },
 
-    fetchStream: function(taskId) {
+    __removeStreamTask: function(stream) {
       const tasks = this.getTasks();
-      if (taskId in tasks) {
-        const task = tasks[taskId];
-        task.fetchStream();
+      const index = tasks.findIndex(t => t.getTaskId() === stream.getTaskId());
+      if (index > -1) {
+        tasks.splice(index, 1);
       }
     },
   }

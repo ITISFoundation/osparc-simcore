@@ -118,7 +118,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __filesList: null,
     __loadingWorkspaces: null,
     __loadingFolders: null,
-    __loadingFiles: null,
     __lastUrlParams: null,
 
     // overridden
@@ -428,7 +427,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const filterData = this._searchBarFilter.getFilterData();
       const text = filterData.text ? encodeURIComponent(filterData.text) : "";
       const streamPromise = osparc.store.Data.getInstance().searchFiles(text);
-      osparc.store.StreamTasks.getInstance().createStreamTask(streamPromise, 500)
+      osparc.store.StreamTasks.getInstance().getStreamTask("files_search", text, streamPromise, 500)
         .then(stream => {
           // const stream = new osparc.data.StreamTask(streamData);
           stream.addListener("streamReceived", e => {
@@ -436,13 +435,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             if ("items" in data) {
               this.__setFilesToList(data["items"]);
             }
-            if (stream.isEnd() === false) {
-              setTimeout(() => stream.fetchStream(), 2000);
-            }
           }, this);
         })
         .catch(err => console.log(err))
-        .finally(() => this.__loadingFiles = null);
+        .finally(() => {
+          this._loadingResourcesBtn.setFetching(false);
+          if (stream.isEnd() === false) {
+            setTimeout(() => this.__reloadFiles(), 500);
+          }
+        });
     },
 
     __resetStudiesList: function() {
