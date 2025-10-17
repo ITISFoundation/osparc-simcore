@@ -325,7 +325,7 @@ async def compute_cluster_total_resources(
                 DASK_WORKER_THREAD_RESOURCE_NAME: worker_threads,
             }
             cluster_resources += Resources.from_flat_dict(
-                worker_dask_resources.items(), mapping=DASK_TO_RESOURCE_NAME_MAPPING
+                worker_dask_resources, mapping=DASK_TO_RESOURCE_NAME_MAPPING
             )
 
         return cluster_resources
