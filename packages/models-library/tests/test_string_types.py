@@ -106,6 +106,31 @@ class InputRequestModel(BaseModel):
             False,
             id="redos-img-attributes",
         ),
+        # ❌ Obfuscated protocol tests
+        pytest.param(
+            "SafeName",
+            "j a v a s c r i p t:alert(1)",
+            False,
+            id="invalid-desc-spaced-js",
+        ),
+        pytest.param(
+            "SafeName",
+            "java\nscript\t:alert(1)",
+            False,
+            id="invalid-desc-newline-js",
+        ),
+        pytest.param(
+            "SafeName",
+            "d\ta\tt\ta:text/html,<script>alert(1)</script>",
+            False,
+            id="invalid-desc-obfuscated-data",
+        ),
+        pytest.param(
+            "SafeName",
+            "v b\ts c r i p t:MsgBox(1)",
+            False,
+            id="invalid-desc-spaced-vbs",
+        ),
     ],
 )
 def test_safe_string_types(name: str, description: str, should_pass: bool):
