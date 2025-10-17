@@ -93,6 +93,24 @@ async def register_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
+    function_job: FunctionJob,
+) -> RegisteredFunctionJob:
+    encoded_function_jobs = _encode_functionjob(function_job)
+    created_function_jobs_db = await _function_jobs_repository.create_function_jobs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_jobs=[encoded_function_jobs],
+    )
+    assert len(created_function_jobs_db) == 1  # nosec
+    return _decode_functionjob(created_function_jobs_db[0])
+
+
+async def register_function_job_batch(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
     function_jobs: FunctionJobList,
 ) -> RegisteredFunctionJobList:
     TypeAdapter(FunctionJobList).validate_python(function_jobs)

@@ -20,6 +20,7 @@ from models_library.functions import (
     FunctionClass,
     FunctionGroupAccessRights,
     FunctionInputsList,
+    FunctionJob,
     FunctionJobList,
     FunctionJobStatus,
     FunctionOutputs,
@@ -320,12 +321,29 @@ class FunctionsRpcApi(BaseRpcApi):
         *,
         product_name: ProductName,
         user_id: UserID,
+        function_job: FunctionJob,
+    ) -> RegisteredFunctionJob:
+        """Register a function job."""
+        return TypeAdapter(RegisteredFunctionJob).validate_python(
+            await self._request(
+                "register_function_job",
+                product_name=product_name,
+                user_id=user_id,
+                function_job=function_job,
+            ),
+        )
+
+    async def register_function_job_batch(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
         function_jobs: FunctionJobList,
     ) -> RegisteredFunctionJobList:
         """Register a function job."""
         return TypeAdapter(RegisteredFunctionJobList).validate_python(
             await self._request(
-                "register_function_job",
+                "register_function_job_map",
                 product_name=product_name,
                 user_id=user_id,
                 function_jobs=function_jobs,

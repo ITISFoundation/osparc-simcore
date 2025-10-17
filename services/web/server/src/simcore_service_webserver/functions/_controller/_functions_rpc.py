@@ -9,6 +9,7 @@ from models_library.functions import (
     FunctionID,
     FunctionInputSchema,
     FunctionInputsList,
+    FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
@@ -95,9 +96,27 @@ async def register_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
+    function_job: FunctionJob,
+) -> RegisteredFunctionJob:
+    return await _functions_service.register_function_job(
+        app=app, user_id=user_id, product_name=product_name, function_job=function_job
+    )
+
+
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionJobClassError,
+        FunctionJobsWriteApiAccessDeniedError,
+    )
+)
+async def register_function_job_batch(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
     function_jobs: FunctionJobList,
 ) -> RegisteredFunctionJobList:
-    return await _functions_service.register_function_job(
+    return await _functions_service.register_function_job_batch(
         app=app, user_id=user_id, product_name=product_name, function_jobs=function_jobs
     )
 
