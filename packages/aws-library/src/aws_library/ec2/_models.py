@@ -46,37 +46,43 @@ class Resources(BaseModel, frozen=True):
     def __ge__(self, other: "Resources") -> bool:
         """operator for >= comparison
         if self has greater or equal resources than other, returns True
+        This will return True only if any of the resources in self is greater or equal to other
+
         Note that generic_resources are compared only if they are numeric
         Non-numeric generic resources must be equal in both or only defined in self
         to be considered greater or equal
         """
-
-        if not (self.cpus >= other.cpus and self.ram >= other.ram):
-            return False
-
-        keys = set(self.generic_resources) | set(other.generic_resources)
-        for k in keys:
-            a = self.generic_resources.get(k)
-            b = other.generic_resources.get(
-                k, a
-            )  # NOTE: get from other, default to "a" resources so that non-existing keys can be compared as equal
-            if isinstance(a, int | float) and isinstance(b, int | float):
-                if a < b:
-                    return False
-            elif a != b:
-                assert isinstance(a, str | None)  # nosec
-                assert isinstance(b, int | float | str | None)  # nosec
-                return False
-        return True
+        if self == other:
+            return True
+        return self > other
 
     def __gt__(self, other: "Resources") -> bool:
         """operator for > comparison
-        if self has greater resources than other, returns True
+        if self has any resources gretaer than other, returns True (even if different resource types are smaller)
+
         Note that generic_resources are compared only if they are numeric
         Non-numeric generic resources must be equal in both or only defined in self
         to be considered greater
         """
-        return self >= other and self != other
+        if (self.cpus > other.cpus) or (self.ram > other.ram):
+            return True
+
+        keys = set(self.generic_resources) | set(other.generic_resources)
+        for k in keys:
+            a = self.generic_resources.get(k)
+            b = other.generic_resources.get(k)
+            if a is None:
+                continue
+            if b is None:
+                return True
+            if isinstance(a, int | float) and isinstance(b, int | float):
+                if a > b:
+                    return True
+            elif a != b:
+                assert isinstance(a, str | None)  # nosec
+                assert isinstance(b, int | float | str | None)  # nosec
+                return True
+        return False
 
     def __add__(self, other: "Resources") -> "Resources":
         """operator for adding two Resources

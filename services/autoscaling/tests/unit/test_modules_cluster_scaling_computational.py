@@ -934,7 +934,6 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
         [InstanceTypeType | None, Resources], DaskTaskResources
     ],
     ec2_client: EC2Client,
-    faker: Faker,
     caplog: pytest.LogCaptureFixture,
 ):
     # we have nothing running now

@@ -36,7 +36,7 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
         (
             Resources(cpus=0.05, ram=ByteSize(1)),
             Resources(cpus=0.1, ram=ByteSize(0)),
-            False,
+            True,  # ram is larger
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(0)),
@@ -46,7 +46,7 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
         (
             Resources(cpus=0.1, ram=ByteSize(0), generic_resources={"GPU": 1}),
             Resources(cpus=0.1, ram=ByteSize(1)),
-            False,  # ram is not enough
+            True,  # GPU is larger
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
@@ -71,7 +71,7 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "2"}),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
-            False,
+            True,  # string resrouces are not comparable so "2" is considered larger
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
@@ -117,7 +117,7 @@ def test_resources_ge_operator(
         (
             Resources(cpus=0.05, ram=ByteSize(1)),
             Resources(cpus=0.1, ram=ByteSize(0)),
-            False,
+            True,
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(0)),
@@ -127,7 +127,7 @@ def test_resources_ge_operator(
         (
             Resources(cpus=0.1, ram=ByteSize(0), generic_resources={"GPU": 1}),
             Resources(cpus=0.1, ram=ByteSize(1)),
-            False,  # ram is not enough
+            True,  # ram is not enough
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
@@ -152,7 +152,7 @@ def test_resources_ge_operator(
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "2"}),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
-            False,
+            True,  # string resources are not comparable, so a > b
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
