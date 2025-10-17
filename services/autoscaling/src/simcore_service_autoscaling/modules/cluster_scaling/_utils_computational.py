@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_MAX_CPU: Final[float] = 1
 _DEFAULT_MAX_RAM: Final[int] = 1024
 
-_DASK_TO_RESOURCE_NAME_MAPPING: Final[dict[str, str]] = {
+DASK_TO_RESOURCE_NAME_MAPPING: Final[dict[str, str]] = {
     "CPU": "cpus",
     "RAM": "ram",
 }
@@ -30,7 +30,7 @@ def resources_from_dask_task(task: DaskTask) -> Resources:
     )  # merge with defaults to ensure there is always some minimal resource defined
 
     return Resources.from_flat_dict(
-        task_resources.items(), mapping=_DASK_TO_RESOURCE_NAME_MAPPING
+        task_resources.items(), mapping=DASK_TO_RESOURCE_NAME_MAPPING
     )
 
 

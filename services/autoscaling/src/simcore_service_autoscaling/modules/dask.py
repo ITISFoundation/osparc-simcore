@@ -29,7 +29,7 @@ from ..utils.utils_ec2 import (
     node_ip_from_ec2_private_dns,
 )
 from .cluster_scaling._utils_computational import (
-    resources_from_dask_task,
+    DASK_TO_RESOURCE_NAME_MAPPING,
 )
 
 _logger = logging.getLogger(__name__)
@@ -293,7 +293,9 @@ async def get_worker_used_resources(
             total_resources_used.update(task_resources)
 
         _logger.debug("found %s for %s", f"{total_resources_used=}", f"{worker_url=}")
-        return resources_from_dask_task(total_resources_used)
+        return Resources.from_flat_dict(
+            dict(total_resources_used), mapping=DASK_TO_RESOURCE_NAME_MAPPING
+        )
 
 
 async def compute_cluster_total_resources(
