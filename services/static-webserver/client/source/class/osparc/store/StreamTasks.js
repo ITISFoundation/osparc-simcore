@@ -32,32 +32,32 @@ qx.Class.define("osparc.store.StreamTasks", {
       const internalId = action + "_" + JSON.stringify(params);
       const task = this.__getStreamTask(internalId);
       if (task) {
+        console.log("Reusing existing stream task:", internalId);
         return Promise.resolve(task);
       }
-      return this.__createStreamTask(internalId, streamPromise, interval);
+      return this.__createStreamTask(internalId, streamPromise, interval)
+        .then(streamTask => {
+          console.log("Creating new stream task:", internalId);
+          return streamTask;
+        })
+        .catch(err => Promise.reject(err));
     },
 
     __createStreamTask: function(internalId, streamPromise, interval) {
-      return new Promise((resolve, reject) => {
-        streamPromise
-          .then(streamData => {
-            if ("status_href" in streamData) {
-              const task = this.__addStreamTask(internalId, streamData, interval);
-              resolve(task);
-            } else {
-              throw Error("Status missing");
-            }
-          })
-          .catch(err => reject(err));
-      });
+      return streamPromise
+        .then(streamData => {
+          console.log("Stream data received:", streamData);
+          if (!("stream_href" in streamData)) {
+            throw new Error("Stream href missing");
+          }
+          return this.__addStreamTask(internalId, streamData, interval);
+        })
+        .catch(err => Promise.reject(err));
     },
 
     __getStreamTask: function(internalId) {
       const tasks = this.getTasks();
-      if (internalId in tasks) {
-        return tasks[internalId];
-      }
-      return null;
+      return tasks[internalId] || null;
     },
 
     __addStreamTask: function(internalId, streamData, interval) {
@@ -67,7 +67,7 @@ qx.Class.define("osparc.store.StreamTasks", {
       }
 
       const stream = new osparc.data.StreamTask(streamData, interval);
-      stream.addListener("resultReceived", () => this.__removeStreamTask(stream), this);
+      // stream.addListener("resultReceived", () => this.__removeStreamTask(stream), this);
       stream.addListener("taskAborted", () => this.__removeStreamTask(stream), this);
       const tasks = this.getTasks();
       tasks[internalId] = stream;
