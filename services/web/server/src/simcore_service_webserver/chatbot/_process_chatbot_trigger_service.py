@@ -77,8 +77,8 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         user_id=_product.support_chatbot_user_id,
         conversation_user_type=ConversationUserType.CHATBOT_USER,
         conversation=rabbit_message.conversation,
-        request_scheme=_product_base_url.scheme,
-        request_host=_product_base_url.host or "unknown",
+        product_url_scheme=_product_base_url.scheme,
+        product_url_host=_product_base_url.host or "unknown",
         content=chat_response.answer,
         type_=ConversationMessageType.MESSAGE,
     )
