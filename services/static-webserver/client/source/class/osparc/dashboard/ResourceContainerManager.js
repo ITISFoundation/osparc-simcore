@@ -553,7 +553,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return card;
     },
 
-    __createFileCard: function(file) {
+    __createFileCard: function(fileData) {
+      const file = new osparc.data.model.File(fileData);
       const card = new osparc.dashboard.FileButtonItem(file);
       [
         "openLocation",
