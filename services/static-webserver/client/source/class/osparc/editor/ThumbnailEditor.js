@@ -61,17 +61,6 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
     "cancel": "qx.event.type.Event"
   },
 
-  statics: {
-    sanitizeUrl: function(dirty) {
-      const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
-      if ((dirty && dirty !== clean) || (clean !== "" && !osparc.utils.Utils.isValidHttpUrl(clean))) {
-        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Error checking link"), "WARNING");
-        return null;
-      }
-      return clean;
-    }
-  },
-
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -125,7 +114,7 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
           });
           control.addListener("execute", () => {
             const urlField = this.getChildControl("url-field");
-            const validUrl = this.self().sanitizeUrl(urlField.getValue());
+            const validUrl = osparc.wrapper.DOMPurify.sanitizeUrl(urlField.getValue());
             if (validUrl) {
               this.fireDataEvent("updateThumbnail", validUrl);
             }
