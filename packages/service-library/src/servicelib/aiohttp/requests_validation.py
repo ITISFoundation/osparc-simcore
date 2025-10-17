@@ -8,11 +8,14 @@ but adapted to parse&validate path, query and body of an aiohttp's request
 """
 
 import json.decoder
+import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Final, TypeVar
 
 from aiohttp import web
+from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
 from models_library.rest_error import EnvelopedError
 from pydantic import BaseModel, TypeAdapter, ValidationError
@@ -26,6 +29,7 @@ ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list 
 APP_JSON_SCHEMA_SPECS_KEY: Final = web.AppKey(
     "APP_JSON_SCHEMA_SPECS_KEY", dict[str, object]
 )
+_logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -109,7 +113,7 @@ def parse_request_path_parameters_as(
 
     with handle_validation_as_http_error(
         error_msg_template=user_message(
-            "Invalid parameter/s '{failed}' in request path"
+            "The parameters '{failed}' in the request path are not valid.", _version=1
         ),
         resource_name=request.rel_url.path,
     ):
@@ -133,7 +137,7 @@ def parse_request_query_parameters_as(
 
     with handle_validation_as_http_error(
         error_msg_template=user_message(
-            "Invalid parameter/s '{failed}' in request query"
+            "The parameters '{failed}' in the request query are not valid.", _version=1
         ),
         resource_name=request.rel_url.path,
     ):
@@ -153,7 +157,8 @@ def parse_request_headers_as(
 ) -> ModelClass:
     with handle_validation_as_http_error(
         error_msg_template=user_message(
-            "Invalid parameter/s '{failed}' in request headers"
+            "The parameters '{failed}' in the request headers are not valid.",
+            _version=1,
         ),
         resource_name=request.rel_url.path,
     ):
@@ -178,7 +183,10 @@ async def parse_request_body_as(
         Validated model of request body
     """
     with handle_validation_as_http_error(
-        error_msg_template=user_message("Invalid field/s '{failed}' in request body"),
+        error_msg_template=user_message(
+            "The fields '{failed}' in the request contain values that are not valid.",
+            _version=1,
+        ),
         resource_name=request.rel_url.path,
     ):
         if not request.can_read_body:
@@ -186,9 +194,24 @@ async def parse_request_body_as(
             body = {}
         else:
             try:
+
                 body = await request.json()
+
             except json.decoder.JSONDecodeError as err:
-                raise web.HTTPBadRequest(text=f"Invalid json in body: {err}") from err
+                error_code = create_error_code(err)
+                user_error_msg = user_message(
+                    "The request contains invalid JSON data which is unsusual. Please try again and if the problem persists, contact support.",
+                    _version=1,
+                )
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        user_error_msg,
+                        error=err,
+                        error_code=error_code,
+                        error_context={"request": request.url},
+                    )
+                )
+                raise web.HTTPBadRequest(text=user_error_msg) from err
 
         if hasattr(model_schema_cls, "model_validate"):
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
