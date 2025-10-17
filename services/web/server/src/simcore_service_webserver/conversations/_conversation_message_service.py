@@ -234,7 +234,6 @@ async def create_support_message(
     conversation_user_type: ConversationUserType,
     conversation: ConversationGetDB,
     request_url: URL,
-    request_host: str,
     # Creation attributes
     content: str,
     type_: ConversationMessageType,
@@ -279,7 +278,7 @@ async def create_support_message(
                 user_id=user_id,
                 message_content=message.content,
                 conversation_url=_conversation_url,
-                host=request_host,
+                host=request_url.host or "unknown",
                 product_support_assigned_fogbugz_project_id=product.support_assigned_fogbugz_project_id,
                 fogbugz_url=str(fogbugz_settings_or_none.FOGBUGZ_URL),
             )

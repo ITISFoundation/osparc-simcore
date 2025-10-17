@@ -59,14 +59,14 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
     chat_response = await chatbot_client.ask_question(_question_for_chatbot)
 
     # After I got respond, create a new support message in the conversation
+    _product_url = products_service.get_product_url(app, product_name=_product_name)
     await conversations_service.create_support_message(
         app=app,
         product_name=rabbit_message.conversation.product_name,
         user_id=_product.support_chatbot_user_id,
         conversation_user_type=ConversationUserType.CHATBOT_USER,
         conversation=rabbit_message.conversation,
-        request_url=URL("http://dummy"),
-        request_host="dummy",
+        request_url=_product_url or URL("http://unknown"),
         content=chat_response.answer,
         type_=ConversationMessageType.MESSAGE,
     )

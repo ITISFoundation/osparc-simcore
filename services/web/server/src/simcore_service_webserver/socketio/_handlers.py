@@ -140,15 +140,16 @@ async def connect(
 
     try:
         auth_user_handler = auth_user_factory(socket_id)
-        user_id, product_name, client_session_id = await auth_user_handler(
-            environ["aiohttp.request"]
-        )
+        _request: web.Request = environ["aiohttp.request"]
+        user_id, product_name, client_session_id = await auth_user_handler(_request)
         _logger.info(
             "%s successfully connected with %s",
             f"{user_id=}",
             f"{client_session_id=}",
             extra=get_log_record_extra(user_id=user_id),
         )
+
+        products_web.set_product_url(_request, product_name)
 
         await _set_user_in_group_rooms(app, user_id, socket_id)
         await _set_user_in_project_rooms(app, user_id, client_session_id, socket_id)

@@ -92,7 +92,6 @@ async def create_conversation_message(request: web.Request):
         conversation_user_type=conversation_user_type,
         conversation=_conversation,
         request_url=request.url,
-        request_host=request.host,
         content=body_params.content,
         type_=body_params.type,
     )

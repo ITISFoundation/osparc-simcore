@@ -1,4 +1,5 @@
 import contextlib
+import logging
 from pathlib import Path
 
 import aiofiles
@@ -6,11 +7,15 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
+from simcore_service_webserver.products._models import ProductBaseUrl
 
 from .._resources import webserver_resources
 from ..constants import RQ_PRODUCT_KEY
 from ..groups import api as groups_service
 from . import _service
+from ._application_keys import (
+    PRODUCTS_URL_MAPPING_APPKEY,
+)
 from ._web_events import PRODUCTS_TEMPLATES_DIR_APPKEY
 from .errors import (
     FileTemplateNotFoundError,
@@ -18,6 +23,8 @@ from .errors import (
     UnknownProductError,
 )
 from .models import Product
+
+_logger = logging.getLogger(__name__)
 
 
 def get_product_name(request: web.Request) -> str:
@@ -38,6 +45,22 @@ def get_current_product(request: web.Request) -> Product:
         request.app, product_name=product_name
     )
     return current_product
+
+
+def set_product_url(request: web.Request, product_name: ProductName) -> None:
+    if (
+        not request.app[PRODUCTS_URL_MAPPING_APPKEY].get(product_name)
+        and request.url.host
+    ):
+        request.app[PRODUCTS_URL_MAPPING_APPKEY][product_name] = ProductBaseUrl(
+            schema=request.url.scheme, host=request.url.host
+        )
+        _logger.debug(
+            "Set product url for %s to %s://%s",
+            product_name,
+            request.url.scheme,
+            request.url.host,
+        )
 
 
 async def is_user_in_product_support_group(

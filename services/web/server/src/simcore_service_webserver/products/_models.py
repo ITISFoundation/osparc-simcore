@@ -351,3 +351,8 @@ class Product(BaseModel):
                 template_name_attribute: str = getattr(self, name)
                 return template_name_attribute
         return None
+
+
+class ProductBaseUrl(BaseModel):
+    schema: str
+    host: str
