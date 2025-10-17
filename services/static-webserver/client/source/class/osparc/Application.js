@@ -64,7 +64,10 @@ qx.Class.define("osparc.Application", {
       }
 
       // libs
-      osparc.wrapper.IntlTelInput.getInstance().init();
+      await Promise.all([
+        osparc.wrapper.DOMPurify.getInstance().init(),
+        osparc.wrapper.IntlTelInput.getInstance().init()
+      ]);
 
       // trackers
       osparc.announcement.Tracker.getInstance().startTracker();
