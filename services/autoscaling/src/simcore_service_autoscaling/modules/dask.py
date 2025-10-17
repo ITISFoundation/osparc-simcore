@@ -28,6 +28,9 @@ from ..utils.utils_ec2 import (
     node_host_name_from_ec2_private_dns,
     node_ip_from_ec2_private_dns,
 )
+from .cluster_scaling._utils_computational import (
+    resources_from_dask_task,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -285,20 +288,12 @@ async def get_worker_used_resources(
         if not worker_processing_tasks:
             return Resources.create_as_empty()
 
-        total_resources_used: collections.Counter[str] = collections.Counter()
+        total_resources_used: collections.Counter = collections.Counter()
         for _, task_resources in worker_processing_tasks:
             total_resources_used.update(task_resources)
 
         _logger.debug("found %s for %s", f"{total_resources_used=}", f"{worker_url=}")
-        return Resources(
-            cpus=total_resources_used.get("CPU", 0),
-            ram=TypeAdapter(ByteSize).validate_python(
-                total_resources_used.get("RAM", 0)
-            ),
-            generic_resources={
-                k: v for k, v in total_resources_used.items() if k not in {"CPU", "RAM"}
-            },
-        )
+        return resources_from_dask_task(total_resources_used)
 
 
 async def compute_cluster_total_resources(
