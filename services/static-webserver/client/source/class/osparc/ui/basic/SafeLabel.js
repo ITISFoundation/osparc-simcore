@@ -22,14 +22,14 @@
 qx.Class.define("osparc.ui.basic.SafeLabel", {
   extend: qx.ui.basic.Label,
 
-  construct() {
-    this.base(arguments);
+  construct(...args) {
+    this.addListener("changeValue", this._onChangeValue, this);
+
+    this.base(arguments, ...args);
 
     this.set({
       rich: true,
     });
-
-    this.addListener("changeValue", this._onChangeValue, this);
   },
 
   members: {
