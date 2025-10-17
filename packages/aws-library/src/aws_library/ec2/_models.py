@@ -61,7 +61,7 @@ class Resources(BaseModel, frozen=True):
                 k, a
             )  # NOTE: get from other, default to "a" resources so that non-existing keys can be compared as equal
             if isinstance(a, int | float) and isinstance(b, int | float):
-                if not (a >= b):
+                if a < b:
                     return False
             elif a != b:
                 assert isinstance(a, str | None)  # nosec
