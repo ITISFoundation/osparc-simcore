@@ -91,7 +91,7 @@ qx.Class.define("osparc.data.PollTask", {
       nullable: false,
       init: false,
       event: "changeDone",
-      apply: "_applyDone",
+      apply: "__fetchResults",
     }
   },
 
@@ -166,12 +166,6 @@ qx.Class.define("osparc.data.PollTask", {
           this.fireDataEvent("pollingError", err);
           throw err;
         });
-    },
-
-    _applyDone: function(done) {
-      if (done && this.getResultHref()) {
-        this.__fetchResults();
-      }
     },
 
     __fetchResults: function() {

@@ -24,6 +24,7 @@ qx.Class.define("osparc.store.PollTasks", {
       check: "Array",
       init: [],
       nullable: true,
+      event: "changeTasks"
     }
   },
 
