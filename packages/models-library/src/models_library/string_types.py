@@ -112,16 +112,15 @@ def _contains_percent_or_entity_obfuscation(value_lower: str) -> bool:
     return "data:text/html" in value_lower
 
 
-def _contains_obfuscated_protocol_by_normalization(value: str) -> bool:
-    # remove common separators/control chars and check for plain protocols in the normalized stream
-    # this avoids complex interleaved-regexes that cause backtracking
-    norm = re.sub(r"[\s\x00-\x1f\x7f\W]+", "", value).lower()
+def _contains_obfuscated_protocol_by_normalization(value_lower: str) -> bool:
+    # remove ALL non-alphanumeric chars for maximum normalization
+    # this catches heavily spaced out patterns like "j a v a s c r i p t:"
+    norm = re.sub(r"[^a-z0-9]", "", value_lower)
     return (
-        norm.startswith("javascript:")
-        or "javascript:" in norm
-        or "vbscript:" in norm
-        or "data:text/html" in norm
-        or "data:" in norm
+        "javascript" in norm
+        or "vbscript" in norm
+        or "datatext" in norm
+        or "data:" in value_lower  # keep original check for data: protocol
     )
 
 
@@ -131,15 +130,13 @@ def validate_input_safety(value: str) -> str:
         if xss_pattern.pattern.search(value):
             raise PydanticCustomError(
                 STRING_UNSAFE_CONTENT_ERROR_CODE,
-                "{details}",
-                {"details": xss_pattern.message},
+                "{msg}",
+                {"msg": xss_pattern.message},
             )
 
-    # Lowercase once for substring checks
-    vlow = value.lower()
-
+    value_lower = value.lower()
     # Fast substring / percent-encoding checks (no backtracking risk)
-    if _contains_percent_or_entity_obfuscation(vlow):
+    if _contains_percent_or_entity_obfuscation(value_lower):
         raise PydanticCustomError(
             STRING_UNSAFE_CONTENT_ERROR_CODE,
             "Contains encoded malicious content",
@@ -147,7 +144,7 @@ def validate_input_safety(value: str) -> str:
         )
 
     # Normalization-based obfuscation detection (de-duplicates heavy regex)
-    if _contains_obfuscated_protocol_by_normalization(value):
+    if _contains_obfuscated_protocol_by_normalization(value_lower):
         raise PydanticCustomError(
             STRING_UNSAFE_CONTENT_ERROR_CODE,
             "Contains obfuscated unsafe protocols",
