@@ -91,7 +91,7 @@ qx.Class.define("osparc.data.PollTask", {
       nullable: false,
       init: false,
       event: "changeDone",
-      apply: "__fetchResults",
+      apply: "__fetchResults"
     }
   },
 
