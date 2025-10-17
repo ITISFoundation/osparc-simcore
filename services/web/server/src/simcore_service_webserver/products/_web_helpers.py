@@ -7,7 +7,6 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
-from simcore_service_webserver.products._models import ProductBaseUrl
 
 from .._resources import webserver_resources
 from ..constants import RQ_PRODUCT_KEY
@@ -16,6 +15,7 @@ from . import _service
 from ._application_keys import (
     PRODUCTS_URL_MAPPING_APPKEY,
 )
+from ._models import ProductBaseUrl
 from ._web_events import PRODUCTS_TEMPLATES_DIR_APPKEY
 from .errors import (
     FileTemplateNotFoundError,
@@ -47,7 +47,7 @@ def get_current_product(request: web.Request) -> Product:
     return current_product
 
 
-def set_product_url(request: web.Request, product_name: ProductName) -> None:
+def set_product_base_url(request: web.Request, product_name: ProductName) -> None:
     if (
         not request.app[PRODUCTS_URL_MAPPING_APPKEY].get(product_name)
         and request.url.host

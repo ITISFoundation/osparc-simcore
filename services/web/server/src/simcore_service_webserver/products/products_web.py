@@ -5,7 +5,7 @@ from ._web_helpers import (
     get_product_name,
     get_product_template_path,
     is_user_in_product_support_group,
-    set_product_url,
+    set_product_base_url,
 )
 
 __all__: tuple[str, ...] = (
@@ -16,6 +16,6 @@ __all__: tuple[str, ...] = (
     "get_product_name",
     "get_product_template_path",
     "is_user_in_product_support_group",
-    "set_product_url",
+    "set_product_base_url",
 )
 # nopycln: file
