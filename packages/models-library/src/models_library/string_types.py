@@ -124,7 +124,7 @@ def _contains_obfuscated_protocol_by_normalization(value_lower: str) -> bool:
     )
 
 
-def validate_input_safety(value: str) -> str:
+def validate_input_xss_safety(value: str) -> str:
     # Run fast, simple regex checks first (fail-fast).
     for xss_pattern in _SAFE_XSS_PATTERNS:
         if xss_pattern.pattern.search(value):
@@ -167,7 +167,7 @@ NameSafeStr: TypeAlias = Annotated[
         max_length=MAX_NAME_LENGTH,
         pattern=r"^[A-Za-z0-9 ._-]+$",  # string that ONLY contains alphanumeric characters, spaces, dots, underscores, or hyphens
     ),
-    AfterValidator(validate_input_safety),
+    AfterValidator(validate_input_xss_safety),
 ]
 
 
@@ -178,7 +178,7 @@ DescriptionSafeStr: TypeAlias = Annotated[
         min_length=MIN_DESCRIPTION_LENGTH,
         max_length=MAX_DESCRIPTION_LENGTH,
     ),
-    AfterValidator(validate_input_safety),
+    AfterValidator(validate_input_xss_safety),
 ]
 
 
@@ -190,7 +190,7 @@ GlobPatternSafeStr: TypeAlias = Annotated[
         strip_whitespace=True,
         pattern=r"^[A-Za-z0-9 ._\*-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and asterisks
     ),
-    AfterValidator(validate_input_safety),
+    AfterValidator(validate_input_xss_safety),
 ]
 
 
@@ -200,9 +200,9 @@ SearchPatternSafeStr: TypeAlias = Annotated[
         strip_whitespace=True,
         min_length=1,
         max_length=200,
-        pattern=r"^[A-Za-z0-9 ._\-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and asterisks
+        pattern=r"^[A-Za-z0-9 ._-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and asterisks
     ),
-    AfterValidator(validate_input_safety),
+    AfterValidator(validate_input_xss_safety),
     annotated_types.doc(
         """
         A safe string used for search patterns.
@@ -220,7 +220,7 @@ ShortTruncatedStr: TypeAlias = Annotated[
     str,
     StringConstraints(strip_whitespace=True),
     trim_string_before(max_length=_SHORT_TRUNCATED_STR_MAX_LENGTH),
-    AfterValidator(validate_input_safety),
+    AfterValidator(validate_input_xss_safety),
     annotated_types.doc(
         """
         A truncated string used to input e.g. titles or display names.
@@ -237,7 +237,7 @@ LongTruncatedStr: TypeAlias = Annotated[
     str,
     StringConstraints(strip_whitespace=True),
     trim_string_before(max_length=_LONG_TRUNCATED_STR_MAX_LENGTH),
-    AfterValidator(validate_input_safety),
+    AfterValidator(validate_input_xss_safety),
     annotated_types.doc(
         """
         A truncated string used to input e.g. descriptions or summaries.

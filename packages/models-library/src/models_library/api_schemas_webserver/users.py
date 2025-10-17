@@ -30,7 +30,7 @@ from ..rest_base import RequestParameters
 from ..string_types import (
     GlobPatternSafeStr,
     SearchPatternSafeStr,
-    validate_input_safety,
+    validate_input_xss_safety,
 )
 from ..users import (
     FirstNameStr,
@@ -209,12 +209,12 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
 
 FirstNameSafeStr = Annotated[
     FirstNameStr,
-    AfterValidator(validate_input_safety),
+    AfterValidator(validate_input_xss_safety),
 ]
 
 LastNameSafeStr = Annotated[
     LastNameStr,
-    AfterValidator(validate_input_safety),
+    AfterValidator(validate_input_xss_safety),
 ]
 
 
