@@ -135,7 +135,6 @@ async def _list_cluster_known_tasks(
     def _list_on_scheduler(
         dask_scheduler: distributed.Scheduler,
     ) -> _DaskClusterTasks:
-
         worker_to_processing_tasks = defaultdict(list)
         unrunnable_tasks = {}
         for task_key, task_state in dask_scheduler.tasks.items():
@@ -319,13 +318,13 @@ async def compute_cluster_total_resources(
                 continue
             # get dask information about resources
             worker_dask_resources = worker_details["resources"]
-            worker_threads = worker_details["nthreads"]
-            worker_dask_resources: dict[str, int | float | str] = {
-                **worker_dask_resources,
-                DASK_WORKER_THREAD_RESOURCE_NAME: worker_threads,
-            }
+            worker_dask_nthreads = worker_details["nthreads"]
             cluster_resources += Resources.from_flat_dict(
-                worker_dask_resources, mapping=DASK_TO_RESOURCE_NAME_MAPPING
+                {
+                    **worker_dask_resources,
+                    DASK_WORKER_THREAD_RESOURCE_NAME: worker_dask_nthreads,
+                },
+                mapping=DASK_TO_RESOURCE_NAME_MAPPING,
             )
 
         return cluster_resources
