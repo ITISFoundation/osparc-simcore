@@ -26,11 +26,11 @@ qx.Class.define("osparc.ui.basic.SafeLabel", {
     const sanitized = value && typeof value === "string" ? osparc.wrapper.DOMPurify.sanitize(value) : null;
     this.base(arguments, sanitized);
 
-    this.addListener("changeValue", this._onChangeValue, this);
-
     this.set({
       rich: true,
     });
+
+    this.addListener("changeValue", this._onChangeValue, this);
   },
 
   members: {
