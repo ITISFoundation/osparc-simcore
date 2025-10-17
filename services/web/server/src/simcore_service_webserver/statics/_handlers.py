@@ -32,9 +32,6 @@ async def get_cached_frontend_index(request: web.Request):
     if product_name not in cached_index_per_product:
         raise web.HTTPNotFound(text=f"No index.html found for {product_name}")
 
-    # TODO: MD - cacheing product URL to APP state in memory
-    products_web.set
-
     return web.Response(
         body=cached_index_per_product[product_name], content_type=MIMETYPE_TEXT_HTML
     )
