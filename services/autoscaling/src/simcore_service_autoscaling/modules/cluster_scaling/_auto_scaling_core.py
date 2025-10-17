@@ -112,6 +112,9 @@ async def _analyze_current_cluster(
         state_names=["stopped"],
     )
 
+    for instance in itertools.chain(existing_ec2_instances, warm_buffer_ec2_instances):
+        auto_scaling_mode.add_instance_generic_resources(app, instance)
+
     attached_ec2s, pending_ec2s = associate_ec2_instances_with_nodes(
         docker_nodes, existing_ec2_instances
     )

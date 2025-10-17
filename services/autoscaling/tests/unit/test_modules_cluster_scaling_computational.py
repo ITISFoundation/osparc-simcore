@@ -638,7 +638,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     mock_docker_tag_node.reset_mock()
     mock_docker_set_node_availability.assert_not_called()
-    mock_rabbitmq_post_message.assert_called_once()
+    assert mock_rabbitmq_post_message.call_count == 3
     mock_rabbitmq_post_message.reset_mock()
 
     # now we have 1 monitored node that needs to be mocked

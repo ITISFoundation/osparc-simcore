@@ -182,3 +182,12 @@ class ComputationalAutoscalingProvider:
     async def try_retire_nodes(self, app: FastAPI) -> None:
         assert self  # nosec
         await dask.try_retire_nodes(_scheduler_url(app), _scheduler_auth(app))
+
+    def add_instance_generic_resources(
+        self, app: FastAPI, instance: EC2InstanceData
+    ) -> None:
+        assert self  # nosec
+        assert app  # nosec
+        app_settings = get_application_settings(app)
+        assert app_settings.AUTOSCALING_DASK  # nosec
+        dask.add_instance_generic_resources(app_settings.AUTOSCALING_DASK, instance)
