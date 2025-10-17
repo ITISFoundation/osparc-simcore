@@ -108,39 +108,34 @@ def add_worker_tasks() -> bool:
 
 
 @pytest.fixture
-def app_server_factory_with_worker_mode(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> Callable[[], FastAPIAppServer]:
-    monkeypatch.setenv("STORAGE_WORKER_MODE", "true")
-
-    def _app_server_factory() -> FastAPIAppServer:
-        app_settings = ApplicationSettings.create_from_envs()
-
-        assert app_settings.API_SERVER_WORKER_MODE is True
-
-        tracing_config = TracingConfig.create(
-            tracing_settings=None,
-            service_name="api-worker",
-        )
-        return FastAPIAppServer(app=create_app(app_settings, tracing_config))
-
-    return _app_server_factory
+def worker_app_settings(
+    app_settings: ApplicationSettings,
+) -> ApplicationSettings:
+    worker_test_app_settings = app_settings.model_copy(
+        update={"API_SERVER_WORKER_MODE": True}, deep=True
+    )
+    print(f"{worker_test_app_settings.model_dump_json(indent=2)=}")
+    return worker_test_app_settings
 
 
 @pytest.fixture
 async def with_api_server_celery_worker(
     celery_app: Celery,
-    app_server_factory_with_worker_mode: Callable[[], FastAPIAppServer],
+    worker_app_settings: ApplicationSettings,
     register_celery_tasks: Callable[[Celery], None],
     add_worker_tasks: bool,
 ) -> AsyncIterator[TestWorkController]:
-    # NOTE: explicitly connect the signals in tests
-    worker_init.connect(
-        _worker_init_wrapper(celery_app, app_server_factory_with_worker_mode),
-        weak=False,
+    tracing_config = TracingConfig.create(
+        tracing_settings=None,  # disable tracing in tests
+        service_name="api-server-worker-test",
     )
-    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
+
+    app_server = FastAPIAppServer(app=create_app(worker_app_settings, tracing_config))
+
+    _init_wrapper = _worker_init_wrapper(celery_app, lambda: app_server)
+    _shutdown_wrapper = _worker_shutdown_wrapper(celery_app)
+    worker_init.connect(_init_wrapper)
+    worker_shutdown.connect(_shutdown_wrapper)
 
     if add_worker_tasks:
         register_worker_tasks(celery_app)
