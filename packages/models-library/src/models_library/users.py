@@ -2,7 +2,7 @@ import datetime
 from typing import Annotated, TypeAlias
 
 from common_library.users_enums import UserRole
-from models_library.string_types import validate_input_safety
+from models_library.string_types import validate_input_xss_safety
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -22,7 +22,9 @@ UserID: TypeAlias = PositiveInt
 UserNameID: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=4, max_length=100)
 ]
-UserNameSafeID: TypeAlias = Annotated[UserNameID, AfterValidator(validate_input_safety)]
+UserNameSafeID: TypeAlias = Annotated[
+    UserNameID, AfterValidator(validate_input_xss_safety)
+]
 
 
 FirstNameStr: TypeAlias = Annotated[
