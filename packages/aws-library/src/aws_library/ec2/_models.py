@@ -22,14 +22,14 @@ from pydantic import (
 from pydantic.config import JsonDict
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
-GenericResourceValue: TypeAlias = StrictInt | StrictFloat | str
+GenericResourceValueType: TypeAlias = StrictInt | StrictFloat | str
 
 
 class Resources(BaseModel, frozen=True):
     cpus: NonNegativeFloat
     ram: ByteSize
     generic_resources: Annotated[
-        dict[str, GenericResourceValue],
+        dict[str, GenericResourceValueType],
         Field(
             default_factory=dict,
             description=(
@@ -83,7 +83,7 @@ class Resources(BaseModel, frozen=True):
         Note that only numeric generic resources are added
         Non-numeric generic resources are ignored
         """
-        merged: dict[str, GenericResourceValue] = {}
+        merged: dict[str, GenericResourceValueType] = {}
         keys = set(self.generic_resources) | set(other.generic_resources)
         for k in keys:
             a = self.generic_resources.get(k)
@@ -107,7 +107,7 @@ class Resources(BaseModel, frozen=True):
         Note that only numeric generic resources are subtracted
         Non-numeric generic resources are ignored
         """
-        merged: dict[str, GenericResourceValue] = {}
+        merged: dict[str, GenericResourceValueType] = {}
         keys = set(self.generic_resources) | set(other.generic_resources)
         for k in keys:
             a = self.generic_resources.get(k)
@@ -129,7 +129,7 @@ class Resources(BaseModel, frozen=True):
     def __hash__(self) -> int:
         """Deterministic hash including cpus, ram (in bytes) and generic_resources."""
         # sort generic_resources items to ensure order-independent hashing
-        generic_items: tuple[tuple[str, GenericResourceValue], ...] = tuple(
+        generic_items: tuple[tuple[str, GenericResourceValueType], ...] = tuple(
             sorted(self.generic_resources.items())
         )
         return hash((self.cpus, self.ram, generic_items))

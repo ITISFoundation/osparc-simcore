@@ -1,7 +1,7 @@
 import logging
-from typing import Final
+from typing import Final, cast
 
-from aws_library.ec2 import Resources
+from aws_library.ec2 import GenericResourceValueType, Resources
 from dask_task_models_library.resource_constraints import (
     DaskTaskResources,
     get_ec2_instance_type_from_resources,
@@ -30,7 +30,8 @@ def resources_from_dask_task(task: DaskTask) -> Resources:
     )  # merge with defaults to ensure there is always some minimal resource defined
 
     return Resources.from_flat_dict(
-        task_resources, mapping=DASK_TO_RESOURCE_NAME_MAPPING
+        cast(dict[str, GenericResourceValueType], task_resources),
+        mapping=DASK_TO_RESOURCE_NAME_MAPPING,
     )
 
 
