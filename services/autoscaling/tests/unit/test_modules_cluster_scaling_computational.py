@@ -126,10 +126,14 @@ def _assert_rabbit_autoscaling_message_sent(
         instances_running=0,
     )
     expected_message = default_message.model_copy(update=message_update_kwargs)
-    mock_rabbitmq_post_message.assert_called_once_with(
-        app,
-        expected_message,
-    )
+    # in this mock we get all kind of messages, we just want to assert one of them is the expected one and there is only one
+    autoscaling_status_messages = [
+        call_args.args[1]
+        for call_args in mock_rabbitmq_post_message.call_args_list
+        if isinstance(call_args.args[1], RabbitAutoscalingStatusMessage)
+    ]
+    assert len(autoscaling_status_messages) == 1, "too many messages sent"
+    assert autoscaling_status_messages[0] == expected_message
 
 
 @pytest.fixture

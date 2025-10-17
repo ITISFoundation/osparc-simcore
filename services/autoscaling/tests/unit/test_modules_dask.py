@@ -124,7 +124,7 @@ async def test_list_unrunnable_tasks(
     # we have nothing running now
     assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == []
     # start a task that cannot run
-    dask_task_impossible_resources = DaskTaskResources(XRAM=213, threads=1)
+    dask_task_impossible_resources = DaskTaskResources(XRAM=213, threads=1)  # type: ignore
     future = create_dask_task(dask_task_impossible_resources)
     assert future
     assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == [
@@ -168,7 +168,7 @@ async def test_list_processing_tasks(
         next(iter(dask_spec_cluster_client.scheduler_info()["workers"])): [
             DaskTask(
                 task_id=DaskTaskId(future_queued_task.key),
-                required_resources=DaskTaskResources(threads=1),
+                required_resources=DaskTaskResources(threads=1),  # type: ignore
             )
         ]
     }
