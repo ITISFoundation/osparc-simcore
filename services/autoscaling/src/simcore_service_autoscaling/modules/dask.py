@@ -15,7 +15,7 @@ from dask_task_models_library.resource_constraints import (
 )
 from distributed.core import Status
 from models_library.clusters import ClusterAuthentication, TLSAuthentication
-from pydantic import AnyUrl, ByteSize, TypeAdapter
+from pydantic import AnyUrl
 
 from ..core.errors import (
     DaskNoWorkersError,
@@ -306,7 +306,7 @@ async def compute_cluster_total_resources(
     if not instances:
         return Resources.create_as_empty()
     async with _scheduler_client(scheduler_url, authentication) as client:
-        instance_host_resources_map = {
+        ec2_instance_resources_map = {
             node_ip_from_ec2_private_dns(i): i.resources for i in instances
         }
         scheduler_info = client.scheduler_info()
@@ -315,20 +315,17 @@ async def compute_cluster_total_resources(
         workers: dict[str, Any] = scheduler_info["workers"]
         cluster_resources = Resources.create_as_empty()
         for worker_details in workers.values():
-            if worker_details["host"] not in instance_host_resources_map:
+            if worker_details["host"] not in ec2_instance_resources_map:
                 continue
+            # get dask information about resources
             worker_dask_resources = worker_details["resources"]
             worker_threads = worker_details["nthreads"]
-            cluster_resources += Resources(
-                cpus=worker_dask_resources.get(
-                    "CPU", instance_host_resources_map[worker_details["host"]].cpus
-                ),
-                ram=TypeAdapter(ByteSize).validate_python(
-                    worker_dask_resources.get(
-                        "RAM", instance_host_resources_map[worker_details["host"]].ram
-                    )
-                ),
-                generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: worker_threads},
+            worker_dask_resources = {
+                **worker_dask_resources,
+                DASK_WORKER_THREAD_RESOURCE_NAME: worker_threads,
+            }
+            cluster_resources += Resources.from_flat_dict(
+                worker_dask_resources.items(), mapping=DASK_TO_RESOURCE_NAME_MAPPING
             )
 
         return cluster_resources
