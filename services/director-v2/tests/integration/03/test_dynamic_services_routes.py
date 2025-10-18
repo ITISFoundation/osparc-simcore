@@ -26,6 +26,10 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.directorv2_integration_utils import (
+    ensure_network_cleanup,
+    patch_dynamic_service_url,
+)
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -42,7 +46,6 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from utils import ensure_network_cleanup, patch_dynamic_service_url
 from yarl import URL
 
 SERVICE_IS_READY_TIMEOUT = 2 * 60

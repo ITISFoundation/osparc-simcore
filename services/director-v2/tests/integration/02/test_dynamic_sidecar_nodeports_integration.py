@@ -29,12 +29,7 @@ from helpers.shared_comp_utils import (
 from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.clusters import ClusterAuthentication
 from models_library.products import ProductName
-from models_library.projects import (
-    Node,
-    NodesDict,
-    ProjectAtDB,
-    ProjectID,
-)
+from models_library.projects import Node, NodesDict, ProjectAtDB, ProjectID
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
@@ -47,6 +42,19 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.directorv2_integration_utils import (
+    assert_all_services_running,
+    assert_retrieve_service,
+    assert_services_reply_200,
+    assert_start_service,
+    assert_stop_service,
+    ensure_network_cleanup,
+    ensure_volume_cleanup,
+    is_legacy,
+    patch_dynamic_service_url,
+    run_command,
+    sleep_for,
+)
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -86,19 +94,6 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
-from utils import (
-    assert_all_services_running,
-    assert_retrieve_service,
-    assert_services_reply_200,
-    assert_start_service,
-    assert_stop_service,
-    ensure_network_cleanup,
-    ensure_volume_cleanup,
-    is_legacy,
-    patch_dynamic_service_url,
-    run_command,
-    sleep_for,
-)
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
