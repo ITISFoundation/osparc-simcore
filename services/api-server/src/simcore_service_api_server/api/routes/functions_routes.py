@@ -16,20 +16,19 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
 )
-from models_library.functions import FunctionJobCollection, FunctionJobID
+from models_library.functions import FunctionJobCollection
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
-from servicelib.utils import limited_gather
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_function_jobs_task_client import FunctionJobTaskClientService
 from ..._service_functions import FunctionService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.jobs import JobPricingSpecification
+from ...models.schemas.jobs import JobInputs, JobPricingSpecification
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import (
     Identity,
@@ -297,15 +296,16 @@ async def get_function_outputschema(
     ),
 )
 async def validate_function_inputs(
-    function_id: FunctionID,
+    function_id: FunctionID,  # pylint: disable=unused-argument
     inputs: FunctionInputs,
+    function: Annotated[RegisteredFunction, Depends(get_function)],
     function_job_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
 ) -> tuple[bool, str]:
     return await function_job_service.validate_function_inputs(
-        function_id=function_id,
-        inputs=inputs,
+        function=function,
+        job_inputs=[JobInputs(values=inputs or {})],
     )
 
 
@@ -349,15 +349,17 @@ async def run_function(
     )
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
 
-    return await function_job_task_client_service.create_function_job_creation_task(
+    jobs = await function_job_task_client_service.create_function_job_creation_tasks(
         function=to_run_function,
-        function_inputs=function_inputs,
+        function_inputs=[function_inputs],
         user_identity=user_identity,
         pricing_spec=pricing_spec,
         job_links=job_links,
         parent_project_uuid=parent_project_uuid,
         parent_node_id=parent_node_id,
     )
+    assert len(jobs) == 1  # nosec
+    return jobs[0]
 
 
 @function_router.delete(
@@ -428,34 +430,15 @@ async def map_function(
     )
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
 
-    async def _run_single_function(function_inputs: FunctionInputs) -> FunctionJobID:
-        result = (
-            await function_job_task_client_service.create_function_job_creation_task(
-                function=to_run_function,
-                function_inputs=function_inputs,
-                user_identity=user_identity,
-                pricing_spec=pricing_spec,
-                job_links=job_links,
-                parent_project_uuid=parent_project_uuid,
-                parent_node_id=parent_node_id,
-            )
-        )
-        return result.uid
-
-    # Run all tasks concurrently, allowing them to complete even if some fail
-    results = await limited_gather(
-        *[
-            _run_single_function(function_inputs)
-            for function_inputs in function_inputs_list
-        ],
-        reraise=False,
-        limit=1,
+    jobs = await function_job_task_client_service.create_function_job_creation_tasks(
+        function=to_run_function,
+        function_inputs=function_inputs_list,
+        user_identity=user_identity,
+        pricing_spec=pricing_spec,
+        job_links=job_links,
+        parent_project_uuid=parent_project_uuid,
+        parent_node_id=parent_node_id,
     )
-
-    # Check if any tasks raised exceptions and raise the first one found
-    for result in results:
-        if isinstance(result, BaseException):
-            raise result
 
     # At this point, all results are FunctionJobID since we've checked for exceptions
     function_job_collection_description = f"Function job collection of map of function {to_run_function.uid} with {len(function_inputs_list)} inputs"
@@ -463,7 +446,7 @@ async def map_function(
         function_job_collection=FunctionJobCollection(
             title="Function job collection of function map",
             description=function_job_collection_description,
-            job_ids=results,  # type: ignore
+            job_ids=[job.uid for job in jobs],
         ),
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,

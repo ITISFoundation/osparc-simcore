@@ -12,7 +12,6 @@ from models_library.api_schemas_api_server.functions import (
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
-    FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
@@ -24,12 +23,16 @@ from models_library.api_schemas_api_server.functions import (
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.functions import (
+    FunctionInputsList,
+    FunctionJobList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
-    RegisteredFunctionJobPatch,
+    RegisteredFunctionJobList,
     RegisteredFunctionJobWithStatus,
+    RegisteredProjectFunctionJobPatchInputList,
+    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
@@ -481,12 +484,16 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         )
 
     async def register_function_job(
-        self, *, user_id: UserID, function_job: FunctionJob, product_name: ProductName
-    ) -> RegisteredFunctionJob:
+        self,
+        *,
+        user_id: UserID,
+        function_jobs: FunctionJobList,
+        product_name: ProductName,
+    ) -> RegisteredFunctionJobList:
         return await self._rpc_client.functions.register_function_job(
             user_id=user_id,
             product_name=product_name,
-            function_job=function_job,
+            function_jobs=function_jobs,
         )
 
     async def patch_registered_function_job(
@@ -494,14 +501,15 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         user_id: UserID,
         product_name: ProductName,
-        function_job_id: FunctionJobID,
-        registered_function_job_patch: RegisteredFunctionJobPatch,
-    ) -> RegisteredFunctionJob:
+        registered_function_job_patch_inputs: (
+            RegisteredProjectFunctionJobPatchInputList
+            | RegisteredSolverFunctionJobPatchInputList
+        ),
+    ) -> list[RegisteredFunctionJob]:
         return await self._rpc_client.functions.patch_registered_function_job(
             user_id=user_id,
             product_name=product_name,
-            function_job_uuid=function_job_id,
-            registered_function_job_patch=registered_function_job_patch,
+            registered_function_job_patch_inputs=registered_function_job_patch_inputs,
         )
 
     async def get_function_input_schema(
@@ -588,13 +596,15 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
         function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> list[RegisteredFunctionJob] | None:
+        inputs: FunctionInputsList,
+        status_filter: list[FunctionJobStatus] | None,
+    ) -> list[RegisteredFunctionJob | None]:
         return await self._rpc_client.functions.find_cached_function_jobs(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
             inputs=inputs,
+            status_filter=status_filter,
         )
 
     async def get_function_job_collection(

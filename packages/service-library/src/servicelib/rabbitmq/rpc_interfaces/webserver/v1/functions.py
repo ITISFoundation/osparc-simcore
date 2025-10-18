@@ -7,7 +7,6 @@ from models_library.api_schemas_webserver.functions import (
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
-    FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
@@ -20,12 +19,17 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     FunctionClass,
     FunctionGroupAccessRights,
+    FunctionInputsList,
+    FunctionJob,
+    FunctionJobList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
-    RegisteredFunctionJobPatch,
+    RegisteredFunctionJobList,
     RegisteredFunctionJobWithStatus,
+    RegisteredProjectFunctionJobPatchInputList,
+    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
@@ -329,22 +333,40 @@ class FunctionsRpcApi(BaseRpcApi):
             ),
         )
 
+    async def register_function_job_batch(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        function_jobs: FunctionJobList,
+    ) -> RegisteredFunctionJobList:
+        """Register a function job."""
+        return TypeAdapter(RegisteredFunctionJobList).validate_python(
+            await self._request(
+                "register_function_job_batch",
+                product_name=product_name,
+                user_id=user_id,
+                function_jobs=function_jobs,
+            ),
+        )
+
     async def patch_registered_function_job(
         self,
         *,
         product_name: ProductName,
         user_id: UserID,
-        function_job_uuid: FunctionJobID,
-        registered_function_job_patch: RegisteredFunctionJobPatch,
-    ) -> RegisteredFunctionJob:
+        registered_function_job_patch_inputs: (
+            RegisteredProjectFunctionJobPatchInputList
+            | RegisteredSolverFunctionJobPatchInputList
+        ),
+    ) -> list[RegisteredFunctionJob]:
         """Patch a registered function job."""
-        return TypeAdapter(RegisteredFunctionJob).validate_python(
+        return TypeAdapter(list[RegisteredFunctionJob]).validate_python(
             await self._request(
                 "patch_registered_function_job",
                 product_name=product_name,
                 user_id=user_id,
-                function_job_uuid=function_job_uuid,
-                registered_function_job_patch=registered_function_job_patch,
+                registered_function_job_patch_inputs=registered_function_job_patch_inputs,
             ),
         )
 
@@ -462,16 +484,18 @@ class FunctionsRpcApi(BaseRpcApi):
         product_name: ProductName,
         user_id: UserID,
         function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> list[RegisteredFunctionJob] | None:
+        inputs: FunctionInputsList,
+        status_filter: list[FunctionJobStatus] | None = None,
+    ) -> list[RegisteredFunctionJob | None]:
         """Find cached function jobs."""
-        return TypeAdapter(list[RegisteredFunctionJob] | None).validate_python(
+        return TypeAdapter(list[RegisteredFunctionJob | None]).validate_python(
             await self._request(
                 "find_cached_function_jobs",
                 product_name=product_name,
                 user_id=user_id,
                 function_id=function_id,
                 inputs=inputs,
+                status_filter=status_filter,
             ),
         )
 

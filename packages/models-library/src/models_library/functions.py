@@ -1,7 +1,7 @@
 import datetime
 from collections.abc import Mapping
 from enum import Enum
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Final, Literal, TypeAlias
 from uuid import UUID
 
 from models_library import projects
@@ -23,6 +23,8 @@ FunctionJobID: TypeAlias = UUID
 FileID: TypeAlias = UUID
 
 InputTypes: TypeAlias = FileID | float | int | bool | str | list
+_MIN_LIST_LENGTH: Final[int] = 1
+_MAX_LIST_LENGTH: Final[int] = 50
 
 
 class FunctionSchemaClass(str, Enum):
@@ -80,8 +82,9 @@ FunctionInputs: TypeAlias = dict[str, Any] | None
 
 FunctionInputsList: TypeAlias = Annotated[
     list[FunctionInputs],
-    Field(max_length=50),
+    Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH),
 ]
+
 
 FunctionOutputs: TypeAlias = dict[str, Any] | None
 
@@ -238,6 +241,9 @@ FunctionJob: TypeAlias = Annotated[
     ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
     Field(discriminator="function_class"),
 ]
+FunctionJobList: TypeAlias = Annotated[
+    list[FunctionJob], Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH)
+]
 
 
 class RegisteredFunctionJobBase(FunctionJobBase):
@@ -263,12 +269,39 @@ RegisteredFunctionJob: TypeAlias = Annotated[
     | RegisteredSolverFunctionJob,
     Field(discriminator="function_class"),
 ]
+RegisteredFunctionJobList: TypeAlias = Annotated[
+    list[RegisteredFunctionJob],
+    Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH),
+]
+
 
 RegisteredFunctionJobPatch = Annotated[
     RegisteredProjectFunctionJobPatch
     | RegisteredPythonCodeFunctionJobPatch
     | RegisteredSolverFunctionJobPatch,
     Field(discriminator="function_class"),
+]
+
+
+class RegisteredProjectFunctionJobPatchInput(BaseModel):
+    uid: FunctionJobID
+    patch: RegisteredProjectFunctionJobPatch
+
+
+RegisteredProjectFunctionJobPatchInputList: TypeAlias = Annotated[
+    list[RegisteredProjectFunctionJobPatchInput],
+    Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH),
+]
+
+
+class RegisteredSolverFunctionJobPatchInput(BaseModel):
+    uid: FunctionJobID
+    patch: RegisteredSolverFunctionJobPatch
+
+
+RegisteredSolverFunctionJobPatchInputList: TypeAlias = Annotated[
+    list[RegisteredSolverFunctionJobPatchInput],
+    Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH),
 ]
 
 

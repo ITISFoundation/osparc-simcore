@@ -7,13 +7,14 @@ from models_library.functions import (
     FunctionClass,
     FunctionGroupAccessRights,
     FunctionID,
-    FunctionInputs,
     FunctionInputSchema,
+    FunctionInputsList,
     FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
+    FunctionJobList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionOutputSchema,
@@ -22,8 +23,10 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
-    RegisteredFunctionJobPatch,
+    RegisteredFunctionJobList,
     RegisteredFunctionJobWithStatus,
+    RegisteredProjectFunctionJobPatchInputList,
+    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
@@ -104,6 +107,24 @@ async def register_function_job(
     reraise_if_error_type=(
         UnsupportedFunctionJobClassError,
         FunctionJobsWriteApiAccessDeniedError,
+    )
+)
+async def register_function_job_batch(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_jobs: FunctionJobList,
+) -> RegisteredFunctionJobList:
+    return await _functions_service.register_function_job_batch(
+        app=app, user_id=user_id, product_name=product_name, function_jobs=function_jobs
+    )
+
+
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionJobClassError,
+        FunctionJobsWriteApiAccessDeniedError,
         FunctionJobPatchModelIncompatibleError,
     )
 )
@@ -112,16 +133,17 @@ async def patch_registered_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_uuid: FunctionJobID,
-    registered_function_job_patch: RegisteredFunctionJobPatch,
-) -> RegisteredFunctionJob:
+    registered_function_job_patch_inputs: (
+        RegisteredProjectFunctionJobPatchInputList
+        | RegisteredSolverFunctionJobPatchInputList
+    ),
+) -> list[RegisteredFunctionJob]:
 
     return await _functions_service.patch_registered_function_job(
         app=app,
         user_id=user_id,
         product_name=product_name,
-        function_job_uuid=function_job_uuid,
-        registered_function_job_patch=registered_function_job_patch,
+        registered_function_job_patch_inputs=registered_function_job_patch_inputs,
     )
 
 
@@ -445,15 +467,19 @@ async def find_cached_function_jobs(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    inputs: FunctionInputs,
-) -> list[RegisteredFunctionJob] | None:
-    return await _functions_service.find_cached_function_jobs(
+    inputs: FunctionInputsList,
+    status_filter: list[FunctionJobStatus] | None,
+) -> list[RegisteredFunctionJob | None]:
+    jobs = await _functions_service.find_cached_function_jobs(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
         inputs=inputs,
+        status_filter=status_filter,
     )
+    assert len(jobs) == len(inputs)  # nosec
+    return jobs
 
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
