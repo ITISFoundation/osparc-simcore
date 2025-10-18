@@ -32,7 +32,7 @@ def test_my_profile_patch_username_min_len():
         MyProfileRestPatch.model_validate({"userName": "abc"})
 
     assert err_info.value.error_count() == 1
-    assert err_info.value.errors()[0]["type"] == "too_short"
+    assert err_info.value.errors()[0]["type"] == "string_too_short"
 
     MyProfileRestPatch.model_validate({"userName": "abcd"})  # OK
 

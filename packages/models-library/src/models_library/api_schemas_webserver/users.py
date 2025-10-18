@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self, TypeAlias
+from typing import Annotated, Any, Literal, Self
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
@@ -11,11 +11,11 @@ from models_library.groups import AccessRightsDict
 from models_library.rest_filters import Filters
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     EmailStr,
     Field,
-    StringConstraints,
     ValidationInfo,
     field_validator,
     model_validator,
@@ -27,12 +27,18 @@ from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
+from ..string_types import (
+    GlobPatternSafeStr,
+    SearchPatternSafeStr,
+    validate_input_xss_safety,
+)
 from ..users import (
     FirstNameStr,
     LastNameStr,
     MyProfile,
     UserID,
     UserNameID,
+    UserNameSafeID,
     UserPermission,
     UserThirdPartyToken,
 )
@@ -201,10 +207,21 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         )
 
 
+FirstNameSafeStr = Annotated[
+    FirstNameStr,
+    AfterValidator(validate_input_xss_safety),
+]
+
+LastNameSafeStr = Annotated[
+    LastNameStr,
+    AfterValidator(validate_input_xss_safety),
+]
+
+
 class MyProfileRestPatch(InputSchemaWithoutCamelCase):
-    first_name: FirstNameStr | None = None
-    last_name: LastNameStr | None = None
-    user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
+    first_name: FirstNameSafeStr | None = None
+    last_name: LastNameSafeStr | None = None
+    user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     # NOTE: phone is updated via a dedicated endpoint!
 
     privacy: MyProfilePrivacyPatch | None = None
@@ -262,8 +279,7 @@ class UsersGetParams(RequestParameters):
 
 class UsersSearch(InputSchema):
     match_: Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, min_length=1, max_length=80),
+        SearchPatternSafeStr,
         Field(
             description="Search string to match with usernames and public profiles (e.g. emails, first/last name)",
             alias="match",
@@ -314,17 +330,9 @@ class UserAccountReject(InputSchema):
     email: EmailStr
 
 
-GlobString: TypeAlias = Annotated[
-    str,
-    StringConstraints(
-        min_length=3, max_length=200, strip_whitespace=True, pattern=r"^[^%]*$"
-    ),
-]
-
-
 class UserAccountSearchQueryParams(RequestParameters):
     email: Annotated[
-        GlobString | None,
+        GlobPatternSafeStr | None,
         Field(
             description="complete or glob pattern for an email",
         ),
@@ -336,7 +344,7 @@ class UserAccountSearchQueryParams(RequestParameters):
         ),
     ] = None
     user_name: Annotated[
-        GlobString | None,
+        GlobPatternSafeStr | None,
         Field(
             description="complete or glob pattern for a username",
         ),
