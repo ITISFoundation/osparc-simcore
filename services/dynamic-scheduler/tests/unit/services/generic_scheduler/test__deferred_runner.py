@@ -59,6 +59,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def app_environment(
+    disable_scheduler_lifespan: None,
     disable_postgres_lifespan: None,
     disable_service_tracker_lifespan: None,
     disable_notifier_lifespan: None,
