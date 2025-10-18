@@ -112,6 +112,9 @@ async def _analyze_current_cluster(
         state_names=["stopped"],
     )
 
+    for instance in itertools.chain(existing_ec2_instances, warm_buffer_ec2_instances):
+        auto_scaling_mode.add_instance_generic_resources(app, instance)
+
     attached_ec2s, pending_ec2s = associate_ec2_instances_with_nodes(
         docker_nodes, existing_ec2_instances
     )
@@ -343,7 +346,9 @@ async def _try_attach_pending_ec2s(
     )
 
 
-async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
+async def _sorted_allowed_instance_types(
+    app: FastAPI, auto_scaling_mode: AutoscalingProvider
+) -> list[EC2InstanceType]:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
@@ -367,6 +372,8 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         return allowed_instance_type_names.index(f"{instance_type.name}")
 
     allowed_instance_types.sort(key=_as_selection)
+    for instance_type in allowed_instance_types:
+        auto_scaling_mode.add_instance_type_generic_resource(app, instance_type)
     return allowed_instance_types
 
 
@@ -728,15 +735,15 @@ async def _find_needed_instances(
             task_required_resources = auto_scaling_mode.get_task_required_resources(
                 task
             )
-            task_required_ec2_instance = (
-                await auto_scaling_mode.get_task_defined_instance(app, task)
+            task_required_ec2 = await auto_scaling_mode.get_task_defined_instance(
+                app, task
             )
 
             # first check if we can assign the task to one of the newly tobe created instances
             if _try_assign_task_to_ec2_instance_type(
                 task,
                 instances=needed_new_instance_types_for_tasks,
-                task_required_ec2_instance=task_required_ec2_instance,
+                task_required_ec2_instance=task_required_ec2,
                 task_required_resources=task_required_resources,
             ):
                 continue
@@ -744,12 +751,12 @@ async def _find_needed_instances(
             # so we need to find what we can create now
             try:
                 # check if exact instance type is needed first
-                if task_required_ec2_instance:
+                if task_required_ec2:
                     defined_ec2 = find_selected_instance_type_for_task(
-                        task_required_ec2_instance,
+                        task_required_ec2,
                         available_ec2_types,
                         task,
-                        auto_scaling_mode.get_task_required_resources(task),
+                        task_required_resources,
                     )
                     needed_new_instance_types_for_tasks.append(
                         AssignedTasksToInstanceType(
@@ -763,7 +770,7 @@ async def _find_needed_instances(
                     # we go for best fitting type
                     best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
                         available_ec2_types,
-                        auto_scaling_mode.get_task_required_resources(task),
+                        task_required_resources,
                         score_type=utils_ec2.closest_instance_policy,
                     )
                     needed_new_instance_types_for_tasks.append(
@@ -1575,7 +1582,10 @@ async def auto_scale_cluster(
     the additional load.
     """
     # current state
-    allowed_instance_types = await _sorted_allowed_instance_types(app)
+    allowed_instance_types = await _sorted_allowed_instance_types(
+        app, auto_scaling_mode
+    )
+
     cluster = await _analyze_current_cluster(
         app, auto_scaling_mode, allowed_instance_types
     )

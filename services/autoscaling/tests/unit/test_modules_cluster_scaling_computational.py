@@ -14,7 +14,7 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Final, cast
+from typing import Any, cast
 from unittest import mock
 
 import arrow
@@ -126,10 +126,14 @@ def _assert_rabbit_autoscaling_message_sent(
         instances_running=0,
     )
     expected_message = default_message.model_copy(update=message_update_kwargs)
-    mock_rabbitmq_post_message.assert_called_once_with(
-        app,
-        expected_message,
-    )
+    # in this mock we get all kind of messages, we just want to assert one of them is the expected one and there is only one
+    autoscaling_status_messages = [
+        call_args.args[1]
+        for call_args in mock_rabbitmq_post_message.call_args_list
+        if isinstance(call_args.args[1], RabbitAutoscalingStatusMessage)
+    ]
+    assert len(autoscaling_status_messages) == 1, "too many messages sent"
+    assert autoscaling_status_messages[0] == expected_message
 
 
 @pytest.fixture
@@ -285,13 +289,11 @@ class _ScaleUpParams:
     expected_num_instances: int
 
 
-_RESOURCE_TO_DASK_RESOURCE_MAP: Final[dict[str, str]] = {"CPUS": "CPU", "RAM": "RAM"}
-
-
 def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
     return {
-        _RESOURCE_TO_DASK_RESOURCE_MAP[res_key.upper()]: res_value
-        for res_key, res_value in resources.model_dump().items()
+        "CPU": resources.cpus,
+        "RAM": resources.ram,
+        **dict(resources.generic_resources.items()),
     }
 
 
@@ -636,7 +638,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     mock_docker_tag_node.reset_mock()
     mock_docker_set_node_availability.assert_not_called()
-    mock_rabbitmq_post_message.assert_called_once()
+    assert mock_rabbitmq_post_message.call_count == 3
     mock_rabbitmq_post_message.reset_mock()
 
     # now we have 1 monitored node that needs to be mocked
@@ -932,7 +934,6 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
         [InstanceTypeType | None, Resources], DaskTaskResources
     ],
     ec2_client: EC2Client,
-    faker: Faker,
     caplog: pytest.LogCaptureFixture,
 ):
     # we have nothing running now
