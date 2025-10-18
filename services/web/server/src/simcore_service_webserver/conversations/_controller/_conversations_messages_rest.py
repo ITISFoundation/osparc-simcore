@@ -1,8 +1,6 @@
 import logging
-from typing import Any
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver.conversations import (
     ConversationMessagePatch,
     ConversationMessageRestGet,
@@ -18,7 +16,6 @@ from models_library.rest_pagination import (
     PageQueryParameters,
 )
 from models_library.rest_pagination_utils import paginate_data
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -58,10 +55,6 @@ class _ConversationMessageCreateBodyParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-def _json_encoder_and_dumps(obj: Any, **kwargs):
-    return json_dumps(jsonable_encoder(obj), **kwargs)
-
-
 @routes.post(
     f"/{VTAG}/conversations/{{conversation_id}}/messages",
     name="create_conversation_message",
@@ -83,21 +76,21 @@ async def create_conversation_message(request: web.Request):
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
-    _, is_support_user = await _conversation_service.get_support_conversation_for_user(
-        app=request.app,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-        conversation_id=path_params.conversation_id,
+    _, conversation_user_type = (
+        await _conversation_service.get_support_conversation_for_user(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            conversation_id=path_params.conversation_id,
+        )
     )
 
     message = await _conversation_message_service.create_support_message(
         app=request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
-        is_support_user=is_support_user,
+        conversation_user_type=conversation_user_type,
         conversation=_conversation,
-        request_url=request.url,
-        request_host=request.host,
         content=body_params.content,
         type_=body_params.type,
     )

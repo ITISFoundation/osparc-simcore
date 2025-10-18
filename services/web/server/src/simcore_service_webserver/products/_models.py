@@ -17,6 +17,7 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
+    HttpUrl,
     PositiveInt,
     field_serializer,
     field_validator,
@@ -87,6 +88,11 @@ class Product(BaseModel):
         Field(description="Host regex"),
     ]
 
+    base_url: Annotated[
+        HttpUrl,
+        Field(description="Product Base URL"),
+    ]
+
     support_email: Annotated[
         LowerCaseEmailStr,
         Field(
@@ -142,6 +148,9 @@ class Product(BaseModel):
     ] = None
     support_standard_group_id: Annotated[
         int | None, Field(description="Support standard group ID, None if disabled")
+    ] = None
+    support_chatbot_user_id: Annotated[
+        int | None, Field(description="Support chatbot user ID, None if disabled")
     ] = None
     support_assigned_fogbugz_person_id: Annotated[
         int | None,
@@ -348,3 +357,8 @@ class Product(BaseModel):
                 template_name_attribute: str = getattr(self, name)
                 return template_name_attribute
         return None
+
+
+class ProductBaseUrl(BaseModel):
+    scheme: str
+    host: str
