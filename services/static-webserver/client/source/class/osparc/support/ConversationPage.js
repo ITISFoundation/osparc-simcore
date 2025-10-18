@@ -68,7 +68,9 @@ qx.Class.define("osparc.support.ConversationPage", {
             backgroundColor: "transparent"
           });
           control.addListener("execute", () => {
-            this.getConversation().setReadBy(true);
+            if (this.getConversation()) {
+              this.getConversation().setReadBy(true);
+            }
             this.setConversation(null);
             this.fireEvent("backToConversations");
           });

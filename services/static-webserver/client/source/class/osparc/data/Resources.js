@@ -1377,6 +1377,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/storage/locations/{locationId}:export-data"
           },
+          searchFiles: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}:search"
+          },
           batchDelete: {
             method: "POST",
             url: statics.API + "/storage/locations/{locationId}/-/paths:batchDelete"

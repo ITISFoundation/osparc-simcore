@@ -87,6 +87,7 @@ qx.Class.define("osparc.store.Store", {
         "searchTemplates",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
         "searchPublicTemplates",  // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
         "searchFunctions",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
+        "searchFiles",            // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES,
       ],
       init: "studiesAndFolders",
       nullable: false,

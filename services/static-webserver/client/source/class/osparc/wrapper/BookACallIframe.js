@@ -39,6 +39,10 @@ qx.Class.define("osparc.wrapper.BookACallIframe", {
   },
 
   statics: {
+    NAME: "easy!appointments",
+    VERSION: "1.5.2",
+    URL: "https://easyappointments.org/",
+
     DEV_SERVICE_URL: "http://10.43.103.145/index.php",
   },
 

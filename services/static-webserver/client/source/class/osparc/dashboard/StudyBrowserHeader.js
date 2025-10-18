@@ -337,6 +337,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
           this.__setIcon("@FontAwesome5Solid/search/24");
           title.setValue(this.tr("Functions results"));
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Files results"));
+          break;
       }
     },
 

@@ -133,10 +133,12 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   members: {
     __foldersList: null,
     __workspacesList: null,
+    __filesList: null,
     __resourcesList: null,
     __groupedContainersList: null,
     __foldersContainer: null,
     __workspacesContainer: null,
+    __filesContainer: null,
     __nonGroupedContainer: null,
     __groupedContainers: null,
     __resourceType: null,
@@ -165,6 +167,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
             case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
               text = this.tr("No Functions found");
+              break;
+            case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+              text = this.tr("No Files found");
               break;
           }
           break;
@@ -525,6 +530,38 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return card;
     },
     // /FOLDERS
+
+    // FILES
+    setFilesToList: function(filesList) {
+      this.__filesList = filesList;
+    },
+
+    reloadFiles: function() {
+      if (this.__filesContainer) {
+        this.__filesContainer.removeAll();
+        this.__filesContainer.exclude();
+      }
+      let fileCards = [];
+      this.__filesList.forEach(fileData => fileCards.push(this.__fileToCard(fileData)));
+      return fileCards;
+    },
+
+    __fileToCard: function(fileData) {
+      const card = this.__createFileCard(fileData);
+      this.__filesContainer.add(card);
+      this.__filesContainer.show();
+      return card;
+    },
+
+    __createFileCard: function(fileData) {
+      const file = new osparc.data.model.File(fileData);
+      const card = new osparc.dashboard.FileButtonItem(file);
+      [
+        "openLocation",
+      ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
+      return card;
+    },
+    // /FILES
 
     __moveNoGroupToLast: function() {
       const idx = this.__groupedContainers.getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));

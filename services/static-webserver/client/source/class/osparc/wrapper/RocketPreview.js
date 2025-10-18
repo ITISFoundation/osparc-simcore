@@ -48,6 +48,10 @@ qx.Class.define("osparc.wrapper.RocketPreview", {
   },
 
   statics: {
+    NAME: "Sim4Life",
+    VERSION: "latest",
+    URL: "https://sim4life.swiss/",
+
     INDEX_HTML: "rocketPreview/build/index.html",
 
     /**
