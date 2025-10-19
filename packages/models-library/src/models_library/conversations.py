@@ -61,7 +61,29 @@ class ConversationGetDB(BaseModel):
     modified: datetime
     last_message_created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                # Support message
+                {
+                    "conversation_id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+                    "product_name": "osparc",
+                    "name": "test_conversation",
+                    "project_uuid": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+                    "user_group_id": "789",
+                    "type": ConversationType.SUPPORT,
+                    "extra_context": {},
+                    "fogbugz_case_id": None,
+                    "is_read_by_user": False,
+                    "is_read_by_support": False,
+                    "created": "2024-01-01T12:00:00",
+                    "modified": "2024-01-01T12:00:00",
+                    "last_message_created_at": "2024-01-01T12:00:00",
+                }
+            ]
+        },
+    )
 
 
 class ConversationMessageGetDB(BaseModel):

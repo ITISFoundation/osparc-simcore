@@ -42,7 +42,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         return True  # return true to avoid re-processing
 
     # Get last 20 messages for the conversation ID
-    messages = await conversations_service.list_messages_for_conversation(
+    _, messages = await conversations_service.list_messages_for_conversation(
         app=app,
         conversation_id=rabbit_message.conversation.conversation_id,
         offset=0,
@@ -50,7 +50,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),
     )
     _question_for_chatbot = ""
-    for msg in messages[1]:
+    for msg in messages:
         _question_for_chatbot += f"{msg.content.strip()}\n"
 
     # Talk to the chatbot service
