@@ -94,26 +94,32 @@ async def _analyze_current_cluster(
     docker_nodes: list[Node] = await auto_scaling_mode.get_monitored_nodes(app)
 
     # get the EC2 instances we have
-    existing_ec2_instances = await get_ec2_client(app).get_instances(
+    existing_ec2_instances: list[EC2InstanceData] = await get_ec2_client(
+        app
+    ).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["pending", "running"],
     )
 
-    terminated_ec2_instances = await get_ec2_client(app).get_instances(
+    terminated_ec2_instances: list[EC2InstanceData] = await get_ec2_client(
+        app
+    ).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["terminated"],
     )
 
-    warm_buffer_ec2_instances = await get_ec2_client(app).get_instances(
+    warm_buffer_ec2_instances: list[EC2InstanceData] = await get_ec2_client(
+        app
+    ).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         state_names=["stopped"],
     )
 
-    for instance in itertools.chain(existing_ec2_instances, warm_buffer_ec2_instances):
-        auto_scaling_mode.add_instance_generic_resources(app, instance)
+    for i in itertools.chain(existing_ec2_instances, warm_buffer_ec2_instances):
+        auto_scaling_mode.add_instance_generic_resources(app, i)
 
     attached_ec2s, pending_ec2s = associate_ec2_instances_with_nodes(
         docker_nodes, existing_ec2_instances
