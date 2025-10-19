@@ -22,9 +22,9 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 from servicelib.redis import exclusive
-from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
-from simcore_service_webserver.groups import api as group_service
 
+from ..application_keys import APP_SETTINGS_APPKEY
+from ..groups import api as group_service
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
 from ..redis import get_redis_lock_manager_client_sdk
@@ -39,6 +39,7 @@ from ._socketio import (
     notify_conversation_message_deleted,
     notify_conversation_message_updated,
 )
+from .errors import ConversationError
 
 _logger = logging.getLogger(__name__)
 
@@ -192,7 +193,7 @@ async def _create_support_message_with_first_check(
             _is_read_by_support = False
         case _:
             msg = f"Unknown conversation user type: {conversation_user_type}"
-            raise ValueError(msg)
+            raise ConversationError(msg)
 
     await _conversation_repository.update(
         app,

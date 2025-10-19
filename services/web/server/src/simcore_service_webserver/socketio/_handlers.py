@@ -140,8 +140,9 @@ async def connect(
 
     try:
         auth_user_handler = auth_user_factory(socket_id)
-        _request: web.Request = environ["aiohttp.request"]
-        user_id, product_name, client_session_id = await auth_user_handler(_request)
+        user_id, product_name, client_session_id = await auth_user_handler(
+            environ["aiohttp.request"]
+        )
         _logger.info(
             "%s successfully connected with %s",
             f"{user_id=}",

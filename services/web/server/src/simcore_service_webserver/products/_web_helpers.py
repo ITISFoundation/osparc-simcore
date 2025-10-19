@@ -43,22 +43,6 @@ def get_current_product(request: web.Request) -> Product:
     return current_product
 
 
-# def set_product_base_url(request: web.Request, product_name: ProductName) -> None:
-#     if (
-#         not request.app[PRODUCTS_URL_MAPPING_APPKEY].get(product_name)
-#         and request.url.host
-#     ):
-#         request.app[PRODUCTS_URL_MAPPING_APPKEY][product_name] = ProductBaseUrl(
-#             scheme=request.url.scheme, host=request.url.host
-#         )
-#         _logger.debug(
-#             "Set product url for %s to %s://%s",
-#             product_name,
-#             request.url.scheme,
-#             request.url.host,
-#         )
-
-
 async def is_user_in_product_support_group(
     request: web.Request, *, user_id: UserID
 ) -> bool:
