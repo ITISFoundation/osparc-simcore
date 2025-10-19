@@ -1,4 +1,5 @@
 from datetime import timedelta
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import Field
@@ -7,6 +8,13 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 from .base import BaseCustomSettings
+
+
+class CeleryPoolType(StrEnum):
+    PREFORK = "prefork"
+    EVENTLET = "eventlet"
+    GEVENT = "gevent"
+    THREADS = "threads"
 
 
 class CelerySettings(BaseCustomSettings):
@@ -34,6 +42,13 @@ class CelerySettings(BaseCustomSettings):
             description="If set to True, result messages will be persistent (after a broker restart)."
         ),
     ] = True
+
+    CELERY_POOL: Annotated[
+        CeleryPoolType,
+        Field(
+            description="Type of pool to use. One of: prefork, eventlet, gevent, threads. See https://docs.celeryq.dev/en/stable/userguide/concurrency/index.html for details.",
+        ),
+    ] = CeleryPoolType.PREFORK
 
     model_config = SettingsConfigDict(
         json_schema_extra={

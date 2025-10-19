@@ -74,23 +74,27 @@ qx.Class.define("osparc.wrapper.DOMPurify", {
 
   members: {
     init: function() {
-      // initialize the script loading
-      const purifyPath = "DOMPurify/purify-3.2.7.min.js";
-      const dynLoader = new qx.util.DynamicScriptLoader([
-        purifyPath
-      ]);
+      return new Promise((resolve, reject) => {
+        // initialize the script loading
+        const purifyPath = "DOMPurify/purify-3.2.7.min.js";
+        const dynLoader = new qx.util.DynamicScriptLoader([
+          purifyPath
+        ]);
 
-      dynLoader.addListenerOnce("ready", e => {
-        console.log(purifyPath + " loaded");
-        this.setLibReady(true);
-      }, this);
+        dynLoader.addListenerOnce("ready", e => {
+          console.log(purifyPath + " loaded");
+          this.setLibReady(true);
+          resolve();
+        }, this);
 
-      dynLoader.addListener("failed", e => {
-        let data = e.getData();
-        console.error("failed to load " + data.script);
-      }, this);
+        dynLoader.addListener("failed", e => {
+          let data = e.getData();
+          console.error("failed to load " + data.script);
+          reject(data);
+        }, this);
 
-      dynLoader.start();
+        dynLoader.start();
+      });
     },
 
     sanitize: function(html) {

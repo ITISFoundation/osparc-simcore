@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 from celery import Task  # type: ignore[import-untyped]
-from celery_library.utils import get_app_server
+from celery_library.worker.app_server import get_app_server
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
