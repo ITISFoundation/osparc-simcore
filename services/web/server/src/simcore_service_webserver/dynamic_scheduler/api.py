@@ -93,7 +93,11 @@ async def stop_dynamic_service(
         settings: DynamicSchedulerSettings = get_plugin_settings(app)
         rpc_client = get_rabbitmq_rpc_client(app)
         await services.stop_dynamic_service(
-            rpc_client, dynamic_service_stop=dynamic_service_stop
+            rpc_client,
+            dynamic_service_stop=dynamic_service_stop,
+            timeout_s=int(
+                settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()
+            ),
         )
 
         def _log_error(retry_state: RetryCallState):
