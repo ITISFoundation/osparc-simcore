@@ -277,10 +277,9 @@ def test_ordering_query_params_validation_error_with_invalid_fields():
 
     # Verify the validation error details
     exc = err_info.value
-    assert exc.error_count() > 0
+    assert exc.error_count() == 1
 
-    # Check that the error mentions the invalid field
-    error_messages = [error["msg"] for error in exc.errors()]
-    assert any(
-        "Input should be 'created_at' or 'name'" in msg for msg in error_messages
-    )
+    error = exc.errors()[0]
+    assert error["loc"] == ("order_by", 1, "field")
+    assert error["type"] == "literal_error"
+    assert error["input"] == "invalid_field"

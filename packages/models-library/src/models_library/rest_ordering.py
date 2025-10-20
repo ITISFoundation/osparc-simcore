@@ -1,5 +1,4 @@
-from enum import Enum
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, Generic
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.json_serialization import json_dumps
@@ -13,16 +12,17 @@ from pydantic import (
 from pydantic.generics import GenericModel
 
 from .basic_types import IDStr
+from .list_operations import OrderClause, OrderDirection, TField, check_ordering_list
 from .rest_base import RequestParameters
-from .utils.common_validators import parse_json_pre_validator
+from .utils.common_validators import (
+    parse_json_pre_validator,
+)
 
-
-class OrderDirection(str, Enum):
-    ASC = "asc"
-    DESC = "desc"
+__all__: tuple[str, ...] = ("OrderDirection",)
 
 
 class OrderBy(BaseModel):
+    # NOTE: use instead OrderClause[TField] where TField is Literal of valid fields
     field: Annotated[IDStr, Field(description="field name identifier")]
     direction: Annotated[
         OrderDirection,
@@ -128,21 +128,10 @@ def create_ordering_query_model_class(
     return _OrderJsonQueryParams
 
 
-#
-#
-# NOTE: OrderingQueryParams is a more flexible variant for generic usage and that
-#      does include multiple ordering clauses
-#
-
-TField = TypeVar("TField", bound=str)
-
-
-class OrderClause(GenericModel, Generic[TField]):
-    field: TField
-    direction: OrderDirection = OrderDirection.ASC
-
-
 class OrderingQueryParams(GenericModel, Generic[TField]):
+    # NOTE: OrderingQueryParams is a more flexible variant for generic usage and that
+    #      does include multiple ordering clauses
+    #
     order_by: Annotated[
         list[OrderClause[TField]],
         Field(
@@ -153,41 +142,39 @@ class OrderingQueryParams(GenericModel, Generic[TField]):
 
     @field_validator("order_by", mode="before")
     @classmethod
-    def _parse_order_by(cls, v):
-        """
-        Example:
+    def _parse_order_by_string(cls, v):
+        """Parses a comma-separated string into a list of OrderClause
 
-        GET /items?order_by=-created_at,name
-
-        Parses to:
-        [
-            OrderClause(field="created_at", direction=OrderDirection.DESC),
-            OrderClause(field="name", direction=OrderDirection.ASC),
-        ]
+        Example, given the query parameter `order_by` in a request like `GET /items?order_by=-created_at,name`
+        It parses to:
+            [
+                OrderClause(field="created_at", direction=OrderDirection.DESC),
+                OrderClause(field="name", direction=OrderDirection.ASC),
+            ]
         """
         if not v:
             return []
+
         if isinstance(v, str):
+            # 1. from comma-separated string to list of OrderClause
             v = v.split(",")
-        clauses = []
-        for t in v:
-            token = t.strip()
-            if not token:
-                continue
-            if token.startswith("-"):
-                clauses.append(
-                    OrderClause[TField](
-                        field=token[1:].strip(), direction=OrderDirection.DESC
-                    )
-                )
-            elif token.startswith("+"):
-                clauses.append(
-                    OrderClause[TField](
-                        field=token[1:].strip(), direction=OrderDirection.ASC
-                    )
-                )
-            else:
-                clauses.append(
-                    OrderClause[TField](field=token, direction=OrderDirection.ASC)
-                )
-        return clauses
+            clauses: list[tuple[str, OrderDirection]] = []
+            for t in v:
+                token = t.strip()
+                if not token:
+                    continue
+                if token.startswith("-"):
+                    clauses.append((token[1:].strip(), OrderDirection.DESC))
+                elif token.startswith("+"):
+                    clauses.append((token[1:].strip(), OrderDirection.ASC))
+                else:
+                    clauses.append((token, OrderDirection.ASC))
+            # 2. check for duplicates and conflicting directions
+            return [
+                {"field": field, "direction": direction}
+                for field, direction in check_ordering_list(clauses)
+            ]
+
+        # NOTE: Parses ONLY strings into list[OrderClause], otherwise raises TypeError
+        msg = f"Invalid type for order_by: expected str, got {type(v)}"
+        raise TypeError(msg)
