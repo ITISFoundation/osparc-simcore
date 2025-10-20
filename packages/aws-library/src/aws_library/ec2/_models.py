@@ -65,25 +65,29 @@ class Resources(BaseModel, frozen=True):
         Non-numeric generic resources must only be defined in self
         to be considered greater
         """
-        if (self.cpus > other.cpus) or (self.ram > other.ram):
-            return True
+        if (self.cpus < other.cpus) or (self.ram < other.ram):
+            return False
 
         keys = set(self.generic_resources) | set(other.generic_resources)
         for k in keys:
             a = self.generic_resources.get(k)
             b = other.generic_resources.get(k)
             if a is None:
-                continue
+                return False
             if b is None:
-                return True
+                # a is greater as b is not defined
+                continue
             if isinstance(a, int | float) and isinstance(b, int | float):
-                if a > b:
-                    return True
-            elif a != b:
-                assert isinstance(a, str | None)  # nosec
-                assert isinstance(b, int | float | str | None)  # nosec
-                return True
-        return False
+                if a < b:
+                    return False
+            else:
+                # remaining options is a is str and b is str or mixed types
+                assert isinstance(a, str)  # nosec
+                assert isinstance(b, int | float | str)  # nosec
+
+        # here we have either everything greater or equal or non-comparable strings
+
+        return self != other
 
     def __add__(self, other: "Resources") -> "Resources":
         """operator for adding two Resources

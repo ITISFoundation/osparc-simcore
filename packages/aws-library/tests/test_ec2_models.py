@@ -36,7 +36,7 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
         (
             Resources(cpus=0.05, ram=ByteSize(1)),
             Resources(cpus=0.1, ram=ByteSize(0)),
-            True,  # ram is larger
+            False,  # CPU is smaller
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(0)),
@@ -46,7 +46,7 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
         (
             Resources(cpus=0.1, ram=ByteSize(0), generic_resources={"GPU": 1}),
             Resources(cpus=0.1, ram=ByteSize(1)),
-            True,  # GPU is larger
+            False,  # RAM is smaller
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
@@ -71,7 +71,7 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "2"}),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
-            True,  # string resrouces are not comparable so "2" is considered larger
+            True,  # string resources are not comparable so "2" is considered larger
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
@@ -117,7 +117,7 @@ def test_resources_ge_operator(
         (
             Resources(cpus=0.05, ram=ByteSize(1)),
             Resources(cpus=0.1, ram=ByteSize(0)),
-            True,
+            False,  # CPU is smaller
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(0)),
@@ -127,7 +127,7 @@ def test_resources_ge_operator(
         (
             Resources(cpus=0.1, ram=ByteSize(0), generic_resources={"GPU": 1}),
             Resources(cpus=0.1, ram=ByteSize(1)),
-            True,  # ram is not enough
+            False,  # ram is not enough
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
@@ -143,6 +143,11 @@ def test_resources_ge_operator(
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
             False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            True,
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1)),
@@ -168,6 +173,11 @@ def test_resources_ge_operator(
             Resources(cpus=0.1, ram=ByteSize(1)),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
             False,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "no"}),
+            True,
         ),
     ],
 )
