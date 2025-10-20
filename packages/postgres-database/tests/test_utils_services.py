@@ -151,6 +151,7 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
             "display_name": "Product Osparc",
             "short_name": "osparc",
             "host_regex": r"^osparc.",
+            "base_url": "https://osparc.io",
             "priority": 0,
         }
         product_name = conn.execute(
