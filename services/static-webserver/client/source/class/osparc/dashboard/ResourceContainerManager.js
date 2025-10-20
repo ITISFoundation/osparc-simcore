@@ -103,6 +103,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "changeContext": "qx.event.type.Data",
     "studyToFolderRequested": "qx.event.type.Data",
     "folderToFolderRequested": "qx.event.type.Data",
+    "openLocation": "qx.event.type.Data",
   },
 
   statics: {

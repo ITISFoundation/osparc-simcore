@@ -123,8 +123,10 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
       });
 
       const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesome5Solid/folder/12");
-      openLocationButton.addListener("execute", () => this.fireDataEvent("openLocation", this.getFolderId()), this);
-      osparc.utils.Utils.setIdToWidget(openLocationButton, "openLocationMenuItem");
+      openLocationButton.addListener("execute", () => this.fireDataEvent("openLocation", {
+        projectId: file.getProjectId(),
+        path: file.getPath()
+      }), this);
       menu.add(openLocationButton);
 
       menuButton.setMenu(menu);

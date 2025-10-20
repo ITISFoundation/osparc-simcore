@@ -795,6 +795,30 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // It will remove the file cards
       this._reloadCards();
     },
+
+    _openLocation: function(fileData) {
+      const projectId = fileData["projectId"];
+      const path = fileData["path"];
+      this.__openStudyDetails(projectId, path);
+    },
+
+    __openStudyDetails: function(projectId, path) {
+      osparc.store.Study.getInstance().getOne(projectId)
+        .then(studyData => {
+          if (studyData) {
+            const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+            studyDataCopy["resourceType"] = "study";
+            const {
+              resourceDetails,
+              window,
+            } = osparc.dashboard.ResourceDetails.popUpInWindow(studyDataCopy);
+            resourceDetails.addListener("openStudy", () => {
+              const openCB = () => window.close();
+              this._startStudyById(projectId, openCB);
+            });
+          }
+        });
+    },
     // /FILES
 
     __configureStudyCards: function(cards) {
