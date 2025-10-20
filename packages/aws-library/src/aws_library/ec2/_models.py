@@ -43,11 +43,10 @@ class Resources(BaseModel, frozen=True):
     def create_as_empty(cls) -> "Resources":
         return cls(cpus=0, ram=ByteSize(0))
 
-    # TODO: this is not ok. everything shall be compared!
     def __ge__(self, other: "Resources") -> bool:
         """operator for >= comparison
         if self has greater or equal resources than other, returns True
-        This will return True only if any of the resources in self is greater or equal to other
+        This will return True only if all of the resources in self are greater or equal to other
 
         Note that generic_resources are compared only if they are numeric
         Non-numeric generic resources must be equal in both or only defined in self
@@ -59,10 +58,11 @@ class Resources(BaseModel, frozen=True):
 
     def __gt__(self, other: "Resources") -> bool:
         """operator for > comparison
-        if self has any resources greater than other, returns True (even if different resource types are smaller)
+        if self has resources greater than other, returns True
+        This will return True only if all of the resources in self are greater than other
 
         Note that generic_resources are compared only if they are numeric
-        Non-numeric generic resources must be equal in both or only defined in self
+        Non-numeric generic resources must only be defined in self
         to be considered greater
         """
         if (self.cpus > other.cpus) or (self.ram > other.ram):
