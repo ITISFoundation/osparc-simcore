@@ -96,6 +96,8 @@ async def stop_dynamic_service(
             rpc_client,
             dynamic_service_stop=dynamic_service_stop,
             timeout_s=int(
+                # NOTE: legacy services still can require a lot of time to store
+                # thier state
                 settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()
             ),
         )

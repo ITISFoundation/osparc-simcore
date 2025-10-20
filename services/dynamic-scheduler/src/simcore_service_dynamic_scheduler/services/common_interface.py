@@ -1,3 +1,6 @@
+from datetime import timedelta
+from typing import Final
+
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
@@ -16,8 +19,15 @@ from models_library.users import UserID
 from pydantic import NonNegativeInt
 
 from ..core.settings import ApplicationSettings
+from .catalog._public_client import CatalogPublicClient
 from .director_v2 import DirectorV2Client
-from .service_tracker import set_request_as_running, set_request_as_stopped
+from .service_tracker import (
+    get_tracked_service,
+    set_request_as_running,
+    set_request_as_stopped,
+)
+
+_NEW_STYLE_SERVICES_STOP_TIMEOUT: Final[timedelta] = timedelta(minutes=5)
 
 
 async def list_tracked_dynamic_services(
@@ -73,12 +83,28 @@ async def stop_dynamic_service(
     if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
         raise NotImplementedError
 
+    # by default assume worst case scenarios:
+    # - service is legacy (which can take a long time to stop)
+    # - did not find tracked service (assume legacy)
+    stop_timeout: timedelta = settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT
+
+    tracked_service = await get_tracked_service(app, dynamic_service_stop.node_id)
+    if tracked_service and tracked_service.dynamic_service_start:
+        service_labels = await CatalogPublicClient.get_from_app_state(
+            app
+        ).get_service_labels(
+            tracked_service.dynamic_service_start.key,
+            tracked_service.dynamic_service_start.version,
+        )
+        if service_labels.needs_dynamic_sidecar:
+            stop_timeout = _NEW_STYLE_SERVICES_STOP_TIMEOUT
+
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     await director_v2_client.stop_dynamic_service(
         node_id=dynamic_service_stop.node_id,
         simcore_user_agent=dynamic_service_stop.simcore_user_agent,
         save_state=dynamic_service_stop.save_state,
-        timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
+        timeout=stop_timeout,
     )
 
 

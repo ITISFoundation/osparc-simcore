@@ -17,7 +17,7 @@ class CatalogPublicClient(SingletonInAppStateMixin):
     def __init__(self, app: FastAPI) -> None:
         self.app = app
 
-    async def get_services_labels(
+    async def get_service_labels(
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> SimcoreServiceLabels:
         response = await CatalogThinClient.get_from_app_state(
