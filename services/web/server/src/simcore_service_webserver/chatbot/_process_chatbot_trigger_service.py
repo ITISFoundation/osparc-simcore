@@ -13,6 +13,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..conversations import conversations_service
+from ..conversations.errors import ConversationErrorNotFoundError
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
 from .chatbot_service import get_chatbot_rest_client
@@ -57,15 +58,21 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
     chatbot_client = get_chatbot_rest_client(app)
     chat_response = await chatbot_client.ask_question(_question_for_chatbot)
 
-    await conversations_service.create_support_message(
-        app=app,
-        product_name=rabbit_message.conversation.product_name,
-        user_id=_product.support_chatbot_user_id,
-        conversation_user_type=ConversationUserType.CHATBOT_USER,
-        conversation=rabbit_message.conversation,
-        content=chat_response.answer,
-        type_=ConversationMessageType.MESSAGE,
-    )
+    try:
+        await conversations_service.create_support_message(
+            app=app,
+            product_name=rabbit_message.conversation.product_name,
+            user_id=_product.support_chatbot_user_id,
+            conversation_user_type=ConversationUserType.CHATBOT_USER,
+            conversation=rabbit_message.conversation,
+            content=chat_response.answer,
+            type_=ConversationMessageType.MESSAGE,
+        )
+    except ConversationErrorNotFoundError:
+        _logger.debug(
+            "Can not create a support message as conversation %s was not found",
+            rabbit_message.conversation.conversation_id,
+        )
     return True
 
 
