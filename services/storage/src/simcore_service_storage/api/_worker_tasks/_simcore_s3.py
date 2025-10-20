@@ -164,6 +164,9 @@ async def search(
             modified_at=modified_at,
             limit=1,  # NOTE: yield items as they come
         ):
+            if not items:
+                continue
+
             data = [
                 TaskStreamItem(
                     data=SearchResultItem(
