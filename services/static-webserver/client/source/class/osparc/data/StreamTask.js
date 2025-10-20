@@ -59,7 +59,6 @@ qx.Class.define("osparc.data.StreamTask", {
     // override
     _startPolling: function() {
       return;
-      // this.fetchStream();
     },
 
     fetchStream: function() {
