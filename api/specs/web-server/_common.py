@@ -60,7 +60,7 @@ def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     for field_name, field_info in model_class.model_fields.items():
 
         field_default = field_info.default
-        assert not field_info.default_factory  # nosec
+        assert not field_info.default_factory, f"got {field_info=}"  # nosec
         query_kwargs = {
             "alias": field_info.alias,
             "title": field_info.title,
