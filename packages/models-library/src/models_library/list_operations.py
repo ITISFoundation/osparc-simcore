@@ -77,3 +77,55 @@ def check_ordering_list(
         unique_order_by.append((field, direction))
 
     return unique_order_by
+
+
+def map_order_fields(
+    order_clauses: list[OrderClause[TField]], field_mapping: dict[str, str]
+) -> list[tuple[str, OrderDirection]]:
+    """Map order clause fields using a field mapping dictionary.
+
+    Args:
+        order_clauses: List of OrderClause objects with API field names
+        field_mapping: Dictionary mapping API field names to domain/DB field names
+
+    Returns:
+        List of tuples with mapped field names and directions
+
+    Example:
+        >>> clauses = [OrderClause(field="email", direction=OrderDirection.ASC)]
+        >>> mapping = {"email": "user_email", "created_at": "created"}
+        >>> map_order_fields(clauses, mapping)
+        [("user_email", OrderDirection.ASC)]
+    """
+    return [
+        (field_mapping[str(clause.field)], clause.direction) for clause in order_clauses
+    ]
+
+
+def validate_order_fields_with_literals(
+    order_by: list[tuple[str, str]],
+    valid_fields: set[str],
+) -> None:
+    """Validate order_by list with string field names and directions.
+
+    Args:
+        order_by: List of (field_name, direction) tuples with string values
+        valid_fields: Set of allowed field names
+        valid_directions: Set of allowed direction values
+
+    Raises:
+        ValueError: If any field or direction is invalid
+    """
+    valid_directions = {OrderDirection.ASC.value, OrderDirection.DESC.value}
+
+    invalid_fields = {field for field, _ in order_by if field not in valid_fields}
+    if invalid_fields:
+        msg = f"Invalid order_by field(s): {invalid_fields}. Valid fields are: {valid_fields}"
+        raise ValueError(msg)
+
+    invalid_directions = {
+        direction for _, direction in order_by if direction not in valid_directions
+    }
+    if invalid_directions:
+        msg = f"Invalid order direction(s): {invalid_directions}. Must be one of: {valid_directions}"
+        raise ValueError(msg)
