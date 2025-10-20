@@ -334,7 +334,7 @@ class UserAccountSearchQueryParams(RequestParameters):
     email: Annotated[
         GlobPatternSafeStr | None,
         Field(
-            description="complete or glob pattern for an email",
+            description="complete or glob pattern for an email (case insensitive)",
         ),
     ] = None
     primary_group_id: Annotated[
@@ -346,7 +346,7 @@ class UserAccountSearchQueryParams(RequestParameters):
     user_name: Annotated[
         GlobPatternSafeStr | None,
         Field(
-            description="complete or glob pattern for a username",
+            description="complete or glob pattern for a username (case insensitive)",
         ),
     ] = None
 
