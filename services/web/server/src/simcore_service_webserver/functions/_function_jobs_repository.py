@@ -7,6 +7,7 @@ import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobsDB,
+    BatchGetCachedRegisteredFunctionJobsDB,
     BatchUpdateRegisteredFunctionJobsDB,
     FunctionClass,
     FunctionClassSpecificData,
@@ -318,7 +319,7 @@ async def delete_function_job(
         )
 
 
-async def find_cached_function_jobs(
+async def batch_find_cached_function_jobs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -327,7 +328,7 @@ async def find_cached_function_jobs(
     product_name: ProductName,
     inputs: FunctionInputsList,
     status_filter: list[FunctionJobStatus] | None = None,
-) -> list[RegisteredFunctionJobDB | None]:
+) -> BatchGetCachedRegisteredFunctionJobsDB:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # Get user groups for access check
         user_groups = await list_all_user_groups_ids(app, user_id=user_id)
@@ -378,8 +379,16 @@ async def find_cached_function_jobs(
             for row in results
         }
 
-        # Return results in the same order as inputs, with None for missing jobs
-        return [jobs_by_input.get(json_input, None) for json_input in json_inputs]
+        return BatchGetCachedRegisteredFunctionJobsDB(
+            found_items=[
+                jobs_by_input[input_]
+                for input_ in json_inputs
+                if input_ in jobs_by_input
+            ],
+            missing_identifiers=[
+                input_ for input_ in inputs if json.dumps(input_) not in jobs_by_input
+            ],
+        )
 
 
 async def get_function_job_status(
