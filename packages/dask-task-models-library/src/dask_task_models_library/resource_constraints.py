@@ -26,3 +26,24 @@ def get_ec2_instance_type_from_resources(
         if resource_name.startswith(DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY):
             return resource_name.split(":")[-1]
     return None
+
+
+_RAM_SAFE_MARGIN_RATIO: Final[float] = (
+    0.1  # NOTE: machines always have less available RAM than advertised
+)
+_CPUS_SAFE_MARGIN: Final[float] = 0.1
+
+
+def estimate_dask_worker_resources_from_ec2_instance(
+    cpus: float, ram: int
+) -> tuple[float, float]:
+    """Estimates the resources available to a dask worker running in an EC2 instance,
+    taking into account safe margins for CPU and RAM.
+
+    Returns:
+        tuple: Estimated resources for the dask worker (cpus, ram).
+    """
+    worker_cpus = min(0.1, cpus - _CPUS_SAFE_MARGIN)  # ensure at least 0.1 CPU
+    worker_ram = int(ram * (1 - _RAM_SAFE_MARGIN_RATIO))  # apply safe margin
+
+    return (worker_cpus, worker_ram)

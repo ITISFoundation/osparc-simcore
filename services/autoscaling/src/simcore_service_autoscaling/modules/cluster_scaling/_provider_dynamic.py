@@ -1,14 +1,27 @@
+import dataclasses
+from typing import Final
+
 from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
 from aws_library.ec2._models import EC2InstanceType
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
+from pydantic import ByteSize, TypeAdapter
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...core.settings import get_application_settings
 from ...models import AssociatedInstance
 from ...utils import utils_docker, utils_ec2
 from ..docker import get_docker_client
+
+_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
+    0.1  # NOTE: machines always have less available RAM than advertised
+)
+_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
+    "1GiB"
+)
+_CPUS_SAFE_MARGIN: Final[float] = 1.4
+_MIN_NUM_CPUS: Final[float] = 0.5
 
 
 class DynamicAutoscalingProvider:
@@ -114,10 +127,21 @@ class DynamicAutoscalingProvider:
         assert instance  # nosec
         # nothing to do at the moment
 
-    def add_instance_type_generic_resource(
+    def adjust_instance_type_resources(
         self, app: FastAPI, instance_type: EC2InstanceType
     ) -> None:
         assert self  # nosec
         assert app  # nosec
-        assert instance_type  # nosec
         # nothing to do at the moment
+        adjusted_cpus = float(instance_type.resources.cpus) - _CPUS_SAFE_MARGIN
+        adjusted_ram = int(
+            instance_type.resources.ram
+            - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * instance_type.resources.ram
+            - _SIDECARS_OPS_SAFE_RAM_MARGIN
+        )
+        dataclasses.replace(
+            instance_type,
+            resources=instance_type.resources.model_copy(
+                update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}
+            ),
+        )

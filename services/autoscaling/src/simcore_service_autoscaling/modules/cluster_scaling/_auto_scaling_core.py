@@ -379,7 +379,7 @@ async def _sorted_allowed_instance_types(
 
     allowed_instance_types.sort(key=_as_selection)
     for instance_type in allowed_instance_types:
-        auto_scaling_mode.add_instance_type_generic_resource(app, instance_type)
+        auto_scaling_mode.adjust_instance_type_resources(app, instance_type)
     return allowed_instance_types
 
 

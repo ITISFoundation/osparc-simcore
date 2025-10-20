@@ -53,6 +53,6 @@ class AutoscalingProvider(Protocol):
         self, app: FastAPI, instance: EC2InstanceData
     ) -> None: ...
 
-    def add_instance_type_generic_resource(
+    def adjust_instance_type_resources(
         self, app: FastAPI, instance_type: EC2InstanceType
     ) -> None: ...
