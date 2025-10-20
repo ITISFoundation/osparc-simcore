@@ -32,6 +32,7 @@ from ..string_types import (
     SearchPatternSafeStr,
     validate_input_xss_safety,
 )
+from ..rest_ordering import OrderingQueryParams
 from ..users import (
     FirstNameStr,
     LastNameStr,
@@ -317,7 +318,14 @@ class UsersForAdminListFilter(Filters):
     model_config = ConfigDict(extra="forbid")
 
 
-class UsersAccountListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
+UserAccountOrderFields: TypeAlias = Literal["email", "created_at"]
+
+
+class UsersAccountListQueryParams(
+    UsersForAdminListFilter,
+    PageQueryParameters,
+    OrderingQueryParams[UserAccountOrderFields],
+): ...
 
 
 class _InvitationDetails(InputSchema):
