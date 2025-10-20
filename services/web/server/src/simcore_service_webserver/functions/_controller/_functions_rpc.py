@@ -2,6 +2,7 @@ from typing import Literal
 
 from aiohttp import web
 from models_library.functions import (
+    BatchCreateRegisteredFunctionJobs,
     Function,
     FunctionAccessRights,
     FunctionClass,
@@ -23,7 +24,6 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
-    RegisteredFunctionJobList,
     RegisteredFunctionJobWithStatus,
     RegisteredProjectFunctionJobPatchInputList,
     RegisteredSolverFunctionJobPatchInputList,
@@ -115,7 +115,7 @@ async def register_function_job_batch(
     user_id: UserID,
     product_name: ProductName,
     function_jobs: FunctionJobList,
-) -> RegisteredFunctionJobList:
+) -> BatchCreateRegisteredFunctionJobs:
     return await _functions_service.register_function_job_batch(
         app=app, user_id=user_id, product_name=product_name, function_jobs=function_jobs
     )

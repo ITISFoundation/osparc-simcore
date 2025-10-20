@@ -79,11 +79,14 @@ async def test_register_get_delete_function_job(
     )
 
     # Register the function job
-    registered_jobs = await webserver_rpc_client.functions.register_function_job_batch(
-        function_jobs=[function_job],
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    registered_jobs_batch_create = (
+        await webserver_rpc_client.functions.register_function_job_batch(
+            function_jobs=[function_job],
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
     )
+    registered_jobs = registered_jobs_batch_create.created_items
     assert len(registered_jobs) == 1
     registered_job = registered_jobs[0]
 
@@ -199,11 +202,14 @@ async def test_list_function_jobs(
     )
 
     # Register the function job
-    registered_jobs = await webserver_rpc_client.functions.register_function_job_batch(
-        function_jobs=[function_job],
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    registered_jobs_batch_create = (
+        await webserver_rpc_client.functions.register_function_job_batch(
+            function_jobs=[function_job],
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
     )
+    registered_jobs = registered_jobs_batch_create.created_items
     assert len(registered_jobs) == 1
     registered_job = registered_jobs[0]
 
@@ -444,10 +450,12 @@ async def test_find_cached_function_jobs(
     ]
 
     # Register the function job
-    await webserver_rpc_client.functions.register_function_job_batch(
-        function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    registered_jobs_batch_create = (
+        await webserver_rpc_client.functions.register_function_job_batch(
+            function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
     )
 
     # Find cached function jobs

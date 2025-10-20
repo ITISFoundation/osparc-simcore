@@ -17,6 +17,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.functions import (
+    BatchCreateRegisteredFunctionJobs,
     FunctionClass,
     FunctionGroupAccessRights,
     FunctionInputsList,
@@ -26,7 +27,6 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
-    RegisteredFunctionJobList,
     RegisteredFunctionJobWithStatus,
     RegisteredProjectFunctionJobPatchInputList,
     RegisteredSolverFunctionJobPatchInputList,
@@ -339,9 +339,9 @@ class FunctionsRpcApi(BaseRpcApi):
         product_name: ProductName,
         user_id: UserID,
         function_jobs: FunctionJobList,
-    ) -> RegisteredFunctionJobList:
+    ) -> BatchCreateRegisteredFunctionJobs:
         """Register a function job."""
-        return TypeAdapter(RegisteredFunctionJobList).validate_python(
+        return TypeAdapter(BatchCreateRegisteredFunctionJobs).validate_python(
             await self._request(
                 "register_function_job_batch",
                 product_name=product_name,
