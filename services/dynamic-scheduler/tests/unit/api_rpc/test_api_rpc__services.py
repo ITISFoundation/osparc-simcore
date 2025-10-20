@@ -432,9 +432,7 @@ async def test_stop_dynamic_service(
 
     # service was stopped
     result = await services.stop_dynamic_service(
-        rpc_client,
-        dynamic_service_stop=_get_rpc_stop(node_id),
-        timeout_s=5,
+        rpc_client, dynamic_service_stop=_get_rpc_stop(node_id)
     )
     assert result is None
 
@@ -443,15 +441,12 @@ async def test_stop_dynamic_service(
         await services.stop_dynamic_service(
             rpc_client,
             dynamic_service_stop=_get_rpc_stop(node_id_not_found),
-            timeout_s=5,
         )
 
     # service awaits for manual intervention
     with pytest.raises(ServiceWaitingForManualInterventionError):
         await services.stop_dynamic_service(
-            rpc_client,
-            dynamic_service_stop=_get_rpc_stop(node_id_manual_intervention),
-            timeout_s=5,
+            rpc_client, dynamic_service_stop=_get_rpc_stop(node_id_manual_intervention)
         )
 
 
@@ -491,7 +486,6 @@ async def test_stop_dynamic_service_serializes_generic_errors(
                 simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
             ),
-            timeout_s=5,
         )
 
 
