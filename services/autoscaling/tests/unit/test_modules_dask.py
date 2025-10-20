@@ -429,7 +429,7 @@ async def test_compute_cluster_total_resources(
 
 @pytest.mark.parametrize(
     "dask_nthreads, dask_nthreads_multiplier, expected_threads_resource",
-    [(4, 1, 4), (4, 2, 8), (0, 2.0, -1)],
+    [(4, 1, 4), (4, 2, 8), (0, 2, -1)],
 )
 def test_add_instance_generic_resources(
     scheduler_url: AnyUrl,
