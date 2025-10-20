@@ -455,14 +455,30 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // a bit hacky
           this._resourcesContainer.getFlatList().nextRequest = !end;
         })
-        .catch(err => console.log(err))
-        .finally(() => {
-          this._loadingResourcesBtn.setFetching(false);
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          // stop fetching
           if (this._resourcesContainer.getFlatList()) {
-            this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest ? "visible" : "excluded");
+            this._resourcesContainer.getFlatList().nextRequest = null;
           }
-          // delay the next request to avoid flooding the server
-          setTimeout(() => this._moreResourcesRequired(), 100);
+        })
+        .finally(() => {
+          if (this._resourcesContainer.getFlatList() && this._resourcesContainer.getFlatList().nextRequest) {
+            this._loadingResourcesBtn.set({
+              visibility: "visible",
+              fetching: true
+            });
+            // delay the next request to avoid flooding the server
+            setTimeout(() => {
+              this._loadingResourcesBtn.setFetching(false); // make it false before calling moreResourcesRequired
+              this._moreResourcesRequired();
+            }, 2000);
+          } else if (this._loadingResourcesBtn) {
+            this._loadingResourcesBtn.set({
+              visibility: "excluded",
+              fetching: false
+            });
+          }
         });
     },
 
@@ -519,8 +535,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _reloadCards: function() {
       const fetching = this._loadingResourcesBtn ? this._loadingResourcesBtn.getFetching() : false;
-      // const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
-      const visibility = true;
+      const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("studies");
