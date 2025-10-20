@@ -764,6 +764,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.setFilesToList(this.__filesList);
       this._resourcesContainer.reloadFiles();
     },
+
+    __resetFilesList: function() {
+      this._resourcesList = [];
+      // It will remove the file cards
+      this._reloadCards();
+    },
     // /FILES
 
     __configureStudyCards: function(cards) {
@@ -1075,7 +1081,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     invalidateFiles: function() {
-      // this.__resetStudiesList();
+      this.__resetFilesList();
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
       }
