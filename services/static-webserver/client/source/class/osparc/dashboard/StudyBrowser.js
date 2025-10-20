@@ -447,7 +447,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(streamData => {
           const items = streamData["data"]["items"] || [];
           if (items.length) {
-            this.__setFilesToList(items);
+            this.__addFilesToList(items);
           }
           const end = streamData["data"]["end"] || false;
           stream.setEnd(end);
@@ -515,24 +515,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __setFoldersToList: function(folders) {
-      this.__foldersList = folders;
-      folders.forEach(folder => folder["resourceType"] = "folder");
-      this.__reloadFolderCards();
-    },
-
-    __setWorkspacesToList: function(workspaces) {
-      this.__workspacesList = workspaces;
-      workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
-      this.__reloadWorkspaceCards();
-    },
-
-    __setFilesToList: function(files) {
-      this.__filesList = files;
-      files.forEach(file => file["resourceType"] = "file");
-      this.__reloadFileCards();
-    },
-
     _reloadCards: function() {
       const fetching = this._loadingResourcesBtn ? this._loadingResourcesBtn.getFetching() : false;
       const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
@@ -565,6 +547,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     // WORKSPACES
+    __setWorkspacesToList: function(workspaces) {
+      this.__workspacesList = workspaces;
+      workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
+      this.__reloadWorkspaceCards();
+    },
+
     __reloadWorkspaceCards: function() {
       this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
       this._resourcesContainer.reloadWorkspaces();
@@ -631,6 +619,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // /WORKSPACES
 
     // FOLDERS
+    __setFoldersToList: function(folders) {
+      this.__foldersList = folders;
+      folders.forEach(folder => folder["resourceType"] = "folder");
+      this.__reloadFolderCards();
+    },
+
     __reloadFolderCards: function() {
       this._resourcesContainer.setFoldersToList(this.__foldersList);
       this._resourcesContainer.reloadFolders();
@@ -775,6 +769,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // /FOLDERS
 
     // FILES
+    __setFilesToList: function(files) {
+      this.__filesList = files;
+      files.forEach(file => file["resourceType"] = "file");
+      this.__reloadFileCards();
+    },
+
+    __addFilesToList: function(filesList) {
+      filesList.forEach(fileData => {
+        const idx = this.__filesList.findIndex(fl => fl["path"] === fileData["path"]);
+        if (idx === -1) {
+          this.__filesList.push(fileData);
+        }
+      });
+      this.__reloadFileCards();
+    },
+
     __reloadFileCards: function() {
       this._resourcesContainer.setFilesToList(this.__filesList);
       this._resourcesContainer.reloadFiles();
