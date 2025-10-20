@@ -365,7 +365,7 @@ def add_instance_generic_resources(
 def add_instance_type_generic_resource(
     settings: DaskMonitoringSettings, instance_type: EC2InstanceType
 ) -> None:
-    instance_threads = min(1, round(instance_type.resources.cpus))
+    instance_threads = max(1, round(instance_type.resources.cpus))
     if settings.DASK_NTHREADS > 0:
         # this overrides everything
         instance_threads = settings.DASK_NTHREADS
