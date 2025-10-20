@@ -109,14 +109,14 @@ async def register_function_job(
         FunctionJobsWriteApiAccessDeniedError,
     )
 )
-async def register_function_job_batch(
+async def batch_register_function_jobs(
     app: web.Application,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_jobs: FunctionJobList,
 ) -> BatchCreateRegisteredFunctionJobs:
-    return await _functions_service.register_function_job_batch(
+    return await _functions_service.batch_register_function_jobs(
         app=app, user_id=user_id, product_name=product_name, function_jobs=function_jobs
     )
 

@@ -107,7 +107,7 @@ async def register_function_job(
     return _decode_functionjob(created_items[0])
 
 
-async def register_function_job_batch(
+async def batch_register_function_jobs(
     app: web.Application,
     *,
     user_id: UserID,
