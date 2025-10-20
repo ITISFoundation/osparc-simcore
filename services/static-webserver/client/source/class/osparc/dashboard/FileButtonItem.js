@@ -21,7 +21,7 @@
  */
 
 qx.Class.define("osparc.dashboard.FileButtonItem", {
-  extend: osparc.dashboard.FileButtonBase,
+  extend: osparc.dashboard.ListButtonBase,
 
   /**
     * @param file {osparc.data.model.File} The file to display
@@ -52,42 +52,18 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
       init: null,
       apply: "__applyFile",
     },
-
-    title: {
-      check: "String",
-      nullable: true,
-      apply: "__applyTitle",
-    },
-
-    modifiedAt: {
-      check: "Date",
-      nullable: true,
-      apply: "__applyModifiedAt",
-    },
   },
 
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "icon": {
-          control = new osparc.dashboard.FolderWithSharedIcon().set({
-            anonymous: true,
-            height: 40,
-            padding: 5
-          });
-          this._add(control, osparc.dashboard.FolderButtonBase.POS.ICON);
-          break;
-        }
-        case "title":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14",
-          });
-          this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
-          break;
         case "date-by":
           control = new osparc.ui.basic.DateAndBy();
-          this._add(control, osparc.dashboard.FolderButtonBase.POS.SUBTITLE);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.LAST_CHANGE
+          });
           break;
         case "menu-button": {
           control = new qx.ui.form.MenuButton().set({
@@ -102,8 +78,10 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
           control.getContentElement().setStyles({
             "border-radius": `${osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS / 2}px`
           });
-          osparc.utils.Utils.setIdToWidget(control, "folderItemMenuButton");
-          this._add(control, osparc.dashboard.FolderButtonBase.POS.MENU);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.OPTIONS
+          });
           break;
         }
       }
@@ -112,37 +90,30 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
 
     __applyFile: function(file) {
       const id = file.getPath();
-      this.getChildControl("icon");
       this.set({
         cardKey: "file-" + id,
       });
-      file.bind("name", this, "title");
-      file.bind("modifiedAt", this, "modifiedAt");
-
       osparc.utils.Utils.setIdToWidget(this, "fileItem_" + id);
 
-      this.__addMenuButton();
-    },
+      const icon = this.getChildControl("icon");
+      if (file.getIsDirectory()) {
+        icon.setSource("@FontAwesome5Solid/folder/24");
+      } else {
+        icon.setSource("@FontAwesome5Solid/file/24");
+      }
 
-    __applyTitle: function(value) {
       const label = this.getChildControl("title");
       label.set({
-        value,
-        toolTipText: value,
+        value: file.getName(),
+        toolTipText: file.getName(),
       });
-    },
 
-    __applyModifiedAt: function(value) {
-      if (value) {
-        const dateBy = this.getChildControl("date-by");
-        dateBy.set({
-          date: value,
-          toolTipText: this.tr("Last modified"),
-        })
-      }
-    },
+      const dateBy = this.getChildControl("date-by");
+      dateBy.set({
+        date: file.getModifiedAt(),
+        toolTipText: this.tr("Last modified"),
+      });
 
-    __addMenuButton: function() {
       const menuButton = this.getChildControl("menu-button");
       menuButton.setVisibility("visible");
 

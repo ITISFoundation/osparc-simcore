@@ -28,7 +28,7 @@ qx.Class.define("osparc.dashboard.CardContainer", {
         widget instanceof osparc.dashboard.CardBase ||
         widget instanceof osparc.dashboard.FolderButtonBase ||
         widget instanceof osparc.dashboard.WorkspaceButtonBase ||
-        widget instanceof osparc.dashboard.FileButtonBase
+        widget instanceof osparc.dashboard.FileButtonItem
       );
     },
   },
