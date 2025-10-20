@@ -203,3 +203,44 @@ def test_aliases_uniqueness():
         ).items()
         if count > 1
     ]  # nosec
+
+
+def test_consecutive_invitation_codes_are_different_due_to_timestamps(
+    invitation_data: InvitationInputs,
+    secret_key: str,
+    default_product: ProductName,
+):
+    """Test that two consecutive invitation codes with same data are different because of different timestamps."""
+    secret = secret_key.encode()
+
+    # Create first invitation code
+    content1 = InvitationContent.create_from_inputs(invitation_data, default_product)
+    code1 = _create_invitation_code(content1, secret)
+
+    # Create second invitation code with same data
+    content2 = InvitationContent.create_from_inputs(invitation_data, default_product)
+    code2 = _create_invitation_code(content2, secret)
+
+    # Codes should be different
+    assert code1 != code2
+
+    # Decrypt both codes
+    invitation1 = decrypt_invitation(
+        invitation_code=code1.decode(),
+        secret_key=secret,
+        default_product=default_product,
+    )
+    invitation2 = decrypt_invitation(
+        invitation_code=code2.decode(),
+        secret_key=secret,
+        default_product=default_product,
+    )
+
+    # Content should be the same except for timestamps
+    assert invitation1.model_dump(exclude={"created"}) == invitation2.model_dump(
+        exclude={"created"}
+    )
+
+    # Timestamps should be different
+    assert invitation1.created != invitation2.created
+    assert invitation2.created >= invitation1.created
