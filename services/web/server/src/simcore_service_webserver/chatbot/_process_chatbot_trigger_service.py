@@ -51,8 +51,16 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),
     )
     _question_for_chatbot = ""
-    for msg in messages:
-        _question_for_chatbot += f"{msg.content.strip()}\n"
+    for inx, msg in enumerate(messages):
+        if inx == 0:
+            # Make last message stand out as the question
+            _question_for_chatbot += (
+                "User last message: \n"
+                f"{msg.content.strip()} \n\n"
+                "Previous messages in the conversation: \n"
+            )
+        else:
+            _question_for_chatbot += f"{msg.content.strip()}\n"
 
     # Talk to the chatbot service
     chatbot_client = get_chatbot_rest_client(app)
