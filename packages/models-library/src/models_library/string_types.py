@@ -165,11 +165,25 @@ NameSafeStr: TypeAlias = Annotated[
         strip_whitespace=True,
         min_length=1,
         max_length=MAX_NAME_LENGTH,
-        pattern=r"^[A-Za-z0-9 ._-]+$",  # string that ONLY contains alphanumeric characters, spaces, dots, underscores, or hyphens
+        pattern=r"^[A-Za-z0-9 ._-]+$",
+        # CAREFUL: string that ONLY contains alphanumeric characters, spaces, dots, underscores, or hyphens
     ),
     AfterValidator(validate_input_xss_safety),
+    annotated_types.doc(
+        """ A safe string used in **name identifiers**, It might be very restrictive for display names (e.g. titles or labels) """
+    ),
 ]
 
+DisplaySafeStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=MAX_NAME_LENGTH,
+    ),
+    AfterValidator(validate_input_xss_safety),
+    annotated_types.doc(""" Like `NameSafeStr` but more suited for display names"""),
+]
 
 DescriptionSafeStr: TypeAlias = Annotated[
     str,
@@ -200,7 +214,7 @@ SearchPatternSafeStr: TypeAlias = Annotated[
         strip_whitespace=True,
         min_length=1,
         max_length=200,
-        pattern=r"^[A-Za-z0-9 ._-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and asterisks
+        pattern=r"^[A-Za-z0-9 ._@-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and at signs
     ),
     AfterValidator(validate_input_xss_safety),
     annotated_types.doc(
