@@ -29,6 +29,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     this.__workspacesList = [];
     this.__foldersList = [];
+    this.__filesList = [];
     this.__resourcesList = [];
     this.__groupedContainersList = [];
     this.__resourceType = resourceType || "study";
@@ -41,6 +42,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       const foldersContainer = this.__foldersContainer = new osparc.dashboard.CardContainer();
       this.__foldersContainer.exclude();
       this._add(foldersContainer);
+
+      const filesContainer = this.__filesContainer = new osparc.dashboard.CardContainer();
+      this.__filesContainer.exclude();
+      this._add(filesContainer);
     }
 
     const noResourcesFound = this.__noResourcesFound = new qx.ui.basic.Label("No resources found").set({
