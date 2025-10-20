@@ -431,10 +431,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const filterData = this._searchBarFilter.getFilterData();
       const text = filterData.text ? encodeURIComponent(filterData.text) : "";
       const existingStream = osparc.store.StreamTasks.getInstance().getStreamTask("files_search", text);
-      // TODO: abort last stream if it changed
       if (existingStream) {
         this.__fetchFilesFromStream(existingStream);
       } else {
+        // TODO: abort last stream if it changed
         const streamPromise = osparc.store.Data.getInstance().searchFiles(text);
         const pollingInterval = 2000;
         osparc.store.StreamTasks.getInstance().createStreamTask("files_search", text, streamPromise, pollingInterval)
