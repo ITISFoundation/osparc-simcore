@@ -56,13 +56,13 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
     title: {
       check: "String",
       nullable: true,
-      apply: "__applyTitle"
+      apply: "__applyTitle",
     },
 
-    lastModified: {
+    modifiedAt: {
       check: "Date",
       nullable: true,
-      apply: "__applyLastModified"
+      apply: "__applyModifiedAt",
     },
   },
 
@@ -111,14 +111,15 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
     },
 
     __applyFile: function(file) {
+      const id = file.getPath();
       this.getChildControl("icon");
       this.set({
-        cardKey: "file-" + file.getFileId()
+        cardKey: "file-" + id,
       });
       file.bind("name", this, "title");
-      file.bind("lastModified", this, "lastModified");
+      file.bind("modifiedAt", this, "modifiedAt");
 
-      osparc.utils.Utils.setIdToWidget(this, "fileItem_" + file.getFileId());
+      osparc.utils.Utils.setIdToWidget(this, "fileItem_" + id);
 
       this.__addMenuButton();
     },
@@ -131,7 +132,7 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
       });
     },
 
-    __applyLastModified: function(value) {
+    __applyModifiedAt: function(value) {
       if (value) {
         const dateBy = this.getChildControl("date-by");
         dateBy.set({
