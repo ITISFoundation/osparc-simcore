@@ -377,10 +377,10 @@ async def _sorted_allowed_instance_types(
         # NOTE: will raise ValueError if allowed_instance_types not in allowed_instance_type_names
         return allowed_instance_type_names.index(f"{instance_type.name}")
 
-    allowed_instance_types.sort(key=_as_selection)
-    for instance_type in allowed_instance_types:
+    return [
         auto_scaling_mode.adjust_instance_type_resources(app, instance_type)
-    return allowed_instance_types
+        for instance_type in sorted(allowed_instance_types, key=_as_selection)
+    ]
 
 
 async def _activate_and_notify(

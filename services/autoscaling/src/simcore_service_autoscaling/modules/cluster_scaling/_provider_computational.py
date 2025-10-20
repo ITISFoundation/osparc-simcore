@@ -199,7 +199,7 @@ class ComputationalAutoscalingProvider:
 
     def adjust_instance_type_resources(
         self, app: FastAPI, instance_type: EC2InstanceType
-    ) -> None:
+    ) -> EC2InstanceType:
         assert self  # nosec
         assert app  # nosec
         app_settings = get_application_settings(app)
@@ -207,12 +207,13 @@ class ComputationalAutoscalingProvider:
         adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
             instance_type.resources.cpus, instance_type.resources.ram
         )
-        dataclasses.replace(
+        replaced_instance_type = dataclasses.replace(
             instance_type,
             resources=instance_type.resources.model_copy(
                 update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}
             ),
         )
         dask.add_instance_type_generic_resource(
-            app_settings.AUTOSCALING_DASK, instance_type
+            app_settings.AUTOSCALING_DASK, replaced_instance_type
         )
+        return replaced_instance_type

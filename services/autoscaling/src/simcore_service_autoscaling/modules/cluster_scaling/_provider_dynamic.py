@@ -129,7 +129,7 @@ class DynamicAutoscalingProvider:
 
     def adjust_instance_type_resources(
         self, app: FastAPI, instance_type: EC2InstanceType
-    ) -> None:
+    ) -> EC2InstanceType:
         assert self  # nosec
         assert app  # nosec
         # nothing to do at the moment
@@ -139,7 +139,7 @@ class DynamicAutoscalingProvider:
             - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * instance_type.resources.ram
             - _SIDECARS_OPS_SAFE_RAM_MARGIN
         )
-        dataclasses.replace(
+        return dataclasses.replace(
             instance_type,
             resources=instance_type.resources.model_copy(
                 update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}
