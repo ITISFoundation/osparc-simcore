@@ -18,7 +18,7 @@ class TaskRequiresUnauthorizedEC2InstanceTypeError(AutoscalingRuntimeError):
 
 class TaskRequirementsAboveRequiredEC2InstanceTypeError(AutoscalingRuntimeError):
     msg_template: str = (
-        "Task {task} requires {instance_type} but requires {resources}. {resources_diff} are missing! "
+        "Task {task} specifies instance type {instance_type} but requests {resources}. {resources_diff} are missing! "
         "TIP: Ensure task resources requirements fit required instance type available resources."
     )
 
