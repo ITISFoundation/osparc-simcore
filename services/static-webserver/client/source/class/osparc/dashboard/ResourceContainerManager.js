@@ -44,6 +44,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._add(foldersContainer);
 
       const filesContainer = this.__filesContainer = new osparc.dashboard.CardContainer();
+      filesContainer.getLayout().set({
+        spacingY: osparc.dashboard.ListButtonBase.SPACING,
+      });
       this.__filesContainer.exclude();
       this._add(filesContainer);
     }
@@ -133,6 +136,20 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         spacingX: spacing,
         spacingY: spacing
       });
+    },
+
+    fitToContainer: function(card, container) {
+      const __fitToContainer = () => {
+        const bounds = container.getBounds() || container.getSizeHint();
+        card.setWidth(bounds.width);
+      };
+      [
+        "appear",
+        "resize",
+      ].forEach(ev => {
+        container.addListener(ev, () => __fitToContainer());
+      });
+      __fitToContainer();
     },
   },
 
@@ -331,17 +348,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       container.add(card);
 
       if (this.getMode() === "list") {
-        const fitToContainer = () => {
-          const bounds = container.getBounds() || container.getSizeHint();
-          card.setWidth(bounds.width);
-        };
-        [
-          "appear",
-          "resize",
-        ].forEach(ev => {
-          container.addListener(ev, () => fitToContainer());
-        });
-        fitToContainer();
+        this.self().fitToContainer(card, container);
       }
     },
 
@@ -556,6 +563,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       const card = this.__createFileCard(fileData);
       this.__filesContainer.add(card);
       this.__filesContainer.show();
+      this.self().fitToContainer(card, this.__filesContainer);
       return card;
     },
 
