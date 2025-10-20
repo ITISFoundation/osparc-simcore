@@ -12828,7 +12828,6 @@ components:
           type: string
           maxLength: 100
           minLength: 1
-          pattern: ^[A-Za-z0-9 ._-]+$
           title: Name
         parentFolderId:
           anyOf:
@@ -12920,7 +12919,6 @@ components:
           type: string
           maxLength: 100
           minLength: 1
-          pattern: ^[A-Za-z0-9 ._-]+$
           title: Name
         parentFolderId:
           anyOf:
@@ -18965,7 +18963,7 @@ components:
           type: string
           maxLength: 200
           minLength: 1
-          pattern: ^[A-Za-z0-9 ._-]*$
+          pattern: ^[A-Za-z0-9 ._@-]*$
           title: Match
           description: Search string to match with usernames and public profiles (e.g.
             emails, first/last name)
