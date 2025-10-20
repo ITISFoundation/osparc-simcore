@@ -5,7 +5,7 @@ from typing import Any
 
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
-from celery_library.utils import get_app_server
+from celery_library.worker.app_server import get_app_server
 from models_library.api_schemas_storage.search_async_jobs import SearchResultItem
 from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
@@ -162,6 +162,7 @@ async def search(
             project_id=project_id,
             name_pattern=name_pattern,
             modified_at=modified_at,
+            limit=1,  # NOTE: yield items as they come
         ):
             data = [
                 TaskStreamItem(
