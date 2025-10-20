@@ -6,7 +6,7 @@
 """
 
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, get_args, get_origin
 
 from pydantic.generics import GenericModel
 
@@ -27,6 +27,13 @@ if TYPE_CHECKING:
     TField = TypeVar("TField", bound=LiteralField)
 else:
     TField = TypeVar("TField", bound=str)
+
+
+def get_literal_values(tfield: Any) -> tuple[str, ...] | None:
+    """Return Literal values if TField is a Literal, else None."""
+    if get_origin(tfield) is Literal:
+        return get_args(tfield)
+    return None
 
 
 class OrderClause(GenericModel, Generic[TField]):
