@@ -286,26 +286,9 @@ RegisteredFunctionJobPatch = Annotated[
 ]
 
 
-class RegisteredProjectFunctionJobPatchInput(BaseModel):
+class FunctionJobPatchRequest(BaseModel):
     uid: FunctionJobID
-    patch: RegisteredProjectFunctionJobPatch
-
-
-RegisteredProjectFunctionJobPatchInputList: TypeAlias = Annotated[
-    list[RegisteredProjectFunctionJobPatchInput],
-    Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH),
-]
-
-
-class RegisteredSolverFunctionJobPatchInput(BaseModel):
-    uid: FunctionJobID
-    patch: RegisteredSolverFunctionJobPatch
-
-
-RegisteredSolverFunctionJobPatchInputList: TypeAlias = Annotated[
-    list[RegisteredSolverFunctionJobPatchInput],
-    Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH),
-]
+    patch: RegisteredFunctionJobPatch
 
 
 class FunctionJobStatus(BaseModel):
