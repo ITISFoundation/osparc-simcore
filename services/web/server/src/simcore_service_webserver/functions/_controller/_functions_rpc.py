@@ -3,6 +3,7 @@ from typing import Literal
 from aiohttp import web
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
+    BatchUpdateRegisteredFunctionJobs,
     Function,
     FunctionAccessRights,
     FunctionClass,
@@ -16,6 +17,8 @@ from models_library.functions import (
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionJobList,
+    FunctionJobPatchRequest,
+    FunctionJobPatchRequestList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionOutputSchema,
@@ -25,8 +28,6 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     RegisteredFunctionJobWithStatus,
-    RegisteredProjectFunctionJobPatchInputList,
-    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
@@ -133,17 +134,37 @@ async def patch_registered_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    registered_function_job_patch_inputs: (
-        RegisteredProjectFunctionJobPatchInputList
-        | RegisteredSolverFunctionJobPatchInputList
-    ),
-) -> list[RegisteredFunctionJob]:
+    function_job_patch_request: FunctionJobPatchRequest,
+) -> RegisteredFunctionJob:
 
     return await _functions_service.patch_registered_function_job(
         app=app,
         user_id=user_id,
         product_name=product_name,
-        registered_function_job_patch_inputs=registered_function_job_patch_inputs,
+        function_job_patch_request=function_job_patch_request,
+    )
+
+
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionJobClassError,
+        FunctionJobsWriteApiAccessDeniedError,
+        FunctionJobPatchModelIncompatibleError,
+    )
+)
+async def batch_patch_registered_function_jobs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_patch_requests: FunctionJobPatchRequestList,
+) -> BatchUpdateRegisteredFunctionJobs:
+
+    return await _functions_service.batch_patch_registered_function_jobs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_patch_requests=function_job_patch_requests,
     )
 
 

@@ -4,6 +4,7 @@ from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
+    BatchUpdateRegisteredFunctionJobs,
     Function,
     FunctionClass,
     FunctionClassSpecificData,
@@ -20,6 +21,8 @@ from models_library.functions import (
     FunctionJobDB,
     FunctionJobID,
     FunctionJobList,
+    FunctionJobPatchRequest,
+    FunctionJobPatchRequestList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionOutputSchema,
@@ -35,11 +38,9 @@ from models_library.functions import (
     RegisteredFunctionJobWithStatusDB,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
-    RegisteredProjectFunctionJobPatchInputList,
     RegisteredProjectFunctionJobWithStatus,
     RegisteredSolverFunction,
     RegisteredSolverFunctionJob,
-    RegisteredSolverFunctionJobPatchInputList,
     RegisteredSolverFunctionJobWithStatus,
 )
 from models_library.functions_errors import (
@@ -134,19 +135,39 @@ async def patch_registered_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    registered_function_job_patch_inputs: (
-        RegisteredProjectFunctionJobPatchInputList
-        | RegisteredSolverFunctionJobPatchInputList
-    ),
-) -> list[RegisteredFunctionJob]:
+    function_job_patch_request: FunctionJobPatchRequest,
+) -> RegisteredFunctionJob:
 
-    result = await _function_jobs_repository.patch_function_job(
+    result = await _function_jobs_repository.patch_function_jobs(
         app=app,
         user_id=user_id,
         product_name=product_name,
-        registered_function_job_patch_inputs=registered_function_job_patch_inputs,
+        function_job_patch_requests=[function_job_patch_request],
     )
-    return [_decode_functionjob(job) for job in result]
+    assert len(result.updated_items) == 1  # nosec
+    return _decode_functionjob(result.updated_items[0])
+
+
+async def batch_patch_registered_function_jobs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_patch_requests: FunctionJobPatchRequestList,
+) -> BatchUpdateRegisteredFunctionJobs:
+    TypeAdapter(FunctionJobPatchRequestList).validate_python(
+        function_job_patch_requests
+    )
+
+    result = await _function_jobs_repository.patch_function_jobs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_patch_requests=function_job_patch_requests,
+    )
+    return BatchUpdateRegisteredFunctionJobs(
+        updated_items=[_decode_functionjob(job) for job in result.updated_items]
+    )
 
 
 async def register_function_job_collection(

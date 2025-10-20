@@ -16,15 +16,12 @@ from models_library.functions import (
     FunctionClass,
     FunctionJobCollection,
     FunctionJobList,
+    FunctionJobPatchRequest,
     FunctionJobStatus,
     RegisteredFunctionJob,
     RegisteredFunctionJobPatch,
     RegisteredProjectFunctionJobPatch,
-    RegisteredProjectFunctionJobPatchInput,
-    RegisteredProjectFunctionJobPatchInputList,
     RegisteredSolverFunctionJobPatch,
-    RegisteredSolverFunctionJobPatchInput,
-    RegisteredSolverFunctionJobPatchInputList,
     SolverFunctionJob,
 )
 from models_library.functions_errors import (
@@ -630,32 +627,14 @@ async def test_patch_registered_function_jobs(
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
-    patch_inputs: (
-        RegisteredProjectFunctionJobPatchInputList
-        | RegisteredSolverFunctionJobPatchInputList
-    )
-    if function.function_class == FunctionClass.PROJECT:
-        assert isinstance(patch, RegisteredProjectFunctionJobPatch)
-        patch_inputs = [
-            RegisteredProjectFunctionJobPatchInput(uid=registered_job.uid, patch=patch)
-        ]
-    elif function.function_class == FunctionClass.SOLVER:
-        assert isinstance(patch, RegisteredSolverFunctionJobPatch)
-        patch_inputs = [
-            RegisteredSolverFunctionJobPatchInput(uid=registered_job.uid, patch=patch)
-        ]
-    else:
-        pytest.fail("Unsupported function class")
 
-    registered_jobs = (
-        await webserver_rpc_client.functions.patch_registered_function_job(
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-            registered_function_job_patch_inputs=patch_inputs,
-        )
+    registered_job = await webserver_rpc_client.functions.patch_registered_function_job(
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        function_job_patch_request=FunctionJobPatchRequest(
+            uid=registered_job.uid, patch=patch
+        ),
     )
-    assert len(registered_jobs) == 1
-    registered_job = registered_jobs[0]
     assert registered_job.title == patch.title
     assert registered_job.description == patch.description
     assert registered_job.inputs == patch.inputs
@@ -723,27 +702,14 @@ async def test_incompatible_patch_model_error(
         user_id=logged_user["id"],
         product_name=osparc_product_name,
     )
-    patch_input = None
-    if function.function_class == FunctionClass.PROJECT:
-        assert isinstance(patch, RegisteredSolverFunctionJobPatch)
-        patch_input = RegisteredSolverFunctionJobPatchInput(
-            uid=registered_job.uid, patch=patch
-        )
-    if function.function_class == FunctionClass.SOLVER:
-        assert isinstance(patch, RegisteredProjectFunctionJobPatch)
-        patch_input = RegisteredProjectFunctionJobPatchInput(
-            uid=registered_job.uid, patch=patch
-        )
-    assert patch_input is not None
     with pytest.raises(FunctionJobPatchModelIncompatibleError):
         registered_job = (
             await webserver_rpc_client.functions.patch_registered_function_job(
                 user_id=logged_user["id"],
                 product_name=osparc_product_name,
-                registered_function_job_patch_inputs=TypeAdapter(
-                    RegisteredSolverFunctionJobPatchInputList
-                    | RegisteredSolverFunctionJobPatchInputList
-                ).validate_python([patch_input]),
+                function_job_patch_request=FunctionJobPatchRequest(
+                    uid=registered_job.uid, patch=patch
+                ),
             )
         )
 

@@ -18,18 +18,19 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
+    BatchUpdateRegisteredFunctionJobs,
     FunctionClass,
     FunctionGroupAccessRights,
     FunctionInputsList,
     FunctionJob,
     FunctionJobList,
+    FunctionJobPatchRequest,
+    FunctionJobPatchRequestList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     RegisteredFunctionJobWithStatus,
-    RegisteredProjectFunctionJobPatchInputList,
-    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
@@ -355,18 +356,32 @@ class FunctionsRpcApi(BaseRpcApi):
         *,
         product_name: ProductName,
         user_id: UserID,
-        registered_function_job_patch_inputs: (
-            RegisteredProjectFunctionJobPatchInputList
-            | RegisteredSolverFunctionJobPatchInputList
-        ),
-    ) -> list[RegisteredFunctionJob]:
+        function_job_patch_request: FunctionJobPatchRequest,
+    ) -> RegisteredFunctionJob:
         """Patch a registered function job."""
-        return TypeAdapter(list[RegisteredFunctionJob]).validate_python(
+        return TypeAdapter(RegisteredFunctionJob).validate_python(
             await self._request(
                 "patch_registered_function_job",
                 product_name=product_name,
                 user_id=user_id,
-                registered_function_job_patch_inputs=registered_function_job_patch_inputs,
+                function_job_patch_request=function_job_patch_request,
+            ),
+        )
+
+    async def batch_patch_registered_function_job(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        function_job_patch_requests: FunctionJobPatchRequestList,
+    ) -> BatchUpdateRegisteredFunctionJobs:
+        """Patch a registered function job."""
+        return BatchUpdateRegisteredFunctionJobs.model_validate(
+            await self._request(
+                "patch_registered_function_job",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_patch_requests=function_job_patch_requests,
             ),
         )
 

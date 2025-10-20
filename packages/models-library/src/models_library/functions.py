@@ -15,6 +15,7 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field
 
+from .batch_operations import BatchUpdateEnvelope
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
 
@@ -273,8 +274,10 @@ RegisteredFunctionJob: TypeAlias = Annotated[
 
 
 class BatchCreateRegisteredFunctionJobs(BatchCreateEnvelope[RegisteredFunctionJob]):
-    """Envelope model for batch registering function jobs"""
+    pass
 
+
+class BatchUpdateRegisteredFunctionJobs(BatchUpdateEnvelope[RegisteredFunctionJob]):
     pass
 
 
@@ -289,6 +292,16 @@ RegisteredFunctionJobPatch = Annotated[
 class FunctionJobPatchRequest(BaseModel):
     uid: FunctionJobID
     patch: RegisteredFunctionJobPatch
+
+
+FunctionJobPatchRequestList: TypeAlias = Annotated[
+    list[FunctionJobPatchRequest],
+    Field(
+        max_length=_MAX_LIST_LENGTH,
+        min_length=_MIN_LIST_LENGTH,
+        description="List of function job patch requests",
+    ),
+]
 
 
 class FunctionJobStatus(BaseModel):
@@ -360,6 +373,10 @@ class RegisteredFunctionJobDB(FunctionJobDB):
 
 
 class BatchCreateRegisteredFunctionJobsDB(BatchCreateEnvelope[RegisteredFunctionJobDB]):
+    pass
+
+
+class BatchUpdateRegisteredFunctionJobsDB(BatchUpdateEnvelope[RegisteredFunctionJobDB]):
     pass
 
 

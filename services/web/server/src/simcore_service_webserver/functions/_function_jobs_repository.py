@@ -7,6 +7,7 @@ import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobsDB,
+    BatchUpdateRegisteredFunctionJobsDB,
     FunctionClass,
     FunctionClassSpecificData,
     FunctionID,
@@ -14,14 +15,13 @@ from models_library.functions import (
     FunctionJobCollectionID,
     FunctionJobDB,
     FunctionJobID,
+    FunctionJobPatchRequest,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionsApiAccessRights,
     RegisteredFunctionJobDB,
     RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatusDB,
-    RegisteredProjectFunctionJobPatchInputList,
-    RegisteredSolverFunctionJobPatchInputList,
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
@@ -130,24 +130,14 @@ async def create_function_jobs(  # noqa: PLR0913
     return BatchCreateRegisteredFunctionJobsDB(created_items=created_jobs)
 
 
-async def patch_function_job(
+async def patch_function_jobs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     product_name: ProductName,
-    registered_function_job_patch_inputs: (
-        RegisteredProjectFunctionJobPatchInputList
-        | RegisteredSolverFunctionJobPatchInputList
-    ),
-) -> list[RegisteredFunctionJobDB]:
-
-    # check only a single function class is used
-    TypeAdapter(
-        RegisteredProjectFunctionJobPatchInputList
-        | RegisteredSolverFunctionJobPatchInputList
-    ).validate_python(registered_function_job_patch_inputs)
-    used_function_class = registered_function_job_patch_inputs[0].patch.function_class
+    function_job_patch_requests: list[FunctionJobPatchRequest],
+) -> BatchUpdateRegisteredFunctionJobsDB:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
@@ -160,41 +150,41 @@ async def patch_function_job(
             ],
         )
         updated_jobs = []
-        for patch_input in registered_function_job_patch_inputs:
+        for patch_request in function_job_patch_requests:
 
             job = await get_function_job(
                 app,
                 connection=transaction,
                 user_id=user_id,
                 product_name=product_name,
-                function_job_id=patch_input.uid,
+                function_job_id=patch_request.uid,
             )
-            if job.function_class != used_function_class:
+            if job.function_class != patch_request.patch.function_class:
                 raise FunctionJobPatchModelIncompatibleError(
                     function_id=job.function_uuid, product_name=product_name
                 )
 
             class_specific_data = _update_class_specific_data(
-                class_specific_data=job.class_specific_data, patch=patch_input.patch
+                class_specific_data=job.class_specific_data, patch=patch_request.patch
             )
             update_values = {
-                "inputs": patch_input.patch.inputs,
-                "outputs": patch_input.patch.outputs,
+                "inputs": patch_request.patch.inputs,
+                "outputs": patch_request.patch.outputs,
                 "class_specific_data": class_specific_data,
-                "title": patch_input.patch.title,
-                "description": patch_input.patch.description,
+                "title": patch_request.patch.title,
+                "description": patch_request.patch.description,
                 "status": "created",
             }
 
             result = await transaction.execute(
                 function_jobs_table.update()
-                .where(function_jobs_table.c.uuid == f"{patch_input.uid}")
+                .where(function_jobs_table.c.uuid == f"{patch_request.uid}")
                 .values(**{k: v for k, v in update_values.items() if v is not None})
                 .returning(*_FUNCTION_JOBS_TABLE_COLS)
             )
             updated_jobs.append(RegisteredFunctionJobDB.model_validate(result.one()))
 
-        return updated_jobs
+        return BatchUpdateRegisteredFunctionJobsDB(updated_items=updated_jobs)
 
 
 async def list_function_jobs_with_status(

@@ -102,3 +102,20 @@ class BatchCreateEnvelope(BaseModel, Generic[SchemaT]):
             description="List of successfully created items",
         ),
     ]
+
+
+class BatchUpdateEnvelope(BaseModel, Generic[SchemaT]):
+    """Generic envelope model for batch-update operations.
+
+    This model represents the result of a strict batch update operation,
+    containing the list of updated items. The operation is expected to be "strict"
+    in the sense that it either updates all requested items or fails entirely. See https://google.aip.dev/234
+    """
+
+    updated_items: Annotated[
+        list[SchemaT],
+        Field(
+            min_length=1,
+            description="List of successfully updated items",
+        ),
+    ]
