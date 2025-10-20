@@ -163,13 +163,16 @@ class FunctionJobService:
                 )
                 for input_ in job_inputs
             ]
-            jobs = await self._web_rpc_client.register_function_job(
-                function_jobs=TypeAdapter(FunctionJobList).validate_python(
-                    function_jobs
-                ),
-                user_id=self.user_id,
-                product_name=self.product_name,
+            batch_registered_jobs = (
+                await self._web_rpc_client.batch_register_function_jobs(
+                    function_jobs=TypeAdapter(FunctionJobList).validate_python(
+                        function_jobs
+                    ),
+                    user_id=self.user_id,
+                    product_name=self.product_name,
+                )
             )
+            jobs = batch_registered_jobs.created_items
 
         elif function.function_class == FunctionClass.SOLVER:
             function_jobs = [
@@ -184,13 +187,16 @@ class FunctionJobService:
                 )
                 for input_ in job_inputs
             ]
-            jobs = await self._web_rpc_client.register_function_job(
-                function_jobs=TypeAdapter(FunctionJobList).validate_python(
-                    function_jobs
-                ),
-                user_id=self.user_id,
-                product_name=self.product_name,
+            batch_registered_jobs = (
+                await self._web_rpc_client.batch_register_function_jobs(
+                    function_jobs=TypeAdapter(FunctionJobList).validate_python(
+                        function_jobs
+                    ),
+                    user_id=self.user_id,
+                    product_name=self.product_name,
+                )
             )
+            jobs = batch_registered_jobs.created_items
         else:
             raise UnsupportedFunctionClassError(
                 function_class=function.function_class,

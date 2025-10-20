@@ -70,7 +70,7 @@ async def test_function_job_collection(
     ]
     # Register the function jobs
     registered_jobs_batch_create = (
-        await webserver_rpc_client.functions.register_function_job_batch(
+        await webserver_rpc_client.functions.batch_register_function_jobs(
             function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -201,7 +201,7 @@ async def test_create_function_job_collection_same_function_job_uuid(
     )
     # Register the function job
     registered_jobs_batch_create = (
-        await webserver_rpc_client.functions.register_function_job_batch(
+        await webserver_rpc_client.functions.batch_register_function_jobs(
             function_jobs=[registered_function_job],
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -278,7 +278,7 @@ async def test_list_function_job_collections(
     ]
     # Register the function jobs
     registered_jobs_batch_create = (
-        await webserver_rpc_client.functions.register_function_job_batch(
+        await webserver_rpc_client.functions.batch_register_function_jobs(
             function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
             user_id=logged_user["id"],
             product_name=osparc_product_name,
@@ -378,7 +378,7 @@ async def test_list_function_job_collections_filtered_function_id(
         ]
         # Register the function job
         registered_jobs_batch_create = (
-            await webserver_rpc_client.functions.register_function_job_batch(
+            await webserver_rpc_client.functions.batch_register_function_jobs(
                 function_jobs=TypeAdapter(FunctionJobList).validate_python(
                     function_jobs
                 ),

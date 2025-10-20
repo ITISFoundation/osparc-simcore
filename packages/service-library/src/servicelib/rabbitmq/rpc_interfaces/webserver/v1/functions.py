@@ -333,7 +333,7 @@ class FunctionsRpcApi(BaseRpcApi):
             ),
         )
 
-    async def register_function_job_batch(
+    async def batch_register_function_jobs(
         self,
         *,
         product_name: ProductName,
