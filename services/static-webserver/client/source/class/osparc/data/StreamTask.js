@@ -51,7 +51,7 @@ qx.Class.define("osparc.data.StreamTask", {
       check: "Number",
       nullable: false,
       // init: 20,
-      init: 2,
+      init: 5,
     },
   },
 

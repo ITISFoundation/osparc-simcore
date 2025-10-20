@@ -30,8 +30,7 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
     this.base(arguments);
 
     this.set({
-      appearance: "pb-study", // change this,
-      cursor: "auto",
+      cursor: "default",
     });
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
@@ -95,12 +94,7 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
       });
       osparc.utils.Utils.setIdToWidget(this, "fileItem_" + id);
 
-      const icon = this.getChildControl("icon");
-      if (file.getIsDirectory()) {
-        icon.setSource("@FontAwesome5Solid/folder/24");
-      } else {
-        icon.setSource("@FontAwesome5Solid/file/24");
-      }
+      this.setIcon(file.getIsDirectory() ? "@FontAwesome5Solid/folder/" : "@FontAwesome5Solid/file/");
 
       const label = this.getChildControl("title");
       label.set({
