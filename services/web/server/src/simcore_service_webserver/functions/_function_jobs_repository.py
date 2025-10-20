@@ -6,6 +6,7 @@ import logging
 import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
+    BatchCreateRegisteredFunctionJobsDB,
     FunctionClass,
     FunctionClassSpecificData,
     FunctionID,
@@ -69,7 +70,7 @@ async def create_function_jobs(  # noqa: PLR0913
     user_id: UserID,
     product_name: ProductName,
     function_jobs: list[FunctionJobDB],
-) -> list[RegisteredFunctionJobDB]:
+) -> BatchCreateRegisteredFunctionJobsDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
             app,
@@ -126,7 +127,7 @@ async def create_function_jobs(  # noqa: PLR0913
             execute=True,
         )
 
-    return created_jobs
+    return BatchCreateRegisteredFunctionJobsDB(created_items=created_jobs)
 
 
 async def patch_function_job(

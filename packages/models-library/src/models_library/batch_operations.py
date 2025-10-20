@@ -85,3 +85,20 @@ class BatchGetEnvelope(BaseModel, Generic[ResourceT, IdentifierT]):
             description="List of identifiers for items that were not found",
         ),
     ] = DEFAULT_FACTORY
+
+
+class BatchCreateEnvelope(BaseModel, Generic[SchemaT]):
+    """Generic envelope model for batch-create operations.
+
+    This model represents the result of a strict batch create operation,
+    containing the list of created items. The operation is expected to be "strict"
+    in the sense that it either creates all requested items or fails entirely.
+    """
+
+    created_items: Annotated[
+        list[SchemaT],
+        Field(
+            min_length=1,
+            description="List of successfully created items",
+        ),
+    ]

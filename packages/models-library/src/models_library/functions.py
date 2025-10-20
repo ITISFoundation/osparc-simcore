@@ -7,6 +7,7 @@ from uuid import UUID
 from models_library import projects
 from models_library.basic_regex import UUID_RE_BASE
 from models_library.basic_types import ConstrainedStr
+from models_library.batch_operations import BatchCreateEnvelope
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -269,10 +270,12 @@ RegisteredFunctionJob: TypeAlias = Annotated[
     | RegisteredSolverFunctionJob,
     Field(discriminator="function_class"),
 ]
-RegisteredFunctionJobList: TypeAlias = Annotated[
-    list[RegisteredFunctionJob],
-    Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH),
-]
+
+
+class BatchCreateRegisteredFunctionJobs(BatchCreateEnvelope[RegisteredFunctionJob]):
+    """Envelope model for batch registering function jobs"""
+
+    pass
 
 
 RegisteredFunctionJobPatch = Annotated[
@@ -371,6 +374,10 @@ class FunctionJobDB(BaseModel):
 class RegisteredFunctionJobDB(FunctionJobDB):
     uuid: FunctionJobID
     created: datetime.datetime
+
+
+class BatchCreateRegisteredFunctionJobsDB(BatchCreateEnvelope[RegisteredFunctionJobDB]):
+    pass
 
 
 class RegisteredFunctionJobWithStatusDB(FunctionJobDB):

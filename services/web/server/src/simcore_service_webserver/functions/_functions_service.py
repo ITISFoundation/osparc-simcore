@@ -3,6 +3,7 @@ from typing import Literal
 from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.functions import (
+    BatchCreateRegisteredFunctionJobs,
     Function,
     FunctionClass,
     FunctionClassSpecificData,
@@ -30,7 +31,6 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     RegisteredFunctionJobDB,
-    RegisteredFunctionJobList,
     RegisteredFunctionJobWithStatus,
     RegisteredFunctionJobWithStatusDB,
     RegisteredProjectFunction,
@@ -102,8 +102,9 @@ async def register_function_job(
         product_name=product_name,
         function_jobs=[encoded_function_jobs],
     )
-    assert len(created_function_jobs_db) == 1  # nosec
-    return _decode_functionjob(created_function_jobs_db[0])
+    created_items = created_function_jobs_db.created_items
+    assert len(created_items) == 1  # nosec
+    return _decode_functionjob(created_items[0])
 
 
 async def register_function_job_batch(
@@ -112,7 +113,7 @@ async def register_function_job_batch(
     user_id: UserID,
     product_name: ProductName,
     function_jobs: FunctionJobList,
-) -> RegisteredFunctionJobList:
+) -> BatchCreateRegisteredFunctionJobs:
     TypeAdapter(FunctionJobList).validate_python(function_jobs)
     encoded_function_jobs = [_encode_functionjob(job) for job in function_jobs]
     created_function_jobs_db = await _function_jobs_repository.create_function_jobs(
@@ -121,7 +122,11 @@ async def register_function_job_batch(
         product_name=product_name,
         function_jobs=encoded_function_jobs,
     )
-    return [_decode_functionjob(job) for job in created_function_jobs_db]
+    return BatchCreateRegisteredFunctionJobs(
+        created_items=[
+            _decode_functionjob(job) for job in created_function_jobs_db.created_items
+        ]
+    )
 
 
 async def patch_registered_function_job(
