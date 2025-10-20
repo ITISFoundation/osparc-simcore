@@ -54,7 +54,7 @@ pydantic>=2.10.0    # Avoids inter-version compatibility serialization errors as
 pydantic-settings<2.7.1
 
 # avoid downgrades of openapi-spec-validator related libraries
-referencing<=0.35.1
+referencing<=0.37.0
 
 
 #
