@@ -1,25 +1,23 @@
 from dataclasses import dataclass
-from typing import Annotated
 
 import jsonschema
 from common_library.exclude import as_dict_exclude_none
 from models_library.functions import (
+    BatchUpdateRegisteredFunctionJobs,
     FunctionClass,
     FunctionID,
     FunctionInputs,
     FunctionJobCollectionID,
     FunctionJobID,
     FunctionJobList,
+    FunctionJobPatchRequest,
+    FunctionJobPatchRequestList,
     FunctionSchemaClass,
     ProjectFunctionJob,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredProjectFunctionJobPatch,
-    RegisteredProjectFunctionJobPatchInput,
-    RegisteredProjectFunctionJobPatchInputList,
     RegisteredSolverFunctionJobPatch,
-    RegisteredSolverFunctionJobPatchInput,
-    RegisteredSolverFunctionJobPatchInputList,
     SolverFunctionJob,
 )
 from models_library.functions_errors import (
@@ -31,7 +29,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from pydantic import Field, TypeAdapter, ValidationError, validate_call
+from pydantic import TypeAdapter, ValidationError
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
 
@@ -210,25 +208,18 @@ class FunctionJobService:
             for job, input_ in zip(jobs, job_inputs)
         ]
 
-    @validate_call
-    async def patch_registered_function_job(
+    async def batch_patch_registered_function_job(
         self,
         *,
         user_id: UserID,
         product_name: ProductName,
-        patches: Annotated[
-            list[FunctionJobPatch],
-            Field(max_length=50, min_length=1),
-        ],
-    ) -> list[RegisteredFunctionJob]:
-        patch_inputs: list[
-            RegisteredProjectFunctionJobPatchInput
-            | RegisteredSolverFunctionJobPatchInput
-        ] = []
-        for patch in patches:
+        function_job_patches: list[FunctionJobPatch],
+    ) -> BatchUpdateRegisteredFunctionJobs:
+        patch_inputs: FunctionJobPatchRequestList = []
+        for patch in function_job_patches:
             if patch.function_class == FunctionClass.PROJECT:
                 patch_inputs.append(
-                    RegisteredProjectFunctionJobPatchInput(
+                    FunctionJobPatchRequest(
                         uid=patch.function_job_id,
                         patch=RegisteredProjectFunctionJobPatch(
                             title=None,
@@ -236,13 +227,13 @@ class FunctionJobService:
                             inputs=None,
                             outputs=None,
                             job_creation_task_id=patch.job_creation_task_id,
-                            project_job_id=patch.project_job_id,
+                            project_job_id=None,
                         ),
                     )
                 )
             elif patch.function_class == FunctionClass.SOLVER:
                 patch_inputs.append(
-                    RegisteredSolverFunctionJobPatchInput(
+                    FunctionJobPatchRequest(
                         uid=patch.function_job_id,
                         patch=RegisteredSolverFunctionJobPatch(
                             title=None,
@@ -250,7 +241,7 @@ class FunctionJobService:
                             inputs=None,
                             outputs=None,
                             job_creation_task_id=patch.job_creation_task_id,
-                            solver_job_id=patch.solver_job_id,
+                            solver_job_id=None,
                         ),
                     )
                 )
@@ -258,14 +249,10 @@ class FunctionJobService:
                 raise UnsupportedFunctionClassError(
                     function_class=patch.function_class,
                 )
-
-        return await self._web_rpc_client.patch_registered_function_job(
+        return await self._web_rpc_client.batch_patch_registered_function_job(
             user_id=user_id,
             product_name=product_name,
-            registered_function_job_patch_inputs=TypeAdapter(
-                RegisteredProjectFunctionJobPatchInputList
-                | RegisteredSolverFunctionJobPatchInputList
-            ).validate_python(patch_inputs),
+            function_job_patch_requests=patch_inputs,
         )
 
     async def run_function(
@@ -294,20 +281,22 @@ class FunctionJobService:
                 job_id=study_job.id,
                 pricing_spec=pricing_spec,
             )
-            registered_jobs = await self.patch_registered_function_job(
+            registered_job = await self._web_rpc_client.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
-                patches=[
-                    FunctionJobPatch(
-                        function_class=FunctionClass.PROJECT,
-                        function_job_id=pre_registered_function_job_data.function_job_id,
+                function_job_patch_request=FunctionJobPatchRequest(
+                    uid=pre_registered_function_job_data.function_job_id,
+                    patch=RegisteredProjectFunctionJobPatch(
+                        title=None,
+                        description=None,
+                        inputs=None,
+                        outputs=None,
                         job_creation_task_id=None,
                         project_job_id=study_job.id,
-                    )
-                ],
+                    ),
+                ),
             )
-            assert len(registered_jobs) == 1
-            return registered_jobs[0]
+            return registered_job
 
         if function.function_class == FunctionClass.SOLVER:
             solver_job = await self._job_service.create_solver_job(
@@ -325,20 +314,22 @@ class FunctionJobService:
                 job_id=solver_job.id,
                 pricing_spec=pricing_spec,
             )
-            registered_jobs = await self.patch_registered_function_job(
+            registered_job = await self._web_rpc_client.patch_registered_function_job(
                 user_id=self.user_id,
                 product_name=self.product_name,
-                patches=[
-                    FunctionJobPatch(
-                        function_class=FunctionClass.SOLVER,
-                        function_job_id=pre_registered_function_job_data.function_job_id,
+                function_job_patch_request=FunctionJobPatchRequest(
+                    uid=pre_registered_function_job_data.function_job_id,
+                    patch=RegisteredSolverFunctionJobPatch(
+                        title=None,
+                        description=None,
+                        inputs=None,
+                        outputs=None,
                         job_creation_task_id=None,
                         solver_job_id=solver_job.id,
-                    )
-                ],
+                    ),
+                ),
             )
-            assert len(registered_jobs) == 1
-            return registered_jobs[0]
+            return registered_job
 
         raise UnsupportedFunctionClassError(
             function_class=function.function_class,

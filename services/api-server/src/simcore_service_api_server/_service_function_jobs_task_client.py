@@ -371,10 +371,10 @@ class FunctionJobTaskClientService:
             for pre_registered_function_job_data in pre_registered_function_job_data_list
         ]
 
-        patched_jobs = await self._function_job_service.patch_registered_function_job(
+        patched_jobs = await self._function_job_service.batch_patch_registered_function_job(
             user_id=user_identity.user_id,
             product_name=user_identity.product_name,
-            patches=[
+            function_job_patches=[
                 FunctionJobPatch(
                     function_class=function.function_class,
                     function_job_id=pre_registered_function_job_data.function_job_id,
@@ -387,6 +387,6 @@ class FunctionJobTaskClientService:
                 )
             ],
         )
-        patched_jobs_iter = iter(patched_jobs)
+        patched_jobs_iter = iter(patched_jobs.updated_items)
         _ = lambda job: job if job is not None else next(patched_jobs_iter)
         return [_(job) for job in cached_jobs]
