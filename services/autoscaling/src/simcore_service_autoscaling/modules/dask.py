@@ -347,7 +347,7 @@ _LARGE_RESOURCE: Final[int] = 99999
 def add_instance_generic_resources(
     settings: DaskMonitoringSettings, instance: EC2InstanceData
 ) -> None:
-    instance_threads = min(1, round(instance.resources.cpus))
+    instance_threads = max(1, round(instance.resources.cpus))
     if settings.DASK_NTHREADS > 0:
         # this overrides everything
         instance_threads = settings.DASK_NTHREADS
