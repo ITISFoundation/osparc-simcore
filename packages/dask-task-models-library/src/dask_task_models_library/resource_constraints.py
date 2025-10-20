@@ -43,7 +43,7 @@ def estimate_dask_worker_resources_from_ec2_instance(
     Returns:
         tuple: Estimated resources for the dask worker (cpus, ram).
     """
-    worker_cpus = min(0.1, cpus - _CPUS_SAFE_MARGIN)  # ensure at least 0.1 CPU
+    worker_cpus = max(0.1, cpus - _CPUS_SAFE_MARGIN)  # ensure at least 0.1 CPU
     worker_ram = int(ram * (1 - _RAM_SAFE_MARGIN_RATIO))  # apply safe margin
 
     return (worker_cpus, worker_ram)
