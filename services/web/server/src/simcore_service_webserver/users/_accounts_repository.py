@@ -351,6 +351,7 @@ async def search_merged_pre_and_registered_users(
     filter_by_user_name_like: str | None = None,
     filter_by_primary_group_id: int | None = None,
     product_name: ProductName | None = None,
+    limit: int = 50,
 ) -> list[Row]:
     """Searches and merges users from both users and pre-registration tables"""
     users_alias = sa.alias(users, name="users_alias")
@@ -422,6 +423,9 @@ async def search_merged_pre_and_registered_users(
         return []
 
     final_query = queries[0] if len(queries) == 1 else sa.union(*queries)
+
+    # Add limit to prevent excessive results
+    final_query = final_query.limit(limit)
 
     async with pass_or_acquire_connection(engine, connection) as conn:
         result = await conn.execute(final_query)
