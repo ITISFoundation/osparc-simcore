@@ -1,3 +1,11 @@
+# pylint: disable=no-value-for-parameter
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-statements
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import pytest
 from fastapi import FastAPI
 from pytest_simcore.helpers.typing_env import EnvVarsDict
