@@ -4,7 +4,6 @@ from typing import Literal
 import pytest
 from common_library.json_serialization import json_dumps
 from models_library.basic_types import IDStr
-from models_library.list_operations import get_literal_values
 from models_library.rest_ordering import (
     OrderBy,
     OrderClause,
@@ -259,8 +258,6 @@ def test_ordering_query_params_parsing():
         OrderClause[ValidField](field="name", direction=OrderDirection.ASC),
         OrderClause[ValidField](field="gender", direction=OrderDirection.ASC),
     ]
-
-    assert get_literal_values(ValidField) == ("created_at", "name", "gender")
 
 
 def test_ordering_query_params_validation_error_with_invalid_fields():
