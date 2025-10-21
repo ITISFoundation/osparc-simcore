@@ -9,7 +9,6 @@ from pydantic import (
     Field,
     field_validator,
 )
-from pydantic.generics import GenericModel
 
 from .basic_types import IDStr
 from .list_operations import OrderClause, OrderDirection, TField, check_ordering_list
@@ -160,7 +159,7 @@ def _parse_order_by(v):
     ]
 
 
-class OrderingQueryParams(GenericModel, Generic[TField]):
+class OrderingQueryParams(BaseModel, Generic[TField]):
     """
     This class is designed to parse query parameters for ordering results in an API request.
 
