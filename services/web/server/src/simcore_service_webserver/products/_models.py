@@ -17,6 +17,7 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
+    HttpUrl,
     PositiveInt,
     field_serializer,
     field_validator,
@@ -87,6 +88,11 @@ class Product(BaseModel):
         Field(description="Host regex"),
     ]
 
+    base_url: Annotated[
+        HttpUrl,
+        Field(description="Product Base URL"),
+    ]
+
     support_email: Annotated[
         LowerCaseEmailStr,
         Field(
@@ -142,6 +148,9 @@ class Product(BaseModel):
     ] = None
     support_standard_group_id: Annotated[
         int | None, Field(description="Support standard group ID, None if disabled")
+    ] = None
+    support_chatbot_user_id: Annotated[
+        int | None, Field(description="Support chatbot user ID, None if disabled")
     ] = None
     support_assigned_fogbugz_person_id: Annotated[
         int | None,
@@ -209,6 +218,7 @@ class Product(BaseModel):
                         # fake mandatory
                         "name": "osparc",
                         "host_regex": r"([\.-]{0,1}osparc[\.-])",
+                        "base_url": "https://osparc.io",
                         "twilio_messaging_sid": "1" * 34,
                         "registration_email_template": "osparc_registration_email",
                         "login_settings": {
@@ -229,6 +239,7 @@ class Product(BaseModel):
                         "display_name": "TI PT",
                         "short_name": "TIPI",
                         "host_regex": r"(^tis[\.-])|(^ti-solutions\.)|(^ti-plan\.)",
+                        "base_url": "https://tip.io",
                         "support_email": "support@foo.com",
                         "manual_url": "https://foo.com",
                         "issues_login_url": None,
@@ -244,6 +255,7 @@ class Product(BaseModel):
                         "display_name": "o²S²PARC FOO",
                         "short_name": "osparcf",
                         "host_regex": "([\\.-]{0,1}osparcf[\\.-])",
+                        "base_url": "https://osparc.io",
                         "support_email": "foo@osparcf.io",
                         "vendor": {
                             "url": "https://acme.com",
@@ -348,3 +360,8 @@ class Product(BaseModel):
                 template_name_attribute: str = getattr(self, name)
                 return template_name_attribute
         return None
+
+
+class ProductBaseUrl(BaseModel):
+    scheme: str
+    host: str
