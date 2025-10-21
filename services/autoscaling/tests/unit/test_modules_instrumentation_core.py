@@ -12,6 +12,7 @@ from simcore_service_autoscaling.modules.instrumentation._core import (
 def disabled_instrumentation(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    assert app_environment
     monkeypatch.setenv("AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED", "false")
 
 
