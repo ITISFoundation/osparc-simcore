@@ -51,7 +51,7 @@ def check_ordering_list(
     Raises:
         ValueError: If a field appears with conflicting directions
     """
-    seen_fields = {}
+    seen_fields: dict[TField, OrderDirection] = {}
     unique_order_by = []
 
     for field, direction in order_by:

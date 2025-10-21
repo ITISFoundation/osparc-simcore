@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
@@ -27,12 +27,12 @@ from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
+from ..rest_ordering import OrderingQueryParams
 from ..string_types import (
     GlobPatternSafeStr,
     SearchPatternSafeStr,
     validate_input_xss_safety,
 )
-from ..rest_ordering import OrderingQueryParams
 from ..users import (
     FirstNameStr,
     LastNameStr,
