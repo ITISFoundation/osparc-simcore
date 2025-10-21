@@ -45,15 +45,6 @@ async def create_user_pre_registration(
 ) -> int:
     """Creates a user pre-registration entry.
 
-    Args:
-        engine: Database engine
-        connection: Optional existing connection
-        email: Email address for the pre-registration
-        created_by: ID of the user creating the pre-registration (None for anonymous)
-        product_name: Product name the user is requesting access to
-        link_to_existing_user: Whether to link the pre-registration to an existing user with the same email
-        **other_values: Additional values to insert in the pre-registration entry
-
     Returns:
         ID of the created pre-registration
     """
@@ -103,15 +94,6 @@ async def list_user_pre_registrations(
     pagination_offset: int = 0,
 ) -> tuple[list[dict[str, Any]], int]:
     """Lists user pre-registrations with optional filters.
-
-    Args:
-        engine: Database engine
-        connection: Optional existing connection
-        filter_by_pre_email: Filter by email pattern (SQL LIKE pattern)
-        filter_by_product_name: Filter by product name
-        filter_by_account_request_status: Filter by account request status
-        pagination_limit: Maximum number of results to return
-        pagination_offset: Number of results to skip (for pagination)
 
     Returns:
         Tuple of (list of pre-registration records, total count)
@@ -216,16 +198,7 @@ async def review_user_pre_registration(
     new_status: AccountRequestStatus,
     invitation_extras: dict[str, Any] | None = None,
 ) -> None:
-    """Updates the account request status of a pre-registered user.
-
-    Args:
-        engine: The database engine
-        connection: Optional existing connection
-        pre_registration_id: ID of the pre-registration record
-        reviewed_by: ID of the user who reviewed the request
-        new_status: New status (APPROVED or REJECTED)
-        invitation_extras: Optional invitation data to store in extras field
-    """
+    """Updates the account request status of a pre-registered user."""
     if new_status not in (AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED):
         msg = f"Invalid status for review: {new_status}. Must be APPROVED or REJECTED."
         raise ValueError(msg)
@@ -482,30 +455,22 @@ async def list_merged_pre_and_registered_users(
     product_name: ProductName,
     filter_any_account_request_status: Annotated[
         list[AccountRequestStatus] | None,
-        doc(
-            "If provided, only returns users with account request status in this list (only pre-registered users with any of these statuses will be included)"
-        ),
+        doc("Only returns users with these statuses (pre-registered users only)"),
     ] = None,
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
     order_by: Annotated[
         list[tuple[OrderKeys, OrderDirection]] | None,
-        doc(
-            'Valid fields: "email", "current_status_created". '
-            'Default: [("email", OrderDirection.ASC), ("is_pre_registered", OrderDirection.DESC), ("current_status_created", OrderDirection.DESC)]'
-        ),
+        doc('Valid fields: "email", "current_status_created"'),
     ] = None,
 ) -> tuple[list[MergedUserData], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
-    This returns:
-    1. Users who are registered with the platform (in users table)
-    2. Users who are pre-registered (in users_pre_registration_details table)
-    3. Users who are both registered and pre-registered
-
     Returns:
-        Tuple of (list of merged user data, total count)
+        1. Users registered with the platform (users table)
+        2. Users pre-registered (users_pre_registration_details table)
+        3. Users both registered and pre-registered
     """
     # Base where conditions for both queries
     pre_reg_query_conditions = [
