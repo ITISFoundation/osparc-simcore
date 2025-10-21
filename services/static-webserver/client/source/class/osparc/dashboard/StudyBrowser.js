@@ -430,14 +430,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._loadingResourcesBtn.setVisibility("visible");
       const filterData = this._searchBarFilter.getFilterData();
       const text = filterData.text ? encodeURIComponent(filterData.text) : "";
-      const existingStream = osparc.store.StreamTasks.getInstance().getStreamTask("files_search", text);
+      const streamTasks = osparc.store.StreamTasks.getInstance();
+      const existingStream = streamTasks.getStreamTask("files_search", text);
       if (existingStream) {
         this.__fetchFilesFromStream(existingStream);
       } else {
-        // TODO: abort last stream if it changed
+        streamTasks.abortStreamTasks();
         const streamPromise = osparc.store.Data.getInstance().searchFiles(text);
         const pollingInterval = 2000;
-        osparc.store.StreamTasks.getInstance().createStreamTask("files_search", text, streamPromise, pollingInterval)
+        streamTasks.createStreamTask("files_search", text, streamPromise, pollingInterval)
           .then(newStream => this.__fetchFilesFromStream(newStream));
       }
     },

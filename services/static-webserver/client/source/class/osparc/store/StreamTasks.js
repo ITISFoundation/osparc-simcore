@@ -52,10 +52,20 @@ qx.Class.define("osparc.store.StreamTasks", {
       return tasks[internalId] || null;
     },
 
+    abortStreamTasks: function() {
+      const tasks = this.getTasks();
+      Object.values(tasks).forEach(stream => {
+        if (stream.isEnd() === false) {
+          stream.abortRequested();
+        }
+        // and remove
+        this.__removeStreamTask(stream);
+      });
+    },
+
     __addStreamTask: function(action, params, streamData, interval) {
       const internalId = osparc.store.StreamTasks.actionToInternalId(action, params);
       const stream = new osparc.data.StreamTask(streamData, interval);
-      // stream.addListener("resultReceived", () => this.__removeStreamTask(stream), this);
       stream.addListener("taskAborted", () => this.__removeStreamTask(stream), this);
       const tasks = this.getTasks();
       tasks[internalId] = stream;
@@ -64,9 +74,9 @@ qx.Class.define("osparc.store.StreamTasks", {
 
     __removeStreamTask: function(stream) {
       const tasks = this.getTasks();
-      const index = tasks.findIndex(t => t.getTaskId() === stream.getTaskId());
-      if (index > -1) {
-        tasks.splice(index, 1);
+      const internalId = Object.keys(tasks).find(key => tasks[key] === stream);
+      if (internalId) {
+        delete tasks[internalId];
       }
     },
   }
