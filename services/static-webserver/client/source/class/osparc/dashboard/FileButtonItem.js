@@ -70,6 +70,8 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
             padding: [0, 8],
             maxWidth: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
             maxHeight: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            alignX: "center",
+            alignY: "middle",
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
@@ -95,15 +97,20 @@ qx.Class.define("osparc.dashboard.FileButtonItem", {
       osparc.utils.Utils.setIdToWidget(this, "fileItem_" + id);
 
       this.setIcon(file.getIsDirectory() ? "@FontAwesome5Solid/folder/" : "@FontAwesome5Solid/file/");
+      this.getChildControl("icon").getChildControl("image").set({
+        paddingTop: 5,
+      });
 
-      const label = this.getChildControl("title");
-      label.set({
+      this.getChildControl("title").set({
         value: file.getName(),
         toolTipText: file.getName(),
       });
 
-      const dateBy = this.getChildControl("date-by");
-      dateBy.set({
+      this.getChildControl("owner").set({
+        value: "Project Id: " + osparc.utils.Utils.uuidToShort(file.getProjectId()),
+      });
+
+      this.getChildControl("date-by").set({
         date: file.getModifiedAt(),
         toolTipText: this.tr("Last modified"),
       });
