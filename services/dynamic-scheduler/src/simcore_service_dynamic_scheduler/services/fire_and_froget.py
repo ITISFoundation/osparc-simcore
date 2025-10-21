@@ -7,7 +7,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 
 class FireAndForgetCollection(SingletonInAppStateMixin):
-    app_state_name: str = "fire_amd_forget_collection"
+    app_state_name: str = "fire_and_forget_collection"
 
     def __init__(self, app: FastAPI) -> None:
         self.app = app

@@ -139,7 +139,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         description=(
             "When stopping a LEGACY service, depending on the amount of data to store, "
             "the operation might be very long. Also all relative created resources: "
-            "services, containsers, volumes and networks need to be removed. "
+            "services, containers, volumes and networks need to be removed. "
         ),
     )
 

@@ -111,7 +111,7 @@ async def service_stop(node_id: NodeID):
 
     service_model = await get_tracked_service(parent_app, node_id)
     if not service_model:
-        ui.notify(f"Could not stop service {node_id}. Was not abel to find it")
+        ui.notify(f"Could not stop service {node_id}. Was not able to find it")
         return
 
     assert service_model.user_id  #  nosec
@@ -135,7 +135,7 @@ async def remove_service_from_tracking(node_id: NodeID):
 
     service_model = await get_tracked_service(parent_app, node_id)
     if not service_model:
-        ui.notify(f"Could not remove service {node_id}. Was not abel to find it")
+        ui.notify(f"Could not remove service {node_id}. Was not able to find it")
         return
 
     await remove_tracked_service(parent_app, node_id)
