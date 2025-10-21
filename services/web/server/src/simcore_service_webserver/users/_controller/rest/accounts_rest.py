@@ -80,11 +80,14 @@ async def list_users_accounts(request: web.Request) -> web.Response:
         filter_any_account_request_status=filter_any_account_request_status,
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
-        order_by=[
-            (api_to_service_field_mapping[clause.field], clause.direction)
-            for clause in query_params.order_by
-        ]
-        or None,
+        order_by=(
+            [
+                (api_to_service_field_mapping[clause.field], clause.direction)
+                for clause in query_params.order_by
+            ]
+            if query_params.order_by
+            else None
+        ),
     )
 
     def _to_domain_model(account_details: dict[str, Any]) -> UserAccountGet:
@@ -120,7 +123,6 @@ async def search_user_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    #  TODO: add sorting options
     query_params: UserAccountSearchQueryParams = parse_request_query_parameters_as(
         UserAccountSearchQueryParams, request
     )

@@ -172,6 +172,8 @@ async def search_users_accounts(
     using parameters like product_name and user_id. However, this function skips
     such checks as it is designed for scenarios (e.g., background tasks) where
     no caller or context is available.
+
+    NOTE: list is limited to a maximum of 50 entries
     """
 
     if (
