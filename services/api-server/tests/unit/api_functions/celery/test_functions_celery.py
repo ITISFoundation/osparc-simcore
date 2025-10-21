@@ -52,9 +52,6 @@ from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.api.dependencies.celery import (
     get_task_manager,
 )
-from simcore_service_api_server.celery_worker.worker_tasks.functions_tasks import (
-    run_function as run_function_task,
-)
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.domain.celery_models import ApiWorkerTaskFilter
@@ -64,6 +61,9 @@ from simcore_service_api_server.models.domain.functions import (
 from simcore_service_api_server.models.schemas.jobs import (
     JobPricingSpecification,
     NodeID,
+)
+from simcore_service_api_server.modules.celery.worker._functions_tasks import (
+    run_function as run_function_task,
 )
 from tenacity import (
     AsyncRetrying,
