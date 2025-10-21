@@ -202,7 +202,7 @@ GlobPatternSafeStr: TypeAlias = Annotated[
         min_length=3,
         max_length=200,
         strip_whitespace=True,
-        pattern=r"^[A-Za-z0-9 ._\*-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and asterisks
+        pattern=r"^[A-Za-z0-9 ._\*@-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, asterisks and at signs
     ),
     AfterValidator(validate_input_xss_safety),
 ]
