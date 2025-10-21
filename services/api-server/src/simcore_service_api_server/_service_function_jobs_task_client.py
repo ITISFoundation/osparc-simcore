@@ -340,7 +340,7 @@ class FunctionJobTaskClientService:
         ]
 
         pre_registered_function_job_data_list = (
-            await self._function_job_service.pre_register_function_jobs(
+            await self._function_job_service.batch_pre_register_function_jobs(
                 function=function,
                 job_inputs=uncached_inputs,
             )

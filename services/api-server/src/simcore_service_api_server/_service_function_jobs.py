@@ -132,7 +132,7 @@ class FunctionJobService:
             values=joined_inputs or {},
         )
 
-    async def pre_register_function_jobs(
+    async def batch_pre_register_function_jobs(
         self,
         *,
         function: RegisteredFunction,

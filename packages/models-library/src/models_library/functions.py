@@ -15,7 +15,7 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field
 
-from .batch_operations import BatchUpdateEnvelope
+from .batch_operations import BatchGetEnvelope, BatchUpdateEnvelope
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
 
@@ -281,6 +281,12 @@ class BatchUpdateRegisteredFunctionJobs(BatchUpdateEnvelope[RegisteredFunctionJo
     pass
 
 
+class BatchGetCachedRegisteredFunctionJobs(
+    BatchGetEnvelope[RegisteredFunctionJob, FunctionInputs]
+):
+    pass
+
+
 RegisteredFunctionJobPatch = Annotated[
     RegisteredProjectFunctionJobPatch
     | RegisteredPythonCodeFunctionJobPatch
@@ -370,6 +376,12 @@ class FunctionJobDB(BaseModel):
 class RegisteredFunctionJobDB(FunctionJobDB):
     uuid: FunctionJobID
     created: datetime.datetime
+
+
+class BatchGetCachedRegisteredFunctionJobsDB(
+    BatchGetEnvelope[RegisteredFunctionJobDB, FunctionInputs]
+):
+    pass
 
 
 class BatchCreateRegisteredFunctionJobsDB(BatchCreateEnvelope[RegisteredFunctionJobDB]):

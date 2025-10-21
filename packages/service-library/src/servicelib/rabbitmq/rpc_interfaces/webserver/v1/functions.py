@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
+    BatchGetCachedRegisteredFunctionJobs,
     BatchUpdateRegisteredFunctionJobs,
     FunctionClass,
     FunctionGroupAccessRights,
@@ -501,9 +502,9 @@ class FunctionsRpcApi(BaseRpcApi):
         function_id: FunctionID,
         inputs: FunctionInputsList,
         status_filter: list[FunctionJobStatus] | None = None,
-    ) -> list[RegisteredFunctionJob | None]:
+    ) -> BatchGetCachedRegisteredFunctionJobs:
         """Find cached function jobs."""
-        return TypeAdapter(list[RegisteredFunctionJob | None]).validate_python(
+        return TypeAdapter(BatchGetCachedRegisteredFunctionJobs).validate_python(
             await self._request(
                 "find_cached_function_jobs",
                 product_name=product_name,
