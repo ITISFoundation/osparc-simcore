@@ -36,6 +36,7 @@ class OrderBy(BaseModel):
 
 
 class _BaseOrderQueryParams(RequestParameters):
+    # Use OrderingQueryParams instead for more flexible ordering
     order_by: OrderBy
 
 
@@ -128,53 +129,65 @@ def create_ordering_query_model_class(
     return _OrderJsonQueryParams
 
 
+def _parse_order_by(v):
+    if not v:
+        return []
+
+    if isinstance(v, list):
+        v = ",".join(v)
+
+    if not isinstance(v, str):
+        msg = "order_by must be a string"
+        raise TypeError(msg)
+
+    # 1. from comma-separated string to list of OrderClause
+    clauses = []
+    for t in v.split(","):
+        token = t.strip()
+        if not token:
+            continue
+        if token.startswith("-"):
+            clauses.append((token[1:], OrderDirection.DESC))
+        elif token.startswith("+"):
+            clauses.append((token[1:], OrderDirection.ASC))
+        else:
+            clauses.append((token, OrderDirection.ASC))
+
+    # 2. check for duplicates and conflicting directions
+    return [
+        {"field": field, "direction": direction}
+        for field, direction in check_ordering_list(clauses)
+    ]
+
+
 class OrderingQueryParams(GenericModel, Generic[TField]):
-    # NOTE: OrderingQueryParams is a more flexible variant for generic usage and that
-    #      does include multiple ordering clauses
-    #
+    """
+    This class is designed to parse query parameters for ordering results in an API request.
+
+    It supports multiple ordering clauses and allows for flexible sorting options.
+
+    NOTE: It only parses strings and validates into list[OrderClause[TField]]
+    where TField is a type variable representing valid field names.
+
+
+    For example:
+
+        /my/path?order_by=field1,-field2,+field3
+
+    would sort by field1 ascending, field2 descending, and field3 ascending.
+    """
+
     order_by: Annotated[
         list[OrderClause[TField]],
-        Field(
-            default_factory=list,
-            description="Order by clauses e.g. ?order_by=-created_at,name",
-        ),
+        BeforeValidator(_parse_order_by),
+        Field(default_factory=list),
     ] = DEFAULT_FACTORY
 
-    @field_validator("order_by", mode="before")
-    @classmethod
-    def _parse_order_by_string(cls, v):
-        """Parses a comma-separated string into a list of OrderClause
-
-        Example, given the query parameter `order_by` in a request like `GET /items?order_by=-created_at,name`
-        It parses to:
-            [
-                OrderClause(field="created_at", direction=OrderDirection.DESC),
-                OrderClause(field="name", direction=OrderDirection.ASC),
-            ]
-        """
-        if not v:
-            return []
-
-        if isinstance(v, str):
-            # 1. from comma-separated string to list of OrderClause
-            v = v.split(",")
-            clauses: list[tuple[str, OrderDirection]] = []
-            for t in v:
-                token = t.strip()
-                if not token:
-                    continue
-                if token.startswith("-"):
-                    clauses.append((token[1:].strip(), OrderDirection.DESC))
-                elif token.startswith("+"):
-                    clauses.append((token[1:].strip(), OrderDirection.ASC))
-                else:
-                    clauses.append((token, OrderDirection.ASC))
-            # 2. check for duplicates and conflicting directions
-            return [
-                {"field": field, "direction": direction}
-                for field, direction in check_ordering_list(clauses)
-            ]
-
-        # NOTE: Parses ONLY strings into list[OrderClause], otherwise raises TypeError
-        msg = f"Invalid type for order_by: expected str, got {type(v)}"
-        raise TypeError(msg)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"order_by": "-created_at,name,+gender"},
+                {"order_by": ""},
+            ],
+        }
+    )
