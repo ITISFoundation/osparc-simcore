@@ -536,7 +536,7 @@ async def test_find_cached_function_jobs_with_status(
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         inputs=[input_],
-        status_filter=[status],
+        cached_job_statuses=[status],
     )
     assert len(cached_jobs) == 1
     cached_job = cached_jobs[0]

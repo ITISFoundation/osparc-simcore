@@ -629,7 +629,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             product_name=product_name,
             function_id=function_id,
             inputs=inputs,
-            status_filter=status_filter,
+            cached_job_statuses=status_filter,
         )
 
     async def get_function_job_collection(

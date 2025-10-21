@@ -136,13 +136,13 @@ class FunctionJobService:
         self,
         *,
         function: RegisteredFunction,
-        job_inputs: list[JobInputs],
+        job_input_list: list[JobInputs],
     ) -> list[PreRegisteredFunctionJobData]:
 
         if function.input_schema is not None:
             is_valid, validation_str = await self.validate_function_inputs(
                 function=function,
-                job_inputs=job_inputs,
+                job_inputs=job_input_list,
             )
             if not is_valid:
                 raise FunctionInputsValidationError(error=validation_str)
@@ -159,7 +159,7 @@ class FunctionJobService:
                     project_job_id=None,
                     job_creation_task_id=None,
                 )
-                for input_ in job_inputs
+                for input_ in job_input_list
             ]
             batch_registered_jobs = (
                 await self._web_rpc_client.batch_register_function_jobs(
@@ -183,7 +183,7 @@ class FunctionJobService:
                     solver_job_id=None,
                     job_creation_task_id=None,
                 )
-                for input_ in job_inputs
+                for input_ in job_input_list
             ]
             batch_registered_jobs = (
                 await self._web_rpc_client.batch_register_function_jobs(
@@ -205,7 +205,7 @@ class FunctionJobService:
                 function_job_id=job.uid,
                 job_inputs=input_,
             )
-            for job, input_ in zip(jobs, job_inputs)
+            for job, input_ in zip(jobs, job_input_list)
         ]
 
     async def batch_patch_registered_function_job(

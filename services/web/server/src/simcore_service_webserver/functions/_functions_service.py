@@ -455,7 +455,7 @@ async def find_cached_function_jobs(
     product_name: ProductName,
     function_id: FunctionID,
     inputs: FunctionInputsList,
-    status_filter: list[FunctionJobStatus] | None = None,
+    cached_job_statuses: list[FunctionJobStatus] | None = None,
 ) -> list[RegisteredFunctionJob | None]:
     returned_function_jobs = await _function_jobs_repository.find_cached_function_jobs(
         app=app,
@@ -463,7 +463,7 @@ async def find_cached_function_jobs(
         product_name=product_name,
         function_id=function_id,
         inputs=inputs,
-        status_filter=status_filter,
+        cached_job_statuses=cached_job_statuses,
     )
     assert len(returned_function_jobs) == len(inputs)  # nosec
 

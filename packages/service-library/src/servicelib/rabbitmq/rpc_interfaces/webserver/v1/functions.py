@@ -500,7 +500,7 @@ class FunctionsRpcApi(BaseRpcApi):
         user_id: UserID,
         function_id: FunctionID,
         inputs: FunctionInputsList,
-        status_filter: list[FunctionJobStatus] | None = None,
+        cached_job_statuses: list[FunctionJobStatus] | None = None,
     ) -> list[RegisteredFunctionJob | None]:
         """Find cached function jobs."""
         return TypeAdapter(list[RegisteredFunctionJob | None]).validate_python(
@@ -510,7 +510,7 @@ class FunctionsRpcApi(BaseRpcApi):
                 user_id=user_id,
                 function_id=function_id,
                 inputs=inputs,
-                status_filter=status_filter,
+                cached_job_statuses=cached_job_statuses,
             ),
         )
 

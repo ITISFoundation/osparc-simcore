@@ -325,7 +325,7 @@ async def find_cached_function_jobs(
     function_id: FunctionID,
     product_name: ProductName,
     inputs: FunctionInputsList,
-    status_filter: list[FunctionJobStatus] | None = None,
+    cached_job_statuses: list[FunctionJobStatus] | None = None,
 ) -> list[RegisteredFunctionJobDB | None]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         # Get user groups for access check
@@ -352,9 +352,9 @@ async def find_cached_function_jobs(
             function_jobs_table.c.uuid.in_(access_subquery),
             (
                 function_jobs_table.c.status.in_(
-                    [status.status for status in status_filter]
+                    [status.status for status in cached_job_statuses]
                 )
-                if status_filter is not None
+                if cached_job_statuses is not None
                 else sqlalchemy.sql.true()
             ),
         )
