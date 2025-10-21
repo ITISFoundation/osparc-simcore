@@ -33,9 +33,6 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.celery.models import ExecutionMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
-from simcore_service_api_server.models.schemas.functions import (
-    FunctionJobCreationTaskStatus,
-)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ._meta import APP_NAME
