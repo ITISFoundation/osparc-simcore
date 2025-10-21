@@ -138,7 +138,10 @@ qx.Class.define("osparc.Application", {
             osparc.auth.Manager.getInstance().validateToken()
               .then(() => {
                 const studyId = urlFragment.nav[1];
-                const loadAfterLogin = { studyId };
+                const loadAfterLogin = {
+                  id: "startStudy",
+                  studyId,
+                };
                 this.__loadMainPage(loadAfterLogin);
               })
               .catch(() => this.__loadLoginPage());
@@ -157,7 +160,10 @@ qx.Class.define("osparc.Application", {
                 if (["anonymous", "guest"].includes(data.role.toLowerCase())) {
                   this.__loadNodeViewerPage(studyId, viewerNodeId);
                 } else {
-                  const loadAfterLogin = { studyId };
+                  const loadAfterLogin = {
+                    id: "startStudy",
+                    studyId,
+                  };
                   this.__loadMainPage(loadAfterLogin);
                 }
               });
@@ -171,11 +177,27 @@ qx.Class.define("osparc.Application", {
             osparc.auth.Manager.getInstance().validateToken()
               .then(() => {
                 const conversationId = urlFragment.nav[1];
-                const loadAfterLogin = { conversationId };
+                const loadAfterLogin = {
+                  id: "openConversation",
+                  conversationId,
+                };
                 this.__loadMainPage(loadAfterLogin);
               })
               .catch(() => this.__loadLoginPage());
           }
+          break;
+        }
+        case "review-users": {
+          // Route: /#/review-users
+          osparc.utils.Utils.cookie.deleteCookie("user");
+          osparc.auth.Manager.getInstance().validateToken()
+            .then(() => {
+              const loadAfterLogin = {
+                id: "openReviewUsers",
+              };
+              this.__loadMainPage(loadAfterLogin);
+            })
+            .catch(() => this.__loadLoginPage());
           break;
         }
         case "registration": {
@@ -516,15 +538,20 @@ qx.Class.define("osparc.Application", {
               });
             }
 
-            if (loadAfterLogin && loadAfterLogin["studyId"]) {
-              const studyId = loadAfterLogin["studyId"];
-              osparc.store.Store.getInstance().setCurrentStudyId(studyId);
-            }
+            if (loadAfterLogin) {
+              if (loadAfterLogin["id"] === "startStudy" && loadAfterLogin["studyId"]) {
+                const studyId = loadAfterLogin["studyId"];
+                osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+              }
 
-            if (loadAfterLogin && loadAfterLogin["conversationId"]) {
-              const conversationId = loadAfterLogin["conversationId"];
-              const supportCenterWindow = osparc.support.SupportCenter.openWindow();
-              supportCenterWindow.openConversation(conversationId);
+              if (loadAfterLogin["id"] === "openConversation" && loadAfterLogin["conversationId"]) {
+                const conversationId = loadAfterLogin["conversationId"];
+                const supportCenterWindow = osparc.support.SupportCenter.openWindow();
+                supportCenterWindow.openConversation(conversationId);
+              }
+              if (loadAfterLogin["id"] === "openReviewUsers" && osparc.data.Permissions.getInstance().isProductOwner()) {
+                osparc.po.POCenterWindow.openWindow("reviewUsers");
+              }
             }
 
             const loadViewerPage = () => {

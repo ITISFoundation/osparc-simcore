@@ -18,7 +18,7 @@
 qx.Class.define("osparc.po.POCenterWindow", {
   extend: osparc.ui.window.TabbedWindow,
 
-  construct: function() {
+  construct: function(openPage) {
     this.base(arguments, "po-center", this.tr("PO Center"));
 
     const width = 1000;
@@ -28,13 +28,13 @@ qx.Class.define("osparc.po.POCenterWindow", {
       height
     });
 
-    const poCenter = new osparc.po.POCenter();
+    const poCenter = new osparc.po.POCenter(openPage);
     this._setTabbedView(poCenter);
   },
 
   statics: {
-    openWindow: function() {
-      const accountWindow = new osparc.po.POCenterWindow();
+    openWindow: function(openPage) {
+      const accountWindow = new osparc.po.POCenterWindow(openPage);
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
