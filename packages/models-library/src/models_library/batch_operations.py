@@ -86,7 +86,7 @@ class BatchGetEnvelope(BaseModel, Generic[ResourceT, IdentifierT]):
     ] = DEFAULT_FACTORY
 
     @model_validator(mode="after")
-    def check_found_items_not_empty(self) -> Self:
+    def check_items_not_empty(self) -> Self:
         if len(self.found_items) + len(self.missing_identifiers) == 0:
             raise ValueError(
                 "At least one item must be found or missing in a batch-get operation."
