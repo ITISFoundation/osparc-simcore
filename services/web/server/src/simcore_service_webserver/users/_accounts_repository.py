@@ -1,5 +1,5 @@
 import logging
-from typing import Any, cast
+from typing import Any, Literal, TypeAlias, cast
 
 import sqlalchemy as sa
 from common_library.exclude import Unset, is_unset
@@ -8,6 +8,7 @@ from models_library.products import ProductName
 from models_library.users import (
     UserID,
 )
+from pydantic import validate_call
 from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserStatus, users
@@ -426,6 +427,11 @@ async def search_merged_pre_and_registered_users(
         return result.fetchall()
 
 
+OrderKeys: TypeAlias = Literal["email", "current_status_created"]
+OrderDirs: TypeAlias = Literal["asc", "desc"]
+
+
+@validate_call(config={"arbitrary_types_allowed": True})
 async def list_merged_pre_and_registered_users(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
@@ -435,6 +441,7 @@ async def list_merged_pre_and_registered_users(
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
+    order_by: list[tuple[OrderKeys, OrderDirs]] | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
@@ -452,17 +459,21 @@ async def list_merged_pre_and_registered_users(
         filter_include_deleted: Whether to include deleted users
         pagination_limit: Maximum number of results to return
         pagination_offset: Number of results to skip (for pagination)
+        order_by: List of (field, direction) tuples. Valid fields: "email", "current_status_created"
+            Default: [("email", "asc"), ("is_pre_registered", "desc"), ("current_status_created", "desc")]
 
     Returns:
         Tuple of (list of merged user data, total count)
     """
     # Base where conditions for both queries
-    pre_reg_where = [users_pre_registration_details.c.product_name == product_name]
-    users_where = []
+    pre_reg_query_conditions = [
+        users_pre_registration_details.c.product_name == product_name
+    ]
+    user_conditions = []
 
     # Add account request status filter if specified
     if filter_any_account_request_status:
-        pre_reg_where.append(
+        pre_reg_query_conditions.append(
             users_pre_registration_details.c.account_request_status.in_(
                 filter_any_account_request_status
             )
@@ -470,7 +481,7 @@ async def list_merged_pre_and_registered_users(
 
     # Add filter for deleted users
     if not filter_include_deleted:
-        users_where.append(users.c.status != UserStatus.DELETED)
+        user_conditions.append(users.c.status != UserStatus.DELETED)
 
     # Create subquery for reviewer username
     account_request_reviewed_by_username = (
@@ -479,7 +490,7 @@ async def list_merged_pre_and_registered_users(
 
     # Query for pre-registered users
     # We need to left join with users to identify if the pre-registered user is already in the system
-    pre_reg_query = (
+    pre_registered_users_query = (
         sa.select(
             users_pre_registration_details.c.id,
             users_pre_registration_details.c.pre_email.label("email"),
@@ -495,6 +506,12 @@ async def list_merged_pre_and_registered_users(
             users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
             users_pre_registration_details.c.extras,
             users_pre_registration_details.c.created,
+            # Computed current_status_created column
+            sa.func.coalesce(
+                users.c.created_at,  # If user exists, use users.created_at
+                users_pre_registration_details.c.account_request_reviewed_at,  # Else if reviewed, use review date
+                users_pre_registration_details.c.created,  # Else use pre-registration created date
+            ).label("current_status_created"),
             users_pre_registration_details.c.account_request_status,
             users_pre_registration_details.c.account_request_reviewed_by,
             users_pre_registration_details.c.account_request_reviewed_at,
@@ -512,11 +529,11 @@ async def list_merged_pre_and_registered_users(
                 users, users_pre_registration_details.c.user_id == users.c.id
             )
         )
-        .where(sa.and_(*pre_reg_where))
+        .where(sa.and_(*pre_reg_query_conditions))
     )
 
     # Query for users that are associated with the product through groups
-    users_query = (
+    registered_users_query = (
         sa.select(
             sa.literal(None).label("id"),
             users.c.email,
@@ -532,6 +549,8 @@ async def list_merged_pre_and_registered_users(
             sa.literal(None).label("pre_reg_user_id"),
             sa.literal(None).label("extras"),
             users.c.created_at.label("created"),
+            # For regular users, current_status_created is just their created_at
+            users.c.created_at.label("current_status_created"),
             sa.literal(None).label("account_request_status"),
             sa.literal(None).label("account_request_reviewed_by"),
             sa.literal(None).label("account_request_reviewed_at"),
@@ -549,29 +568,28 @@ async def list_merged_pre_and_registered_users(
             .join(groups, groups.c.gid == user_to_groups.c.gid)
             .join(products, products.c.group_id == groups.c.gid)
         )
-        .where(sa.and_(products.c.name == product_name, *users_where))
+        .where(sa.and_(products.c.name == product_name, *user_conditions))
     )
 
     # If filtering by account request status, we only want pre-registered users with any of those statuses
     # No need to union with regular users as they don't have account_request_status
     merged_query: sa.sql.Select | sa.sql.CompoundSelect
     if filter_any_account_request_status:
-        merged_query = pre_reg_query
+        merged_query = pre_registered_users_query
     else:
-        merged_query = pre_reg_query.union_all(users_query)
+        merged_query = pre_registered_users_query.union_all(registered_users_query)
 
     # Add distinct on email to eliminate duplicates
     merged_query_subq = merged_query.subquery()
+
+    # Build ordering clauses using the extracted function
+    order_by_clauses = _build_ordering_clauses(merged_query_subq, order_by)
+
     distinct_query = (
         sa.select(merged_query_subq)
         .select_from(merged_query_subq)
         .distinct(merged_query_subq.c.email)
-        .order_by(
-            merged_query_subq.c.email,
-            # Prioritize pre-registration records if duplicate emails exist
-            merged_query_subq.c.is_pre_registered.desc(),
-            merged_query_subq.c.created.desc(),
-        )
+        .order_by(*order_by_clauses)
         .limit(pagination_limit)
         .offset(pagination_offset)
     )
@@ -594,3 +612,42 @@ async def list_merged_pre_and_registered_users(
         records = result.mappings().all()
 
     return cast(list[dict[str, Any]], records), total_count
+
+
+def _build_ordering_clauses(
+    merged_query_subq: sa.sql.Subquery,
+    order_by: list[tuple[OrderKeys, OrderDirs]] | None = None,
+) -> list[sa.sql.ColumnElement]:
+    """Build ORDER BY clauses for merged user queries.
+
+    Args:
+        merged_query_subq: The merged query subquery containing all columns
+        order_by: List of (field, direction) tuples for ordering
+
+    Returns:
+        List of SQLAlchemy ordering clauses
+    """
+    _ordering_criteria: list[tuple[str, OrderDirs]] = []
+
+    if order_by is None:
+        # Default ordering
+        _ordering_criteria = [
+            ("email", "asc"),
+            ("is_pre_registered", "desc"),
+            ("current_status_created", "desc"),
+        ]
+    else:
+        _ordering_criteria = list(order_by)
+        # Always append is_pre_registered prioritization for custom ordering
+        if not any(field == "is_pre_registered" for field, _ in order_by):
+            _ordering_criteria.append(("is_pre_registered", "desc"))
+
+    order_by_clauses = []
+    for field, direction in _ordering_criteria:
+        column = merged_query_subq.columns[field]
+        if direction == "asc":
+            order_by_clauses.append(column.asc())
+        else:
+            order_by_clauses.append(column.desc())
+
+    return order_by_clauses
