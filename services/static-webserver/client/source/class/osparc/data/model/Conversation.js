@@ -188,7 +188,8 @@ qx.Class.define("osparc.data.model.Conversation", {
       return promise
         .then(resp => {
           const messagesData = resp["data"];
-          messagesData.forEach(messageData => this._addMessage(messageData));
+          const markAsUnread = false;
+          messagesData.forEach(messageData => this._addMessage(messageData, markAsUnread));
           this.__nextRequestParams = resp["_links"]["next"];
           return resp;
         })
