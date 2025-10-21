@@ -10520,6 +10520,7 @@ components:
       - PROJECT_STATIC
       - PROJECT_ANNOTATION
       - SUPPORT
+      - SUPPORT_CALL
       title: ConversationType
     CountryInfoDict:
       properties:
@@ -13818,6 +13819,12 @@ components:
           - type: 'null'
           description: Group ID of the app support team or None if no support is defined
             for this product
+        chatbot:
+          anyOf:
+          - $ref: '#/components/schemas/GroupGetBase'
+          - type: 'null'
+          description: Group ID of the support chatbot user or None if no chatbot
+            is defined for this product
       type: object
       required:
       - me
@@ -13832,6 +13839,11 @@ components:
           description: Open to all users
           gid: 1
           label: All
+        chatbot:
+          description: The chatbot user of the application
+          gid: '6'
+          label: Chatbot User
+          thumbnail: https://placekitten.com/15/15
         me:
           accessRights:
             delete: true
