@@ -51,12 +51,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._add(filesContainer);
     }
 
-    const noResourcesFound = this.__noResourcesFound = new qx.ui.basic.Label("No resources found").set({
-      visibility: "excluded",
-      font: "text-14"
-    });
-    noResourcesFound.exclude();
-    this._add(noResourcesFound);
+    this.getChildControl("no-resources-found");
 
     const nonGroupedContainer = this.__nonGroupedContainer = this.__createFlatList();
     this._add(nonGroupedContainer);
@@ -165,10 +160,24 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __nonGroupedContainer: null,
     __groupedContainers: null,
     __resourceType: null,
-    __noResourcesFound: null,
     __noResourcesFoundTimer: null,
 
-    __evaluateNoResourcesFoundLabel: function() {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "no-resources-found":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("No Resources found"),
+            visibility: "excluded",
+            font: "text-14",
+          });
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
+    __getNotFoundText: function() {
       let text = null;
       switch (this.__resourceType) {
         case "study": {
@@ -191,9 +200,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
               text = this.tr("No Functions found");
               break;
-            case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
-              // text = this.tr("No Files found");
-              break;
           }
           break;
         }
@@ -203,23 +209,33 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         case "service":
           text = this.tr("No Apps found");
           break;
-        default:
-          text = this.tr("No Resources found");
-          break;
       }
+      return text;
+    },
 
-      this.__noResourcesFound.exclude();
+    __evaluateNoResourcesFoundLabel: function() {
+      const noResourcesFound = this.getChildControl("no-resources-found");
+      noResourcesFound.exclude();
       if (this.__noResourcesFoundTimer) {
         clearTimeout(this.__noResourcesFoundTimer);
       }
-      if (text && this.__resourcesList.length === 0) {
+
+      if (this.__resourcesList.length === 0) {
         // delay it a bit to avoid the initial flickering
         this.__noResourcesFoundTimer = setTimeout(() => {
-          this.__noResourcesFound.set({
-            value: text,
-            visibility: "visible",
-          });
+          this.showNoResourcesFound();
         }, 2000);
+      }
+    },
+
+    showNoResourcesFound: function() {
+      const text = this.__getNotFoundText();
+      if (text) {
+        const noResourcesFound = this.getChildControl("no-resources-found");
+        noResourcesFound.set({
+          value: text,
+        });
+        noResourcesFound.show();
       }
     },
 

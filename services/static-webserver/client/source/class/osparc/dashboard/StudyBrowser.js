@@ -447,14 +447,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       stream.fetchStream()
         .then(streamData => {
           const items = streamData["data"]["items"] || [];
+          const end = streamData["data"]["end"] || false;
+          stream.setEnd(end);
           if (items.length) {
             this.__addFilesToList(items);
           }
-          const end = streamData["data"]["end"] || false;
-          stream.setEnd(end);
-
-          // a bit hacky
+          // keep it not null to allow further fetching
           this._resourcesContainer.getFlatList().nextRequest = !end;
+          // show no files found only if the stream ended and no files were found
+          if (end && this.__filesList.length === 0) {
+            this._resourcesContainer.getChildControl("no-resources-found").set({
+              value: this.tr("No Files found"),
+              visibility: "visible",
+            });
+          }
         })
         .catch(err => {
           osparc.FlashMessenger.logError(err);
