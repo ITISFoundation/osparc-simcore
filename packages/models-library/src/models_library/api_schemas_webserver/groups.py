@@ -3,6 +3,7 @@ from typing import Annotated, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
+from models_library.string_types import DescriptionSafeStr, NameSafeStr
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -27,7 +28,7 @@ from ..groups import (
     StandardGroupCreate,
     StandardGroupUpdate,
 )
-from ..users import UserID, UserNameID
+from ..users import UserID, UserNameID, UserNameSafeID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
 from ._base import InputSchema, OutputSchema, OutputSchemaWithoutCamelCase
 
@@ -155,8 +156,8 @@ class GroupGet(GroupGetBase):
 
 
 class GroupCreate(InputSchema):
-    label: str
-    description: str
+    label: NameSafeStr
+    description: DescriptionSafeStr
     thumbnail: AnyUrl | None = None
 
     def to_domain_model(self) -> StandardGroupCreate:
@@ -173,8 +174,8 @@ class GroupCreate(InputSchema):
 
 
 class GroupUpdate(InputSchema):
-    label: str | None = None
-    description: str | None = None
+    label: NameSafeStr | None = None
+    description: DescriptionSafeStr | None = None
     thumbnail: AnyUrl | None = None
 
     def to_domain_model(self) -> StandardGroupUpdate:
@@ -393,7 +394,7 @@ class GroupUserAdd(InputSchema):
     """
 
     uid: UserID | None = None
-    user_name: Annotated[UserNameID | None, Field(alias="userName")] = None
+    user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     email: Annotated[
         LowerCaseEmailStr | None,
         Field(

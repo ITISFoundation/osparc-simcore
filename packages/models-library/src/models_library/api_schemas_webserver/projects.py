@@ -22,7 +22,6 @@ from pydantic import (
 from pydantic.config import JsonDict
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
-from ..basic_types import LongTruncatedStr, ShortTruncatedStr
 from ..emails import LowerCaseEmailStr
 from ..folders import FolderID
 from ..groups import GroupID
@@ -41,6 +40,7 @@ from ..projects_state import (
     ProjectShareStatus,
     ProjectStateRunningState,
 )
+from ..string_types import LongTruncatedStr, ShortTruncatedStr
 from ..utils._original_fastapi_encoders import jsonable_encoder
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
