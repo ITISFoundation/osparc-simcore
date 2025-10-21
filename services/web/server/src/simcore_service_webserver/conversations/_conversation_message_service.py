@@ -13,6 +13,7 @@ from models_library.conversations import (
     ConversationMessagePatchDB,
     ConversationMessageType,
     ConversationPatchDB,
+    ConversationType,
     ConversationUserType,
 )
 from models_library.products import ProductName
@@ -218,7 +219,7 @@ async def _trigger_chatbot_processing(
         conversation=conversation,
         last_message_id=last_message_id,
     )
-    _logger.debug(
+    _logger.info(
         "Publishing chatbot processing message with conversation id %s and last message id %s.",
         conversation.conversation_id,
         last_message_id,
@@ -329,6 +330,7 @@ async def create_support_message(
 
     if (
         product.support_chatbot_user_id
+        and conversation.type == ConversationType.SUPPORT
         and conversation_user_type == ConversationUserType.REGULAR_USER
     ):
         # If enabled, ask Chatbot to analyze the message history and respond

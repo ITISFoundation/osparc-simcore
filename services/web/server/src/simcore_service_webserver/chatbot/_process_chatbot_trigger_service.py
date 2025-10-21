@@ -50,6 +50,16 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         limit=20,
         order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),
     )
+
+    if messages and messages[0].user_group_id != rabbit_message.last_message_id:
+        _logger.info(
+            "The last message id %s in the chatbot trigger message does not match the most recent message id %s in the conversation %s. Skipping processing.",
+            rabbit_message.last_message_id,
+            messages[0].message_id,
+            rabbit_message.conversation.conversation_id,
+        )
+        return True  # return true to avoid re-processing
+
     _question_for_chatbot = ""
     for inx, msg in enumerate(messages):
         if inx == 0:
@@ -77,7 +87,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
             type_=ConversationMessageType.MESSAGE,
         )
     except ConversationErrorNotFoundError:
-        _logger.debug(
+        _logger.warning(
             "Can not create a support message as conversation %s was not found",
             rabbit_message.conversation.conversation_id,
         )
