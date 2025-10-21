@@ -8240,7 +8240,6 @@
                     }
                   ]
                 },
-                "minItems": 1,
                 "maxItems": 50,
                 "title": "Function Inputs List"
               }

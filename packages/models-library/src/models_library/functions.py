@@ -25,7 +25,6 @@ FunctionJobID: TypeAlias = UUID
 FileID: TypeAlias = UUID
 
 InputTypes: TypeAlias = FileID | float | int | bool | str | list
-_MIN_LIST_LENGTH: Final[int] = 1
 _MAX_LIST_LENGTH: Final[int] = 50
 
 
@@ -84,7 +83,7 @@ FunctionInputs: TypeAlias = dict[str, Any] | None
 
 FunctionInputsList: TypeAlias = Annotated[
     list[FunctionInputs],
-    Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH),
+    Field(max_length=_MAX_LIST_LENGTH),
 ]
 
 
@@ -244,7 +243,7 @@ FunctionJob: TypeAlias = Annotated[
     Field(discriminator="function_class"),
 ]
 FunctionJobList: TypeAlias = Annotated[
-    list[FunctionJob], Field(max_length=_MAX_LIST_LENGTH, min_length=_MIN_LIST_LENGTH)
+    list[FunctionJob], Field(max_length=_MAX_LIST_LENGTH)
 ]
 
 
@@ -304,7 +303,6 @@ FunctionJobPatchRequestList: TypeAlias = Annotated[
     list[FunctionJobPatchRequest],
     Field(
         max_length=_MAX_LIST_LENGTH,
-        min_length=_MIN_LIST_LENGTH,
         description="List of function job patch requests",
     ),
 ]
