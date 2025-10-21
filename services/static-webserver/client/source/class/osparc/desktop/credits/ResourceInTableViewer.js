@@ -66,7 +66,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
           this._add(control);
           break;
         case "date-filters":
-          control = new osparc.desktop.credits.DateFilters();
+          control = new osparc.filter.DateFilters();
           control.addListener("change", e => {
             const table = this.getChildControl("table");
             table.getTableModel().setFilters(e.getData());
