@@ -27,7 +27,7 @@ _DEFAULT_DASK_RESOURCES: Final[DaskTaskResources] = DaskTaskResources(
 def resources_from_dask_task(task: DaskTask) -> Resources:
     task_resources = (
         _DEFAULT_DASK_RESOURCES | task.required_resources
-    )  # merge with defaults to ensure there is always some minimal resource defined
+    )  # merge defaults with task resources (task resources override defaults)
 
     return Resources.from_flat_dict(
         cast(dict[str, GenericResourceValueType], task_resources),
