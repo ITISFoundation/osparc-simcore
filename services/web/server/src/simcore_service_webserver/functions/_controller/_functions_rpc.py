@@ -3,7 +3,6 @@ from typing import Literal
 from aiohttp import web
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
-    BatchGetCachedRegisteredFunctionJobs,
     BatchUpdateRegisteredFunctionJobs,
     Function,
     FunctionAccessRights,
@@ -491,22 +490,16 @@ async def find_cached_function_jobs(
     function_id: FunctionID,
     inputs: FunctionInputsList,
     status_filter: list[FunctionJobStatus] | None,
-) -> BatchGetCachedRegisteredFunctionJobs:
-    retrieved_cached_function_jobs = (
-        await _functions_service.batch_find_cached_function_jobs(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            function_id=function_id,
-            inputs=inputs,
-            status_filter=status_filter,
-        )
+) -> list[RegisteredFunctionJob | None]:
+    retrieved_cached_function_jobs = await _functions_service.find_cached_function_jobs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_id=function_id,
+        inputs=inputs,
+        status_filter=status_filter,
     )
-    assert len(retrieved_cached_function_jobs.found_items) + len(
-        retrieved_cached_function_jobs.missing_identifiers
-    ) == len(
-        inputs
-    )  # nosec
+    assert len(retrieved_cached_function_jobs) == len(inputs)  # nosec
     return retrieved_cached_function_jobs
 
 

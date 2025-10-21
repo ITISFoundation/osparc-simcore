@@ -4,7 +4,6 @@ from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.functions import (
     BatchCreateRegisteredFunctionJobs,
-    BatchGetCachedRegisteredFunctionJobs,
     BatchUpdateRegisteredFunctionJobs,
     Function,
     FunctionClass,
@@ -449,7 +448,7 @@ async def update_function(
     return _decode_function(updated_function)
 
 
-async def batch_find_cached_function_jobs(
+async def find_cached_function_jobs(
     app: web.Application,
     *,
     user_id: UserID,
@@ -457,26 +456,22 @@ async def batch_find_cached_function_jobs(
     function_id: FunctionID,
     inputs: FunctionInputsList,
     status_filter: list[FunctionJobStatus] | None = None,
-) -> BatchGetCachedRegisteredFunctionJobs:
-    returned_function_jobs = (
-        await _function_jobs_repository.batch_find_cached_function_jobs(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            function_id=function_id,
-            inputs=inputs,
-            status_filter=status_filter,
-        )
+) -> list[RegisteredFunctionJob | None]:
+    returned_function_jobs = await _function_jobs_repository.find_cached_function_jobs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_id=function_id,
+        inputs=inputs,
+        status_filter=status_filter,
     )
-    assert len(returned_function_jobs.found_items) + len(
-        returned_function_jobs.missing_identifiers
-    ) == len(
-        inputs
-    )  # nosec
+    assert len(returned_function_jobs) == len(inputs)  # nosec
 
     def _map_db_model_to_domain_model(
-        job: RegisteredFunctionJobDB,
-    ) -> RegisteredFunctionJob:
+        job: RegisteredFunctionJobDB | None,
+    ) -> RegisteredFunctionJob | None:
+        if job is None:
+            return None
         if job.function_class == FunctionClass.PROJECT:
             return RegisteredProjectFunctionJob(
                 uid=job.uuid,
@@ -507,13 +502,7 @@ async def batch_find_cached_function_jobs(
             )
         raise UnsupportedFunctionJobClassError(function_job_class=job.function_class)
 
-    return BatchGetCachedRegisteredFunctionJobs(
-        found_items=[
-            _map_db_model_to_domain_model(job)
-            for job in returned_function_jobs.found_items
-        ],
-        missing_identifiers=returned_function_jobs.missing_identifiers,
-    )
+    return [_map_db_model_to_domain_model(job) for job in returned_function_jobs]
 
 
 async def get_function_input_schema(

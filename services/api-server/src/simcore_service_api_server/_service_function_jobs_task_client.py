@@ -51,7 +51,7 @@ from .models.api_resources import JobLinks
 from .models.domain.celery_models import ApiServerOwnerMetadata
 from .models.domain.functions import FunctionJobPatch
 from .models.schemas.functions import FunctionJobCreationTaskStatus
-from .models.schemas.jobs import JobPricingSpecification
+from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
 from .services_rpc.storage import StorageService
 from .services_rpc.wb_api_server import WbApiRpcClient
@@ -317,23 +317,16 @@ class FunctionJobTaskClientService:
         parent_node_id: NodeID | None = None,
     ) -> list[RegisteredFunctionJob]:
         inputs = [
-            self._function_job_service.create_function_job_inputs(
-                function=function, function_inputs=input_
-            )
-            for input_ in function_inputs
+            join_inputs(function.default_inputs, input_) for input_ in function_inputs
         ]
 
         cached_jobs = await self._web_rpc_client.find_cached_function_jobs(
             user_id=user_identity.user_id,
             product_name=user_identity.product_name,
             function_id=function.uid,
-            inputs=TypeAdapter(FunctionInputsList).validate_python(
-                [input_.values for input_ in inputs]
-            ),
+            inputs=TypeAdapter(FunctionInputsList).validate_python(inputs),
             status_filter=[FunctionJobStatus(status=RunningState.SUCCESS)],
         )
-
-        assert len(cached_jobs) == len(inputs)  # nosec
 
         uncached_inputs = [
             input_ for input_, job in zip(inputs, cached_jobs) if job is None
@@ -342,7 +335,7 @@ class FunctionJobTaskClientService:
         pre_registered_function_job_data_list = (
             await self._function_job_service.batch_pre_register_function_jobs(
                 function=function,
-                job_inputs=uncached_inputs,
+                job_inputs=[JobInputs(values=_ or {}) for _ in uncached_inputs],
             )
         )
 
