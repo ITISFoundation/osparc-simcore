@@ -9,14 +9,10 @@ from collections.abc import Iterator
 import httpx
 import pytest
 import respx
-from aiohttp.test_utils import TestClient
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_webserver.chatbot._client import (
-    ChatResponse,
-    get_chatbot_rest_client,
-)
-from simcore_service_webserver.chatbot.settings import ChatbotSettings
+from simcore_service_webserver.products import products_service
 
 
 @pytest.fixture
@@ -53,20 +49,10 @@ def mocked_chatbot_api() -> Iterator[respx.MockRouter]:
         yield mock
 
 
-async def test_chatbot_client(
-    app_environment: EnvVarsDict,
-    client: TestClient,
-    mocked_chatbot_api: respx.MockRouter,
-):
-    assert client.app
-
-    settings = ChatbotSettings.create_from_envs()
-    assert settings.CHATBOT_HOST
-    assert settings.CHATBOT_PORT
-
-    chatbot_client = get_chatbot_rest_client(client.app)
-    assert chatbot_client
-
-    output = await chatbot_client.ask_question("What is the meaning of life?")
-    assert isinstance(output, ChatResponse)
-    assert output.answer == "42"
+@pytest.fixture
+def mocked_get_current_product(mocker: MockerFixture) -> MockType:
+    mock = mocker.patch.object(products_service, "get_product")
+    mocked_product = mocker.Mock()
+    mocked_product.support_chatbot_user_id = 123
+    mock.return_value = mocked_product
+    return mock
