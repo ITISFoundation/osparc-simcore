@@ -322,7 +322,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Files"));
           sharedWithButton.exclude();
           tagsButton.exclude();
-          dateFilters.show();
+          dateFilters.exclude();
           break;
       }
     },
