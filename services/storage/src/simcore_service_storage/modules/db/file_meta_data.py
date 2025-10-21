@@ -35,16 +35,15 @@ TotalChildren: TypeAlias = int
 
 
 class _PathsCursorParameters(BaseModel):
+    # NOTE: this is a cursor do not put things that can grow unbounded as this goes then through REST APIs or such
     offset: int
     file_prefix: Path | None
-    project_ids: list[ProjectID] | None
     partial: bool
 
 
 def _init_pagination(
     cursor: GenericCursor | None,
     *,
-    filter_by_project_ids: list[ProjectID] | None,
     filter_by_file_prefix: Path | None,
     is_partial_prefix: bool,
 ) -> _PathsCursorParameters:
@@ -53,7 +52,6 @@ def _init_pagination(
     return _PathsCursorParameters(
         offset=0,
         file_prefix=filter_by_file_prefix,
-        project_ids=filter_by_project_ids,
         partial=is_partial_prefix,
     )
 
@@ -245,7 +243,6 @@ class FileMetaDataRepository(BaseRepository):
 
         cursor_params = _init_pagination(
             cursor,
-            filter_by_project_ids=filter_by_project_ids,
             filter_by_file_prefix=filter_by_file_prefix,
             is_partial_prefix=is_partial_prefix,
         )
@@ -278,9 +275,9 @@ class FileMetaDataRepository(BaseRepository):
                         file_meta_data.c.file_id.like(search_prefix),
                         (
                             file_meta_data.c.project_id.in_(
-                                [f"{_}" for _ in cursor_params.project_ids]
+                                [f"{_}" for _ in filter_by_project_ids]
                             )
-                            if cursor_params.project_ids
+                            if filter_by_project_ids
                             else True
                         ),
                     )
@@ -303,9 +300,9 @@ class FileMetaDataRepository(BaseRepository):
                 )
                 .where(
                     file_meta_data.c.project_id.in_(
-                        [f"{_}" for _ in cursor_params.project_ids]
+                        [f"{_}" for _ in filter_by_project_ids]
                     )
-                    if cursor_params.project_ids
+                    if filter_by_project_ids
                     else True
                 )
                 .cte("ranked_files")
