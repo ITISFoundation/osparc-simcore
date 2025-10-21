@@ -23,10 +23,10 @@ Please preserve the following behaviors when implementing batch operations:
     - https://google.aip.dev/231
 """
 
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, Generic, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
-from pydantic import BaseModel, BeforeValidator, Field, TypeAdapter
+from pydantic import BaseModel, BeforeValidator, Field, TypeAdapter, model_validator
 
 ResourceT = TypeVar("ResourceT")
 IdentifierT = TypeVar("IdentifierT")
@@ -74,7 +74,6 @@ class BatchGetEnvelope(BaseModel, Generic[ResourceT, IdentifierT]):
     found_items: Annotated[
         list[ResourceT],
         Field(
-            min_length=1,
             description="List of successfully retrieved items. Must contain at least one item.",
         ),
     ]
@@ -85,6 +84,14 @@ class BatchGetEnvelope(BaseModel, Generic[ResourceT, IdentifierT]):
             description="List of identifiers for items that were not found",
         ),
     ] = DEFAULT_FACTORY
+
+    @model_validator(mode="after")
+    def check_found_items_not_empty(self) -> Self:
+        if len(self.found_items) + len(self.missing_identifiers) == 0:
+            raise ValueError(
+                "At least one item must be found or missing in a batch-get operation."
+            )
+        return self
 
 
 class BatchCreateEnvelope(BaseModel, Generic[SchemaT]):
