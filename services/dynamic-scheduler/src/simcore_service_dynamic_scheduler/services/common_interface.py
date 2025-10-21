@@ -112,6 +112,7 @@ async def stop_dynamic_service(
                     app
                 ).tasks_collection,
             )
+            return
 
     await director_v2_client.stop_dynamic_service(
         node_id=dynamic_service_stop.node_id,
