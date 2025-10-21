@@ -105,18 +105,13 @@ async def stop_dynamic_service(
         if progress:
             await stack.enter_async_context(progress)
 
-        settings: DynamicSchedulerSettings = get_plugin_settings(app)
         rpc_client = get_rabbitmq_rpc_client(app)
         await services.stop_dynamic_service(
-            rpc_client,
-            dynamic_service_stop=dynamic_service_stop,
-            timeout_s=int(
-                # NOTE: legacy services still can require a lot of time to stop
-                settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()
-            ),
+            rpc_client, dynamic_service_stop=dynamic_service_stop
         )
 
-        # wait for the service to be stopped
+        # wait for the service to be stopped, until it becomes idle
+        settings: DynamicSchedulerSettings = get_plugin_settings(app)
         async for attempt in AsyncRetrying(
             wait=wait_fixed(1.0),
             stop=stop_after_delay(

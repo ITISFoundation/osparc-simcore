@@ -17,6 +17,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from servicelib.utils import fire_and_forget_task
 
 from ..core.settings import ApplicationSettings
 from .catalog._public_client import CatalogPublicClient
@@ -83,12 +84,10 @@ async def stop_dynamic_service(
     if settings.DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER:
         raise NotImplementedError
 
-    # by default assume worst case scenarios:
-    # - service is legacy (which can take a long time to stop)
-    # - did not find tracked service (assume legacy)
-    stop_timeout: timedelta = settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT
+    director_v2_client = DirectorV2Client.get_from_app_state(app)
 
     tracked_service = await get_tracked_service(app, dynamic_service_stop.node_id)
+
     if tracked_service and tracked_service.dynamic_service_start:
         service_labels = await CatalogPublicClient.get_from_app_state(
             app
@@ -96,15 +95,26 @@ async def stop_dynamic_service(
             tracked_service.dynamic_service_start.key,
             tracked_service.dynamic_service_start.version,
         )
-        if service_labels.needs_dynamic_sidecar:
-            stop_timeout = _NEW_STYLE_SERVICES_STOP_TIMEOUT
+        if not service_labels.needs_dynamic_sidecar:
+            # LEGACY services
+            fire_and_forget_task(
+                director_v2_client.stop_dynamic_service(
+                    node_id=dynamic_service_stop.node_id,
+                    simcore_user_agent=dynamic_service_stop.simcore_user_agent,
+                    save_state=dynamic_service_stop.save_state,
+                    timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
+                ),
+                task_suffix_name=(
+                    f"stop_dynamic_service_node_{dynamic_service_stop.node_id}"
+                ),
+                fire_and_forget_tasks_collection=set(),
+            )
 
-    director_v2_client = DirectorV2Client.get_from_app_state(app)
     await director_v2_client.stop_dynamic_service(
         node_id=dynamic_service_stop.node_id,
         simcore_user_agent=dynamic_service_stop.simcore_user_agent,
         save_state=dynamic_service_stop.save_state,
-        timeout=stop_timeout,
+        timeout=_NEW_STYLE_SERVICES_STOP_TIMEOUT,
     )
 
 
