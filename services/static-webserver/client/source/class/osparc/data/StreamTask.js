@@ -50,7 +50,6 @@ qx.Class.define("osparc.data.StreamTask", {
     pageSize: {
       check: "Number",
       nullable: false,
-      // init: 20,
       init: 5,
     },
   },

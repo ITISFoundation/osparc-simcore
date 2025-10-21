@@ -186,7 +186,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case "date-filters":
           control = new osparc.desktop.credits.DateFilters();
           control.addListener("change", e => {
-            console.log(e.getData());
+            const dateRange = e.getData();
+            this.__filter("modifiedAt", dateRange);
           });
           this.getChildControl("filters-layout").add(control);
           break;

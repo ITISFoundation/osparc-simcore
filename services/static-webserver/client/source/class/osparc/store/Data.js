@@ -261,8 +261,7 @@ qx.Class.define("osparc.store.Data", {
           }
         }
       };
-      if (modifiedAtFrom && modifiedAtFrom) {
-        // OM todo
+      if (modifiedAtFrom && modifiedAtTo) {
         params.data["filters"]["modifiedAtFrom"] = modifiedAtFrom;
         params.data["filters"]["modifiedAtTo"] = modifiedAtTo;
       }
