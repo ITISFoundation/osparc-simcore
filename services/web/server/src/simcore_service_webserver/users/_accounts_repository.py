@@ -1,10 +1,12 @@
 import logging
-from typing import Annotated, Any, Literal, TypeAlias, cast
+from datetime import datetime
+from typing import Annotated, Any, Literal, TypeAlias, TypedDict, cast
 
 import sqlalchemy as sa
 from annotated_types import doc
 from common_library.exclude import Unset, is_unset
 from common_library.users_enums import AccountRequestStatus
+from models_library.list_operations import OrderDirection
 from models_library.products import ProductName
 from models_library.users import (
     UserID,
@@ -433,7 +435,43 @@ async def search_merged_pre_and_registered_users(
 
 
 OrderKeys: TypeAlias = Literal["email", "current_status_created"]
-OrderDirs: TypeAlias = Literal["asc", "desc"]
+
+
+class MergedUserData(TypedDict, total=False):
+    """Type definition for merged user data returned by list_merged_pre_and_registered_users."""
+
+    # Pre-registration specific fields
+    id: int | None  # pre-registration ID
+    pre_reg_user_id: int | None  # user_id from pre-registration table
+    institution: str | None
+    address: str | None
+    city: str | None
+    state: str | None
+    postal_code: str | None
+    country: str | None
+    extras: dict[str, Any] | None
+    account_request_status: AccountRequestStatus | None
+    account_request_reviewed_by: int | None
+    account_request_reviewed_at: datetime | None
+    created_by: int | None
+    account_request_reviewed_by_username: str | None
+
+    # Common fields (from either pre-registration or users table)
+    email: str
+    first_name: str | None
+    last_name: str | None
+    phone: str | None
+    created: datetime | None
+    current_status_created: datetime
+
+    # User table specific fields
+    user_id: int | None  # actual user ID from users table
+    user_name: str | None
+    user_primary_group_id: int | None
+    status: str | None  # UserStatus
+
+    # Computed fields
+    is_pre_registered: bool
 
 
 @validate_call(config={"arbitrary_types_allowed": True})
@@ -452,12 +490,13 @@ async def list_merged_pre_and_registered_users(
     pagination_limit: int = 50,
     pagination_offset: int = 0,
     order_by: Annotated[
-        list[tuple[OrderKeys, OrderDirs]] | None,
+        list[tuple[OrderKeys, OrderDirection]] | None,
         doc(
-            'Valid fields: "email", "current_status_created". Default: [("email", "asc"), ("is_pre_registered", "desc"), ("current_status_created", "desc")]'
+            'Valid fields: "email", "current_status_created". '
+            'Default: [("email", OrderDirection.ASC), ("is_pre_registered", OrderDirection.DESC), ("current_status_created", OrderDirection.DESC)]'
         ),
     ] = None,
-) -> tuple[list[dict[str, Any]], int]:
+) -> tuple[list[MergedUserData], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
     This returns:
@@ -633,34 +672,34 @@ async def list_merged_pre_and_registered_users(
         result = await conn.execute(final_query)
         records = result.mappings().all()
 
-    return cast(list[dict[str, Any]], records), total_count
+    return cast(list[MergedUserData], records), total_count
 
 
 def _build_ordering_clauses_for_filtered_query(
     query: sa.sql.Select,
-    order_by: list[tuple[OrderKeys, OrderDirs]] | None = None,
+    order_by: list[tuple[OrderKeys, OrderDirection]] | None = None,
 ) -> list[sa.sql.ColumnElement]:
     """Build ORDER BY clauses for filtered query (no DISTINCT ON constraints)."""
-    _ordering_criteria: list[tuple[str, OrderDirs]] = []
+    _ordering_criteria: list[tuple[str, OrderDirection]] = []
 
     if order_by is None:
         # Default ordering
         _ordering_criteria = [
-            ("email", "asc"),
-            ("is_pre_registered", "desc"),
-            ("current_status_created", "desc"),
+            ("email", OrderDirection.ASC),
+            ("is_pre_registered", OrderDirection.DESC),
+            ("current_status_created", OrderDirection.DESC),
         ]
     else:
         _ordering_criteria = list(order_by)
         # Always append is_pre_registered prioritization for custom ordering
         if not any(field == "is_pre_registered" for field, _ in order_by):
-            _ordering_criteria.append(("is_pre_registered", "desc"))
+            _ordering_criteria.append(("is_pre_registered", OrderDirection.DESC))
 
     order_by_clauses = []
     for field, direction in _ordering_criteria:
         # Get column from the query's selected columns
         column = next(col for col in query.selected_columns if col.name == field)
-        if direction == "asc":
+        if direction == OrderDirection.ASC:
             order_by_clauses.append(column.asc())
         else:
             order_by_clauses.append(column.desc())
