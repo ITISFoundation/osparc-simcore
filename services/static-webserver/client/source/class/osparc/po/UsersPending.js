@@ -128,7 +128,6 @@ qx.Class.define("osparc.po.UsersPending", {
           break;
         case "pending-users-layout": {
           const grid = new qx.ui.layout.Grid(15, 5);
-          grid.setColumnMaxWidth(2, 100); // date
           control = new qx.ui.container.Composite(grid);
           this.getChildControl("pending-users-container").add(control);
           break;

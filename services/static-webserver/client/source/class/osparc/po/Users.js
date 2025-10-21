@@ -70,6 +70,8 @@ qx.Class.define("osparc.po.Users", {
       searchBtn.set({
         appearance: "form-button"
       });
+      const commandEsc = new qx.ui.command.Command("Enter");
+      searchBtn.setCommand(commandEsc);
       searchBtn.addListener("execute", () => {
         if (!osparc.data.Permissions.getInstance().canDo("user.users.search", true)) {
           return;
