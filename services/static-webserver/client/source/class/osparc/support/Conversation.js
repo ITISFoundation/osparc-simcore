@@ -112,7 +112,10 @@ qx.Class.define("osparc.support.Conversation", {
                   return this.__postMessage(content);
                 })
                 .then(() => {
-                  setTimeout(() => this.addSystemMessage("followUp"), 1000);
+                  if (osparc.store.Groups.getInstance().getChatbot() === null) {
+                    // only add follow up message if there is no chatbot support
+                    setTimeout(() => this.addSystemMessage(this.self().SYSTEM_MESSAGE_TYPE.FOLLOW_UP), 1000);
+                  }
                 });
             });
         }
