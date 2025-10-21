@@ -79,7 +79,7 @@ qx.Class.define("osparc.po.UsersPending", {
       const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
       infoButton.addListener("execute", () => {
         const container = new qx.ui.container.Scroll();
-        container.add(new osparc.ui.basic.JsonTreeWidget(infoMetadata, "pendingUserInfo"));
+        container.add(new osparc.ui.basic.JsonTreeWidget(infoMetadata, "userInfo"));
         osparc.ui.window.Window.popUpInWindow(container, qx.locale.Manager.tr("User Info"));
       });
       return infoButton;
