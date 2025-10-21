@@ -1002,17 +1002,32 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         try:
             name_pattern_lower = name_pattern.lower()
-            async for s3_objects in s3_client.list_objects_paginated(
+            async for s3_entries in s3_client.list_entries_paginated(
                 bucket=self.simcore_bucket_name,
                 prefix=f"{proj_id}/",
                 items_per_page=500,  # fetch larger batches for efficiency
             ):
-                for s3_obj in s3_objects:
-                    filename = Path(s3_obj.object_key).name
+                _logger.info(
+                    "Searching S3 files in project %s with pattern '%s' in batch of %d items: %s",
+                    proj_id,
+                    name_pattern,
+                    len(s3_entries),
+                    s3_entries,
+                )
+                for s3_entry in s3_entries:
+                    is_directory = isinstance(s3_entry, S3DirectoryMetaData)
+                    if is_directory:
+                        filename = Path(s3_entry.prefix).name
+                    else:
+                        filename = Path(s3_entry.object_key).name
 
                     if not (
                         fnmatch.fnmatch(filename.lower(), name_pattern_lower)
-                        and len(s3_obj.object_key.split("/"))
+                        and (
+                            len(s3_entry.object_key.split("/"))
+                            if not is_directory
+                            else len(f"{s3_entry.prefix}".split("/"))
+                        )
                         >= min_parts_for_valid_s3_object
                     ):
                         continue
@@ -1023,30 +1038,31 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     )
                     if (
                         last_modified_from
-                        and s3_obj.last_modified
-                        and s3_obj.last_modified < last_modified_from
+                        and s3_entry.last_modified
+                        and s3_entry.last_modified < last_modified_from
                     ):
                         continue
 
                     if (
                         last_modified_until
-                        and s3_obj.last_modified
-                        and s3_obj.last_modified > last_modified_until
+                        and s3_entry.last_modified
+                        and s3_entry.last_modified > last_modified_until
                     ):
                         continue
 
                     file_meta = FileMetaData.from_simcore_node(
                         user_id=user_id,
                         file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                            s3_obj.object_key
+                            s3_entry.object_key
                         ),
                         bucket=self.simcore_bucket_name,
                         location_id=self.get_location_id(),
                         location_name=self.get_location_name(),
                         sha256_checksum=None,
-                        file_size=s3_obj.size,
-                        last_modified=s3_obj.last_modified,
-                        entity_tag=s3_obj.e_tag,
+                        file_size=s3_entry.size,
+                        last_modified=s3_entry.last_modified,
+                        entity_tag=s3_entry.e_tag,
+                        is_directory=is_directory,
                     )
                     yield file_meta
 

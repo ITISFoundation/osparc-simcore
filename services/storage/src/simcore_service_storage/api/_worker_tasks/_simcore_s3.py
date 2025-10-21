@@ -178,6 +178,13 @@ async def search(
                 for item in items
             ]
 
+            _logger.info(
+                "'%s' pushing %d search results items: %s",
+                task_key,
+                len(data),
+                data,
+            )
+
             await app_server.task_manager.push_task_stream_items(
                 task_key,
                 *data,
