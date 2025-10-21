@@ -192,7 +192,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
               text = this.tr("No Functions found");
               break;
             case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
-              text = this.tr("No Files found");
+              // text = this.tr("No Files found");
               break;
           }
           break;
