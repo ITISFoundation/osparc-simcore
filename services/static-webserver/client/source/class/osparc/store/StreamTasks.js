@@ -37,7 +37,6 @@ qx.Class.define("osparc.store.StreamTasks", {
     createStreamTask: function(action, params, streamPromise, interval) {
       return streamPromise
         .then(streamData => {
-          console.log("Stream data received:", streamData);
           if (!("stream_href" in streamData)) {
             throw new Error("Stream href missing");
           }
