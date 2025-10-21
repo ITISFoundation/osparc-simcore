@@ -33,7 +33,6 @@ from tenacity import (
     AsyncRetrying,
     RetryCallState,
     TryAgain,
-    before_sleep_log,
     stop_after_delay,
     wait_fixed,
 )
@@ -80,6 +79,22 @@ async def run_dynamic_service(
     )
 
 
+def _wait_for_idle_retry_error(node_id: NodeID, retry_state: RetryCallState):
+    _logger.info(
+        "Service '%s' is still being tracked after %s",
+        node_id,
+        json_dumps(retry_state.retry_object.statistics),
+    )
+
+
+def _wait_for_idle_before_sleep(node_id: NodeID, retry_state: RetryCallState):
+    _logger.debug(
+        "Waiting for service %s to become idle: %s",
+        node_id,
+        json_dumps(retry_state.retry_object.statistics),
+    )
+
+
 async def stop_dynamic_service(
     app: web.Application,
     *,
@@ -96,18 +111,10 @@ async def stop_dynamic_service(
             rpc_client,
             dynamic_service_stop=dynamic_service_stop,
             timeout_s=int(
-                # NOTE: legacy services still can require a lot of time to store
-                # thier state
+                # NOTE: legacy services still can require a lot of time to stop
                 settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()
             ),
         )
-
-        def _log_error(retry_state: RetryCallState):
-            _logger.error(
-                "Service %s is still being tracked after %s",
-                f"{dynamic_service_stop.node_id=}",
-                f"{json_dumps(retry_state.retry_object.statistics)}",
-            )
 
         # wait for the service to be stopped
         async for attempt in AsyncRetrying(
@@ -115,9 +122,13 @@ async def stop_dynamic_service(
             stop=stop_after_delay(
                 settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()
             ),
-            before_sleep=before_sleep_log(logger=_logger, log_level=logging.INFO),
+            before_sleep=partial(
+                _wait_for_idle_before_sleep, dynamic_service_stop.node_id
+            ),
             reraise=False,
-            retry_error_callback=_log_error,
+            retry_error_callback=partial(
+                _wait_for_idle_retry_error, dynamic_service_stop.node_id
+            ),
         ):
             with attempt:
                 service_status = await services.get_service_status(
