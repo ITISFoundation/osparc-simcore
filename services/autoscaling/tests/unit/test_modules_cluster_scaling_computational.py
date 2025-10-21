@@ -22,7 +22,9 @@ import distributed
 import pytest
 from aws_library.ec2 import Resources
 from dask_task_models_library.resource_constraints import (
+    DASK_WORKER_THREAD_RESOURCE_NAME,
     create_ec2_resource_constraint_key,
+    estimate_dask_worker_resources_from_ec2_instance,
 )
 from faker import Faker
 from fastapi import FastAPI
@@ -259,16 +261,25 @@ async def _create_task_with_resources(
         instance_types = await ec2_client.describe_instance_types(
             InstanceTypes=[dask_task_imposed_ec2_type]
         )
+
         assert instance_types
         assert "InstanceTypes" in instance_types
         assert instance_types["InstanceTypes"]
         assert "MemoryInfo" in instance_types["InstanceTypes"][0]
         assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
+        ec2_ram = TypeAdapter(ByteSize).validate_python(
+            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+        )
+        assert "VCpuInfo" in instance_types["InstanceTypes"][0]
+        assert "DefaultVCpus" in instance_types["InstanceTypes"][0]["VCpuInfo"]
+        ec2_cpus = instance_types["InstanceTypes"][0]["VCpuInfo"]["DefaultVCpus"]
+        required_cpus, required_ram = estimate_dask_worker_resources_from_ec2_instance(
+            ec2_cpus, ec2_ram
+        )
         task_resources = Resources(
-            cpus=1,
-            ram=TypeAdapter(ByteSize).validate_python(
-                f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
-            ),
+            cpus=required_cpus,
+            ram=ByteSize(required_ram),
+            generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
         )
 
     assert task_resources
@@ -443,7 +454,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
             _ScaleUpParams(
                 imposed_instance_type=None,
                 task_resources=Resources(
-                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("115Gib")
                 ),
                 num_tasks=1,
                 expected_instance_type="r5n.4xlarge",
@@ -465,7 +476,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
             _ScaleUpParams(
                 imposed_instance_type="r5n.8xlarge",
                 task_resources=Resources(
-                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("116Gib")
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("115Gib")
                 ),
                 num_tasks=1,
                 expected_instance_type="r5n.8xlarge",
@@ -1281,7 +1292,7 @@ async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_star
             _ScaleUpParams(
                 imposed_instance_type=None,
                 task_resources=Resources(
-                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("115Gib")
                 ),
                 num_tasks=1,
                 expected_instance_type="r5n.4xlarge",
@@ -1456,7 +1467,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
                 task_resources=Resources(
-                    cpus=8, ram=TypeAdapter(ByteSize).validate_python("15Gib")
+                    cpus=7.9, ram=TypeAdapter(ByteSize).validate_python("15Gib")
                 ),
                 num_tasks=12,
                 expected_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
@@ -1465,7 +1476,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
                 task_resources=Resources(
-                    cpus=32, ram=TypeAdapter(ByteSize).validate_python("20480MB")
+                    cpus=31.9, ram=TypeAdapter(ByteSize).validate_python("20480MB")
                 ),
                 num_tasks=7,
                 expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
