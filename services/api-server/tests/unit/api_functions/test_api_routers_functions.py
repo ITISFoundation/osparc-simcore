@@ -20,6 +20,7 @@ from httpx import AsyncClient
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.functions import (
     FunctionJobList,
+    FunctionJobPatchRequest,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     ProjectFunction,
@@ -27,8 +28,8 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
-    RegisteredProjectFunctionJobPatchInputList,
-    RegisteredSolverFunctionJobPatchInputList,
+    RegisteredProjectFunctionJobPatch,
+    RegisteredSolverFunctionJobPatch,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
@@ -496,27 +497,26 @@ async def test_run_project_function(
         ),
     )
 
-    async def _patch_registered_function_job_side_effect(
+    async def _patch_registered_function_job(
         product_name: ProductName,
         user_id: UserID,
-        registered_function_job_patch_inputs: (
-            RegisteredProjectFunctionJobPatchInputList
-            | RegisteredSolverFunctionJobPatchInputList
-        ),
+        function_job_patch_request: FunctionJobPatchRequest,
     ):
-        return [
-            fake_registered_project_function_job.model_copy(
-                update={
-                    "job_creation_task_id": patch.patch.job_creation_task_id,
-                    "uid": patch.uid,
-                }
-            )
-            for patch in registered_function_job_patch_inputs
-        ]
+        patch = function_job_patch_request.patch
+        assert isinstance(patch, RegisteredProjectFunctionJobPatch) or isinstance(
+            patch, RegisteredSolverFunctionJobPatch
+        )
+        job = fake_registered_project_function_job.model_copy(
+            update={
+                "job_creation_task_id": patch.job_creation_task_id,
+                "uid": function_job_patch_request.uid,
+            }
+        )
+        return job
 
     mock_handler_in_functions_rpc_interface(
         "patch_registered_function_job",
-        side_effect=_patch_registered_function_job_side_effect,
+        side_effect=_patch_registered_function_job,
     )
 
     pre_registered_function_job_data = PreRegisteredFunctionJobData(

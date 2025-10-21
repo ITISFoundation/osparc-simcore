@@ -378,7 +378,7 @@ class FunctionsRpcApi(BaseRpcApi):
         """Patch a registered function job."""
         return BatchUpdateRegisteredFunctionJobs.model_validate(
             await self._request(
-                "patch_registered_function_job",
+                "batch_patch_registered_function_jobs",
                 product_name=product_name,
                 user_id=user_id,
                 function_job_patch_requests=function_job_patch_requests,

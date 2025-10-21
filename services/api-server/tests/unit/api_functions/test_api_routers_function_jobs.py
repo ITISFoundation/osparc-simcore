@@ -20,7 +20,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionJob,
 )
 from models_library.functions import (
-    FunctionJobList,
+    FunctionJob,
     FunctionJobStatus,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJobWithStatus,
@@ -75,11 +75,10 @@ async def test_register_function_job(
 
     async def _register_function_job_side_effect(
         user_id: UserID,
-        function_jobs: FunctionJobList,
+        function_job: FunctionJob,
         product_name: ProductName,
     ):
-        assert len(function_jobs) == 1
-        return [fake_registered_project_function_job]
+        return fake_registered_project_function_job
 
     mock_handler_in_functions_rpc_interface(
         "register_function_job", side_effect=_register_function_job_side_effect
