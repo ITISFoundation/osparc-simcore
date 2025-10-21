@@ -20,7 +20,6 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
-from servicelib.tracing import TracingConfig
 from settings_library.redis import RedisSettings
 from simcore_service_api_server.clients import celery_task_manager
 from simcore_service_api_server.core.application import create_app
@@ -114,15 +113,11 @@ async def with_api_server_celery_worker(
     add_worker_tasks: bool,
     monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterator[TestWorkController]:
-    tracing_config = TracingConfig.create(
-        tracing_settings=None,  # disable tracing in tests
-        service_name="api-server-worker-test",
-    )
     # Signals must be explicitily connected
     monkeypatch.setenv("API_SERVER_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
 
-    app_server = FastAPIAppServer(app=create_app(app_settings, tracing_config))
+    app_server = FastAPIAppServer(app=create_app(app_settings))
 
     _init_wrapper = _worker_init_wrapper(celery_app, lambda: app_server)
     _shutdown_wrapper = _worker_shutdown_wrapper(celery_app)
