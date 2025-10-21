@@ -2,7 +2,7 @@ import contextlib
 import datetime
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
 import sqlalchemy as sa
 from models_library.basic_types import SHA256Str
@@ -10,7 +10,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validate_call
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -227,11 +227,14 @@ class FileMetaDataRepository(BaseRepository):
                         return None
         return None
 
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def list_child_paths(
         self,
         *,
         connection: AsyncConnection | None = None,
-        filter_by_project_ids: list[ProjectID] | None,
+        filter_by_project_ids: Annotated[
+            list[ProjectID] | None, Field(max_length=10000)
+        ],
         filter_by_file_prefix: Path | None,
         cursor: GenericCursor | None,
         limit: int,
@@ -239,6 +242,9 @@ class FileMetaDataRepository(BaseRepository):
     ) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
         """returns a list of FileMetaDataAtDB that are one level deep.
         e.g. when no filter is used, these are top level objects
+
+        NOTE: if filter_by_project_ids is huge, this will raise ValidationError and someone needs to fix it!
+        Maybe using a DB join
         """
 
         cursor_params = _init_pagination(
