@@ -173,7 +173,6 @@ async def patch_function_jobs(
                 "class_specific_data": class_specific_data,
                 "title": patch_request.patch.title,
                 "description": patch_request.patch.description,
-                "status": "created",
             }
 
             result = await transaction.execute(
