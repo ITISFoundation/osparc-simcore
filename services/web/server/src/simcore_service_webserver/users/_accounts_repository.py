@@ -1,7 +1,8 @@
 import logging
-from typing import Any, Literal, TypeAlias, cast
+from typing import Annotated, Any, Literal, TypeAlias, cast
 
 import sqlalchemy as sa
+from annotated_types import doc
 from common_library.exclude import Unset, is_unset
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
@@ -437,11 +438,21 @@ async def list_merged_pre_and_registered_users(
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
-    filter_any_account_request_status: list[AccountRequestStatus] | None = None,
+    filter_any_account_request_status: Annotated[
+        list[AccountRequestStatus] | None,
+        doc(
+            "If provided, only returns users with account request status in this list (only pre-registered users with any of these statuses will be included)"
+        ),
+    ] = None,
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
-    order_by: list[tuple[OrderKeys, OrderDirs]] | None = None,
+    order_by: Annotated[
+        list[tuple[OrderKeys, OrderDirs]] | None,
+        doc(
+            'Valid fields: "email", "current_status_created". Default: [("email", "asc"), ("is_pre_registered", "desc"), ("current_status_created", "desc")]'
+        ),
+    ] = None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
@@ -449,18 +460,6 @@ async def list_merged_pre_and_registered_users(
     1. Users who are registered with the platform (in users table)
     2. Users who are pre-registered (in users_pre_registration_details table)
     3. Users who are both registered and pre-registered
-
-    Args:
-        engine: Database engine
-        connection: Optional existing connection
-        product_name: Product name to filter by
-        filter_any_account_request_status: If provided, only returns users with account request status in this list
-            (only pre-registered users with any of these statuses will be included)
-        filter_include_deleted: Whether to include deleted users
-        pagination_limit: Maximum number of results to return
-        pagination_offset: Number of results to skip (for pagination)
-        order_by: List of (field, direction) tuples. Valid fields: "email", "current_status_created"
-            Default: [("email", "asc"), ("is_pre_registered", "desc"), ("current_status_created", "desc")]
 
     Returns:
         Tuple of (list of merged user data, total count)
@@ -579,22 +578,41 @@ async def list_merged_pre_and_registered_users(
     else:
         merged_query = pre_registered_users_query.union_all(registered_users_query)
 
-    # Add distinct on email to eliminate duplicates
+    # Add distinct on email to eliminate duplicates using ROW_NUMBER()
     merged_query_subq = merged_query.subquery()
 
-    # Build ordering clauses using the extracted function
-    order_by_clauses = _build_ordering_clauses(merged_query_subq, order_by)
+    # Use ROW_NUMBER() to prioritize records per email
+    # This allows us to order by any field without DISTINCT ON constraints
+    ranked_query = sa.select(
+        merged_query_subq,
+        sa.func.row_number()
+        .over(
+            partition_by=merged_query_subq.c.email,
+            order_by=[
+                merged_query_subq.c.is_pre_registered.desc(),  # Prioritize pre-registered
+                merged_query_subq.c.current_status_created.desc(),  # Then by most recent
+            ],
+        )
+        .label("rn"),
+    ).subquery()
 
-    distinct_query = (
-        sa.select(merged_query_subq)
-        .select_from(merged_query_subq)
-        .distinct(merged_query_subq.c.email)
-        .order_by(*order_by_clauses)
+    # Filter to get only the first record per email (rn = 1)
+    filtered_query = sa.select(
+        *[col for col in ranked_query.c if col.name != "rn"]
+    ).where(ranked_query.c.rn == 1)
+
+    # Build ordering clauses using the extracted function
+    order_by_clauses = _build_ordering_clauses_for_filtered_query(
+        filtered_query, order_by
+    )
+
+    final_query = (
+        filtered_query.order_by(*order_by_clauses)
         .limit(pagination_limit)
         .offset(pagination_offset)
     )
 
-    # Count query (for pagination)
+    # Count query (for pagination) - count distinct emails
     count_query = sa.select(sa.func.count().label("total")).select_from(
         sa.select(merged_query_subq.c.email)
         .select_from(merged_query_subq)
@@ -608,25 +626,17 @@ async def list_merged_pre_and_registered_users(
         total_count = count_result.scalar_one()
 
         # Get user records
-        result = await conn.execute(distinct_query)
+        result = await conn.execute(final_query)
         records = result.mappings().all()
 
     return cast(list[dict[str, Any]], records), total_count
 
 
-def _build_ordering_clauses(
-    merged_query_subq: sa.sql.Subquery,
+def _build_ordering_clauses_for_filtered_query(
+    query: sa.sql.Select,
     order_by: list[tuple[OrderKeys, OrderDirs]] | None = None,
 ) -> list[sa.sql.ColumnElement]:
-    """Build ORDER BY clauses for merged user queries.
-
-    Args:
-        merged_query_subq: The merged query subquery containing all columns
-        order_by: List of (field, direction) tuples for ordering
-
-    Returns:
-        List of SQLAlchemy ordering clauses
-    """
+    """Build ORDER BY clauses for filtered query (no DISTINCT ON constraints)."""
     _ordering_criteria: list[tuple[str, OrderDirs]] = []
 
     if order_by is None:
@@ -644,7 +654,8 @@ def _build_ordering_clauses(
 
     order_by_clauses = []
     for field, direction in _ordering_criteria:
-        column = merged_query_subq.columns[field]
+        # Get column from the query's selected columns
+        column = next(col for col in query.selected_columns if col.name == field)
         if direction == "asc":
             order_by_clauses.append(column.asc())
         else:
