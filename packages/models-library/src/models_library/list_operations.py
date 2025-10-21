@@ -9,7 +9,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Annotated, Generic, TypeVar
 
 from annotated_types import doc
-from pydantic.generics import GenericModel
+from pydantic import BaseModel
 
 
 class OrderDirection(str, Enum):
@@ -30,7 +30,7 @@ else:
     TField = TypeVar("TField", bound=str)
 
 
-class OrderClause(GenericModel, Generic[TField]):
+class OrderClause(BaseModel, Generic[TField]):
     field: TField
     direction: OrderDirection = OrderDirection.ASC
 
