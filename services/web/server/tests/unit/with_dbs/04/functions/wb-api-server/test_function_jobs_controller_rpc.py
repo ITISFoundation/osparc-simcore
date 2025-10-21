@@ -464,13 +464,11 @@ async def test_find_cached_function_jobs(
     )
 
     # Assert the cached jobs contain the registered job
-    assert cached_jobs.found_items is not None
-    assert len(cached_jobs.found_items) == 1
-    job0 = cached_jobs.found_items[0]
+    assert len(cached_jobs) == 2
+    job0 = cached_jobs[0]
     assert job0 is not None
     assert job0.inputs == {"input1": 1}
-    assert len(cached_jobs.missing_identifiers) == 1
-    assert cached_jobs.missing_identifiers[0] == {"input1": 10}
+    assert cached_jobs[1] is None
 
     cached_jobs = await webserver_rpc_client.functions.find_cached_function_jobs(
         function_id=registered_function.uid,
@@ -480,8 +478,8 @@ async def test_find_cached_function_jobs(
     )
 
     # Assert the cached jobs does not contain the registered job for the other user
-    assert len(cached_jobs.missing_identifiers) == 2
-    assert len(cached_jobs.found_items) == 0
+    assert len(cached_jobs) == 2
+    assert all(job is None for job in cached_jobs)
 
 
 @pytest.mark.parametrize(
@@ -542,8 +540,8 @@ async def test_find_cached_function_jobs_with_status(
         inputs=[input_],
         status_filter=[status],
     )
-    assert len(cached_jobs.found_items) == 1
-    cached_job = cached_jobs.found_items[0]
+    assert len(cached_jobs) == 1
+    cached_job = cached_jobs[0]
     assert cached_job is not None
     assert cached_job.inputs == input_
     cached_job_status = await webserver_rpc_client.functions.get_function_job_status(
