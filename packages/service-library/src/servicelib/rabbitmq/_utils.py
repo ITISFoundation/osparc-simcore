@@ -76,7 +76,7 @@ async def declare_queue(
     if arguments is not None:
         default_arguments.update(arguments)
     queue_parameters: dict[str, Any] = {
-        "durable": True,
+        "durable": not exclusive_queue,
         "exclusive": exclusive_queue,
         "arguments": default_arguments,
         "name": f"{get_rabbitmq_client_unique_name(client_name)}_{queue_name}_exclusive",
