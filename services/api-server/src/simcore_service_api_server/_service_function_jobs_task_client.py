@@ -381,5 +381,7 @@ class FunctionJobTaskClientService:
             ],
         )
         patched_jobs_iter = iter(patched_jobs.updated_items)
-        _ = lambda job: job if job is not None else next(patched_jobs_iter)
-        return [_(job) for job in cached_jobs]
+        resolve_cached_jobs = lambda job: (
+            job if job is not None else next(patched_jobs_iter)
+        )
+        return [resolve_cached_jobs(job) for job in cached_jobs]
