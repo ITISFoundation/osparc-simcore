@@ -184,7 +184,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           this.getChildControl("filter-buttons").add(control);
           break;
         case "date-filters":
-          control = new osparc.desktop.credits.DateFilters();
+          control = new osparc.filter.DateFilters();
           control.addListener("change", e => {
             const dateRange = e.getData();
             this.__filter("modifiedAt", dateRange);
@@ -322,7 +322,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Files"));
           sharedWithButton.exclude();
           tagsButton.exclude();
-          // dateFilters.show();
+          dateFilters.show();
           break;
       }
     },
