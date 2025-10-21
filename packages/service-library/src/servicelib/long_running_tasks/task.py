@@ -113,8 +113,8 @@ async def _get_tasks_to_remove(
 
     for tracked_task in await tracked_tasks.list_tasks_data():
         if tracked_task.fire_and_forget:
-            # fire and forget tasks also need to be remove form tracking
-            # when detectes ad done, start counting how much time has elapsed
+            # fire and forget tasks also need to be remove from tracking
+            # when detectes as done, start counting how much time has elapsed
             # if over stale_task_detect_timeout_s remove the task
 
             # wait for task to complete
@@ -132,10 +132,10 @@ async def _get_tasks_to_remove(
                 continue
 
             # if enough time passes remove the task
-            elpased_since_done = (
+            elapsed_since_done = (
                 utc_now - tracked_task.detected_as_done_at
             ).total_seconds()
-            if elpased_since_done > stale_task_detect_timeout_s:
+            if elapsed_since_done > stale_task_detect_timeout_s:
                 tasks_to_remove.append(
                     (tracked_task.task_id, tracked_task.task_context)
                 )
