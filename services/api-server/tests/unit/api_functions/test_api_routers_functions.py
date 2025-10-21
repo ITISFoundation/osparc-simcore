@@ -503,8 +503,8 @@ async def test_run_project_function(
         function_job_patch_request: FunctionJobPatchRequest,
     ):
         patch = function_job_patch_request.patch
-        assert isinstance(patch, RegisteredProjectFunctionJobPatch) or isinstance(
-            patch, RegisteredSolverFunctionJobPatch
+        assert isinstance(
+            patch, (RegisteredProjectFunctionJobPatch, RegisteredSolverFunctionJobPatch)
         )
         job = fake_registered_project_function_job.model_copy(
             update={

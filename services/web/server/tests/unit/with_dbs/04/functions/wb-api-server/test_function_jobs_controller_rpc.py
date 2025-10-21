@@ -447,12 +447,10 @@ async def test_find_cached_function_jobs(
     ]
 
     # Register the function job
-    registered_jobs_batch_create = (
-        await webserver_rpc_client.functions.batch_register_function_jobs(
-            function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    await webserver_rpc_client.functions.batch_register_function_jobs(
+        function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Find cached function jobs

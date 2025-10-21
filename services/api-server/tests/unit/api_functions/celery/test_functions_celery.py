@@ -168,8 +168,8 @@ async def _batch_patch_registered_function_job(
     jobs = []
     for patch_request in function_job_patch_requests:
         patch = patch_request.patch
-        assert isinstance(patch, RegisteredProjectFunctionJobPatch) or isinstance(
-            patch, RegisteredSolverFunctionJobPatch
+        assert isinstance(
+            patch, (RegisteredProjectFunctionJobPatch, RegisteredSolverFunctionJobPatch)
         )
         jobs.append(
             mock_registered_project_function_job.model_copy(
@@ -189,8 +189,8 @@ async def _patch_registered_function_job(
     function_job_patch_request: FunctionJobPatchRequest,
 ):
     patch = function_job_patch_request.patch
-    assert isinstance(patch, RegisteredProjectFunctionJobPatch) or isinstance(
-        patch, RegisteredSolverFunctionJobPatch
+    assert isinstance(
+        patch, (RegisteredProjectFunctionJobPatch, RegisteredSolverFunctionJobPatch)
     )
     job = mock_registered_project_function_job.model_copy(
         update={
