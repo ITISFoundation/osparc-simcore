@@ -12,7 +12,7 @@ from models_library.conversations import (
     ConversationID,
     ConversationPatchDB,
     ConversationType,
-    IsSupportUser,
+    ConversationUserType,
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -185,10 +185,21 @@ async def get_support_conversation_for_user(
     user_id: UserID,
     product_name: ProductName,
     conversation_id: ConversationID,
-) -> tuple[ConversationGetDB, IsSupportUser]:
+) -> tuple[ConversationGetDB, ConversationUserType]:
     # Check if user is part of support group (in that case he has access to all support conversations)
     product = products_service.get_product(app, product_name=product_name)
     _support_standard_group_id = product.support_standard_group_id
+    _chatbot_user_id = product.support_chatbot_user_id
+
+    # Check if user is an AI bot
+    if _chatbot_user_id and user_id == _chatbot_user_id:
+        return (
+            await get_conversation(
+                app, conversation_id=conversation_id, type_=ConversationType.SUPPORT
+            ),
+            ConversationUserType.CHATBOT_USER,
+        )
+
     if _support_standard_group_id is not None:
         _user_group_ids = await list_user_groups_ids_with_read_access(
             app, user_id=user_id
@@ -199,7 +210,7 @@ async def get_support_conversation_for_user(
                 await get_conversation(
                     app, conversation_id=conversation_id, type_=ConversationType.SUPPORT
                 ),
-                True,
+                ConversationUserType.SUPPORT_USER,
             )
 
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
@@ -210,7 +221,7 @@ async def get_support_conversation_for_user(
             user_group_id=_user_group_id,
             type_=ConversationType.SUPPORT,
         ),
-        False,
+        ConversationUserType.REGULAR_USER,
     )
 
 
@@ -285,7 +296,7 @@ async def create_fogbugz_case_for_support_conversation(
     fogbugz_client = get_fogbugz_rest_client(app)
     fogbugz_case_data = FogbugzCaseCreate(
         fogbugz_project_id=product_support_assigned_fogbugz_project_id,
-        title=f"Request for Support on {host}",
+        title=f"Request for Support on {host} by {user['email']}",
         description=description,
     )
     case_id = await fogbugz_client.create_case(fogbugz_case_data)
