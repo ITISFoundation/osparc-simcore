@@ -266,7 +266,7 @@ async def create_support_message(
         return message
 
     if is_first_message or conversation.fogbugz_case_id is None:
-        _logger.debug(
+        _logger.info(
             "Support settings available, this is first message, creating FogBugz case for Conversation ID: %s",
             conversation.conversation_id,
         )
@@ -298,7 +298,7 @@ async def create_support_message(
             )
     else:
         assert not is_first_message  # nosec
-        _logger.debug(
+        _logger.info(
             "Support settings available, but this is NOT the first message, so we need to reopen a FogBugz case. Conversation ID: %s",
             conversation.conversation_id,
         )
@@ -329,7 +329,7 @@ async def create_support_message(
 
     if (
         product.support_chatbot_user_id
-        and conversation_user_type == ConversationUserType.CHATBOT_USER
+        and conversation_user_type == ConversationUserType.REGULAR_USER
     ):
         # If enabled, ask Chatbot to analyze the message history and respond
         await _trigger_chatbot_processing(

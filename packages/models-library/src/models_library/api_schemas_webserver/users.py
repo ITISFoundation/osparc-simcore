@@ -172,6 +172,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         my_product_group: tuple[Group, AccessRightsDict] | None,
         my_preferences: AggregatedPreferences,
         my_support_group: Group | None,
+        my_chatbot_user_group: Group | None,
         profile_contact: MyProfileAddressGet | None = None,
     ) -> Self:
         profile_data = remap_keys(
@@ -194,7 +195,10 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         return cls(
             **profile_data,
             groups=MyGroupsGet.from_domain_model(
-                my_groups_by_type, my_product_group, my_support_group
+                my_groups_by_type,
+                my_product_group,
+                my_support_group,
+                my_chatbot_user_group,
             ),
             preferences=my_preferences,
             contact=profile_contact,
