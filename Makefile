@@ -195,7 +195,8 @@ docker buildx bake --allow=fs.read=.. \
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-				--set $(service).output="type=docker$(comma)compression=zstd$(comma)compression-level=9$(comma)dest=$(local-dest)/$(service).tar") \
+				--set $(service).output="type=oci$(comma)\
+				compression=zstd$(comma)compression-level=9$(comma)force-compression=true$(comma)dest=$(local-dest)/$(service)zstd.tar") \
 			,--load\
 		)\
 	)\
@@ -204,7 +205,8 @@ docker buildx bake --allow=fs.read=.. \
 				--set $(service).tags=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) \
 		) \
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-			--set $(service).output="type=registry$(comma)compression=zstd$(comma)compression-level=9$(comma)push=true" \
+			--set $(service).output="type=registry$(comma)\
+			compression=zstd$(comma)compression-level=1$(comma)force-compression=true$$(comma)push=true" \
 		)\
 	,) \
 	$(if $(push),--push,) \
