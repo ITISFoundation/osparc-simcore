@@ -13,6 +13,7 @@ from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import ValidationError
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
@@ -1122,3 +1123,44 @@ async def test_list_merged_users_custom_ordering_with_current_status_created(
     assert (
         current_status_dates == sorted_dates
     ), "Users should be ordered by current_status_created desc"
+
+
+@pytest.mark.parametrize(
+    "invalid_order_by,expected_error_pattern",
+    [
+        # Invalid field name
+        (
+            [("invalid_field", "asc")],
+            r"Input should be 'email' or 'current_status_created'",
+        ),
+        # Invalid direction
+        ([("email", "invalid_direction")], r"Input should be 'asc' or 'desc'"),
+        # Multiple invalid values
+        (
+            [("invalid_field", "invalid_direction")],
+            r"Input should be 'email' or 'current_status_created'",
+        ),
+        # Mixed valid and invalid
+        (
+            [("email", "asc"), ("invalid_field", "desc")],
+            r"Input should be 'email' or 'current_status_created'",
+        ),
+    ],
+)
+async def test_list_merged_users_invalid_order_by_validation(
+    app: web.Application,
+    product_name: ProductName,
+    invalid_order_by: list[tuple[str, str]],
+    expected_error_pattern: str,
+):
+    """Test that invalid order_by parameters are rejected by Pydantic validation."""
+
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act & Assert - Should raise ValidationError
+    with pytest.raises(ValidationError, match=expected_error_pattern):
+        await _accounts_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            order_by=invalid_order_by,
+        )
