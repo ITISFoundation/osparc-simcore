@@ -36,7 +36,7 @@ _CPUS_SAFE_MARGIN: Final[float] = 0.1
 
 def estimate_dask_worker_resources_from_ec2_instance(
     cpus: float, ram: int
-) -> tuple[float, float]:
+) -> tuple[float, int]:
     """Estimates the resources available to a dask worker running in an EC2 instance,
     taking into account safe margins for CPU and RAM.
 
