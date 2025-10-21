@@ -113,7 +113,6 @@ qx.Class.define("osparc.po.UsersPending", {
           this.getChildControl("header-layout").add(control);
           break;
         case "intro-text":
-          // list of pending users or approved/rejected, but not yet registered
           control = new qx.ui.basic.Label(this.tr("List of pending users or approved/rejected, but not yet registered:")).set({
             font: "text-14",
             textColor: "text",
