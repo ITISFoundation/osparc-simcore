@@ -14,17 +14,16 @@ from celery.contrib.testing.worker import (
     start_worker,
 )
 from celery.signals import worker_init, worker_shutdown
-from celery.worker.worker import WorkController
 from celery_library.backends.redis import RedisTaskStore
-from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
+from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer
 from servicelib.celery.task_manager import TaskManager
 from servicelib.redis import RedisClientSDK
-from settings_library.celery import CelerySettings
+from settings_library.celery import CeleryPoolType, CelerySettings
 from settings_library.redis import RedisDatabase, RedisSettings
 
 pytest_plugins = [
@@ -104,11 +103,6 @@ def celery_settings(
     return CelerySettings.create_from_envs()
 
 
-@pytest.fixture
-def app_server(celery_app: Celery, celery_settings: CelerySettings) -> BaseAppServer:
-    return FakeAppServer(app=celery_app, settings=celery_settings)
-
-
 @pytest.fixture(scope="session")
 def celery_config() -> dict[str, Any]:
     return {
@@ -128,21 +122,25 @@ def celery_config() -> dict[str, Any]:
 @pytest.fixture
 async def with_celery_worker(
     celery_app: Celery,
-    app_server: BaseAppServer,
+    celery_settings: CelerySettings,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-    def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
-        return on_worker_init(sender, app_server, **_kwargs)
 
-    worker_init.connect(_on_worker_init_wrapper)
-    worker_shutdown.connect(on_worker_shutdown)
+    def _app_server_factory() -> BaseAppServer:
+        return FakeAppServer(app=celery_app, settings=celery_settings)
+
+    # NOTE: explicitly connect the signals in tests
+    worker_init.connect(
+        _worker_init_wrapper(celery_app, _app_server_factory), weak=False
+    )
+    worker_shutdown.connect(_worker_shutdown_wrapper(celery_app), weak=False)
 
     register_celery_tasks(celery_app)
 
     with start_worker(
         celery_app,
         concurrency=1,
-        pool="threads",
+        pool=CeleryPoolType.THREADS,
         loglevel="info",
         perform_ping_check=False,
         queues="default",

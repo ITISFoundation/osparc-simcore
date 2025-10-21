@@ -50,12 +50,12 @@ from servicelib.common_headers import (
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
-from simcore_service_api_server.celery_worker.worker_tasks import functions_tasks
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.domain.functions import (
     PreRegisteredFunctionJobData,
 )
 from simcore_service_api_server.models.schemas.jobs import JobInputs
+from simcore_service_api_server.modules.celery.worker import _functions_tasks
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 _faker = Faker()
@@ -430,13 +430,13 @@ async def test_run_project_function(
         app_server.app = app
         return app_server
 
-    mocker.patch.object(functions_tasks, "get_app_server", _get_app_server)
+    mocker.patch.object(_functions_tasks, "get_app_server", _get_app_server)
 
     def _get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
         return mocker.MagicMock(spec=RabbitMQRPCClient)
 
     mocker.patch.object(
-        functions_tasks, "get_rabbitmq_rpc_client", _get_rabbitmq_rpc_client
+        _functions_tasks, "get_rabbitmq_rpc_client", _get_rabbitmq_rpc_client
     )
 
     async def _get_wb_api_rpc_client(app: FastAPI) -> WbApiRpcClient:
@@ -446,7 +446,7 @@ async def test_run_project_function(
         return WbApiRpcClient.get_from_app_state(app)
 
     mocker.patch.object(
-        functions_tasks, "get_wb_api_rpc_client", _get_wb_api_rpc_client
+        _functions_tasks, "get_wb_api_rpc_client", _get_wb_api_rpc_client
     )
 
     def _default_side_effect(
@@ -524,7 +524,7 @@ async def test_run_project_function(
         function_job_id=fake_registered_project_function.uid,
     )
 
-    job = await functions_tasks.run_function(
+    job = await _functions_tasks.run_function(
         task=MagicMock(spec=Task),
         task_key=TaskKey(_faker.uuid4()),
         user_identity=user_identity,

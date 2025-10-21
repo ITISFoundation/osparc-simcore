@@ -13,7 +13,7 @@ from pydantic import NonNegativeInt
 from servicelib.celery.models import TaskKey
 
 from .errors import encode_celery_transferrable_error
-from .utils import get_app_server
+from .worker.app_server import get_app_server
 
 _logger = logging.getLogger(__name__)
 
