@@ -22,6 +22,7 @@ from servicelib.utils import fire_and_forget_task
 from ..core.settings import ApplicationSettings
 from .catalog._public_client import CatalogPublicClient
 from .director_v2 import DirectorV2Client
+from .fire_and_froget import FireAndForgetCollection
 from .service_tracker import (
     get_tracked_service,
     set_request_as_running,
@@ -107,7 +108,9 @@ async def stop_dynamic_service(
                 task_suffix_name=(
                     f"stop_dynamic_service_node_{dynamic_service_stop.node_id}"
                 ),
-                fire_and_forget_tasks_collection=set(),
+                fire_and_forget_tasks_collection=FireAndForgetCollection.get_from_app_state(
+                    app
+                ).tasks_collection,
             )
 
     await director_v2_client.stop_dynamic_service(
