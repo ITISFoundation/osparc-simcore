@@ -22,7 +22,7 @@ from servicelib.utils import fire_and_forget_task
 from ..core.settings import ApplicationSettings
 from .catalog._public_client import CatalogPublicClient
 from .director_v2 import DirectorV2Client
-from .fire_and_froget import FireAndForgetCollection
+from .fire_and_forget import FireAndForgetCollection
 from .service_tracker import (
     get_tracked_service,
     set_request_as_running,
