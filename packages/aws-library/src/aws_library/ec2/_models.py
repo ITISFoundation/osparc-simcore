@@ -157,16 +157,9 @@ class EC2InstanceBootSpecific(BaseModel):
         list[DockerGenericTag],
         Field(
             default_factory=list,
-            description="a list of docker image/tags to pull on instance cold start",
+            description="a list of docker image/tags to pull on the instance",
         ),
     ] = DEFAULT_FACTORY
-    pre_pull_images_cron_interval: Annotated[
-        datetime.timedelta,
-        Field(
-            description="time interval between pulls of images (minimum is 1 minute) "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-        ),
-    ] = datetime.timedelta(minutes=30)
     buffer_count: Annotated[
         NonNegativeInt,
         Field(description="number of buffer EC2s to keep (defaults to 0)"),
@@ -180,7 +173,9 @@ class EC2InstanceBootSpecific(BaseModel):
                 temp_file.writelines(v)
                 temp_file.flush()
                 # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
-                sh.bash("-n", temp_file.name)  # pyright: ignore[reportCallIssue]  # sh is untyped, but this call is safe for bash syntax checking
+                sh.bash(
+                    "-n", temp_file.name
+                )  # pyright: ignore[reportCallIssue]  # sh is untyped, but this call is safe for bash syntax checking
         except sh.ErrorReturnCode as exc:
             msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
             raise ValueError(msg) from exc
@@ -231,7 +226,7 @@ class EC2InstanceBootSpecific(BaseModel):
                             "simcore/services/dynamic/another-nice-one:2.4.5",
                             "asd",
                         ],
-                        "pre_pull_images_cron_interval": "01:00:00",
+                        "pre_pull_images_cron_interval": "01:00:00",  # retired but kept for tests
                     },
                     {
                         # AMI + pre-pull + buffer count

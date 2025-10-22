@@ -37,10 +37,9 @@ qx.Class.define("osparc.desktop.preferences.window.APIKeyBase", {
 
   members: {
     __addInfoText: function(infoText) {
-      const introLabel = new qx.ui.basic.Label(infoText).set({
+      const introLabel = new osparc.ui.basic.SafeLabel(infoText).set({
         paddingLeft: 5,
         paddingRight: 5,
-        rich: true
       });
       this.add(introLabel);
     }

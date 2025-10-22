@@ -405,6 +405,7 @@ async def test_send_email_code(
             name="osparc",
             display_name="The Foo Product",
             host_regex=re.compile(r".+"),
+            base_url="https://osparc.io",
             vendor={},
             short_name="foo",
             support_email=support_email,

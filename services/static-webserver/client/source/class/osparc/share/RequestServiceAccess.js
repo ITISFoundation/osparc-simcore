@@ -61,7 +61,6 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
         const userGroupId = cantReadServiceData["owner"];
         if (userGroupId) {
           const userName = new qx.ui.basic.Label().set({
-            rich: true,
             selectable: true,
           });
           layout.add(userName, {
@@ -69,7 +68,6 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
             column: 0
           });
           const email = new qx.ui.basic.Label().set({
-            rich: true,
             selectable: true,
           });
           layout.add(email, {
@@ -78,7 +76,6 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
           });
           const appLabel = new qx.ui.basic.Label().set({
             value: `${cantReadServiceData["key"]}:${osparc.service.Utils.extractVersionDisplay(cantReadServiceData["release"])}`,
-            rich: true,
             selectable: true,
           });
           layout.add(appLabel, {

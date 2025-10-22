@@ -46,6 +46,7 @@ def products_raw_data() -> dict[ProductName, dict[str, Any]]:
         "display_name": "COMPLETE example",
         "short_name": "dummy",
         "host_regex": r"([\.-]{0,1}dummy[\.-])",
+        "base_url": "http://example.com",
         "support_email": "foo@osparc.io",
         "twilio_messaging_sid": None,
         "vendor": Vendor(
@@ -83,6 +84,7 @@ def products_raw_data() -> dict[ProductName, dict[str, Any]]:
         "display_name": "MINIMAL example",
         "short_name": "dummy",
         "host_regex": "([\\.-]{0,1}osparc[\\.-])",
+        "base_url": "http://example.com",
         "support_email": "support@osparc.io",
     }
 

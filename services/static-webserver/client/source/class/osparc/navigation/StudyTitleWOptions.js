@@ -166,7 +166,10 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
         study.bind("name", editTitle, "value");
 
         const shareButton = this.getChildControl("study-menu-share");
-        shareButton.setEnabled(osparc.data.model.Study.canIWrite(study.getAccessRights()));
+        shareButton.set({
+          visibility: osparc.auth.Data.getInstance().isGuest() ? "excluded" : "visible",
+          enabled: osparc.data.model.Study.canIWrite(study.getAccessRights()),
+        });
 
         const reloadButton = this.getChildControl("study-menu-reload");
         study.getUi().bind("mode", reloadButton, "visibility", {

@@ -3,11 +3,12 @@ from functools import cached_property
 from typing import Annotated, Final, Self, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
+from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.clusters import ClusterAuthentication
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import (
     AliasChoices,
     AnyUrl,
@@ -62,6 +63,14 @@ class EC2InstancesSettings(BaseCustomSettings):
             "NOTE: minimum length >0",
         ),
     ]
+
+    EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: Annotated[
+        list[DockerGenericTag],
+        Field(
+            description="List of docker images to pre-pull on cold started new EC2 instances",
+            default_factory=list,
+        ),
+    ] = DEFAULT_FACTORY
 
     EC2_INSTANCES_KEY_NAME: Annotated[
         str,

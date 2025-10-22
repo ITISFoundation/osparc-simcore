@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * @asset(DOMPurify/purify.min.js)
+ * @asset(DOMPurify/purify-3.2.7.min.js)
  * @ignore(DOMPurify)
  */
 
@@ -34,7 +34,30 @@ qx.Class.define("osparc.wrapper.DOMPurify", {
   statics: {
     NAME: "DOMPurify",
     VERSION: "2.0.0",
-    URL: "https://github.com/cure53/DOMPurify"
+    URL: "https://github.com/cure53/DOMPurify",
+
+    sanitizeUrl: function(url) {
+      const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(url);
+      if ((url && url !== clean) || (clean !== "" && !osparc.utils.Utils.isValidHttpUrl(clean))) {
+        osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Error checking link"), "WARNING");
+        return null;
+      }
+      return clean;
+    },
+
+    sanitize: function(html) {
+      return osparc.wrapper.DOMPurify.getInstance().sanitize(html);
+    },
+
+    sanitizeLabel: function(label) {
+      label.addListener("changeValue", e => {
+        const val = e.getData();
+        const sanitized = osparc.wrapper.DOMPurify.sanitize(val);
+        if (sanitized !== val) {
+          label.setValue(sanitized);
+        }
+      });
+    },
   },
 
   construct: function() {
@@ -50,26 +73,28 @@ qx.Class.define("osparc.wrapper.DOMPurify", {
   },
 
   members: {
-    __diffPatcher: null,
-
     init: function() {
-      // initialize the script loading
-      let purifyPath = "DOMPurify/purify.min.js";
-      let dynLoader = new qx.util.DynamicScriptLoader([
-        purifyPath
-      ]);
+      return new Promise((resolve, reject) => {
+        // initialize the script loading
+        const purifyPath = "DOMPurify/purify-3.2.7.min.js";
+        const dynLoader = new qx.util.DynamicScriptLoader([
+          purifyPath
+        ]);
 
-      dynLoader.addListenerOnce("ready", e => {
-        console.log(purifyPath + " loaded");
-        this.setLibReady(true);
-      }, this);
+        dynLoader.addListenerOnce("ready", e => {
+          console.log(purifyPath + " loaded");
+          this.setLibReady(true);
+          resolve();
+        }, this);
 
-      dynLoader.addListener("failed", e => {
-        let data = e.getData();
-        console.error("failed to load " + data.script);
-      }, this);
+        dynLoader.addListener("failed", e => {
+          let data = e.getData();
+          console.error("failed to load " + data.script);
+          reject(data);
+        }, this);
 
-      dynLoader.start();
+        dynLoader.start();
+      });
     },
 
     sanitize: function(html) {
