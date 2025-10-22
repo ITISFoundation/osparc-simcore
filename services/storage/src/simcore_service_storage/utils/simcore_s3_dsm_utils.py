@@ -1,3 +1,4 @@
+import logging
 from contextlib import suppress
 from pathlib import Path
 from typing import TypeAlias
@@ -30,6 +31,8 @@ from ..modules.db.access_layer import AccessLayerRepository
 from ..modules.db.file_meta_data import FileMetaDataRepository, TotalChildren
 from ..modules.db.projects import ProjectRepository
 from .utils import convert_db_to_model
+
+_logger = logging.getLogger(__name__)
 
 
 async def _list_all_files_in_folder(
@@ -250,6 +253,11 @@ async def list_child_paths_from_s3(
     """
     objects_cursor = None
     if cursor is not None:
+        _logger.debug(
+            "Using cursor for listing child paths in S3 for filter '%s': %s",
+            file_filter,
+            cursor,
+        )
         cursor_params = json_loads(cursor)
         assert cursor_params["file_filter"] == f"{file_filter}"  # nosec
         objects_cursor = cursor_params["objects_next_cursor"]
@@ -277,6 +285,11 @@ async def list_child_paths_from_s3(
     ]
     next_cursor = None
     if objects_next_cursor:
+        _logger.debug(
+            "Next cursor for listing child paths in S3 for filter '%s': %s",
+            file_filter,
+            objects_next_cursor,
+        )
         next_cursor = json_dumps(
             {
                 "file_filter": f"{file_filter}",

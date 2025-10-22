@@ -89,7 +89,7 @@ def mock_catalog(
         yield
 
 
-async def test_get_services_labels(
+async def test_get_service_labels(
     mock_catalog: None,
     app: FastAPI,
     service_key: ServiceKey,
@@ -97,7 +97,7 @@ async def test_get_services_labels(
     simcore_service_labels: SimcoreServiceLabels,
 ):
     client = CatalogPublicClient.get_from_app_state(app)
-    result = await client.get_services_labels(service_key, service_version)
+    result = await client.get_docker_image_labels(service_key, service_version)
     assert result.model_dump(mode="json") == simcore_service_labels.model_dump(
         mode="json"
     )
