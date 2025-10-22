@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
@@ -27,6 +27,7 @@ from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
+from ..rest_ordering import OrderingQueryParams
 from ..string_types import (
     GlobPatternSafeStr,
     SearchPatternSafeStr,
@@ -313,7 +314,14 @@ class UsersForAdminListFilter(Filters):
     model_config = ConfigDict(extra="forbid")
 
 
-class UsersAccountListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
+UserAccountOrderFields: TypeAlias = Literal["email", "created_at"]
+
+
+class UsersAccountListQueryParams(
+    UsersForAdminListFilter,
+    PageQueryParameters,
+    OrderingQueryParams[UserAccountOrderFields],
+): ...
 
 
 class _InvitationDetails(InputSchema):
@@ -334,7 +342,7 @@ class UserAccountSearchQueryParams(RequestParameters):
     email: Annotated[
         GlobPatternSafeStr | None,
         Field(
-            description="complete or glob pattern for an email",
+            description="complete or glob pattern for an email (case insensitive)",
         ),
     ] = None
     primary_group_id: Annotated[
@@ -346,7 +354,7 @@ class UserAccountSearchQueryParams(RequestParameters):
     user_name: Annotated[
         GlobPatternSafeStr | None,
         Field(
-            description="complete or glob pattern for a username",
+            description="complete or glob pattern for a username (case insensitive)",
         ),
     ] = None
 

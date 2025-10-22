@@ -238,7 +238,7 @@ async def test_search_users_by_partial_email(
     url = (
         client.app.router["search_user_accounts"]
         .url_for()
-        .with_query(email=partial_email)
+        .with_query(email=partial_email.upper())  # NOTE: case insensitive!
     )
     resp = await client.get(f"{url}")
     await assert_status(resp, status.HTTP_403_FORBIDDEN)

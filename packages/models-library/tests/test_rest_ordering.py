@@ -1,11 +1,14 @@
 import pickle
+from typing import Literal
 
 import pytest
 from common_library.json_serialization import json_dumps
 from models_library.basic_types import IDStr
 from models_library.rest_ordering import (
     OrderBy,
+    OrderClause,
     OrderDirection,
+    OrderingQueryParams,
     create_ordering_query_model_class,
 )
 from pydantic import (
@@ -122,8 +125,7 @@ def test_ordering_query_model_class_factory():
     )
 
     # inherits to add extra post-validator
-    class OrderQueryParamsModel(BaseOrderingQueryModel):
-        ...
+    class OrderQueryParamsModel(BaseOrderingQueryModel): ...
 
     # normal
     data = {"order_by": {"field": "modified_at", "direction": "asc"}}
@@ -237,3 +239,47 @@ def test_ordering_query_parse_json_pre_validator():
     assert error["loc"] == ("order_by",)
     assert error["type"] == "value_error"
     assert error["input"] == bad_json_value
+
+
+def test_ordering_query_params_parsing():
+    """Test OrderingQueryParams parsing from URL query format like ?order_by=-created_at,name,+gender"""
+
+    # Define allowed fields using Literal type
+    ValidField = Literal["created_at", "name", "gender"]
+
+    class TestOrderingParams(OrderingQueryParams[ValidField]):
+        pass
+
+    # Test parsing from comma-separated string
+    params = TestOrderingParams.model_validate({"order_by": "-created_at,name,+gender"})
+
+    assert params.order_by == [
+        OrderClause[ValidField](field="created_at", direction=OrderDirection.DESC),
+        OrderClause[ValidField](field="name", direction=OrderDirection.ASC),
+        OrderClause[ValidField](field="gender", direction=OrderDirection.ASC),
+    ]
+
+
+def test_ordering_query_params_validation_error_with_invalid_fields():
+    """Test that OrderingQueryParams raises ValidationError when invalid fields are used"""
+
+    # Define allowed fields using Literal type
+    ValidField = Literal["created_at", "name"]
+
+    class TestOrderingParams(OrderingQueryParams[ValidField]):
+        pass
+
+    # Test with invalid field should raise ValidationError
+    with pytest.raises(ValidationError) as err_info:
+        TestOrderingParams.model_validate(
+            {"order_by": "-created_at,invalid_field,name"}
+        )
+
+    # Verify the validation error details
+    exc = err_info.value
+    assert exc.error_count() == 1
+
+    error = exc.errors()[0]
+    assert error["loc"] == ("order_by", 1, "field")
+    assert error["type"] == "literal_error"
+    assert error["input"] == "invalid_field"

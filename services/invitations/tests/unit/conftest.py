@@ -114,7 +114,7 @@ def invitation_data(
     # first version
     kwargs = {
         "issuer": "LicenseRequestID=123456789",
-        "guest": faker.email(),
+        "guest": faker.email().upper(),  # to test case insensitivity
         "trial_account_days": faker.pyint(min_value=1) if is_trial_account else None,
     }
     # next version, can include product
@@ -124,4 +124,6 @@ def invitation_data(
     if extra_credits_in_usd is not None:
         kwargs["extra_credits_in_usd"] = extra_credits_in_usd
 
-    return InvitationInputs.model_validate(kwargs)
+    data = InvitationInputs.model_validate(kwargs)
+    assert data.guest == kwargs["guest"].lower()  # emails are case insensitive
+    return data

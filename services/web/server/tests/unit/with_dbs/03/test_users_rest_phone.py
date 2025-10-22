@@ -19,7 +19,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.models import PhoneNumberStr
-from simcore_service_webserver.users._controller.rest.users_rest import (
+from simcore_service_webserver.users._controller.rest.profile_rest import (
     _REGISTRATION_CODE_VALUE_FAKE,
 )
 

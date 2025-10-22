@@ -1,13 +1,17 @@
 import logging
-from typing import Any, cast
+from datetime import datetime
+from typing import Annotated, Any, Literal, TypeAlias, TypedDict, cast
 
 import sqlalchemy as sa
+from annotated_types import doc
 from common_library.exclude import Unset, is_unset
 from common_library.users_enums import AccountRequestStatus
+from models_library.list_operations import OrderDirection
 from models_library.products import ProductName
 from models_library.users import (
     UserID,
 )
+from pydantic import validate_call
 from simcore_postgres_database.models.groups import groups, user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserStatus, users
@@ -40,15 +44,6 @@ async def create_user_pre_registration(
     **other_values,
 ) -> int:
     """Creates a user pre-registration entry.
-
-    Args:
-        engine: Database engine
-        connection: Optional existing connection
-        email: Email address for the pre-registration
-        created_by: ID of the user creating the pre-registration (None for anonymous)
-        product_name: Product name the user is requesting access to
-        link_to_existing_user: Whether to link the pre-registration to an existing user with the same email
-        **other_values: Additional values to insert in the pre-registration entry
 
     Returns:
         ID of the created pre-registration
@@ -99,15 +94,6 @@ async def list_user_pre_registrations(
     pagination_offset: int = 0,
 ) -> tuple[list[dict[str, Any]], int]:
     """Lists user pre-registrations with optional filters.
-
-    Args:
-        engine: Database engine
-        connection: Optional existing connection
-        filter_by_pre_email: Filter by email pattern (SQL LIKE pattern)
-        filter_by_product_name: Filter by product name
-        filter_by_account_request_status: Filter by account request status
-        pagination_limit: Maximum number of results to return
-        pagination_offset: Number of results to skip (for pagination)
 
     Returns:
         Tuple of (list of pre-registration records, total count)
@@ -212,16 +198,7 @@ async def review_user_pre_registration(
     new_status: AccountRequestStatus,
     invitation_extras: dict[str, Any] | None = None,
 ) -> None:
-    """Updates the account request status of a pre-registered user.
-
-    Args:
-        engine: The database engine
-        connection: Optional existing connection
-        pre_registration_id: ID of the pre-registration record
-        reviewed_by: ID of the user who reviewed the request
-        new_status: New status (APPROVED or REJECTED)
-        invitation_extras: Optional invitation data to store in extras field
-    """
+    """Updates the account request status of a pre-registered user."""
     if new_status not in (AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED):
         msg = f"Invalid status for review: {new_status}. Must be APPROVED or REJECTED."
         raise ValueError(msg)
@@ -349,6 +326,7 @@ async def search_merged_pre_and_registered_users(
     filter_by_user_name_like: str | None = None,
     filter_by_primary_group_id: int | None = None,
     product_name: ProductName | None = None,
+    limit: int = 50,
 ) -> list[Row]:
     """Searches and merges users from both users and pre-registration tables"""
     users_alias = sa.alias(users, name="users_alias")
@@ -421,48 +399,88 @@ async def search_merged_pre_and_registered_users(
 
     final_query = queries[0] if len(queries) == 1 else sa.union(*queries)
 
+    # Add limit to prevent excessive results
+    final_query = final_query.limit(limit)
+
     async with pass_or_acquire_connection(engine, connection) as conn:
         result = await conn.execute(final_query)
         return result.fetchall()
 
 
+OrderKeys: TypeAlias = Literal["email", "current_status_created"]
+
+
+class MergedUserData(TypedDict, total=False):
+    """Type definition for merged user data returned by list_merged_pre_and_registered_users."""
+
+    # Pre-registration specific fields
+    id: int | None  # pre-registration ID
+    pre_reg_user_id: int | None  # user_id from pre-registration table
+    institution: str | None
+    address: str | None
+    city: str | None
+    state: str | None
+    postal_code: str | None
+    country: str | None
+    extras: dict[str, Any] | None
+    account_request_status: AccountRequestStatus | None
+    account_request_reviewed_by: int | None
+    account_request_reviewed_at: datetime | None
+    created_by: int | None
+    account_request_reviewed_by_username: str | None
+
+    # Common fields (from either pre-registration or users table)
+    email: str
+    first_name: str | None
+    last_name: str | None
+    phone: str | None
+    created: datetime | None
+    current_status_created: datetime
+
+    # User table specific fields
+    user_id: int | None  # actual user ID from users table
+    user_name: str | None
+    user_primary_group_id: int | None
+    status: str | None  # UserStatus
+
+    # Computed fields
+    is_pre_registered: bool
+
+
+@validate_call(config={"arbitrary_types_allowed": True})
 async def list_merged_pre_and_registered_users(
     engine: AsyncEngine,
     connection: AsyncConnection | None = None,
     *,
     product_name: ProductName,
-    filter_any_account_request_status: list[AccountRequestStatus] | None = None,
+    filter_any_account_request_status: Annotated[
+        list[AccountRequestStatus] | None,
+        doc("Only returns users with these statuses (pre-registered users only)"),
+    ] = None,
     filter_include_deleted: bool = False,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
-) -> tuple[list[dict[str, Any]], int]:
+    order_by: Annotated[
+        list[tuple[OrderKeys, OrderDirection]] | None,
+        doc('Valid fields: "email", "current_status_created"'),
+    ] = None,
+) -> tuple[list[MergedUserData], int]:
     """Retrieves and merges users from both users and pre-registration tables.
 
-    This returns:
-    1. Users who are registered with the platform (in users table)
-    2. Users who are pre-registered (in users_pre_registration_details table)
-    3. Users who are both registered and pre-registered
-
-    Args:
-        engine: Database engine
-        connection: Optional existing connection
-        product_name: Product name to filter by
-        filter_any_account_request_status: If provided, only returns users with account request status in this list
-            (only pre-registered users with any of these statuses will be included)
-        filter_include_deleted: Whether to include deleted users
-        pagination_limit: Maximum number of results to return
-        pagination_offset: Number of results to skip (for pagination)
-
     Returns:
-        Tuple of (list of merged user data, total count)
+        1. Users registered with the platform (users table)
+        2. Users pre-registered (users_pre_registration_details table)
+        3. Users both registered and pre-registered
     """
     # Base where conditions for both queries
-    pre_reg_where = [users_pre_registration_details.c.product_name == product_name]
-    users_where = []
+    pre_reg_query_conditions = [
+        users_pre_registration_details.c.product_name == product_name
+    ]
+    user_conditions = []
 
     # Add account request status filter if specified
     if filter_any_account_request_status:
-        pre_reg_where.append(
+        pre_reg_query_conditions.append(
             users_pre_registration_details.c.account_request_status.in_(
                 filter_any_account_request_status
             )
@@ -470,7 +488,7 @@ async def list_merged_pre_and_registered_users(
 
     # Add filter for deleted users
     if not filter_include_deleted:
-        users_where.append(users.c.status != UserStatus.DELETED)
+        user_conditions.append(users.c.status != UserStatus.DELETED)
 
     # Create subquery for reviewer username
     account_request_reviewed_by_username = (
@@ -479,7 +497,7 @@ async def list_merged_pre_and_registered_users(
 
     # Query for pre-registered users
     # We need to left join with users to identify if the pre-registered user is already in the system
-    pre_reg_query = (
+    pre_registered_users_query = (
         sa.select(
             users_pre_registration_details.c.id,
             users_pre_registration_details.c.pre_email.label("email"),
@@ -495,6 +513,12 @@ async def list_merged_pre_and_registered_users(
             users_pre_registration_details.c.user_id.label("pre_reg_user_id"),
             users_pre_registration_details.c.extras,
             users_pre_registration_details.c.created,
+            # Computed current_status_created column
+            sa.func.coalesce(
+                users.c.created_at,  # If user exists, use users.created_at
+                users_pre_registration_details.c.account_request_reviewed_at,  # Else if reviewed, use review date
+                users_pre_registration_details.c.created,  # Else use pre-registration created date
+            ).label("current_status_created"),
             users_pre_registration_details.c.account_request_status,
             users_pre_registration_details.c.account_request_reviewed_by,
             users_pre_registration_details.c.account_request_reviewed_at,
@@ -512,11 +536,11 @@ async def list_merged_pre_and_registered_users(
                 users, users_pre_registration_details.c.user_id == users.c.id
             )
         )
-        .where(sa.and_(*pre_reg_where))
+        .where(sa.and_(*pre_reg_query_conditions))
     )
 
     # Query for users that are associated with the product through groups
-    users_query = (
+    registered_users_query = (
         sa.select(
             sa.literal(None).label("id"),
             users.c.email,
@@ -532,6 +556,8 @@ async def list_merged_pre_and_registered_users(
             sa.literal(None).label("pre_reg_user_id"),
             sa.literal(None).label("extras"),
             users.c.created_at.label("created"),
+            # For regular users, current_status_created is just their created_at
+            users.c.created_at.label("current_status_created"),
             sa.literal(None).label("account_request_status"),
             sa.literal(None).label("account_request_reviewed_by"),
             sa.literal(None).label("account_request_reviewed_at"),
@@ -549,34 +575,52 @@ async def list_merged_pre_and_registered_users(
             .join(groups, groups.c.gid == user_to_groups.c.gid)
             .join(products, products.c.group_id == groups.c.gid)
         )
-        .where(sa.and_(products.c.name == product_name, *users_where))
+        .where(sa.and_(products.c.name == product_name, *user_conditions))
     )
 
     # If filtering by account request status, we only want pre-registered users with any of those statuses
     # No need to union with regular users as they don't have account_request_status
     merged_query: sa.sql.Select | sa.sql.CompoundSelect
     if filter_any_account_request_status:
-        merged_query = pre_reg_query
+        merged_query = pre_registered_users_query
     else:
-        merged_query = pre_reg_query.union_all(users_query)
+        merged_query = pre_registered_users_query.union_all(registered_users_query)
 
-    # Add distinct on email to eliminate duplicates
+    # Add distinct on email to eliminate duplicates using ROW_NUMBER()
     merged_query_subq = merged_query.subquery()
-    distinct_query = (
-        sa.select(merged_query_subq)
-        .select_from(merged_query_subq)
-        .distinct(merged_query_subq.c.email)
-        .order_by(
-            merged_query_subq.c.email,
-            # Prioritize pre-registration records if duplicate emails exist
-            merged_query_subq.c.is_pre_registered.desc(),
-            merged_query_subq.c.created.desc(),
+
+    # Use ROW_NUMBER() to prioritize records per email
+    # This allows us to order by any field without DISTINCT ON constraints
+    ranked_query = sa.select(
+        merged_query_subq,
+        sa.func.row_number()
+        .over(
+            partition_by=merged_query_subq.c.email,
+            order_by=[
+                merged_query_subq.c.is_pre_registered.desc(),  # Prioritize pre-registered
+                merged_query_subq.c.current_status_created.desc(),  # Then by most recent
+            ],
         )
+        .label("rn"),
+    ).subquery()
+
+    # Filter to get only the first record per email (rn = 1)
+    filtered_query = sa.select(
+        *[col for col in ranked_query.c if col.name != "rn"]
+    ).where(ranked_query.c.rn == 1)
+
+    # Build ordering clauses using the extracted function
+    order_by_clauses = _build_ordering_clauses_for_filtered_query(
+        filtered_query, order_by
+    )
+
+    final_query = (
+        filtered_query.order_by(*order_by_clauses)
         .limit(pagination_limit)
         .offset(pagination_offset)
     )
 
-    # Count query (for pagination)
+    # Count query (for pagination) - count distinct emails
     count_query = sa.select(sa.func.count().label("total")).select_from(
         sa.select(merged_query_subq.c.email)
         .select_from(merged_query_subq)
@@ -590,7 +634,39 @@ async def list_merged_pre_and_registered_users(
         total_count = count_result.scalar_one()
 
         # Get user records
-        result = await conn.execute(distinct_query)
+        result = await conn.execute(final_query)
         records = result.mappings().all()
 
-    return cast(list[dict[str, Any]], records), total_count
+    return cast(list[MergedUserData], records), total_count
+
+
+def _build_ordering_clauses_for_filtered_query(
+    query: sa.sql.Select,
+    order_by: list[tuple[OrderKeys, OrderDirection]] | None = None,
+) -> list[sa.sql.ColumnElement]:
+    """Build ORDER BY clauses for filtered query (no DISTINCT ON constraints)."""
+    _ordering_criteria: list[tuple[str, OrderDirection]] = []
+
+    if order_by is None:
+        # Default ordering
+        _ordering_criteria = [
+            ("email", OrderDirection.ASC),
+            ("is_pre_registered", OrderDirection.DESC),
+            ("current_status_created", OrderDirection.DESC),
+        ]
+    else:
+        _ordering_criteria = list(order_by)
+        # Always append is_pre_registered prioritization for custom ordering
+        if not any(field == "is_pre_registered" for field, _ in order_by):
+            _ordering_criteria.append(("is_pre_registered", OrderDirection.DESC))
+
+    order_by_clauses = []
+    for field, direction in _ordering_criteria:
+        # Get column from the query's selected columns
+        column = next(col for col in query.selected_columns if col.name == field)
+        if direction == OrderDirection.ASC:
+            order_by_clauses.append(column.asc())
+        else:
+            order_by_clauses.append(column.desc())
+
+    return order_by_clauses
