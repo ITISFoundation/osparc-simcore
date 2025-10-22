@@ -84,6 +84,16 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
             True,
         ),
         (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "no"}),
+            True,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "no"}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
+            False,
+        ),
+        (
             Resources(cpus=0.1, ram=ByteSize(1)),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
             False,
@@ -178,6 +188,11 @@ def test_resources_ge_operator(
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "no"}),
             True,
+        ),
+        (
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "no"}),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
+            False,
         ),
     ],
 )

@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import re
 import tempfile
@@ -17,6 +18,8 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StringConstraints,
+    TypeAdapter,
+    ValidationError,
     field_validator,
 )
 from pydantic.config import JsonDict
@@ -82,8 +85,15 @@ class Resources(BaseModel, frozen=True):
                     return False
             else:
                 # remaining options is a is str and b is str or mixed types
+                # NOTE: we cannot compare strings unless they are equal or some kind of boolean (e.g. "true", "false", "yes", "no", "1", "0")
                 assert isinstance(a, str)  # nosec
                 assert isinstance(b, int | float | str)  # nosec
+                # let's try to get a boolean out of the values to compare them
+                with contextlib.suppress(ValidationError):
+                    a_as_boolean = TypeAdapter(bool).validate_python(a)
+                    b_as_boolean = TypeAdapter(bool).validate_python(b)
+                    if not a_as_boolean and b_as_boolean:
+                        return False
 
         # here we have either everything greater or equal or non-comparable strings
 
