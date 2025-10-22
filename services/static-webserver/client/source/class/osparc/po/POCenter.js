@@ -18,7 +18,7 @@
 qx.Class.define("osparc.po.POCenter", {
   extend: osparc.ui.window.TabbedView,
 
-  construct: function() {
+  construct: function(openPage) {
     this.base(arguments);
 
     const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
@@ -31,6 +31,10 @@ qx.Class.define("osparc.po.POCenter", {
     this.__addPreRegistrationPage();
     this.__addInvitationsPage();
     this.__addProductPage();
+
+    if (openPage) {
+      this.__openPage(openPage);
+    }
   },
 
   members: {
@@ -45,7 +49,8 @@ qx.Class.define("osparc.po.POCenter", {
       const title = this.tr("Review Users");
       const iconSrc = "@FontAwesome5Solid/user-plus/22";
       const usersPending = new osparc.po.UsersPending();
-      this.addTab(title, iconSrc, usersPending);
+      const page = this.addTab(title, iconSrc, usersPending);
+      page.pageId = "reviewUsers";
     },
 
     __addPreRegistrationPage: function() {
@@ -67,6 +72,15 @@ qx.Class.define("osparc.po.POCenter", {
       const iconSrc = "@FontAwesome5Solid/info/22";
       const productInfo = new osparc.po.ProductInfo();
       this.addTab(title, iconSrc, productInfo);
+    },
+
+    __openPage: function(openPage) {
+      const tabsView = this.getChildControl("tabs-view");
+      const pages = tabsView.getChildren();
+      const page = pages.find(page => page.pageId && page.pageId === openPage);
+      if (page) {
+        tabsView.setSelection([page]);
+      }
     },
   }
 });
