@@ -1804,7 +1804,7 @@ paths:
           - type: string
             minLength: 3
             maxLength: 200
-            pattern: ^[^%]*$
+            pattern: ^[A-Za-z0-9 ._\*@-]*$
           - type: 'null'
           title: Email
       - name: primary_group_id
@@ -1825,7 +1825,7 @@ paths:
           - type: string
             minLength: 3
             maxLength: 200
-            pattern: ^[^%]*$
+            pattern: ^[A-Za-z0-9 ._\*@-]*$
           - type: 'null'
           title: User Name
       responses:
@@ -13038,9 +13038,14 @@ components:
       properties:
         label:
           type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Label
         description:
           type: string
+          maxLength: 5000
+          minLength: 3
           title: Description
         thumbnail:
           anyOf:
@@ -13126,11 +13131,16 @@ components:
         label:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
+            pattern: ^[A-Za-z0-9 ._-]+$
           - type: 'null'
           title: Label
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         thumbnail:
@@ -13155,7 +13165,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         email:
@@ -13183,7 +13193,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
           description: None if private
@@ -18097,10 +18107,15 @@ components:
       properties:
         name:
           type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         color:
@@ -18189,11 +18204,16 @@ components:
         name:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
+            pattern: ^[A-Za-z0-9 ._-]+$
           - type: 'null'
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         color:
@@ -18623,7 +18643,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Invitedby
         accountRequestStatus:
@@ -18634,7 +18654,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Accountrequestreviewedby
         accountRequestReviewedAt:
@@ -18671,7 +18691,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
           description: Username of the user if an account was created
@@ -18783,7 +18803,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         firstName:
@@ -18941,8 +18961,9 @@ components:
       properties:
         match:
           type: string
-          maxLength: 80
+          maxLength: 200
           minLength: 1
+          pattern: ^[A-Za-z0-9 ._@-]*$
           title: Match
           description: Search string to match with usernames and public profiles (e.g.
             emails, first/last name)
