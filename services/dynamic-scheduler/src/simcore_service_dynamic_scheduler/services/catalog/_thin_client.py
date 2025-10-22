@@ -40,7 +40,7 @@ class CatalogThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespan
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
-    async def get_services_labels(
+    async def get_docker_image_labels(
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> Response:
         return await self.client.get(
