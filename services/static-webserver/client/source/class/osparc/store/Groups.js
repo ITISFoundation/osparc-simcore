@@ -43,6 +43,13 @@ qx.Class.define("osparc.store.Groups", {
       event: "changeSupportGroup",
     },
 
+    chatbot: {
+      check: "osparc.data.model.Group",
+      init: null,
+      nullable: true,
+      event: "changeChatbot",
+    },
+
     organizations: {
       check: "Object",
       init: {},
@@ -105,6 +112,10 @@ qx.Class.define("osparc.store.Groups", {
               "delete": false,
             };
             supportGroup = this.__addToGroupsCache(resp["support"], "support");
+          }
+          if ("chatbot" in resp && resp["chatbot"]) {
+            const chatbot = new osparc.data.model.Group(resp["chatbot"]);
+            this.setChatbot(chatbot);
           }
           const groupMe = this.__addToGroupsCache(resp["me"], "me");
           const orgs = {};
