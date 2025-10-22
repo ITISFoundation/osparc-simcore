@@ -92,7 +92,7 @@ async def stop_dynamic_service(
     if tracked_service and tracked_service.dynamic_service_start:
         service_labels = await CatalogPublicClient.get_from_app_state(
             app
-        ).get_service_labels(
+        ).get_docker_image_labels(
             tracked_service.dynamic_service_start.key,
             tracked_service.dynamic_service_start.version,
         )
