@@ -149,3 +149,5 @@ async def director_v2_lifespan(app: FastAPI) -> AsyncIterator[State]:
     public_client.set_to_app_state(app)
 
     yield {}
+
+    public_client.pop_from_app_state(app)

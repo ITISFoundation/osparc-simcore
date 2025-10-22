@@ -82,9 +82,10 @@ qx.Class.define("osparc.data.model.Conversation", {
 
     type: {
       check: [
-        "PROJECT_STATIC",
-        "PROJECT_ANNOTATION",
-        "SUPPORT",
+        "PROJECT_STATIC",     // osparc.store.ConversationsProject.TYPES.PROJECT_STATIC
+        "PROJECT_ANNOTATION", // osparc.store.ConversationsProject.TYPES.PROJECT_ANNOTATION
+        "SUPPORT",            // osparc.store.ConversationsSupport.TYPES.SUPPORT
+        "SUPPORT_CALL",       // osparc.store.ConversationsSupport.TYPES.SUPPORT_CALL
       ],
       nullable: false,
       init: null,
@@ -188,7 +189,8 @@ qx.Class.define("osparc.data.model.Conversation", {
       return promise
         .then(resp => {
           const messagesData = resp["data"];
-          messagesData.forEach(messageData => this._addMessage(messageData));
+          const markAsUnread = false;
+          messagesData.forEach(messageData => this._addMessage(messageData, markAsUnread));
           this.__nextRequestParams = resp["_links"]["next"];
           return resp;
         })
