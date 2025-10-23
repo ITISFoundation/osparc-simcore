@@ -198,7 +198,11 @@ def user_project_in_2_products(
 ) -> Iterator[ProjectDict]:
     fake_product_name = faker.name()
     with postgres_db.connect() as conn:
-        conn.execute(products.insert().values(name=fake_product_name, host_regex=""))
+        conn.execute(
+            products.insert().values(
+                name=fake_product_name, host_regex="", base_url="http://localhost"
+            )
+        )
         conn.execute(
             projects_to_products.insert().values(
                 project_uuid=user_project["uuid"], product_name=fake_product_name

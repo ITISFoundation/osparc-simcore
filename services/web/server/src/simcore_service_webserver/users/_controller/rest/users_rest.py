@@ -56,6 +56,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
         groups_by_type,
         my_product_group,
         product_support_group,
+        product_chatbot_primary_group,
     ) = await groups_service.get_user_profile_groups(
         request.app, user_id=req_ctx.user_id, product=product
     )
@@ -85,6 +86,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
         my_product_group,
         preferences,
         product_support_group,
+        product_chatbot_primary_group,
         my_address,
     )
 
