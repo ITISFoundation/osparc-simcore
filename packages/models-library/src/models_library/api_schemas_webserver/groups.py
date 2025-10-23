@@ -202,6 +202,12 @@ class MyGroupsGet(OutputSchema):
             description="Group ID of the app support team or None if no support is defined for this product"
         ),
     ] = None
+    chatbot: Annotated[
+        GroupGetBase | None,
+        Field(
+            description="Group ID of the support chatbot user or None if no chatbot is defined for this product"
+        ),
+    ] = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -246,6 +252,12 @@ class MyGroupsGet(OutputSchema):
                     "description": "The support team of the application",
                     "thumbnail": "https://placekitten.com/15/15",
                 },
+                "chatbot": {
+                    "gid": "6",
+                    "label": "Chatbot User",
+                    "description": "The chatbot user of the application",
+                    "thumbnail": "https://placekitten.com/15/15",
+                },
             }
         }
     )
@@ -256,6 +268,7 @@ class MyGroupsGet(OutputSchema):
         groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
         product_support_group: Group | None,
+        product_chatbot_primary_group: Group | None,
     ) -> Self:
         assert groups_by_type.primary  # nosec
         assert groups_by_type.everyone  # nosec
@@ -276,6 +289,13 @@ class MyGroupsGet(OutputSchema):
                     GroupGetBase.dump_basic_group_data(product_support_group)
                 )
                 if product_support_group
+                else None
+            ),
+            chatbot=(
+                GroupGetBase.model_validate(
+                    GroupGetBase.dump_basic_group_data(product_chatbot_primary_group)
+                )
+                if product_chatbot_primary_group
                 else None
             ),
         )

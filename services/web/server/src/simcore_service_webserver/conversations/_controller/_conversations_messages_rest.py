@@ -9,7 +9,6 @@ from models_library.conversations import (
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
-    ConversationType,
 )
 from models_library.rest_pagination import (
     Page,
@@ -72,7 +71,7 @@ async def create_conversation_message(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
@@ -116,7 +115,7 @@ async def list_conversation_messages(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
@@ -170,7 +169,7 @@ async def get_conversation_message(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
@@ -208,7 +207,7 @@ async def update_conversation_message(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
@@ -248,7 +247,7 @@ async def delete_conversation_message(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
