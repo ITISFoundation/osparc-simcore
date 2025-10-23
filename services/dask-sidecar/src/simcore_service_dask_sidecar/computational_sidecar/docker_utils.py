@@ -422,9 +422,11 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
 ) -> AsyncIterator[Awaitable[None]]:
+    # TODO: implement the gneeric error!!
     """
     Raises:
         ServiceTimeoutLoggingError -- raised when no logs are received for longer than _AIODOCKER_LOGS_TIMEOUT_S
+        DaskSidecarLoggerError -- raised for any other issue
     """
     monitoring_task = None
     try:
