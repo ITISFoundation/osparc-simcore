@@ -17,10 +17,12 @@ from ._event_after_registration import (
 )
 from ._lifespan import generic_scheduler_lifespan
 from ._models import (
+    OperationContext,
     OperationName,
     OperationToStart,
     ProvidedOperationContext,
     RequiredOperationContext,
+    ReservedContextKeys,
     ScheduleId,
 )
 from ._operation import (
@@ -48,6 +50,7 @@ __all__: tuple[str, ...] = (
     "get_step_store_proxy",
     "NoDataFoundError",
     "Operation",
+    "OperationContext",
     "OperationContextProxy",
     "OperationName",
     "OperationRegistry",
@@ -57,6 +60,7 @@ __all__: tuple[str, ...] = (
     "register_to_start_after_on_executed_completed",
     "register_to_start_after_on_reverted_completed",
     "RequiredOperationContext",
+    "ReservedContextKeys",
     "restart_operation_step_stuck_during_revert",
     "restart_operation_step_stuck_in_manual_intervention_during_execute",
     "ScheduleId",

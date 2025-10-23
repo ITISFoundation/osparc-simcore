@@ -29,6 +29,7 @@ from ..services.generic_scheduler import generic_scheduler_lifespan
 from ..services.notifier import get_notifier_lifespans
 from ..services.rabbitmq import rabbitmq_lifespan
 from ..services.redis import redis_lifespan
+from ..services.scheduler import scheduler_lifespan
 from ..services.service_tracker import service_tracker_lifespan
 from ..services.status_monitor import status_monitor_lifespan
 from .settings import ApplicationSettings
@@ -84,6 +85,7 @@ def create_app_lifespan(
         app_lifespan.add(lifespan)
 
     app_lifespan.add(generic_scheduler_lifespan)
+    app_lifespan.add(scheduler_lifespan)
 
     app_lifespan.add(service_tracker_lifespan)
     app_lifespan.add(deferred_manager_lifespan)

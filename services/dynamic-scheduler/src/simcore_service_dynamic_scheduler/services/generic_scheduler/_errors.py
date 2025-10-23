@@ -38,10 +38,6 @@ class UnexpectedStepHandlingError(BaseGenericSchedulerError):
     )
 
 
-class OperationContextValueIsNoneError(BaseGenericSchedulerError):
-    msg_template: str = "Values of context cannot be None: {operation_context}"
-
-
 class ProvidedOperationContextKeysAreMissingError(BaseGenericSchedulerError):
     msg_template: str = (
         "Provided context {provided_context} is missing keys {missing_keys}, was expecting {expected_keys}"
