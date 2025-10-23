@@ -106,16 +106,11 @@ qx.Class.define("osparc.store.Groups", {
           const productEveryoneGroup = this.__addToGroupsCache(resp["product"], "productEveryone");
           let supportGroup = null;
           if ("support" in resp && resp["support"]) {
-            resp["support"]["accessRights"] = {
-              "read": false,
-              "write": false,
-              "delete": false,
-            };
             supportGroup = this.__addToGroupsCache(resp["support"], "support");
           }
+          let chatbot = null;
           if ("chatbot" in resp && resp["chatbot"]) {
-            const chatbot = new osparc.data.model.Group(resp["chatbot"]);
-            this.setChatbot(chatbot);
+            chatbot = this.__addToGroupsCache(resp["chatbot"], "chatbot");
           }
           const groupMe = this.__addToGroupsCache(resp["me"], "me");
           const orgs = {};
@@ -131,6 +126,7 @@ qx.Class.define("osparc.store.Groups", {
           this.setEveryoneGroup(everyoneGroup);
           this.setEveryoneProductGroup(productEveryoneGroup);
           this.setSupportGroup(supportGroup);
+          this.setChatbot(chatbot);
           this.setOrganizations(orgs);
           this.setGroupMe(groupMe);
           const myAuthData = osparc.auth.Data.getInstance();
