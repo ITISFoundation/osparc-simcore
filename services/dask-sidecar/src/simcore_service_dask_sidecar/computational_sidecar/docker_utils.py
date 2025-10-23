@@ -272,6 +272,11 @@ async def _parse_container_docker_logs(
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
 ) -> None:
+    """
+
+    Raises:
+        TimeoutError: raised when no logs are received for longer than _AIODOCKER_LOGS_TIMEOUT_S
+    """
     with log_context(
         logger, logging.DEBUG, "started monitoring of >=1.0 service - using docker logs"
     ):
@@ -348,41 +353,40 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
     are retrieved using the usual cli 'docker logs CONTAINERID'
     """
 
-    with log_catch(logger, reraise=False):
-        container_info = await container.show()
-        container_name = container_info.get("Name", "undefined")
-        with log_context(
-            logger,
-            logging.INFO,
-            f"parse logs of {service_key}:{service_version} - {container.id}-{container_name}",
-        ):
-            if integration_version > LEGACY_INTEGRATION_VERSION:
-                await _parse_container_docker_logs(
-                    container=container,
-                    progress_regexp=progress_regexp,
-                    service_key=service_key,
-                    service_version=service_version,
-                    container_name=container_name,
-                    task_publishers=task_publishers,
-                    log_file_url=log_file_url,
-                    log_publishing_cb=log_publishing_cb,
-                    s3_settings=s3_settings,
-                    progress_bar=progress_bar,
-                )
-            else:
-                await _parse_container_log_file(
-                    container=container,
-                    progress_regexp=progress_regexp,
-                    service_key=service_key,
-                    service_version=service_version,
-                    container_name=container_name,
-                    task_publishers=task_publishers,
-                    task_volumes=task_volumes,
-                    log_file_url=log_file_url,
-                    log_publishing_cb=log_publishing_cb,
-                    s3_settings=s3_settings,
-                    progress_bar=progress_bar,
-                )
+    container_info = await container.show()
+    container_name = container_info.get("Name", "undefined")
+    with log_context(
+        logger,
+        logging.INFO,
+        f"parse logs of {service_key}:{service_version} - {container.id}-{container_name}",
+    ):
+        if integration_version > LEGACY_INTEGRATION_VERSION:
+            await _parse_container_docker_logs(
+                container=container,
+                progress_regexp=progress_regexp,
+                service_key=service_key,
+                service_version=service_version,
+                container_name=container_name,
+                task_publishers=task_publishers,
+                log_file_url=log_file_url,
+                log_publishing_cb=log_publishing_cb,
+                s3_settings=s3_settings,
+                progress_bar=progress_bar,
+            )
+        else:
+            await _parse_container_log_file(
+                container=container,
+                progress_regexp=progress_regexp,
+                service_key=service_key,
+                service_version=service_version,
+                container_name=container_name,
+                task_publishers=task_publishers,
+                task_volumes=task_volumes,
+                log_file_url=log_file_url,
+                log_publishing_cb=log_publishing_cb,
+                s3_settings=s3_settings,
+                progress_bar=progress_bar,
+            )
 
 
 @contextlib.asynccontextmanager
