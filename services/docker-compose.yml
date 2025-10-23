@@ -561,7 +561,7 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
-      - docker-api-network
+      - docker_api_subnet
     environment:
       <<:
         - *common_logging_environments
@@ -603,7 +603,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker-api-network
+      - docker_api_subnet
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -1557,8 +1557,8 @@ networks:
     internal: false
     labels:
       com.simcore.description: "computational services network"
-  docker-api-network:
-    name: ${SWARM_STACK_NAME}_docker-api-network
+  docker_api_subnet:
+    name: ${SWARM_STACK_NAME}_docker_api_subnet
     driver: overlay
     attachable: true
     internal: true
