@@ -11,6 +11,9 @@ import distributed
 import pytest
 from arrow import utcnow
 from aws_library.ec2 import Resources
+from dask_task_models_library.resource_constraints import (
+    DASK_WORKER_THREAD_RESOURCE_NAME,
+)
 from faker import Faker
 from models_library.clusters import (
     ClusterAuthentication,
@@ -31,14 +34,20 @@ from simcore_service_autoscaling.models import (
     EC2InstanceData,
 )
 from simcore_service_autoscaling.modules.dask import (
+    DaskMonitoringSettings,
     DaskTask,
     _scheduler_client,
+    add_instance_generic_resources,
+    compute_cluster_total_resources,
     get_worker_still_has_results_in_memory,
     get_worker_used_resources,
+    is_worker_connected,
+    is_worker_retired,
     list_processing_tasks_per_worker,
     list_unrunnable_tasks,
+    try_retire_nodes,
 )
-from tenacity import retry, stop_after_delay, wait_fixed
+from tenacity import AsyncRetrying, retry, stop_after_delay, wait_fixed
 
 _authentication_types = [
     NoAuthentication(),
@@ -115,11 +124,14 @@ async def test_list_unrunnable_tasks(
     # we have nothing running now
     assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == []
     # start a task that cannot run
-    dask_task_impossible_resources = {"XRAM": 213}
+    dask_task_impossible_resources = DaskTaskResources(XRAM=213, threads=1)  # type: ignore
     future = create_dask_task(dask_task_impossible_resources)
     assert future
     assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == [
-        DaskTask(task_id=future.key, required_resources=dask_task_impossible_resources)
+        DaskTask(
+            task_id=future.key,
+            required_resources=(dask_task_impossible_resources),
+        )
     ]
     # remove that future, will remove the task
     del future
@@ -154,7 +166,10 @@ async def test_list_processing_tasks(
         scheduler_url, scheduler_authentication
     ) == {
         next(iter(dask_spec_cluster_client.scheduler_info()["workers"])): [
-            DaskTask(task_id=DaskTaskId(future_queued_task.key), required_resources={})
+            DaskTask(
+                task_id=DaskTaskId(future_queued_task.key),
+                required_resources=DaskTaskResources(threads=1),  # type: ignore
+            )
         ]
     }
 
@@ -358,7 +373,11 @@ async def test_worker_used_resources(
     await _wait_for_dask_scheduler_to_change_state()
     assert await get_worker_used_resources(
         scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-    ) == Resources(cpus=num_cpus, ram=ByteSize(0))
+    ) == Resources(
+        cpus=num_cpus,
+        ram=ByteSize(0),
+        generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
+    )
 
     result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
     assert result == 7
@@ -370,3 +389,139 @@ async def test_worker_used_resources(
         )
         == Resources.create_as_empty()
     )
+
+
+async def test_compute_cluster_total_resources(
+    dask_spec_local_cluster: distributed.SpecCluster,
+    scheduler_url: AnyUrl,
+    scheduler_authentication: ClusterAuthentication,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    fake_localhost_ec2_instance_data: EC2InstanceData,
+):
+    # asking for resources of empty cluster returns empty resources
+    assert (
+        await compute_cluster_total_resources(
+            scheduler_url, scheduler_authentication, []
+        )
+        == Resources.create_as_empty()
+    )
+    ec2_instance_data = fake_ec2_instance_data()
+    assert ec2_instance_data.resources.cpus > 0
+    assert ec2_instance_data.resources.ram > 0
+    assert ec2_instance_data.resources.generic_resources == {}
+    assert (
+        await compute_cluster_total_resources(
+            scheduler_url, scheduler_authentication, [ec2_instance_data]
+        )
+        == Resources.create_as_empty()
+    ), "this instance is not connected and should not be accounted for"
+
+    cluster_total_resources = await compute_cluster_total_resources(
+        scheduler_url, scheduler_authentication, [fake_localhost_ec2_instance_data]
+    )
+    assert cluster_total_resources.cpus > 0
+    assert cluster_total_resources.ram > 0
+    assert DASK_WORKER_THREAD_RESOURCE_NAME in cluster_total_resources.generic_resources
+    assert (
+        cluster_total_resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] == 2
+    )
+
+
+@pytest.mark.parametrize(
+    "dask_nthreads, dask_nthreads_multiplier, expected_threads_resource",
+    [(4, 1, 4), (4, 2, 8), (0, 2, -1)],
+)
+def test_add_instance_generic_resources(
+    scheduler_url: AnyUrl,
+    scheduler_authentication: ClusterAuthentication,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    dask_nthreads: int,
+    dask_nthreads_multiplier: int,
+    expected_threads_resource: int,
+):
+    settings = DaskMonitoringSettings(
+        DASK_MONITORING_URL=scheduler_url,
+        DASK_SCHEDULER_AUTH=scheduler_authentication,
+        DASK_NTHREADS=dask_nthreads,
+        DASK_NTHREADS_MULTIPLIER=dask_nthreads_multiplier,
+    )
+    ec2_instance_data = fake_ec2_instance_data()
+    assert ec2_instance_data.resources.cpus > 0
+    assert ec2_instance_data.resources.ram > 0
+    assert ec2_instance_data.resources.generic_resources == {}
+
+    add_instance_generic_resources(settings, ec2_instance_data)
+    assert ec2_instance_data.resources.generic_resources != {}
+    assert (
+        DASK_WORKER_THREAD_RESOURCE_NAME
+        in ec2_instance_data.resources.generic_resources
+    )
+    if expected_threads_resource < 0:
+        expected_threads_resource = int(
+            ec2_instance_data.resources.cpus * dask_nthreads_multiplier
+        )
+    assert (
+        ec2_instance_data.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME]
+        == expected_threads_resource
+    )
+
+
+async def test_is_worker_connected(
+    scheduler_url: AnyUrl,
+    scheduler_authentication: ClusterAuthentication,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    fake_localhost_ec2_instance_data: EC2InstanceData,
+):
+    ec2_instance_data = fake_ec2_instance_data()
+    assert (
+        await is_worker_connected(
+            scheduler_url, scheduler_authentication, ec2_instance_data
+        )
+        is False
+    )
+
+    assert (
+        await is_worker_connected(
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
+        )
+        is True
+    )
+
+
+async def test_is_worker_retired(
+    scheduler_url: AnyUrl,
+    scheduler_authentication: ClusterAuthentication,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    fake_localhost_ec2_instance_data: EC2InstanceData,
+):
+    ec2_instance_data = fake_ec2_instance_data()
+    # fake instance is not connected, so it cannot be retired
+    assert (
+        await is_worker_retired(
+            scheduler_url, scheduler_authentication, ec2_instance_data
+        )
+        is False
+    )
+
+    # localhost is connected, but not retired
+    assert (
+        await is_worker_retired(
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
+        )
+        is False
+    )
+
+    # retire localhost worker
+    await try_retire_nodes(scheduler_url, scheduler_authentication)
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True
+    ):
+        with attempt:
+            assert (
+                await is_worker_retired(
+                    scheduler_url,
+                    scheduler_authentication,
+                    fake_localhost_ec2_instance_data,
+                )
+                is True
+            )

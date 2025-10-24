@@ -326,3 +326,33 @@ async def pull_image(
                 )
 
         await _pull_image_with_retry()
+
+
+_CPUS_SAFE_MARGIN: Final[float] = (
+    1.4  # accounts for machine overhead (ops + sidecar itself)
+)
+_MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
+    0.1  # NOTE: machines always have less available RAM than advertised
+)
+_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
+    "1GiB"
+)
+DYNAMIC_SIDECAR_MIN_CPUS: Final[float] = 0.5
+
+
+def estimate_dynamic_sidecar_resources_from_ec2_instance(
+    cpus: float, ram: int
+) -> tuple[float, int]:
+    """Estimates the resources available to a dynamic-sidecar running in an EC2 instance,
+    taking into account safe margins for CPU and RAM, as the EC2 full resources are not completely visible
+
+    Returns:
+        tuple: Estimated resources for the dynamic-sidecar (cpus, ram).
+    """
+    # dynamic-sidecar usually needs less CPU
+    sidecar_cpus = max(DYNAMIC_SIDECAR_MIN_CPUS, cpus - _CPUS_SAFE_MARGIN)
+    sidecar_ram = int(
+        ram - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * ram - _SIDECARS_OPS_SAFE_RAM_MARGIN
+    )
+
+    return (sidecar_cpus, sidecar_ram)
