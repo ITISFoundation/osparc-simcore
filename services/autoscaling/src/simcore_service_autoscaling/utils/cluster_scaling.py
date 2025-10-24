@@ -109,12 +109,11 @@ def find_selected_instance_type_for_task(
     selected_instance = filtered_instances[0]
 
     # check that the assigned resources and the machine resource fit
-    if not (task_required_resources <= selected_instance.resources):
+    if task_required_resources > selected_instance.resources:
         raise TaskRequirementsAboveRequiredEC2InstanceTypeError(
             task=task,
             instance_type=selected_instance,
             resources=task_required_resources,
-            resources_diff=task_required_resources - selected_instance.resources,
         )
 
     return selected_instance

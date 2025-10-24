@@ -18,7 +18,7 @@ class TaskRequiresUnauthorizedEC2InstanceTypeError(AutoscalingRuntimeError):
 
 class TaskRequirementsAboveRequiredEC2InstanceTypeError(AutoscalingRuntimeError):
     msg_template: str = (
-        "Task {task} specifies instance type {instance_type} but requests {resources}. {resources_diff} are missing! "
+        "Task {task} requires {instance_type} but requires {resources}. "
         "TIP: Ensure task resources requirements fit required instance type available resources."
     )
 
@@ -43,6 +43,4 @@ class DaskNoWorkersError(AutoscalingRuntimeError):
 
 
 class DaskWorkerNotFoundError(AutoscalingRuntimeError):
-    msg_template: str = (
-        "Dask worker running on {worker_host} is not registered to scheduler in {url}, it is not found!"
-    )
+    msg_template: str = "Dask worker running on {worker_host} is not registered to scheduler in {url}, it is not found!"
