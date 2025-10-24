@@ -22,7 +22,7 @@ class BasePreferencesRepo:
         return result if result is not None else False
 
     @classmethod
-    async def set_allows_guests_to_push_states_and_output_ports(
+    async def set_allow_guests_to_push_states_and_output_ports(
         cls, connection: SAConnection, *, project_uuid: str
     ) -> None:
         await connection.execute(

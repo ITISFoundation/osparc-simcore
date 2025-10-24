@@ -45,7 +45,7 @@ async def test_something(
     )
 
     # add the entry in the table
-    await BasePreferencesRepo.set_allows_guests_to_push_states_and_output_ports(
+    await BasePreferencesRepo.set_allow_guests_to_push_states_and_output_ports(
         connection, project_uuid=project["uuid"]
     )
 
