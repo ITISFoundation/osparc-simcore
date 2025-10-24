@@ -112,6 +112,10 @@ async def _get_tasks_to_remove(
     tasks_to_remove: list[tuple[TaskId, TaskContext]] = []
 
     for tracked_task in await tracked_tasks.list_tasks_data():
+        if tracked_task.fire_and_forget:
+            # fire and forget tasks are not considered stale
+            continue
+
         if tracked_task.last_status_check is None:
             # the task just added or never received a poll request
             elapsed_from_start = (utc_now - tracked_task.started).total_seconds()
@@ -314,6 +318,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         """
         self._started_event_task_tasks_monitor.set()
         task_id: TaskId
+        to_remove: list[tuple[TaskId, TaskContext]] = []
+
         for task_id in set(self._created_tasks.keys()):
             if task := self._created_tasks.get(task_id, None):
                 is_done = task.done()
@@ -323,14 +329,19 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
                 # write to redis only when done
                 task_data = await self._tasks_data.get_task_data(task_id)
-                if task_data is None or task_data.is_done:
-                    # already done and updatet data in redis
+                if task_data is None:
+                    continue
+
+                # already done and updatet data in redis
+                if task_data.is_done:
                     continue
 
                 result_field: ResultField | None = None
                 # get task result
                 try:
                     result_field = ResultField(str_result=dumps(task.result()))
+                    if task_data.fire_and_forget:
+                        to_remove.append((task_data.task_id, task_data.task_context))
                 except asyncio.InvalidStateError:
                     # task was not completed try again next time and see if it is done
                     continue
@@ -394,13 +405,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     updates["result_field"] = result_field
                 await self._tasks_data.update_task_data(task_id, updates=updates)
 
-                # always remove fire and forget when done, no need to keep them around
-                if task_data.fire_and_forget:
-                    await self.remove_task(
-                        task_data.task_id,
-                        task_data.task_context,
-                        wait_for_removal=False,
-                    )
+        # always remove fire and forget when done, no need to keep them around
+        for task_id, task_context in to_remove:
+            await self.remove_task(task_id, task_context, wait_for_removal=False)
 
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
