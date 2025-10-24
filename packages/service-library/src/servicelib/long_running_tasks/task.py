@@ -423,6 +423,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     updates["result_field"] = result_field
                 await self._tasks_data.update_task_data(task_id, updates=updates)
 
+                # always remove fire and forget when done, no need to keep them around
+                if task_data and task_data.fire_and_forget:
+                    await self.remove_task(
+                        task_data.task_id,
+                        task_data.task_context,
+                        wait_for_removal=False,
+                    )
+
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
             return [
