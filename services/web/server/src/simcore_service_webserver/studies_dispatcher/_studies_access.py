@@ -25,8 +25,10 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
+from simcore_postgres_database.utils_projects_optionals import BasePreferencesRepo
 
 from ..constants import INDEX_RESOURCE_NAME
+from ..db.plugin import get_asyncpg_engine
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
@@ -220,6 +222,14 @@ async def copy_study_to_account(
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(project["uuid"])
         )
+
+        # set the same option in the new project from the tempalte
+        if await BasePreferencesRepo.allows_guests_to_push_states_and_output_ports(
+            get_asyncpg_engine(request.app), project_uuid=template_project["uuid"]
+        ):
+            await BasePreferencesRepo.set_allow_guests_to_push_states_and_output_ports(
+                get_asyncpg_engine(request.app), project_uuid=project["uuid"]
+            )
 
     return project_uuid
 

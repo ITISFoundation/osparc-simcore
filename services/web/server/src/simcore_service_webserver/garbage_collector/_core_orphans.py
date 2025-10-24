@@ -12,7 +12,9 @@ from models_library.projects_nodes_io import NodeID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed, limited_gather
+from simcore_postgres_database.utils_projects_optionals import BasePreferencesRepo
 
+from ..db.plugin import get_asyncpg_engine
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..projects._projects_service import (
     is_node_id_present_in_any_project_workbench,
@@ -53,6 +55,14 @@ async def _remove_service(
                     permission="write",
                 )
             )
+
+    if (
+        user_role == UserRole.GUEST
+        and BasePreferencesRepo.allows_guests_to_push_states_and_output_ports(
+            get_asyncpg_engine(app), project_uuid=f"{service.project_id}"
+        )
+    ):
+        save_service_state = True
 
     with (
         log_catch(_logger, reraise=False),
