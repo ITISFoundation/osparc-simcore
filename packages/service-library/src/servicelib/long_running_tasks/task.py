@@ -113,8 +113,33 @@ async def _get_tasks_to_remove(
 
     for tracked_task in await tracked_tasks.list_tasks_data():
         if tracked_task.fire_and_forget:
-            # fire and forget tasks are not considered stale
-            continue
+            # fire and forget tasks also need to be remove from tracking
+            # when detectes as done, start counting how much time has elapsed
+            # if over stale_task_detect_timeout_s remove the task
+
+            # wait for task to complete
+            if not tracked_task.is_done:
+                continue
+
+            # mark detected as done
+            if tracked_task.detected_as_done_at is None:
+                await tracked_tasks.update_task_data(
+                    tracked_task.task_id,
+                    updates={
+                        "detected_as_done_at": datetime.datetime.now(tz=datetime.UTC)
+                    },
+                )
+                continue
+
+            # if enough time passes remove the task
+            elapsed_since_done = (
+                utc_now - tracked_task.detected_as_done_at
+            ).total_seconds()
+            if elapsed_since_done > stale_task_detect_timeout_s:
+                tasks_to_remove.append(
+                    (tracked_task.task_id, tracked_task.task_context)
+                )
+                continue
 
         if tracked_task.last_status_check is None:
             # the task just added or never received a poll request
@@ -311,16 +336,13 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             limit=_PARALLEL_TASKS_CANCELLATION,
         )
 
-    async def _tasks_monitor(  # pylint:disable=too-many-branches # noqa: C901, PLR0912
-        self,
-    ) -> None:
+    async def _tasks_monitor(self) -> None:  # noqa: C901
         """
         A task which monitors locally running tasks and updates their status
         in the Redis store when they are done.
         """
         self._started_event_task_tasks_monitor.set()
         task_id: TaskId
-        to_remove: list[tuple[TaskId, TaskContext]] = []
 
         for task_id in set(self._created_tasks.keys()):
             if task := self._created_tasks.get(task_id, None):
@@ -331,19 +353,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
                 # write to redis only when done
                 task_data = await self._tasks_data.get_task_data(task_id)
-                if task_data is None:
-                    continue
-
-                # already done and updatet data in redis
-                if task_data.is_done:
+                if task_data is None or task_data.is_done:
+                    # already done and updatet data in redis
                     continue
 
                 result_field: ResultField | None = None
                 # get task result
                 try:
                     result_field = ResultField(str_result=dumps(task.result()))
-                    if task_data.fire_and_forget:
-                        to_remove.append((task_data.task_id, task_data.task_context))
                 except asyncio.InvalidStateError:
                     # task was not completed try again next time and see if it is done
                     continue
@@ -406,10 +423,6 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 if result_field is not None:
                     updates["result_field"] = result_field
                 await self._tasks_data.update_task_data(task_id, updates=updates)
-
-        # always remove fire and forget when done, no need to keep them around
-        for task_id, task_context in to_remove:
-            await self.remove_task(task_id, task_context, wait_for_removal=False)
 
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
