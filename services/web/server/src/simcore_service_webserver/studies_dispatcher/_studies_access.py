@@ -223,7 +223,7 @@ async def copy_study_to_account(
             request.app, project_id=ProjectID(project["uuid"])
         )
 
-        # set the same option in the new project from the tempalte
+        # set the same option in the new project from the template
         if await BaseProjectOptionalsRepo.allows_guests_to_push_states_and_output_ports(
             get_asyncpg_engine(request.app), project_uuid=template_project["uuid"]
         ):
