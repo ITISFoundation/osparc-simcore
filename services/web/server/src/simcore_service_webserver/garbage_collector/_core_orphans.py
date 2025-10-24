@@ -56,13 +56,13 @@ async def _remove_service(
                 )
             )
 
-    if (
-        user_role == UserRole.GUEST
-        and await BaseProjectOptionalsRepo.allows_guests_to_push_states_and_output_ports(
-            get_asyncpg_engine(app), project_uuid=f"{service.project_id}"
-        )
-    ):
-        save_service_state = True
+        if (
+            user_role == UserRole.GUEST
+            and await BaseProjectOptionalsRepo.allows_guests_to_push_states_and_output_ports(
+                get_asyncpg_engine(app), project_uuid=f"{service.project_id}"
+            )
+        ):
+            save_service_state = True
 
     with (
         log_catch(_logger, reraise=False),
