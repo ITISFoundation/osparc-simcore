@@ -889,3 +889,35 @@ def test_delayed_logging_with_small_timeout_raises_exception(
         10,  # larger timeout to avoid issues
     )
     run_computational_sidecar(**waiting_task.sidecar_params())
+
+
+@pytest.mark.parametrize(
+    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+)
+def test_run_sidecar_with_managed_monitor_container_log_task_raising(
+    app_environment: EnvVarsDict,
+    dask_subsystem_mock: dict[str, mock.Mock],
+    sidecar_task: Callable[..., ServiceExampleParam],
+    mocked_get_image_labels: mock.Mock,
+    mocker: MockerFixture,
+):
+    """https://github.com/aio-libs/aiodocker/issues/901"""
+    # Mock the timeout with a very small value
+
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.docker_utils.managed_monitor_container_log_task",
+        side_effect=RuntimeError("Simulated log monitoring failure"),
+    )
+
+    # Configure the task to sleep first and then generate logs
+    waiting_task = sidecar_task(
+        command=[
+            "/bin/bash",
+            "-c",
+            'echo "Starting task"; sleep 5; echo "After sleep"',
+        ]
+    )
+
+    # Execute the task and expect a timeout exception in the logs
+    run_computational_sidecar(**waiting_task.sidecar_params())
+    pytest.fail("TODO: check that the generic error is raised")
