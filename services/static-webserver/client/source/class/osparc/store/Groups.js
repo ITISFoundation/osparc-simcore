@@ -159,7 +159,8 @@ qx.Class.define("osparc.store.Groups", {
               this.__addMemberToCache(orgMember, groupId);
             });
           }
-        });
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     fetchGroupsAndMembers: function() {
