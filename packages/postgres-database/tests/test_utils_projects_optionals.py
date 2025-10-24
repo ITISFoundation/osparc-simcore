@@ -6,6 +6,7 @@ import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from simcore_postgres_database.utils_projects_optionals import BasePreferencesRepo
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -30,6 +31,7 @@ async def fake_project(
 
 
 async def test_something(
+    asyncpg_engine: AsyncEngine,
     connection: SAConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
@@ -39,19 +41,19 @@ async def test_something(
 
     assert (
         await BasePreferencesRepo.allows_guests_to_push_states_and_output_ports(
-            connection, project_uuid=project["uuid"]
+            asyncpg_engine, project_uuid=project["uuid"]
         )
         is False
     )
 
     # add the entry in the table
     await BasePreferencesRepo.set_allow_guests_to_push_states_and_output_ports(
-        connection, project_uuid=project["uuid"]
+        asyncpg_engine, project_uuid=project["uuid"]
     )
 
     assert (
         await BasePreferencesRepo.allows_guests_to_push_states_and_output_ports(
-            connection, project_uuid=project["uuid"]
+            asyncpg_engine, project_uuid=project["uuid"]
         )
         is True
     )
