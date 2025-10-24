@@ -26,6 +26,7 @@ from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import (
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
     ServiceRuntimeError,
+    ServiceTimeoutLoggingError,
 )
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import (
@@ -857,7 +858,6 @@ def test_running_service_with_incorrect_zip_data_that_uses_a_file_to_key_map_rai
     "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
 )
 def test_delayed_logging_with_small_timeout_raises_exception(
-    caplog: pytest.LogCaptureFixture,
     app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sidecar_task: Callable[..., ServiceExampleParam],
@@ -881,17 +881,43 @@ def test_delayed_logging_with_small_timeout_raises_exception(
     )
 
     # Execute the task and expect a timeout exception in the logs
-    with caplog.at_level(logging.ERROR, logger="simcore_service_dask_sidecar"):
+    with pytest.raises(ServiceTimeoutLoggingError):
         run_computational_sidecar(**waiting_task.sidecar_params())
-        assert len(caplog.records) == 1
-        record = caplog.records[0]
-        assert record.exc_info
-        assert isinstance(record.exc_info[1], TimeoutError)
-    caplog.clear()
+
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.docker_utils._AIODOCKER_LOGS_TIMEOUT_S",
         10,  # larger timeout to avoid issues
     )
-    with caplog.at_level(logging.ERROR, logger="simcore_service_dask_sidecar"):
-        run_computational_sidecar(**waiting_task.sidecar_params())
-        assert len(caplog.records) == 0
+    run_computational_sidecar(**waiting_task.sidecar_params())
+
+
+@pytest.mark.parametrize(
+    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+)
+def test_run_sidecar_with_managed_monitor_container_log_task_raising(
+    app_environment: EnvVarsDict,
+    dask_subsystem_mock: dict[str, mock.Mock],
+    sidecar_task: Callable[..., ServiceExampleParam],
+    mocked_get_image_labels: mock.Mock,
+    mocker: MockerFixture,
+):
+    """https://github.com/aio-libs/aiodocker/issues/901"""
+    # Mock the timeout with a very small value
+
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.docker_utils.managed_monitor_container_log_task",
+        side_effect=RuntimeError("Simulated log monitoring failure"),
+    )
+
+    # Configure the task to sleep first and then generate logs
+    waiting_task = sidecar_task(
+        command=[
+            "/bin/bash",
+            "-c",
+            'echo "Starting task"; sleep 5; echo "After sleep"',
+        ]
+    )
+
+    # Execute the task and expect a timeout exception in the logs
+    run_computational_sidecar(**waiting_task.sidecar_params())
+    pytest.fail("TODO: check that the generic error is raised")

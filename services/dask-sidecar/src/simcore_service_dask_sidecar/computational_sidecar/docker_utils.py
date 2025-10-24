@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import datetime
 import logging
 import re
 import socket
@@ -22,6 +23,7 @@ from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.errors import ServiceTimeoutLoggingError
 from dask_task_models_library.container_tasks.protocol import (
     ContainerCommands,
     ContainerEnvsDict,
@@ -56,7 +58,7 @@ from .models import (
 )
 from .task_shared_volume import TaskSharedVolumes
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 LogPublishingCB = Callable[[LogMessageStr, LogLevelInt], Coroutine[Any, Any, None]]
 
 
@@ -102,7 +104,7 @@ async def create_container_config(
             NanoCPUs=nano_cpus_limit,
         ),
     )
-    logger.debug("Container configuration: \n%s", pformat(config.model_dump()))
+    _logger.debug("Container configuration: \n%s", pformat(config.model_dump()))
     return config
 
 
@@ -113,7 +115,7 @@ async def managed_container(
     container = None
     try:
         with log_context(
-            logger, logging.DEBUG, msg=f"managing container {name} for {config.image}"
+            _logger, logging.DEBUG, msg=f"managing container {name} for {config.image}"
         ):
             container = await docker_client.containers.create(
                 config.model_dump(by_alias=True), name=name
@@ -121,7 +123,7 @@ async def managed_container(
             yield container
     except asyncio.CancelledError:
         if container:
-            logger.warning(
+            _logger.warning(
                 "Cancelling run of container %s, for %s", container.id, config.image
             )
         raise
@@ -129,14 +131,14 @@ async def managed_container(
         try:
             if container:
                 with log_context(
-                    logger,
+                    _logger,
                     logging.DEBUG,
                     msg=f"Removing container {name}:{container.id} for {config.image}",
                 ):
                     await container.delete(remove=True, v=True, force=True)
-            logger.info("Completed run of %s", config.image)
+            _logger.info("Completed run of %s", config.image)
         except DockerError:
-            logger.exception(
+            _logger.exception(
                 "Unknown error with docker client when removing container '%s'",
                 container or name,
             )
@@ -166,7 +168,7 @@ _OSPARC_LOG_NUM_PARTS: Final[int] = 2
 async def _try_parse_progress(
     line: str, *, progress_regexp: re.Pattern[str]
 ) -> float | None:
-    with log_catch(logger, reraise=False):
+    with log_catch(_logger, reraise=False):
         # pattern might be like "timestamp log"
         log = line.strip("\n")
         splitted_log = log.split(" ", maxsplit=1)
@@ -215,14 +217,14 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     with log_context(
-        logger,
+        _logger,
         logging.DEBUG,
         "started monitoring of pre-1.0 service - using log file in /logs folder",
     ):
-        async with aiofiles.open(log_file, mode="rt") as file_pointer:
+        async with aiofiles.open(log_file) as file_pointer:
             while (await container.show())["State"]["Running"]:
                 if line := await file_pointer.readline():
-                    logger.info(
+                    _logger.info(
                         "[%s]: %s",
                         f"{service_key}:{service_version} - {container.id}{container_name}",
                         line,
@@ -236,7 +238,7 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
 
             # finish reading the logs if possible
             async for line in file_pointer:
-                logger.info(
+                _logger.info(
                     "[%s]: %s",
                     f"{service_key}:{service_version} - {container.id}{container_name}",
                     line,
@@ -272,60 +274,79 @@ async def _parse_container_docker_logs(
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
 ) -> None:
-    with log_context(
-        logger, logging.DEBUG, "started monitoring of >=1.0 service - using docker logs"
-    ):
-        assert isinstance(container.docker.connector, aiohttp.UnixConnector)  # nosec
-        async with Docker(
-            session=aiohttp.ClientSession(
-                connector=aiohttp.UnixConnector(container.docker.connector.path),
-                timeout=aiohttp.ClientTimeout(total=_AIODOCKER_LOGS_TIMEOUT_S),
-            )
-        ) as docker_client_for_logs:
-            # NOTE: this is a workaround for aiodocker not being able to get the container
-            # logs when the container is not running
-            container_for_long_running_logs = (
-                await docker_client_for_logs.containers.get(container.id)
-            )
-            # NOTE: this is a workaround for aiodocker not being able to get the container
-            # logs when the container is not running
-            await container.show()
-            await container_for_long_running_logs.show()
-            async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
-                log_file_path = (
-                    Path(tmp_dir)
-                    / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
-                )
-                log_file_path.parent.mkdir(parents=True, exist_ok=True)
-                async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
-                    async for log_line in cast(
-                        AsyncGenerator[str, None],
-                        container_for_long_running_logs.log(
-                            stdout=True,
-                            stderr=True,
-                            follow=True,
-                            timestamps=True,
-                        ),
-                    ):
-                        log_msg_without_timestamp = log_line.split(" ", maxsplit=1)[1]
-                        logger.info(
-                            "[%s]: %s",
-                            f"{service_key}:{service_version} - {container_for_long_running_logs.id}{container_name}",
-                            log_msg_without_timestamp,
-                        )
-                        await log_fp.write(log_line.encode("utf-8"))
-                        # NOTE: here we remove the timestamp, only needed for the file
-                        await _parse_and_publish_logs(
-                            log_msg_without_timestamp,
-                            task_publishers=task_publishers,
-                            progress_regexp=progress_regexp,
-                            progress_bar=progress_bar,
-                        )
+    """
 
-                # copy the log file to the log_file_url
-                await push_file_to_remote(
-                    log_file_path, log_file_url, log_publishing_cb, s3_settings
+    Raises:
+        ServiceTimeoutLoggingError: raised when no logs are received for longer than _AIODOCKER_LOGS_TIMEOUT_S
+    """
+    try:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            "started monitoring of >=1.0 service - using docker logs",
+        ):
+            assert isinstance(
+                container.docker.connector, aiohttp.UnixConnector
+            )  # nosec
+            async with Docker(
+                session=aiohttp.ClientSession(
+                    connector=aiohttp.UnixConnector(container.docker.connector.path),
+                    timeout=aiohttp.ClientTimeout(total=_AIODOCKER_LOGS_TIMEOUT_S),
                 )
+            ) as docker_client_for_logs:
+                # NOTE: this is a workaround for aiodocker not being able to get the container
+                # logs when the container is not running
+                container_for_long_running_logs = (
+                    await docker_client_for_logs.containers.get(container.id)
+                )
+                # NOTE: this is a workaround for aiodocker not being able to get the container
+                # logs when the container is not running
+                await container.show()
+                await container_for_long_running_logs.show()
+                async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
+                    log_file_path = (
+                        Path(tmp_dir)
+                        / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
+                    )
+                    log_file_path.parent.mkdir(parents=True, exist_ok=True)
+                    async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
+                        async for log_line in cast(
+                            AsyncGenerator[str, None],
+                            container_for_long_running_logs.log(
+                                stdout=True,
+                                stderr=True,
+                                follow=True,
+                                timestamps=True,
+                            ),
+                        ):
+                            log_msg_without_timestamp = log_line.split(" ", maxsplit=1)[
+                                1
+                            ]
+                            _logger.info(
+                                "[%s]: %s",
+                                f"{service_key}:{service_version} - {container_for_long_running_logs.id}{container_name}",
+                                log_msg_without_timestamp,
+                            )
+                            await log_fp.write(log_line.encode("utf-8"))
+                            # NOTE: here we remove the timestamp, only needed for the file
+                            await _parse_and_publish_logs(
+                                log_msg_without_timestamp,
+                                task_publishers=task_publishers,
+                                progress_regexp=progress_regexp,
+                                progress_bar=progress_bar,
+                            )
+
+                    # copy the log file to the log_file_url
+                    await push_file_to_remote(
+                        log_file_path, log_file_url, log_publishing_cb, s3_settings
+                    )
+    except TimeoutError as e:
+        raise ServiceTimeoutLoggingError(
+            service_key=service_key,
+            service_version=service_version,
+            container_id=container.id,
+            timeout_timedelta=datetime.timedelta(seconds=_AIODOCKER_LOGS_TIMEOUT_S),
+        ) from e
 
 
 async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
@@ -346,43 +367,45 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
     that must be available in task_volumes.log / log.dat
     Services above are not creating a file and use the usual docker logging. These logs
     are retrieved using the usual cli 'docker logs CONTAINERID'
+
+    Raises: ServiceTimeoutLoggingError if no logs are received for longer than _AIODOCKER_LOGS_TIMEOUT_S
+            any error
     """
 
-    with log_catch(logger, reraise=False):
-        container_info = await container.show()
-        container_name = container_info.get("Name", "undefined")
-        with log_context(
-            logger,
-            logging.INFO,
-            f"parse logs of {service_key}:{service_version} - {container.id}-{container_name}",
-        ):
-            if integration_version > LEGACY_INTEGRATION_VERSION:
-                await _parse_container_docker_logs(
-                    container=container,
-                    progress_regexp=progress_regexp,
-                    service_key=service_key,
-                    service_version=service_version,
-                    container_name=container_name,
-                    task_publishers=task_publishers,
-                    log_file_url=log_file_url,
-                    log_publishing_cb=log_publishing_cb,
-                    s3_settings=s3_settings,
-                    progress_bar=progress_bar,
-                )
-            else:
-                await _parse_container_log_file(
-                    container=container,
-                    progress_regexp=progress_regexp,
-                    service_key=service_key,
-                    service_version=service_version,
-                    container_name=container_name,
-                    task_publishers=task_publishers,
-                    task_volumes=task_volumes,
-                    log_file_url=log_file_url,
-                    log_publishing_cb=log_publishing_cb,
-                    s3_settings=s3_settings,
-                    progress_bar=progress_bar,
-                )
+    container_info = await container.show()
+    container_name = container_info.get("Name", "undefined")
+    with log_context(
+        _logger,
+        logging.INFO,
+        f"parse logs of {service_key}:{service_version} - {container.id}-{container_name}",
+    ):
+        if integration_version > LEGACY_INTEGRATION_VERSION:
+            await _parse_container_docker_logs(
+                container=container,
+                progress_regexp=progress_regexp,
+                service_key=service_key,
+                service_version=service_version,
+                container_name=container_name,
+                task_publishers=task_publishers,
+                log_file_url=log_file_url,
+                log_publishing_cb=log_publishing_cb,
+                s3_settings=s3_settings,
+                progress_bar=progress_bar,
+            )
+        else:
+            await _parse_container_log_file(
+                container=container,
+                progress_regexp=progress_regexp,
+                service_key=service_key,
+                service_version=service_version,
+                container_name=container_name,
+                task_publishers=task_publishers,
+                task_volumes=task_volumes,
+                log_file_url=log_file_url,
+                log_publishing_cb=log_publishing_cb,
+                s3_settings=s3_settings,
+                progress_bar=progress_bar,
+            )
 
 
 @contextlib.asynccontextmanager
@@ -399,6 +422,11 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
     s3_settings: S3Settings | None,
     progress_bar: ProgressBarData,
 ) -> AsyncIterator[Awaitable[None]]:
+    """
+    Raises:
+        ServiceTimeoutLoggingError -- raised when no logs are received for longer than _AIODOCKER_LOGS_TIMEOUT_S
+        DaskSidecarLoggerError -- raised for any other issue
+    """
     monitoring_task = None
     try:
         if integration_version == LEGACY_INTEGRATION_VERSION:
@@ -426,9 +454,17 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
         yield monitoring_task
         # wait for task to complete, so we get the complete log
         await monitoring_task
+    except Exception:
+        _logger.exception(
+            "Error while monitoring logs of container %s for service %s:%s",
+            container.id,
+            service_key,
+            service_version,
+        )
+        raise
     finally:
         if monitoring_task:
-            with log_context(logger, logging.DEBUG, "cancel logs monitoring task"):
+            with log_context(_logger, logging.DEBUG, "cancel logs monitoring task"):
                 monitoring_task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
                     await monitoring_task
@@ -475,7 +511,7 @@ async def get_image_labels(
     # NOTE: old services did not have the integration-version label
     # image labels are set to None when empty
     if image_labels := image_cfg["Config"].get("Labels"):
-        logger.debug("found following image labels:\n%s", pformat(image_labels))
+        _logger.debug("found following image labels:\n%s", pformat(image_labels))
         data = from_labels(
             image_labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
@@ -486,20 +522,20 @@ async def get_image_labels(
 async def get_computational_shared_data_mount_point(docker_client: Docker) -> Path:
     app_settings = ApplicationSettings.create_from_envs()
     try:
-        logger.debug(
+        _logger.debug(
             "getting computational shared data mount point for %s",
             app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME,
         )
         volume_attributes = await DockerVolume(
             docker_client, app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME
         ).show()
-        logger.debug(
+        _logger.debug(
             "found following volume attributes: %s", pformat(volume_attributes)
         )
         return Path(volume_attributes["Mountpoint"])
 
     except DockerError:
-        logger.exception(
+        _logger.exception(
             "Error while retrieving docker volume %s, returnining default %s instead",
             app_settings.SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME,
             app_settings.SIDECAR_COMP_SERVICES_SHARED_FOLDER,
