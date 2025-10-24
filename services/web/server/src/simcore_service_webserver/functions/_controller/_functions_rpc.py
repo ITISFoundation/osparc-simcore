@@ -2,18 +2,23 @@ from typing import Literal
 
 from aiohttp import web
 from models_library.functions import (
+    BatchCreateRegisteredFunctionJobs,
+    BatchUpdateRegisteredFunctionJobs,
     Function,
     FunctionAccessRights,
     FunctionClass,
     FunctionGroupAccessRights,
     FunctionID,
-    FunctionInputs,
     FunctionInputSchema,
+    FunctionInputsList,
     FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
+    FunctionJobList,
+    FunctionJobPatchRequest,
+    FunctionJobPatchRequestList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionOutputSchema,
@@ -22,7 +27,6 @@ from models_library.functions import (
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
-    RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
 )
 from models_library.functions_errors import (
@@ -104,6 +108,24 @@ async def register_function_job(
     reraise_if_error_type=(
         UnsupportedFunctionJobClassError,
         FunctionJobsWriteApiAccessDeniedError,
+    )
+)
+async def batch_register_function_jobs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_jobs: FunctionJobList,
+) -> BatchCreateRegisteredFunctionJobs:
+    return await _functions_service.batch_register_function_jobs(
+        app=app, user_id=user_id, product_name=product_name, function_jobs=function_jobs
+    )
+
+
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionJobClassError,
+        FunctionJobsWriteApiAccessDeniedError,
         FunctionJobPatchModelIncompatibleError,
     )
 )
@@ -112,16 +134,37 @@ async def patch_registered_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_job_uuid: FunctionJobID,
-    registered_function_job_patch: RegisteredFunctionJobPatch,
+    function_job_patch_request: FunctionJobPatchRequest,
 ) -> RegisteredFunctionJob:
 
     return await _functions_service.patch_registered_function_job(
         app=app,
         user_id=user_id,
         product_name=product_name,
-        function_job_uuid=function_job_uuid,
-        registered_function_job_patch=registered_function_job_patch,
+        function_job_patch_request=function_job_patch_request,
+    )
+
+
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionJobClassError,
+        FunctionJobsWriteApiAccessDeniedError,
+        FunctionJobPatchModelIncompatibleError,
+    )
+)
+async def batch_patch_registered_function_jobs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_patch_requests: FunctionJobPatchRequestList,
+) -> BatchUpdateRegisteredFunctionJobs:
+
+    return await _functions_service.batch_patch_registered_function_jobs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_patch_requests=function_job_patch_requests,
     )
 
 
@@ -445,15 +488,19 @@ async def find_cached_function_jobs(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    inputs: FunctionInputs,
-) -> list[RegisteredFunctionJob] | None:
-    return await _functions_service.find_cached_function_jobs(
+    inputs: FunctionInputsList,
+    cached_job_statuses: list[FunctionJobStatus] | None,
+) -> list[RegisteredFunctionJob | None]:
+    retrieved_cached_function_jobs = await _functions_service.find_cached_function_jobs(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
         inputs=inputs,
+        cached_job_statuses=cached_job_statuses,
     )
+    assert len(retrieved_cached_function_jobs) == len(inputs)  # nosec
+    return retrieved_cached_function_jobs
 
 
 @router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
