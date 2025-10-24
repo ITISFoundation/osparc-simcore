@@ -111,11 +111,13 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesNodeNotFoundError,
 )
+from simcore_postgres_database.utils_projects_optionals import BaseProjectOptionalsRepo
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
+from ..db.plugin import get_asyncpg_engine
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
@@ -817,6 +819,13 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
         save_state = await has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
         )
+    if (
+        user_role == UserRole.GUEST
+        and await BaseProjectOptionalsRepo.allows_guests_to_push_states_and_output_ports(
+            get_asyncpg_engine(request.app), project_uuid=project_uuid
+        )
+    ):
+        save_state = True
 
     @exclusive(
         get_redis_lock_manager_client_sdk(request.app),

@@ -11,7 +11,7 @@ from .models.projects_optionals import projects_optionals
 class CouldNotCreateOrUpdateUserPreferenceError(Exception): ...
 
 
-class BasePreferencesRepo:
+class BaseProjectOptionalsRepo:
     model: sa.Table = projects_optionals
 
     @classmethod
