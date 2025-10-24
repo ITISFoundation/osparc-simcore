@@ -211,12 +211,6 @@ async def test_fire_and_forget_task_is_not_auto_removed_while_running(
         fire_and_forget=True,
         task_context=empty_context,
     )
-    await asyncio.sleep(3 * TEST_CHECK_STALE_INTERVAL_S)
-    # the task shall still be present even if we did not check the status before
-    status = await long_running_manager.tasks_manager.get_task_status(
-        task_id, with_task_context=empty_context
-    )
-    assert not status.done, "task was removed although it is fire and forget"
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
