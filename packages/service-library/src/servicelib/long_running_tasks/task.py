@@ -311,7 +311,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             limit=_PARALLEL_TASKS_CANCELLATION,
         )
 
-    async def _tasks_monitor(self) -> None:  # noqa: C901
+    async def _tasks_monitor(  # pylint:disable=too-many-branches # noqa: C901, PLR0912
+        self,
+    ) -> None:
         """
         A task which monitors locally running tasks and updates their status
         in the Redis store when they are done.
