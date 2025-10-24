@@ -454,6 +454,14 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
         yield monitoring_task
         # wait for task to complete, so we get the complete log
         await monitoring_task
+    except Exception:
+        _logger.exception(
+            "Error while monitoring logs of container %s for service %s:%s",
+            container.id,
+            service_key,
+            service_version,
+        )
+        raise
     finally:
         if monitoring_task:
             with log_context(_logger, logging.DEBUG, "cancel logs monitoring task"):
