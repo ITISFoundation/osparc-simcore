@@ -112,35 +112,6 @@ async def _get_tasks_to_remove(
     tasks_to_remove: list[tuple[TaskId, TaskContext]] = []
 
     for tracked_task in await tracked_tasks.list_tasks_data():
-        if tracked_task.fire_and_forget:
-            # fire and forget tasks also need to be remove from tracking
-            # when detectes as done, start counting how much time has elapsed
-            # if over stale_task_detect_timeout_s remove the task
-
-            # wait for task to complete
-            if not tracked_task.is_done:
-                continue
-
-            # mark detected as done
-            if tracked_task.detected_as_done_at is None:
-                await tracked_tasks.update_task_data(
-                    tracked_task.task_id,
-                    updates={
-                        "detected_as_done_at": datetime.datetime.now(tz=datetime.UTC)
-                    },
-                )
-                continue
-
-            # if enough time passes remove the task
-            elapsed_since_done = (
-                utc_now - tracked_task.detected_as_done_at
-            ).total_seconds()
-            if elapsed_since_done > stale_task_detect_timeout_s:
-                tasks_to_remove.append(
-                    (tracked_task.task_id, tracked_task.task_context)
-                )
-                continue
-
         if tracked_task.last_status_check is None:
             # the task just added or never received a poll request
             elapsed_from_start = (utc_now - tracked_task.started).total_seconds()
