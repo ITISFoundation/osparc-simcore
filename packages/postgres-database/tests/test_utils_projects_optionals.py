@@ -3,10 +3,8 @@
 from collections.abc import Awaitable, Callable
 
 import pytest
-import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from simcore_postgres_database.models.projects_optionals import projects_optionals
 from simcore_postgres_database.utils_projects_optionals import BasePreferencesRepo
 
 
@@ -47,12 +45,8 @@ async def test_something(
     )
 
     # add the entry in the table
-
-    await connection.execute(
-        sa.insert(projects_optionals).values(
-            project_uuid=project["uuid"],
-            allow_guests_to_push_states_and_output_ports=True,
-        )
+    await BasePreferencesRepo.set_allows_guests_to_push_states_and_output_ports(
+        connection, project_uuid=project["uuid"]
     )
 
     assert (
