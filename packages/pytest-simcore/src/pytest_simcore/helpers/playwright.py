@@ -143,6 +143,7 @@ class SocketIOEvent:
 
 
 SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
+_WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
 
 
 @dataclass
@@ -165,20 +166,31 @@ class RobustWebSocket:
         ) as ctx:
 
             def on_framesent(payload: str | bytes) -> None:
-                ctx.logger.debug("⬇️ Frame sent: %s", payload)
+                ctx.logger.debug(
+                    "%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_PREFIX, payload
+                )
 
             def on_framereceived(payload: str | bytes) -> None:
-                ctx.logger.debug("⬆️ Frame received: %s", payload)
+                ctx.logger.debug(
+                    "%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_PREFIX, payload
+                )
 
             def on_close(_: WebSocket) -> None:
                 if self.auto_reconnect:
-                    ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
+                    ctx.logger.warning(
+                        "%s⚠️ WebSocket closed. Attempting to reconnect...",
+                        _WEBSOCKET_MESSAGE_PREFIX,
+                    )
                     self._attempt_reconnect(ctx.logger)
                 else:
-                    ctx.logger.warning("⚠️ WebSocket closed.")
+                    ctx.logger.warning(
+                        "%s⚠️ WebSocket closed.", _WEBSOCKET_MESSAGE_PREFIX
+                    )
 
             def on_socketerror(error_msg: str) -> None:
-                ctx.logger.error("❌ WebSocket error: %s", error_msg)
+                ctx.logger.error(
+                    "%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_PREFIX, error_msg
+                )
 
             # Attach core event listeners
             self.ws.on("framesent", on_framesent)
