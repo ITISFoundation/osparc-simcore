@@ -137,6 +137,7 @@ async def _list_cluster_known_tasks(
     def _list_on_scheduler(
         dask_scheduler: distributed.Scheduler,
     ) -> dict[str, Any]:
+        # NOTE: _DaskClusterTasks uses cannot be used here because of serialization issues
         worker_to_processing_tasks = defaultdict(list)
         unrunnable_tasks = {}
         for task_key, task_state in dask_scheduler.tasks.items():
