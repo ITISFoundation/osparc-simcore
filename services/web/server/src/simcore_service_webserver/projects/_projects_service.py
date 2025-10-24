@@ -823,7 +823,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
     if (
         user_role == UserRole.GUEST
         and await BaseProjectOptionalsRepo.allows_guests_to_push_states_and_output_ports(
-            get_asyncpg_engine(request.app), project_uuid=project_uuid
+            get_asyncpg_engine(request.app), project_uuid=f"{project_uuid}"
         )
     ):
         save_state = True
