@@ -1,7 +1,12 @@
+import dataclasses
+
 from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
+from aws_library.ec2._models import EC2InstanceType
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node, Task
+from pydantic import ByteSize
+from servicelib.docker_utils import estimate_dynamic_sidecar_resources_from_ec2_instance
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...core.settings import get_application_settings
@@ -104,3 +109,29 @@ class DynamicAutoscalingProvider:
         assert self  # nosec
         assert app  # nosec
         # nothing to do here
+
+    def add_instance_generic_resources(
+        self, app: FastAPI, instance: EC2InstanceData
+    ) -> None:
+        assert self  # nosec
+        assert app  # nosec
+        assert instance  # nosec
+        # nothing to do at the moment
+
+    def adjust_instance_type_resources(
+        self, app: FastAPI, instance_type: EC2InstanceType
+    ) -> EC2InstanceType:
+        assert self  # nosec
+        assert app  # nosec
+        adjusted_cpus, adjusted_ram = (
+            estimate_dynamic_sidecar_resources_from_ec2_instance(
+                instance_type.resources.cpus, instance_type.resources.ram
+            )
+        )
+
+        return dataclasses.replace(
+            instance_type,
+            resources=instance_type.resources.model_copy(
+                update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}
+            ),
+        )
