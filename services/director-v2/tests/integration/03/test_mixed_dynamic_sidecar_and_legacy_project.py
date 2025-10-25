@@ -21,12 +21,7 @@ from models_library.projects import ProjectAtDB
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.host import get_localhost_ip
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.rabbit import RabbitSettings
-from settings_library.redis import RedisSettings
-from utils import (
+from pytest_simcore.directorv2_integration_utils import (
     assert_all_services_running,
     assert_services_reply_200,
     assert_start_service,
@@ -35,6 +30,11 @@ from utils import (
     is_legacy,
     patch_dynamic_service_url,
 )
+from pytest_simcore.helpers.host import get_localhost_ip
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from yarl import URL
 
 logger = logging.getLogger(__name__)
