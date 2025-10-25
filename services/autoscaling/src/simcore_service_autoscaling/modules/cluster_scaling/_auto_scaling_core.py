@@ -796,12 +796,12 @@ async def _find_needed_instances(
                 _logger.exception("Unexpected error:")
 
     _logger.info(
-        "found following %s needed instances: %s",
+        "found %d required instances: %s",
         len(needed_new_instance_types_for_tasks),
-        [
-            f"{i.instance_type.name}:{i.instance_type.resources} takes {len(i.assigned_tasks)} task{'s' if len(i.assigned_tasks) > 1 else ''}"
+        ", ".join(
+            f"{i.instance_type.name}:{i.instance_type.resources} for {len(i.assigned_tasks)} task{'s' if len(i.assigned_tasks) > 1 else ''}"
             for i in needed_new_instance_types_for_tasks
-        ],
+        ),
     )
 
     num_instances_per_type = collections.defaultdict(
