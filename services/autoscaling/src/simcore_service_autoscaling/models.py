@@ -23,9 +23,6 @@ class _TaskAssignmentMixin:
     def has_resources_for_task(self, task_resources: Resources) -> bool:
         return bool(self.available_resources >= task_resources)
 
-    def has_assigned_tasks(self) -> bool:
-        return len(self.assigned_tasks) > 0
-
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class AssignedTasksToInstanceType(_TaskAssignmentMixin):
@@ -39,6 +36,10 @@ class _BaseInstance(_TaskAssignmentMixin):
     def __post_init__(self) -> None:
         if self.available_resources == Resources.create_as_empty():
             object.__setattr__(self, "available_resources", self.ec2_instance.resources)
+
+    def has_assigned_tasks(self) -> bool:
+        # NOTE: This function is needed because assigned_tasks can be empty while still have used resources (this is not nice and should be changed)
+        return bool(self.available_resources < self.ec2_instance.resources)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
