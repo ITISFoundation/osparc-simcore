@@ -154,7 +154,6 @@ async def _analyze_current_cluster(
             node_used_resources = await auto_scaling_mode.compute_node_used_resources(
                 app, instance
             )
-            # available resources are total - used -> that means something is still going on on the instance (e.g. processing tasks)
             active_nodes.append(
                 dataclasses.replace(
                     instance,
@@ -162,7 +161,6 @@ async def _analyze_current_cluster(
                     - node_used_resources,
                 )
             )
-
         elif utils_docker.is_instance_drained(instance):
             all_drained_nodes.append(instance)
         elif await auto_scaling_mode.is_instance_retired(app, instance):
@@ -1007,10 +1005,7 @@ async def _find_drainable_nodes(
     drainable_nodes: list[AssociatedInstance] = []
 
     for instance in cluster.active_nodes:
-        if instance.has_assigned_tasks() or (
-            instance.available_resources < instance.ec2_instance.resources
-        ):
-            # NOTE: we do not (yet) write down processing tasks to the node, so we check also if available resources are less than total resources
+        if instance.has_assigned_tasks():
             await utils_docker.set_node_found_empty(
                 get_docker_client(app), instance.node, empty=False
             )
