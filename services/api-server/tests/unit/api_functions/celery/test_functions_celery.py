@@ -207,7 +207,7 @@ async def _find_cached_function_jobs_side_effect(
     product_name: ProductName,
     function_id: FunctionID,
     inputs: FunctionInputsList,
-    status_filter: list[FunctionJobStatus] | None,
+    cached_job_statuses: list[FunctionJobStatus] | None,
 ):
     return [None] * len(inputs)
 
