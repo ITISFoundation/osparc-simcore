@@ -111,11 +111,11 @@ from servicelib.redis import (
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task, limited_gather, logged_gather
 from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.utils_projects_extentions import ProjectsExtensionsRepo
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesNodeNotFoundError,
 )
-from simcore_postgres_database.utils_projects_optionals import BaseProjectOptionalsRepo
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..application_settings import get_application_settings
@@ -822,7 +822,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
         )
     if (
         user_role == UserRole.GUEST
-        and await BaseProjectOptionalsRepo.allows_guests_to_push_states_and_output_ports(
+        and await ProjectsExtensionsRepo.allows_guests_to_push_states_and_output_ports(
             get_asyncpg_engine(request.app), project_uuid=f"{project_uuid}"
         )
     ):

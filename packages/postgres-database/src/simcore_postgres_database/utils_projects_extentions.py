@@ -5,14 +5,14 @@ from simcore_postgres_database.utils_repos import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from .models.projects_optionals import projects_optionals
+from .models.projects_extentions import projects_extentions
 
 
 class CouldNotCreateOrUpdateUserPreferenceError(Exception): ...
 
 
-class BaseProjectOptionalsRepo:
-    model: sa.Table = projects_optionals
+class ProjectsExtensionsRepo:
+    model: sa.Table = projects_extentions
 
     @classmethod
     async def allows_guests_to_push_states_and_output_ports(
@@ -32,7 +32,7 @@ class BaseProjectOptionalsRepo:
     ) -> None:
         async with transaction_context(async_engine) as connection:
             await connection.execute(
-                sa.insert(projects_optionals).values(
+                sa.insert(projects_extentions).values(
                     project_uuid=project_uuid,
                     allow_guests_to_push_states_and_output_ports=True,
                 )

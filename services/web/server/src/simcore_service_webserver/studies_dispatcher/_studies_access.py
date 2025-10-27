@@ -25,7 +25,7 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
-from simcore_postgres_database.utils_projects_optionals import BaseProjectOptionalsRepo
+from simcore_postgres_database.utils_projects_extentions import ProjectsExtensionsRepo
 
 from ..constants import INDEX_RESOURCE_NAME
 from ..db.plugin import get_asyncpg_engine
@@ -224,10 +224,10 @@ async def copy_study_to_account(
         )
 
         # set the same option in the new project from the template
-        if await BaseProjectOptionalsRepo.allows_guests_to_push_states_and_output_ports(
+        if await ProjectsExtensionsRepo.allows_guests_to_push_states_and_output_ports(
             get_asyncpg_engine(request.app), project_uuid=template_project["uuid"]
         ):
-            await BaseProjectOptionalsRepo.set_allow_guests_to_push_states_and_output_ports(
+            await ProjectsExtensionsRepo.set_allow_guests_to_push_states_and_output_ports(
                 get_asyncpg_engine(request.app), project_uuid=project["uuid"]
             )
 

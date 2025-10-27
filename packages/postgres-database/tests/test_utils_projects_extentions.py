@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from simcore_postgres_database.utils_projects_optionals import BaseProjectOptionalsRepo
+from simcore_postgres_database.utils_projects_extentions import ProjectsExtensionsRepo
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
@@ -30,7 +30,7 @@ async def fake_project(
     return project
 
 
-async def test_something(
+async def test_workflow(
     asyncpg_engine: AsyncEngine,
     connection: SAConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
@@ -40,19 +40,19 @@ async def test_something(
     project: RowProxy = await create_fake_project(connection, user, hidden=True)
 
     assert (
-        await BaseProjectOptionalsRepo.allows_guests_to_push_states_and_output_ports(
+        await ProjectsExtensionsRepo.allows_guests_to_push_states_and_output_ports(
             asyncpg_engine, project_uuid=project["uuid"]
         )
         is False
     )
 
     # add the entry in the table
-    await BaseProjectOptionalsRepo.set_allow_guests_to_push_states_and_output_ports(
+    await ProjectsExtensionsRepo.set_allow_guests_to_push_states_and_output_ports(
         asyncpg_engine, project_uuid=project["uuid"]
     )
 
     assert (
-        await BaseProjectOptionalsRepo.allows_guests_to_push_states_and_output_ports(
+        await ProjectsExtensionsRepo.allows_guests_to_push_states_and_output_ports(
             asyncpg_engine, project_uuid=project["uuid"]
         )
         is True
