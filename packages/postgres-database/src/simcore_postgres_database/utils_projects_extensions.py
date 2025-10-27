@@ -12,8 +12,6 @@ class CouldNotCreateOrUpdateUserPreferenceError(Exception): ...
 
 
 class ProjectsExtensionsRepo:
-    model: sa.Table = projects_extensions
-
     @classmethod
     async def allows_guests_to_push_states_and_output_ports(
         cls, async_engine: AsyncEngine, *, project_uuid: str
@@ -21,8 +19,8 @@ class ProjectsExtensionsRepo:
         async with pass_or_acquire_connection(async_engine) as connection:
             result: bool | None = await connection.scalar(
                 sa.select(
-                    cls.model.c.allow_guests_to_push_states_and_output_ports
-                ).where(cls.model.c.project_uuid == project_uuid)
+                    projects_extensions.c.allow_guests_to_push_states_and_output_ports
+                ).where(projects_extensions.c.project_uuid == project_uuid)
             )
             return result if result is not None else False
 
