@@ -8,9 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from .models.projects_extensions import projects_extensions
 
 
-class CouldNotCreateOrUpdateUserPreferenceError(Exception): ...
-
-
 class ProjectsExtensionsRepo:
     @classmethod
     async def allows_guests_to_push_states_and_output_ports(
