@@ -25,7 +25,7 @@ class ProjectsExtensionsRepo:
             return result if result is not None else False
 
     @classmethod
-    async def set_allow_guests_to_push_states_and_output_ports(
+    async def _set_allow_guests_to_push_states_and_output_ports(
         cls, async_engine: AsyncEngine, *, project_uuid: str
     ) -> None:
         async with transaction_context(async_engine) as connection:
@@ -34,4 +34,23 @@ class ProjectsExtensionsRepo:
                     project_uuid=project_uuid,
                     allow_guests_to_push_states_and_output_ports=True,
                 )
+            )
+
+    @classmethod
+    async def copy_allow_guests_to_push_states_and_output_ports(
+        cls,
+        async_engine: AsyncEngine,
+        *,
+        from_project_uuid: str,
+        to_project_uuid: str,
+    ) -> None:
+        # get setting from template project
+        allow_guests = await cls.allows_guests_to_push_states_and_output_ports(
+            async_engine, project_uuid=from_project_uuid
+        )
+
+        # set same setting in new project if True
+        if allow_guests:
+            await cls._set_allow_guests_to_push_states_and_output_ports(
+                async_engine, project_uuid=to_project_uuid
             )

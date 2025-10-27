@@ -223,13 +223,11 @@ async def copy_study_to_account(
             request.app, project_id=ProjectID(project["uuid"])
         )
 
-        # set the same option in the new project from the template
-        if await ProjectsExtensionsRepo.allows_guests_to_push_states_and_output_ports(
-            get_asyncpg_engine(request.app), project_uuid=template_project["uuid"]
-        ):
-            await ProjectsExtensionsRepo.set_allow_guests_to_push_states_and_output_ports(
-                get_asyncpg_engine(request.app), project_uuid=project["uuid"]
-            )
+        await ProjectsExtensionsRepo.copy_allow_guests_to_push_states_and_output_ports(
+            get_asyncpg_engine(request.app),
+            from_project_uuid=template_project["uuid"],
+            to_project_uuid=project["uuid"],
+        )
 
     return project_uuid
 
