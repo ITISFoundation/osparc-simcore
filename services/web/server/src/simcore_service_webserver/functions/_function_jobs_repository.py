@@ -1,25 +1,32 @@
 # pylint: disable=too-many-arguments
 
 import json
+import logging
 
 import sqlalchemy
 from aiohttp import web
 from models_library.functions import (
+    BatchCreateRegisteredFunctionJobsDB,
+    BatchUpdateRegisteredFunctionJobsDB,
     FunctionClass,
+    FunctionClassSpecificData,
     FunctionID,
-    FunctionInputs,
-    FunctionJobClassSpecificData,
+    FunctionInputsList,
     FunctionJobCollectionID,
+    FunctionJobDB,
     FunctionJobID,
+    FunctionJobPatchRequest,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionsApiAccessRights,
     RegisteredFunctionJobDB,
+    RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatusDB,
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
-    FunctionJobReadAccessDeniedError,
+    FunctionJobPatchModelIncompatibleError,
+    UnsupportedFunctionJobClassError,
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
@@ -38,9 +45,8 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import Text, cast
+from sqlalchemy import Text, cast, func
 from sqlalchemy.ext.asyncio import AsyncConnection
-from sqlalchemy.sql import func
 
 from ..db.plugin import get_asyncpg_engine
 from ..groups.api import list_all_user_groups_ids
@@ -54,21 +60,17 @@ from ._functions_table_cols import (
     _FUNCTION_JOBS_TABLE_COLS,
 )
 
+_logger = logging.getLogger(__name__)
 
-async def create_function_job(  # noqa: PLR0913
+
+async def create_function_jobs(  # noqa: PLR0913
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     product_name: ProductName,
-    function_class: FunctionClass,
-    function_uid: FunctionID,
-    title: str,
-    description: str,
-    inputs: FunctionInputs,
-    outputs: FunctionOutputs,
-    class_specific_data: FunctionJobClassSpecificData,
-) -> RegisteredFunctionJobDB:
+    function_jobs: list[FunctionJobDB],
+) -> BatchCreateRegisteredFunctionJobsDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
             app,
@@ -79,50 +81,63 @@ async def create_function_job(  # noqa: PLR0913
                 FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
             ],
         )
+
+        # Prepare values for batch insert
+        values_to_insert = [
+            {
+                "function_uuid": job.function_uuid,
+                "inputs": job.inputs,
+                "outputs": job.outputs,
+                "function_class": job.function_class,
+                "class_specific_data": job.class_specific_data,
+                "title": job.title,
+                "description": job.description,
+                "status": "created",
+            }
+            for job in function_jobs
+        ]
+
+        # Batch insert all function jobs in a single query
         result = await transaction.execute(
             function_jobs_table.insert()
-            .values(
-                function_uuid=function_uid,
-                inputs=inputs,
-                outputs=outputs,
-                function_class=function_class,
-                class_specific_data=class_specific_data,
-                title=title,
-                description=description,
-                status="created",
-            )
+            .values(values_to_insert)
             .returning(*_FUNCTION_JOBS_TABLE_COLS)
         )
-        row = result.one()
 
-        registered_function_job = RegisteredFunctionJobDB.model_validate(row)
+        # Get all created jobs
+        created_jobs = TypeAdapter(list[RegisteredFunctionJobDB]).validate_python(
+            list(result)
+        )
 
+        # Get user primary group and set permissions for all jobs
         user_primary_group_id = await users_service.get_user_primary_group_id(
             app, user_id=user_id
         )
+        job_uuids = [job.uuid for job in created_jobs]
+
         await _internal_set_group_permissions(
             app,
             connection=transaction,
             permission_group_id=user_primary_group_id,
             product_name=product_name,
             object_type="function_job",
-            object_ids=[registered_function_job.uuid],
+            object_ids=job_uuids,
             read=True,
             write=True,
             execute=True,
         )
 
-    return registered_function_job
+    return BatchCreateRegisteredFunctionJobsDB(created_items=created_jobs)
 
 
-async def patch_function_job(
+async def patch_function_jobs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     product_name: ProductName,
-    registered_function_job_db: RegisteredFunctionJobDB,
-) -> RegisteredFunctionJobDB:
+    function_job_patch_requests: list[FunctionJobPatchRequest],
+) -> BatchUpdateRegisteredFunctionJobsDB:
 
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
@@ -134,23 +149,41 @@ async def patch_function_job(
                 FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
             ],
         )
-        result = await transaction.execute(
-            function_jobs_table.update()
-            .where(function_jobs_table.c.uuid == f"{registered_function_job_db.uuid}")
-            .values(
-                inputs=registered_function_job_db.inputs,
-                outputs=registered_function_job_db.outputs,
-                function_class=registered_function_job_db.function_class,
-                class_specific_data=registered_function_job_db.class_specific_data,
-                title=registered_function_job_db.title,
-                description=registered_function_job_db.description,
-                status="created",
-            )
-            .returning(*_FUNCTION_JOBS_TABLE_COLS)
-        )
-        row = result.one()
+        updated_jobs = []
+        for patch_request in function_job_patch_requests:
 
-        return RegisteredFunctionJobDB.model_validate(row)
+            job = await get_function_job(
+                app,
+                connection=transaction,
+                user_id=user_id,
+                product_name=product_name,
+                function_job_id=patch_request.uid,
+            )
+            if job.function_class != patch_request.patch.function_class:
+                raise FunctionJobPatchModelIncompatibleError(
+                    function_id=job.function_uuid, product_name=product_name
+                )
+
+            class_specific_data = _update_class_specific_data(
+                class_specific_data=job.class_specific_data, patch=patch_request.patch
+            )
+            update_values = {
+                "inputs": patch_request.patch.inputs,
+                "outputs": patch_request.patch.outputs,
+                "class_specific_data": class_specific_data,
+                "title": patch_request.patch.title,
+                "description": patch_request.patch.description,
+            }
+
+            result = await transaction.execute(
+                function_jobs_table.update()
+                .where(function_jobs_table.c.uuid == f"{patch_request.uid}")
+                .values(**{k: v for k, v in update_values.items() if v is not None})
+                .returning(*_FUNCTION_JOBS_TABLE_COLS)
+            )
+            updated_jobs.append(RegisteredFunctionJobDB.model_validate(result.one()))
+
+        return BatchUpdateRegisteredFunctionJobsDB(updated_items=updated_jobs)
 
 
 async def list_function_jobs_with_status(
@@ -291,36 +324,60 @@ async def find_cached_function_jobs(
     user_id: UserID,
     function_id: FunctionID,
     product_name: ProductName,
-    inputs: FunctionInputs,
-) -> list[RegisteredFunctionJobDB] | None:
+    inputs: FunctionInputsList,
+    cached_job_statuses: list[FunctionJobStatus] | None = None,
+) -> list[RegisteredFunctionJobDB | None]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        jobs: list[RegisteredFunctionJobDB] = []
-        async for row in await conn.stream(
-            function_jobs_table.select().where(
-                function_jobs_table.c.function_uuid == function_id,
-                cast(function_jobs_table.c.inputs, Text) == json.dumps(inputs),
+        # Get user groups for access check
+        user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+
+        # Create access subquery
+        access_subquery = (
+            function_jobs_access_rights_table.select()
+            .with_only_columns(function_jobs_access_rights_table.c.function_job_uuid)
+            .where(
+                function_jobs_access_rights_table.c.group_id.in_(user_groups),
+                function_jobs_access_rights_table.c.product_name == product_name,
+                function_jobs_access_rights_table.c.read,
             )
-        ):
-            job = RegisteredFunctionJobDB.model_validate(row)
-            try:
-                await check_user_permissions(
-                    app,
-                    connection=conn,
-                    user_id=user_id,
-                    product_name=product_name,
-                    object_id=job.uuid,
-                    object_type="function_job",
-                    permissions=["read"],
+        )
+
+        # Create list of JSON dumped inputs for comparison
+        json_inputs = [json.dumps(inp) for inp in inputs]
+
+        # Build filter conditions
+        filter_conditions = sqlalchemy.and_(
+            function_jobs_table.c.function_uuid == function_id,
+            cast(function_jobs_table.c.inputs, Text).in_(json_inputs),
+            function_jobs_table.c.uuid.in_(access_subquery),
+            (
+                function_jobs_table.c.status.in_(
+                    [status.status for status in cached_job_statuses]
                 )
-            except FunctionJobReadAccessDeniedError:
-                continue
+                if cached_job_statuses is not None
+                else sqlalchemy.sql.true()
+            ),
+        )
 
-            jobs.append(job)
+        # Use DISTINCT ON to get only one job per input (the most recent one)
+        results = await conn.execute(
+            function_jobs_table.select()
+            .distinct(cast(function_jobs_table.c.inputs, Text))
+            .where(filter_conditions)
+            .order_by(
+                cast(function_jobs_table.c.inputs, Text),
+                function_jobs_table.c.created.desc(),
+            )
+        )
 
-        if len(jobs) > 0:
-            return jobs
+        # Create a mapping from JSON inputs to jobs
+        _ensure_str = lambda x: x if isinstance(x, str) else json.dumps(x)
+        jobs_by_input: dict[str, RegisteredFunctionJobDB] = {
+            _ensure_str(row.inputs): RegisteredFunctionJobDB.model_validate(row)
+            for row in results
+        }
 
-        return None
+        return [jobs_by_input.get(input_, None) for input_ in json_inputs]
 
 
 async def get_function_job_status(
@@ -461,3 +518,36 @@ async def update_function_job_outputs(
             raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
 
         return TypeAdapter(FunctionOutputs).validate_python(row.outputs)
+
+
+def _update_class_specific_data(
+    class_specific_data: dict,
+    patch: RegisteredFunctionJobPatch,
+) -> FunctionClassSpecificData:
+    if patch.function_class == FunctionClass.PROJECT:
+        return FunctionClassSpecificData(
+            project_job_id=(
+                f"{patch.project_job_id}"
+                if patch.project_job_id
+                else class_specific_data.get("project_job_id")
+            ),
+            job_creation_task_id=(
+                f"{patch.job_creation_task_id}"
+                if patch.job_creation_task_id
+                else class_specific_data.get("job_creation_task_id")
+            ),
+        )
+    if patch.function_class == FunctionClass.SOLVER:
+        return FunctionClassSpecificData(
+            solver_job_id=(
+                f"{patch.solver_job_id}"
+                if patch.solver_job_id
+                else class_specific_data.get("solver_job_id")
+            ),
+            job_creation_task_id=(
+                f"{patch.job_creation_task_id}"
+                if patch.job_creation_task_id
+                else class_specific_data.get("job_creation_task_id")
+            ),
+        )
+    raise UnsupportedFunctionJobClassError(function_job_class=patch.function_class)
