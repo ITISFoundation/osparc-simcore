@@ -25,7 +25,7 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
-from simcore_postgres_database.utils_projects_extentions import ProjectsExtensionsRepo
+from simcore_postgres_database.utils_projects_extensions import ProjectsExtensionsRepo
 
 from ..constants import INDEX_RESOURCE_NAME
 from ..db.plugin import get_asyncpg_engine

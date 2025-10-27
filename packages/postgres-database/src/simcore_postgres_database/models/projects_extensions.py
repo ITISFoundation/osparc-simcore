@@ -4,15 +4,15 @@ from ._common import RefActions
 from .base import metadata
 from .projects import projects
 
-projects_extentions = sa.Table(
-    "projects_extentions",
+projects_extensions = sa.Table(
+    "projects_extensions",
     metadata,
     sa.Column(
         "project_uuid",
         sa.String,
         sa.ForeignKey(
             projects.c.uuid,
-            name="fk_projects_extentions_project_uuid_projects",
+            name="fk_projects_extensions_project_uuid_projects",
             ondelete=RefActions.CASCADE,
             onupdate=RefActions.CASCADE,
         ),

@@ -107,7 +107,7 @@ from servicelib.redis import (
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task, limited_gather, logged_gather
 from simcore_postgres_database.models.users import UserRole
-from simcore_postgres_database.utils_projects_extentions import ProjectsExtensionsRepo
+from simcore_postgres_database.utils_projects_extensions import ProjectsExtensionsRepo
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesNodeNotFoundError,

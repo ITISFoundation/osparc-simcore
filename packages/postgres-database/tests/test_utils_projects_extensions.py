@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from simcore_postgres_database.utils_projects_extentions import ProjectsExtensionsRepo
+from simcore_postgres_database.utils_projects_extensions import ProjectsExtensionsRepo
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
