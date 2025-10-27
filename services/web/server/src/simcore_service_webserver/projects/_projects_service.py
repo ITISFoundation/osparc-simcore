@@ -817,6 +817,13 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
         save_state = await has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
         )
+    if (
+        user_role == UserRole.GUEST
+        and await _projects_repository.allows_guests_to_push_states_and_output_ports(
+            request.app, project_uuid=f"{project_uuid}"
+        )
+    ):
+        save_state = True
 
     @exclusive(
         get_redis_lock_manager_client_sdk(request.app),
