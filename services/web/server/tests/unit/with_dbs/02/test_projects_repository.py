@@ -1,13 +1,15 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 from datetime import datetime, timedelta
 from uuid import UUID
 
 import arrow
 import pytest
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from models_library.basic_types import IDStr
@@ -195,3 +197,44 @@ async def test_batch_get_trashed_by_primary_gid(
         None,
         logged_user["primary_gid"],
     ]
+
+
+async def _assert_allows_to_psuh(
+    app: web.Application, project_uuid: str, *, expected: bool
+) -> None:
+    result = (
+        await projects_service_repository.allows_guests_to_push_states_and_output_ports(
+            app, project_uuid=project_uuid
+        )
+    )
+    assert result is expected
+
+
+async def test_guest_allowed_to_push(
+    client: TestClient, user_project: ProjectDict, shared_project: ProjectDict
+):
+    assert client.app
+
+    source_uuid = user_project["uuid"]
+    copy_uuid = shared_project["uuid"]
+
+    await _assert_allows_to_psuh(client.app, source_uuid, expected=False)
+
+    # add the entry in the table
+    await projects_service_repository._set_allow_guests_to_push_states_and_output_ports(  # noqa: SLF001
+        client.app, project_uuid=source_uuid
+    )
+
+    await _assert_allows_to_psuh(client.app, source_uuid, expected=True)
+
+    assert (
+        await projects_service_repository.allows_guests_to_push_states_and_output_ports(
+            client.app, project_uuid=copy_uuid
+        )
+        is False
+    )
+    await _assert_allows_to_psuh(client.app, copy_uuid, expected=False)
+    await projects_service_repository.copy_allow_guests_to_push_states_and_output_ports(
+        client.app, from_project_uuid=source_uuid, to_project_uuid=copy_uuid
+    )
+    await _assert_allows_to_psuh(client.app, copy_uuid, expected=True)

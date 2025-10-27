@@ -25,13 +25,12 @@ from common_library.logging.logging_errors import create_troubleshooting_log_kwa
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
-from simcore_postgres_database.utils_projects_extensions import ProjectsExtensionsRepo
 
 from ..constants import INDEX_RESOURCE_NAME
-from ..db.plugin import get_asyncpg_engine
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
+from ..projects import _projects_repository
 from ..projects._groups_repository import get_project_group
 from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.api import check_user_project_permission
@@ -223,8 +222,8 @@ async def copy_study_to_account(
             request.app, project_id=ProjectID(project["uuid"])
         )
 
-        await ProjectsExtensionsRepo.copy_allow_guests_to_push_states_and_output_ports(
-            get_asyncpg_engine(request.app),
+        await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
+            request.app,
             from_project_uuid=template_project["uuid"],
             to_project_uuid=project["uuid"],
         )

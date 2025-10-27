@@ -107,7 +107,6 @@ from servicelib.redis import (
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task, limited_gather, logged_gather
 from simcore_postgres_database.models.users import UserRole
-from simcore_postgres_database.utils_projects_extensions import ProjectsExtensionsRepo
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesNodeNotFoundError,
@@ -117,7 +116,6 @@ from simcore_postgres_database.webserver_models import ProjectType
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
-from ..db.plugin import get_asyncpg_engine
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
@@ -821,8 +819,8 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
         )
     if (
         user_role == UserRole.GUEST
-        and await ProjectsExtensionsRepo.allows_guests_to_push_states_and_output_ports(
-            get_asyncpg_engine(request.app), project_uuid=f"{project_uuid}"
+        and await _projects_repository.allows_guests_to_push_states_and_output_ports(
+            request.app, project_uuid=f"{project_uuid}"
         )
     ):
         save_state = True
