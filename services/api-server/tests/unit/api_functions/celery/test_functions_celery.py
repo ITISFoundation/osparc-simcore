@@ -24,10 +24,17 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth, HTTPStatusError
 from models_library.api_schemas_long_running_tasks.tasks import TaskResult, TaskStatus
 from models_library.functions import (
+    BatchCreateRegisteredFunctionJobs,
+    BatchUpdateRegisteredFunctionJobs,
     FunctionClass,
     FunctionID,
+    FunctionInputsList,
     FunctionJobCollection,
     FunctionJobID,
+    FunctionJobList,
+    FunctionJobPatchRequest,
+    FunctionJobPatchRequestList,
+    FunctionJobStatus,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     RegisteredFunction,
@@ -36,7 +43,9 @@ from models_library.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
     RegisteredProjectFunctionJobPatch,
+    RegisteredSolverFunctionJobPatch,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockType
@@ -150,15 +159,72 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
     return _
 
 
-async def _patch_registered_function_job_side_effect(
-    mock_registered_project_function_job: RegisteredFunctionJob, *args, **kwargs
+async def _batch_patch_registered_function_job(
+    mock_registered_project_function_job: RegisteredFunctionJob,
+    product_name: ProductName,
+    user_id: UserID,
+    function_job_patch_requests: FunctionJobPatchRequestList,
 ):
-    registered_function_job_patch = kwargs["registered_function_job_patch"]
-    assert isinstance(registered_function_job_patch, RegisteredProjectFunctionJobPatch)
-    job_creation_task_id = registered_function_job_patch.job_creation_task_id
-    uid = kwargs["function_job_uuid"]
-    return mock_registered_project_function_job.model_copy(
-        update={"job_creation_task_id": job_creation_task_id, "uid": uid}
+    jobs = []
+    for patch_request in function_job_patch_requests:
+        patch = patch_request.patch
+        assert isinstance(
+            patch, (RegisteredProjectFunctionJobPatch, RegisteredSolverFunctionJobPatch)
+        )
+        jobs.append(
+            mock_registered_project_function_job.model_copy(
+                update={
+                    "job_creation_task_id": patch.job_creation_task_id,
+                    "uid": patch_request.uid,
+                }
+            )
+        )
+    return BatchUpdateRegisteredFunctionJobs(updated_items=jobs)
+
+
+async def _patch_registered_function_job(
+    mock_registered_project_function_job: RegisteredFunctionJob,
+    product_name: ProductName,
+    user_id: UserID,
+    function_job_patch_request: FunctionJobPatchRequest,
+):
+    patch = function_job_patch_request.patch
+    assert isinstance(
+        patch, (RegisteredProjectFunctionJobPatch, RegisteredSolverFunctionJobPatch)
+    )
+    job = mock_registered_project_function_job.model_copy(
+        update={
+            "job_creation_task_id": patch.job_creation_task_id,
+            "uid": function_job_patch_request.uid,
+        }
+    )
+    return job
+
+
+async def _find_cached_function_jobs_side_effect(
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    inputs: FunctionInputsList,
+    cached_job_statuses: list[FunctionJobStatus] | None,
+):
+    return [None] * len(inputs)
+
+
+async def _batch_register_function_jobs(
+    registered_function_job: RegisteredFunctionJob,
+    user_id: UserID,
+    function_jobs: FunctionJobList,
+    product_name: ProductName,
+):
+    return BatchCreateRegisteredFunctionJobs(
+        created_items=[
+            registered_function_job.model_copy(
+                update={"uid": FunctionJobID(_faker.uuid4())}
+            )
+            for _ in function_jobs
+        ]
     )
 
 
@@ -216,16 +282,20 @@ async def test_with_fake_run_function(
         "get_function", return_value=fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
-        "find_cached_function_jobs", return_value=[]
+        "find_cached_function_jobs", side_effect=_find_cached_function_jobs_side_effect
     )
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", return_value=fake_registered_project_function_job
+        "batch_register_function_jobs",
+        side_effect=partial(
+            _batch_register_function_jobs,
+            fake_registered_project_function_job,
+        ),
     )
 
     mock_handler_in_functions_rpc_interface(
-        "patch_registered_function_job",
+        "batch_patch_registered_function_job",
         side_effect=partial(
-            _patch_registered_function_job_side_effect,
+            _batch_patch_registered_function_job,
             fake_registered_project_function_job,
         ),
     )
@@ -377,10 +447,14 @@ async def test_run_project_function_parent_info(
         "get_function", return_value=fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
-        "find_cached_function_jobs", return_value=[]
+        "find_cached_function_jobs", side_effect=_find_cached_function_jobs_side_effect
     )
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", return_value=fake_registered_project_function_job
+        "batch_register_function_jobs",
+        side_effect=partial(
+            _batch_register_function_jobs,
+            fake_registered_project_function_job,
+        ),
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -392,9 +466,16 @@ async def test_run_project_function_parent_info(
         ),
     )
     mock_handler_in_functions_rpc_interface(
+        "batch_patch_registered_function_job",
+        side_effect=partial(
+            _batch_patch_registered_function_job,
+            fake_registered_project_function_job,
+        ),
+    )
+    mock_handler_in_functions_rpc_interface(
         "patch_registered_function_job",
         side_effect=partial(
-            _patch_registered_function_job_side_effect,
+            _patch_registered_function_job,
             fake_registered_project_function_job,
         ),
     )
@@ -497,10 +578,14 @@ async def test_map_function_parent_info(
         "get_function", return_value=fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
-        "find_cached_function_jobs", return_value=[]
+        "find_cached_function_jobs", side_effect=_find_cached_function_jobs_side_effect
     )
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", return_value=fake_registered_project_function_job
+        "batch_register_function_jobs",
+        side_effect=partial(
+            _batch_register_function_jobs,
+            fake_registered_project_function_job,
+        ),
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -523,13 +608,19 @@ async def test_map_function_parent_info(
     )
 
     patch_mock = mock_handler_in_functions_rpc_interface(
-        "patch_registered_function_job",
+        "batch_patch_registered_function_job",
         side_effect=partial(
-            _patch_registered_function_job_side_effect,
+            _batch_patch_registered_function_job,
             fake_registered_project_function_job,
         ),
     )
-
+    mock_handler_in_functions_rpc_interface(
+        "patch_registered_function_job",
+        side_effect=partial(
+            _patch_registered_function_job,
+            fake_registered_project_function_job,
+        ),
+    )
     mock_handler_in_projects_rpc_interface("mark_project_as_job", return_value=None)
 
     # ACT
@@ -551,9 +642,10 @@ async def test_map_function_parent_info(
 
     if expected_status_code == status.HTTP_200_OK:
         FunctionJobCollection.model_validate(response.json())
-        task_id = patch_mock.call_args.kwargs[
-            "registered_function_job_patch"
-        ].job_creation_task_id
+        task_id = patch_mock.call_args.kwargs["function_job_patch_requests"][
+            0
+        ].patch.job_creation_task_id
+        assert task_id is not None
         await _wait_for_task_result(client, auth, f"{task_id}")
         assert side_effect_checks["headers_checked"] is True
 
@@ -604,24 +696,32 @@ async def test_map_function(
         "get_function", return_value=fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface(
-        "find_cached_function_jobs", return_value=[]
+        "find_cached_function_jobs", side_effect=_find_cached_function_jobs_side_effect
     )
 
     mock_handler_in_projects_rpc_interface("mark_project_as_job", return_value=None)
 
     _generated_function_job_ids: list[FunctionJobID] = []
 
-    async def _register_function_job_side_effect(
-        generated_function_job_ids: list[FunctionJobID], *args, **kwargs
+    async def _batch_register_function_jobs_side_effect(
+        generated_function_job_ids: list,
+        user_id: UserID,
+        function_jobs: FunctionJobList,
+        product_name: ProductName,
     ):
-        uid = FunctionJobID(_faker.uuid4())
-        generated_function_job_ids.append(uid)
-        return fake_registered_project_function_job.model_copy(update={"uid": uid})
+        registered_jobs = []
+        for _ in function_jobs:
+            uid = FunctionJobID(_faker.uuid4())
+            generated_function_job_ids.append(uid)
+            registered_jobs.append(
+                fake_registered_project_function_job.model_copy(update={"uid": uid})
+            )
+        return BatchCreateRegisteredFunctionJobs(created_items=registered_jobs)
 
     mock_handler_in_functions_rpc_interface(
-        "register_function_job",
+        "batch_register_function_jobs",
         side_effect=partial(
-            _register_function_job_side_effect, _generated_function_job_ids
+            _batch_register_function_jobs_side_effect, _generated_function_job_ids
         ),
     )
     mock_handler_in_functions_rpc_interface(
@@ -650,9 +750,17 @@ async def test_map_function(
     )
 
     patch_mock = mock_handler_in_functions_rpc_interface(
+        "batch_patch_registered_function_job",
+        side_effect=partial(
+            _batch_patch_registered_function_job,
+            fake_registered_project_function_job,
+        ),
+    )
+
+    mock_handler_in_functions_rpc_interface(
         "patch_registered_function_job",
         side_effect=partial(
-            _patch_registered_function_job_side_effect,
+            _patch_registered_function_job,
             fake_registered_project_function_job,
         ),
     )
@@ -675,10 +783,17 @@ async def test_map_function(
     assert (
         job_collection.job_ids == _generated_function_job_ids
     ), "Job ID did not preserve order or were incorrectly propagated"
-    celery_task_ids = {
-        elm.kwargs["registered_function_job_patch"].job_creation_task_id
-        for elm in patch_mock.call_args_list
-    }
+
+    celery_task_ids = set()
+    for args in patch_mock.call_args_list:
+        inputs = args.kwargs["function_job_patch_requests"]
+        celery_task_ids = celery_task_ids.union(
+            {
+                input_.patch.job_creation_task_id
+                for input_ in inputs
+                if input_.patch.job_creation_task_id
+            }
+        )
     assert len(celery_task_ids) == len(_inputs)
     for task_id in celery_task_ids:
         await _wait_for_task_result(client, auth, f"{task_id}")
