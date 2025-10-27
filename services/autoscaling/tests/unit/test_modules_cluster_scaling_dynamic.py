@@ -437,7 +437,6 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
             / 1e9,
             "ram": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             * fake_node.description.resources.memory_bytes,
-            "generic_resources": {},
         },
     )
 
@@ -713,9 +712,11 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         cluster_total_resources={
             "cpus": fake_attached_node.description.resources.nano_cp_us / 1e9,
             "ram": fake_attached_node.description.resources.memory_bytes,
-            "generic_resources": {},
         },
-        cluster_used_resources={"cpus": float(0), "ram": 0, "generic_resources": {}},
+        cluster_used_resources={
+            "cpus": float(0),
+            "ram": 0,
+        },
         instances_running=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
@@ -978,7 +979,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",
@@ -990,7 +991,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type="t2.xlarge",
                 service_resources=Resources(
-                    cpus=2.6, ram=TypeAdapter(ByteSize).validate_python("4Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("4Gib")
                 ),
                 num_services=1,
                 expected_instance_type="t2.xlarge",
@@ -1002,7 +1003,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type="r5n.8xlarge",
                 service_resources=Resources(
-                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.8xlarge",
@@ -1165,7 +1166,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
                 ),
                 num_services=10,
                 expected_instance_type="r5n.4xlarge",  # 1 GPU, 16 CPUs, 128GiB
-                expected_num_instances=5,
+                expected_num_instances=4,
             ),
             id="sim4life-light",
         ),
@@ -1254,7 +1255,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
                 service_resources=Resources(
-                    cpus=6.6, ram=TypeAdapter(ByteSize).validate_python("15Gib")
+                    cpus=8, ram=TypeAdapter(ByteSize).validate_python("15Gib")
                 ),
                 num_services=12,
                 expected_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
@@ -1263,7 +1264,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
                 service_resources=Resources(
-                    cpus=30.6, ram=TypeAdapter(ByteSize).validate_python("20480MB")
+                    cpus=32, ram=TypeAdapter(ByteSize).validate_python("20480MB")
                 ),
                 num_services=7,
                 expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
@@ -1556,7 +1557,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",

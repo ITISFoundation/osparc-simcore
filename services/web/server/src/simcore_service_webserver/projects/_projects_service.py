@@ -88,10 +88,6 @@ from servicelib.common_headers import (
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.docker_utils import (
-    DYNAMIC_SIDECAR_MIN_CPUS,
-    estimate_dynamic_sidecar_resources_from_ec2_instance,
-)
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
@@ -658,12 +654,12 @@ async def update_project_node_resources_from_hardware_info(
             app, user_id, project_id, node_id, service_key, service_version
         )
         scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
-        new_cpus_value, new_ram_value = (
-            estimate_dynamic_sidecar_resources_from_ec2_instance(
-                selected_ec2_instance_type.cpus, selected_ec2_instance_type.ram
-            )
+        new_cpus_value = float(selected_ec2_instance_type.cpus) - _CPUS_SAFE_MARGIN
+        new_ram_value = int(
+            selected_ec2_instance_type.ram
+            - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+            - _SIDECARS_OPS_SAFE_RAM_MARGIN
         )
-
         if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
             # NOTE: we go for the largest sub-service and scale it up/down
             scalable_service_name, hungry_service_resources = max(
@@ -686,14 +682,17 @@ async def update_project_node_resources_from_hardware_info(
                         }
                     )
             new_cpus_value = max(
-                new_cpus_value - other_services_resources["CPU"],
-                DYNAMIC_SIDECAR_MIN_CPUS,
+                float(selected_ec2_instance_type.cpus)
+                - _CPUS_SAFE_MARGIN
+                - other_services_resources["CPU"],
+                _MIN_NUM_CPUS,
             )
-
-            new_ram_value = max(
-                int(new_ram_value - other_services_resources["RAM"]), 128 * 1024 * 1024
+            new_ram_value = int(
+                selected_ec2_instance_type.ram
+                - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+                - other_services_resources["RAM"]
+                - _SIDECARS_OPS_SAFE_RAM_MARGIN
             )
-
         # scale the service
         node_resources[scalable_service_name].resources["CPU"].set_value(new_cpus_value)
         node_resources[scalable_service_name].resources["RAM"].set_value(new_ram_value)
