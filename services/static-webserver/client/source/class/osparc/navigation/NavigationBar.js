@@ -158,7 +158,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       }
       this.getChildControl("notifications-button");
       this.getChildControl("help-button");
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.store.StaticInfo.isBillableProduct()) {
         this.getChildControl("credits-button");
       }
       this.getChildControl("log-in-button");

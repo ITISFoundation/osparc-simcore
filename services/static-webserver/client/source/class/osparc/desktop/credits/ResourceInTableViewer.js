@@ -122,7 +122,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
         }
       });
 
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.store.StaticInfo.isBillableProduct()) {
         const store = osparc.store.Store.getInstance();
         store.getWallets().forEach(wallet => {
           walletSelectBox.add(new qx.ui.form.ListItem(wallet.getName(), null, wallet));
@@ -136,7 +136,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
     },
 
     _getSelectWalletId: function() {
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.store.StaticInfo.isBillableProduct()) {
         const walletSelectBox = this.getChildControl("wallet-selector");
         const selectedWallet = walletSelectBox.getSelection()[0].getModel();
         return selectedWallet.getWalletId();

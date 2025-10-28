@@ -2074,7 +2074,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyDataButton = this.__getStudyDataMenuButton(card);
       menu.add(studyDataButton);
 
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.store.StaticInfo.isBillableProduct()) {
         const billingsSettingsButton = this.__getBillingMenuButton(card);
         menu.add(billingsSettingsButton);
       }

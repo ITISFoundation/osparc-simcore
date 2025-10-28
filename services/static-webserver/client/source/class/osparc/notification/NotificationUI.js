@@ -282,7 +282,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           this.__openStudyDetails(resourceId, notification);
           break;
         case "WALLET_SHARED": {
-          const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+          const walletsEnabled = osparc.store.StaticInfo.isBillableProduct();
           if (walletsEnabled) {
             this.__openWalletDetails(parseInt(resourceId));
           }
