@@ -1106,7 +1106,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.13", "3.12"]
+        python: ["3.13", "3.14"]
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
