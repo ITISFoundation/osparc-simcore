@@ -470,7 +470,7 @@ packaging==24.2
     #   opentelemetry-instrumentation
 pamqp==3.3.0
     # via aiormq
-pint==0.24.4
+pint==0.25
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 platformdirs==4.3.6
     # via pint

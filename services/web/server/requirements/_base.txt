@@ -121,8 +121,6 @@ anyio==4.3.0
     #   fast-depends
     #   faststream
     #   httpx
-appdirs==1.4.4
-    # via pint
 arrow==1.3.0
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -296,7 +294,7 @@ faststream==0.5.31
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 flexcache==0.3
     # via pint
-flexparser==0.3.1
+flexparser==0.4
     # via pint
 frozenlist==1.4.1
     # via
@@ -733,10 +731,12 @@ phonenumbers==9.0.9
     # via -r requirements/_base.in
 pillow==12.0.0
     # via captcha
-pint==0.24.3
+pint==0.25
     # via
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
+platformdirs==4.5.0
+    # via pint
 prometheus-client==0.14.1
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 prompt-toolkit==3.0.52
