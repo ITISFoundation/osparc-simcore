@@ -1,5 +1,5 @@
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.13"
 # dependencies = [
 #     "httpx",
 #     "matplotlib",
@@ -129,7 +129,6 @@ def main(njobs: int, sleep_seconds: int, log_job: bool = False):
             plt.show(block=True)
 
         finally:
-
             for file in uploaded_files:
                 try:
                     file_client_instance.delete_file(file.id)

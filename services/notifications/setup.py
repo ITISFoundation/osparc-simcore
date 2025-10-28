@@ -43,7 +43,7 @@ SETUP = {
     "author": AUTHORS,
     "description": DESCRIPTION,
     "license": "MIT license",
-    "python_requires": "~=3.11",
+    "python_requires": "~=3.13",
     "packages": find_packages(where="src"),
     "package_dir": {
         "": "src",
