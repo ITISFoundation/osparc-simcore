@@ -76,7 +76,7 @@ propcache==0.3.2
     # via
     #   aiohttp
     #   yarl
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
     # via
     #   aiopg
     #   sqlalchemy

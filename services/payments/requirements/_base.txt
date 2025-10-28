@@ -140,7 +140,7 @@ googleapis-common-protos==1.70.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-greenlet==3.1.1
+greenlet==3.2.4
     # via sqlalchemy
 grpcio==1.68.0
     # via opentelemetry-exporter-otlp-proto-grpc
@@ -365,7 +365,7 @@ protobuf==5.29.5
     #   opentelemetry-proto
 psutil==6.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
     # via sqlalchemy
 pyasn1==0.6.1
     # via
