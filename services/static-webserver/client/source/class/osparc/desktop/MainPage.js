@@ -68,8 +68,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     const preloadPromises = [];
     const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
     if (walletsEnabled) {
-      preloadPromises.push(store.reloadCreditPrice());
-      preloadPromises.push(store.reloadWallets());
+      preloadPromises.push(store.fetchCreditPrice());
+      preloadPromises.push(store.fetchWallets());
     }
     preloadPromises.push(store.getAllClassifiers(true));
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
