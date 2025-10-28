@@ -195,6 +195,12 @@ propcache==0.3.1
     #   yarl
 py-partiql-parser==0.6.1
     # via moto
+pyasynchat==1.0.4
+    # via pyftpdlib
+pyasyncore==1.0.4
+    # via
+    #   pyasynchat
+    #   pyftpdlib
 pycparser==2.23
     # via cffi
 pydantic==2.11.7
@@ -317,11 +323,6 @@ typing-extensions==4.14.1
     #   cfn-lint
     #   pydantic
     #   pydantic-core
-    #   pyopenssl
-    #   pytest-asyncio
-    #   types-aioboto3
-    #   types-aiobotocore
-    #   types-aiobotocore-s3
     #   typing-inspection
 typing-inspection==0.4.0
     # via

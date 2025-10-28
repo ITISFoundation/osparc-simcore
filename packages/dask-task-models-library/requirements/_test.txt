@@ -66,6 +66,5 @@ typing-extensions==4.15.0
     #   flexcache
     #   flexparser
     #   pint
-    #   pytest-asyncio
 tzdata==2025.2
     # via faker

@@ -140,10 +140,6 @@ idna==3.10
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==8.6.1
-    # via
-    #   -c requirements/_base.txt
-    #   dask
 iniconfig==2.1.0
     # via pytest
 jinja2==3.1.6
@@ -338,10 +334,7 @@ typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
-    #   exceptiongroup
     #   mypy
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
 tzdata==2025.2
     # via
@@ -371,7 +364,3 @@ zict==3.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-zipp==3.21.0
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata

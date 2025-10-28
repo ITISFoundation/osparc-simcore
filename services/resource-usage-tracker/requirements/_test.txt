@@ -321,7 +321,6 @@ typing-extensions==4.14.1
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
     #   typing-inspection
 typing-inspection==0.4.1

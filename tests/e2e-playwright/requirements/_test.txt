@@ -142,7 +142,6 @@ types-python-dateutil==2.9.0.20250822
 typing-extensions==4.15.0
     # via
     #   -r requirements/_test_wo_playwright.txt
-    #   anyio
     #   pydantic
     #   pydantic-core
     #   pyee

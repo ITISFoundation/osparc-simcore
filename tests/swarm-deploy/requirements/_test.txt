@@ -331,7 +331,7 @@ opentelemetry-semantic-conventions==0.58b0
     #   opentelemetry-sdk
 opentelemetry-util-http==0.58b0
     # via opentelemetry-instrumentation-requests
-orjson==3.11.3
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -718,9 +718,7 @@ typing-extensions==4.15.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   aiodebug
-    #   aiosignal
     #   alembic
-    #   anyio
     #   faststream
     #   flexcache
     #   flexparser
@@ -734,7 +732,6 @@ typing-extensions==4.15.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
-    #   pytest-asyncio
     #   typer
     #   typing-inspection
 typing-inspection==0.4.2

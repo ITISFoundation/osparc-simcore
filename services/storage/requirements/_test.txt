@@ -411,14 +411,12 @@ types-aiofiles==24.1.0.20250822
 typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   asyncpg-stubs
     #   aws-sam-translator
     #   cfn-lint
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
     #   typing-inspection
 typing-inspection==0.4.1
