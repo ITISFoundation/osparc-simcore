@@ -27,11 +27,11 @@ anyio==4.3.0
     #   httpx
     #   starlette
     #   watchfiles
-asyncpg==0.27.0
+asyncpg==0.30.0
     # via
     #   -c requirements/_base.txt
     #   asyncpg-stubs
-asyncpg-stubs==0.27.1
+asyncpg-stubs==0.30.2
     # via -r requirements/_test.in
 attrs==25.4.0
     # via
@@ -100,7 +100,7 @@ frozenlist==1.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==2.0.2
+greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -328,7 +328,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
-sqlalchemy==1.4.47
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt

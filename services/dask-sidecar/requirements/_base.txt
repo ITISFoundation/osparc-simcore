@@ -312,7 +312,7 @@ pandas==2.2.3
     # via bokeh
 partd==1.4.2
     # via dask
-pillow==11.2.1
+pillow==12.0.0
     # via bokeh
 prometheus-client==0.22.0
     # via -r requirements/_base.in

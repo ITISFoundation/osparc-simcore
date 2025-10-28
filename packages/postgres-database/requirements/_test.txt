@@ -31,7 +31,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
     # via
     #   -c requirements/_base.txt
     #   aiopg

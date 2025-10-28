@@ -114,7 +114,7 @@ fsspec==2025.3.2
     # via
     #   -c requirements/_base.txt
     #   dask
-greenlet==3.2.2
+greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -214,7 +214,7 @@ partd==1.4.2
     #   dask
 pathspec==0.12.1
     # via mypy
-pillow==11.3.0
+pillow==12.0.0
     # via bokeh
 pluggy==1.6.0
     # via
