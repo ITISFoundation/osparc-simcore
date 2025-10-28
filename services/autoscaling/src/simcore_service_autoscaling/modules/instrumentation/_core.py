@@ -35,7 +35,7 @@ def setup(app: FastAPI) -> None:
 
 
 def get_instrumentation(app: FastAPI) -> AutoscalingInstrumentation:
-    if not app.state.instrumentation:
+    if not hasattr(app.state, "instrumentation"):
         raise ConfigurationError(
             msg="Instrumentation not setup. Please check the configuration."
         )
