@@ -444,15 +444,11 @@ typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
     #   fastapi
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
-    #   starlette
-    #   types-boto3
     #   typing-inspection
 typing-inspection==0.4.1
     # via

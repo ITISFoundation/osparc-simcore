@@ -296,12 +296,10 @@ sympy==1.14.0
 typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   aws-sam-translator
     #   cfn-lint
     #   pydantic
     #   pydantic-core
-    #   pytest-asyncio
     #   typing-inspection
 typing-inspection==0.4.1
     # via

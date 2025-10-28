@@ -95,7 +95,6 @@ sqlalchemy==1.4.54
     #   aiopg
 typing-extensions==4.15.0
     # via
-    #   aiosignal
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
 werkzeug==3.1.3

@@ -118,10 +118,7 @@ six==1.17.0
 termcolor==3.1.0
     # via pytest-sugar
 typing-extensions==4.15.0
-    # via
-    #   aiosignal
-    #   openapi-core
-    #   pytest-asyncio
+    # via openapi-core
 urllib3==2.5.0
     # via
     #   -c ../../requirements/constraints.txt

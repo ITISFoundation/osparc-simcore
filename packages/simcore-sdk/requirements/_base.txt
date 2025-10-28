@@ -230,7 +230,7 @@ opentelemetry-semantic-conventions==0.58b0
     #   opentelemetry-sdk
 opentelemetry-util-http==0.58b0
     # via opentelemetry-instrumentation-requests
-orjson==3.11.3
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -462,9 +462,7 @@ types-python-dateutil==2.9.0.20250822
 typing-extensions==4.15.0
     # via
     #   aiodebug
-    #   aiosignal
     #   alembic
-    #   anyio
     #   faststream
     #   flexcache
     #   flexparser

@@ -183,7 +183,6 @@ typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   mypy
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
 tzdata==2025.2
     # via faker

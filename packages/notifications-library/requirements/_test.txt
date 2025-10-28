@@ -120,9 +120,7 @@ types-aiofiles==24.1.0.20250822
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
-    #   aiosignal
     #   mypy
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
 tzdata==2025.2
     # via faker

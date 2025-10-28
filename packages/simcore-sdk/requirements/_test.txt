@@ -337,17 +337,13 @@ types-tqdm==4.67.0.20250809
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
-    #   aiosignal
     #   alembic
     #   aws-sam-translator
     #   cfn-lint
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
-    #   types-aiobotocore
-    #   types-aiobotocore-s3
     #   typing-inspection
 typing-inspection==0.4.2
     # via
