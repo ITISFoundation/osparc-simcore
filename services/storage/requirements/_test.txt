@@ -188,7 +188,7 @@ jsonref==1.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-jsonschema==4.23.0
+jsonschema==4.25.1
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
@@ -329,7 +329,7 @@ python-dotenv==1.0.1
     #   -r requirements/_test.in
 pytz==2025.2
     # via pandas
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -364,7 +364,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.22.3
+rpds-py==0.28.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema

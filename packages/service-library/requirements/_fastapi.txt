@@ -172,7 +172,7 @@ uvicorn==0.37.0
     #   fastapi-cloud-cli
 uvloop==0.21.0
     # via uvicorn
-watchfiles==1.1.0
+watchfiles==1.1.1
     # via uvicorn
 websockets==15.0.1
     # via uvicorn

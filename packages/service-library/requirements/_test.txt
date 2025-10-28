@@ -31,7 +31,7 @@ attrs==25.3.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-botocore==1.40.44
+botocore==1.40.60
     # via -r requirements/_test.in
 certifi==2025.8.3
     # via
@@ -238,7 +238,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
