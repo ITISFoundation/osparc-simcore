@@ -2,7 +2,7 @@
 exclude: "^.venv$|^.cache$|^.pytest_cache$"
 fail_fast: false
 default_language_version:
-  python: python3.11
+  python: python3.13
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
