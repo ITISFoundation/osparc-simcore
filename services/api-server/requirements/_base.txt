@@ -835,7 +835,7 @@ pydantic-settings==2.7.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.18.0
     # via rich
-pyinstrument==5.0.0
+pyinstrument==5.1.1
     # via
     #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -852,7 +852,7 @@ python-dotenv==1.0.1
     #   uvicorn
 python-multipart==0.0.19
     # via fastapi
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -1184,7 +1184,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-watchfiles==1.0.0
+watchfiles==1.1.1
     # via uvicorn
 wcwidth==0.2.13
     # via prompt-toolkit

@@ -144,7 +144,7 @@ rich==14.1.0
     # via
     #   cookiecutter
     #   typer
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing
