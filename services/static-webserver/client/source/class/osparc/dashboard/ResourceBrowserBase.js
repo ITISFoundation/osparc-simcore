@@ -119,7 +119,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
       };
 
-      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      const walletsEnabled = osparc.store.StaticInfo.isBillableProduct();
       if (walletsEnabled) {
         Promise.all([
           osparc.store.Study.getInstance().getWallet(studyId),
@@ -767,7 +767,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || studyAlias));
 
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.store.StaticInfo.isBillableProduct()) {
         const studyOptions = new osparc.study.StudyOptions();
         // they will be patched once the study is created
         studyOptions.setPatchStudy(false);

@@ -54,7 +54,7 @@ qx.Class.define("osparc.widget.NodeOptions", {
       let showStartStopButton = false;
 
       // Tier Selection
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.store.StaticInfo.isBillableProduct()) {
         const tierSelectionView = new osparc.node.TierSelectionView(node);
         sections.push(tierSelectionView);
 

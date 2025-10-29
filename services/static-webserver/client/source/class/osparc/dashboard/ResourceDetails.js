@@ -523,7 +523,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __addBillingPage: function() {
-      if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (!osparc.store.StaticInfo.isBillableProduct()) {
         return;
       }
       if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
