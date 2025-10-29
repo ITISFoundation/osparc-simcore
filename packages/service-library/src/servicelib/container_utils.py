@@ -30,7 +30,6 @@ class ContainerExecCommandFailedError(BaseContainerUtilsError):
 
 
 _HTTP_404_NOT_FOUND: Final[int] = 404
-
 _logger = logging.getLogger(__name__)
 
 

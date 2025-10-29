@@ -31,6 +31,15 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
           expose-github-runtime: 'true'
+      - name: Set DISABLE_CACHE_TO for PRs, no need to bloat the github cache
+        id: set-disable-cache-to
+        run: |
+          # Only enable cache-to on master/main
+          if [[ "${GITHUB_REF##*/}" == "master" || "${GITHUB_REF##*/}" == "main" ]]; then
+            echo "DISABLE_CACHE_TO=" >> $GITHUB_ENV
+          else
+            echo "DISABLE_CACHE_TO=1" >> $GITHUB_ENV
+          fi
       - name: build backend images
         if: ${{ inputs.build-backend }}
         run: |
