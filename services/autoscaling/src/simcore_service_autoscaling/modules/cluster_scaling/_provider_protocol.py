@@ -1,6 +1,7 @@
 from typing import Protocol
 
 from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
+from aws_library.ec2._models import EC2InstanceType
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node as DockerNode
@@ -47,3 +48,11 @@ class AutoscalingProvider(Protocol):
     ) -> bool: ...
 
     async def try_retire_nodes(self, app: FastAPI) -> None: ...
+
+    def add_instance_generic_resources(
+        self, app: FastAPI, instance: EC2InstanceData
+    ) -> None: ...
+
+    def adjust_instance_type_resources(
+        self, app: FastAPI, instance_type: EC2InstanceType
+    ) -> EC2InstanceType: ...
