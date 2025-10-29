@@ -38,7 +38,7 @@ Both python and pip version are specified:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: ["3.9", "3.11"]
+        python: ["3.9", "3.13"]
   ```
 - [pyupgrade](https://github.com/asottile/pyupgrade) tool which has been containarized (``scripts/pyupgrade.bash``) and added as a Makefile recipe (``make pyupgrade``)
 

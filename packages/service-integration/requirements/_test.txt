@@ -43,7 +43,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   types-jsonschema
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   -c requirements/_base.txt
     #   referencing

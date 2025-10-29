@@ -56,7 +56,7 @@ frozenlist==1.5.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==3.1.1
+greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -82,7 +82,7 @@ idna==3.10
     #   yarl
 iniconfig==2.1.0
     # via pytest
-jsonschema==4.23.0
+jsonschema==4.25.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -166,7 +166,7 @@ requests==2.32.4
     #   docker
 respx==0.22.0
     # via -r requirements/_test.in
-rpds-py==0.23.1
+rpds-py==0.28.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -192,9 +192,7 @@ typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
     #   mypy
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
 tzdata==2025.2
     # via faker

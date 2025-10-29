@@ -25,10 +25,6 @@ fsspec==2025.3.2
     # via
     #   -c requirements/./_base.txt
     #   dask
-importlib-metadata==8.6.1
-    # via
-    #   -c requirements/./_base.txt
-    #   dask
 jinja2==3.1.6
     # via
     #   -c requirements/./_base.txt
@@ -67,7 +63,7 @@ psutil==7.0.0
     # via
     #   -c requirements/./_base.txt
     #   distributed
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -98,7 +94,3 @@ zict==3.0.0
     # via
     #   -c requirements/./_base.txt
     #   distributed
-zipp==3.21.0
-    # via
-    #   -c requirements/./_base.txt
-    #   importlib-metadata

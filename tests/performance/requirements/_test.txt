@@ -83,7 +83,7 @@ psutil==7.1.0
     # via locust
 psycogreen==1.0.2
     # via locust-plugins
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
     # via locust-plugins
 pydantic==2.11.9
     # via
@@ -120,7 +120,7 @@ requests==2.32.5
     #   locust
     #   python-socketio
     #   smart-open
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing
@@ -139,11 +139,9 @@ tenacity==9.1.2
 typing-extensions==4.15.0
     # via
     #   jsf
-    #   locust
     #   locust-plugins
     #   pydantic
     #   pydantic-core
-    #   referencing
     #   typing-inspection
 typing-inspection==0.4.2
     # via

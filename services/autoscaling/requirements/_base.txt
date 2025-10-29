@@ -241,10 +241,7 @@ idna==3.10
     #   requests
     #   yarl
 importlib-metadata==8.6.1
-    # via
-    #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
-    #   dask
-    #   opentelemetry-api
+    # via opentelemetry-api
 jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -285,7 +282,7 @@ jsonref==1.1.0
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-jsonschema==4.23.0
+jsonschema==4.25.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -415,7 +412,7 @@ opentelemetry-util-http==0.55b1
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
-orjson==3.10.18
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -598,7 +595,7 @@ pydantic-settings==2.7.0
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.19.1
     # via rich
-pyinstrument==5.0.1
+pyinstrument==5.1.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -613,7 +610,7 @@ python-dotenv==1.1.0
     #   uvicorn
 python-multipart==0.0.20
     # via fastapi
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -717,7 +714,7 @@ rich-toolkit==0.15.0
     #   fastapi-cloud-cli
 rignore==0.6.4
     # via fastapi-cloud-cli
-rpds-py==0.25.0
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing
@@ -817,8 +814,6 @@ types-python-dateutil==2.9.0.20250516
 typing-extensions==4.14.1
     # via
     #   aiodebug
-    #   anyio
-    #   exceptiongroup
     #   fastapi
     #   faststream
     #   opentelemetry-api
@@ -830,12 +825,7 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
-    #   starlette
     #   typer
-    #   types-aiobotocore
-    #   types-aiobotocore-ec2
-    #   types-aiobotocore-s3
-    #   types-aiobotocore-ssm
     #   typing-inspection
 typing-inspection==0.4.0
     # via pydantic
@@ -877,7 +867,7 @@ uvicorn==0.34.2
     #   fastapi-cloud-cli
 uvloop==0.21.0
     # via uvicorn
-watchfiles==1.0.5
+watchfiles==1.1.1
     # via uvicorn
 websockets==15.0.1
     # via uvicorn
@@ -900,6 +890,4 @@ zict==3.0.0
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
 zipp==3.21.0
-    # via
-    #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
-    #   importlib-metadata
+    # via importlib-metadata

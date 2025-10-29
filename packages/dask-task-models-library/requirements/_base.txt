@@ -29,8 +29,6 @@ fsspec==2025.9.0
     # via dask
 idna==3.10
     # via email-validator
-importlib-metadata==8.7.0
-    # via dask
 jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -58,7 +56,7 @@ mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.1.1
     # via distributed
-orjson==3.11.3
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -142,7 +140,7 @@ rich==14.1.0
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing
@@ -185,5 +183,3 @@ urllib3==2.5.0
     #   distributed
 zict==3.0.0
     # via distributed
-zipp==3.23.0
-    # via importlib-metadata

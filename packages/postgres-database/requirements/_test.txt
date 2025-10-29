@@ -31,7 +31,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
     # via
     #   -c requirements/_base.txt
     #   aiopg
@@ -85,7 +85,6 @@ typing-extensions==4.15.0
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   mypy
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
 tzdata==2025.2
     # via faker

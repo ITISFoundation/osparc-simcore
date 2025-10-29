@@ -81,10 +81,5 @@ sortedcontainers==2.4.0
     # via hypothesis
 termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.14.1
-    # via
-    #   -c requirements/_base.txt
-    #   anyio
-    #   pytest-asyncio
 tzdata==2025.2
     # via faker

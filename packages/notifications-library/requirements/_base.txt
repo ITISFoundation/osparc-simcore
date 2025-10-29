@@ -64,7 +64,7 @@ mdurl==0.1.2
     # via markdown-it-py
 multidict==6.6.4
     # via yarl
-orjson==3.11.3
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -81,7 +81,7 @@ orjson==3.11.3
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
 propcache==0.3.2
     # via yarl
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
     # via sqlalchemy
 pydantic==2.11.9
     # via
@@ -145,7 +145,7 @@ rich==14.1.0
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing
