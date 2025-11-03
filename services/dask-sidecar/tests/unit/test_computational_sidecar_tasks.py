@@ -811,7 +811,9 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
 
 
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 def test_failing_service_raises_exception(
     caplog_info_level: pytest.LogCaptureFixture,
@@ -825,7 +827,9 @@ def test_failing_service_raises_exception(
 
 
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: pytest.LogCaptureFixture,
@@ -840,7 +844,9 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
 
 
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 def test_running_service_with_incorrect_zip_data_that_uses_a_file_to_key_map_raises_exception(
     caplog_info_level: pytest.LogCaptureFixture,
@@ -855,7 +861,9 @@ def test_running_service_with_incorrect_zip_data_that_uses_a_file_to_key_map_rai
 
 
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 def test_delayed_logging_with_small_timeout_raises_exception(
     app_environment: EnvVarsDict,
@@ -892,7 +900,9 @@ def test_delayed_logging_with_small_timeout_raises_exception(
 
 
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 def test_run_sidecar_with_managed_monitor_container_log_task_raising(
     app_environment: EnvVarsDict,
@@ -901,11 +911,8 @@ def test_run_sidecar_with_managed_monitor_container_log_task_raising(
     mocked_get_image_labels: mock.Mock,
     mocker: MockerFixture,
 ):
-    """https://github.com/aio-libs/aiodocker/issues/901"""
-    # Mock the timeout with a very small value
-
     mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.docker_utils.managed_monitor_container_log_task",
+        "simcore_service_dask_sidecar.computational_sidecar.core.managed_monitor_container_log_task",
         side_effect=RuntimeError("Simulated log monitoring failure"),
     )
 
@@ -919,5 +926,5 @@ def test_run_sidecar_with_managed_monitor_container_log_task_raising(
     )
 
     # Execute the task and expect a timeout exception in the logs
-    run_computational_sidecar(**waiting_task.sidecar_params())
-    pytest.fail("TODO: check that the generic error is raised")
+    with pytest.raises(RuntimeError, match="Simulated log monitoring failure"):
+        run_computational_sidecar(**waiting_task.sidecar_params())
