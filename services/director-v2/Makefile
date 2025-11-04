@@ -28,8 +28,6 @@ directorv2_rest_api_schemas.py: openapi.json ## auto-generates pydantic models f
 	$(SCRIPTS_DIR)/openapi-pydantic-models-generator.bash \
 			--input $< \
 			--output $@ \
-			--field-constraints \
-			--reuse-model \
 			--enum-field-as-literal=all
 
 	# formats
