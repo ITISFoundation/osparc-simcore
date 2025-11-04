@@ -27,8 +27,7 @@ directorv2_rest_api_schemas.py: openapi.json ## auto-generates pydantic models f
 	# auto-generates $@ from $<
 	$(SCRIPTS_DIR)/openapi-pydantic-models-generator.bash \
 			--input $< \
-			--output $@ \
-			--enum-field-as-literal=all
+			--output $@
 
 	# formats
 	@black $@
