@@ -57,6 +57,5 @@ def create_image_spec(
         ].depends_on
 
     return ComposeSpecification(
-        version=settings.COMPOSE_VERSION,
         services={service_name: Service(**service_kwargs)},
     )
