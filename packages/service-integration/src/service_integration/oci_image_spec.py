@@ -1,4 +1,4 @@
-""" Support for Open Container Initiative (OCI)
+"""Support for Open Container Initiative (OCI)
 
 SEE https://opencontainers.org
 SEE https://github.com/opencontainers
@@ -181,7 +181,7 @@ class LabelSchemaAnnotations(BaseModel):
             include=set(_TO_OCI.keys()), exclude_unset=True, exclude_none=True
         )
         assert set(convertable_data.keys()).issubset(  # nosec
-            set(self.model_fields.keys())
+            set(type(self).model_fields.keys())
         )  # nosec
 
         return {_TO_OCI[key]: value for key, value in convertable_data.items()}
