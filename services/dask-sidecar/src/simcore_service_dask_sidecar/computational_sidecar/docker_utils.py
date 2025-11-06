@@ -471,7 +471,16 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
             # wait for task to complete, so we get the complete log
             await monitoring_task
     except* ServiceTimeoutLoggingError as eg:
-        raise eg.exceptions[0] from eg
+        # NOTE: Create a fresh exception instance to avoid serialization issues with the dask client
+        original_exc = eg.exceptions[0]
+        raise ServiceTimeoutLoggingError(
+            service_key=original_exc.service_key,  # pyright: ignore[reportAttributeAccessIssue]
+            service_version=original_exc.service_version,  # pyright: ignore[reportAttributeAccessIssue]
+            container_id=original_exc.container_id,  # pyright: ignore[reportAttributeAccessIssue]
+            timeout_timedelta=original_exc.timeout_timedelta,  # pyright: ignore[reportAttributeAccessIssue]
+            message=original_exc.message,
+            code=original_exc.code,  # pyright: ignore[reportAttributeAccessIssue]
+        ) from None
     except* Exception as eg:
         _logger.exception(
             "Error while monitoring logs of container %s for service %s:%s",
