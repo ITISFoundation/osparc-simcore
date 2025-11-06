@@ -259,7 +259,7 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
 
 
 _MINUTE: Final[int] = 60
-_AIODOCKER_LOGS_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
+_AIODOCKER_LOGS_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(hours=1)
 
 
 async def _parse_container_docker_logs(
