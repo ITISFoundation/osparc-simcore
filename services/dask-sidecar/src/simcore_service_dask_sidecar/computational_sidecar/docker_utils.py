@@ -354,14 +354,11 @@ async def _parse_container_docker_logs(
                     timeout_timedelta=app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT,
                 ) from exc
             finally:
-                if log_file_path.exists():
-                    with log_context(
-                        _logger, logging.INFO, "uploading docker logs file"
-                    ):
-                        # copy the log file to the log_file_url
-                        await push_file_to_remote(
-                            log_file_path, log_file_url, log_publishing_cb, s3_settings
-                        )
+                with log_context(_logger, logging.INFO, "uploading docker logs file"):
+                    # copy the log file to the log_file_url
+                    await push_file_to_remote(
+                        log_file_path, log_file_url, log_publishing_cb, s3_settings
+                    )
 
 
 async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
