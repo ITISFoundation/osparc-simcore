@@ -260,11 +260,6 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
                 )
 
 
-_SERVICE_SILENT_NO_LOGS_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(
-    hours=1
-)
-
-
 async def _parse_container_docker_logs(
     *,
     container: DockerContainer,
@@ -283,6 +278,7 @@ async def _parse_container_docker_logs(
     Raises:
         ServiceTimeoutLoggingError: raised when no logs are received for longer than _AIODOCKER_LOGS_TIMEOUT_S
     """
+    app_settings = ApplicationSettings.create_from_envs()
 
     with log_context(
         _logger,
@@ -304,7 +300,7 @@ async def _parse_container_docker_logs(
                             container.docker.connector.path
                         ),
                         timeout=aiohttp.ClientTimeout(
-                            total=_SERVICE_SILENT_NO_LOGS_TIMEOUT_S.total_seconds()
+                            total=app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT.total_seconds()
                         ),
                     )
                 ) as docker_client_for_logs:
@@ -348,14 +344,14 @@ async def _parse_container_docker_logs(
 
             except TimeoutError as exc:
                 await task_publishers.publish_logs(
-                    message=f"Service {service_key}:{service_version} was silent (no logs) for more than {_SERVICE_SILENT_NO_LOGS_TIMEOUT_S}! Service will be aborted now.",
+                    message=f"Service {service_key}:{service_version} was silent (no logs) for more than {app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT}! Service will be aborted now.",
                     log_level=logging.ERROR,
                 )
                 raise ServiceTimeoutLoggingError(
                     service_key=service_key,
                     service_version=service_version,
                     container_id=container.id,
-                    timeout_timedelta=_SERVICE_SILENT_NO_LOGS_TIMEOUT_S,
+                    timeout_timedelta=app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT,
                 ) from exc
             finally:
                 if log_file_path.exists():
