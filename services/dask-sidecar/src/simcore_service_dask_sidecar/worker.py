@@ -108,10 +108,10 @@ async def dask_exception_handler() -> AsyncGenerator[None, None]:
     except ServiceTimeoutLoggingError as original_exc:
         # NOTE: Create a fresh exception instance to avoid serialization issues with the dask client
         raise ServiceTimeoutLoggingError(
-            service_key=original_exc.service_key,  # pyright: ignore[reportAttributeAccessIssue]
-            service_version=original_exc.service_version,  # pyright: ignore[reportAttributeAccessIssue]
-            container_id=original_exc.container_id,  # pyright: ignore[reportAttributeAccessIssue]
-            timeout_timedelta=original_exc.timeout_timedelta,  # pyright: ignore[reportAttributeAccessIssue]
+            service_key=original_exc.service_key,  # type: ignore[attr-defined]
+            service_version=original_exc.service_version,  # type: ignore[attr-defined]
+            container_id=original_exc.container_id,  # type: ignore[attr-defined]
+            timeout_timedelta=original_exc.timeout_timedelta,  # type: ignore[attr-defined]
             message=original_exc.message,
             code=original_exc.code,
         ) from None
