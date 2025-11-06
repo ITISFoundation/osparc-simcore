@@ -5,6 +5,7 @@
 # pylint: disable=too-many-instance-attributes
 
 import asyncio
+import datetime
 import json
 import logging
 import re
@@ -25,6 +26,7 @@ from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import (
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
+    ServiceOutOfMemoryError,
     ServiceRuntimeError,
     ServiceTimeoutLoggingError,
 )
@@ -45,8 +47,9 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import BootMode
 from packaging import version
-from pydantic import AnyUrl, SecretStr, TypeAdapter
+from pydantic import AnyUrl, ByteSize, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq._client import RabbitMQClient
 from servicelib.rabbitmq._constants import BIND_TO_ALL_TOPICS
@@ -860,6 +863,19 @@ def test_running_service_with_incorrect_zip_data_that_uses_a_file_to_key_map_rai
         )
 
 
+@pytest.fixture
+def with_short_max_silence_timeout(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT": f"{datetime.timedelta(seconds=0.5)}",
+        },
+    )
+
+
 @pytest.mark.parametrize(
     "integration_version, boot_mode, task_owner",
     [("1.0.0", BootMode.CPU, "no_parent_node")],
@@ -867,17 +883,12 @@ def test_running_service_with_incorrect_zip_data_that_uses_a_file_to_key_map_rai
 )
 def test_delayed_logging_with_small_timeout_raises_exception(
     app_environment: EnvVarsDict,
+    with_short_max_silence_timeout: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sidecar_task: Callable[..., ServiceExampleParam],
     mocked_get_image_labels: mock.Mock,
-    mocker: MockerFixture,
 ):
     """https://github.com/aio-libs/aiodocker/issues/901"""
-    # Mock the timeout with a very small value
-    mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.docker_utils._AIODOCKER_LOGS_TIMEOUT_S",
-        0.5,  # Small timeout that should cause failure
-    )
 
     # Configure the task to sleep first and then generate logs
     waiting_task = sidecar_task(
@@ -891,12 +902,6 @@ def test_delayed_logging_with_small_timeout_raises_exception(
     # Execute the task and expect a timeout exception in the logs
     with pytest.raises(ServiceTimeoutLoggingError):
         run_computational_sidecar(**waiting_task.sidecar_params())
-
-    mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.docker_utils._AIODOCKER_LOGS_TIMEOUT_S",
-        10,  # larger timeout to avoid issues
-    )
-    run_computational_sidecar(**waiting_task.sidecar_params())
 
 
 @pytest.mark.parametrize(
@@ -928,3 +933,36 @@ def test_run_sidecar_with_managed_monitor_container_log_task_raising(
     # Execute the task and expect a timeout exception in the logs
     with pytest.raises(RuntimeError, match="Simulated log monitoring failure"):
         run_computational_sidecar(**waiting_task.sidecar_params())
+
+
+# now a test that checks if a service goes out of memory
+@pytest.mark.parametrize(
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
+)
+def test_run_sidecar_with_service_exceeding_memory_limit(
+    app_environment: EnvVarsDict,
+    dask_client: distributed.Client,
+    sidecar_task: Callable[..., ServiceExampleParam],
+    mocked_get_image_labels: mock.Mock,
+):
+    # Configure the task to exceed memory limit
+    allocation_size = TypeAdapter(ByteSize).validate_python("50MB")
+    memory_exceeding_task = sidecar_task(
+        command=[
+            "/bin/bash",
+            "-c",
+            f'echo "Allocating {allocation_size} memory"; dd if=/dev/zero bs=1M count=100 | tail | sleep 10',
+        ]
+    )
+
+    # Execute the task and expect a runtime error due to memory limit exceeded
+
+    future = dask_client.submit(
+        run_computational_sidecar,
+        **memory_exceeding_task.sidecar_params(),
+        resources={"RAM": allocation_size * 3 // 4},  # set limit to 75% of allocation
+    )
+    with pytest.raises(ServiceOutOfMemoryError):
+        future.result()
