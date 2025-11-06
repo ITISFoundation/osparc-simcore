@@ -11,6 +11,7 @@ from collections.abc import (
     Callable,
     Coroutine,
 )
+from math import log
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Final, cast
@@ -221,9 +222,24 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
         logging.DEBUG,
         "started monitoring of pre-1.0 service - using log file in /logs folder",
     ):
-        async with aiofiles.open(log_file) as file_pointer:
-            while (await container.show())["State"]["Running"]:
-                if line := await file_pointer.readline():
+        try:
+            async with aiofiles.open(log_file) as file_pointer:
+                while (await container.show())["State"]["Running"]:
+                    if line := await file_pointer.readline():
+                        _logger.info(
+                            "[%s]: %s",
+                            f"{service_key}:{service_version} - {container.id}{container_name}",
+                            line,
+                        )
+                        await _parse_and_publish_logs(
+                            line,
+                            task_publishers=task_publishers,
+                            progress_regexp=progress_regexp,
+                            progress_bar=progress_bar,
+                        )
+
+                # finish reading the logs if possible
+                async for line in file_pointer:
                     _logger.info(
                         "[%s]: %s",
                         f"{service_key}:{service_version} - {container.id}{container_name}",
@@ -235,25 +251,12 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
                         progress_regexp=progress_regexp,
                         progress_bar=progress_bar,
                     )
-
-            # finish reading the logs if possible
-            async for line in file_pointer:
-                _logger.info(
-                    "[%s]: %s",
-                    f"{service_key}:{service_version} - {container.id}{container_name}",
-                    line,
-                )
-                await _parse_and_publish_logs(
-                    line,
-                    task_publishers=task_publishers,
-                    progress_regexp=progress_regexp,
-                    progress_bar=progress_bar,
-                )
-
+        finally:
             # copy the log file to the log_file_url
-            await push_file_to_remote(
-                log_file, log_file_url, log_publishing_cb, s3_settings
-            )
+            if log_file.exists():
+                await push_file_to_remote(
+                    log_file, log_file_url, log_publishing_cb, s3_settings
+                )
 
 
 _MINUTE: Final[int] = 60
@@ -279,12 +282,13 @@ async def _parse_container_docker_logs(
     Raises:
         ServiceTimeoutLoggingError: raised when no logs are received for longer than _AIODOCKER_LOGS_TIMEOUT_S
     """
-    try:
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            "started monitoring of >=1.0 service - using docker logs",
-        ):
+
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        "started monitoring of >=1.0 service - using docker logs",
+    ):
+        try:
             assert isinstance(
                 container.docker.connector, aiohttp.UnixConnector
             )  # nosec
@@ -336,17 +340,19 @@ async def _parse_container_docker_logs(
                                 progress_bar=progress_bar,
                             )
 
-                    # copy the log file to the log_file_url
-                    await push_file_to_remote(
-                        log_file_path, log_file_url, log_publishing_cb, s3_settings
-                    )
-    except TimeoutError as e:
-        raise ServiceTimeoutLoggingError(
-            service_key=service_key,
-            service_version=service_version,
-            container_id=container.id,
-            timeout_timedelta=datetime.timedelta(seconds=_AIODOCKER_LOGS_TIMEOUT_S),
-        ) from e
+        except TimeoutError as e:
+            raise ServiceTimeoutLoggingError(
+                service_key=service_key,
+                service_version=service_version,
+                container_id=container.id,
+                timeout_timedelta=datetime.timedelta(seconds=_AIODOCKER_LOGS_TIMEOUT_S),
+            ) from e
+        finally:
+            if log_file_path.exists():
+                # copy the log file to the log_file_url
+                await push_file_to_remote(
+                    log_file_path, log_file_url, log_publishing_cb, s3_settings
+                )
 
 
 async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-arguments
