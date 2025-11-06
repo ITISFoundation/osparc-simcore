@@ -307,7 +307,7 @@ class ComputationalSidecar:
                         ),
                     )
                 await self._publish_sidecar_log(
-                    "Service {self.task_parameters.image}:{self.task_parameters.tag} ran successfully."
+                    f"Service {self.task_parameters.image}:{self.task_parameters.tag} completed successfully."
                 )
 
             # POST-PROCESSING (1 step weighted 5%)
@@ -315,7 +315,7 @@ class ComputationalSidecar:
                 task_volumes, image_labels.get_integration_version()
             )
             await self._publish_sidecar_log(
-                "Service {self.task_parameters.image}:{self.task_parameters.tag} completed successfully."
+                f"Uploaded output data of {self.task_parameters.image}:{self.task_parameters.tag} successfully."
             )
             return results
 
