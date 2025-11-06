@@ -259,7 +259,9 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
 
 
 _MINUTE: Final[int] = 60
-_AIODOCKER_LOGS_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(hours=1)
+_SERVICE_SILENT_NO_LOGS_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(
+    hours=1
+)
 
 
 async def _parse_container_docker_logs(
@@ -301,7 +303,7 @@ async def _parse_container_docker_logs(
                             container.docker.connector.path
                         ),
                         timeout=aiohttp.ClientTimeout(
-                            total=_AIODOCKER_LOGS_TIMEOUT_S.total_seconds()
+                            total=_SERVICE_SILENT_NO_LOGS_TIMEOUT_S.total_seconds()
                         ),
                     )
                 ) as docker_client_for_logs:
@@ -345,14 +347,14 @@ async def _parse_container_docker_logs(
 
             except TimeoutError as exc:
                 await task_publishers.publish_logs(
-                    message=f"Service {service_key}:{service_version} was silent (no logs) for more than {_AIODOCKER_LOGS_TIMEOUT_S}! Service will be aborted now.",
+                    message=f"Service {service_key}:{service_version} was silent (no logs) for more than {_SERVICE_SILENT_NO_LOGS_TIMEOUT_S}! Service will be aborted now.",
                     log_level=logging.ERROR,
                 )
                 raise ServiceTimeoutLoggingError(
                     service_key=service_key,
                     service_version=service_version,
                     container_id=container.id,
-                    timeout_timedelta=_AIODOCKER_LOGS_TIMEOUT_S,
+                    timeout_timedelta=_SERVICE_SILENT_NO_LOGS_TIMEOUT_S,
                 ) from exc
             finally:
                 if log_file_path.exists():
