@@ -483,13 +483,16 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
             code=original_exc.code,  # pyright: ignore[reportAttributeAccessIssue]
         ) from None
     except* Exception as eg:
+        original_exc = eg.exceptions[0]
         _logger.exception(
-            "Error while monitoring logs of container %s for service %s:%s",
+            "Error while monitoring logs of container %s for service %s:%s: %s",
             container.id,
             service_key,
             service_version,
+            original_exc,
         )
-        raise eg.exceptions[0] from eg
+        # Re-raise the original exception type with fresh instance
+        raise type(original_exc)(str(original_exc)) from None
 
 
 _AIODOCKER_PULLING_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(hours=1)

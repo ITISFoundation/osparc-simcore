@@ -18,11 +18,19 @@ class ServiceRuntimeError(ContainerTaskError):
     )
 
 
-class ServiceTimeoutLoggingError(ContainerTaskError):
+class ServiceOutOfMemoryError(ServiceRuntimeError):
     msg_template = (
         "The service {service_key}:{service_version}"
-        " running in container {container_id} was detected as hanging and forcefully terminated by the platform. "
-        "This happened because it exceeded the maximum allowed time of {timeout_timedelta} without producing any logs."
+        " running in container {container_id} ran out of memory and was terminated. Current limits are {service_resources}."
+        " Last logs:\n{service_logs}"
+    )
+
+
+class ServiceTimeoutLoggingError(ServiceRuntimeError):
+    msg_template = (
+        "The service {service_key}:{service_version}"
+        " running in container {container_id} was silent/hanging for longer than {timeout_timedelta} and was terminated. "
+        "TIP: The service might have an internal issue or was wrongly setup."
     )
 
 

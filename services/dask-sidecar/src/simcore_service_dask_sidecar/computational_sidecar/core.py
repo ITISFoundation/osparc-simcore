@@ -15,6 +15,7 @@ from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import (
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
+    ServiceOutOfMemoryError,
     ServiceRuntimeError,
     ServiceTimeoutLoggingError,
 )
@@ -22,7 +23,7 @@ from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from dask_task_models_library.container_tasks.protocol import ContainerTaskParameters
 from models_library.progress_bar import ProgressReport
 from packaging import version
-from pydantic import ValidationError
+from pydantic import ByteSize, TypeAdapter, ValidationError
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from servicelib.progress_bar import ProgressBarData
@@ -264,7 +265,7 @@ class ComputationalSidecar:
             ):
                 await container.start()
                 await self._publish_sidecar_log(
-                    f"Container started as '{container.id}' on {socket.gethostname()}..."
+                    f"Service {self.task_parameters.image}:{self.task_parameters.tag} started as '{container.id}' on {socket.gethostname()}..."
                 )
                 # wait until the container finished, either success or fail or timeout
                 while (container_data := await container.show())["State"]["Running"]:
@@ -272,14 +273,18 @@ class ComputationalSidecar:
                 # Check for OOMKilled
                 if container_data["State"].get("OOMKilled", False):
                     await self._publish_sidecar_log(
-                        "Container was killed due to out-of-memory (OOM) error.",
+                        "Service ran out of memory and was terminated. "
+                        f"TIP: Consider requesting more memory for this service or optimizing memory usage. "
+                        f"(Current RAM limits: {TypeAdapter(ByteSize).validate_python(self.task_max_resources['RAM']).human_readable()})",
                         log_level=logging.ERROR,
                     )
-                    raise ServiceRuntimeError(
+                    raise ServiceOutOfMemoryError(
                         service_key=self.task_parameters.image,
                         service_version=self.task_parameters.tag,
+                        service_resources=TypeAdapter(ByteSize)
+                        .validate_python(self.task_max_resources["RAM"])
+                        .human_readable(),
                         container_id=container.id,
-                        exit_code=container_data["State"]["ExitCode"],
                         service_logs=await cast(
                             Coroutine,
                             container.log(
@@ -287,6 +292,7 @@ class ComputationalSidecar:
                             ),
                         ),
                     )
+
                 if container_data["State"]["ExitCode"] > os.EX_OK:
                     raise ServiceRuntimeError(
                         service_key=self.task_parameters.image,
@@ -300,13 +306,17 @@ class ComputationalSidecar:
                             ),
                         ),
                     )
-                await self._publish_sidecar_log("Container ran successfully.")
+                await self._publish_sidecar_log(
+                    "Service {self.task_parameters.image}:{self.task_parameters.tag} ran successfully."
+                )
 
             # POST-PROCESSING (1 step weighted 5%)
             results = await self._retrieve_output_data(
                 task_volumes, image_labels.get_integration_version()
             )
-            await self._publish_sidecar_log("Task completed successfully.")
+            await self._publish_sidecar_log(
+                "Service {self.task_parameters.image}:{self.task_parameters.tag} completed successfully."
+            )
             return results
 
     async def __aenter__(self) -> "ComputationalSidecar":
