@@ -268,6 +268,24 @@ class ComputationalSidecar:
                 # wait until the container finished, either success or fail or timeout
                 while (container_data := await container.show())["State"]["Running"]:
                     await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
+                # Check for OOMKilled
+                if container_data["State"].get("OOMKilled", False):
+                    await self._publish_sidecar_log(
+                        "Container was killed due to out-of-memory (OOM) error.",
+                        log_level=logging.ERROR,
+                    )
+                    raise ServiceRuntimeError(
+                        service_key=self.task_parameters.image,
+                        service_version=self.task_parameters.tag,
+                        container_id=container.id,
+                        exit_code=container_data["State"]["ExitCode"],
+                        service_logs=await cast(
+                            Coroutine,
+                            container.log(
+                                stdout=True, stderr=True, tail=20, follow=False
+                            ),
+                        ),
+                    )
                 if container_data["State"]["ExitCode"] > os.EX_OK:
                     raise ServiceRuntimeError(
                         service_key=self.task_parameters.image,
@@ -302,11 +320,15 @@ class ComputationalSidecar:
         tb: TracebackType | None,
     ) -> None:
         if exc:
-            await self._publish_sidecar_log(
-                f"Task error:\n{exc}", log_level=logging.ERROR
-            )
-            await self._publish_sidecar_log(
-                "TIP: There might be more information in the service log file in the service outputs",
-            )
+            if isinstance(exc, asyncio.CancelledError):
+                # cancelled errors are not logged as errors
+                await self._publish_sidecar_log("Task was cancelled.")
+            else:
+                await self._publish_sidecar_log(
+                    f"Task error:\n{type(exc)}", log_level=logging.ERROR
+                )
+                await self._publish_sidecar_log(
+                    "TIP: There might be more information in the service log file in the service outputs",
+                )
         # ensure we pass the final progress
         self.task_publishers.publish_progress(ProgressReport(actual_value=1))
