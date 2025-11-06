@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import datetime
+import functools
 import logging
 import re
 import socket
@@ -13,7 +14,7 @@ from collections.abc import (
 )
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Final, cast
+from typing import Any, Final, ParamSpec, TypeVar, cast
 
 import aiofiles
 import aiofiles.tempfile
@@ -22,6 +23,7 @@ import arrow
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
+from common_library.async_tools import cancel_wait_task
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceTimeoutLoggingError
 from dask_task_models_library.container_tasks.protocol import (
@@ -425,6 +427,30 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
             )
 
 
+P = ParamSpec("P")
+T = TypeVar("T")
+
+
+def cancel_parent_on_child_exception(func: Callable[P, T]) -> Callable[P, T]:
+    """Decorator that cancels the parent task if the decorated function raises an exception.
+
+    Replicates TaskGroup behavior without serialization issues for dask workers.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        parent_task = asyncio.current_task()
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            # Cancel parent task when child task fails (same as TaskGroup behavior)
+            if parent_task and not parent_task.done():
+                parent_task.cancel()
+            raise exc from None
+
+    return wrapper
+
+
 @contextlib.asynccontextmanager
 async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable=too-many-arguments
     container: DockerContainer,
@@ -444,55 +470,41 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
         ServiceTimeoutLoggingError -- raised when no logs are received for longer than _AIODOCKER_LOGS_TIMEOUT_S
     """
     monitoring_task = None
+
+    if integration_version == LEGACY_INTEGRATION_VERSION:
+        # NOTE: ensure the file is present before the container is started (necessary for old services)
+        log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
+        log_file.touch()
     try:
-        if integration_version == LEGACY_INTEGRATION_VERSION:
-            # NOTE: ensure the file is present before the container is started (necessary for old services)
-            log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
-            log_file.touch()
-        async with asyncio.TaskGroup() as tg:
-            monitoring_task = asyncio.shield(
-                tg.create_task(
-                    _monitor_container_logs(
-                        container=container,
-                        progress_regexp=progress_regexp,
-                        service_key=service_key,
-                        service_version=service_version,
-                        task_publishers=task_publishers,
-                        integration_version=integration_version,
-                        task_volumes=task_volumes,
-                        log_file_url=log_file_url,
-                        log_publishing_cb=log_publishing_cb,
-                        s3_settings=s3_settings,
-                        progress_bar=progress_bar,
-                    ),
-                    name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
-                )
+
+        @cancel_parent_on_child_exception
+        async def _monitor_with_parent_cancellation() -> None:
+            await _monitor_container_logs(
+                container=container,
+                progress_regexp=progress_regexp,
+                service_key=service_key,
+                service_version=service_version,
+                task_publishers=task_publishers,
+                integration_version=integration_version,
+                task_volumes=task_volumes,
+                log_file_url=log_file_url,
+                log_publishing_cb=log_publishing_cb,
+                s3_settings=s3_settings,
+                progress_bar=progress_bar,
             )
-            yield monitoring_task
-            # wait for task to complete, so we get the complete log
-            await monitoring_task
-    except* ServiceTimeoutLoggingError as eg:
-        # NOTE: Create a fresh exception instance to avoid serialization issues with the dask client
-        original_exc = eg.exceptions[0]
-        raise ServiceTimeoutLoggingError(
-            service_key=original_exc.service_key,  # pyright: ignore[reportAttributeAccessIssue]
-            service_version=original_exc.service_version,  # pyright: ignore[reportAttributeAccessIssue]
-            container_id=original_exc.container_id,  # pyright: ignore[reportAttributeAccessIssue]
-            timeout_timedelta=original_exc.timeout_timedelta,  # pyright: ignore[reportAttributeAccessIssue]
-            message=original_exc.message,
-            code=original_exc.code,  # pyright: ignore[reportAttributeAccessIssue]
-        ) from None
-    except* Exception as eg:
-        original_exc = eg.exceptions[0]
-        _logger.exception(
-            "Error while monitoring logs of container %s for service %s:%s: %s",
-            container.id,
-            service_key,
-            service_version,
-            original_exc,
+
+        monitoring_task = asyncio.create_task(
+            _monitor_with_parent_cancellation(),
+            name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
         )
-        # Re-raise the original exception type with fresh instance
-        raise type(original_exc)(str(original_exc)) from None
+
+        yield monitoring_task
+        # wait for task to complete, so we get the complete log
+        await monitoring_task
+    except asyncio.CancelledError:
+        if monitoring_task and not monitoring_task.done():
+            await cancel_wait_task(monitoring_task)
+        raise
 
 
 _AIODOCKER_PULLING_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(hours=1)

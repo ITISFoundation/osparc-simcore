@@ -272,12 +272,6 @@ class ComputationalSidecar:
                     await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
                 # Check for OOMKilled
                 if container_data["State"].get("OOMKilled", False):
-                    await self._publish_sidecar_log(
-                        "Service ran out of memory and was terminated. "
-                        f"TIP: Consider requesting more memory for this service or optimizing memory usage. "
-                        f"(Current RAM limits: {TypeAdapter(ByteSize).validate_python(self.task_max_resources['RAM']).human_readable()})",
-                        log_level=logging.ERROR,
-                    )
                     raise ServiceOutOfMemoryError(
                         service_key=self.task_parameters.image,
                         service_version=self.task_parameters.tag,
@@ -334,17 +328,18 @@ class ComputationalSidecar:
             if isinstance(exc, asyncio.CancelledError):
                 # cancelled errors are not logged as errors
                 await self._publish_sidecar_log("Service was cancelled.")
-            elif isinstance(exc, ServiceTimeoutLoggingError):
+            elif isinstance(exc, ServiceTimeoutLoggingError | ServiceOutOfMemoryError):
                 await self._publish_sidecar_log(f"{exc}", log_level=logging.ERROR)
                 await self._publish_sidecar_log(
-                    "TIP: There might be more information in the service log file to find out why the service hanged.",
+                    "TIP: There might be more information in the service log to help debug the service issue.",
                 )
+
             else:
                 await self._publish_sidecar_log(
-                    f"Service error:\n{type(exc)}", log_level=logging.ERROR
+                    f"Service error: {exc}", log_level=logging.ERROR
                 )
                 await self._publish_sidecar_log(
-                    "TIP: There might be more information in the service log file",
+                    "TIP: There might be more information in the service log to help debug the service issue.",
                 )
         # ensure we pass the final progress
         self.task_publishers.publish_progress(ProgressReport(actual_value=1))
