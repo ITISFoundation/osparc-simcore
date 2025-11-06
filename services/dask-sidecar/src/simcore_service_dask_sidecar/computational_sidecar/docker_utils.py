@@ -11,7 +11,6 @@ from collections.abc import (
     Callable,
     Coroutine,
 )
-from math import log
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Final, cast
@@ -260,8 +259,7 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
 
 
 _MINUTE: Final[int] = 60
-_HOUR: Final[int] = 60 * _MINUTE
-_AIODOCKER_LOGS_TIMEOUT_S: Final[int] = 1 * _HOUR
+_AIODOCKER_LOGS_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(hours=1)
 
 
 async def _parse_container_docker_logs(
@@ -302,7 +300,9 @@ async def _parse_container_docker_logs(
                         connector=aiohttp.UnixConnector(
                             container.docker.connector.path
                         ),
-                        timeout=aiohttp.ClientTimeout(total=_AIODOCKER_LOGS_TIMEOUT_S),
+                        timeout=aiohttp.ClientTimeout(
+                            total=_AIODOCKER_LOGS_TIMEOUT_S.total_seconds()
+                        ),
                     )
                 ) as docker_client_for_logs:
                     # NOTE: this is a workaround for aiodocker not being able to get the container
@@ -344,13 +344,15 @@ async def _parse_container_docker_logs(
                             )
 
             except TimeoutError as e:
+                await task_publishers.publish_logs(
+                    message=f"Service {service_key}:{service_version} was silent (no logs) for more than {_AIODOCKER_LOGS_TIMEOUT_S}! Service will be aborted now.",
+                    log_level=logging.ERROR,
+                )
                 raise ServiceTimeoutLoggingError(
                     service_key=service_key,
                     service_version=service_version,
                     container_id=container.id,
-                    timeout_timedelta=datetime.timedelta(
-                        seconds=_AIODOCKER_LOGS_TIMEOUT_S
-                    ),
+                    timeout_timedelta=_AIODOCKER_LOGS_TIMEOUT_S,
                 ) from e
             finally:
                 if log_file_path.exists():
@@ -447,27 +449,28 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
             # NOTE: ensure the file is present before the container is started (necessary for old services)
             log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
             log_file.touch()
-        monitoring_task = asyncio.shield(
-            asyncio.create_task(
-                _monitor_container_logs(
-                    container=container,
-                    progress_regexp=progress_regexp,
-                    service_key=service_key,
-                    service_version=service_version,
-                    task_publishers=task_publishers,
-                    integration_version=integration_version,
-                    task_volumes=task_volumes,
-                    log_file_url=log_file_url,
-                    log_publishing_cb=log_publishing_cb,
-                    s3_settings=s3_settings,
-                    progress_bar=progress_bar,
-                ),
-                name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
+        async with asyncio.TaskGroup() as tg:
+            monitoring_task = asyncio.shield(
+                tg.create_task(
+                    _monitor_container_logs(
+                        container=container,
+                        progress_regexp=progress_regexp,
+                        service_key=service_key,
+                        service_version=service_version,
+                        task_publishers=task_publishers,
+                        integration_version=integration_version,
+                        task_volumes=task_volumes,
+                        log_file_url=log_file_url,
+                        log_publishing_cb=log_publishing_cb,
+                        s3_settings=s3_settings,
+                        progress_bar=progress_bar,
+                    ),
+                    name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
+                )
             )
-        )
-        yield monitoring_task
-        # wait for task to complete, so we get the complete log
-        await monitoring_task
+            yield monitoring_task
+            # wait for task to complete, so we get the complete log
+            await monitoring_task
     except Exception:
         _logger.exception(
             "Error while monitoring logs of container %s for service %s:%s",
