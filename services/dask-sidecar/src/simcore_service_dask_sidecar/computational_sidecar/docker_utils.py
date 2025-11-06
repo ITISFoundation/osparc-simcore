@@ -259,7 +259,7 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
 
 
 _MINUTE: Final[int] = 60
-_AIODOCKER_LOGS_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(hours=1)
+_AIODOCKER_LOGS_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 
 
 async def _parse_container_docker_logs(
@@ -343,7 +343,7 @@ async def _parse_container_docker_logs(
                                 progress_bar=progress_bar,
                             )
 
-            except TimeoutError as e:
+            except TimeoutError as exc:
                 await task_publishers.publish_logs(
                     message=f"Service {service_key}:{service_version} was silent (no logs) for more than {_AIODOCKER_LOGS_TIMEOUT_S}! Service will be aborted now.",
                     log_level=logging.ERROR,
@@ -353,7 +353,7 @@ async def _parse_container_docker_logs(
                     service_version=service_version,
                     container_id=container.id,
                     timeout_timedelta=_AIODOCKER_LOGS_TIMEOUT_S,
-                ) from e
+                ) from exc
             finally:
                 if log_file_path.exists():
                     with log_context(
@@ -441,7 +441,6 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
     """
     Raises:
         ServiceTimeoutLoggingError -- raised when no logs are received for longer than _AIODOCKER_LOGS_TIMEOUT_S
-        DaskSidecarLoggerError -- raised for any other issue
     """
     monitoring_task = None
     try:
@@ -471,20 +470,16 @@ async def managed_monitor_container_log_task(  # noqa: PLR0913 # pylint: disable
             yield monitoring_task
             # wait for task to complete, so we get the complete log
             await monitoring_task
-    except Exception:
+    except* ServiceTimeoutLoggingError as eg:
+        raise eg.exceptions[0] from eg
+    except* Exception as eg:
         _logger.exception(
             "Error while monitoring logs of container %s for service %s:%s",
             container.id,
             service_key,
             service_version,
         )
-        raise
-    finally:
-        if monitoring_task:
-            with log_context(_logger, logging.DEBUG, "cancel logs monitoring task"):
-                monitoring_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await monitoring_task
+        raise eg.exceptions[0] from eg
 
 
 _AIODOCKER_PULLING_TIMEOUT_S: Final[int] = 60 * _MINUTE

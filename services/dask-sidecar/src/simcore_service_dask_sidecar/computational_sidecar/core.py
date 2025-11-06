@@ -16,6 +16,7 @@ from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import (
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
     ServiceRuntimeError,
+    ServiceTimeoutLoggingError,
 )
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from dask_task_models_library.container_tasks.protocol import ContainerTaskParameters
@@ -322,13 +323,18 @@ class ComputationalSidecar:
         if exc:
             if isinstance(exc, asyncio.CancelledError):
                 # cancelled errors are not logged as errors
-                await self._publish_sidecar_log("Task was cancelled.")
+                await self._publish_sidecar_log("Service was cancelled.")
+            elif isinstance(exc, ServiceTimeoutLoggingError):
+                await self._publish_sidecar_log(f"{exc}", log_level=logging.ERROR)
+                await self._publish_sidecar_log(
+                    "TIP: There might be more information in the service log file to find out why the service hanged.",
+                )
             else:
                 await self._publish_sidecar_log(
-                    f"Task error:\n{type(exc)}", log_level=logging.ERROR
+                    f"Service error:\n{type(exc)}", log_level=logging.ERROR
                 )
                 await self._publish_sidecar_log(
-                    "TIP: There might be more information in the service log file in the service outputs",
+                    "TIP: There might be more information in the service log file",
                 )
         # ensure we pass the final progress
         self.task_publishers.publish_progress(ProgressReport(actual_value=1))
