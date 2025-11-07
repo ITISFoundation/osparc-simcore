@@ -271,14 +271,16 @@ class ComputationalSidecar:
                 while (container_data := await container.show())["State"]["Running"]:
                     await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
 
-                async def _safe_get_last_logs() -> str:
+                async def _safe_get_last_logs() -> list[str]:
                     with log_catch(_logger, reraise=False):
-                        return await cast(
+                        last_logs = await cast(
                             Coroutine,
                             container.log(
                                 stdout=True, stderr=True, tail=20, follow=False
                             ),
                         )
+                        assert isinstance(last_logs, list)  # nosec
+                        return last_logs
                     return "Unexpected error: Could not retrieve logs."
 
                 # Check for OOMKilled
