@@ -1,14 +1,11 @@
 import asyncio
-import contextlib
 import logging
 import signal
 import threading
-from collections.abc import AsyncGenerator
 from pprint import pformat
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.errors import ServiceTimeoutLoggingError
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from dask_task_models_library.container_tasks.protocol import (
     ContainerTaskParameters,
@@ -100,23 +97,6 @@ async def dask_teardown(worker: distributed.Worker) -> None:
         ...
 
 
-@contextlib.asynccontextmanager
-async def dask_exception_handler() -> AsyncGenerator[None, None]:
-    """Context manager to handle dask serialization issues"""
-    try:
-        yield
-    except ServiceTimeoutLoggingError as original_exc:
-        # NOTE: Create a fresh exception instance to avoid serialization issues with the dask client
-        raise ServiceTimeoutLoggingError(
-            service_key=original_exc.service_key,  # type: ignore[attr-defined]
-            service_version=original_exc.service_version,  # type: ignore[attr-defined]
-            container_id=original_exc.container_id,  # type: ignore[attr-defined]
-            timeout_timedelta=original_exc.timeout_timedelta,  # type: ignore[attr-defined]
-            message=original_exc.message,
-            code=original_exc.code,
-        ) from None
-
-
 async def _run_computational_sidecar_async(
     *,
     task_parameters: ContainerTaskParameters,
@@ -132,11 +112,8 @@ async def _run_computational_sidecar_async(
     )
     current_task = asyncio.current_task()
     assert current_task  # nosec
-    async with (
-        dask_exception_handler(),
-        monitor_task_abortion(
-            task_name=current_task.get_name(), task_publishers=task_publishers
-        ),
+    async with monitor_task_abortion(
+        task_name=current_task.get_name(), task_publishers=task_publishers
     ):
         task_max_resources = get_current_task_resources()
         async with ComputationalSidecar(
