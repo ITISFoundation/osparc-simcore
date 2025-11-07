@@ -25,7 +25,7 @@ from models_library.progress_bar import ProgressReport
 from packaging import version
 from pydantic import ByteSize, TypeAdapter, ValidationError
 from pydantic.networks import AnyUrl
-from servicelib.logging_utils import LogLevelInt, LogMessageStr
+from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch
 from servicelib.progress_bar import ProgressBarData
 from settings_library.s3 import S3Settings
 from yarl import URL
@@ -270,6 +270,17 @@ class ComputationalSidecar:
                 # wait until the container finished, either success or fail or timeout
                 while (container_data := await container.show())["State"]["Running"]:
                     await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
+
+                async def _safe_get_last_logs() -> str:
+                    with log_catch(_logger, reraise=False):
+                        return await cast(
+                            Coroutine,
+                            container.log(
+                                stdout=True, stderr=True, tail=20, follow=False
+                            ),
+                        )
+                    return "Unexpected error: Could not retrieve logs."
+
                 # Check for OOMKilled
                 if container_data["State"].get("OOMKilled", False):
                     raise ServiceOutOfMemoryError(
@@ -279,12 +290,7 @@ class ComputationalSidecar:
                         .validate_python(self.task_max_resources.get("RAM", 0))
                         .human_readable(),
                         container_id=container.id,
-                        service_logs=await cast(
-                            Coroutine,
-                            container.log(
-                                stdout=True, stderr=True, tail=20, follow=False
-                            ),
-                        ),
+                        service_logs=_safe_get_last_logs(),
                     )
 
                 if container_data["State"]["ExitCode"] > os.EX_OK:
@@ -293,12 +299,7 @@ class ComputationalSidecar:
                         service_version=self.task_parameters.tag,
                         container_id=container.id,
                         exit_code=container_data["State"]["ExitCode"],
-                        service_logs=await cast(
-                            Coroutine,
-                            container.log(
-                                stdout=True, stderr=True, tail=20, follow=False
-                            ),
-                        ),
+                        service_logs=_safe_get_last_logs(),
                     )
                 await self._publish_sidecar_log(
                     f"Service {self.task_parameters.image}:{self.task_parameters.tag} completed successfully."
