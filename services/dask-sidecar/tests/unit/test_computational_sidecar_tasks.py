@@ -954,7 +954,7 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     allocation_size = TypeAdapter(ByteSize).validate_python("100MB")
     memory_exceeding_task = sidecar_task(
         service_key="python",
-        service_version="3.14-slim",
+        service_version="3.11-slim",
         command=[
             "python",
             "-c",

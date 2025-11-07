@@ -281,7 +281,7 @@ class ComputationalSidecar:
                         )
                         assert isinstance(last_logs, list)  # nosec
                         return last_logs
-                    return "Unexpected error: Could not retrieve logs."
+                    return ["Unexpected error: Could not retrieve logs."]
 
                 # Check for OOMKilled
                 if container_data["State"].get("OOMKilled", False):
