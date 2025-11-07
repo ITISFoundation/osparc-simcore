@@ -276,7 +276,7 @@ class ComputationalSidecar:
                         service_key=self.task_parameters.image,
                         service_version=self.task_parameters.tag,
                         service_resources=TypeAdapter(ByteSize)
-                        .validate_python(self.task_max_resources["RAM"])
+                        .validate_python(self.task_max_resources.get("RAM", 0))
                         .human_readable(),
                         container_id=container.id,
                         service_logs=await cast(
