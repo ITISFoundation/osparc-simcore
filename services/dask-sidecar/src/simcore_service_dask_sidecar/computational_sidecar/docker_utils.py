@@ -309,8 +309,6 @@ async def _parse_container_docker_logs(
                     container_for_long_running_logs = (
                         await docker_client_for_logs.containers.get(container.id)
                     )
-                    # NOTE: this is a workaround for aiodocker not being able to get the container
-                    # logs when the container is not running
                     await container.show()
                     await container_for_long_running_logs.show()
 
