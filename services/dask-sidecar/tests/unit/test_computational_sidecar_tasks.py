@@ -425,14 +425,17 @@ def sidecar_task(
     s3_settings: S3Settings,
 ) -> Callable[..., ServiceExampleParam]:
     def _creator(
-        command: list[str] | None = None, input_data: TaskInputData | None = None
+        service_key: str | None = None,
+        service_version: str | None = None,
+        command: list[str] | None = None,
+        input_data: TaskInputData | None = None,
     ) -> ServiceExampleParam:
         return ServiceExampleParam(
             docker_basic_auth=DockerBasicAuth(
                 server_address="docker.io", username="pytest", password=SecretStr("")
             ),
-            service_key="ubuntu",
-            service_version="latest",
+            service_key=service_key or "ubuntu",
+            service_version=service_version or "latest",
             command=command
             or ["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
             input_data=input_data or TaskInputData.model_validate({}),
@@ -948,13 +951,15 @@ def test_run_sidecar_with_service_exceeding_memory_limit(
     mocked_get_image_labels: mock.Mock,
 ):
     # Configure the task to exceed memory limit
-    allocation_size = TypeAdapter(ByteSize).validate_python("50MB")
+    allocation_size = TypeAdapter(ByteSize).validate_python("100MB")
     memory_exceeding_task = sidecar_task(
+        service_key="python",
+        service_version="3.14-slim",
         command=[
-            "/bin/bash",
+            "python",
             "-c",
-            f'echo "Allocating {allocation_size} memory"; dd if=/dev/zero bs=1M count=100 | tail | sleep 10',
-        ]
+            f"print('Allocating memory {allocation_size} bytes', flush=True); a = bytearray({allocation_size}); print('Allocating memory {allocation_size} bytes DONE', flush=True); import time; time.sleep(10)",
+        ],
     )
 
     # Execute the task and expect a runtime error due to memory limit exceeded

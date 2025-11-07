@@ -104,6 +104,7 @@ async def create_container_config(
             ],
             Memory=memory_limit,
             NanoCPUs=nano_cpus_limit,
+            MemorySwap=memory_limit,
         ),
     )
     _logger.debug("Container configuration: \n%s", pformat(config.model_dump()))

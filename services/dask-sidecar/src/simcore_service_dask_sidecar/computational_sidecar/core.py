@@ -292,7 +292,7 @@ class ComputationalSidecar:
                         .validate_python(self.task_max_resources.get("RAM", 0))
                         .human_readable(),
                         container_id=container.id,
-                        service_logs=_safe_get_last_logs(),
+                        service_logs=await _safe_get_last_logs(),
                     )
 
                 if container_data["State"]["ExitCode"] > os.EX_OK:
@@ -301,7 +301,7 @@ class ComputationalSidecar:
                         service_version=self.task_parameters.tag,
                         container_id=container.id,
                         exit_code=container_data["State"]["ExitCode"],
-                        service_logs=_safe_get_last_logs(),
+                        service_logs=await _safe_get_last_logs(),
                     )
                 await self._publish_sidecar_log(
                     f"Service {self.task_parameters.image}:{self.task_parameters.tag} completed successfully."
