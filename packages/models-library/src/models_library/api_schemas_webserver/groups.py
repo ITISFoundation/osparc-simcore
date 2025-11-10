@@ -3,6 +3,7 @@ from typing import Annotated, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
+from models_library.string_types import DescriptionSafeStr, NameSafeStr
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -27,7 +28,7 @@ from ..groups import (
     StandardGroupCreate,
     StandardGroupUpdate,
 )
-from ..users import UserID, UserNameID
+from ..users import UserID, UserNameID, UserNameSafeID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
 from ._base import InputSchema, OutputSchema, OutputSchemaWithoutCamelCase
 
@@ -155,8 +156,8 @@ class GroupGet(GroupGetBase):
 
 
 class GroupCreate(InputSchema):
-    label: str
-    description: str
+    label: NameSafeStr
+    description: DescriptionSafeStr
     thumbnail: AnyUrl | None = None
 
     def to_domain_model(self) -> StandardGroupCreate:
@@ -173,8 +174,8 @@ class GroupCreate(InputSchema):
 
 
 class GroupUpdate(InputSchema):
-    label: str | None = None
-    description: str | None = None
+    label: NameSafeStr | None = None
+    description: DescriptionSafeStr | None = None
     thumbnail: AnyUrl | None = None
 
     def to_domain_model(self) -> StandardGroupUpdate:
@@ -199,6 +200,12 @@ class MyGroupsGet(OutputSchema):
         GroupGetBase | None,
         Field(
             description="Group ID of the app support team or None if no support is defined for this product"
+        ),
+    ] = None
+    chatbot: Annotated[
+        GroupGetBase | None,
+        Field(
+            description="Group ID of the support chatbot user or None if no chatbot is defined for this product"
         ),
     ] = None
 
@@ -245,6 +252,12 @@ class MyGroupsGet(OutputSchema):
                     "description": "The support team of the application",
                     "thumbnail": "https://placekitten.com/15/15",
                 },
+                "chatbot": {
+                    "gid": "6",
+                    "label": "Chatbot User",
+                    "description": "The chatbot user of the application",
+                    "thumbnail": "https://placekitten.com/15/15",
+                },
             }
         }
     )
@@ -255,6 +268,7 @@ class MyGroupsGet(OutputSchema):
         groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
         product_support_group: Group | None,
+        product_chatbot_primary_group: Group | None,
     ) -> Self:
         assert groups_by_type.primary  # nosec
         assert groups_by_type.everyone  # nosec
@@ -275,6 +289,13 @@ class MyGroupsGet(OutputSchema):
                     GroupGetBase.dump_basic_group_data(product_support_group)
                 )
                 if product_support_group
+                else None
+            ),
+            chatbot=(
+                GroupGetBase.model_validate(
+                    GroupGetBase.dump_basic_group_data(product_chatbot_primary_group)
+                )
+                if product_chatbot_primary_group
                 else None
             ),
         )
@@ -373,7 +394,7 @@ class GroupUserAdd(InputSchema):
     """
 
     uid: UserID | None = None
-    user_name: Annotated[UserNameID | None, Field(alias="userName")] = None
+    user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     email: Annotated[
         LowerCaseEmailStr | None,
         Field(

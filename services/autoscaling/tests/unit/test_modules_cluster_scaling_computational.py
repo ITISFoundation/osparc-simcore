@@ -14,7 +14,7 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Final, cast
+from typing import Any, cast
 from unittest import mock
 
 import arrow
@@ -22,7 +22,9 @@ import distributed
 import pytest
 from aws_library.ec2 import Resources
 from dask_task_models_library.resource_constraints import (
+    DASK_WORKER_THREAD_RESOURCE_NAME,
     create_ec2_resource_constraint_key,
+    estimate_dask_worker_resources_from_ec2_instance,
 )
 from faker import Faker
 from fastapi import FastAPI
@@ -126,10 +128,14 @@ def _assert_rabbit_autoscaling_message_sent(
         instances_running=0,
     )
     expected_message = default_message.model_copy(update=message_update_kwargs)
-    mock_rabbitmq_post_message.assert_called_once_with(
-        app,
-        expected_message,
-    )
+    # in this mock we get all kind of messages, we just want to assert one of them is the expected one and there is only one
+    autoscaling_status_messages = [
+        call_args.args[1]
+        for call_args in mock_rabbitmq_post_message.call_args_list
+        if isinstance(call_args.args[1], RabbitAutoscalingStatusMessage)
+    ]
+    assert len(autoscaling_status_messages) == 1, "too many messages sent"
+    assert autoscaling_status_messages[0] == expected_message
 
 
 @pytest.fixture
@@ -255,16 +261,25 @@ async def _create_task_with_resources(
         instance_types = await ec2_client.describe_instance_types(
             InstanceTypes=[dask_task_imposed_ec2_type]
         )
+
         assert instance_types
         assert "InstanceTypes" in instance_types
         assert instance_types["InstanceTypes"]
         assert "MemoryInfo" in instance_types["InstanceTypes"][0]
         assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
+        ec2_ram = TypeAdapter(ByteSize).validate_python(
+            f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
+        )
+        assert "VCpuInfo" in instance_types["InstanceTypes"][0]
+        assert "DefaultVCpus" in instance_types["InstanceTypes"][0]["VCpuInfo"]
+        ec2_cpus = instance_types["InstanceTypes"][0]["VCpuInfo"]["DefaultVCpus"]
+        required_cpus, required_ram = estimate_dask_worker_resources_from_ec2_instance(
+            ec2_cpus, ec2_ram
+        )
         task_resources = Resources(
-            cpus=1,
-            ram=TypeAdapter(ByteSize).validate_python(
-                f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
-            ),
+            cpus=required_cpus,
+            ram=ByteSize(required_ram),
+            generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
         )
 
     assert task_resources
@@ -285,13 +300,11 @@ class _ScaleUpParams:
     expected_num_instances: int
 
 
-_RESOURCE_TO_DASK_RESOURCE_MAP: Final[dict[str, str]] = {"CPUS": "CPU", "RAM": "RAM"}
-
-
 def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
     return {
-        _RESOURCE_TO_DASK_RESOURCE_MAP[res_key.upper()]: res_value
-        for res_key, res_value in resources.model_dump().items()
+        "CPU": resources.cpus,
+        "RAM": resources.ram,
+        **dict(resources.generic_resources.items()),
     }
 
 
@@ -441,7 +454,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
             _ScaleUpParams(
                 imposed_instance_type=None,
                 task_resources=Resources(
-                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("115Gib")
                 ),
                 num_tasks=1,
                 expected_instance_type="r5n.4xlarge",
@@ -463,7 +476,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
             _ScaleUpParams(
                 imposed_instance_type="r5n.8xlarge",
                 task_resources=Resources(
-                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("116Gib")
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("115Gib")
                 ),
                 num_tasks=1,
                 expected_instance_type="r5n.8xlarge",
@@ -636,7 +649,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     mock_docker_tag_node.reset_mock()
     mock_docker_set_node_availability.assert_not_called()
-    mock_rabbitmq_post_message.assert_called_once()
+    assert mock_rabbitmq_post_message.call_count == 3
     mock_rabbitmq_post_message.reset_mock()
 
     # now we have 1 monitored node that needs to be mocked
@@ -932,7 +945,6 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
         [InstanceTypeType | None, Resources], DaskTaskResources
     ],
     ec2_client: EC2Client,
-    faker: Faker,
     caplog: pytest.LogCaptureFixture,
 ):
     # we have nothing running now
@@ -1280,7 +1292,7 @@ async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_star
             _ScaleUpParams(
                 imposed_instance_type=None,
                 task_resources=Resources(
-                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                    cpus=1, ram=TypeAdapter(ByteSize).validate_python("115Gib")
                 ),
                 num_tasks=1,
                 expected_instance_type="r5n.4xlarge",
@@ -1455,7 +1467,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
                 task_resources=Resources(
-                    cpus=8, ram=TypeAdapter(ByteSize).validate_python("15Gib")
+                    cpus=7.9, ram=TypeAdapter(ByteSize).validate_python("15Gib")
                 ),
                 num_tasks=12,
                 expected_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
@@ -1464,7 +1476,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
                 task_resources=Resources(
-                    cpus=32, ram=TypeAdapter(ByteSize).validate_python("20480MB")
+                    cpus=31.9, ram=TypeAdapter(ByteSize).validate_python("20480MB")
                 ),
                 num_tasks=7,
                 expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB

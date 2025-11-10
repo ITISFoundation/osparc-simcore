@@ -150,6 +150,7 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 	read -p "Enter your username: " USER_NAME; \
 	read -s -p "Enter your password: " PASSWORD; echo ""; \
 	echo "--product-url=$$PRODUCT_URL --user-name=$$USER_NAME --password=$$PASSWORD" > $@; \
+	echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
 	if [ "$$BILLABLE" = "y" ]; then \
 		echo "--product-billable" >> $@; \
 	fi; \

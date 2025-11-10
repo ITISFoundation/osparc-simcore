@@ -6,6 +6,9 @@
 
 import pytest
 from aws_library.ec2 import Resources
+from dask_task_models_library.resource_constraints import (
+    DASK_WORKER_THREAD_RESOURCE_NAME,
+)
 from pydantic import ByteSize, TypeAdapter
 from simcore_service_autoscaling.models import DaskTask, DaskTaskResources
 from simcore_service_autoscaling.modules.cluster_scaling._utils_computational import (
@@ -23,13 +26,16 @@ from simcore_service_autoscaling.modules.cluster_scaling._utils_computational im
             Resources(
                 cpus=_DEFAULT_MAX_CPU,
                 ram=TypeAdapter(ByteSize).validate_python(_DEFAULT_MAX_RAM),
+                generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
             ),
             id="missing resources returns defaults",
         ),
         pytest.param(
             DaskTask(task_id="fake", required_resources={"CPU": 2.5}),
             Resources(
-                cpus=2.5, ram=TypeAdapter(ByteSize).validate_python(_DEFAULT_MAX_RAM)
+                cpus=2.5,
+                ram=TypeAdapter(ByteSize).validate_python(_DEFAULT_MAX_RAM),
+                generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
             ),
             id="only cpus defined",
         ),
@@ -38,16 +44,25 @@ from simcore_service_autoscaling.modules.cluster_scaling._utils_computational im
                 task_id="fake",
                 required_resources={"CPU": 2.5, "RAM": 2 * 1024 * 1024 * 1024},
             ),
-            Resources(cpus=2.5, ram=TypeAdapter(ByteSize).validate_python("2GiB")),
+            Resources(
+                cpus=2.5,
+                ram=TypeAdapter(ByteSize).validate_python("2GiB"),
+                generic_resources={DASK_WORKER_THREAD_RESOURCE_NAME: 1},
+            ),
             id="cpu and ram defined",
         ),
         pytest.param(
             DaskTask(
                 task_id="fake",
-                required_resources={"CPU": 2.5, "ram": 2 * 1024 * 1024 * 1024},
+                required_resources={"CPU": 2.5, "xram": 2 * 1024 * 1024 * 1024},  # type: ignore
             ),
             Resources(
-                cpus=2.5, ram=TypeAdapter(ByteSize).validate_python(_DEFAULT_MAX_RAM)
+                cpus=2.5,
+                ram=TypeAdapter(ByteSize).validate_python(_DEFAULT_MAX_RAM),
+                generic_resources={
+                    DASK_WORKER_THREAD_RESOURCE_NAME: 1,
+                    "xram": 2 * 1024 * 1024 * 1024,
+                },
             ),
             id="invalid naming",
         ),

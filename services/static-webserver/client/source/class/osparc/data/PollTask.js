@@ -41,8 +41,7 @@ qx.Class.define("osparc.data.PollTask", {
         });
       }
 
-      this.__retries = 3;
-      this.__pollTaskState();
+      this._startPolling();
     }
   },
 
@@ -77,7 +76,7 @@ qx.Class.define("osparc.data.PollTask", {
 
     resultHref: {
       check: "String",
-      nullable: false
+      nullable: true
     },
 
     abortHref: {
@@ -124,6 +123,11 @@ qx.Class.define("osparc.data.PollTask", {
   members: {
     __retries: null,
     __aborting: null,
+
+    _startPolling: function() {
+      this.__retries = 3;
+      this.__pollTaskState();
+    },
 
     __pollTaskState: function() {
       const statusPath = this.self().extractPathname(this.getStatusHref());

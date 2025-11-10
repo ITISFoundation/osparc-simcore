@@ -67,11 +67,13 @@ async def test_jinja2_templates_table(
             {
                 "name": "osparc",
                 "host_regex": r"^osparc.",
+                "base_url": "https://osparc.io",
                 "registration_email_template": registration_email_template,
             },
             {
                 "name": "s4l",
                 "host_regex": r"(^s4l[\.-])|(^sim4life\.)",
+                "base_url": "https://sim4life.info",
                 "short_name": "s4l web",
                 "registration_email_template": registration_email_template,
             },
@@ -79,6 +81,7 @@ async def test_jinja2_templates_table(
                 "name": "tis",
                 "short_name": "TIP",
                 "host_regex": r"(^ti.[\.-])|(^ti-solution\.)",
+                "base_url": "https://tis.com",
             },
         ]:
             #  aiopg doesn't support executemany!!
@@ -133,6 +136,7 @@ async def test_insert_select_product(
         "display_name": "o²S²PARC",
         "short_name": "osparc",
         "host_regex": r"([\.-]{0,1}osparc[\.-])",
+        "base_url": "https://osparc.io",
         "support_email": "foo@osparc.io",
         "twilio_messaging_sid": None,
         "vendor": Vendor(

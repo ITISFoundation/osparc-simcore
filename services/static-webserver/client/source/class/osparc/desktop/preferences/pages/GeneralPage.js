@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+    if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addCreditsIndicatorSettings();
     }
 
@@ -33,7 +33,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       this.__addLowDiskSpaceSetting();
     }
 
-    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+    if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addInactivitySetting();
     }
 
