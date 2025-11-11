@@ -10,6 +10,7 @@ import arrow
 from faststream.exceptions import NackMessage, RejectMessage
 from faststream.rabbit import (
     ExchangeType,
+    QueueType,
     RabbitBroker,
     RabbitExchange,
     RabbitQueue,
@@ -263,7 +264,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
     def _get_global_queue(self, queue_name: _FastStreamRabbitQueue) -> RabbitQueue:
         return RabbitQueue(
-            f"{self._global_resources_prefix}_{queue_name}", durable=True
+            f"{self._global_resources_prefix}_{queue_name}", queue_type=QueueType.QUORUM
         )
 
     def __get_subclass(

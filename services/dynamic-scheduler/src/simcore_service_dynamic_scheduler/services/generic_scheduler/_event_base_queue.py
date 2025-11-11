@@ -7,7 +7,7 @@ from typing import Final
 from fastapi import FastAPI
 from faststream.exceptions import FastStreamException, RejectMessage
 from faststream.rabbit import RabbitExchange, RabbitQueue, RabbitRouter
-from faststream.rabbit.schemas.queue import ClassicQueueArgs
+from faststream.rabbit.schemas.queue import ClassicQueueArgs, QueueType
 
 from ._models import OperationContext, OperationName, ScheduleId
 
@@ -21,7 +21,9 @@ def _get_global_queue(
     queue_name: str, arguments: ClassicQueueArgs | None = None
 ) -> RabbitQueue:
     return RabbitQueue(
-        f"{EXCHANGE_NAME}_{queue_name}", durable=True, arguments=arguments
+        f"{EXCHANGE_NAME}_{queue_name}",
+        queue_type=QueueType.QUORUM,
+        arguments=arguments,
     )
 
 
