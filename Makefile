@@ -195,8 +195,7 @@ docker buildx bake --allow=fs.read=.. \
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-				--set $(service).output="type=oci$(comma)\
-				compression=zstd$(comma)compression-level=9$(comma)force-compression=true$(comma)dest=$(local-dest)/$(service)zstd.tar") \
+			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
 			,--load\
 		)\
 	)\
