@@ -7,7 +7,7 @@ from typing import Final
 from fastapi import FastAPI
 from faststream.exceptions import FastStreamException, RejectMessage
 from faststream.rabbit import RabbitExchange, RabbitQueue, RabbitRouter
-from faststream.rabbit.schemas.queue import ClassicQueueArgs, QueueType
+from faststream.rabbit.schemas.queue import QueueType, QuorumQueueArgs
 
 from ._models import OperationContext, OperationName, ScheduleId
 
@@ -18,7 +18,7 @@ EXCHANGE_NAME: Final[str] = "dynamic-scheduler-events"
 
 
 def _get_global_queue(
-    queue_name: str, arguments: ClassicQueueArgs | None = None
+    queue_name: str, arguments: QuorumQueueArgs | None = None
 ) -> RabbitQueue:
     return RabbitQueue(
         f"{EXCHANGE_NAME}_{queue_name}",
