@@ -206,7 +206,7 @@ docker buildx bake --allow=fs.read=.. \
 		) \
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 			--set $(service).output="type=registry$(comma)\
-			compression=zstd$(comma)compression-level=1$(comma)force-compression=true$(comma)oci-mediatypes=false" \
+			compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
 		)\
 	,) \
 	--file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
