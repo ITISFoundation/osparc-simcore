@@ -415,8 +415,8 @@ async def get_image_labels(
                     == "application/vnd.docker.distribution.manifest.list.v2+json"
                 ):
                     # default to x86_64 architecture
-                    _logger.info(
-                        "Image %s:%s is a docker image with multiple architectures. "
+                    _logger.warning(
+                        "Docker image %s:%s contains multiple architectures. "
                         "Currently defaulting to first architecture",
                         image,
                         tag,
