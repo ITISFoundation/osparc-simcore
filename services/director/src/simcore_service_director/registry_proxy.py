@@ -395,18 +395,6 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
     return docker_digest
 
 
-async def _get_image_labels_schema_v2(
-    app: FastAPI, image: str, tag: str, *, update_cache
-) -> tuple[dict[str, str], str | None]:
-    # Image Manifest Version 2, Schema 2 -> defaults in registries v3 (https://distribution.github.io/distribution/spec/manifest-v2-2/)
-    request_result, headers = await registry_request(
-        app,
-        path=f"{image}/manifests/{tag}",
-        method="GET",
-        use_cache=not update_cache,
-    )
-
-
 async def get_image_labels(
     app: FastAPI, image: str, tag: str, *, update_cache=False
 ) -> tuple[dict[str, str], str | None]:
