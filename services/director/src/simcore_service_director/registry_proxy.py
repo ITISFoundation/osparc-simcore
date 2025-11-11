@@ -214,6 +214,9 @@ async def registry_request(
                         "application/vnd.docker.distribution.manifest.list.v2+json",
                         "application/vnd.docker.distribution.manifest.v1+prettyjws",
                         "application/json",
+                        # Add OCI media types so registries that serve OCI manifests/indexes are accepted
+                        "application/vnd.oci.image.manifest.v1+json",
+                        "application/vnd.oci.image.index.v1+json",
                     ]
                 )
             }
@@ -392,6 +395,18 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
     return docker_digest
 
 
+async def _get_image_labels_schema_v2(
+    app: FastAPI, image: str, tag: str, *, update_cache
+) -> tuple[dict[str, str], str | None]:
+    # Image Manifest Version 2, Schema 2 -> defaults in registries v3 (https://distribution.github.io/distribution/spec/manifest-v2-2/)
+    request_result, headers = await registry_request(
+        app,
+        path=f"{image}/manifests/{tag}",
+        method="GET",
+        use_cache=not update_cache,
+    )
+
+
 async def get_image_labels(
     app: FastAPI, image: str, tag: str, *, update_cache=False
 ) -> tuple[dict[str, str], str | None]:
@@ -408,11 +423,14 @@ async def get_image_labels(
         labels: dict[str, str] = {}
         match schema_version:
             case 2:
+                await _get_image_labels_schema_v2(
+                    app, image, tag, update_cache=update_cache
+                )
                 # Image Manifest Version 2, Schema 2 -> defaults in registries v3 (https://distribution.github.io/distribution/spec/manifest-v2-2/)
                 media_type = request_result["mediaType"]
-                if (
-                    media_type
-                    == "application/vnd.docker.distribution.manifest.list.v2+json"
+                if media_type in (
+                    "application/vnd.docker.distribution.manifest.list.v2+json",
+                    "application/vnd.oci.image.index.v1+json",
                 ):
                     # default to x86_64 architecture
                     _logger.warning(
