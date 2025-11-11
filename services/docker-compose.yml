@@ -147,7 +147,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.timeout=1000ms
         # NOTE: keep in sync with fallback router (rule and entrypoint)
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=(Path(`/`) || Path(`/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcoreapi
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@swarm,ratelimit-${SWARM_STACK_NAME}_api-server,inflightreq-${SWARM_STACK_NAME}_api-server
     networks: &api_server_networks
@@ -1421,10 +1421,10 @@ services:
       TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
       # 6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
       TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
-      TRAEFIK_ENTRYPOINTS_SIMCORE_API_ADDRESS: ":10081"
-      TRAEFIK_ENTRYPOINTS_SIMCORE_API_FORWARDEDHEADERS_INSECURE: "true"
-      TRAEFIK_ENTRYPOINTS_SIMCORE_API_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
-      TRAEFIK_ENTRYPOINTS_SIMCORE_API_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_ADDRESS: ":10081"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_FORWARDEDHEADERS_INSECURE: "true"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
       TRAEFIK_ENTRYPOINTS_TRAEFIK_MONITOR_ADDRESS: ":8080"
       TRAEFIK_ENTRYPOINTS_TRAEFIK_MONITOR_FORWARDEDHEADERS_INSECURE: "true"
       TRAEFIK_PROVIDERS_SWARM_ENDPOINT: "unix:///var/run/docker.sock"
@@ -1490,7 +1490,7 @@ services:
         ### Fallback for api-server
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.rule=(Path(`/`) || Path(`/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.service=${SWARM_STACK_NAME}_api-server_fallback
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.entrypoints=simcore_api
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.entrypoints=simcoreapi
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.priority=1
         # always fail and return 503 via unhealthy loadbalancer healthcheck
         - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.server.port=0 # port is required (otherwise traefik service is not created)
