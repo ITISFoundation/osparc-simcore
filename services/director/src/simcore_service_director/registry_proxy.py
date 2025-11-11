@@ -411,9 +411,6 @@ async def get_image_labels(
         labels: dict[str, str] = {}
         match schema_version:
             case 2:
-                await _get_image_labels_schema_v2(
-                    app, image, tag, update_cache=update_cache
-                )
                 # Image Manifest Version 2, Schema 2 -> defaults in registries v3 (https://distribution.github.io/distribution/spec/manifest-v2-2/)
                 media_type = request_result["mediaType"]
                 if media_type in (
@@ -421,7 +418,7 @@ async def get_image_labels(
                     "application/vnd.oci.image.index.v1+json",
                 ):
                     # default to x86_64 architecture
-                    _logger.warning(
+                    _logger.info(
                         "Docker image %s:%s contains multiple architectures. "
                         "Currently defaulting to first architecture",
                         image,
