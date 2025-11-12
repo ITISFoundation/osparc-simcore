@@ -7,7 +7,6 @@ x-dask-tls-secrets: &dask_tls_secrets
 # mode: 444 # not supported by docker stack compose as of 26.0.0
 
 ## common environs
-
 x-common-logging: &common_logging_environments
   LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
   LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
