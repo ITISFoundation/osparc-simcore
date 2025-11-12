@@ -131,22 +131,22 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "advanced-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this._addAt(control, 2, {
             flex: 1
           });
           break;
-        case "advanced-checkbox":
+        case "tiers-checkbox":
           control = new qx.ui.form.CheckBox().set({
-            label: this.tr("Advanced options"),
+            label: this.tr("Tiers & Costs"),
             value: false
           });
           this.getChildControl("advanced-layout").add(control);
           break;
-        case "options-layout": {
+        case "tiers-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
           const scroll = new qx.ui.container.Scroll();
-          this.getChildControl("advanced-checkbox").bind("value", scroll, "visibility", {
+          this.getChildControl("tiers-checkbox").bind("value", scroll, "visibility", {
             converter: checked => checked ? "visible" : "excluded"
           });
           scroll.add(control);
@@ -163,16 +163,12 @@ qx.Class.define("osparc.study.StudyOptions", {
             marginTop: 20
           });
           control.getContentElement().addClass("rotate");
-          this.getChildControl("options-layout").add(control);
-          break;
-        case "services-resources-layout":
-          control = this.self().createGroupBox(this.tr("Tiers"));
-          this.getChildControl("options-layout").add(control);
+          this.getChildControl("tiers-layout").add(control);
           break;
         case "study-pricing-units": {
           control = new osparc.study.StudyPricingUnits();
           const loadingImage = this.getChildControl("loading-units-spinner");
-          const unitsBoxesLayout = this.getChildControl("services-resources-layout");
+          const unitsBoxesLayout = this.getChildControl("tiers-layout");
           const unitsLoading = () => {
             loadingImage.show();
             unitsBoxesLayout.exclude();
