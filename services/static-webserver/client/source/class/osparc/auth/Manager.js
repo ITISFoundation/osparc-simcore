@@ -169,7 +169,10 @@ qx.Class.define("osparc.auth.Manager", {
           password
         },
       };
-      return osparc.data.Resources.fetch("auth", "postLogin", params)
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("auth", "postLogin", params, options)
         .then(resp => {
           const {
             status,
