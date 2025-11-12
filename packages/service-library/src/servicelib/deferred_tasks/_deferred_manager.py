@@ -264,7 +264,9 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
     def _get_global_queue(self, queue_name: _FastStreamRabbitQueue) -> RabbitQueue:
         return RabbitQueue(
-            f"{self._global_resources_prefix}_{queue_name}", queue_type=QueueType.QUORUM
+            f"{self._global_resources_prefix}_{queue_name}",
+            queue_type=QueueType.QUORUM,
+            durable=True,
         )
 
     def __get_subclass(

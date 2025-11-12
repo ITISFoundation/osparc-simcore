@@ -23,6 +23,7 @@ def _get_global_queue(
     return RabbitQueue(
         f"{EXCHANGE_NAME}_{queue_name}",
         queue_type=QueueType.QUORUM,
+        durable=True,
         arguments=arguments,
     )
 
