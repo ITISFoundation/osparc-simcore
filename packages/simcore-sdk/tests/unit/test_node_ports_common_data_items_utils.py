@@ -3,7 +3,6 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from models_library.projects_nodes_io import SimcoreS3FileID
@@ -15,7 +14,7 @@ class _SimcoreFileIDParam:
     file_path: Path
     project_id: str
     node_id: str
-    file_base_path: Optional[Path]
+    file_base_path: Path | None
     expected_simcore_file_id: SimcoreS3FileID
 
 

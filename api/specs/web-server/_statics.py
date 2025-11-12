@@ -17,8 +17,7 @@ router = APIRouter(
 
 
 @router.get("/", response_class=HTMLResponse)
-async def get_cached_frontend_index():
-    ...
+async def get_cached_frontend_index(): ...
 
 
 assert get_cached_frontend_index.__name__ == INDEX_RESOURCE_NAME

@@ -164,7 +164,7 @@ def ensure_ends_with(input_string: str, char: str) -> str:
 
 def partition_gen(
     input_list: Iterable, *, slice_size: NonNegativeInt
-) -> Generator[tuple[Any, ...], None, None]:
+) -> Generator[tuple[Any, ...]]:
     """
     Given an iterable and the slice_size yields tuples containing
     slice_size elements in them.
@@ -197,7 +197,7 @@ async def limited_as_completed(
     *,
     limit: int = _DEFAULT_LIMITED_CONCURRENCY,
     tasks_group_prefix: str | None = None,
-) -> AsyncGenerator[asyncio.Task[T], None]:
+) -> AsyncGenerator[asyncio.Task[T]]:
     """Runs awaitables using limited concurrent tasks and returns
     result futures unordered.
 

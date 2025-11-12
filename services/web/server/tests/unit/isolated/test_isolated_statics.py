@@ -3,8 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 """
-    This tests some invariants considered in the webserver code regarding
-    the structure of the frontend apps produced after compiling static-webserver/client
+This tests some invariants considered in the webserver code regarding
+the structure of the frontend apps produced after compiling static-webserver/client
 """
 
 import json

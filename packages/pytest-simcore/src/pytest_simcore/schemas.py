@@ -2,8 +2,9 @@
 
 import json
 import subprocess
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
 
 import pytest
 

@@ -1106,7 +1106,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         modified_at: (
             tuple[datetime.datetime | None, datetime.datetime | None] | None
         ) = None,
-    ) -> AsyncGenerator[FileMetaData, None]:
+    ) -> AsyncGenerator[FileMetaData]:
         """Search S3 files in a specific project and yield individual results."""
         s3_client = get_s3_client(self.app)
         min_parts_for_valid_s3_object = 2
@@ -1154,7 +1154,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             tuple[datetime.datetime | None, datetime.datetime | None] | None
         ) = None,
         limit: NonNegativeInt = 100,
-    ) -> AsyncGenerator[list[FileMetaData], None]:
+    ) -> AsyncGenerator[list[FileMetaData]]:
         """
         Search for files in S3 using a wildcard pattern for filenames.
         Returns results as an async generator that yields pages of results.

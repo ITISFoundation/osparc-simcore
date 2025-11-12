@@ -26,5 +26,4 @@ def test_application_with_debug_enabled(
     disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-):
-    ...
+): ...

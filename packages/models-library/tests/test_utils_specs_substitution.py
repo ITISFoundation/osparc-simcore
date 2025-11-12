@@ -142,7 +142,7 @@ def test_nothing_to_substitute():
 
 
 def test_no_identifier_present(
-    available_osparc_variables: dict[str, SubstitutionValue]
+    available_osparc_variables: dict[str, SubstitutionValue],
 ):
     original_spec = {"x": 33, "y": {"z": True}, "foo": "$UNREGISTERED_ID"}
 

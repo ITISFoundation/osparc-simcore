@@ -1,4 +1,4 @@
-""" This service just keeps a reference of the payment method `payment_method_id`
+"""This service just keeps a reference of the payment method `payment_method_id`
 and all the details are stored externaly.
 
 The creation of this resource can use any of these two workflows:
@@ -15,6 +15,7 @@ This resource can also be read or deleted using
 - delete_payment_method
 
 """
+
 import logging
 from typing import cast
 
@@ -150,9 +151,11 @@ async def insert_payment_method(
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
-        completion_state=InitPromptAckFlowState.SUCCESS
-        if ack.success
-        else InitPromptAckFlowState.FAILED,
+        completion_state=(
+            InitPromptAckFlowState.SUCCESS
+            if ack.success
+            else InitPromptAckFlowState.FAILED
+        ),
         state_message=ack.message,
     )
 

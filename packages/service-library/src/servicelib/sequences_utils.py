@@ -10,7 +10,7 @@ T = TypeVar("T")
 
 def partition_gen(
     input_list: Iterable[T], *, slice_size: NonNegativeInt
-) -> Generator[tuple[T, ...], None, None]:
+) -> Generator[tuple[T, ...]]:
     """
     Given an iterable and the slice_size yields tuples containing
     slice_size elements in them.

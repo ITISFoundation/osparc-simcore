@@ -1,8 +1,7 @@
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class BaseDynamicSchedulerRPCError(OsparcErrorMixin, Exception):
-    ...
+class BaseDynamicSchedulerRPCError(OsparcErrorMixin, Exception): ...
 
 
 class ServiceWaitingForManualInterventionError(BaseDynamicSchedulerRPCError):

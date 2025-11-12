@@ -208,9 +208,7 @@ async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> b
     wallet_groups = await wallets_service.list_wallet_groups_with_read_access_by_wallet(
         app, wallet_id=rabbit_message.wallet_id
     )
-    rooms_to_notify: Generator[GroupID, None, None] = (
-        item.gid for item in wallet_groups
-    )
+    rooms_to_notify: Generator[GroupID] = (item.gid for item in wallet_groups)
     for room in rooms_to_notify:
         await send_message_to_standard_group(
             app,

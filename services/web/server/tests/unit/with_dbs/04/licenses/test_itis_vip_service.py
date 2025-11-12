@@ -136,9 +136,9 @@ async def test_sync_itis_vip_as_licensed_resources(
         ):
             assert f"{url}".endswith(category)
 
-            vip_resources: list[
-                ItisVipData
-            ] = await _itis_vip_service.get_category_items(http_client, url)
+            vip_resources: list[ItisVipData] = (
+                await _itis_vip_service.get_category_items(http_client, url)
+            )
             assert vip_resources[0].features.get("functionality") == "Posable"
 
             for vip in vip_resources:

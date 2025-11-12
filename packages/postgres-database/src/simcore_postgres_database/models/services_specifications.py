@@ -1,10 +1,11 @@
 """
-    Defines specific services/group ID specifications
+Defines specific services/group ID specifications
 
-    A group X may have special specifications defined when running a jupyter-lab-math
-    for example that should run on a specific machine.
+A group X may have special specifications defined when running a jupyter-lab-math
+for example that should run on a specific machine.
 
 """
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 

@@ -5,7 +5,6 @@ import tarfile
 import time
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import osparc
 from EmFdtdSimulator import EmFdtdMultiportSimulation
@@ -21,6 +20,7 @@ SECRET = os.environ.get("OSPARC_API_SECRET")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # We try to automatically deduce the isolve service that is suited best
 class ISolveType(Enum):
@@ -83,7 +83,7 @@ def submit_simulation(
     files_api: osparc.FilesApi,
     sim: Simulation,
     solver_version: str,
-    wait: Optional[bool] = True,
+    wait: bool | None = True,
 ) -> tuple[osparc.Job, osparc.JobStatus]:
     solver_type = get_solver_type(sim)
     solver: osparc.Solver = get_isolve(solvers_api, solver_type, version=solver_version)
@@ -165,11 +165,11 @@ def submit_simulation(
 
 def run_simulation(
     sim: ApiSimulation,
-    isolve_version: Optional[str] = "latest",
+    isolve_version: str | None = "latest",
     *,
     host: str = HOST,
-    api_key: Optional[str] = KEY,
-    api_secret: Optional[str] = SECRET,
+    api_key: str | None = KEY,
+    api_secret: str | None = SECRET,
 ):  # TODO: version should default to latest
 
     configuration = osparc.Configuration()

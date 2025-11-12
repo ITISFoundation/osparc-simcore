@@ -1,17 +1,17 @@
 """
-   Functions and models to query scicrunch service REST API (https://scicrunch.org/api/)
+Functions and models to query scicrunch service REST API (https://scicrunch.org/api/)
 
-    - http client for API requests
-    - Error handling:
-        - translates network errors
-        - translates request error codes
+ - http client for API requests
+ - Error handling:
+     - translates network errors
+     - translates request error codes
 
-    Free functions with raw request scicrunch.org API
-    - client request context
-    - raise_for_status=True -> Raise an aiohttp.ClientResponseError if the response status is 400 or higher
-    - validates response and prunes using pydantic models
+ Free functions with raw request scicrunch.org API
+ - client request context
+ - raise_for_status=True -> Raise an aiohttp.ClientResponseError if the response status is 400 or higher
+ - validates response and prunes using pydantic models
 
-    SEE test_scicrunch_service_api.py
+ SEE test_scicrunch_service_api.py
 """
 
 import logging
@@ -73,8 +73,7 @@ class ResourceView(BaseModel):
         return URL(str(self._get_field("Resource URL")))
 
 
-class ListOfResourceHits(RootModel[list[ResourceHit]]):
-    ...
+class ListOfResourceHits(RootModel[list[ResourceHit]]): ...
 
 
 # REQUESTS

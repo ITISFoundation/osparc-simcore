@@ -423,9 +423,9 @@ class Ulimit(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    name: Annotated[
-        str | None, Field(alias="Name", description="Name of ulimit")
-    ] = None
+    name: Annotated[str | None, Field(alias="Name", description="Name of ulimit")] = (
+        None
+    )
     soft: Annotated[int | None, Field(alias="Soft", description="Soft limit")] = None
     hard: Annotated[int | None, Field(alias="Hard", description="Hard limit")] = None
 
@@ -1913,9 +1913,9 @@ class IPAMConfig(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    subnet: Annotated[
-        str | None, Field(alias="Subnet", examples=["172.20.0.0/16"])
-    ] = None
+    subnet: Annotated[str | None, Field(alias="Subnet", examples=["172.20.0.0/16"])] = (
+        None
+    )
     ip_range: Annotated[
         str | None, Field(alias="IPRange", examples=["172.20.10.0/24"])
     ] = None
@@ -1947,9 +1947,9 @@ class NetworkContainer(BaseModel):
     i_pv4_address: Annotated[
         str | None, Field(alias="IPv4Address", examples=["172.19.0.2/16"])
     ] = None
-    i_pv6_address: Annotated[
-        str | None, Field(alias="IPv6Address", examples=[""])
-    ] = None
+    i_pv6_address: Annotated[str | None, Field(alias="IPv6Address", examples=[""])] = (
+        None
+    )
 
 
 class PeerInfo(BaseModel):
@@ -4979,9 +4979,9 @@ class BuildInfo(BaseModel):
     error_detail: Annotated[ErrorDetail | None, Field(alias="errorDetail")] = None
     status: str | None = None
     progress: str | None = None
-    progress_detail: Annotated[
-        ProgressDetail | None, Field(alias="progressDetail")
-    ] = None
+    progress_detail: Annotated[ProgressDetail | None, Field(alias="progressDetail")] = (
+        None
+    )
     aux: ImageID | None = None
 
 
@@ -4994,9 +4994,9 @@ class CreateImageInfo(BaseModel):
     error_detail: Annotated[ErrorDetail | None, Field(alias="errorDetail")] = None
     status: str | None = None
     progress: str | None = None
-    progress_detail: Annotated[
-        ProgressDetail | None, Field(alias="progressDetail")
-    ] = None
+    progress_detail: Annotated[ProgressDetail | None, Field(alias="progressDetail")] = (
+        None
+    )
 
 
 class PushImageInfo(BaseModel):
@@ -5006,9 +5006,9 @@ class PushImageInfo(BaseModel):
     error: str | None = None
     status: str | None = None
     progress: str | None = None
-    progress_detail: Annotated[
-        ProgressDetail | None, Field(alias="progressDetail")
-    ] = None
+    progress_detail: Annotated[ProgressDetail | None, Field(alias="progressDetail")] = (
+        None
+    )
 
 
 class EndpointSettings(BaseModel):
@@ -5277,9 +5277,9 @@ class Task(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    id: Annotated[
-        str | None, Field(alias="ID", description="The ID of the task.")
-    ] = None
+    id: Annotated[str | None, Field(alias="ID", description="The ID of the task.")] = (
+        None
+    )
     version: Annotated[ObjectVersion | None, Field(alias="Version")] = None
     created_at: Annotated[str | None, Field(alias="CreatedAt")] = None
     updated_at: Annotated[str | None, Field(alias="UpdatedAt")] = None
@@ -5397,9 +5397,9 @@ class NetworkSettings1(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    networks: Annotated[
-        dict[str, EndpointSettings] | None, Field(alias="Networks")
-    ] = None
+    networks: Annotated[dict[str, EndpointSettings] | None, Field(alias="Networks")] = (
+        None
+    )
 
 
 class ContainerSummary(BaseModel):

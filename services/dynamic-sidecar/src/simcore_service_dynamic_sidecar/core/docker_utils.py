@@ -27,7 +27,7 @@ _ACCEPTED_CONTAINER_STATUSES: set[str] = {
 
 
 @asynccontextmanager
-async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
+async def docker_client() -> AsyncGenerator[aiodocker.Docker]:
     docker = aiodocker.Docker()
     try:
         yield docker

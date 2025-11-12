@@ -30,7 +30,9 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
 )
-from simcore_service_webserver.payments.settings import PaymentsSettings
+from simcore_service_webserver.payments.settings import (
+    PaymentsSettings,
+)
 from simcore_service_webserver.payments.settings import (
     get_plugin_settings as get_payments_plugin_settings,
 )

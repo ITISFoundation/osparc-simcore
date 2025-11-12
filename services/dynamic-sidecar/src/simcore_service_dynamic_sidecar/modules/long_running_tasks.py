@@ -137,7 +137,7 @@ async def _retry_docker_compose_create(
 @asynccontextmanager
 async def _reset_on_error(
     shared_store: SharedStore,
-) -> AsyncGenerator[None, None]:
+) -> AsyncGenerator[None]:
     try:
         yield None
     except Exception:

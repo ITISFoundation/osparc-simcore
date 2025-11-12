@@ -1,5 +1,4 @@
-""" Helper script to generate OAS automatically
-"""
+"""Helper script to generate OAS automatically"""
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
@@ -47,8 +46,7 @@ router = APIRouter(
 )
 async def create_folder(
     _body: FolderCreateBodyParams,
-):
-    ...
+): ...
 
 
 @router.get(
@@ -57,8 +55,7 @@ async def create_folder(
 )
 async def list_folders(
     _query: Annotated[as_query(FoldersListQueryParams), Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -67,8 +64,7 @@ async def list_folders(
 )
 async def list_folders_full_search(
     _query: Annotated[as_query(FolderSearchQueryParams), Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -77,8 +73,7 @@ async def list_folders_full_search(
 )
 async def get_folder(
     _path: Annotated[FoldersPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.put(
@@ -88,8 +83,7 @@ async def get_folder(
 async def replace_folder(
     _path: Annotated[FoldersPathParams, Depends()],
     _body: FolderReplaceBodyParams,
-):
-    ...
+): ...
 
 
 @router.delete(
@@ -98,8 +92,7 @@ async def replace_folder(
 )
 async def delete_folder(
     _path: Annotated[FoldersPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.post(
@@ -110,5 +103,4 @@ async def delete_folder(
 )
 async def move_folder_to_workspace(
     _path: Annotated[FolderWorkspacesPathParams, Depends()],
-):
-    ...
+): ...
