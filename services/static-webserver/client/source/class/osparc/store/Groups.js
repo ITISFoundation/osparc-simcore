@@ -22,7 +22,7 @@ qx.Class.define("osparc.store.Groups", {
   construct: function() {
     this.base(arguments);
 
-    this.groupsCached = [];
+    this.__groupsCached = [];
   },
 
   properties: {
@@ -41,6 +41,13 @@ qx.Class.define("osparc.store.Groups", {
       init: null, // this will stay null for guest users
       nullable: true,
       event: "changeSupportGroup",
+    },
+
+    chatbot: {
+      check: "osparc.data.model.Group",
+      init: null,
+      nullable: true,
+      event: "changeChatbot",
     },
 
     organizations: {
@@ -72,27 +79,38 @@ qx.Class.define("osparc.store.Groups", {
   },
 
   members: {
-    groupsCached: null,
+    __groupsCached: null,
+    __groupsPromiseCached: null,
 
-    __fetchGroups: function() {
+    fetchGroups: function() {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
           resolve([]);
         });
       }
+
+      if (this.__groupsPromiseCached) {
+        return this.__groupsPromiseCached;
+      }
+
+      if (this.__groupsCached && this.__groupsCached.length) {
+        return new Promise(resolve => {
+          resolve(this.getOrganizations());
+        });
+      }
+
       const useCache = false;
-      return osparc.data.Resources.get("organizations", {}, useCache)
+      return this.__groupsPromiseCached = osparc.data.Resources.get("organizations", {}, useCache)
         .then(resp => {
           const everyoneGroup = this.__addToGroupsCache(resp["all"], "everyone");
           const productEveryoneGroup = this.__addToGroupsCache(resp["product"], "productEveryone");
           let supportGroup = null;
           if ("support" in resp && resp["support"]) {
-            resp["support"]["accessRights"] = {
-              "read": false,
-              "write": false,
-              "delete": false,
-            };
             supportGroup = this.__addToGroupsCache(resp["support"], "support");
+          }
+          let chatbot = null;
+          if ("chatbot" in resp && resp["chatbot"]) {
+            chatbot = this.__addToGroupsCache(resp["chatbot"], "chatbot");
           }
           const groupMe = this.__addToGroupsCache(resp["me"], "me");
           const orgs = {};
@@ -108,6 +126,7 @@ qx.Class.define("osparc.store.Groups", {
           this.setEveryoneGroup(everyoneGroup);
           this.setEveryoneProductGroup(productEveryoneGroup);
           this.setSupportGroup(supportGroup);
+          this.setChatbot(chatbot);
           this.setOrganizations(orgs);
           this.setGroupMe(groupMe);
           const myAuthData = osparc.auth.Data.getInstance();
@@ -118,6 +137,9 @@ qx.Class.define("osparc.store.Groups", {
             thumbnail: myAuthData.getAvatar(32),
           })
           return orgs;
+        })
+        .finally(() => {
+          this.__groupsPromiseCached = null;
         });
     },
 
@@ -137,12 +159,13 @@ qx.Class.define("osparc.store.Groups", {
               this.__addMemberToCache(orgMember, groupId);
             });
           }
-        });
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     fetchGroupsAndMembers: function() {
       return new Promise(resolve => {
-        this.__fetchGroups()
+        this.fetchGroups()
           .then(orgs => {
             // reset Users
             const usersStore = osparc.store.Users.getInstance();
@@ -495,12 +518,12 @@ qx.Class.define("osparc.store.Groups", {
     // CRUD GROUP MEMBERS
 
     __addToGroupsCache: function(groupData, groupType) {
-      let group = this.groupsCached.find(f => f.getGroupId() === groupData["gid"]);
+      let group = this.__groupsCached.find(f => f.getGroupId() === groupData["gid"]);
       if (!group) {
         group = new osparc.data.model.Group(groupData).set({
           groupType
         });
-        this.groupsCached.unshift(group);
+        this.__groupsCached.unshift(group);
       }
       return group;
     },

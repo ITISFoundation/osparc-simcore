@@ -82,11 +82,12 @@ qx.Class.define("osparc.support.Conversation", {
           if (currentStudy) {
             extraContext["projectId"] = currentStudy.getUuid();
           }
-          osparc.store.ConversationsSupport.getInstance().postConversation(extraContext)
+          // clone first, it will be reset when setting the conversation
+          const bookACallInfo = this.__bookACallInfo ? Object.assign({}, this.__bookACallInfo) : null;
+          const type = bookACallInfo ? osparc.store.ConversationsSupport.TYPES.SUPPORT_CALL : osparc.store.ConversationsSupport.TYPES.SUPPORT;
+          osparc.store.ConversationsSupport.getInstance().postConversation(extraContext, type)
             .then(data => {
-              // clone first, it will be reset when setting the conversation
-              const bookACallInfo = this.__bookACallInfo ? Object.assign({}, this.__bookACallInfo) : null;
-              const newConversation = new osparc.data.model.Conversation(data);
+              const newConversation = new osparc.data.model.ConversationSupport(data);
               this.setConversation(newConversation);
               let prePostMessagePromise = new Promise((resolve) => resolve());
               if (bookACallInfo) {
@@ -112,7 +113,13 @@ qx.Class.define("osparc.support.Conversation", {
                   return this.__postMessage(content);
                 })
                 .then(() => {
-                  setTimeout(() => this.addSystemMessage("followUp"), 1000);
+                  if (
+                    osparc.store.Groups.getInstance().getChatbot() === null ||
+                    type === osparc.store.ConversationsSupport.TYPES.SUPPORT_CALL
+                  ) {
+                    // only add follow up message if there is no chatbot support
+                    setTimeout(() => this.addSystemMessage(this.self().SYSTEM_MESSAGE_TYPE.FOLLOW_UP), 1000);
+                  }
                 });
             });
         }
@@ -131,6 +138,17 @@ qx.Class.define("osparc.support.Conversation", {
 
       this.__bookACallInfo = null;
       this.__evaluateShareProject();
+    },
+
+    // overridden
+    _messageAdded: function(message) {
+      this.base(arguments, message);
+
+      // keep conversation read
+      const conversation = this.getConversation();
+      if (conversation) {
+        conversation.setReadBy(true);
+      }
     },
 
     __postMessage: function(content) {

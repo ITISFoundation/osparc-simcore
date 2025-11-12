@@ -29,13 +29,12 @@
  */
 
 qx.Class.define("osparc.ui.basic.LinkLabel", {
-  extend: qx.ui.basic.Label,
+  extend: osparc.ui.basic.SafeLabel,
 
   construct: function(label, url) {
     this.base(arguments, label);
 
     this.set({
-      rich: true,
       allowGrowX: true
     });
 

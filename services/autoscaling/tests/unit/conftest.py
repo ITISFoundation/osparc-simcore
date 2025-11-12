@@ -30,6 +30,7 @@ from aws_library.ec2 import (
     Resources,
 )
 from common_library.json_serialization import json_dumps
+from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -52,7 +53,11 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     TaskSpec,
 )
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.services_metadata_runtime import SimcoreContainerLabels
+from models_library.services_types import ServiceKey, ServiceVersion
+from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, PositiveInt, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
@@ -380,8 +385,8 @@ def enabled_computational_mode(
             "AUTOSCALING_DASK": "{}",
             "DASK_MONITORING_URL": faker.url(),
             "DASK_SCHEDULER_AUTH": "{}",
-            "DASK_MONITORING_USER_NAME": faker.user_name(),
-            "DASK_MONITORING_PASSWORD": faker.password(),
+            "DASK_NTHREADS": f"{faker.pyint(min_value=0, max_value=10)}",
+            "DASK_NTHREADS_MULTIPLIER": f"{faker.pyint(min_value=1, max_value=4)}",
         },
     )
 
@@ -858,8 +863,54 @@ def cluster() -> Callable[..., Cluster]:
 
 
 @pytest.fixture
+def service_version() -> ServiceVersion:
+    return "1.0.234"
+
+
+@pytest.fixture
+def service_key() -> ServiceKey:
+    return "simcore/services/dynamic/test"
+
+
+@pytest.fixture
+def node_id(faker: Faker) -> NodeID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def fake_dask_job_id(
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    user_id: UserID,
+    project_id: ProjectID,
+    faker: Faker,
+) -> Callable[[], str]:
+    def _() -> str:
+        return generate_dask_job_id(
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=faker.uuid4(cast_to=None),
+        )
+
+    return _
+
+
+@pytest.fixture
 async def create_dask_task(
     dask_spec_cluster_client: distributed.Client,
+    fake_dask_job_id: Callable[[], str],
 ) -> Callable[..., distributed.Future]:
     def _remote_pytest_fct(x: int, y: int) -> int:
         return x + y
@@ -874,6 +925,7 @@ async def create_dask_task(
             43,
             resources=required_resources,
             pure=False,
+            key=fake_dask_job_id(),
             **overrides,
         )
         assert future
@@ -1031,6 +1083,38 @@ def hot_buffer_instance_type(app_settings: ApplicationSettings) -> InstanceTypeT
     return cast(
         InstanceTypeType,
         next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
+    )
+
+
+@pytest.fixture
+def hot_buffer_has_pre_pull(
+    app_settings: ApplicationSettings,
+    hot_buffer_instance_type: InstanceTypeType,
+) -> bool:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return bool(
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+        or app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            hot_buffer_instance_type
+        ].pre_pull_images
+    )
+
+
+@pytest.fixture
+def hot_buffer_expected_pre_pulled_images(
+    app_settings: ApplicationSettings,
+    hot_buffer_instance_type: InstanceTypeType,
+) -> list[DockerGenericTag]:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return sorted(
+        set(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+        )
+        | set(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                hot_buffer_instance_type
+            ].pre_pull_images
+        )
     )
 
 
@@ -1243,3 +1327,24 @@ async def create_buffer_machines(
         return instance_ids
 
     return _do
+
+
+@pytest.fixture
+def with_ec2_instances_cold_start_docker_images_pre_pulling(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+) -> EnvVarsDict:
+    images = TypeAdapter(list[DockerGenericTag]).validate_python(
+        [
+            "nginx:latest",
+            "itisfoundation/my-very-nice-service-in-common:latest",
+            "simcore/services/dynamic/another-nice-one:2.4.5161",
+            "asd",
+        ]
+    )
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING": json.dumps(images),
+        },
+    )
+    return app_environment | envs

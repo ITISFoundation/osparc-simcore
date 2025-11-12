@@ -77,6 +77,13 @@ class Group(BaseModel):
             "type": "standard",
             "thumbnail": None,
         }
+        chatbot: JsonDict = {
+            "gid": 5,
+            "name": "Chatbot",
+            "description": "chatbot group",
+            "type": "primary",
+            "thumbnail": None,
+        }
 
         schema.update(
             {
@@ -86,6 +93,7 @@ class Group(BaseModel):
                     organization,
                     product,
                     support,
+                    chatbot,
                 ]
             }
         )

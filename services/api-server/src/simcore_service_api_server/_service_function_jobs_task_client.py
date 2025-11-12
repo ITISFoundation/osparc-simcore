@@ -1,5 +1,4 @@
 # pylint: disable=too-many-instance-attributes
-import contextlib
 import logging
 from dataclasses import dataclass
 
@@ -10,6 +9,7 @@ from models_library.functions import (
     FunctionClass,
     FunctionID,
     FunctionInputs,
+    FunctionInputsList,
     FunctionJobCollectionID,
     FunctionJobID,
     FunctionJobStatus,
@@ -30,22 +30,23 @@ from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from servicelib.celery.models import ExecutionMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
-from simcore_service_api_server.models.schemas.functions import (
-    FunctionJobCreationTaskStatus,
-)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ._meta import APP_NAME
 from ._service_function_jobs import FunctionJobService
 from ._service_functions import FunctionService
 from ._service_jobs import JobService
 from .api.dependencies.authentication import Identity
-from .exceptions.function_errors import (
-    FunctionJobCacheNotFoundError,
+from .exceptions.backend_errors import (
+    SolverJobOutputRequestButNotSucceededError,
+    StudyJobOutputRequestButNotSucceededError,
 )
 from .models.api_resources import JobLinks
 from .models.domain.celery_models import ApiServerOwnerMetadata
+from .models.domain.functions import FunctionJobPatch
 from .models.schemas.functions import FunctionJobCreationTaskStatus
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
 from .services_http.webserver import AuthSession
@@ -237,30 +238,7 @@ class FunctionJobTaskClientService:
             check_write_permissions=False,
         )
 
-    async def get_cached_function_job(
-        self,
-        *,
-        function: RegisteredFunction,
-        job_inputs: JobInputs,
-    ) -> RegisteredFunctionJob:
-        """Raises FunctionJobCacheNotFoundError if no cached job is found"""
-        if cached_function_jobs := await self._web_rpc_client.find_cached_function_jobs(
-            function_id=function.uid,
-            inputs=job_inputs.values,
-            user_id=self.user_id,
-            product_name=self.product_name,
-        ):
-            for cached_function_job in cached_function_jobs:
-                job_status = await self.inspect_function_job(
-                    function=function,
-                    function_job=cached_function_job,
-                )
-                if job_status.status == RunningState.SUCCESS:
-                    return cached_function_job
-
-        raise FunctionJobCacheNotFoundError
-
-    async def function_job_outputs(
+    async def function_job_outputs(  # pylint: disable=too-many-return-statements
         self,
         *,
         function: RegisteredFunction,
@@ -283,30 +261,36 @@ class FunctionJobTaskClientService:
         ):
             if function_job.project_job_id is None:
                 return None
-            new_outputs = dict(
-                (
-                    await self._job_service.get_study_job_outputs(
-                        study_id=function.project_id,
-                        job_id=function_job.project_job_id,
-                    )
-                ).results
-            )
+            try:
+                new_outputs = dict(
+                    (
+                        await self._job_service.get_study_job_outputs(
+                            study_id=function.project_id,
+                            job_id=function_job.project_job_id,
+                        )
+                    ).results
+                )
+            except StudyJobOutputRequestButNotSucceededError:
+                return None
         elif (
             function.function_class == FunctionClass.SOLVER
             and function_job.function_class == FunctionClass.SOLVER
         ):
             if function_job.solver_job_id is None:
                 return None
-            new_outputs = dict(
-                (
-                    await self._job_service.get_solver_job_outputs(
-                        solver_key=function.solver_key,
-                        version=function.solver_version,
-                        job_id=function_job.solver_job_id,
-                        async_pg_engine=self._async_pg_engine,
-                    )
-                ).results
-            )
+            try:
+                new_outputs = dict(
+                    (
+                        await self._job_service.get_solver_job_outputs(
+                            solver_key=function.solver_key,
+                            version=function.solver_version,
+                            job_id=function_job.solver_job_id,
+                            async_pg_engine=self._async_pg_engine,
+                        )
+                    ).results
+                )
+            except SolverJobOutputRequestButNotSucceededError:
+                return None
         else:
             raise UnsupportedFunctionClassError(function_class=function.function_class)
 
@@ -318,61 +302,83 @@ class FunctionJobTaskClientService:
             check_write_permissions=False,
         )
 
-    async def create_function_job_creation_task(
+    async def create_function_job_creation_tasks(
         self,
         *,
         function: RegisteredFunction,
-        function_inputs: FunctionInputs,
+        function_inputs: FunctionInputsList,
         user_identity: Identity,
         pricing_spec: JobPricingSpecification | None,
         job_links: JobLinks,
         parent_project_uuid: ProjectID | None = None,
         parent_node_id: NodeID | None = None,
-    ) -> RegisteredFunctionJob:
-        job_inputs = await self._function_job_service.create_function_job_inputs(
-            function=function, function_inputs=function_inputs
+    ) -> list[RegisteredFunctionJob]:
+        inputs = [
+            join_inputs(function.default_inputs, input_) for input_ in function_inputs
+        ]
+
+        cached_jobs = await self._web_rpc_client.find_cached_function_jobs(
+            user_id=user_identity.user_id,
+            product_name=user_identity.product_name,
+            function_id=function.uid,
+            inputs=TypeAdapter(FunctionInputsList).validate_python(inputs),
+            status_filter=[FunctionJobStatus(status=RunningState.SUCCESS)],
         )
 
-        # check if results are cached
-        with contextlib.suppress(FunctionJobCacheNotFoundError):
-            return await self.get_cached_function_job(
-                function=function,
-                job_inputs=job_inputs,
-            )
+        uncached_inputs = [
+            input_ for input_, job in zip(inputs, cached_jobs) if job is None
+        ]
 
-        pre_registered_function_job_data = (
-            await self._function_job_service.pre_register_function_job(
+        pre_registered_function_job_data_list = (
+            await self._function_job_service.batch_pre_register_function_jobs(
                 function=function,
-                job_inputs=job_inputs,
+                job_input_list=[JobInputs(values=_ or {}) for _ in uncached_inputs],
             )
         )
 
         # run function in celery task
-
         owner_metadata = ApiServerOwnerMetadata(
-            user_id=user_identity.user_id, product_name=user_identity.product_name
-        )
-
-        task_uuid = await self._celery_task_manager.submit_task(
-            ExecutionMetadata(
-                name="run_function",
-                ephemeral=False,
-                queue=TasksQueue.API_WORKER_QUEUE,
-            ),
-            owner_metadata=owner_metadata,
-            user_identity=user_identity,
-            function=function,
-            pre_registered_function_job_data=pre_registered_function_job_data,
-            pricing_spec=pricing_spec,
-            job_links=job_links,
-            x_simcore_parent_project_uuid=parent_project_uuid,
-            x_simcore_parent_node_id=parent_node_id,
-        )
-
-        return await self._function_job_service.patch_registered_function_job(
             user_id=user_identity.user_id,
             product_name=user_identity.product_name,
-            function_job_id=pre_registered_function_job_data.function_job_id,
-            function_class=function.function_class,
-            job_creation_task_id=TaskID(task_uuid),
+            owner=APP_NAME,
         )
+        task_uuids = [
+            await self._celery_task_manager.submit_task(
+                ExecutionMetadata(
+                    name="run_function",
+                    ephemeral=False,
+                    queue=TasksQueue.API_WORKER_QUEUE,
+                ),
+                owner_metadata=owner_metadata,
+                user_identity=user_identity,
+                function=function,
+                pre_registered_function_job_data=pre_registered_function_job_data,
+                pricing_spec=pricing_spec,
+                job_links=job_links,
+                x_simcore_parent_project_uuid=parent_project_uuid,
+                x_simcore_parent_node_id=parent_node_id,
+            )
+            for pre_registered_function_job_data in pre_registered_function_job_data_list
+        ]
+
+        patched_jobs = await self._function_job_service.batch_patch_registered_function_job(
+            user_id=user_identity.user_id,
+            product_name=user_identity.product_name,
+            function_job_patches=[
+                FunctionJobPatch(
+                    function_class=function.function_class,
+                    function_job_id=pre_registered_function_job_data.function_job_id,
+                    job_creation_task_id=TaskID(task_uuid),
+                    project_job_id=None,
+                    solver_job_id=None,
+                )
+                for task_uuid, pre_registered_function_job_data in zip(
+                    task_uuids, pre_registered_function_job_data_list
+                )
+            ],
+        )
+        patched_jobs_iter = iter(patched_jobs.updated_items)
+        resolve_cached_jobs = lambda job: (
+            job if job is not None else next(patched_jobs_iter)
+        )
+        return [resolve_cached_jobs(job) for job in cached_jobs]

@@ -20,13 +20,13 @@
  */
 
 qx.Class.define("osparc.data.model.Conversation", {
+  type: "abstract",
   extend: qx.core.Object,
 
   /**
    * @param conversationData {Object} Object containing the serialized Conversation Data
-   * @param studyId {String} ID of the Study
    * */
-  construct: function(conversationData, studyId) {
+  construct: function(conversationData) {
     this.base(arguments);
 
     this.set({
@@ -36,17 +36,11 @@ qx.Class.define("osparc.data.model.Conversation", {
       type: conversationData.type,
       created: new Date(conversationData.created),
       modified: new Date(conversationData.modified),
-      projectId: conversationData.projectUuid || null,
-      extraContext: conversationData.extraContext || null,
-      studyId: studyId || null,
+      lastMessageCreatedAt: conversationData.lastMessageCreatedAt ? new Date(conversationData.lastMessageCreatedAt) : null
     });
 
     this.__messages = [];
     this.__listenToConversationMessageWS();
-
-    if (conversationData.type === "SUPPORT") {
-      this.__fetchFirstAndLastMessages();
-    }
   },
 
   statics: {
@@ -76,7 +70,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       nullable: false,
       init: null,
       event: "changeName",
-      apply: "__applyName",
+      apply: "_applyName",
     },
 
     userGroupId: {
@@ -88,9 +82,10 @@ qx.Class.define("osparc.data.model.Conversation", {
 
     type: {
       check: [
-        "PROJECT_STATIC",
-        "PROJECT_ANNOTATION",
-        "SUPPORT",
+        "PROJECT_STATIC",     // osparc.store.ConversationsProject.TYPES.PROJECT_STATIC
+        "PROJECT_ANNOTATION", // osparc.store.ConversationsProject.TYPES.PROJECT_ANNOTATION
+        "SUPPORT",            // osparc.store.ConversationsSupport.TYPES.SUPPORT
+        "SUPPORT_CALL",       // osparc.store.ConversationsSupport.TYPES.SUPPORT_CALL
       ],
       nullable: false,
       init: null,
@@ -111,46 +106,11 @@ qx.Class.define("osparc.data.model.Conversation", {
       event: "changeModified",
     },
 
-    projectId: {
-      check: "String",
+    lastMessageCreatedAt: {
+      check: "Date",
       nullable: true,
       init: null,
-      event: "changeProjectId",
-    },
-
-    extraContext: {
-      check: "Object",
-      nullable: true,
-      init: null,
-      event: "changeExtraContext",
-    },
-
-    nameAlias: {
-      check: "String",
-      nullable: false,
-      init: "",
-      event: "changeNameAlias",
-    },
-
-    firstMessage: {
-      check: "osparc.data.model.Message",
-      nullable: true,
-      init: null,
-      event: "changeFirstMessage",
-    },
-
-    lastMessage: {
-      check: "osparc.data.model.Message",
-      nullable: true,
-      init: null,
-      event: "changeLastMessage",
-      apply: "__applyLastMessage",
-    },
-
-    studyId: {
-      check: "String",
-      nullable: true,
-      init: null,
+      event: "changeLastMessageCreatedAt",
     },
   },
 
@@ -161,21 +121,11 @@ qx.Class.define("osparc.data.model.Conversation", {
   },
 
   members: {
-    __fetchingFirstAndLastMessage: null,
     __nextRequestParams: null,
     __messages: null,
 
-    __applyName: function(name) {
-      if (name && name !== "null") {
-        this.setNameAlias(name);
-      }
-    },
-
-    __applyLastMessage: function(lastMessage) {
-      const name = this.getName();
-      if (!name || name === "null") {
-        this.setNameAlias(lastMessage ? lastMessage.getContent() : "");
-      }
+    _applyName: function(name) {
+      return;
     },
 
     __listenToConversationMessageWS: function() {
@@ -191,13 +141,14 @@ qx.Class.define("osparc.data.model.Conversation", {
             if (conversationId === this.getConversationId()) {
               switch (eventName) {
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
-                  this.addMessage(messageData);
+                  this._addMessage(messageData);
+                  this.setLastMessageCreatedAt(new Date(messageData.created));
                   break;
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED:
-                  this.updateMessage(messageData);
+                  this._updateMessage(messageData);
                   break;
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED:
-                  this.deleteMessage(messageData);
+                  this._deleteMessage(messageData);
                   break;
               }
             }
@@ -205,38 +156,6 @@ qx.Class.define("osparc.data.model.Conversation", {
         };
         socket.on(eventName, eventHandler, this);
       });
-    },
-
-    __fetchFirstAndLastMessages: function() {
-      if (this.__fetchingFirstAndLastMessage) {
-        return this.__fetchingFirstAndLastMessage;
-      }
-
-      this.__fetchingFirstAndLastMessage = true;
-      osparc.store.ConversationsSupport.getInstance().fetchLastMessage(this.getConversationId())
-        .then(resp => {
-          const messages = resp["data"];
-          if (messages.length) {
-            const lastMessage = new osparc.data.model.Message(messages[0]);
-            this.setLastMessage(lastMessage);
-          }
-          // fetch first message only if there is more than one message
-          if (resp["_meta"]["total"] === 1) {
-            const firstMessage = new osparc.data.model.Message(messages[0]);
-            this.setFirstMessage(firstMessage);
-          } else if (resp["_meta"]["total"] > 1) {
-            osparc.store.ConversationsSupport.getInstance().fetchFirstMessage(this.getConversationId(), resp["_meta"])
-              .then(firstMessages => {
-                if (firstMessages.length) {
-                  const firstMessage = new osparc.data.model.Message(firstMessages[0]);
-                  this.setFirstMessage(firstMessage);
-                }
-              });
-          }
-          return null;
-        })
-        .catch(err => osparc.FlashMessenger.logError(err))
-        .finally(() => this.__fetchingFirstAndLastMessage = null);
     },
 
     amIOwner: function() {
@@ -251,7 +170,8 @@ qx.Class.define("osparc.data.model.Conversation", {
           limit: 42
         }
       };
-      if (this.getStudyId()) {
+      const isProjectConversation = this instanceof osparc.data.model.ConversationProject;
+      if (isProjectConversation) {
         params.url.studyId = this.getStudyId();
       }
 
@@ -263,13 +183,14 @@ qx.Class.define("osparc.data.model.Conversation", {
       const options = {
         resolveWResponse: true
       };
-      const promise = this.getStudyId() ?
+      const promise = isProjectConversation ?
         osparc.data.Resources.fetch("conversationsStudies", "getMessagesPage", params, options) :
         osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options);
       return promise
         .then(resp => {
           const messagesData = resp["data"];
-          messagesData.forEach(messageData => this.addMessage(messageData));
+          const markAsUnread = false;
+          messagesData.forEach(messageData => this._addMessage(messageData, markAsUnread));
           this.__nextRequestParams = resp["_links"]["next"];
           return resp;
         })
@@ -280,13 +201,6 @@ qx.Class.define("osparc.data.model.Conversation", {
       osparc.store.ConversationsSupport.getInstance().renameConversation(this.getConversationId(), newName)
         .then(() => this.setName(newName))
         .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    patchExtraContext: function(extraContext) {
-      osparc.store.ConversationsSupport.getInstance().patchExtraContext(this.getConversationId(), extraContext)
-        .then(() => {
-          this.setExtraContext(extraContext);
-        });
     },
 
     getMessages: function() {
@@ -301,81 +215,35 @@ qx.Class.define("osparc.data.model.Conversation", {
       return this.__messages.some(msg => msg.getMessageId() === messageId);
     },
 
-    addMessage: function(messageData) {
+    _addMessage: function(messageData) {
       let message = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
       if (!message) {
         message = new osparc.data.model.Message(messageData);
         this.__messages.push(message);
         osparc.data.model.Message.sortMessagesByDate(this.__messages);
         this.fireDataEvent("messageAdded", message);
-        this.__evalFirstAndLastMessage();
       }
       return message;
     },
 
-    updateMessage: function(messageData) {
+    _updateMessage: function(messageData) {
       if (messageData) {
         const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
         if (found) {
           found.setData(messageData);
           this.fireDataEvent("messageUpdated", found);
-          this.__evalFirstAndLastMessage();
         }
       }
     },
 
-    deleteMessage: function(messageData) {
+    _deleteMessage: function(messageData) {
       if (messageData) {
         const found = this.__messages.find(msg => msg.getMessageId() === messageData["messageId"]);
         if (found) {
           this.__messages.splice(this.__messages.indexOf(found), 1);
           this.fireDataEvent("messageDeleted", found);
-          this.__evalFirstAndLastMessage();
         }
       }
-    },
-
-    __evalFirstAndLastMessage: function() {
-      if (this.__messages && this.__messages.length) {
-        // newest first
-        this.setFirstMessage(this.__messages[this.__messages.length - 1]);
-        this.setLastMessage(this.__messages[0]);
-      }
-    },
-
-    getContextProjectId: function() {
-      if (this.getExtraContext() && "projectId" in this.getExtraContext()) {
-        return this.getExtraContext()["projectId"];
-      }
-      return null;
-    },
-
-    getFogbugzLink: function() {
-      if (this.getExtraContext() && "fogbugz_case_url" in this.getExtraContext()) {
-        return this.getExtraContext()["fogbugz_case_url"];
-      }
-      return null;
-    },
-
-    getAppointment: function() {
-      if (this.getExtraContext() && "appointment" in this.getExtraContext()) {
-        return this.getExtraContext()["appointment"];
-      }
-      return null;
-    },
-
-    setAppointment: function(appointment) {
-      const extraContext = this.getExtraContext() || {};
-      extraContext["appointment"] = appointment ? appointment.toISOString() : null;
-      // OM: Supporters are not allowed to patch the conversation metadata yet
-      const backendAllowsPatch = osparc.store.Groups.getInstance().amIASupportUser() ? false : true;
-      if (backendAllowsPatch) {
-        return osparc.store.ConversationsSupport.getInstance().patchExtraContext(this.getConversationId(), extraContext)
-          .then(() => {
-            this.setExtraContext(Object.assign({}, extraContext));
-        });
-      }
-      return Promise.resolve(this.setExtraContext(Object.assign({}, extraContext)));
     },
   },
 });

@@ -48,7 +48,7 @@ qx.Class.define("osparc.study.ConversationPage", {
     this.__buildLayout();
 
     if (conversationData) {
-      const conversation = new osparc.data.model.Conversation(conversationData, this.__studyData["uuid"]);
+      const conversation = new osparc.data.model.ConversationProject(conversationData, this.__studyData["uuid"]);
       this.setConversation(conversation);
     }
 
@@ -124,7 +124,7 @@ qx.Class.define("osparc.study.ConversationPage", {
             // create new conversation first
             osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"], newLabel)
               .then(data => {
-                const conversation = new osparc.data.model.Conversation(data, this.__studyData["uuid"]);
+                const conversation = new osparc.data.model.ConversationProject(data, this.__studyData["uuid"]);
                 this.setConversation(conversation);
                 this.getChildControl("button").setLabel(newLabel);
               });
@@ -178,15 +178,17 @@ qx.Class.define("osparc.study.ConversationPage", {
     },
 
     __updateMessagesNumber: function() {
-      const nMessagesLabel = this.getChildControl("n-messages");
-      const messages = this.getConversation().getMessages();
-      const nMessages = messages.filter(msg => msg.getType() === "MESSAGE").length;
-      if (nMessages === 0) {
-        nMessagesLabel.setValue(this.tr("No Messages yet"));
-      } else if (nMessages === 1) {
-        nMessagesLabel.setValue(this.tr("1 Message"));
-      } else if (nMessages > 1) {
-        nMessagesLabel.setValue(nMessages + this.tr(" Messages"));
+      if (this.getConversation()) {
+        const nMessagesLabel = this.getChildControl("n-messages");
+        const messages = this.getConversation().getMessages();
+        const nMessages = messages.filter(msg => msg.getType() === "MESSAGE").length;
+        if (nMessages === 0) {
+          nMessagesLabel.setValue(this.tr("No Messages yet"));
+        } else if (nMessages === 1) {
+          nMessagesLabel.setValue(this.tr("1 Message"));
+        } else if (nMessages > 1) {
+          nMessagesLabel.setValue(nMessages + this.tr(" Messages"));
+        }
       }
     },
   }

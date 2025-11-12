@@ -1,5 +1,6 @@
 import functools
 import logging
+import typing
 from typing import TypeAlias
 
 from aws_library.ec2 import (
@@ -62,29 +63,23 @@ async def ec2_startup_script(
             join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
         )
     )
-    if app_settings.AUTOSCALING_REGISTRY:  # noqa: SIM102
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    if app_settings.AUTOSCALING_REGISTRY:
+        startup_commands.append(
+            utils_docker.get_docker_login_on_start_bash_command(
+                app_settings.AUTOSCALING_REGISTRY
+            )
+        )
+
         if pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
-            ec2_boot_specific.pre_pull_images
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
         ):
-            startup_commands.append(
-                " && ".join(
-                    [
-                        utils_docker.get_docker_login_on_start_bash_command(
-                            app_settings.AUTOSCALING_REGISTRY
-                        ),
-                        pull_image_cmd,
-                    ]
-                )
-            )
-            startup_commands.append(
-                utils_docker.get_docker_pull_images_crontab(
-                    ec2_boot_specific.pre_pull_images_cron_interval
-                ),
-            )
+            startup_commands.append(pull_image_cmd)
 
     return " && ".join(startup_commands)
 
 
+@typing.no_type_check  # NOTE: This disable checking by mypy as it cannot handle checking this in reasonable time (>5 minutes) since 1.18.0 (due to large Literal Union it seems)
 def _instance_type_by_type_name(
     ec2_type: EC2InstanceType, *, type_name: InstanceTypeType | None
 ) -> bool:
@@ -114,11 +109,12 @@ def find_selected_instance_type_for_task(
     selected_instance = filtered_instances[0]
 
     # check that the assigned resources and the machine resource fit
-    if task_required_resources > selected_instance.resources:
+    if not (task_required_resources <= selected_instance.resources):
         raise TaskRequirementsAboveRequiredEC2InstanceTypeError(
             task=task,
             instance_type=selected_instance,
             resources=task_required_resources,
+            resources_diff=task_required_resources - selected_instance.resources,
         )
 
     return selected_instance

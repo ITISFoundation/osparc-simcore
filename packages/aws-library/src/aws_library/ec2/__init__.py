@@ -17,6 +17,7 @@ from ._models import (
     EC2InstanceData,
     EC2InstanceType,
     EC2Tags,
+    GenericResourceValueType,
     Resources,
 )
 
@@ -36,6 +37,7 @@ __all__: tuple[str, ...] = (
     "EC2NotConnectedError",
     "EC2RuntimeError",
     "EC2Tags",
+    "GenericResourceValueType",
     "Resources",
     "SimcoreEC2API",
 )

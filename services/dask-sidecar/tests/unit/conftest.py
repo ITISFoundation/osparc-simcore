@@ -21,7 +21,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -117,7 +117,11 @@ def local_cluster(app_environment: EnvVarsDict) -> Iterator[distributed.LocalClu
     print(pformat(dask.config.get("distributed")))
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
-        resources={"CPU": 10, "GPU": 10},
+        resources={
+            "CPU": 10,
+            "GPU": 10,
+            "RAM": TypeAdapter(ByteSize).validate_python("1GiB"),
+        },
         scheduler_kwargs={"preload": "simcore_service_dask_sidecar.scheduler"},
         preload="simcore_service_dask_sidecar.worker",
     ) as cluster:

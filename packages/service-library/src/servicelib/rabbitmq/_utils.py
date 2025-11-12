@@ -76,7 +76,7 @@ async def declare_queue(
     if arguments is not None:
         default_arguments.update(arguments)
     queue_parameters: dict[str, Any] = {
-        "durable": True,
+        "durable": not exclusive_queue,
         "exclusive": exclusive_queue,
         "arguments": default_arguments,
         "name": f"{get_rabbitmq_client_unique_name(client_name)}_{queue_name}_exclusive",
@@ -84,19 +84,6 @@ async def declare_queue(
     if not exclusive_queue:
         # NOTE: setting a name will ensure multiple instance will take their data here
         queue_parameters |= {"name": queue_name}
-
-    # avoids deprecated `transient_nonexcl_queues` warning in RabbitMQ
-    if (
-        queue_parameters.get("durable", False) is False
-        and queue_parameters.get("exclusive", False) is False
-    ):
-        msg = (
-            "Queue must be `durable` or `exclusive`, but not both. "
-            "This is to avoid the `transient_nonexcl_queues` warning. "
-            "NOTE: if both `durable` and `exclusive` are missing they are considered False. "
-            f"{queue_parameters=}"
-        )
-        raise ValueError(msg)
 
     # NOTE: if below line raises something similar to ``ChannelPreconditionFailed: PRECONDITION_FAILED``
     # most likely someone changed the signature of the queues (parameters etc...)
