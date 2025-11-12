@@ -43,6 +43,13 @@ qx.Class.define("osparc.store.Groups", {
       event: "changeSupportGroup",
     },
 
+    chatbot: {
+      check: "osparc.data.model.Group",
+      init: null,
+      nullable: true,
+      event: "changeChatbot",
+    },
+
     organizations: {
       check: "Object",
       init: {},
@@ -99,12 +106,11 @@ qx.Class.define("osparc.store.Groups", {
           const productEveryoneGroup = this.__addToGroupsCache(resp["product"], "productEveryone");
           let supportGroup = null;
           if ("support" in resp && resp["support"]) {
-            resp["support"]["accessRights"] = {
-              "read": false,
-              "write": false,
-              "delete": false,
-            };
             supportGroup = this.__addToGroupsCache(resp["support"], "support");
+          }
+          let chatbot = null;
+          if ("chatbot" in resp && resp["chatbot"]) {
+            chatbot = this.__addToGroupsCache(resp["chatbot"], "chatbot");
           }
           const groupMe = this.__addToGroupsCache(resp["me"], "me");
           const orgs = {};
@@ -120,6 +126,7 @@ qx.Class.define("osparc.store.Groups", {
           this.setEveryoneGroup(everyoneGroup);
           this.setEveryoneProductGroup(productEveryoneGroup);
           this.setSupportGroup(supportGroup);
+          this.setChatbot(chatbot);
           this.setOrganizations(orgs);
           this.setGroupMe(groupMe);
           const myAuthData = osparc.auth.Data.getInstance();
@@ -152,7 +159,8 @@ qx.Class.define("osparc.store.Groups", {
               this.__addMemberToCache(orgMember, groupId);
             });
           }
-        });
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     fetchGroupsAndMembers: function() {

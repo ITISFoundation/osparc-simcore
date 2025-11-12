@@ -5,6 +5,9 @@ from typing import Any, Final
 
 import arrow
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
+from dask_task_models_library.resource_constraints import (
+    estimate_dask_worker_resources_from_ec2_instance,
+)
 from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.services import (
@@ -292,15 +295,14 @@ async def _update_project_node_resources_from_hardware_info(
             image_resources: ImageResources = node_resources[
                 DEFAULT_SINGLE_SERVICE_NAME
             ]
-            image_resources.resources["CPU"].set_value(
-                float(selected_ec2_instance_type.cpus) - _CPUS_SAFE_MARGIN
-            )
-            image_resources.resources["RAM"].set_value(
-                int(
-                    selected_ec2_instance_type.ram
-                    - _RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
+            adjusted_cpus, adjusted_ram = (
+                estimate_dask_worker_resources_from_ec2_instance(
+                    float(selected_ec2_instance_type.cpus),
+                    selected_ec2_instance_type.ram,
                 )
             )
+            image_resources.resources["CPU"].set_value(adjusted_cpus)
+            image_resources.resources["RAM"].set_value(adjusted_ram)
 
             await project_nodes_repo.update(
                 connection,

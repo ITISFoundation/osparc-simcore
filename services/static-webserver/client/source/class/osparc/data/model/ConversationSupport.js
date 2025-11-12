@@ -184,12 +184,12 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     },
 
     // overriden
-    _addMessage: function(messageData) {
+    _addMessage: function(messageData, markAsUnread = true) {
       const message = this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();
 
       // mark conversation as unread if the message is from the other party
-      if (!osparc.data.model.Message.isMyMessage(message)) {
+      if (markAsUnread && !osparc.data.model.Message.isMyMessage(message)) {
         this.setReadBy(false);
       }
       return message;

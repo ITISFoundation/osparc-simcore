@@ -8,8 +8,8 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.projects import ProjectPatch
-from models_library.basic_types import _LONG_TRUNCATED_STR_MAX_LENGTH
 from models_library.projects import Project
+from models_library.string_types import _LONG_TRUNCATED_STR_MAX_LENGTH
 
 
 @pytest.fixture()

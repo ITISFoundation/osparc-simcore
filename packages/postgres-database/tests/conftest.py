@@ -354,7 +354,9 @@ async def create_fake_product(
         async with asyncpg_engine.begin() as connection:
             result = await connection.execute(
                 sa.insert(products)
-                .values(name=product_name, host_regex=".*")
+                .values(
+                    name=product_name, host_regex=".*", base_url="https://example.com"
+                )
                 .returning(sa.literal_column("*"))
             )
             assert result

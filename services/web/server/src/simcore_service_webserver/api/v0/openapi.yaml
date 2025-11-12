@@ -1804,7 +1804,7 @@ paths:
           - type: string
             minLength: 3
             maxLength: 200
-            pattern: ^[^%]*$
+            pattern: ^[A-Za-z0-9 ._\*@-]*$
           - type: 'null'
           title: Email
       - name: primary_group_id
@@ -1825,7 +1825,7 @@ paths:
           - type: string
             minLength: 3
             maxLength: 200
-            pattern: ^[^%]*$
+            pattern: ^[A-Za-z0-9 ._\*@-]*$
           - type: 'null'
           title: User Name
       responses:
@@ -10520,6 +10520,7 @@ components:
       - PROJECT_STATIC
       - PROJECT_ANNOTATION
       - SUPPORT
+      - SUPPORT_CALL
       title: ConversationType
     CountryInfoDict:
       properties:
@@ -13038,9 +13039,14 @@ components:
       properties:
         label:
           type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Label
         description:
           type: string
+          maxLength: 5000
+          minLength: 3
           title: Description
         thumbnail:
           anyOf:
@@ -13126,11 +13132,16 @@ components:
         label:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
+            pattern: ^[A-Za-z0-9 ._-]+$
           - type: 'null'
           title: Label
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         thumbnail:
@@ -13155,7 +13166,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         email:
@@ -13183,7 +13194,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
           description: None if private
@@ -13818,6 +13829,12 @@ components:
           - type: 'null'
           description: Group ID of the app support team or None if no support is defined
             for this product
+        chatbot:
+          anyOf:
+          - $ref: '#/components/schemas/GroupGetBase'
+          - type: 'null'
+          description: Group ID of the support chatbot user or None if no chatbot
+            is defined for this product
       type: object
       required:
       - me
@@ -13832,6 +13849,11 @@ components:
           description: Open to all users
           gid: 1
           label: All
+        chatbot:
+          description: The chatbot user of the application
+          gid: '6'
+          label: Chatbot User
+          thumbnail: https://placekitten.com/15/15
         me:
           accessRights:
             delete: true
@@ -18097,10 +18119,15 @@ components:
       properties:
         name:
           type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         color:
@@ -18189,11 +18216,16 @@ components:
         name:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
+            pattern: ^[A-Za-z0-9 ._-]+$
           - type: 'null'
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         color:
@@ -18623,7 +18655,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Invitedby
         accountRequestStatus:
@@ -18634,7 +18666,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Accountrequestreviewedby
         accountRequestReviewedAt:
@@ -18671,7 +18703,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
           description: Username of the user if an account was created
@@ -18783,7 +18815,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         firstName:
@@ -18941,8 +18973,9 @@ components:
       properties:
         match:
           type: string
-          maxLength: 80
+          maxLength: 200
           minLength: 1
+          pattern: ^[A-Za-z0-9 ._@-]*$
           title: Match
           description: Search string to match with usernames and public profiles (e.g.
             emails, first/last name)

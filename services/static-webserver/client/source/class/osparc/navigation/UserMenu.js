@@ -70,7 +70,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control = new qx.ui.menu.Button(this.tr("Billing Center"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuBillingCenterBtn");
           control.addListener("execute", () => {
-            const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+            const walletsEnabled = osparc.store.StaticInfo.isBillableProduct();
             if (walletsEnabled) {
               osparc.desktop.credits.BillingCenterWindow.openWindow();
             }
@@ -166,7 +166,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.data.Permissions.getInstance().isAdmin()) {
           this.getChildControl("admin-center");
         }
-        if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        if (osparc.store.StaticInfo.isBillableProduct()) {
           this.getChildControl("billing-center");
         }
         this.getChildControl("organizations");
@@ -222,7 +222,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.data.Permissions.getInstance().isAdmin()) {
           this.getChildControl("admin-center");
         }
-        if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        if (osparc.store.StaticInfo.isBillableProduct()) {
           this.getChildControl("billing-center");
         }
         this.getChildControl("organizations");

@@ -7,7 +7,6 @@ from models_library.api_schemas_webserver.functions import (
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
-    FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
@@ -18,13 +17,19 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.functions import (
+    BatchCreateRegisteredFunctionJobs,
+    BatchUpdateRegisteredFunctionJobs,
     FunctionClass,
     FunctionGroupAccessRights,
+    FunctionInputsList,
+    FunctionJob,
+    FunctionJobList,
+    FunctionJobPatchRequest,
+    FunctionJobPatchRequestList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
-    RegisteredFunctionJobPatch,
     RegisteredFunctionJobWithStatus,
 )
 from models_library.products import ProductName
@@ -329,13 +334,29 @@ class FunctionsRpcApi(BaseRpcApi):
             ),
         )
 
+    async def batch_register_function_jobs(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        function_jobs: FunctionJobList,
+    ) -> BatchCreateRegisteredFunctionJobs:
+        """Register a function job."""
+        return TypeAdapter(BatchCreateRegisteredFunctionJobs).validate_python(
+            await self._request(
+                "batch_register_function_jobs",
+                product_name=product_name,
+                user_id=user_id,
+                function_jobs=function_jobs,
+            ),
+        )
+
     async def patch_registered_function_job(
         self,
         *,
         product_name: ProductName,
         user_id: UserID,
-        function_job_uuid: FunctionJobID,
-        registered_function_job_patch: RegisteredFunctionJobPatch,
+        function_job_patch_request: FunctionJobPatchRequest,
     ) -> RegisteredFunctionJob:
         """Patch a registered function job."""
         return TypeAdapter(RegisteredFunctionJob).validate_python(
@@ -343,8 +364,24 @@ class FunctionsRpcApi(BaseRpcApi):
                 "patch_registered_function_job",
                 product_name=product_name,
                 user_id=user_id,
-                function_job_uuid=function_job_uuid,
-                registered_function_job_patch=registered_function_job_patch,
+                function_job_patch_request=function_job_patch_request,
+            ),
+        )
+
+    async def batch_patch_registered_function_job(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        function_job_patch_requests: FunctionJobPatchRequestList,
+    ) -> BatchUpdateRegisteredFunctionJobs:
+        """Patch a registered function job."""
+        return BatchUpdateRegisteredFunctionJobs.model_validate(
+            await self._request(
+                "batch_patch_registered_function_jobs",
+                product_name=product_name,
+                user_id=user_id,
+                function_job_patch_requests=function_job_patch_requests,
             ),
         )
 
@@ -462,16 +499,18 @@ class FunctionsRpcApi(BaseRpcApi):
         product_name: ProductName,
         user_id: UserID,
         function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> list[RegisteredFunctionJob] | None:
+        inputs: FunctionInputsList,
+        cached_job_statuses: list[FunctionJobStatus] | None = None,
+    ) -> list[RegisteredFunctionJob | None]:
         """Find cached function jobs."""
-        return TypeAdapter(list[RegisteredFunctionJob] | None).validate_python(
+        return TypeAdapter(list[RegisteredFunctionJob | None]).validate_python(
             await self._request(
                 "find_cached_function_jobs",
                 product_name=product_name,
                 user_id=user_id,
                 function_id=function_id,
                 inputs=inputs,
+                cached_job_statuses=cached_job_statuses,
             ),
         )
 

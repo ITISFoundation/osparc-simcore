@@ -34,6 +34,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   statics: {
     TYPES: {
       SUPPORT: "SUPPORT",
+      SUPPORT_CALL: "SUPPORT_CALL",
     },
   },
 
@@ -82,14 +83,14 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         });
     },
 
-    postConversation: function(extraContext = {}) {
+    postConversation: function(extraContext = {}, type = osparc.store.ConversationsSupport.TYPES.SUPPORT) {
       const url = window.location.href;
       extraContext["deployment"] = url;
       extraContext["product"] = osparc.product.Utils.getProductName();
       const params = {
         data: {
           name: "null",
-          type: osparc.store.ConversationsSupport.TYPES.SUPPORT,
+          type,
           extraContext,
         }
       };

@@ -39,7 +39,7 @@ qx.Class.define("osparc.desktop.credits.CurrentUsage", {
 
   members: {
     __currentStudyChanged: function(currentStudy) {
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.store.StaticInfo.isBillableProduct()) {
         if (currentStudy) {
           const store = osparc.store.Store.getInstance();
           const contextWallet = store.getContextWallet();

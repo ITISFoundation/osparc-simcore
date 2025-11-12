@@ -12,6 +12,8 @@
 #
 x-common-environment: &common_environment
   SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
+
+
 services:
   api-server:
     environment:
@@ -281,7 +283,7 @@ services:
         - traefik.enable=true
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.service=api@internal
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.entrypoints=traefik_monitor
+        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.entrypoints=traefikmonitor
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=${SWARM_STACK_NAME}_gzip@swarm
         - traefik.http.services.${SWARM_STACK_NAME}_api_internal.loadbalancer.server.port=8080
 
@@ -295,10 +297,5 @@ services:
         - traefik.enable=true
         - traefik.http.services.${SWARM_STACK_NAME}_whoami.loadbalancer.server.port=80
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.rule=PathPrefix(`/whoami`)
-        - traefik.http.routers.${SWARM_STACK_NAME}_whoami.entrypoints=traefik_monitor
+        - traefik.http.routers.${SWARM_STACK_NAME}_whoami.entrypoints=traefikmonitor
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=${SWARM_STACK_NAME}_gzip@swarm
-
-networks:
-  docker-api-network:
-    driver_opts:
-      {} # override 'encrypted' locally, some WSL versions have issues with encrypted networks SEE https://github.com/microsoft/WSL/issues/10029

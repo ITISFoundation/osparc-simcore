@@ -39,12 +39,12 @@ qx.Class.define("osparc.dashboard.ListButtonLoadMore", {
   members: {
     _applyFetching: function(value) {
       this.setIcon(osparc.dashboard.CardBase.LOADING_ICON);
+      const image = this.getChildControl("icon").getChildControl("image");
+      image.setPadding(5); // add padding to make the rotation smoother
       if (value) {
-        this.getChildControl("icon").getChildControl("image").getContentElement()
-          .addClass("rotate");
+        image.getContentElement().addClass("rotate");
       } else {
-        this.getChildControl("icon").getChildControl("image").getContentElement()
-          .removeClass("rotate");
+        image.getContentElement().removeClass("rotate");
       }
       this.setEnabled(!value);
     },

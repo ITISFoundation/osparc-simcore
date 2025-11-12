@@ -98,6 +98,9 @@ class WaitForS4LDict(TypedDict):
     iframe: FrameLocator
 
 
+_WEBSOCKET_MESSAGE_S4L_PREFIX: Final[str] = "📡S4L-WEBSOCKET: "
+
+
 def wait_for_launched_s4l(
     page: Page,
     node_id,
@@ -137,6 +140,31 @@ def wait_for_launched_s4l(
             )
         s4l_websocket = ws_info.value
         ctx.logger.info("acquired S4L websocket!")
+
+        def on_framesent(payload: str | bytes) -> None:
+            ctx.logger.debug(
+                "%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, payload
+            )
+
+        def on_framereceived(payload: str | bytes) -> None:
+            ctx.logger.debug(
+                "%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, payload
+            )
+
+        def on_close(_: WebSocket) -> None:
+            ctx.logger.warning("%s⚠️ WebSocket closed.", _WEBSOCKET_MESSAGE_S4L_PREFIX)
+
+        def on_socketerror(error_msg: str) -> None:
+            ctx.logger.error(
+                "%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_S4L_PREFIX, error_msg
+            )
+
+        # Attach core event listeners
+        s4l_websocket.on("framesent", on_framesent)
+        s4l_websocket.on("framereceived", on_framereceived)
+        s4l_websocket.on("close", on_close)
+        s4l_websocket.on("socketerror", on_socketerror)
+
         return {
             "websocket": s4l_websocket,
             "iframe": s4l_iframe,
