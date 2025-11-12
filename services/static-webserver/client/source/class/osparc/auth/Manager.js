@@ -170,7 +170,7 @@ qx.Class.define("osparc.auth.Manager", {
         },
       };
       const options = {
-        resolveWResponse: true
+        resolveWResponse: true // we need the status code
       };
       return osparc.data.Resources.fetch("auth", "postLogin", params, options)
         .then(resp => {
