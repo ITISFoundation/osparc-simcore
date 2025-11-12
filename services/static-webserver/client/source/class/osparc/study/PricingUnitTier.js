@@ -76,8 +76,8 @@ qx.Class.define("osparc.study.PricingUnitTier", {
           this.bind("selected", control, "label", {
             converter: selected => selected ? "Selected" : "Select"
           });
-          this.bind("selected", control, "enabled", {
-            converter: selected => !selected
+          this.bind("selected", control, "icon", {
+            converter: selected => selected ? "@FontAwesome5Solid/check/12" : null
           });
           this.bind("showSelectButton", control, "visibility", {
             converter: show => show ? "visible" : "excluded"

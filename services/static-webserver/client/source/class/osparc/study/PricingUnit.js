@@ -27,7 +27,7 @@ qx.Class.define("osparc.study.PricingUnit", {
     this.set({
       padding: 10,
       decorator: "rounded",
-      minWidth: 100,
+      minWidth: 110,
       allowGrowX: false,
       allowGrowY: false,
     });
