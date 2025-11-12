@@ -20,10 +20,12 @@ EXCHANGE_NAME: Final[str] = "dynamic-scheduler-events"
 def _get_global_queue(
     queue_name: str, arguments: QuorumQueueArgs | None = None
 ) -> RabbitQueue:
+    # See https://github.com/ITISFoundation/osparc-simcore/pull/8573
+    # to understand why QUORUM queues are used here
     return RabbitQueue(
         f"{EXCHANGE_NAME}_{queue_name}",
         queue_type=QueueType.QUORUM,
-        durable=True,
+        durable=True,  # RabbitQueue typing requires durable=True when queue_type is QUORUM
         arguments=arguments,
     )
 

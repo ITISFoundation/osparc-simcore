@@ -19,6 +19,8 @@ def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
         # Configure celery to use quorum queues
         # https://docs.celeryq.dev/en/v5.5.2/userguide/configuration.html#std-setting-task_default_queue_type
         # https://github.com/celery/celery/issues/6067#issuecomment-2212577881
+        # See See https://github.com/ITISFoundation/osparc-simcore/pull/8573
+        # to know why we need quorum queues
         "task_default_queue_type": "quorum",
         "broker_transport_options": {"confirm_publish": True},
         "worker_detect_quorum_queues": True,

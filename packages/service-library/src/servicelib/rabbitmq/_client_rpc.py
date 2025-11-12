@@ -49,6 +49,9 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         self._channel = await self._connection.channel()
 
         self._rpc = aio_pika.patterns.RPC(self._channel)
+        # rely on default queue configuration that should be reasonable
+        # if overriding parameters, make sure their combination makes sense
+        # See https://github.com/ITISFoundation/osparc-simcore/pull/8573 for more details
         await self._rpc.initialize()
 
     async def close(self) -> None:

@@ -263,10 +263,12 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                     )
 
     def _get_global_queue(self, queue_name: _FastStreamRabbitQueue) -> RabbitQueue:
+        # See https://github.com/ITISFoundation/osparc-simcore/pull/8573
+        # to understand why QUORUM queues are used here
         return RabbitQueue(
             f"{self._global_resources_prefix}_{queue_name}",
             queue_type=QueueType.QUORUM,
-            durable=True,
+            durable=True,  # RabbitQueue typing requires durable=True when queue_type is QUORUM
         )
 
     def __get_subclass(
