@@ -75,18 +75,19 @@ qx.Class.define("osparc.study.StudyOptions", {
       return win;
     },
 
-    createGroupBox: function(label) {
-      const box = new qx.ui.groupbox.GroupBox(label);
+    createGroupBox: function(title) {
+      const box = new qx.ui.groupbox.GroupBox(title).set({
+        layout: new qx.ui.layout.VBox(5)
+      });
       box.getChildControl("legend").set({
         font: "text-14",
-        padding: 2
       });
       box.getChildControl("frame").set({
         backgroundColor: "transparent",
         marginTop: 15,
-        padding: 2
+        padding: 2,
+        decorator: "no-border",
       });
-      box.setLayout(new qx.ui.layout.VBox(5));
       return box;
     },
 
