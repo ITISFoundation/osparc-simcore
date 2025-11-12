@@ -1036,34 +1036,45 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                         None,
                         None,
                     )
-                    if (
-                        last_modified_from
-                        and s3_entry.last_modified
-                        and s3_entry.last_modified < last_modified_from
-                    ):
-                        continue
+                    # For directories, we skip last_modified filtering since they don't have this attribute
+                    if not is_directory:
+                        if (
+                            last_modified_from
+                            and s3_entry.last_modified
+                            and s3_entry.last_modified < last_modified_from
+                        ):
+                            continue
 
-                    if (
-                        last_modified_until
-                        and s3_entry.last_modified
-                        and s3_entry.last_modified > last_modified_until
-                    ):
-                        continue
+                        if (
+                            last_modified_until
+                            and s3_entry.last_modified
+                            and s3_entry.last_modified > last_modified_until
+                        ):
+                            continue
 
-                    file_meta = FileMetaData.from_simcore_node(
-                        user_id=user_id,
-                        file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                            s3_entry.object_key
+                    # For directories, don't pass last_modified since they don't have one
+                    # The from_simcore_node method will use a default current timestamp
+                    file_meta_kwargs = {
+                        "user_id": user_id,
+                        "file_id": TypeAdapter(SimcoreS3FileID).validate_python(
+                            f"{s3_entry.prefix}"
+                            if is_directory
+                            else s3_entry.object_key
                         ),
-                        bucket=self.simcore_bucket_name,
-                        location_id=self.get_location_id(),
-                        location_name=self.get_location_name(),
-                        sha256_checksum=None,
-                        file_size=s3_entry.size,
-                        last_modified=s3_entry.last_modified,
-                        entity_tag=s3_entry.e_tag,
-                        is_directory=is_directory,
-                    )
+                        "bucket": self.simcore_bucket_name,
+                        "location_id": self.get_location_id(),
+                        "location_name": self.get_location_name(),
+                        "sha256_checksum": None,
+                        "file_size": UNDEFINED_SIZE if is_directory else s3_entry.size,
+                        "entity_tag": None if is_directory else s3_entry.e_tag,
+                        "is_directory": is_directory,
+                    }
+
+                    # Only add last_modified for files, not directories
+                    if not is_directory:
+                        file_meta_kwargs["last_modified"] = s3_entry.last_modified
+
+                    file_meta = FileMetaData.from_simcore_node(**file_meta_kwargs)
                     yield file_meta
 
         except S3KeyNotFoundError as exc:
