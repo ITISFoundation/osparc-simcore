@@ -184,9 +184,7 @@ qx.Class.define("osparc.auth.Manager", {
               retryAfter: osparc.auth.core.Utils.extractRetryAfter(data),
               nextStep: data.name
             };
-          }
-
-          if (status === 200) {
+          } else if (status === 200) {
             return osparc.data.Resources.fetch("profile", "getOne")
               .then(profile => {
                 this.__loginUser(profile);
@@ -196,7 +194,6 @@ qx.Class.define("osparc.auth.Manager", {
                 };
               });
           }
-
           // other/unexpected statuses
           return Promise.reject(error || { message: this.tr("Unsuccessful Login") });
         })
