@@ -71,7 +71,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       switch (id) {
         case "name":
           control = new qx.ui.basic.Label().set({
-            font: "text-16"
+            font: "text-14"
           });
           this._add(control);
           break;
