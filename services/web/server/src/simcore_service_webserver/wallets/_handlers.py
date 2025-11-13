@@ -1,5 +1,6 @@
 import functools
 import logging
+from typing import Final
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
@@ -64,17 +65,13 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
-def _handle_payment_unverified_error_as_502(
-    request: web.Request, exception: PaymentUnverifiedError
+def _create_error_response_with_support_id_and_logging(
+    request: web.Request,
+    exception: Exception,
+    user_msg: str,
+    status_code: int,
 ) -> web.Response:
-
-    status_code = status.HTTP_502_BAD_GATEWAY
-    user_msg = user_message(
-        "Payment processing is currently unavailable. "
-        "Please contact support for assistance with your payment and avoid retrying this transaction. "
-        "We have been notified of this issue and are working to resolve it.",
-        _version=1,
-    )
+    """Helper function to create error response and produce traceable logs in the server."""
     error_code = getattr(exception, "error_code", None) or create_error_code(exception)
 
     _logger.exception(
@@ -93,6 +90,14 @@ def _handle_payment_unverified_error_as_502(
     return create_error_response(error, status_code=error.status)
 
 
+_MSG_PAYMENT_SERVICE_FAILURE: Final = user_message(
+    "Payment processing is currently unavailable. "
+    "Please contact support for assistance with your payment and avoid retrying this transaction. "
+    "We have been notified of this issue and are working to resolve it.",
+    _version=1,
+)
+
+
 def handle_wallets_exceptions(handler: Handler):  # noqa: C901
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
@@ -108,7 +113,9 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
             raise web.HTTPNotFound(text=f"{exc}") from exc
 
         except PaymentUnverifiedError as exc:
-            return _handle_payment_unverified_error_as_502(request, exc)
+            return _create_error_response_with_support_id_and_logging(
+                request, exc, _MSG_PAYMENT_SERVICE_FAILURE, status.HTTP_502_BAD_GATEWAY
+            )
 
         except (
             PaymentUniqueViolationError,
@@ -120,7 +127,9 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
             raise web.HTTPConflict(text=f"{exc}") from exc
 
         except PaymentServiceUnavailableError as exc:
-            raise web.HTTPServiceUnavailable(text=f"{exc}") from exc
+            return _create_error_response_with_support_id_and_logging(
+                request, exc, _MSG_PAYMENT_SERVICE_FAILURE, status.HTTP_502_BAD_GATEWAY
+            )
 
         except WalletAccessForbiddenError as exc:
             raise web.HTTPForbidden(text=f"{exc}") from exc
