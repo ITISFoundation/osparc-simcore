@@ -230,7 +230,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       */
     createTags: function(study) {
       const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5)).set({
-        maxWidth: 420
+        maxWidth: 300
       });
 
       const addTags = model => {
@@ -246,7 +246,12 @@ qx.Class.define("osparc.info.StudyUtils", {
           });
       };
       study.addListener("changeTags", () => addTags(study), this);
-      osparc.store.Tags.getInstance().addListener("tagsChanged", () => addTags(study), this);
+      [
+        "tagAdded",
+        "tagRemoved",
+      ].forEach(eventType => {
+        osparc.store.Tags.getInstance().addListener(eventType, () => addTags(study), this);
+      });
       addTags(study);
 
       return tagsContainer;

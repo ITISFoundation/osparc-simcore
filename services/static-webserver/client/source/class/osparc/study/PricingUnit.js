@@ -27,7 +27,7 @@ qx.Class.define("osparc.study.PricingUnit", {
     this.set({
       padding: 10,
       decorator: "rounded",
-      minWidth: 100,
+      minWidth: 110,
       allowGrowX: false,
       allowGrowY: false,
     });
@@ -71,7 +71,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       switch (id) {
         case "name":
           control = new qx.ui.basic.Label().set({
-            font: "text-16"
+            font: "text-14"
           });
           this._add(control);
           break;

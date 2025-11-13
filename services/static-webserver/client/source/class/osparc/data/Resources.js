@@ -1637,6 +1637,7 @@ qx.Class.define("osparc.data.Resources", {
 
           if ("resolveWResponse" in options && options.resolveWResponse) {
             response.params = params;
+            response.status = e.getRequest().getStatus();
             resolve(response);
           } else {
             resolve(data);
