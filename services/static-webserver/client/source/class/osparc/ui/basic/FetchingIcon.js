@@ -26,8 +26,8 @@ qx.Class.define("osparc.ui.basic.FetchingIcon", {
     this.base(arguments);
 
     this.set({
-      iconSize: 24,
       alignX: "center",
+      center: true,
     });
 
     this.addListener("changeFetching", function(e) {

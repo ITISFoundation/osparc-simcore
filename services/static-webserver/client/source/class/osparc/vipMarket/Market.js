@@ -28,7 +28,9 @@ qx.Class.define("osparc.vipMarket.Market", {
     this.addWidgetToTabs(miniWallet);
 
     // add a spinner while loading categories
-    const fetchingIcon = this.__fetchingIcon = new osparc.ui.basic.FetchingIcon();
+    const fetchingIcon = this.__fetchingIcon = new osparc.ui.basic.FetchingIcon().set({
+      iconSize: 24,
+    });
     fetchingIcon.setFetching(true);
     this.addWidgetToTabs(fetchingIcon);
 
