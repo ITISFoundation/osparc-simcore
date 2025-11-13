@@ -81,7 +81,7 @@ async def test_successful_one_time_payment_workflow(
     mocker: MockerFixture,
 ):
     if mock_payments_gateway_service_or_none is None:
-        pytest.skip("cannot run thist test against external because we ACK here")
+        pytest.skip("cannot run this test against external because we ACK here")
 
     mock_on_payment_completed = mocker.patch(
         "simcore_service_payments.api.rest._acknowledgements.payments.on_payment_completed",

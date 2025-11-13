@@ -7,10 +7,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-""" This is a simple example of a payments-gateway service
+"""This is a simple example of a payments-gateway service
 
-    - Mainly used to create the openapi specs (SEE `openapi.json`) that the payments service expects
-    - Also used as a fake payment-gateway for manual exploratory testing
+- Mainly used to create the openapi specs (SEE `openapi.json`) that the payments service expects
+- Also used as a fake payment-gateway for manual exploratory testing
 """
 
 
@@ -354,9 +354,7 @@ def create_payment_method_router():
         assert batch  # nosec
         return PaymentMethodsBatch(
             items=[
-                GetPaymentMethod(
-                    id=id_, created=datetime.datetime.now(tz=datetime.timezone.utc)
-                )
+                GetPaymentMethod(id=id_, created=datetime.datetime.now(tz=datetime.UTC))
                 for id_ in batch.payment_methods_ids
             ]
         )
@@ -379,9 +377,7 @@ def create_payment_method_router():
         assert id  # nosec
         assert auth  # nosec
 
-        return GetPaymentMethod(
-            id=id, created=datetime.datetime.now(tz=datetime.timezone.utc)
-        )
+        return GetPaymentMethod(id=id, created=datetime.datetime.now(tz=datetime.UTC))
 
     @router.delete(
         "/{id}",
