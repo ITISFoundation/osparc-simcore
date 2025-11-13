@@ -2,6 +2,10 @@ import functools
 import logging
 
 from aiohttp import web
+from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.user_messages import user_message
+from models_library.api_schemas_payments.errors import PaymentUnverifiedError
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     PutWalletBodyParams,
@@ -9,9 +13,11 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGetWithAvailableCredits,
 )
 from models_library.rest_base import RequestParameters, StrictRequestParameters
+from models_library.rest_error import ErrorGet
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import Field
+from servicelib.aiohttp import status
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -22,6 +28,10 @@ from servicelib.aiohttp.typing_extension import Handler
 from .._meta import API_VTAG as VTAG
 from ..application_settings_utils import requires_dev_feature_enabled
 from ..constants import RQ_PRODUCT_KEY
+from ..exception_handling import (
+    create_error_context_from_request,
+    create_error_response,
+)
 from ..login.decorators import login_required
 from ..payments.errors import (
     InvalidPaymentMethodError,
@@ -54,7 +64,36 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
-def handle_wallets_exceptions(handler: Handler):
+def _handle_payment_unverified_error_as_502(
+    request: web.Request, exception: PaymentUnverifiedError
+) -> web.Response:
+
+    status_code = status.HTTP_502_BAD_GATEWAY
+    user_msg = user_message(
+        "Payment processing is temporarily unavailable. "
+        "Please contact support for assistance with your payment. "
+        "Do not attempt to retry this payment."
+        "We have logged the incident and will investigate it promptly. "
+    )
+    error_code = getattr(exception, "error_code", None) or create_error_code(exception)
+
+    _logger.exception(
+        **create_troubleshooting_log_kwargs(
+            user_msg,
+            error=exception,
+            error_context={
+                **create_error_context_from_request(request),
+            },
+            error_code=error_code,
+        )
+    )
+    error = ErrorGet.model_construct(
+        message=user_msg, support_id=error_code, status=status_code
+    )
+    return create_error_response(error, status_code=error.status)
+
+
+def handle_wallets_exceptions(handler: Handler):  # noqa: C901
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
@@ -67,6 +106,9 @@ def handle_wallets_exceptions(handler: Handler):
             UserDefaultWalletNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(text=f"{exc}") from exc
+
+        except PaymentUnverifiedError as exc:
+            return _handle_payment_unverified_error_as_502(request, exc)
 
         except (
             PaymentUniqueViolationError,
