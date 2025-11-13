@@ -379,8 +379,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const shareIcon = this.__shareIcon = new qx.ui.basic.Image().set({
         alignY: "middle",
         allowGrowX: false,
-        allowShrinkX: false
+        allowShrinkX: false,
+        cursor: "pointer",
       });
+      shareIcon.addListener("tap", () => this.__openShareWith(), this);
       layout.addAt(shareIcon, 0);
       return shareIcon;
     },
