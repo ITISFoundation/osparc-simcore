@@ -29,7 +29,10 @@ qx.Class.define("osparc.vipMarket.Market", {
 
     // add a spinner while loading categories
     const fetchingIcon = this.__fetchingIcon = new osparc.ui.basic.FetchingIcon().set({
+      label: this.tr("Loading Models..."),
+      font: "text-14",
       iconSize: 24,
+      gap: 6,
     });
     fetchingIcon.setFetching(true);
     this.addWidgetToTabs(fetchingIcon);
