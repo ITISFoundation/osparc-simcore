@@ -147,9 +147,21 @@ qx.Class.define("osparc.study.StudyOptions", {
             flex: 1
           });
           break;
-        case "add-tag-layout":
+        case "tags-layout":
           control = osparc.study.StudyOptions.createSectionLayout(this.tr("Tags"));
           this._add(control);
+          break;
+        case "tag-manager-button":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Add"),
+            icon: "@FontAwesome5Solid/tag/12",
+            allowGrowX: false,
+            appearance: "form-button-outlined",
+            textColor: "text",
+            backgroundColor: "transparent",
+          });
+          control.addListener("execute", () => this.__openTagsEditor());
+          this.getChildControl("tags-layout").add(control);
           break;
         case "advanced-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
@@ -315,12 +327,18 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __addTags: function() {
-      const addTagLayout = this.getChildControl("add-tag-layout");
-      /*
-      const tagManager = new osparc.form.tag.TagManager();
-      tagManager.setLiveUpdate(true);
-      addTagLayout.add(tagManager);
-      */
+      const addTagLayout = this.getChildControl("tags-layout");
+      this.getChildControl("tag-manager-button");
+    },
+
+    __openTagsEditor: function() {
+      const tagManager = new osparc.form.tag.TagManager(this.__studyData);
+      const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
+      tagManager.addListener("updateTags", e => {
+        win.close();
+        const updatedData = e.getData();
+        console.log(updatedData);
+      }, this);
     },
 
     __addWalletSelector: function() {
