@@ -15,6 +15,7 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
+from servicelib.logging_utils import create_troubleshooting_log_kwargs
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
@@ -82,9 +83,36 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
 
     # Step 7: Perform auto-recharge
     if settings.PAYMENTS_AUTORECHARGE_ENABLED:
-        await _perform_auto_recharge(
-            app, rabbit_message, payment_method_db, wallet_auto_recharge
-        )
+        try:
+            await _perform_auto_recharge(
+                app, rabbit_message, payment_method_db, wallet_auto_recharge
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Auto-recharge payment failed. Message will be acknowledged to prevent risk of double payment on retry.",
+                    error=e,
+                    error_context={
+                        "wallet_id": str(rabbit_message.wallet_id),
+                        "payment_method_id": str(
+                            wallet_auto_recharge.payment_method_id
+                        ),
+                        "top_up_amount_in_usd": str(
+                            wallet_auto_recharge.top_up_amount_in_usd
+                        ),
+                        "product_name": rabbit_message.product_name,
+                    },
+                    tip=(
+                        "IMPORTANT: This may result in payments without credits added if the error was due to an unverified payment. "
+                        "Verify that payment was processed and credits were added to the wallet."
+                    ),
+                ),
+            )
+            return (
+                # IMPORTANT: Auto-recharge failed but we return True to acknowledge message so it does not retry!
+                True
+            )
+
     return True
 
 
