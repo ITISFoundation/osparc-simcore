@@ -165,6 +165,7 @@ qx.Class.define("osparc.study.StudyOptions", {
             label: this.tr("Add"),
             icon: "@FontAwesome5Solid/tag/12",
             allowGrowX: false,
+            allowGrowY: false,
             appearance: "form-button-outlined",
             textColor: "text",
             backgroundColor: "transparent",
