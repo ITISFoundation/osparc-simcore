@@ -30,7 +30,7 @@ qx.Class.define("osparc.ui.basic.FetchingIcon", {
       center: true,
     });
 
-    this.addListener("changeFetching", function(e) {
+    this.addListener("changeFetching", e => {
       const isFetching = e.getData();
       this.setVisibility(isFetching ? "visible" : "excluded");
     }, this);
