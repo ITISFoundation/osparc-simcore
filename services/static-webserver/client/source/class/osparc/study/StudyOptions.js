@@ -152,6 +152,14 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = osparc.study.StudyOptions.createSectionLayout(this.tr("Tags"));
           this._add(control);
           break;
+        case "current-tags-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5)).set({
+            // maxWidth: 420
+          });
+          this.getChildControl("tags-layout").add(control, {
+            flex: 1
+          });
+          break;
         case "tag-manager-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Add"),
@@ -281,11 +289,26 @@ qx.Class.define("osparc.study.StudyOptions", {
       const titleField = this.getChildControl("title-field");
       titleField.setValue(this.__studyData["name"]);
 
+      this.__repopulateTags();
+
       this.getChildControl("advanced-layout").set({
         visibility: osparc.study.Utils.extractUniqueServices(this.__studyData["workbench"]).length > 0 ? "visible" : "excluded"
       })
       const studyPricingUnits = this.getChildControl("study-pricing-units");
       studyPricingUnits.setStudyData(this.__studyData);
+    },
+
+    __repopulateTags: function() {
+      const currentTagsContainer = this.getChildControl("current-tags-container");
+      currentTagsContainer.removeAll();
+      const tagIds = this.__studyData["tags"] || [];
+      const tagStore = osparc.store.Tags.getInstance();
+      tagIds.forEach(tagId => {
+        const tag = tagStore.getTag(tagId);
+        if (tag) {
+          currentTagsContainer.add(new osparc.ui.basic.Tag(tag));
+        }
+      });
     },
 
     __applyWallet: function(wallet) {
@@ -330,7 +353,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __addTags: function() {
-      const addTagLayout = this.getChildControl("tags-layout");
+      this.getChildControl("tags-layout");
       this.getChildControl("tag-manager-button");
     },
 
@@ -340,7 +363,8 @@ qx.Class.define("osparc.study.StudyOptions", {
       tagManager.addListener("updateTags", e => {
         win.close();
         const updatedData = e.getData();
-        console.log(updatedData);
+        this.__studyData["tags"] = updatedData["tags"];
+        this.__repopulateTags();
       }, this);
     },
 
