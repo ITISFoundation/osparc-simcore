@@ -299,34 +299,59 @@ def test_response_surface_modeling(
                 )
 
                 output_plus_button.click()
-                page.wait_for_timeout(1000)
 
                 output_confirm_button = service_iframe.locator(
                     '[mmux-testid="confirm-add-output-btn"]'
                 )
                 output_confirm_button.click()
-                page.wait_for_timeout(1000)
 
         # Click the next button
         with log_context(logging.INFO, "Clicking Next to go to the next step..."):
             service_iframe.locator('[mmux-testid="next-button"]').click()
-            page.wait_for_timeout(1000)
 
         with log_context(logging.INFO, "Starting the sampling..."):
             service_iframe.locator('[mmux-testid="extend-sampling-btn"]').click()
-            page.wait_for_timeout(1000)
             service_iframe.locator('[mmux-testid="new-sampling-campaign-btn"]').click()
-            page.wait_for_timeout(1000)
+            samplingInput = service_iframe.locator(
+                '[mmux-testid="lhs-number-of-sampling-points-input"] input[type="number"]'
+            )
+            samplingInput.fill("40")
+            samplingInput.press("Enter")
             service_iframe.locator('[mmux-testid="run-sampling-btn"]').click()
-            page.wait_for_timeout(1000)
 
-        with log_context(logging.INFO, "Waiting for the sampling to complete..."):
+        with log_context(logging.INFO, "Waiting for the sampling to launch..."):
             toast = service_iframe.locator("div.Toastify__toast").filter(
                 has_text="Sampling started running successfully, please wait for completion."
             )
             toast.wait_for(state="visible", timeout=120000)  # waits up to 120 seconds
 
         with log_context(logging.INFO, "Waiting for the sampling to complete..."):
+
+            def all_completed():
+                status_cells = service_iframe.locator(
+                    'div[role="gridcell"][data-field="status"]'
+                )
+                total = status_cells.count()
+                if total == 0:
+                    return False
+                for i in range(total):
+                    text = (status_cells.nth(i).text_content() or "").lower().strip()
+                    logging.info(f"STATUS CELL TEXT {i}: {text}")
+                    if text != "complete":
+                        return False
+                return True
+
+            while not all_completed():
+                logging.info("⏳ Waiting for all status cells to be completed...")
+                page.wait_for_timeout(3000)
+                service_iframe.locator(
+                    '[mmux-testid="refresh-job-collections-btn"]'
+                ).click()
+
+            service_iframe.locator(
+                '[mmux-testid="select-all-successful-jobs-btn"]  '
+            ).click()
+
             plotly_graph = service_iframe.locator(".js-plotly-plot")
             plotly_graph.wait_for(state="visible", timeout=300000)
             page.wait_for_timeout(2000)
@@ -343,13 +368,3 @@ def test_response_surface_modeling(
                 list_projects_response.value.ok
             ), f"Failed to list projects: {list_projects_response.value.status}"
             page.wait_for_timeout(2000)
-
-    # # then we wait a long time
-    page.wait_for_timeout(1 * MINUTE)
-
-    # TODO: more steps
-    # Run this tests against MOGA, UQ and SUMO services before destroying the functions / jobs / etc..
-    # 4. cleanup
-    # - drop the Jobs created for the Function
-    # - drop the function proper to avoid polluting the DB
-    # - drop the jsonifier project
