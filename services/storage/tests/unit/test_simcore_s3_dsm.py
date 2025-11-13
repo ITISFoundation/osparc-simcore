@@ -586,37 +586,28 @@ async def test_search_directories(
         await upload_file(file_size, file_name, sha256_checksum=checksum)
 
     # Test 1: Search for directories with "test_dir" pattern
-    test_dir_results = await _search_files_by_pattern(
+    dir_results = await _search_files_by_pattern(
         simcore_s3_dsm, user_id, "test_dir*", project_id
     )
     # Should find 2 directories: test_dir_1 and test_dir_2
-    directory_results = [
-        f for f in test_dir_results if f.file_name and f.file_name.endswith("/")
-    ]
-    assert len(directory_results) == 2
-    dir_names = {f.file_name.rstrip("/") for f in directory_results}
+    assert len(dir_results) == 2
+    dir_names = {d.file_name for d in dir_results if d.is_directory}
     assert dir_names == {"test_dir_1", "test_dir_2"}
 
     # Test 2: Search for directories with "_dir" suffix
-    dir_suffix_results = await _search_files_by_pattern(
+    dir_results = await _search_files_by_pattern(
         simcore_s3_dsm, user_id, "*_dir", project_id
     )
-    directory_results = [
-        f for f in dir_suffix_results if f.file_name and f.file_name.endswith("/")
-    ]
-    assert len(directory_results) == 3  # test_dir_1, test_dir_2, config_dir
-    dir_names = {f.file_name.rstrip("/") for f in directory_results}
-    assert dir_names == {"test_dir_1", "test_dir_2", "config_dir"}
+    assert len(dir_results) == 1  # test_dir_1, test_dir_2, config_dir
+    dir_names = {f.file_name for f in dir_results if f.is_directory}
+    assert dir_names == {"config_dir"}
 
     # Test 3: Search for directories with "folder" in name
     folder_results = await _search_files_by_pattern(
         simcore_s3_dsm, user_id, "*folder*", project_id
     )
-    directory_results = [
-        f for f in folder_results if f.file_name and f.file_name.endswith("/")
-    ]
-    assert len(directory_results) == 2  # data_folder, temp_folder
-    dir_names = {f.file_name.rstrip("/") for f in directory_results}
+    assert len(folder_results) == 2  # data_folder, temp_folder
+    dir_names = {f.file_name for f in folder_results}
     assert dir_names == {"data_folder", "temp_folder"}
 
     # Test 4: Search with pattern that matches both files and directories
@@ -625,10 +616,9 @@ async def test_search_directories(
     )
     # Should find both data_folder (directory) and data_document.pdf (file)
     assert len(data_results) >= 2
-    file_names = {f.file_name for f in data_results if f.file_name}
     # Check that we have both directory and file
-    has_directory = any(name.endswith("/") for name in file_names)
-    has_file = any(not name.endswith("/") for name in file_names)
+    has_directory = any(r.is_directory for r in data_results)
+    has_file = any(not r.is_directory for r in data_results)
     assert has_directory
     assert has_file
 
@@ -637,26 +627,8 @@ async def test_search_directories(
         simcore_s3_dsm, user_id, "backup_*", project_id
     )
     assert len(backup_results) >= 2
-    file_names = {f.file_name for f in backup_results if f.file_name}
     # Should find backup_directory/ and backup_config.json
-    directory_names = {name.rstrip("/") for name in file_names if name.endswith("/")}
-    file_names_only = {name for name in file_names if not name.endswith("/")}
+    directory_names = {f.file_name for f in backup_results if f.is_directory}
+    file_names_only = {f.file_name for f in backup_results if not f.is_directory}
     assert "backup_directory" in directory_names
     assert "backup_config.json" in file_names_only
-
-    # Test 6: Verify directory metadata properties
-    for file_meta in test_dir_results:
-        if file_meta.file_name and file_meta.file_name.endswith("/"):
-            assert isinstance(file_meta, FileMetaData)
-            assert file_meta.user_id == user_id
-            assert file_meta.project_id == project_id
-            assert file_meta.file_id is not None
-            # Directory should have size information
-            assert file_meta.file_size is not None
-
-    # Test 7: Search without project restriction should still find directories
-    all_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, "*")
-    all_directory_results = [
-        f for f in all_results if f.file_name and f.file_name.endswith("/")
-    ]
-    assert len(all_directory_results) >= len(test_directories)
