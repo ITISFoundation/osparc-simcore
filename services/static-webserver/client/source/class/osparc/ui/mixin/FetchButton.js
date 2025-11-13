@@ -14,15 +14,22 @@ qx.Mixin.define("osparc.ui.mixin.FetchButton", {
       check: "Boolean",
       nullable: false,
       init: false,
+      event: "changeFetching",
       apply: "_applyFetching"
-    }
+    },
+
+    iconSize: {
+      check: "Integer",
+      init: 12,
+    },
   },
+
   members: {
     __icon: null,
     _applyFetching: function(isFetching, old) {
       if (isFetching) {
         this.__icon = this.getIcon();
-        this.setIcon("@FontAwesome5Solid/circle-notch/12");
+        this.setIcon(`@FontAwesome5Solid/circle-notch/${this.getIconSize()}`);
         this.getChildControl("icon").getContentElement().addClass("rotate");
       } else {
         if (isFetching !== old) {

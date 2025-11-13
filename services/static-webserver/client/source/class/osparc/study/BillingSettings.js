@@ -24,7 +24,7 @@ qx.Class.define("osparc.study.BillingSettings", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.__studyData = studyData;
 
@@ -80,6 +80,10 @@ qx.Class.define("osparc.study.BillingSettings", {
             allowGrowX: false
           });
           this.getChildControl("pay-debt-layout").add(control);
+          break;
+        case "tiers-box":
+          control = osparc.study.StudyOptions.createGroupBox(this.tr("Tiers & Costs"));
+          this._add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -279,10 +283,12 @@ qx.Class.define("osparc.study.BillingSettings", {
     },
 
     __buildPricingUnitsGroup: function() {
-      const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(this.tr("Tiers"));
+      const tiersBox = this.getChildControl("tiers-box");
+      tiersBox.getChildControl("frame").set({
+        marginTop: 5,
+      });
       const pricingUnits = new osparc.study.StudyPricingUnits(this.__studyData);
-      pricingUnitsLayout.add(pricingUnits);
-      this._add(pricingUnitsLayout);
+      tiersBox.add(pricingUnits);
     }
   }
 });

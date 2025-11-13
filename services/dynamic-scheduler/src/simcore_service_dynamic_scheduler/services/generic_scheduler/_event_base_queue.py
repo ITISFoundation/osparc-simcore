@@ -7,7 +7,7 @@ from typing import Final
 from fastapi import FastAPI
 from faststream.exceptions import FastStreamException, RejectMessage
 from faststream.rabbit import RabbitExchange, RabbitQueue, RabbitRouter
-from faststream.rabbit.schemas.queue import ClassicQueueArgs
+from faststream.rabbit.schemas.queue import QueueType, QuorumQueueArgs
 
 from ._models import OperationContext, OperationName, ScheduleId
 
@@ -18,10 +18,15 @@ EXCHANGE_NAME: Final[str] = "dynamic-scheduler-events"
 
 
 def _get_global_queue(
-    queue_name: str, arguments: ClassicQueueArgs | None = None
+    queue_name: str, arguments: QuorumQueueArgs | None = None
 ) -> RabbitQueue:
+    # See https://github.com/ITISFoundation/osparc-simcore/pull/8573
+    # to understand why QUORUM queues are used here
     return RabbitQueue(
-        f"{EXCHANGE_NAME}_{queue_name}", durable=True, arguments=arguments
+        f"{EXCHANGE_NAME}_{queue_name}",
+        queue_type=QueueType.QUORUM,
+        durable=True,  # RabbitQueue typing requires durable=True when queue_type is QUORUM
+        arguments=arguments,
     )
 
 
