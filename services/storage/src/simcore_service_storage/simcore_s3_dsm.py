@@ -987,6 +987,79 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         return current_page_results
 
+    def _process_s3_directory_entry(
+        self,
+        user_id: UserID,
+        s3_entry: S3DirectoryMetaData,
+        name_pattern_lower: str,
+        min_parts_for_valid_s3_object: int,
+    ) -> FileMetaData | None:
+        filename = Path(s3_entry.prefix).name
+
+        if not (
+            fnmatch.fnmatch(filename.lower(), name_pattern_lower)
+            and len(f"{s3_entry.prefix}".split("/")) >= min_parts_for_valid_s3_object
+        ):
+            return None
+
+        return FileMetaData.from_simcore_node(
+            user_id=user_id,
+            file_id=TypeAdapter(SimcoreS3FileID).validate_python(f"{s3_entry.prefix}"),
+            bucket=self.simcore_bucket_name,
+            location_id=self.get_location_id(),
+            location_name=self.get_location_name(),
+            sha256_checksum=None,
+            file_size=UNDEFINED_SIZE,
+            entity_tag=None,
+            is_directory=True,
+        )
+
+    def _process_s3_file_entry(
+        self,
+        user_id: UserID,
+        s3_entry: S3MetaData,
+        name_pattern_lower: str,
+        min_parts_for_valid_s3_object: int,
+        modified_at: tuple[datetime.datetime | None, datetime.datetime | None] | None,
+    ) -> FileMetaData | None:
+        filename = Path(s3_entry.object_key).name
+
+        if not (
+            fnmatch.fnmatch(filename.lower(), name_pattern_lower)
+            and len(s3_entry.object_key.split("/")) >= min_parts_for_valid_s3_object
+        ):
+            return None
+
+        last_modified_from, last_modified_until = modified_at or (None, None)
+
+        # Apply time filters
+        if (
+            last_modified_from
+            and s3_entry.last_modified
+            and s3_entry.last_modified < last_modified_from
+        ):
+            return None
+
+        if (
+            last_modified_until
+            and s3_entry.last_modified
+            and s3_entry.last_modified > last_modified_until
+        ):
+            return None
+
+        return FileMetaData.from_simcore_node(
+            user_id=user_id,
+            file_id=TypeAdapter(SimcoreS3FileID).validate_python(s3_entry.object_key),
+            bucket=self.simcore_bucket_name,
+            location_id=self.get_location_id(),
+            location_name=self.get_location_name(),
+            sha256_checksum=None,
+            file_size=s3_entry.size,
+            entity_tag=s3_entry.e_tag,
+            is_directory=False,
+            last_modified=s3_entry.last_modified,
+        )
+
     async def _search_project_s3_files(
         self,
         user_id: UserID,
@@ -1007,75 +1080,27 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 prefix=f"{proj_id}/",
                 items_per_page=500,  # fetch larger batches for efficiency
             ):
-                _logger.info(
-                    "Searching S3 files in project %s with pattern '%s' in batch of %d items: %s",
-                    proj_id,
-                    name_pattern,
-                    len(s3_entries),
-                    s3_entries,
-                )
                 for s3_entry in s3_entries:
-                    is_directory = isinstance(s3_entry, S3DirectoryMetaData)
-                    if is_directory:
-                        filename = Path(s3_entry.prefix).name
-                    else:
-                        filename = Path(s3_entry.object_key).name
+                    file_metadata: FileMetaData | None = None
 
-                    if not (
-                        fnmatch.fnmatch(filename.lower(), name_pattern_lower)
-                        and (
-                            len(s3_entry.object_key.split("/"))
-                            if not is_directory
-                            else len(f"{s3_entry.prefix}".split("/"))
+                    if isinstance(s3_entry, S3DirectoryMetaData):
+                        file_metadata = self._process_s3_directory_entry(
+                            user_id,
+                            s3_entry,
+                            name_pattern_lower,
+                            min_parts_for_valid_s3_object,
                         )
-                        >= min_parts_for_valid_s3_object
-                    ):
-                        continue
+                    elif isinstance(s3_entry, S3MetaData):
+                        file_metadata = self._process_s3_file_entry(
+                            user_id,
+                            s3_entry,
+                            name_pattern_lower,
+                            min_parts_for_valid_s3_object,
+                            modified_at,
+                        )
 
-                    last_modified_from, last_modified_until = modified_at or (
-                        None,
-                        None,
-                    )
-                    # For directories, we skip last_modified filtering since they don't have this attribute
-                    if not is_directory:
-                        if (
-                            last_modified_from
-                            and s3_entry.last_modified
-                            and s3_entry.last_modified < last_modified_from
-                        ):
-                            continue
-
-                        if (
-                            last_modified_until
-                            and s3_entry.last_modified
-                            and s3_entry.last_modified > last_modified_until
-                        ):
-                            continue
-
-                    # For directories, don't pass last_modified since they don't have one
-                    # The from_simcore_node method will use a default current timestamp
-                    file_meta_kwargs = {
-                        "user_id": user_id,
-                        "file_id": TypeAdapter(SimcoreS3FileID).validate_python(
-                            f"{s3_entry.prefix}"
-                            if is_directory
-                            else s3_entry.object_key
-                        ),
-                        "bucket": self.simcore_bucket_name,
-                        "location_id": self.get_location_id(),
-                        "location_name": self.get_location_name(),
-                        "sha256_checksum": None,
-                        "file_size": UNDEFINED_SIZE if is_directory else s3_entry.size,
-                        "entity_tag": None if is_directory else s3_entry.e_tag,
-                        "is_directory": is_directory,
-                    }
-
-                    # Only add last_modified for files, not directories
-                    if not is_directory:
-                        file_meta_kwargs["last_modified"] = s3_entry.last_modified
-
-                    file_meta = FileMetaData.from_simcore_node(**file_meta_kwargs)
-                    yield file_meta
+                    if file_metadata is not None:
+                        yield file_metadata
 
         except S3KeyNotFoundError as exc:
             _logger.debug("No files found in S3 for project %s: %s", proj_id, exc)

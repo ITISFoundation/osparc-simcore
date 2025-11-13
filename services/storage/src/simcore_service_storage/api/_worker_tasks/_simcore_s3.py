@@ -173,6 +173,7 @@ async def search(
                     data=SearchResultItem(
                         name=item.file_name,
                         project_id=item.project_id,
+                        # NOTE: dirs in S3 are virtual, so we do not have created_at, last_modified info
                         created_at=None if item.is_directory else item.created_at,
                         modified_at=None if item.is_directory else item.last_modified,
                         is_directory=item.is_directory,
@@ -182,13 +183,6 @@ async def search(
                 )
                 for item in items
             ]
-
-            _logger.info(
-                "'%s' pushing %d search results items: %s",
-                task_key,
-                len(data),
-                data,
-            )
 
             await app_server.task_manager.push_task_stream_items(
                 task_key,
