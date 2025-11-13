@@ -70,10 +70,10 @@ def _handle_payment_unverified_error_as_502(
 
     status_code = status.HTTP_502_BAD_GATEWAY
     user_msg = user_message(
-        "Payment processing is temporarily unavailable. "
-        "Please contact support for assistance with your payment. "
-        "Do not attempt to retry this payment."
-        "We have logged the incident and will investigate it promptly. "
+        "Payment processing is currently unavailable. "
+        "Please contact support for assistance with your payment and avoid retrying this transaction. "
+        "We have been notified of this issue and are working to resolve it.",
+        _version=1,
     )
     error_code = getattr(exception, "error_code", None) or create_error_code(exception)
 
