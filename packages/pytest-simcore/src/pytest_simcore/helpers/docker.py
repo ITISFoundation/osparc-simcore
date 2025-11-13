@@ -15,7 +15,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 
-# NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status2 because some of the
+# NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status1 because some of the
 # packages tests installations do not include this library!!
 class ContainerStatus(str, Enum):
     """
