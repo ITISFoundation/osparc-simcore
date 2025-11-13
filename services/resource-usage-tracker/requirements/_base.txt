@@ -750,7 +750,7 @@ referencing==0.29.3
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-regex==2023.12.25
+regex==2025.11.3
     # via dateparser
 requests==2.32.4
     # via

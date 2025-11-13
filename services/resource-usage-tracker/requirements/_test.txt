@@ -254,7 +254,7 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-regex==2023.12.25
+regex==2025.11.3
     # via
     #   -c requirements/_base.txt
     #   cfn-lint
