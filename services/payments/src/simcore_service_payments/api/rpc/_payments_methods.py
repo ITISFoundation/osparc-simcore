@@ -153,6 +153,7 @@ async def delete_payment_method(
     reraise_if_error_type=(
         PaymentsMethodsError,
         PaymentsError,
+        PaymentUnverifiedError,
         PaymentServiceUnavailableError,
     )
 )
