@@ -273,7 +273,7 @@ def test_response_surface_modeling(
             for i in range(count_min):
                 input_field = min_inputs.nth(i)
                 input_field.fill(str(i + 1))
-                print(f"Filled {min_test_id} input {i} with value {i + 1}")
+                logging.info(f"Filled {min_test_id} input {i} with value {i + 1}")
                 assert input_field.input_value() == str(i + 1)
 
             max_test_id = "Standard Deviation" if "uq" in service_key.lower() else "Max"
@@ -285,7 +285,9 @@ def test_response_surface_modeling(
             for i in range(count_max):
                 input_field = max_inputs.nth(i)
                 input_field.fill(str((i + 1) * 10))
-                print(f"Filled {max_test_id} input {i} with value {(i + 1) * 10}")
+                logging.info(
+                    f"Filled {max_test_id} input {i} with value {(i + 1) * 10}"
+                )
                 assert input_field.input_value() == str((i + 1) * 10)
 
             page.wait_for_timeout(1000)
