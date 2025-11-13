@@ -17,6 +17,10 @@ class PaymentServiceUnavailableError(_BaseRpcApiError):
     msg_template = "Payments are currently unavailable: {human_readable_detail}"
 
 
+class PaymentUnverifiedError(_BaseRpcApiError):
+    msg_template = "The payment state could not be verified: {internal_details}"
+
+
 #
 # payment transactions errors
 #
@@ -43,8 +47,7 @@ class PaymentAlreadyAckedError(PaymentsError):
 #
 
 
-class PaymentsMethodsError(_BaseRpcApiError):
-    ...
+class PaymentsMethodsError(_BaseRpcApiError): ...
 
 
 class PaymentMethodNotFoundError(PaymentsMethodsError):
