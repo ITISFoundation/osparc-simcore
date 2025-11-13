@@ -11,12 +11,14 @@ qx.Class.define("osparc.ui.window.Window", {
     this.base(arguments, caption, icon);
 
     this.getChildControl("captionbar").set({
-      padding: 8
+      padding: 8,
+      cursor: "move",
     });
 
     this.getChildControl("title").set({
       font: "text-14",
-      rich: true
+      rich: true,
+      cursor: "move",
     });
 
     this._getLayout().setSeparator("separator-vertical");
