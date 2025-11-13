@@ -59,6 +59,12 @@ qx.Class.define("osparc.store.Tags", {
     },
 
     postTag: function(newTagData) {
+      newTagData.name.trim();
+      newTagData.description.trim();
+      if (newTagData.description === "") {
+        // the backend does not like empty descriptions
+        delete newTagData.description;
+      }
       const params = {
         data: newTagData
       };
