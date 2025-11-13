@@ -42,7 +42,9 @@ qx.Class.define("osparc.form.tag.TagManager", {
       if (!title) {
         title = qx.locale.Manager.tr("Apply Tags");
       }
-      return osparc.ui.window.Window.popUpInWindow(tagManager, title, 300, null).set({
+      const width = 400;
+      const maxHeight = 500;
+      return osparc.ui.window.Window.popUpInWindow(tagManager, title, width).set({
         allowMinimize: false,
         allowMaximize: false,
         showMinimize: false,
@@ -50,7 +52,8 @@ qx.Class.define("osparc.form.tag.TagManager", {
         clickAwayClose: true,
         movable: true,
         resizable: true,
-        showClose: true
+        showClose: true,
+        maxHeight,
       });
     }
   },
@@ -81,7 +84,8 @@ qx.Class.define("osparc.form.tag.TagManager", {
         label: this.tr("New Tag"),
         icon: "@FontAwesome5Solid/plus/14",
         alignX: "center",
-        allowGrowX: false
+        allowGrowX: false,
+        marginTop: 10,
       });
       addTagButton.addListener("execute", () => {
         this.__repopulateTags();
