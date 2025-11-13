@@ -22,6 +22,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
+
     this.__buildLayout();
 
     if (studyId) {
@@ -280,6 +281,9 @@ qx.Class.define("osparc.study.StudyOptions", {
       const titleField = this.getChildControl("title-field");
       titleField.setValue(this.__studyData["name"]);
 
+      this.getChildControl("advanced-layout").set({
+        visibility: osparc.study.Utils.extractUniqueServices(this.__studyData["workbench"]).length > 0 ? "visible" : "excluded"
+      })
       const studyPricingUnits = this.getChildControl("study-pricing-units");
       studyPricingUnits.setStudyData(this.__studyData);
     },
@@ -314,7 +318,6 @@ qx.Class.define("osparc.study.StudyOptions", {
       this.__addWalletSelector();
       this.__addTierSelector();
       this.__addButtons();
-
       this.__evaluateOpenButton();
     },
 
