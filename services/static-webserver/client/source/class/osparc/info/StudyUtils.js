@@ -246,7 +246,12 @@ qx.Class.define("osparc.info.StudyUtils", {
           });
       };
       study.addListener("changeTags", () => addTags(study), this);
-      osparc.store.Tags.getInstance().addListener("tagsChanged", () => addTags(study), this);
+      [
+        "tagAdded",
+        "tagRemoved",
+      ].forEach(eventType => {
+        osparc.store.Tags.getInstance().addListener(eventType, () => addTags(study), this);
+      });
       addTags(study);
 
       return tagsContainer;
