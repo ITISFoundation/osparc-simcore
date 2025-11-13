@@ -27,6 +27,11 @@ qx.Class.define("osparc.vipMarket.Market", {
     });
     this.addWidgetToTabs(miniWallet);
 
+    // add a spinner while loading categories
+    const fetchingIcon = this.__fetchingIcon = new osparc.ui.basic.FetchingIcon();
+    fetchingIcon.setFetching(true);
+    this.addWidgetToTabs(fetchingIcon);
+
     const store = osparc.store.Store.getInstance();
     const contextWallet = store.getContextWallet();
     if (!contextWallet) {
@@ -51,6 +56,7 @@ qx.Class.define("osparc.vipMarket.Market", {
   },
 
   members: {
+    __fetchingIcon: null,
     __reqOpenCategory: null,
     __myModelsCategoryMarket: null,
     __myModelsCategoryButton: null,
@@ -105,6 +111,8 @@ qx.Class.define("osparc.vipMarket.Market", {
           });
 
           await this.__addFreeItems();
+
+          this.__fetchingIcon.setFetching(false);
 
           categories.forEach(category => {
             this.__buildViPMarketPage(category, category["items"]);
