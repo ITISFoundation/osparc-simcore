@@ -59,7 +59,7 @@ class PaymentsGatewayBaseError(OsparcErrorMixin, ValueError):
 class UnverifiedPaymentError(PaymentsGatewayBaseError):
     msg_template = (
         "Request to gateway timeout after {request_duration_sec:.2f}s during payment and did not get a response "
-        "with the state of the payment. We cannot gurantee whether the payment was successful or not."
+        "with the state of the payment. We cannot guarantee whether the payment was successful or not."
         "DO NOT RETRY automatically to avoid risk of double-payment. Request details: {request}"
     )
 

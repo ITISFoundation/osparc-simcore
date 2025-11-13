@@ -131,7 +131,7 @@ async def test_fails_to_pay_with_payment_method_without_funds(
 ):
     if mock_payments_gateway_service_or_none is None:
         pytest.skip(
-            "cannot run this test against external because it setup a payment method"
+            "cannot run this test against external because it sets up a payment method"
         )
 
     rut = ResourceUsageTrackerApi.get_from_app_state(app)

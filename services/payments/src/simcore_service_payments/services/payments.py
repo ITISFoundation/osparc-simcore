@@ -1,8 +1,9 @@
-""" Functions here support two types of payments worklows:
+"""Functions here support two types of payments worklows:
 - One-time payment
 - Payment w/ payment-method
 
 """
+
 # pylint: disable=too-many-arguments
 
 import logging
@@ -53,7 +54,9 @@ from ..services.resource_usage_tracker import ResourceUsageTrackerApi
 from ..services.stripe import StripeApi
 from .notifier import NotifierService
 from .notifier_ws import WebSocketProvider
-from .payments_gateway import PaymentsGatewayApi
+from .payments_gateway import (
+    PaymentsGatewayApi,
+)
 
 _logger = logging.getLogger()
 
@@ -237,6 +240,12 @@ async def pay_with_payment_method(  # noqa: PLR0913
     stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> PaymentTransaction:
+    """
+    Raises:
+        Any exception raised by the payment service gateway or postgre is propagated upwards.
+
+        UnverifiedPaymentError: when the payment could not be verified (e.g. timeout with gateway). DO NOT RETRY in this case!
+    """
     initiated_at = arrow.utcnow().datetime
 
     acked = await repo_methods.get_payment_method(
@@ -244,6 +253,9 @@ async def pay_with_payment_method(  # noqa: PLR0913
     )
 
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
+        # WARNING: if gateway raises UnverifiedPaymentError, we do not have guarantee that the payment is or not done.
+        # - if it is done, we will fail to add credits.
+        # - it is not done, then the credits are not added but that is ok
         acked.payment_method_id,
         payment=InitPayment(
             amount_dollars=AmountDecimal(amount_dollars),
