@@ -28,9 +28,12 @@ qx.Class.define("osparc.ui.window.Window", {
       backgroundColor: "window-popup-background"
     });
 
-    // Enable closing when clicking outside the modal
     this.addListener("appear", () => this.__afterAppear(), this);
     this.addListener("move", () => this.__windowMoved(), this);
+
+    // OM: add a mechanism to make the window smaller if it doesn't fit the screen
+    window.addEventListener("resize", () => this.__appResized());
+
     const commandEsc = new qx.ui.command.Command("Esc");
     commandEsc.addListener("execute", () => {
       this.fireEvent("cancel");
@@ -116,6 +119,7 @@ qx.Class.define("osparc.ui.window.Window", {
     },
 
     __afterAppear: function() {
+      // Enable closing when clicking outside the modal
       const thisDom = this.getContentElement().getDomElement();
       const thisZIndex = parseInt(thisDom.style.zIndex);
       const modalFrame = qx.dom.Hierarchy.getSiblings(thisDom).find(el =>
@@ -164,6 +168,58 @@ qx.Class.define("osparc.ui.window.Window", {
 
       // Only apply correction if needed
       if (left !== bounds.left || top !== bounds.top) {
+        this.moveTo(left, top);
+      }
+    },
+
+    __appResized: function() {
+      // ensure it fits within the screen
+      const bounds = this.getBounds(); // current window position/size
+      const root = qx.core.Init.getApplication().getRoot();
+      const parentBounds = root.getBounds(); // available screen area
+      if (!bounds || !parentBounds) {
+        return;
+      }
+
+      let {
+        width,
+        height,
+        left,
+        top
+      } = bounds;
+
+      let resized = false;
+
+      // Adjust width if needed
+      if (width > parentBounds.width) {
+        width = parentBounds.width;
+        resized = true;
+      }
+
+      // Adjust height if needed
+      if (height > parentBounds.height) {
+        height = parentBounds.height;
+        resized = true;
+      }
+
+      // Clamp horizontal position
+      left = Math.min(
+        Math.max(left, 0),
+        parentBounds.width - width
+      );
+
+      // Clamp vertical position
+      top = Math.min(
+        Math.max(top, 0),
+        parentBounds.height - height
+      );
+
+      // Apply changes if any
+      if (resized) {
+        this.set({
+          width,
+          height
+        });
         this.moveTo(left, top);
       }
     },
