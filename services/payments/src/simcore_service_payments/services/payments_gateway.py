@@ -8,9 +8,9 @@
 import contextlib
 import functools
 import logging
+import time
 from collections.abc import Callable
 from contextlib import suppress
-from time import time
 
 import httpx
 from common_library.errors_classes import OsparcErrorMixin
