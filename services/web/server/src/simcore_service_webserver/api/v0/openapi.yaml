@@ -4779,7 +4779,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -4916,7 +4916,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -4978,7 +4978,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5041,7 +5041,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5105,7 +5105,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5163,7 +5163,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5226,7 +5226,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5345,7 +5345,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5408,7 +5408,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -7584,7 +7584,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CursorPage___T_Customized_PathMetaDataGet_'
+                $ref: '#/components/schemas/CursorPage_TypeVar_Customized_PathMetaDataGet_'
   /v0/storage/locations/{location_id}/paths/{path}:size:
     post:
       tags:
@@ -8108,7 +8108,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
         '422':
-          description: Unprocessable Entity
+          description: Unprocessable Content
           content:
             application/json:
               schema:
@@ -8179,7 +8179,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -8239,7 +8239,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -8296,7 +8296,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -8357,7 +8357,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -8414,7 +8414,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -8475,7 +8475,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -10663,7 +10663,7 @@ components:
       - NOT_BILLED
       - REQUIRES_MANUAL_REVIEW
       title: CreditTransactionStatus
-    CursorPage___T_Customized_PathMetaDataGet_:
+    CursorPage_TypeVar_Customized_PathMetaDataGet_:
       properties:
         items:
           items:
@@ -10703,7 +10703,7 @@ components:
       type: object
       required:
       - items
-      title: CursorPage[~_T]Customized[PathMetaDataGet]
+      title: CursorPage[TypeVar]Customized[PathMetaDataGet]
     DatCoreFileLink:
       properties:
         store:
