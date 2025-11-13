@@ -21,7 +21,7 @@ qx.Class.define("osparc.study.StudyOptions", {
   construct: function(studyId) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(10));
     this.__buildLayout();
 
     if (studyId) {
@@ -34,7 +34,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       check: "String",
       init: null,
       nullable: false,
-      apply: "__fetchStudy"
+      apply: "__fetchStudy",
     },
 
     wallet: {
@@ -42,7 +42,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       init: null,
       nullable: true,
       event: "changeWallet",
-      apply: "__applyWallet"
+      apply: "__applyWallet",
     },
 
     patchStudy: {
@@ -55,7 +55,7 @@ qx.Class.define("osparc.study.StudyOptions", {
 
   events: {
     "startStudy": "qx.event.type.Event",
-    "cancel": "qx.event.type.Event"
+    "cancel": "qx.event.type.Event",
   },
 
   statics: {
@@ -63,16 +63,27 @@ qx.Class.define("osparc.study.StudyOptions", {
       const title = osparc.product.Utils.getStudyAlias({
         firstUpperCase: true
       }) + qx.locale.Manager.tr(" Options");
-      const width = 550;
-      const minHeight = 270;
+      const width = 450;
+      const minHeight = 200;
       const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, minHeight).set({
         clickAwayClose: false
       });
-
       win.set({
         maxHeight: 600
       });
       return win;
+    },
+
+    createSectionLayout: function(title) {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle",
+      }));
+      const label = new qx.ui.basic.Label(title).set({
+        font: "text-14",
+        minWidth: 120,
+      });
+      layout.add(label);
+      return layout;
     },
 
     createGroupBox: function(title) {
@@ -109,43 +120,58 @@ qx.Class.define("osparc.study.StudyOptions", {
       let control;
       switch (id) {
         case "title-layout":
-          control = osparc.study.StudyOptions.createGroupBox(this.tr("Title"));
-          this._addAt(control, 0);
+          control = osparc.study.StudyOptions.createSectionLayout(this.tr("Title *"));
+          this._add(control);
           break;
         case "title-field":
           control = new qx.ui.form.TextField().set({
-            maxWidth: 220
+            allowGrowX: true,
           });
           control.addListener("changeValue", () => this.__evaluateOpenButton());
           osparc.utils.Utils.setIdToWidget(control, "studyTitleField");
-          this.getChildControl("title-layout").add(control);
+          this.getChildControl("title-layout").add(control, {
+            flex: 1
+          });
           break;
         case "wallet-selector-layout":
-          control = osparc.study.StudyOptions.createGroupBox(this.tr("Credit Account"));
-          this._addAt(control, 1);
+          control = osparc.study.StudyOptions.createSectionLayout(this.tr("Credit Account"));
+          this._add(control);
           break;
         case "wallet-selector":
           control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
-            allowGrowX: false
+            maxWidth: null,
+            allowGrowX: true,
           });
           control.addListener("changeSelection", () => this.__evaluateOpenButton());
-          this.getChildControl("wallet-selector-layout").add(control);
+          this.getChildControl("wallet-selector-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "add-tag-layout":
+          control = osparc.study.StudyOptions.createSectionLayout(this.tr("Tags"));
+          this._add(control);
           break;
         case "advanced-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this._addAt(control, 2, {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            marginTop: 15,
+            marginBottom: 15,
+          });
+          this._add(control, {
             flex: 1
           });
           break;
         case "tiers-checkbox":
           control = new qx.ui.form.CheckBox().set({
             label: this.tr("Tiers & Costs"),
-            value: false
+            value: false,
+            font: "text-14",
           });
           this.getChildControl("advanced-layout").add(control);
           break;
         case "tiers-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+            minHeight: 40,
+          });
           const scroll = new qx.ui.container.Scroll();
           this.getChildControl("tiers-checkbox").bind("value", scroll, "visibility", {
             converter: checked => checked ? "visible" : "excluded"
@@ -191,7 +217,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: "right"
           }));
-          this._addAt(control, 3);
+          this._add(control);
           break;
         case "cancel-button":
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
@@ -271,25 +297,36 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __buildLayout: function() {
-      this.__buildTopSummaryLayout();
-      this.__buildOptionsLayout();
-      this.__buildButtons();
+      this.__addTitle();
+      this.__addTags();
+      this.__addWalletSelector();
+      this.__addTierSelector();
+      this.__addButtons();
 
       this.__evaluateOpenButton();
     },
 
-    __buildTopSummaryLayout: function() {
-      const store = osparc.store.Store.getInstance();
-
+    __addTitle: function() {
       const titleField = this.getChildControl("title-field");
       titleField.addListener("appear", () => {
         titleField.focus();
         titleField.activate();
       });
+    },
 
-      // Wallet Selector
+    __addTags: function() {
+      const addTagLayout = this.getChildControl("add-tag-layout");
+      /*
+      const tagManager = new osparc.form.tag.TagManager();
+      tagManager.setLiveUpdate(true);
+      addTagLayout.add(tagManager);
+      */
+    },
+
+    __addWalletSelector: function() {
       const walletSelector = this.getChildControl("wallet-selector");
 
+      const store = osparc.store.Store.getInstance();
       const wallets = store.getWallets();
       const selectWallet = walletId => {
         const found = wallets.find(wallet => wallet.getWalletId() === parseInt(walletId));
@@ -315,11 +352,11 @@ qx.Class.define("osparc.study.StudyOptions", {
       }
     },
 
-    __buildOptionsLayout: function() {
+    __addTierSelector: function() {
       this.getChildControl("study-pricing-units");
     },
 
-    __buildButtons: function() {
+    __addButtons: function() {
       // Open/Cancel buttons
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.addListener("execute", () => this.fireEvent("cancel"));
