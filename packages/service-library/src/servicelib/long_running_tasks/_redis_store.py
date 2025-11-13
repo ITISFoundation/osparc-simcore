@@ -1,5 +1,3 @@
-from functools import lru_cache
-from importlib import resources
 from typing import Any, ClassVar, Final
 
 import redis.asyncio as aioredis
@@ -10,7 +8,7 @@ from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..redis._client import RedisClientSDK
 from ..redis._utils import handle_redis_returns_union_types
-from ..utils import limited_gather
+from ..utils import limited_gather, load_script
 from .models import LRTNamespace, TaskData, TaskId
 
 _STORE_TYPE_TASK_DATA: Final[str] = "TD"
@@ -38,21 +36,13 @@ def _flatten_dict(updates: dict[str, Any]) -> list[str]:
     return flat_list
 
 
-@lru_cache
-def _load_script(script_name: str) -> str:
-    with resources.as_file(
-        resources.files("servicelib.long_running_tasks._lua") / f"{script_name}.lua"
-    ) as script_file:
-        return script_file.read_text(encoding="utf-8").strip()
-
-
 class RedisStore:
     hset_if_key_exists: ClassVar[AsyncScript | None] = None
 
     @classmethod
     def _register_scripts(cls, redis_client: RedisClientSDK) -> None:
         cls.hset_if_key_exists = redis_client.redis.register_script(
-            _load_script("hset_if_key_exists")
+            load_script("servicelib.long_running_tasks._lua", "hset_if_key_exists")
         )
 
     def __init__(self, redis_settings: RedisSettings, lrt_namespace: LRTNamespace):
