@@ -153,9 +153,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this._add(control);
           break;
         case "current-tags-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5)).set({
-            // maxWidth: 420
-          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5));
           this.getChildControl("tags-layout").add(control, {
             flex: 1
           });

@@ -230,7 +230,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       */
     createTags: function(study) {
       const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5)).set({
-        maxWidth: 420
+        maxWidth: 300
       });
 
       const addTags = model => {
