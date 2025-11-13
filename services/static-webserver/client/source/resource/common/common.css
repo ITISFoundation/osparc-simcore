@@ -22,21 +22,20 @@
   animation: rotation 4s infinite linear;
 }
 
-.verticalText {
-  writing-mode: lr-tb;
-  transform: rotate(-90deg);
-  -webkit-transform: rotate(-90deg);
-  -moz-transform: rotate(-90deg);
-  -o-transform: rotate(-90deg);
-}
-
-.rotated {
-  transform: rotateZ(180deg);
-}
-
 .qx-form-button,
 .qx-form-button-hover,
 .qx-form-button-focus,
 .qx-form-button-active {
   background-clip: border-box;
+}
+
+/* Chrome, Edge, Safari */
+input::-webkit-search-cancel-button {
+  appearance: none;
+  display: none;
+}
+
+/* Fully remove searchfield appearance, cross button */
+input[type="search"] {
+  appearance: textfield;
 }
