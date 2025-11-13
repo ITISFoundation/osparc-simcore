@@ -559,11 +559,9 @@ async def test_search_directories(
         ("temp_folder", 3, 2),
     ]
 
-    created_directories = []
-
     # Create the directories
     for dir_name, subdir_count, file_count in test_directories:
-        directory_file_id, _ = await create_directory_with_files(
+        await create_directory_with_files(
             dir_name,
             file_size,
             subdir_count,
@@ -571,17 +569,16 @@ async def test_search_directories(
             project_id,
             node_id,
         )
-        created_directories.append((dir_name, directory_file_id))
 
     # Also upload some regular files with similar patterns for contrast
     regular_files = [
-        ("test_file.txt", "test_*"),
-        ("data_document.pdf", "data_*"),
-        ("backup_config.json", "backup_*"),
-        ("temp_settings.xml", "temp_*"),
+        "test_file.txt",
+        "data_document.pdf",
+        "backup_config.json",
+        "temp_settings.xml",
     ]
 
-    for file_name, _ in regular_files:
+    for file_name in regular_files:
         checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
         await upload_file(file_size, file_name, sha256_checksum=checksum)
 
