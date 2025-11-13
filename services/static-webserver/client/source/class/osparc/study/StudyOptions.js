@@ -292,7 +292,7 @@ qx.Class.define("osparc.study.StudyOptions", {
 
       this.getChildControl("advanced-layout").set({
         visibility: osparc.study.Utils.extractUniqueServices(this.__studyData["workbench"]).length > 0 ? "visible" : "excluded"
-      })
+      });
       const studyPricingUnits = this.getChildControl("study-pricing-units");
       studyPricingUnits.setStudyData(this.__studyData);
     },

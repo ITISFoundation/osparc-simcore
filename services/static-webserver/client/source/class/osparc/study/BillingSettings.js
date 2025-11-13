@@ -83,7 +83,6 @@ qx.Class.define("osparc.study.BillingSettings", {
           break;
         case "tiers-box":
           control = osparc.study.StudyOptions.createGroupBox(this.tr("Tiers & Costs"));
-          control.get
           this._add(control);
           break;
       }
