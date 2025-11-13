@@ -16,7 +16,8 @@
 ************************************************************************ */
 
 /**
- * Small and simple icon button to trigger different actions on tap.
+ * Small and simple loading/fetching indicator component.
+ * Displays a visual indicator when a fetching operation is in progress.
  */
 qx.Class.define("osparc.ui.basic.FetchingIcon", {
   extend: qx.ui.basic.Atom,
