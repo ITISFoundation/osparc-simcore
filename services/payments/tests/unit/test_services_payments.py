@@ -126,8 +126,10 @@ async def test_fails_to_pay_with_payment_method_without_funds(
     user_id: UserID,
     user_name: IDStr,
     user_email: EmailStr,
-    mocker: MockerFixture,
     notifier_service: NotifierService,
+    mocker: MockerFixture,
+    mock_email_provider: MagicMock,
+    mock_ws_provider: MagicMock,
 ):
     if mock_payments_gateway_service_or_none is None:
         pytest.skip(
@@ -170,7 +172,7 @@ async def test_fails_to_pay_with_payment_method_without_funds(
 
     # check notifications triggered as background tasks
     await asyncio.sleep(0.1)
-    assert len(notifier._background_tasks) == 0  # noqa: SLF001
+    assert len(notifier_service._background_tasks) == 0  # noqa: SLF001
 
     assert mock_email_provider.notify_payment_completed.called
     assert (

@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import cast
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import (
@@ -15,7 +16,6 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
-from servicelib.logging_utils import create_troubleshooting_log_kwargs
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
