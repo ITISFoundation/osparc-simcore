@@ -37,6 +37,8 @@ _logger = logging.getLogger(__name__)
 
 
 async def process_message(app: FastAPI, data: bytes) -> bool:
+    # pylint: disable=too-many-return-statements
+
     rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
     _logger.debug("Process msg: %s", rabbit_message)
 
@@ -55,6 +57,7 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     )
     if await _check_autorecharge_conditions_not_met(wallet_auto_recharge):
         return True  # We do not auto recharge
+
     assert wallet_auto_recharge is not None  # nosec
     assert wallet_auto_recharge.payment_method_id is not None  # nosec
 
