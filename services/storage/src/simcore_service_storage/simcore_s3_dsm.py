@@ -994,17 +994,44 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         name_pattern_lower: str,
         min_parts_for_valid_s3_object: int,
     ) -> FileMetaData | None:
-        filename = Path(s3_entry.prefix).name
+        prefix_str = str(s3_entry.prefix)
 
-        if not (
-            fnmatch.fnmatch(filename.lower(), name_pattern_lower)
-            and len(f"{s3_entry.prefix}".split("/")) >= min_parts_for_valid_s3_object
-        ):
+        # Handle both cases: with and without trailing slash
+        # For prefixes like "project_id/node_id/directory_name/" or "project_id/node_id/directory_name"
+        normalized_prefix = prefix_str.rstrip("/")
+        prefix_parts = normalized_prefix.split("/")
+
+        # Extract the directory name (last part of the path)
+        # Skip intermediate paths that don't have enough parts
+        if len(prefix_parts) < min_parts_for_valid_s3_object:
+            return None
+
+        directory_name = prefix_parts[-1]
+
+        # Check if this directory matches the search pattern
+        if not fnmatch.fnmatch(directory_name.lower(), name_pattern_lower):
+            return None
+
+        # Construct the file_id for SimcoreS3FileID validation
+        # SimcoreS3FileID expects: project_id/node_id/filename_or_directory_name
+        file_id_str = f"{'/'.join(prefix_parts[:-1])}/{directory_name}"
+
+        try:
+            validated_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
+                file_id_str
+            )
+        except Exception as exc:
+            # Log invalid S3 directory prefixes that don't match SimcoreS3FileID pattern
+            _logger.debug(
+                "Skipping S3 directory with invalid file_id pattern: %s (error: %s)",
+                file_id_str,
+                exc,
+            )
             return None
 
         return FileMetaData.from_simcore_node(
             user_id=user_id,
-            file_id=TypeAdapter(SimcoreS3FileID).validate_python(f"{s3_entry.prefix}"),
+            file_id=validated_file_id,
             bucket=self.simcore_bucket_name,
             location_id=self.get_location_id(),
             location_name=self.get_location_name(),
@@ -1047,9 +1074,21 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         ):
             return None
 
+        try:
+            validated_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
+                s3_entry.object_key
+            )
+        except ValidationError as exc:
+            _logger.debug(
+                "Skipping S3 object with invalid file_id pattern: %s (error: %s)",
+                s3_entry.object_key,
+                exc,
+            )
+            return None
+
         return FileMetaData.from_simcore_node(
             user_id=user_id,
-            file_id=TypeAdapter(SimcoreS3FileID).validate_python(s3_entry.object_key),
+            file_id=validated_file_id,
             bucket=self.simcore_bucket_name,
             location_id=self.get_location_id(),
             location_name=self.get_location_name(),
