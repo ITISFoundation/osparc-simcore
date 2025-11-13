@@ -22,7 +22,6 @@ RUN uv pip install --system datamodel-code-generator[http] && uv pip list
 ENTRYPOINT ["datamodel-codegen", \
 		      "--use-non-positive-negative-number-constrained-types", \
           "--allow-population-by-field-name", \
-          "--enum-field-as-literal=all", \
           "--field-constraints", \
           "--input-file-type=jsonschema", \
           "--output-model-type=pydantic_v2.BaseModel", \
