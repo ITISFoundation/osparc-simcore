@@ -1,4 +1,4 @@
-""" Account settings for twilio.com service
+"""Account settings for twilio.com service
 
 For twilio SMS services:
     SEE https://www.twilio.com/docs/sms/quickstart/python

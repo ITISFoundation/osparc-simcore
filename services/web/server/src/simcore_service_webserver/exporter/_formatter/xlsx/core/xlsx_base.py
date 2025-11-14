@@ -225,7 +225,7 @@ class BaseXLSXDocument:
         self._check_attribute("file_name")
         self._sheets_by_name: dict[BaseXLSXSheet, Worksheet] = {}
 
-    def _get_sheets(self) -> Generator[tuple[str, Any], None, None]:
+    def _get_sheets(self) -> Generator[tuple[str, Any]]:
         for member in inspect.getmembers(self):
             if isinstance(member[1], BaseXLSXSheet):
                 yield member
@@ -236,7 +236,7 @@ class BaseXLSXDocument:
 
     def _assemble_workbook(
         self,
-        sheets_entries: Generator[tuple[str, Any], None, None],
+        sheets_entries: Generator[tuple[str, Any]],
         template_data: BaseModel | None,
     ) -> Workbook:
         workbook = Workbook()

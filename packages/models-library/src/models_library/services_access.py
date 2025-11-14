@@ -1,6 +1,4 @@
-"""Service access rights models
-
-"""
+"""Service access rights models"""
 
 from typing import Annotated
 

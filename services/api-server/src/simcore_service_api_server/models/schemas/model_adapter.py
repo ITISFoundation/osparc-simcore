@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Annotated, Literal, NotRequired
+from typing import Annotated, Literal, NotRequired, TypedDict
 
 from models_library.api_schemas_api_server.pricing_plans import (
     ServicePricingPlanGet as _ServicePricingPlanGet,
@@ -60,7 +60,6 @@ from pydantic import (
     NonNegativeInt,
     PlainSerializer,
 )
-from typing_extensions import TypedDict
 
 
 class GetCreditPriceLegacy(BaseModel):

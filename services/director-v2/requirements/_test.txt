@@ -114,7 +114,7 @@ fsspec==2025.3.2
     # via
     #   -c requirements/_base.txt
     #   dask
-greenlet==3.2.2
+greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -140,10 +140,6 @@ idna==3.10
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==8.6.1
-    # via
-    #   -c requirements/_base.txt
-    #   dask
 iniconfig==2.1.0
     # via pytest
 jinja2==3.1.6
@@ -218,7 +214,7 @@ partd==1.4.2
     #   dask
 pathspec==0.12.1
     # via mypy
-pillow==11.3.0
+pillow==12.0.0
     # via bokeh
 pluggy==1.6.0
     # via
@@ -270,7 +266,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2025.2
     # via pandas
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -338,10 +334,7 @@ typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
-    #   exceptiongroup
     #   mypy
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
 tzdata==2025.2
     # via
@@ -371,7 +364,3 @@ zict==3.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-zipp==3.21.0
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata

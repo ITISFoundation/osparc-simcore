@@ -1,6 +1,4 @@
-""" Groups notifications on payments events
-
-"""
+"""Groups notifications on payments events"""
 
 import logging
 from dataclasses import dataclass

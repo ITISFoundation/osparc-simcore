@@ -316,7 +316,7 @@ async def _parse_container_docker_logs(
                     log_file_path.parent.mkdir(parents=True, exist_ok=True)
                     async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
                         async for log_line in cast(
-                            AsyncGenerator[str, None],
+                            AsyncGenerator[str],
                             container_for_long_running_logs.log(
                                 stdout=True,
                                 stderr=True,

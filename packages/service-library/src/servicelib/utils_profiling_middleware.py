@@ -57,7 +57,7 @@ def append_profile(body: str, profile_text: str) -> str:
 
 
 def check_response_headers(
-    response_headers: dict[bytes, bytes]
+    response_headers: dict[bytes, bytes],
 ) -> list[tuple[bytes, bytes]]:
     original_content_type: str = response_headers[b"content-type"].decode()
     assert original_content_type in {  # nosec

@@ -1,13 +1,13 @@
-""" Simple client SDK for osparc web API (prototype concept)
+"""Simple client SDK for osparc web API (prototype concept)"""
 
-"""
 import getpass
 import logging
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any, Generic, Iterator, TypeVar
+from typing import Annotated, Any, Generic, TypeVar
 from uuid import UUID
 
 import httpx

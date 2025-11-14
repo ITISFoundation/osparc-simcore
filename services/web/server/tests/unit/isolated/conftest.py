@@ -163,7 +163,7 @@ def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         PYTHON_GET_PIP_SHA256=6123659241292b2147b58922b9ffe11dda66b39d52d8a6f3aa310bc1d60ea6f7
         PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/a1675ab6c2bd898ed82b1f58c486097f763c74a9/public/get-pip.py
         PYTHON_PIP_VERSION=21.1.3
-        PYTHON_VERSION=3.11.9
+        PYTHON_VERSION=3.13.9
         PYTHONDONTWRITEBYTECODE=1
         PYTHONOPTIMIZE=TRUE
         SC_BOOT_MODE=production
@@ -251,7 +251,6 @@ def mock_webserver_service_environment(
 
 @pytest.fixture
 def mocked_login_required(mocker: MockerFixture):
-
     user_id = 1
 
     # patches @login_required decorator

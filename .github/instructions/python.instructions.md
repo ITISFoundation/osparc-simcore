@@ -9,7 +9,7 @@ Follow these rules **strictly** when generating Python code:
 
 ### 1. Python Version
 
-* Use Python 3.11: Ensure all code uses features and syntax compatible with Python 3.11.
+* Use Python 3.13: Ensure all code uses features and syntax compatible with Python 3.13.
 
 ### 2. **Type Annotations**
 

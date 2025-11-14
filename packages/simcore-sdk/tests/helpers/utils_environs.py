@@ -1,6 +1,5 @@
-""" Utils to deal with environment variables (environs in short)
+"""Utils to deal with environment variables (environs in short)"""
 
-"""
 import re
 from pathlib import Path
 

@@ -1,10 +1,11 @@
 """
-    Establishes which services can consume a given filetype
+Establishes which services can consume a given filetype
 
-    The relation is N-N because
-    - a service could handle one or more filetypes and
-    - one filetype could be handled by one or more services
+The relation is N-N because
+- a service could handle one or more filetypes and
+- one filetype could be handled by one or more services
 """
+
 import sqlalchemy as sa
 
 from ._common import RefActions
