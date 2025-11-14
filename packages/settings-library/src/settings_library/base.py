@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Annotated, Any, Final, get_args, get_origin
+from typing import Annotated, Any, Final, cast, get_args, get_origin
 
 from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
 from pydantic import ValidationInfo, field_validator
@@ -100,12 +100,13 @@ def _get_class_from_typing(typ: type) -> type:
     origin = get_origin(typ)
     if origin is Annotated:
         # For Annotated, the first argument is the real type
-        return get_args(typ)[0]
+        return cast(type, get_args(typ)[0])
     if isinstance(typ, type):
         # It's already a class
         return typ
     # Add more special cases if needed (Tuple, List, etc.) -- usually not suitable for issubclass
-    return object  # default fallback
+    msg = f"Cannot extract class from typing type: {typ}"
+    raise ValueError(msg)
 
 
 class BaseCustomSettings(BaseSettings):
