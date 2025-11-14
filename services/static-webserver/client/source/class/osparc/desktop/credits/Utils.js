@@ -50,10 +50,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       };
     },
 
-    areWalletsEnabled: function() {
-      return Boolean(osparc.store.StaticInfo.getValue("isPaymentEnabled"));
-    },
-
     getNoWriteAccessInformationLabel: function() {
       return new qx.ui.basic.Label().set({
         value: qx.locale.Manager.tr("You can't access this information"),
@@ -103,6 +99,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       const walletSelector = new qx.ui.form.SelectBox().set({
         maxWidth: 250
       });
+      walletSelector.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
 
       const populateSelectBox = selectBox => {
         selectBox.removeAll();

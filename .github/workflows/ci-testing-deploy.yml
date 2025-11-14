@@ -26,7 +26,7 @@ on:
   workflow_dispatch:
     inputs:
       force_all_builds:
-        description: 'Run all tests and builds'
+        description: "Run all tests and builds"
         required: false
         type: boolean
         default: false
@@ -333,7 +333,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-webserver-02:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -362,7 +361,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-webserver-03:
     needs: changes
@@ -393,36 +391,34 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-webserver-04:
-      needs: changes
-      if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-      timeout-minutes: 25 # if this timeout gets too small, then split the tests
-      name: "[unit] webserver 04"
-      runs-on: ${{ matrix.os }}
-      strategy:
-        matrix:
-          python: ["3.11"]
-          os: [ubuntu-24.04]
-        fail-fast: false
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v5
-        - name: Setup environment
-          uses: ./.github/actions/setup-simcore-env
-          with:
-            python-version: ${{ matrix.python }}
-            cache-dependency-glob: "**/web/server/requirements/ci.txt"
-        - name: install webserver
-          run: ./ci/github/unit-testing/webserver.bash install
-        - name: test
-          run: ./ci/github/unit-testing/webserver.bash test_with_db 04
-        - uses: codecov/codecov-action@v5
-          env:
-            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          with:
-            flags: unittests #optional
-
+    needs: changes
+    if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 04"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 04
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
 
   unit-test-storage:
     needs: changes
@@ -454,7 +450,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-agent:
     needs: changes
@@ -549,7 +544,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-api-server:
     needs: changes
     if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -583,7 +577,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-autoscaling:
     needs: changes
     if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -615,7 +608,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-catalog:
     needs: changes
     if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -643,7 +635,7 @@ jobs:
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
@@ -652,7 +644,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-clusters-keeper:
     needs: changes
@@ -696,7 +687,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-datcore-adapter:
     needs: changes
     if: ${{ needs.changes.outputs.datcore-adapter == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -724,7 +714,7 @@ jobs:
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
@@ -733,7 +723,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-director:
     needs: changes
@@ -762,7 +751,7 @@ jobs:
         run: ./ci/github/unit-testing/director.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director/test_failures
@@ -771,7 +760,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-director-v2:
     needs: changes
@@ -800,7 +788,7 @@ jobs:
         run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -809,7 +797,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-aws-library:
     needs: changes
@@ -843,46 +830,35 @@ jobs:
           flags: unittests #optional
 
   unit-test-celery-library:
-      needs: changes
-      if: ${{ needs.changes.outputs.celery-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-      timeout-minutes: 18 # if this timeout gets too small, then split the tests
-      name: "[unit] celery-library"
-      runs-on: ${{ matrix.os }}
-      strategy:
-        matrix:
-          python: ["3.11"]
-          os: [ubuntu-24.04]
-        fail-fast: false
-      steps:
-        - uses: actions/checkout@v5
-        - name: setup docker buildx
-          id: buildx
-          uses: docker/setup-buildx-action@v3
-          with:
-            driver: docker-container
-        - name: setup python environment
-          uses: actions/setup-python@v6
-          with:
-            python-version: ${{ matrix.python }}
-        - name: install uv
-          uses: astral-sh/setup-uv@v6
-          with:
-            version: "0.6.x"
-            enable-cache: false
-            cache-dependency-glob: "**/celery-library/requirements/ci.txt"
-        - name: show system version
-          run: ./ci/helpers/show_system_versions.bash
-        - name: install
-          run: ./ci/github/unit-testing/celery-library.bash install
-        - name: typecheck
-          run: ./ci/github/unit-testing/celery-library.bash typecheck
-        - name: test
-          run: ./ci/github/unit-testing/celery-library.bash test
-        - uses: codecov/codecov-action@v5
-          env:
-            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          with:
-            flags: unittests #optional
+    needs: changes
+    if: ${{ needs.changes.outputs.celery-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] celery-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/celery-library/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/celery-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/celery-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/celery-library.bash test
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
 
   unit-test-dask-task-models-library:
     needs: changes
@@ -915,7 +891,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-dask-sidecar:
     needs: changes
     if: ${{ needs.changes.outputs.dask-sidecar == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -946,7 +921,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-payments:
     needs: changes
@@ -979,7 +953,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-dynamic-scheduler:
     needs: changes
     if: ${{ needs.changes.outputs.dynamic-scheduler == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1010,7 +983,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-resource-usage-tracker:
     needs: changes
@@ -1053,7 +1025,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-dynamic-sidecar:
     needs: changes
     if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1084,7 +1055,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-efs-guardian:
     needs: changes
@@ -1127,7 +1097,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-python-linting:
     needs: changes
@@ -1184,7 +1153,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-invitations:
     needs: changes
     if: ${{ needs.changes.outputs.invitations == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1215,7 +1183,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-service-integration:
     needs: changes
@@ -1248,7 +1215,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-service-library:
     needs: changes
     if: ${{ needs.changes.outputs.service-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1279,7 +1245,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-settings-library:
     needs: changes
@@ -1312,7 +1277,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-models-library:
     needs: changes
     if: ${{ needs.changes.outputs.models-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1343,7 +1307,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-test-common-library:
     needs: changes
@@ -1407,7 +1370,6 @@ jobs:
         with:
           flags: unittests #optional
 
-
   unit-test-simcore-sdk:
     needs: changes
     if: ${{ needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1440,7 +1402,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
-
 
   unit-tests:
     # NOTE: this is a github required status check!
@@ -1513,14 +1474,14 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: 'backend'
+          artifact-name-pattern: "backend"
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
@@ -1551,14 +1512,14 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: 'backend'
+          artifact-name-pattern: "backend"
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
         run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1595,7 +1556,7 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: 'backend'
+          artifact-name-pattern: "backend"
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install
@@ -1604,7 +1565,7 @@ jobs:
         run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
@@ -1635,7 +1596,7 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: 'backend'
+          artifact-name-pattern: "backend"
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install
@@ -1644,7 +1605,7 @@ jobs:
         run: ./ci/github/integration-testing/dynamic-sidecar.bash test 01
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/dynamic-sidecar/test_failures
@@ -1653,7 +1614,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests #optional
-
 
   integration-test-docker-api-proxy:
     needs: [changes, build-test-images]
@@ -1676,14 +1636,14 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: 'backend'
+          artifact-name-pattern: "backend"
       - name: install
         run: ./ci/github/integration-testing/docker-api-proxy.bash install
       - name: test
         run: ./ci/github/integration-testing/docker-api-proxy.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/docker-api-proxy/test_failures
@@ -1716,14 +1676,14 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: 'backend'
+          artifact-name-pattern: "backend"
       - name: install
         run: ./ci/github/integration-testing/simcore-sdk.bash install
       - name: test
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
@@ -1777,7 +1737,7 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: '*'
+          artifact-name-pattern: "*"
       - name: install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -1786,7 +1746,7 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
@@ -1812,7 +1772,7 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: '*'
+          artifact-name-pattern: "*"
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
@@ -1820,17 +1780,16 @@ jobs:
       - name: dump services setting schemas
         run: export DOCKER_REGISTRY=local; export DOCKER_IMAGE_TAG=production; make settings-schema.json
       - name: upload services settings schemas
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_services_settings_schemas
           path: ./services/**/settings-schema.json
       - name: upload failed tests logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
-
 
   system-test-e2e:
     needs: [changes, build-test-images]
@@ -1851,7 +1810,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v5.0.0
+      - uses: actions/setup-node@v6.0.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -1859,7 +1818,7 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: '*'
+          artifact-name-pattern: "*"
       - name: setup
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
@@ -1873,19 +1832,19 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e/test_failures
       - name: upload screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_logs
           path: tests/e2e/logs
@@ -1914,7 +1873,7 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: '*'
+          artifact-name-pattern: "*"
       - name: prepare devenv
         run: make devenv
       - name: setup
@@ -1932,13 +1891,13 @@ jobs:
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.job }}_tracing
           path: tests/e2e-playwright/test-results
@@ -1973,7 +1932,7 @@ jobs:
         system-test-e2e-playwright,
         system-test-environment-setup,
         system-test-public-api,
-        system-test-swarm-deploy
+        system-test-swarm-deploy,
       ]
     runs-on: ubuntu-latest
     steps:
@@ -2012,7 +1971,7 @@ jobs:
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
-          artifact-name-pattern: '*'
+          artifact-name-pattern: "*"
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'

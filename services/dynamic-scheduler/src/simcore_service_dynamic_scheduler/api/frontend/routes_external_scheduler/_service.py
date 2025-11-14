@@ -10,7 +10,6 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
 )
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
-from ....core.settings import ApplicationSettings
 from ....services.rabbitmq import get_rabbitmq_rpc_client
 from ....services.service_tracker import get_tracked_service, remove_tracked_service
 from .._utils import get_parent_app, get_settings
@@ -112,10 +111,8 @@ async def service_stop(node_id: NodeID):
 
     service_model = await get_tracked_service(parent_app, node_id)
     if not service_model:
-        ui.notify(f"Could not stop service {node_id}. Was not abel to find it")
+        ui.notify(f"Could not stop service {node_id}. Was not able to find it")
         return
-
-    settings: ApplicationSettings = parent_app.state.settings
 
     assert service_model.user_id  #  nosec
     assert service_model.project_id  # nosec
@@ -129,7 +126,6 @@ async def service_stop(node_id: NodeID):
             simcore_user_agent="",
             save_state=True,
         ),
-        timeout_s=int(settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()),
     )
 
 
@@ -139,7 +135,7 @@ async def remove_service_from_tracking(node_id: NodeID):
 
     service_model = await get_tracked_service(parent_app, node_id)
     if not service_model:
-        ui.notify(f"Could not remove service {node_id}. Was not abel to find it")
+        ui.notify(f"Could not remove service {node_id}. Was not able to find it")
         return
 
     await remove_tracked_service(parent_app, node_id)

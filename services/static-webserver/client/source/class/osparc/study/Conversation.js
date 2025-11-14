@@ -17,7 +17,7 @@
 
 
 qx.Class.define("osparc.study.Conversation", {
-  extend: osparc.conversation.Conversation,
+  extend: osparc.conversation.MessageList,
 
   /**
     * @param studyData {String} Study Data
@@ -47,7 +47,7 @@ qx.Class.define("osparc.study.Conversation", {
           // create new conversation first
           osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"])
             .then(data => {
-              const newConversation = new osparc.data.model.Conversation(data, this.__studyData["uuid"]);
+              const newConversation = new osparc.data.model.ConversationProject(data, this.__studyData["uuid"]);
               this.setConversation(newConversation);
               this.__postMessage(content);
             });
@@ -62,7 +62,7 @@ qx.Class.define("osparc.study.Conversation", {
           // create new conversation first
           osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"])
             .then(data => {
-              const newConversation = new osparc.data.model.Conversation(data, this.__studyData["uuid"]);
+              const newConversation = new osparc.data.model.ConversationProject(data, this.__studyData["uuid"]);
               this.setConversation(newConversation);
               this.__postNotify(userGid);
             });
@@ -70,6 +70,7 @@ qx.Class.define("osparc.study.Conversation", {
       });
     },
 
+    // overridden
     _createMessageUI: function(message) {
       const messageUI = new osparc.conversation.MessageUI(message, this.__studyData);
       messageUI.getChildControl("message-content").set({

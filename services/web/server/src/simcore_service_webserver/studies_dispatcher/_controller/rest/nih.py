@@ -9,10 +9,12 @@ from pydantic import (
 )
 
 from ...._meta import API_VTAG
+from ....db.plugin import get_asyncpg_engine
 from ....products import products_web
 from ....utils_aiohttp import envelope_json_response
 from ... import _service
 from ..._catalog import iter_latest_product_services
+from ...settings import get_plugin_settings
 from .nih_schemas import ServiceGet, Viewer
 
 _logger = logging.getLogger(__name__)
@@ -26,9 +28,12 @@ async def list_latest_services(request: Request):
     """Returns a list latest version of services"""
     product_name = products_web.get_product_name(request)
 
+    plugin_settings = get_plugin_settings(request.app)
+    engine = get_asyncpg_engine(request.app)
+
     services = []
     async for service_data in iter_latest_product_services(
-        request.app, product_name=product_name
+        plugin_settings, engine, product_name=product_name
     ):
         try:
             service = ServiceGet.create(service_data, request)

@@ -1,7 +1,7 @@
 import base64
 from collections.abc import Sequence
 
-from common_library.json_serialization import json_dumps
+from common_library.json_serialization import json_loads
 from models_library.docker import DockerGenericTag
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
@@ -46,6 +46,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
     expected_instance_type: InstanceTypeType,
     expected_instance_state: InstanceStateNameType,
     expected_additional_tag_keys: list[str],
+    expected_pre_pulled_images: list[DockerGenericTag] | None = None,
     instance_filters: Sequence[FilterTypeDef] | None,
     expected_user_data: list[str] | None = None,
     check_reservation_index: int | None = None,
@@ -64,6 +65,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
             *expected_additional_tag_keys,
         ],
         expected_user_data=expected_user_data,
+        expected_pre_pulled_images=expected_pre_pulled_images,
         instance_filters=instance_filters,
         check_reservation_index=check_reservation_index,
     )
@@ -142,10 +144,9 @@ async def _assert_reservation(
                 iter(filter(_by_pre_pull_image, instance["Tags"]))
             )
             assert "Value" in instance_pre_pulled_images_aws_tag
-            assert (
-                instance_pre_pulled_images_aws_tag["Value"]
-                == f"{json_dumps(expected_pre_pulled_images)}"
-            )
+            assert sorted(
+                json_loads(instance_pre_pulled_images_aws_tag["Value"])
+            ) == sorted(expected_pre_pulled_images)
 
         assert "PrivateDnsName" in instance
         instance_private_dns_name = instance["PrivateDnsName"]

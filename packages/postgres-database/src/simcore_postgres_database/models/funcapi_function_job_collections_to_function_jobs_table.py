@@ -35,11 +35,18 @@ function_job_collections_to_function_jobs_table = sa.Table(
         nullable=False,
         doc="Unique identifier of the function job",
     ),
+    sa.Column(
+        "order",
+        sa.Integer,
+        nullable=False,
+        doc="Order of the function job in the collection (1-based)",
+    ),
     column_created_datetime(),
     column_modified_datetime(),
     sa.PrimaryKeyConstraint(
         "function_job_collection_uuid",
         "function_job_uuid",
+        "order",
         name="funcapi_function_job_collections_to_function_jobs_pk",
     ),
 )

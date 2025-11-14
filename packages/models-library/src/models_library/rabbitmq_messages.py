@@ -3,11 +3,13 @@ import logging
 from abc import abstractmethod
 from decimal import Decimal
 from enum import Enum, IntEnum, auto
-from typing import Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 import arrow
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import BaseModel, Field
 
+from .conversations import ConversationGetDB, ConversationMessageID
 from .products import ProductName
 from .progress_bar import ProgressReport
 from .projects import ProjectID
@@ -72,6 +74,32 @@ class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
 class EventRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.events"] = "simcore.services.events"
     action: RabbitEventMessageType
+
+    def routing_key(self) -> str | None:
+        return None
+
+
+class WebserverInternalEventRabbitMessageAction(StrAutoEnum):
+    UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE = auto()
+
+
+class WebserverInternalEventRabbitMessage(RabbitMessageBase):
+    channel_name: Literal["simcore.services.webserver_internal_events"] = (
+        "simcore.services.webserver_internal_events"
+    )
+    action: WebserverInternalEventRabbitMessageAction
+    data: Annotated[dict[str, Any], Field(default_factory=dict)] = DEFAULT_FACTORY
+
+    def routing_key(self) -> str | None:
+        return None
+
+
+class WebserverChatbotRabbitMessage(RabbitMessageBase):
+    channel_name: Literal["simcore.services.webserver-chatbot"] = (
+        "simcore.services.webserver-chatbot"
+    )
+    conversation: ConversationGetDB
+    last_message_id: ConversationMessageID
 
     def routing_key(self) -> str | None:
         return None

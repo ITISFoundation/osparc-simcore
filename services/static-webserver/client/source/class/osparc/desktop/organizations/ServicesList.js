@@ -47,7 +47,6 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",
-        rich: true,
         font: "text-13"
       });
       return intro;

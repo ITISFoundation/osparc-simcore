@@ -214,6 +214,9 @@ async def registry_request(
                         "application/vnd.docker.distribution.manifest.list.v2+json",
                         "application/vnd.docker.distribution.manifest.v1+prettyjws",
                         "application/json",
+                        # Add OCI media types so registries that serve OCI manifests/indexes are accepted
+                        "application/vnd.oci.image.manifest.v1+json",
+                        "application/vnd.oci.image.index.v1+json",
                     ]
                 )
             }
@@ -410,13 +413,13 @@ async def get_image_labels(
             case 2:
                 # Image Manifest Version 2, Schema 2 -> defaults in registries v3 (https://distribution.github.io/distribution/spec/manifest-v2-2/)
                 media_type = request_result["mediaType"]
-                if (
-                    media_type
-                    == "application/vnd.docker.distribution.manifest.list.v2+json"
+                if media_type in (
+                    "application/vnd.docker.distribution.manifest.list.v2+json",
+                    "application/vnd.oci.image.index.v1+json",
                 ):
                     # default to x86_64 architecture
                     _logger.info(
-                        "Image %s:%s is a docker image with multiple architectures. "
+                        "Docker image %s:%s contains multiple architectures. "
                         "Currently defaulting to first architecture",
                         image,
                         tag,

@@ -3,10 +3,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import AsyncIterable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable
 from datetime import datetime, timezone
 from random import choice
-from typing import Any, Awaitable
+from typing import Any
 
 import httpx
 import pytest
@@ -24,6 +24,7 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.tracing import TracingConfig
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     CreditTransactionClassification,
@@ -67,7 +68,11 @@ async def initialized_app(
     postgres_host_config: dict[str, str],
 ) -> AsyncIterable[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
-    app = create_app(settings)
+    tracing_config = TracingConfig.create(
+        service_name="resource-usage-tracker",
+        tracing_settings=None,  # disable tracing in tests
+    )
+    app = create_app(settings, tracing_config=tracing_config)
     async with LifespanManager(app):
         yield app
 

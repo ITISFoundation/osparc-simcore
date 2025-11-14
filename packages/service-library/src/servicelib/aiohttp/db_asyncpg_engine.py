@@ -17,23 +17,22 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ..db_asyncpg_utils import create_async_engine_and_database_ready
 from ..logging_utils import log_context
 
-APP_DB_ASYNC_ENGINE_KEY: Final[str] = f"{__name__ }.AsyncEngine"
-
+DB_ASYNC_ENGINE_APPKEY: Final = web.AppKey("DB_ASYNC_ENGINE", AsyncEngine)
 
 _logger = logging.getLogger(__name__)
 
 
 def _set_async_engine_to_app_state(app: web.Application, engine: AsyncEngine):
-    if exists := app.get(APP_DB_ASYNC_ENGINE_KEY, None):
-        msg = f"An instance of {type(exists)} already in app[{APP_DB_ASYNC_ENGINE_KEY}]={exists}"
+    if exists := app.get(DB_ASYNC_ENGINE_APPKEY, None):
+        msg = f"An instance of {type(exists)} already in app[{DB_ASYNC_ENGINE_APPKEY}]={exists}"
         raise ValueError(msg)
 
-    app[APP_DB_ASYNC_ENGINE_KEY] = engine
+    app[DB_ASYNC_ENGINE_APPKEY] = engine
     return get_async_engine(app)
 
 
 def get_async_engine(app: web.Application) -> AsyncEngine:
-    engine: AsyncEngine = app[APP_DB_ASYNC_ENGINE_KEY]
+    engine: AsyncEngine = app[DB_ASYNC_ENGINE_APPKEY]
     assert engine  # nosec
     return engine
 

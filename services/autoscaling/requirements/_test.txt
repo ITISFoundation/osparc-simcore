@@ -297,21 +297,21 @@ sympy==1.14.0
     # via cfn-lint
 termcolor==3.1.0
     # via pytest-sugar
-types-aiobotocore==2.22.0
+types-aiobotocore==2.25.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-types-aiobotocore-ec2==2.22.0
+types-aiobotocore-ec2==2.25.0
     # via
     #   -c requirements/_base.txt
     #   types-aiobotocore
-types-aiobotocore-iam==2.22.0
+types-aiobotocore-iam==2.25.0
     # via types-aiobotocore
-types-aiobotocore-s3==2.22.0
+types-aiobotocore-s3==2.25.0
     # via
     #   -c requirements/_base.txt
     #   types-aiobotocore
-types-aiobotocore-ssm==2.22.0
+types-aiobotocore-ssm==2.25.0
     # via
     #   -c requirements/_base.txt
     #   types-aiobotocore

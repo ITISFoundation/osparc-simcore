@@ -9,7 +9,6 @@ from collections.abc import AsyncIterator
 
 import httpx
 import pytest
-from asyncpg import PostgresError
 from aws_library.s3._errors import S3AccessError, S3KeyNotFoundError
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
@@ -28,6 +27,7 @@ from simcore_service_storage.modules.datcore_adapter.datcore_adapter_exceptions 
     DatcoreAdapterTimeoutError,
 )
 from simcore_service_storage.modules.db.access_layer import InvalidFileIdentifierError
+from sqlalchemy.exc import DBAPIError
 
 
 @pytest.fixture
@@ -85,7 +85,12 @@ async def client(initialized_app: FastAPI) -> AsyncIterator[AsyncClient]:
             status.HTTP_422_UNPROCESSABLE_ENTITY,
         ),
         (
-            PostgresError("pytest postgres error"),
+            DBAPIError.instance(
+                statement="pytest statement",
+                params={},
+                orig=Exception("pytest original"),
+                dbapi_base_err=Exception,
+            ),
             status.HTTP_503_SERVICE_UNAVAILABLE,
         ),
         (

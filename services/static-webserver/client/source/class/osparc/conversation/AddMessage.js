@@ -44,7 +44,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     message: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       init: null,
       nullable: true,
       event: "changeMessage",
@@ -81,15 +81,20 @@ qx.Class.define("osparc.conversation.AddMessage", {
           this.getChildControl("add-comment-layout").add(control);
           break;
         }
-        case "comment-field":
+        case "comment-field": {
           control = new osparc.editor.MarkdownEditor();
           control.addListener("textChanged", () => this.__addCommentPressed(), this);
           control.setCompact(true);
-          control.getChildControl("text-area").set({
+          const textArea = control.getChildControl("text-area");
+          textArea.set({
             maxLength: osparc.data.model.Conversation.MAX_CONTENT_LENGTH,
           });
+          textArea.addListener("appear", () => {
+            textArea.focus();
+            textArea.activate();
+          });
           // make it visually connected to the button
-          control.getChildControl("text-area").getContentElement().setStyles({
+          textArea.getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
           });
           // make it more compact
@@ -97,6 +102,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
             flex: 1
           });
           break;
+        }
         case "add-comment-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/16").set({
             toolTipText: this.tr("Ctrl+Enter"),
@@ -125,14 +131,28 @@ qx.Class.define("osparc.conversation.AddMessage", {
           control.addListener("execute", this.__addCommentPressed, this);
           this.getChildControl("add-comment-layout").add(control);
           break;
+        case "footer-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignY: "middle"
+          }));
+          this._add(control);
+          break;
+        case "no-permission-label":
+          control = new qx.ui.basic.Label(this.tr("Only users with write access can add comments.")).set({
+            allowGrowX: true,
+          });
+          this.getChildControl("footer-layout").addAt(control, 0, {
+            flex: 1
+          });
+          break;
         case "notify-user-button":
           control = new qx.ui.form.Button("🔔 " + this.tr("Notify user")).set({
             appearance: "form-button",
             allowGrowX: false,
-            alignX: "right"
+            alignX: "right",
           });
           control.addListener("execute", () => this.__notifyUserTapped());
-          this._add(control);
+          this.getChildControl("footer-layout").addAt(control, 1);
           break;
       }
 
@@ -146,13 +166,16 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __applyStudyData: function(studyData) {
+      const noPermissionLabel = this.getChildControl("no-permission-label");
       const notifyUserButton = this.getChildControl("notify-user-button");
       if (studyData) {
         const canIWrite = osparc.data.model.Study.canIWrite(studyData["accessRights"])
         this.getChildControl("add-comment-button").setEnabled(canIWrite);
+        noPermissionLabel.setVisibility(canIWrite ? "hidden" : "visible");
         notifyUserButton.show();
         notifyUserButton.setEnabled(canIWrite);
       } else {
+        noPermissionLabel.hide();
         notifyUserButton.exclude();
       }
     },
@@ -161,7 +184,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       if (message) {
         // edit mode
         const commentField = this.getChildControl("comment-field");
-        commentField.setText(message["content"]);
+        commentField.setText(message.getContent());
       }
     },
 

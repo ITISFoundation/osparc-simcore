@@ -9,7 +9,6 @@ from common_library.user_messages import user_message
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
-from models_library.api_schemas_catalog.services import MyServiceGet
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
@@ -541,20 +540,32 @@ async def get_project_services(request: web.Request) -> web.Response:
         )
     )
 
-    services: list[MyServiceGet] = await catalog_service.batch_get_my_services(
-        request.app,
-        product_name=req_ctx.product_name,
-        user_id=req_ctx.user_id,
-        services_ids=services_in_project,
-    )
+    services = []
+    missing = None
+
+    if services_in_project:
+        batch_got = await catalog_service.batch_get_my_services(
+            request.app,
+            product_name=req_ctx.product_name,
+            user_id=req_ctx.user_id,
+            services_ids=services_in_project,
+        )
+        services = [
+            NodeServiceGet.model_validate(sv, from_attributes=True)
+            for sv in batch_got.found_items
+        ]
+        missing = (
+            [
+                ServiceKeyVersion(key=k, version=v)
+                for k, v in batch_got.missing_identifiers
+            ]
+            if batch_got.missing_identifiers
+            else None
+        )
 
     return envelope_json_response(
         ProjectNodeServicesGet(
-            project_uuid=path_params.project_id,
-            services=[
-                NodeServiceGet.model_validate(sv, from_attributes=True)
-                for sv in services
-            ],
+            project_uuid=path_params.project_id, services=services, missing=missing
         )
     )
 

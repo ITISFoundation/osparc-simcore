@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Annotated, Self
 
+from models_library.string_types import DisplaySafeStr
 from pydantic import ConfigDict, Field, field_validator
 
 from ..access_rights import AccessRights
-from ..basic_types import IDStr
 from ..folders import FolderDB, FolderID
 from ..groups import GroupID
 from ..utils.common_validators import null_or_none_str_to_none_validator
@@ -53,7 +53,7 @@ class FolderGet(OutputSchema):
 
 
 class FolderCreateBodyParams(InputSchema):
-    name: IDStr
+    name: DisplaySafeStr
     parent_folder_id: FolderID | None = None
     workspace_id: WorkspaceID | None = None
     model_config = ConfigDict(extra="forbid")
@@ -68,7 +68,7 @@ class FolderCreateBodyParams(InputSchema):
 
 
 class FolderReplaceBodyParams(InputSchema):
-    name: IDStr
+    name: DisplaySafeStr
     parent_folder_id: FolderID | None = None
     model_config = ConfigDict(extra="forbid")
 

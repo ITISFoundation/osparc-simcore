@@ -17,6 +17,7 @@ from models_library.functions import (
     Function,
     FunctionClass,
     FunctionJobCollectionsListFilters,
+    FunctionJobList,
 )
 from models_library.functions_errors import (
     FunctionJobCollectionReadAccessDeniedError,
@@ -25,6 +26,7 @@ from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
 )
 from models_library.products import ProductName
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 
@@ -53,19 +55,9 @@ async def test_function_job_collection(
     )
     assert registered_function.uid is not None
 
-    registered_function_job = ProjectFunctionJob(
-        function_uid=registered_function.uid,
-        title="Test Function Job",
-        description="A test function job",
-        project_job_id=uuid4(),
-        inputs={"input1": "value1"},
-        outputs={"output1": "result1"},
-        job_creation_task_id=None,
-    )
-    # Register the function job
-    function_job_ids = []
-    for _ in range(3):
-        registered_function_job = ProjectFunctionJob(
+    # Register the function jobs
+    function_jobs = [
+        ProjectFunctionJob(
             function_uid=registered_function.uid,
             title="Test Function Job",
             description="A test function job",
@@ -74,14 +66,20 @@ async def test_function_job_collection(
             outputs={"output1": "result1"},
             job_creation_task_id=None,
         )
-        # Register the function job
-        registered_job = await webserver_rpc_client.functions.register_function_job(
-            function_job=registered_function_job,
+        for _ in range(3)
+    ]
+    # Register the function jobs
+    registered_jobs_batch_create = (
+        await webserver_rpc_client.functions.batch_register_function_jobs(
+            function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
-        assert registered_job.uid is not None
-        function_job_ids.append(registered_job.uid)
+    )
+    registered_jobs = registered_jobs_batch_create.created_items
+    assert len(registered_jobs) == 3
+    assert all(job.uid is not None for job in registered_jobs)
+    function_job_ids = [job.uid for job in registered_jobs]
 
     function_job_collection = FunctionJobCollection(
         title="Test Function Job Collection",
@@ -163,6 +161,74 @@ async def test_function_job_collection(
     "user_role",
     [UserRole.USER],
 )
+async def test_create_function_job_collection_same_function_job_uuid(
+    client: TestClient,
+    add_user_function_api_access_rights: None,
+    create_fake_function_obj: Callable[[FunctionClass], Function],
+    webserver_rpc_client: WebServerRpcClient,
+    logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+    user_without_function_api_access_rights: UserInfoDict,
+    osparc_product_name: ProductName,
+):
+    # Register the function first
+    registered_function = await webserver_rpc_client.functions.register_function(
+        function=create_fake_function_obj(FunctionClass.PROJECT),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert registered_function.uid is not None
+
+    registered_function_job = ProjectFunctionJob(
+        function_uid=registered_function.uid,
+        title="Test Function Job",
+        description="A test function job",
+        project_job_id=uuid4(),
+        inputs={"input1": "value1"},
+        outputs={"output1": "result1"},
+        job_creation_task_id=None,
+    )
+    # Register the function job
+    function_job_ids = []
+    registered_function_job = ProjectFunctionJob(
+        function_uid=registered_function.uid,
+        title="Test Function Job",
+        description="A test function job",
+        project_job_id=uuid4(),
+        inputs={"input1": "value1"},
+        outputs={"output1": "result1"},
+        job_creation_task_id=None,
+    )
+    # Register the function job
+    registered_jobs_batch_create = (
+        await webserver_rpc_client.functions.batch_register_function_jobs(
+            function_jobs=[registered_function_job],
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
+    )
+    registered_jobs = registered_jobs_batch_create.created_items
+    assert len(registered_jobs) == 1
+    registered_job = registered_jobs[0]
+    assert registered_job.uid is not None
+
+    function_job_ids = [registered_job.uid] * 3
+
+    function_job_collection = FunctionJobCollection(
+        title="Test Function Job Collection",
+        description="A test function job collection",
+        job_ids=function_job_ids,
+    )
+
+    assert function_job_collection.job_ids[0] == registered_job.uid
+    assert function_job_collection.job_ids[1] == registered_job.uid
+    assert function_job_collection.job_ids[2] == registered_job.uid
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_list_function_job_collections(
     client: TestClient,
     add_user_function_api_access_rights: None,
@@ -198,9 +264,8 @@ async def test_list_function_job_collections(
     assert registered_function.uid is not None
 
     # Create a function job collection
-    function_job_ids = []
-    for _ in range(3):
-        registered_function_job = ProjectFunctionJob(
+    function_jobs = [
+        ProjectFunctionJob(
             function_uid=registered_function.uid,
             title="Test Function Job",
             description="A test function job",
@@ -209,19 +274,24 @@ async def test_list_function_job_collections(
             outputs={"output1": "result1"},
             job_creation_task_id=None,
         )
-        # Register the function job
-        registered_job = await webserver_rpc_client.functions.register_function_job(
-            function_job=registered_function_job,
+        for _ in range(3)
+    ]
+    # Register the function jobs
+    registered_jobs_batch_create = (
+        await webserver_rpc_client.functions.batch_register_function_jobs(
+            function_jobs=TypeAdapter(FunctionJobList).validate_python(function_jobs),
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
-        assert registered_job.uid is not None
-        function_job_ids.append(registered_job.uid)
+    )
+    registered_jobs = registered_jobs_batch_create.created_items
+    assert len(registered_jobs) == 3
+    assert all(job.uid is not None for job in registered_jobs)
 
     function_job_collection = FunctionJobCollection(
         title="Test Function Job Collection",
         description="A test function job collection",
-        job_ids=function_job_ids,
+        job_ids=[job.uid for job in registered_jobs],
     )
 
     # Register the function job collection
@@ -294,9 +364,8 @@ async def test_list_function_job_collections_filtered_function_id(
         else:
             function_id = other_registered_function.uid
         # Create a function job collection
-        function_job_ids = []
-        for _ in range(3):
-            registered_function_job = ProjectFunctionJob(
+        function_jobs = [
+            ProjectFunctionJob(
                 function_uid=function_id,
                 title="Test Function Job",
                 description="A test function job",
@@ -305,14 +374,22 @@ async def test_list_function_job_collections_filtered_function_id(
                 outputs={"output1": "result1"},
                 job_creation_task_id=None,
             )
-            # Register the function job
-            registered_job = await webserver_rpc_client.functions.register_function_job(
-                function_job=registered_function_job,
+            for _ in range(3)
+        ]
+        # Register the function job
+        registered_jobs_batch_create = (
+            await webserver_rpc_client.functions.batch_register_function_jobs(
+                function_jobs=TypeAdapter(FunctionJobList).validate_python(
+                    function_jobs
+                ),
                 user_id=logged_user["id"],
                 product_name=osparc_product_name,
             )
-            assert registered_job.uid is not None
-            function_job_ids.append(registered_job.uid)
+        )
+        registered_jobs = registered_jobs_batch_create.created_items
+        assert len(registered_jobs) == 3
+        assert all(job.uid for job in registered_jobs)
+        function_job_ids = [job.uid for job in registered_jobs]
 
         function_job_collection = FunctionJobCollection(
             title="Test Function Job Collection",

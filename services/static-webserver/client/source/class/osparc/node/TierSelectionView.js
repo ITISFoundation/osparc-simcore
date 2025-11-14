@@ -32,7 +32,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
     __populateLayout: function() {
       this._removeAll();
 
-      this._add(new qx.ui.basic.Label(this.tr("Tiers")).set({
+      this._add(new qx.ui.basic.Label(this.tr("Tiers & Costs")).set({
         font: "text-14"
       }));
 
@@ -43,6 +43,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
         allowGrowX: false,
         allowGrowY: false
       });
+      tierBox.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       tiersLayout.add(tierBox);
 
       const node = this.getNode();

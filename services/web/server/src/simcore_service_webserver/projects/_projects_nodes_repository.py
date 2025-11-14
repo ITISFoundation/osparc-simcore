@@ -85,15 +85,15 @@ async def get(
     node_id: NodeID,
 ) -> Node:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
+        get_stmt = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
             (projects_nodes.c.project_uuid == f"{project_id}")
             & (projects_nodes.c.node_id == f"{node_id}")
         )
 
-        result = await conn.stream(query)
+        result = await conn.execute(get_stmt)
         assert result  # nosec
 
-        row = await result.first()
+        row = result.one_or_none()
         if row is None:
             raise NodeNotFoundError(
                 project_uuid=f"{project_id}", node_uuid=f"{node_id}"
@@ -181,7 +181,7 @@ async def update(
     values = partial_node.model_dump(mode="json", exclude_unset=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.stream(
+        result = await conn.execute(
             projects_nodes.update()
             .values(**values)
             .where(
@@ -190,4 +190,4 @@ async def update(
             )
             .returning(*_SELECTION_PROJECTS_NODES_DB_ARGS)
         )
-        return Node.model_validate(await result.first(), from_attributes=True)
+        return Node.model_validate(result.one(), from_attributes=True)

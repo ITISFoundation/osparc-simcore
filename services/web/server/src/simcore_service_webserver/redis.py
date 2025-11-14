@@ -43,6 +43,7 @@ async def setup_redis_client(app: web.Application):
                 RedisDatabase.USER_NOTIFICATIONS,
                 RedisDatabase.ANNOUNCEMENTS,
                 RedisDatabase.DOCUMENTS,
+                RedisDatabase.CELERY_TASKS,
             )
         },
         settings=redis_settings,
@@ -112,6 +113,10 @@ def get_redis_announcements_client(app: web.Application) -> aioredis.Redis:
         app, RedisDatabase.ANNOUNCEMENTS
     ).redis
     return redis_client
+
+
+def get_redis_celery_tasks_client_sdk(app: web.Application) -> RedisClientSDK:
+    return _get_redis_client_sdk(app, RedisDatabase.CELERY_TASKS)
 
 
 # PLUGIN SETUP --------------------------------------------------------------------------

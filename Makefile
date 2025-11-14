@@ -195,7 +195,7 @@ docker buildx bake --allow=fs.read=.. \
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-				--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
+			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
 			,--load\
 		)\
 	)\
@@ -204,10 +204,10 @@ docker buildx bake --allow=fs.read=.. \
 				--set $(service).tags=$(DOCKER_REGISTRY)/$(service):$(DOCKER_IMAGE_TAG) \
 		) \
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-			--set $(service).output="type=registry$(comma)push=true" \
+			--set $(service).output="type=registry$(comma)\
+			compression=zstd$(comma)compression-level=3$(comma)force-compression=true$(comma)oci-mediatypes=true" \
 		)\
 	,) \
-	$(if $(push),--push,) \
 	--file docker-compose-build.yml $(if $(target),$(target),$(INCLUDED_SERVICES)) \
 	$(if $(findstring -nc,$@),--no-cache,\
 		$(foreach service, $(SERVICES_NAMES_TO_BUILD),\

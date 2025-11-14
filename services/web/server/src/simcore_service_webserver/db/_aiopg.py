@@ -5,6 +5,7 @@ SEE migration aiopg->asyncpg https://github.com/ITISFoundation/osparc-simcore/is
 """
 
 import logging
+import warnings
 from collections.abc import AsyncIterator
 from typing import Any, cast
 
@@ -28,6 +29,16 @@ from ..constants import APP_AIOPG_ENGINE_KEY
 from .settings import PostgresSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
+warnings.warn(
+    (
+        "simcore_service_webserver.db._aiopg is deprecated and will be removed in a future release. "
+        "Please use simcore_service_webserver.db._asyncpg instead. "
+        "See migration details: https://github.com/ITISFoundation/osparc-simcore/issues/4529"
+    ),
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)

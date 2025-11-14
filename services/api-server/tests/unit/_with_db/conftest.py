@@ -301,7 +301,9 @@ async def create_fake_api_keys(
 
             _generate_fake_api_key.row_ids.append(row.id)
 
-            yield ApiKeyInDB.model_validate({"api_secret": plain_api_secret, **row})
+            yield ApiKeyInDB.model_validate(
+                {"api_secret": plain_api_secret, **row._asdict()}
+            )
 
     _generate_fake_api_key.row_ids = []
     yield _generate_fake_api_key

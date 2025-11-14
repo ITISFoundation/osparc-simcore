@@ -51,7 +51,7 @@ qx.Class.define("osparc.support.SupportCenter", {
   },
 
   statics: {
-    WINDOW_WIDTH: 430,
+    WINDOW_WIDTH: 450,
     WINDOW_HEIGHT: 700,
     REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
 
@@ -146,7 +146,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "conversation-page":
           control = new osparc.support.ConversationPage();
-          control.addListener("showConversations", () => this.showConversations(), this);
+          control.addListener("backToConversations", () => this.showConversations(), this);
           this.getChildControl("conversations-stack").add(control);
           break;
       }
@@ -182,7 +182,17 @@ qx.Class.define("osparc.support.SupportCenter", {
 
     __showConversation: function() {
       this.__selectConversationsStackPage();
-      this.getChildControl("conversations-stack").setSelection([this.getChildControl("conversation-page")]);
+      const conversationPage = this.getChildControl("conversation-page");
+      this.getChildControl("conversations-stack").setSelection([conversationPage]);
+
+      const conversation = conversationPage.getConversation();
+      if (conversation) {
+        if (osparc.store.Groups.getInstance().amIASupportUser() && conversation.isReadBySupport() === false) {
+          conversation.markAsRead();
+        } else if (!osparc.store.Groups.getInstance().amIASupportUser() && conversation.isReadByUser() === false) {
+          conversation.markAsRead();
+        }
+      }
     },
 
     openConversation: function(conversationId) {

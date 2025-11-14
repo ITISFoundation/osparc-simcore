@@ -1,8 +1,9 @@
 """
-    NOTE: All tests in this module run against the same simcore deployed stack. Which means that the results in one
-    might affect the others. E.g. files uploaded in one test can be listed in rext
+NOTE: All tests in this module run against the same simcore deployed stack. Which means that the results in one
+might affect the others. E.g. files uploaded in one test can be listed in rext
 
 """
+
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
@@ -236,6 +237,11 @@ def test_run_job(
     # FIXME: assert status.started_at < status.stopped_at
     assert status.submitted_at < status.stopped_at
 
+    if expected_outcome != "SUCCESS":
+        with pytest.raises(osparc.ApiException):
+            outputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
+        return
+
     # check solver outputs
     outputs: osparc.JobOutputs = solvers_api.get_job_outputs(
         solver.id, solver.version, job.id
@@ -244,37 +250,20 @@ def test_run_job(
     assert outputs.job_id == job.id
     assert len(outputs.results) == 2
 
-    # 'outputs': {'output_1': {'description': 'Integer is generated in range [1-9]',
-    #                         'displayOrder': 1,
-    #                         'fileToKeyMap': {'single_number.txt': 'output_1'},
-    #                         'label': 'File containing one random integer',
-    #                         'type': 'data:text/plain'},
-    #             'output_2': {'description': 'Interval is generated in range '
-    #                                         '[1-9]',
-    #                         'displayOrder': 2,
-    #                         'label': 'Random sleep interval',
-    #                         'type': 'integer',
-    #                         'unit': 'second'}},
-
     output_file = outputs.results["output_1"]
     number = outputs.results["output_2"]
 
     assert status.state == expected_outcome
 
-    if expected_outcome == "SUCCESS":
-        assert isinstance(output_file, osparc.File)
-        assert isinstance(number, float)
+    assert isinstance(output_file, osparc.File)
+    assert isinstance(number, float)
 
-        # output file exists
-        assert files_api.get_file(output_file.id) == output_file
+    # output file exists
+    assert files_api.get_file(output_file.id) == output_file
 
-        # can download and open
-        download_path: str = files_api.download_file(file_id=output_file.id)
-        assert float(Path(download_path).read_text()), "contains a random number"
-
-    else:
-        # one of them is not finished
-        assert output_file is None or number is None
+    # can download and open
+    download_path: str = files_api.download_file(file_id=output_file.id)
+    assert float(Path(download_path).read_text()), "contains a random number"
 
     # download log (Added in on API version 0.4.0 / client version 0.5.0 )
     if osparc_VERSION >= (0, 5, 0):

@@ -60,9 +60,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       if (
         this.__canIWrite() &&
         this.getStudy().getTemplateType() &&
-        osparc.data.Permissions.getInstance().isProductOwner()
+        osparc.data.Permissions.getInstance().isTester()
       ) {
-        // let product owners change the template type
+        // let testers change the template type
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
           alignY: "middle",
         }));
@@ -200,7 +200,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         osparc.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         infoLayout["QUALITY"] = {
-          label: this.tr("Quality:"),
+          label: this.tr("Quality"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getLinkButton(),
@@ -212,7 +212,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       if (osparc.product.Utils.showClassifiers()) {
         infoLayout["CLASSIFIERS"] = {
-          label: this.tr("Classifiers:"),
+          label: this.tr("Classifiers"),
           view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || canIWrite) ? {
             button: osparc.utils.Utils.getLinkButton(),
@@ -227,7 +227,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         const pathLabel = new qx.ui.basic.Label();
         pathLabel.setValue(this.getStudy().getLocationString());
         infoLayout["LOCATION"] = {
-          label: this.tr("Location:"),
+          label: this.tr("Location"),
           view: pathLabel,
           action: null
         };

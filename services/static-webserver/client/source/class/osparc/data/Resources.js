@@ -1375,7 +1375,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           multiDownload: {
             method: "POST",
-            url: statics.API + "/storage/locations/{locationId}/export-data"
+            url: statics.API + "/storage/locations/{locationId}:export-data"
+          },
+          searchFiles: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}:search"
           },
           batchDelete: {
             method: "POST",
@@ -1633,6 +1637,7 @@ qx.Class.define("osparc.data.Resources", {
 
           if ("resolveWResponse" in options && options.resolveWResponse) {
             response.params = params;
+            response.status = e.getRequest().getStatus();
             resolve(response);
           } else {
             resolve(data);

@@ -14,7 +14,7 @@ from typing import cast
 from models_library.api_schemas_catalog import CATALOG_RPC_NAMESPACE
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
-    MyServiceGet,
+    MyServicesRpcBatchGet,
     PageRpcLatestServiceGet,
     PageRpcServiceRelease,
     PageRpcServiceSummary,
@@ -177,7 +177,7 @@ async def batch_get_my_services(
             ServiceVersion,
         ]
     ],
-) -> list[MyServiceGet]:
+) -> MyServicesRpcBatchGet:
     """
     Raises:
         ValidationError: on invalid arguments
@@ -191,8 +191,7 @@ async def batch_get_my_services(
         ids=ids,
         timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
-    assert TypeAdapter(list[MyServiceGet]).validate_python(result) is not None  # nosec
-    return cast(list[MyServiceGet], result)
+    return TypeAdapter(MyServicesRpcBatchGet).validate_python(result)
 
 
 @validate_call(config={"arbitrary_types_allowed": True})

@@ -19,6 +19,7 @@ from pydantic import (
 from pydantic.fields import Field
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
+from settings_library.celery import CelerySettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
@@ -31,6 +32,7 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .application_keys import APP_SETTINGS_APPKEY
 from .catalog.settings import CatalogSettings
+from .chatbot.settings import ChatbotSettings
 from .collaboration.settings import RealTimeCollaborationSettings
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
@@ -203,6 +205,19 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             json_schema_extra={"auto_default_from_env": True},
             description="catalog service client's plugin",
+        ),
+    ]
+    WEBSERVER_CHATBOT: Annotated[
+        ChatbotSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+    WEBSERVER_CELERY: Annotated[
+        CelerySettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="celery plugin",
         ),
     ]
     WEBSERVER_DB: Annotated[

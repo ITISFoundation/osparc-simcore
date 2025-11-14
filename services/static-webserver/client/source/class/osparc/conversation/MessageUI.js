@@ -20,7 +20,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param message {Object} message data
+    * @param message {osparc.data.model.Message} message
     * @param studyData {Object?null} serialized Study Data
     */
   construct: function(message, studyData = null) {
@@ -36,15 +36,6 @@ qx.Class.define("osparc.conversation.MessageUI", {
     });
   },
 
-  statics: {
-    isMyMessage: function(message) {
-      if (message["userGroupId"] === "system") {
-        return false;
-      }
-      return message && osparc.auth.Data.getInstance().getGroupId() === message["userGroupId"];
-    }
-  },
-
   events: {
     "messageUpdated": "qx.event.type.Data",
     "messageDeleted": "qx.event.type.Data",
@@ -52,16 +43,16 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
   properties: {
     message: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       init: null,
       nullable: false,
-      apply: "__applyMessage",
+      apply: "_applyMessage",
     },
   },
 
   members: {
     _createChildControlImpl: function(id) {
-      const isMyMessage = this.self().isMyMessage(this.getMessage());
+      const isMyMessage = osparc.data.model.Message.isMyMessage(this.getMessage());
       let control;
       switch (id) {
         case "avatar":
@@ -134,27 +125,30 @@ qx.Class.define("osparc.conversation.MessageUI", {
       return control || this.base(arguments, id);
     },
 
-    __applyMessage: function(message) {
-      const createdDateData = new Date(message["created"]);
-      const createdDate = osparc.utils.Utils.formatDateAndTime(createdDateData);
-      const lastUpdate = this.getChildControl("last-updated");
-      if (message["created"] === message["modified"]) {
-        lastUpdate.setValue(createdDate);
-      } else {
-        const updatedDateData = new Date(message["modified"]);
-        const updatedDate = osparc.utils.Utils.formatDateAndTime(updatedDateData);
-        lastUpdate.setValue(createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")");
-      }
+    _applyMessage: function(message) {
+      const updateLastUpdate = () => {
+        const createdDate = osparc.utils.Utils.formatDateAndTime(message.getCreated());
+        let value = "";
+        if (message.getCreated().getTime() === message.getModified().getTime()) {
+          value = createdDate;
+        } else {
+          const updatedDate = osparc.utils.Utils.formatDateAndTime(message.getModified());
+          value = createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")";
+        }
+        this.getChildControl("last-updated").setValue(value);
+      };
+      updateLastUpdate();
+      message.addListener("changeModified", () => updateLastUpdate());
 
       const messageContent = this.getChildControl("message-content");
-      messageContent.setValue(message["content"]);
+      message.bind("content", messageContent, "value");
 
       const avatar = this.getChildControl("avatar");
       const userName = this.getChildControl("user-name");
-      if (message["userGroupId"] === "system") {
+      if (osparc.data.model.Message.isSupportMessage(message)) {
         userName.setValue("Support");
       } else {
-        osparc.store.Users.getInstance().getUser(message["userGroupId"])
+        osparc.store.Users.getInstance().getUser(message.getUserGroupId())
           .then(user => {
             avatar.setUser(user);
             userName.setValue(user ? user.getLabel() : "Unknown user");
@@ -165,7 +159,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           });
       }
 
-      if (this.self().isMyMessage(message)) {
+      if (osparc.data.model.Message.isMyMessage(message)) {
         const menuButton = this.getChildControl("menu-button");
 
         const menu = new qx.ui.menu.Menu().set({
@@ -188,23 +182,22 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
       const addMessage = new osparc.conversation.AddMessage().set({
         studyData: this.__studyData,
-        conversationId: message["conversationId"],
+        conversationId: message.getConversationId(),
         message,
       });
+      addMessage.getChildControl("notify-user-button").exclude();
       const title = this.tr("Edit message");
-      const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 135).set({
+      const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 120).set({
         clickAwayClose: false,
         resizable: true,
         showClose: true,
       });
       addMessage.addListener("updateMessage", e => {
         const content = e.getData();
-        const conversationId = message["conversationId"];
-        const messageId = message["messageId"];
         if (this.__studyData) {
-          promise = osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], conversationId, messageId, content);
+          promise = osparc.store.ConversationsProject.getInstance().editMessage(message, content, this.__studyData["uuid"]);
         } else {
-          promise = osparc.store.ConversationsSupport.getInstance().editMessage(conversationId, messageId, content);
+          promise = osparc.store.ConversationsSupport.getInstance().editMessage(message, content);
         }
         promise.then(data => {
           win.close();
@@ -226,7 +219,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
         if (win.getConfirmed()) {
           let promise = null;
           if (this.__studyData) {
-            promise = osparc.store.ConversationsProject.getInstance().deleteMessage(message);
+            promise = osparc.store.ConversationsProject.getInstance().deleteMessage(message, this.__studyData["uuid"]);
           } else {
             promise = osparc.store.ConversationsSupport.getInstance().deleteMessage(message);
           }

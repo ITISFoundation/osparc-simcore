@@ -4,12 +4,10 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any, Final, TypeAlias
 
 from fastapi import APIRouter, Depends, Query, status
-from models_library.api_schemas_long_running_tasks.tasks import (
-    TaskGet,
-)
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileMetaDataGet,
@@ -25,6 +23,7 @@ from models_library.api_schemas_webserver.storage import (
     BatchDeletePathsBodyParams,
     DataExportPost,
     ListPathsQueryParams,
+    SearchBodyParams,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
 )
@@ -35,8 +34,8 @@ from pydantic import AnyUrl, ByteSize
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
-from simcore_service_webserver.tasks._exception_handlers import (
-    _TO_HTTP_ERROR_MAP as export_data_http_error_map,
+from simcore_service_webserver.tasks._controller._rest_exceptions import (
+    _TO_HTTP_ERROR_MAP,
 )
 
 router = APIRouter(
@@ -220,19 +219,33 @@ async def is_completed_upload_file(
     """Returns state of upload completion"""
 
 
-# data export
-_export_data_responses: dict[int | str, dict[str, Any]] = {
-    i.status_code: {"model": EnvelopedError}
-    for i in export_data_http_error_map.values()
+_RESPONSES: Final[dict[int | str, dict[str, Any]]] = {
+    i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
 }
 
 
 @router.post(
-    "/storage/locations/{location_id}/export-data",
+    "/storage/locations/{location_id}:export-data",
+    status_code=status.HTTP_202_ACCEPTED,
     response_model=Envelope[TaskGet],
     name="export_data",
     description="Export data",
-    responses=_export_data_responses,
+    responses=_RESPONSES,
 )
 async def export_data(export_data: DataExportPost, location_id: LocationID):
     """Trigger data export. Returns async job id for getting status and results"""
+
+
+@router.post(
+    "/storage/locations/{location_id}:search",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=Envelope[TaskGet],
+    name="search",
+    description="Starts a files/folders search",
+    responses=_RESPONSES,
+)
+async def search(
+    _path: Annotated[StorageLocationPathParams, Depends()],
+    _body: SearchBodyParams,
+):
+    """Trigger search. Returns async job id for getting status and results"""

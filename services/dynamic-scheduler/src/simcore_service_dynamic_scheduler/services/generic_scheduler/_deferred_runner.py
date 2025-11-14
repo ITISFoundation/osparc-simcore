@@ -34,7 +34,7 @@ def get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
     operation_name: OperationName = context["operation_name"]
     step_group_name: StepGroupName = context["step_group_name"]
     step_name: StepName = context["step_name"]
-    is_creating = context["is_creating"]
+    is_executing = context["is_executing"]
 
     return StepStoreProxy(
         store=Store.get_from_app_state(app),
@@ -42,7 +42,7 @@ def get_step_store_proxy(context: DeferredContext) -> StepStoreProxy:
         operation_name=operation_name,
         step_group_name=step_group_name,
         step_name=step_name,
-        is_creating=is_creating,
+        is_executing=is_executing,
     )
 
 
@@ -51,14 +51,14 @@ def get_step_group_proxy(context: DeferredContext) -> StepGroupProxy:
     schedule_id: ScheduleId = context["schedule_id"]
     operation_name: OperationName = context["operation_name"]
     step_group_name: StepGroupName = context["step_group_name"]
-    is_creating = context["is_creating"]
+    is_executing = context["is_executing"]
 
     return StepGroupProxy(
         store=Store.get_from_app_state(app),
         schedule_id=schedule_id,
         operation_name=operation_name,
         step_group_name=step_group_name,
-        is_creating=is_creating,
+        is_executing=is_executing,
     )
 
 
@@ -124,7 +124,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
         operation_name: OperationName,
         step_group_name: StepGroupName,
         step_name: StepName,
-        is_creating: bool,
+        is_executing: bool,
         expected_steps_count: NonNegativeInt,
     ) -> DeferredContext:
         return {
@@ -132,28 +132,28 @@ class DeferredRunner(BaseDeferredHandler[None]):
             "operation_name": operation_name,
             "step_group_name": step_group_name,
             "step_name": step_name,
-            "is_creating": is_creating,
+            "is_executing": is_executing,
             "expected_steps_count": expected_steps_count,
         }
 
     @classmethod
     async def get_retries(cls, context: DeferredContext) -> int:
-        is_creating = context["is_creating"]
+        is_executing = context["is_executing"]
         step = _get_step(context)
         return (
-            await step.get_create_retries(context)
-            if is_creating
-            else await step.get_undo_retries(context)
+            await step.get_execute_retries(context)
+            if is_executing
+            else await step.get_revert_retries(context)
         )
 
     @classmethod
     async def get_timeout(cls, context: DeferredContext) -> timedelta:
-        is_creating = context["is_creating"]
+        is_executing = context["is_executing"]
         step = _get_step(context)
         return (
-            await step.get_create_wait_between_attempts(context)
-            if is_creating
-            else await step.get_undo_wait_between_attempts(context)
+            await step.get_execute_wait_between_attempts(context)
+            if is_executing
+            else await step.get_revert_wait_between_attempts(context)
         )
 
     @classmethod
@@ -165,7 +165,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
     @classmethod
     async def run(cls, context: DeferredContext) -> None:
         app = context["app"]
-        is_creating = context["is_creating"]
+        is_executing = context["is_executing"]
 
         await get_step_store_proxy(context).create_or_update(
             "status", StepStatus.RUNNING
@@ -175,31 +175,31 @@ class DeferredRunner(BaseDeferredHandler[None]):
 
         operation_context_proxy = get_operation_context_proxy(context)
 
-        if is_creating:
+        if is_executing:
             required_context = await operation_context_proxy.read(
-                *step.get_create_requires_context_keys()
+                *step.get_execute_requires_context_keys()
             )
             _raise_if_any_context_value_is_none(required_context)
 
-            step_provided_operation_context = await step.create(app, required_context)
+            step_provided_operation_context = await step.execute(app, required_context)
             provided_operation_context = step_provided_operation_context or {}
-            create_provides_keys = step.get_create_provides_context_keys()
+            execute_provides_keys = step.get_execute_provides_context_keys()
 
             _raise_if_provided_context_keys_are_missing_or_none(
-                provided_operation_context, create_provides_keys
+                provided_operation_context, execute_provides_keys
             )
         else:
             required_context = await operation_context_proxy.read(
-                *step.get_undo_requires_context_keys()
+                *step.get_revert_requires_context_keys()
             )
             _raise_if_any_context_value_is_none(required_context)
 
-            step_provided_operation_context = await step.undo(app, required_context)
+            step_provided_operation_context = await step.revert(app, required_context)
             provided_operation_context = step_provided_operation_context or {}
-            undo_provides_keys = step.get_undo_provides_context_keys()
+            revert_provides_keys = step.get_revert_provides_context_keys()
 
             _raise_if_provided_context_keys_are_missing_or_none(
-                provided_operation_context, undo_provides_keys
+                provided_operation_context, revert_provides_keys
             )
 
         await operation_context_proxy.create_or_update(provided_operation_context)
@@ -219,14 +219,6 @@ class DeferredRunner(BaseDeferredHandler[None]):
     ) -> None:
         await get_step_store_proxy(context).create_or_update_multiple(
             {"status": StepStatus.FAILED, "error_traceback": error.format_error()}
-        )
-
-        await _enqueue_schedule_event_if_group_is_done(context)
-
-    @classmethod
-    async def on_cancelled(cls, context: DeferredContext) -> None:
-        await get_step_store_proxy(context).create_or_update(
-            "status", StepStatus.CANCELLED
         )
 
         await _enqueue_schedule_event_if_group_is_done(context)

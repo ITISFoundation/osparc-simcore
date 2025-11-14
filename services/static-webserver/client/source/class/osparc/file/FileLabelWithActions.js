@@ -269,7 +269,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       );
       if (task.getAbortHref()) {
         const cancelButton = progressWindow.addCancelButton();
-        cancelButton.setLabel(this.tr("Ignore"));
+        cancelButton.setLabel(this.tr("Hide"));
         const abortButton = new qx.ui.form.Button().set({
           label: this.tr("Cancel"),
           center: true,

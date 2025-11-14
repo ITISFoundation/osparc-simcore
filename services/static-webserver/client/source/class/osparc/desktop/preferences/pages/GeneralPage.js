@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+    if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addCreditsIndicatorSettings();
     }
 
@@ -33,7 +33,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       this.__addLowDiskSpaceSetting();
     }
 
-    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+    if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addInactivitySetting();
     }
 
@@ -55,6 +55,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
         allowGrowX: false
       });
+      walletIndicatorVisibilitySB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       [{
         id: "always",
         label: "Always"
