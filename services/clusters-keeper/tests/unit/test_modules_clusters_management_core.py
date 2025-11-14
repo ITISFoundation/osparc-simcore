@@ -64,8 +64,7 @@ def _base_configuration(
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_primary_ec2_instances_envs: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
-) -> None:
-    ...
+) -> None: ...
 
 
 async def _assert_cluster_exist_and_state(

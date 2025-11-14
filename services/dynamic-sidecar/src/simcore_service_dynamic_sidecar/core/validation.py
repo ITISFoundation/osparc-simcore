@@ -112,7 +112,7 @@ def _merge_env_vars(
 ) -> list[str]:
     def _gen_parts_env_vars(
         env_vars: list[str] | dict[str, str],
-    ) -> Generator[tuple[str, str], None, None]:
+    ) -> Generator[tuple[str, str]]:
         assert isinstance(env_vars, list | dict)  # nosec
 
         if isinstance(env_vars, list):

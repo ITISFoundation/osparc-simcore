@@ -1,8 +1,9 @@
 from pathlib import Path
 from subprocess import CompletedProcess, run
+
+from settings_library.r_clone import S3Provider
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
-from settings_library.r_clone import S3Provider
 
 DESTINATION = "dst"
 SOURCE = "src"

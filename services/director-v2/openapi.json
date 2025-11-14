@@ -1536,7 +1536,7 @@
           "Status": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Status2"
+                "$ref": "#/components/schemas/Status1"
               },
               {
                 "type": "null"
@@ -1590,7 +1590,7 @@
               }
             ],
             "title": "Oomkilled",
-            "description": "Whether this container has been killed because it ran out of memory.\n"
+            "description": "Whether a process within this container has been killed because it ran\nout of memory since the container was last started.\n"
           },
           "Dead": {
             "anyOf": [
@@ -3282,7 +3282,7 @@
         "type": "object",
         "title": "ServicesInstrumentation"
       },
-      "Status2": {
+      "Status1": {
         "type": "string",
         "enum": [
           "created",
@@ -3293,7 +3293,7 @@
           "exited",
           "dead"
         ],
-        "title": "Status2",
+        "title": "Status1",
         "description": "String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\"."
       },
       "TaskLogFileGet": {

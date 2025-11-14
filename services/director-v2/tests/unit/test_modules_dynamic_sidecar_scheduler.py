@@ -97,7 +97,7 @@ async def _assert_get_dynamic_services_mocked(
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
     expected_status: str,
-) -> AsyncGenerator[RunningDynamicServiceDetails, None]:
+) -> AsyncGenerator[RunningDynamicServiceDetails]:
     with _mock_containers_docker_status(scheduler_data):
         await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
         # put mocked data

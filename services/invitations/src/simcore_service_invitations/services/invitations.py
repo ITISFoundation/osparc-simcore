@@ -16,8 +16,7 @@ def _to_initial(v: str):
     return v[0]
 
 
-class InvalidInvitationCodeError(Exception):
-    ...
+class InvalidInvitationCodeError(Exception): ...
 
 
 class _ContentWithShortNames(InvitationContent):

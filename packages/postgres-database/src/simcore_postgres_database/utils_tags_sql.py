@@ -1,4 +1,5 @@
 import functools
+from typing import TypedDict
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -10,7 +11,6 @@ from simcore_postgres_database.models.tags_access_rights import tags_access_righ
 from simcore_postgres_database.models.users import users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.selectable import ScalarSelect
-from typing_extensions import TypedDict
 
 _TAG_COLUMNS = [
     tags.c.id,

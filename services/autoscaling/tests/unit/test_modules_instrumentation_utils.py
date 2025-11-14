@@ -38,7 +38,7 @@ def _assert_metrics(
 
 
 def test_update_gauge_sets_old_entries_to_0(
-    fake_ec2_instance_data: Callable[..., EC2InstanceData]
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     # Create a Gauge with example labels
     registry = CollectorRegistry()

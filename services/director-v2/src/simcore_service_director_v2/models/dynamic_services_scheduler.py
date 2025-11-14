@@ -21,7 +21,7 @@ from models_library.api_schemas_directorv2.services import (
 from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import DockerNodeID
-from models_library.generated_models.docker_rest_api import ContainerState, Status2
+from models_library.generated_models.docker_rest_api import ContainerState, Status1
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
@@ -55,7 +55,7 @@ TEMPORARY_PORT_NUMBER = 65_534
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
 
-DockerStatus: TypeAlias = Status2
+DockerStatus: TypeAlias = Status1
 
 
 DockerId: TypeAlias = Annotated[

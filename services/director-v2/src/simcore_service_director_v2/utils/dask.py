@@ -501,7 +501,7 @@ def _can_task_run_on_worker(
 ) -> bool:
     def gen_check(
         task_resources: dict[str, Any], worker_resources: dict[str, Any]
-    ) -> Generator[bool, None, None]:
+    ) -> Generator[bool]:
         for name, required_value in task_resources.items():
             if required_value is None:
                 yield True

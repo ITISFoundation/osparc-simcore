@@ -3,7 +3,7 @@
 # Include this file with --contraints
 #
 
-# yarl version 1.8.2 is the first one shipping wheels for Python 3.11
+# yarl version 1.8.2 is the first one shipping wheels for Python 3.13
 # SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_new_url_generation for properly usage
 yarl>=1.8.2
 frozenlist>=1.3.1

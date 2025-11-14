@@ -1,6 +1,4 @@
-""" osparc's service models library
-
-"""
+"""osparc's service models library"""
 
 #
 # NOTE:

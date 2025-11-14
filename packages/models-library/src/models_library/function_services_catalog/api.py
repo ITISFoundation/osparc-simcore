@@ -1,10 +1,10 @@
 # mypy: disable-error-code=truthy-function
 """
-    Factory to build catalog of i/o metadata for functions implemented in the front-end
+Factory to build catalog of i/o metadata for functions implemented in the front-end
 
-    NOTE: These definitions are currently needed in the catalog and director2
-    services. Since it is static data, instead of making a call from
-    director2->catalog, it was decided to share as a library
+NOTE: These definitions are currently needed in the catalog and director2
+services. Since it is static data, instead of making a call from
+director2->catalog, it was decided to share as a library
 """
 
 from collections.abc import Iterator

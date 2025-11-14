@@ -50,7 +50,7 @@ tests-ci: ## runs unit tests [ci-mode]
 		$(CURDIR)/tests
 
 
-DOCKER_API_VERSION ?= 1.41
+DOCKER_API_VERSION ?= 1.44
 .PHONY: docker_rest_api.py
 docker_rest_api.py: ## auto-generates pydantic models for Docker REST API models
 	# auto-generates $@ from $<

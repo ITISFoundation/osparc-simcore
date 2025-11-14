@@ -24,16 +24,14 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["tags"])
     response_model=Envelope[TagGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_tag(_body: TagCreate):
-    ...
+async def create_tag(_body: TagCreate): ...
 
 
 @router.get(
     "/tags",
     response_model=Envelope[list[TagGet]],
 )
-async def list_tags():
-    ...
+async def list_tags(): ...
 
 
 @router.patch(
@@ -42,13 +40,11 @@ async def list_tags():
 )
 async def update_tag(
     _path_params: Annotated[TagPathParams, Depends()], _body: TagUpdate
-):
-    ...
+): ...
 
 
 @router.delete(
     "/tags/{tag_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_tag(_path_params: Annotated[TagPathParams, Depends()]):
-    ...
+async def delete_tag(_path_params: Annotated[TagPathParams, Depends()]): ...

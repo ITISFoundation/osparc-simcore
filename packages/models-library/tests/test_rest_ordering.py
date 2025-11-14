@@ -122,8 +122,7 @@ def test_ordering_query_model_class_factory():
     )
 
     # inherits to add extra post-validator
-    class OrderQueryParamsModel(BaseOrderingQueryModel):
-        ...
+    class OrderQueryParamsModel(BaseOrderingQueryModel): ...
 
     # normal
     data = {"order_by": {"field": "modified_at", "direction": "asc"}}

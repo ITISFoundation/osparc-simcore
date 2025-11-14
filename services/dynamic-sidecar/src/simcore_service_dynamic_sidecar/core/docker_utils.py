@@ -9,7 +9,7 @@ from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ContainerState
-from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
+from models_library.generated_models.docker_rest_api import Status1 as ContainerStatus
 from models_library.services import ServiceRunID
 from pydantic import PositiveInt
 from servicelib.utils import logged_gather
@@ -27,7 +27,7 @@ _ACCEPTED_CONTAINER_STATUSES: set[str] = {
 
 
 @asynccontextmanager
-async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
+async def docker_client() -> AsyncGenerator[aiodocker.Docker]:
     docker = aiodocker.Docker()
     try:
         yield docker

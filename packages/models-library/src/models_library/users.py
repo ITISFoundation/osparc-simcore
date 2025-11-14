@@ -1,5 +1,9 @@
 import datetime
-from typing import Annotated, TypeAlias
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Annotated,
+    TypeAlias,
+    TypedDict,
+)
 
 from common_library.users_enums import UserRole
 from models_library.string_types import validate_input_xss_safety
@@ -12,9 +16,6 @@ from pydantic import (
     StringConstraints,
 )
 from pydantic.config import JsonDict
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from .emails import LowerCaseEmailStr
 

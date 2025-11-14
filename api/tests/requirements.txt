@@ -109,7 +109,7 @@ requests==2.32.5
     # via jsonschema-path
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing
@@ -118,10 +118,7 @@ six==1.17.0
 termcolor==3.1.0
     # via pytest-sugar
 typing-extensions==4.15.0
-    # via
-    #   aiosignal
-    #   openapi-core
-    #   pytest-asyncio
+    # via openapi-core
 urllib3==2.5.0
     # via
     #   -c ../../requirements/constraints.txt

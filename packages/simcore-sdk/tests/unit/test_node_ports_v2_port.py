@@ -728,7 +728,7 @@ def test_invalid_port(common_fixtures: None, port_cfg: dict[str, Any]):
 
 
 @pytest.mark.parametrize(
-    "port_cfg", [(create_valid_port_config("data:*/*", key="set_some_inexisting_file"))]
+    "port_cfg", [create_valid_port_config("data:*/*", key="set_some_inexisting_file")]
 )
 async def test_invalid_file_type_setter(
     common_fixtures: None, project_id: str, node_uuid: str, port_cfg: dict[str, Any]

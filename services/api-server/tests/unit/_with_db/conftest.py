@@ -198,8 +198,8 @@ async def async_engine(app: FastAPI) -> AsyncEngine:
 @pytest.fixture
 async def create_user_ids(
     async_engine: AsyncEngine,
-) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]], None]:
-    async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt, None]:
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[PositiveInt]]]:
+    async def _generate_user_ids(n: PositiveInt) -> AsyncGenerator[PositiveInt]:
         for _ in range(n):
             while True:
                 user = random_user()
@@ -233,10 +233,10 @@ async def create_user_ids(
 @pytest.fixture
 async def create_product_names(
     async_engine: AsyncEngine,
-) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[str, None]], None]:
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[str]]]:
     async def _generate_product_names(
         n: PositiveInt,
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[str]:
         for _ in range(n):
             while True:
                 product = random_product(group_id=None)
@@ -269,9 +269,9 @@ async def create_product_names(
 @pytest.fixture
 async def create_fake_api_keys(
     async_engine: AsyncEngine,
-    create_user_ids: Callable[[PositiveInt], AsyncGenerator[PositiveInt, None]],
-    create_product_names: Callable[[PositiveInt], AsyncGenerator[str, None]],
-) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]], None]:
+    create_user_ids: Callable[[PositiveInt], AsyncGenerator[PositiveInt]],
+    create_product_names: Callable[[PositiveInt], AsyncGenerator[str]],
+) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]]]:
 
     async def _generate_fake_api_key(n: PositiveInt):
         users, products = create_user_ids(n), create_product_names(n)
@@ -316,7 +316,7 @@ async def create_fake_api_keys(
 
 @pytest.fixture
 async def auth(
-    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
 ) -> httpx.BasicAuth:
     """overrides auth and uses access to real repositories instead of mocks"""
     async for key in create_fake_api_keys(1):

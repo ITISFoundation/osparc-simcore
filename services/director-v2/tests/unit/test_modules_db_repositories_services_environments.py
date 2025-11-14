@@ -8,4 +8,6 @@ def test_vendor_secret_names_are_osparc_environments():
     # packages simcore_postgres_database and models_library which are indenpendent
     assert VENDOR_SECRET_PREFIX.endswith("_")
 
-    TypeAdapter(OsparcVariableIdentifier).validate_python(f"${VENDOR_SECRET_PREFIX}FAKE_SECRET")
+    TypeAdapter(OsparcVariableIdentifier).validate_python(
+        f"${VENDOR_SECRET_PREFIX}FAKE_SECRET"
+    )

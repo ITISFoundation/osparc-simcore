@@ -1,8 +1,7 @@
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class BaseAgentRPCError(OsparcErrorMixin, Exception):
-    ...
+class BaseAgentRPCError(OsparcErrorMixin, Exception): ...
 
 
 class NoServiceVolumesFoundRPCError(BaseAgentRPCError):
