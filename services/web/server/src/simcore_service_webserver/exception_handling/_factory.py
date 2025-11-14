@@ -52,7 +52,9 @@ def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
     assert is_error(status_code), f"{status_code=} must be an error [{error=}]"  # nosec
 
     return web.json_response(
-        data={"error": error.model_dump(exclude_unset=True, mode="json")},
+        data={
+            "error": error.model_dump(exclude_unset=True, mode="json", by_alias=True)
+        },
         dumps=json_dumps,
         reason=safe_status_message(get_code_display_name(status_code)),
         status=status_code,
