@@ -94,8 +94,8 @@ def _create_error_response_with_support_id_and_logging(
 
 _MSG_PAYMENT_SERVICE_FAILURE: Final = user_message(
     "Payment processing is currently unavailable. "
-    "Please contact support for assistance with your payment and avoid retrying this transaction. "
-    "We have been notified of this issue and are working to resolve it.",
+    "Please hold off on retrying and contact support for help completing your payment. "
+    "Our team has been notified and is already looking into it.",
     _version=1,
 )
 
