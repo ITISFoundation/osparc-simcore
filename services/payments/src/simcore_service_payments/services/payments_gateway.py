@@ -8,6 +8,7 @@
 import contextlib
 import functools
 import logging
+import time
 from collections.abc import Callable
 from contextlib import suppress
 
@@ -15,7 +16,7 @@ import httpx
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from httpx import URL, HTTPStatusError
+from httpx import URL, HTTPStatusError, TimeoutException
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import TypeAdapter, ValidationError
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -51,7 +52,19 @@ def _parse_raw_as_or_none(cls: type, text: str | None):
     return None
 
 
-class PaymentsGatewayError(OsparcErrorMixin, ValueError):
+class PaymentsGatewayBaseError(OsparcErrorMixin, ValueError):
+    pass
+
+
+class UnverifiedPaymentError(PaymentsGatewayBaseError):
+    msg_template = (
+        "Request to gateway timeout after {request_duration_sec:.2f}s during payment and did not get a response "
+        "with the state of the payment. We cannot guarantee whether the payment was successful or not."
+        "DO NOT RETRY automatically to avoid risk of double-payment. Request details: {request}"
+    )
+
+
+class PaymentsGatewayError(PaymentsGatewayBaseError):
     msg_template = "{operation_id} error {status_code}: {reason}"
 
     @classmethod
@@ -81,15 +94,19 @@ class PaymentsGatewayError(OsparcErrorMixin, ValueError):
 
 @contextlib.contextmanager
 def _raise_as_payments_gateway_error(operation_id: str):
+    """
+    Maps httpx exceptions into PaymentsGatewayError exceptions
+    """
     try:
+
         yield
 
     except HTTPStatusError as err:
-        error = PaymentsGatewayError.from_http_status_error(
+        gateway_error = PaymentsGatewayError.from_http_status_error(
             err, operation_id=operation_id
         )
-        _logger.warning(error.get_detailed_message())
-        raise error from err
+        _logger.warning(gateway_error.get_detailed_message())
+        raise gateway_error from err
 
 
 def _handle_status_errors(coro: Callable):
@@ -195,10 +212,25 @@ class PaymentsGatewayApi(
         id_: PaymentMethodID,
         payment: InitPayment,
     ) -> AckPaymentWithPaymentMethod:
-        response = await self.client.post(
-            f"/payment-methods/{id_}:pay",
-            json=jsonable_encoder(payment.model_dump(exclude_none=True, by_alias=True)),
-        )
+        _request_start = time.time()
+        try:
+            response = await self.client.post(
+                f"/payment-methods/{id_}:pay",
+                json=jsonable_encoder(
+                    payment.model_dump(exclude_none=True, by_alias=True)
+                ),
+                # NOTE: more flexible in the communication with the payment gateway upon payment
+                # SEE https://git.speag.com/oSparc/osparc-infra/-/issues/86
+                timeout=httpx.Timeout(60.0),
+            )
+
+        except TimeoutException as err:
+            raise UnverifiedPaymentError(
+                operation_id="PaymentsGatewayApi.pay_with_payment_method",
+                request_duration_sec=time.time() - _request_start,
+                request=f"{err.request}",
+            ) from err
+
         response.raise_for_status()
         return AckPaymentWithPaymentMethod.model_validate(response.json())
 
