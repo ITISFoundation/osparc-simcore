@@ -27,6 +27,8 @@ faker==37.8.0
     # via -r requirements/_test.in
 fakeredis==2.31.3
     # via -r requirements/_test.in
+flaky==3.8.1
+    # via -r requirements/_test.in
 greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
