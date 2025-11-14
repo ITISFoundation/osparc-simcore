@@ -105,16 +105,16 @@ def create_ordering_query_model_class(
     )
 
     class _OrderQueryParams(_BaseOrderQueryParams):
-        order_by: Annotated[
-            _OrderBy, BeforeValidator(parse_json_pre_validator)
-        ] = Field(
-            default=converted_default,
-            description=(
-                f"Order by field (`{msg_field_options}`) and direction (`{msg_direction_options}`). "
-                f"The default sorting order is `{json_dumps(default)}`."
-            ),
-            examples=[order_by_example],
-            json_schema_extra={"example_json": order_by_example_json},
+        order_by: Annotated[_OrderBy, BeforeValidator(parse_json_pre_validator)] = (
+            Field(
+                default=converted_default,
+                description=(
+                    f"Order by field (`{msg_field_options}`) and direction (`{msg_direction_options}`). "
+                    f"The default sorting order is `{json_dumps(default)}`."
+                ),
+                examples=[order_by_example],
+                json_schema_extra={"example_json": order_by_example_json},
+            )
         )
 
     return _OrderQueryParams

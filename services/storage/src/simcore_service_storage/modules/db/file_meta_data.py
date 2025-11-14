@@ -408,7 +408,7 @@ class FileMetaDataRepository(BaseRepository):
         self,
         *,
         connection: AsyncConnection | None = None,
-    ) -> AsyncGenerator[FileMetaDataAtDB, None]:
+    ) -> AsyncGenerator[FileMetaDataAtDB]:
         """returns all the theoretically valid fmds (e.g. upload_expires_at column is null)"""
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(

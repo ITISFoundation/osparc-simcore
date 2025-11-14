@@ -17,7 +17,7 @@ class HealthCheckError(RuntimeError):
 
 @router.get("/health", response_model=HealthCheckGet)
 async def check_service_health(
-    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)]
+    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
 ):
     if not rabbitmq_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)

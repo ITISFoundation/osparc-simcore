@@ -4,7 +4,6 @@ import asyncio
 import os
 from contextlib import suppress
 from pathlib import Path
-from typing import Optional
 
 import typer
 from httpx import URL, AsyncClient, HTTPStatusError
@@ -143,7 +142,7 @@ def main(
     endpoint: str,
     username: str,
     project_file: Path,
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
     share_with_gid: int = EVERYONE_GROUP_ID,
     password: str = typer.Option(
         ..., prompt=True, confirmation_prompt=True, hide_input=True

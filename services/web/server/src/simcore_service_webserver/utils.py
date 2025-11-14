@@ -7,11 +7,11 @@ import logging
 import os
 import tracemalloc
 from datetime import datetime
-
-from common_library.error_codes import ErrorCodeStr
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
+
+from common_library.error_codes import ErrorCodeStr
 
 _logger = logging.getLogger(__name__)
 

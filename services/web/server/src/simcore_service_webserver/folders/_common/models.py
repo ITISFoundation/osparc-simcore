@@ -73,20 +73,19 @@ class FoldersListQueryParams(
 class FolderSearchQueryParams(
     PageQueryParameters, _FolderOrderQueryParams, FiltersQueryParameters[FolderFilters]  # type: ignore[misc, valid-type]
 ):
-    text: Annotated[
-        str | None, BeforeValidator(empty_str_to_none_pre_validator)
-    ] = Field(
-        default=None,
-        description="Multi column full text search, across all folders and workspaces",
-        max_length=100,
-        examples=["My Project"],
+    text: Annotated[str | None, BeforeValidator(empty_str_to_none_pre_validator)] = (
+        Field(
+            default=None,
+            description="Multi column full text search, across all folders and workspaces",
+            max_length=100,
+            examples=["My Project"],
+        )
     )
 
     model_config = ConfigDict(extra="forbid")
 
 
-class FolderTrashQueryParams(RemoveQueryParams):
-    ...
+class FolderTrashQueryParams(RemoveQueryParams): ...
 
 
 class FolderWorkspacesPathParams(BaseModel):

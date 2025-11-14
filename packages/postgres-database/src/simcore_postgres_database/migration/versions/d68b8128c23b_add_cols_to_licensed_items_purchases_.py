@@ -5,6 +5,7 @@ Revises: 8fa15c4c3977
 Create Date: 2024-12-10 10:24:28.071216+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -24,5 +25,4 @@ def upgrade():
     )
 
 
-def downgrade():
-    ...
+def downgrade(): ...

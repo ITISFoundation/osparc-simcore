@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import AsyncIterable, Callable
+from collections.abc import AsyncIterable, Callable
 
 import pytest
 from asgi_lifespan import LifespanManager

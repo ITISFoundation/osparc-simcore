@@ -68,7 +68,7 @@ mdurl==0.1.2
     # via markdown-it-py
 multidict==6.6.4
     # via yarl
-orjson==3.11.3
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -144,7 +144,7 @@ rich==14.1.0
     # via
     #   cookiecutter
     #   typer
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing

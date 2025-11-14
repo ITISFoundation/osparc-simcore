@@ -1,10 +1,10 @@
 """
-    Usage example
+Usage example
 
-    def test_it(faker: Faker):
-        fake_docker_compose = generate_fake_docker_compose(faker, 3)
+def test_it(faker: Faker):
+    fake_docker_compose = generate_fake_docker_compose(faker, 3)
 
-        print(fake_docker_compose)
+    print(fake_docker_compose)
 
 """
 

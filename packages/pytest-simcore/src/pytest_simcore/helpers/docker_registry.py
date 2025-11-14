@@ -1,9 +1,8 @@
-""" Helper to request data from docker-registry
+"""Helper to request data from docker-registry
 
 
 NOTE: this could be used as draft for https://github.com/ITISFoundation/osparc-simcore/issues/2165
 """
-
 
 import json
 import os

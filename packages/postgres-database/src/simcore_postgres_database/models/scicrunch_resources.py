@@ -1,5 +1,4 @@
-""" Stores SOME of the information associated to Research Resource Identifiers (RRIDs) as defined in https://scicrunch.org/resources
-"""
+"""Stores SOME of the information associated to Research Resource Identifiers (RRIDs) as defined in https://scicrunch.org/resources"""
 
 import sqlalchemy as sa
 from sqlalchemy.sql import func

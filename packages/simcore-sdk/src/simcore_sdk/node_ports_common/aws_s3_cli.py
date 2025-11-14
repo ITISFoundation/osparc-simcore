@@ -23,8 +23,7 @@ _logger = logging.getLogger(__name__)
 _OSPARC_SYMLINK_EXTENSION = ".rclonelink"  # named `rclonelink` to maintain backwards
 
 
-class BaseAwsS3CliError(OsparcErrorMixin, RuntimeError):
-    ...
+class BaseAwsS3CliError(OsparcErrorMixin, RuntimeError): ...
 
 
 class AwsS3CliFailedError(BaseAwsS3CliError):

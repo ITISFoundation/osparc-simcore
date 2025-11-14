@@ -4,9 +4,9 @@
 # pylint:disable=too-many-arguments
 
 
+from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Generator
 
 import pytest
 import sqlalchemy as sa
@@ -51,7 +51,7 @@ _WALLET_ID = 6
 @pytest.fixture()
 def resource_tracker_service_run_id(
     postgres_db: sa.engine.Engine, random_resource_tracker_service_run
-) -> Generator[str, None, None]:
+) -> Generator[str]:
     with postgres_db.connect() as con:
         result = con.execute(
             resource_tracker_service_runs.insert()

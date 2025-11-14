@@ -1,6 +1,5 @@
-""" Requests to catalog service API
+"""Requests to catalog service API"""
 
-"""
 import logging
 import urllib.parse
 from datetime import datetime
