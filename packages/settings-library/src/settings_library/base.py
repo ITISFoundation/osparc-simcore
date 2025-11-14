@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Any, Final
+from typing import Annotated, Any, Final, get_args, get_origin
 
 from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
 from pydantic import ValidationInfo, field_validator
@@ -95,6 +95,19 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
         return prepared_value
 
 
+def _get_class_from_typing(typ: type) -> type:
+    """Unwraps Annotated, Union, and other typing types to return the base class suitable for issubclass()."""
+    origin = get_origin(typ)
+    if origin is Annotated:
+        # For Annotated, the first argument is the real type
+        return get_args(typ)[0]
+    if isinstance(typ, type):
+        # It's already a class
+        return typ
+    # Add more special cases if needed (Tuple, List, etc.) -- usually not suitable for issubclass
+    return object  # default fallback
+
+
 class BaseCustomSettings(BaseSettings):
     """
     - Customized configuration for all settings
@@ -137,14 +150,14 @@ class BaseCustomSettings(BaseSettings):
             auto_default_from_env = _is_auto_default_from_env_enabled(field)
             field_type = get_type(field)
             is_not_literal = not is_literal(field)
-
-            if is_not_literal and issubclass(field_type, BaseCustomSettings):
+            class_type = _get_class_from_typing(field_type)
+            if is_not_literal and issubclass(class_type, BaseCustomSettings):
                 if auto_default_from_env:
                     # Builds a default factory `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = _create_settings_from_env(name, field)
                     field.default = None
 
-            elif is_not_literal and issubclass(field_type, BaseSettings):
+            elif is_not_literal and issubclass(class_type, BaseSettings):
                 msg = f"{cls}.{name} of type {field_type} must inherit from BaseCustomSettings"
                 raise ValueError(msg)
 
