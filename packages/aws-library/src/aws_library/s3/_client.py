@@ -3,6 +3,7 @@ import contextlib
 import functools
 import logging
 import urllib.parse
+from collections import deque
 from collections.abc import AsyncGenerator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -316,6 +317,60 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         ):
             for obj in s3_objects:
                 yield obj
+
+    @s3_exception_handler_async_gen(_logger)
+    async def list_entries_paginated(
+        self,
+        bucket: S3BucketName,
+        prefix: str,
+        *,
+        items_per_page: int = _MAX_ITEMS_PER_PAGE,
+    ) -> AsyncGenerator[list[S3MetaData | S3DirectoryMetaData], None]:
+        """Breadth-first recursive listing of S3 entries (files + directories).
+
+        Yields:
+            A list of S3MetaData and S3DirectoryMetaData per page, exploring
+            directories level by level.
+        """
+        if items_per_page > _AWS_MAX_ITEMS_PER_PAGE:
+            msg = f"items_per_page must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
+            raise ValueError(msg)
+
+        paginator = self._client.get_paginator("list_objects_v2")
+        queue = deque([prefix])  # Breadth-first traversal queue
+
+        while queue:
+            current_prefix = queue.popleft()
+
+            async for page in paginator.paginate(
+                Bucket=bucket,
+                Prefix=current_prefix,
+                Delimiter=S3_OBJECT_DELIMITER,
+                PaginationConfig={"PageSize": items_per_page},
+            ):
+                entries: list[S3MetaData | S3DirectoryMetaData] = []
+
+                # Add subdirectories
+                for subfolder in page.get("CommonPrefixes", []):
+                    if "Prefix" in subfolder:
+                        sub_prefix = subfolder["Prefix"]
+                        entries.append(
+                            S3DirectoryMetaData.model_construct(
+                                prefix=S3ObjectPrefix(sub_prefix, size=None)
+                            )
+                        )
+                        queue.append(sub_prefix)  # BFS traversal
+
+                # Add files in the current prefix
+                entries.extend(
+                    [
+                        S3MetaData.from_botocore_list_objects(obj)
+                        for obj in page.get("Contents", [])
+                    ]
+                )
+
+                if entries:
+                    yield entries
 
     @s3_exception_handler(_logger)
     async def delete_objects_recursively(
