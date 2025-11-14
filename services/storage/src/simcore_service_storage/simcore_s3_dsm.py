@@ -998,8 +998,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         # Handle both cases: with and without trailing slash
         # For prefixes like "project_id/node_id/directory_name/" or "project_id/node_id/directory_name"
-        normalized_prefix = prefix_str.rstrip("/")
-        prefix_parts = normalized_prefix.split("/")
+        prefix_parts = Path(prefix_str).parts
 
         # Extract the directory name (last part of the path)
         # Skip intermediate paths that don't have enough parts
@@ -1020,7 +1019,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             validated_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
                 file_id_str
             )
-        except Exception as exc:
+        except ValidationError as exc:
             # Log invalid S3 directory prefixes that don't match SimcoreS3FileID pattern
             _logger.debug(
                 "Skipping S3 directory with invalid file_id pattern: %s (error: %s)",
