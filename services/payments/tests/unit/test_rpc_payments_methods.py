@@ -287,7 +287,7 @@ async def test_webserver_pay_with_payment_method_timeout_workflow(
     # faking Payment method
     created = await insert_payment_method(
         repo=PaymentsMethodsRepo(app.state.engine),
-        payment_method_id=faker.uuid4(),
+        payment_method_id=IDStr("a0b31d6f-8a64-42f7-842c-a65377790d44"),
         user_id=user_id,
         wallet_id=wallet_id,
         ack=AckPaymentMethod(success=True, message="Faked ACK"),
@@ -296,7 +296,8 @@ async def test_webserver_pay_with_payment_method_timeout_workflow(
     # Mock the payment endpoint to raise a timeout
     def _timeout_payment(request: httpx.Request, pm_id: PaymentMethodID):
         # Simulate timeout by raising TimeoutException
-        raise TimeoutException(f"Request timed out for {pm_id}", request=request)
+        msg = f"Request timed out for {pm_id}"
+        raise TimeoutException(msg, request=request)
 
     mock_payments_gateway_service_api_base.post(
         path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",
