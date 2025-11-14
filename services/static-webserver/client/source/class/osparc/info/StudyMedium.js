@@ -133,9 +133,12 @@ qx.Class.define("osparc.info.StudyMedium", {
         });
       }
 
+      const tagsContainer = osparc.info.StudyUtils.createTags(this.getStudy()).set({
+        maxWidth: 150,
+      });
       extraInfo.push({
         label: this.tr("TAGS"),
-        view: osparc.info.StudyUtils.createTags(this.getStudy())
+        view: tagsContainer
       });
 
       return extraInfo;

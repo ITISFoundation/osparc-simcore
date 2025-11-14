@@ -902,7 +902,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
 
       const tagsStore = osparc.store.Tags.getInstance();
-      tagsStore.addListener("tagsChanged", () => {
+      tagsStore.addListener("tagRemoved", () => {
         this.invalidateStudies();
         this.__reloadStudies();
       }, this);
