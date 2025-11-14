@@ -2,7 +2,7 @@
 
 SHELL := /bin/bash
 
-PYTHON_VERSION := $(or $(PYTHON), 3.11)
+PYTHON_VERSION := $(or $(PYTHON), 3.13)
 
 
 .PHONY: hel%

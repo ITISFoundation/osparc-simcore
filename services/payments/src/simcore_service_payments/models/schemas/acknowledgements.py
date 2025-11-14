@@ -37,8 +37,7 @@ class _BaseAckPayment(_BaseAck):
 #
 
 
-class AckPaymentMethod(_BaseAck):
-    ...
+class AckPaymentMethod(_BaseAck): ...
 
 
 class SavedPaymentMethod(AckPaymentMethod):

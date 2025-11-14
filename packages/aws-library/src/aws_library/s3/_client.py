@@ -293,7 +293,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         prefix: str,
         *,
         items_per_page: int = _MAX_ITEMS_PER_PAGE,
-    ) -> AsyncGenerator[list[S3MetaData], None]:
+    ) -> AsyncGenerator[list[S3MetaData]]:
         if items_per_page > _AWS_MAX_ITEMS_PER_PAGE:
             msg = f"items_per_page must be <= {_AWS_MAX_ITEMS_PER_PAGE}"
             raise ValueError(msg)
@@ -311,7 +311,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
 
     async def _list_all_objects(
         self, *, bucket: S3BucketName, prefix: str
-    ) -> AsyncGenerator[S3MetaData, None]:
+    ) -> AsyncGenerator[S3MetaData]:
         async for s3_objects in self.list_objects_paginated(
             bucket=bucket, prefix=prefix
         ):

@@ -82,7 +82,7 @@ class MountedVolumes:
             f"_{_name_from_full_path(self.user_preferences_path)[::-1]}"
         )
 
-    def volume_name_state_paths(self) -> Generator[str, None, None]:
+    def volume_name_state_paths(self) -> Generator[str]:
         for state_path in self.state_paths:
             yield (
                 f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
@@ -149,7 +149,7 @@ class MountedVolumes:
 
     async def iter_state_paths_to_docker_volumes(
         self, service_run_id: ServiceRunID
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[str]:
         for volume_state_path, state_path in zip(
             self.volume_name_state_paths(), self.state_paths, strict=True
         ):

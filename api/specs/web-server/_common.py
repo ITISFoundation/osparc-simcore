@@ -1,5 +1,4 @@
-""" Common utils for OAS script generators
-"""
+"""Common utils for OAS script generators"""
 
 import inspect
 import sys

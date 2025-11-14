@@ -1,7 +1,8 @@
+from collections.abc import Callable
 from datetime import timedelta
 from decimal import Decimal
 from enum import auto
-from typing import Any, Callable, Final
+from typing import Any, Final
 from uuid import UUID
 
 import arrow

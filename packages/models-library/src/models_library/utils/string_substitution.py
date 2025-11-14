@@ -1,6 +1,5 @@
-""" Utils for substitutions in string templates
+"""Utils for substitutions in string templates"""
 
-"""
 import re
 import sys
 from collections import UserDict

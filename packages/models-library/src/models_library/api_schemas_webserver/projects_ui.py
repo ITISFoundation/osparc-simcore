@@ -2,7 +2,12 @@
 Models Front-end UI
 """
 
-from typing import Annotated, Literal, NotRequired
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Annotated,
+    Literal,
+    NotRequired,
+    TypedDict,
+)
 
 from pydantic import (
     BaseModel,
@@ -14,9 +19,6 @@ from pydantic import (
 )
 from pydantic.config import JsonDict
 from pydantic_extra_types.color import Color
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from ..projects_nodes_io import NodeID, NodeIDStr
 from ..utils.common_validators import empty_str_to_none_pre_validator

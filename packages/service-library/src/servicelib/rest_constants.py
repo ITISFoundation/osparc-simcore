@@ -1,8 +1,7 @@
 # SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict
 
-from typing import Final
-
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Final,
     TypedDict,
 )
 

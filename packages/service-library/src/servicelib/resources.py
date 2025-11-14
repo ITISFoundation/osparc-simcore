@@ -1,4 +1,4 @@
-""" Safe access to all data resources distributed with this package
+"""Safe access to all data resources distributed with this package
 
 https://docs.python.org/3.11/library/importlib.resources.html#module-importlib.resources
 """

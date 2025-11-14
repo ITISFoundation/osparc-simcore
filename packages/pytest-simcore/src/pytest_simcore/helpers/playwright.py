@@ -617,7 +617,7 @@ def expected_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-) -> Generator[ServiceRunning, None, None]:
+) -> Generator[ServiceRunning]:
     started = arrow.utcnow()
     with contextlib.ExitStack() as stack:
         ctx = stack.enter_context(

@@ -1,5 +1,5 @@
 #!/bin/python
-""" Healthcheck script to run inside docker
+"""Healthcheck script to run inside docker
 
 Q&A:
     1. why not to use curl instead of a python script?

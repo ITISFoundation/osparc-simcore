@@ -43,8 +43,7 @@ class PaymentAlreadyAckedError(PaymentsError):
 #
 
 
-class PaymentsMethodsError(_BaseRpcApiError):
-    ...
+class PaymentsMethodsError(_BaseRpcApiError): ...
 
 
 class PaymentMethodNotFoundError(PaymentsMethodsError):

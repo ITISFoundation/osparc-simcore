@@ -68,7 +68,7 @@ def s3_exception_handler(
     """
 
     def decorator(
-        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]
+        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
     ) -> Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]:
         @functools.wraps(func)
         async def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:
@@ -98,8 +98,8 @@ def s3_exception_handler(
 def s3_exception_handler_async_gen(
     logger: logging.Logger,
 ) -> Callable[
-    [Callable[Concatenate[Self, P], AsyncGenerator[T, None]]],
-    Callable[Concatenate[Self, P], AsyncGenerator[T, None]],
+    [Callable[Concatenate[Self, P], AsyncGenerator[T]]],
+    Callable[Concatenate[Self, P], AsyncGenerator[T]],
 ]:
     """
     Raises:
@@ -111,12 +111,12 @@ def s3_exception_handler_async_gen(
     """
 
     def decorator(
-        func: Callable[Concatenate[Self, P], AsyncGenerator[T, None]]
-    ) -> Callable[Concatenate[Self, P], AsyncGenerator[T, None]]:
+        func: Callable[Concatenate[Self, P], AsyncGenerator[T]],
+    ) -> Callable[Concatenate[Self, P], AsyncGenerator[T]]:
         @functools.wraps(func)
         async def async_generator_wrapper(
             self: Self, *args: P.args, **kwargs: P.kwargs
-        ) -> AsyncGenerator[T, None]:
+        ) -> AsyncGenerator[T]:
             try:
                 assert inspect.isasyncgenfunction(func)  # nosec
                 async for item in func(self, *args, **kwargs):

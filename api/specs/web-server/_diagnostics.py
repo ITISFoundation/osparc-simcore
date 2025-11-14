@@ -47,8 +47,7 @@ async def get_config():
     "/scheduled_maintenance",
     response_model=Envelope[str],
 )
-async def get_scheduled_maintenance():
-    ...
+async def get_scheduled_maintenance(): ...
 
 
 @router.get(
@@ -57,8 +56,7 @@ async def get_scheduled_maintenance():
     response_model=Envelope[AppStatusCheck],
     response_description="Returns app status check",
 )
-async def get_app_status():
-    ...
+async def get_app_status(): ...
 
 
 @router.get(
@@ -67,9 +65,8 @@ async def get_app_status():
     response_description="Returns app diagnostics report",
 )
 async def get_app_diagnostics(
-    _query: Annotated[StatusDiagnosticsQueryParam, Depends()]
-):
-    ...
+    _query: Annotated[StatusDiagnosticsQueryParam, Depends()],
+): ...
 
 
 @router.get(
@@ -77,5 +74,4 @@ async def get_app_diagnostics(
     response_model=Envelope[AppStatusCheck],
     response_description="Returns app status check",
 )
-async def get_service_status(service_name: str):
-    ...
+async def get_service_status(service_name: str): ...

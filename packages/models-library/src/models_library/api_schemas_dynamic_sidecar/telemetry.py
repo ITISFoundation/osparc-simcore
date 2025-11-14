@@ -27,23 +27,19 @@ class MountPathCategory(StrAutoEnum):
 class SDiskUsageProtocol(Protocol):
     @property
     @abstractmethod
-    def total(self) -> int:
-        ...
+    def total(self) -> int: ...
 
     @property
     @abstractmethod
-    def used(self) -> int:
-        ...
+    def used(self) -> int: ...
 
     @property
     @abstractmethod
-    def free(self) -> int:
-        ...
+    def free(self) -> int: ...
 
     @property
     @abstractmethod
-    def percent(self) -> float:
-        ...
+    def percent(self) -> float: ...
 
 
 def _get_percent(used: float, total: float) -> float:

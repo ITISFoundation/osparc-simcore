@@ -23,7 +23,7 @@ def _wrap_dask_async_call(called_fct) -> Awaitable[Any]:
 @contextlib.asynccontextmanager
 async def dask_client(
     state: AppState, instance: Instance
-) -> AsyncGenerator[distributed.Client, None]:
+) -> AsyncGenerator[distributed.Client]:
     security = distributed.Security()
     assert state.deploy_config
     dask_certificates = state.deploy_config / "assets" / "dask-certificates"

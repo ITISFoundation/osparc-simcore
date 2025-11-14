@@ -3,9 +3,9 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 """
-    Fixtures to produce fake data for a project:
-        - it is self-consistent
-        - granular customization by overriding fixtures
+Fixtures to produce fake data for a project:
+    - it is self-consistent
+    - granular customization by overriding fixtures
 """
 
 

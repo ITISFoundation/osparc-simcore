@@ -57,7 +57,7 @@ pylint==3.3.8
     # via -r requirements/../../../requirements/devenv.txt
 pytokens==0.1.10
     # via black
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/_base.txt
     #   pre-commit

@@ -5,7 +5,7 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-PYTHON_VERSION=3.11.9
+PYTHON_VERSION=3.13.9
 IMAGE_NAME="local/datamodel-code-generator:${PYTHON_VERSION}"
 WORKDIR="$(pwd)"
 
@@ -22,7 +22,6 @@ RUN uv pip install --system datamodel-code-generator[http] && uv pip list
 ENTRYPOINT ["datamodel-codegen", \
 		      "--use-non-positive-negative-number-constrained-types", \
           "--allow-population-by-field-name", \
-          "--enum-field-as-literal=all", \
           "--field-constraints", \
           "--input-file-type=jsonschema", \
           "--output-model-type=pydantic_v2.BaseModel", \
