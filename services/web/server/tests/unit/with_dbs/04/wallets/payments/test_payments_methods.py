@@ -452,7 +452,8 @@ async def test_pay_with_payment_method_handles_payment_unverified_error(
         _rpc,
         "pay_with_payment_method",
         side_effect=PaymentUnverifiedError(
-            internal_details="Payment verification failed and this is the internal log"
+            internal_details="Payment verification failed and this is the internal log",
+            error_code="TEST12345",
         ),
     )
 
@@ -467,7 +468,10 @@ async def test_pay_with_payment_method_handles_payment_unverified_error(
     )
 
     # Verify that the error is properly handled and returns appropriate status
-    await assert_status(response, status.HTTP_502_BAD_GATEWAY)
+    data, error = await assert_status(response, status.HTTP_502_BAD_GATEWAY)
+    assert not data
+
+    assert error["supportID"] == "TEST12345", "SHould provide support ID from exception"
 
     # Verify the mocked function was called
     assert mock_pay_with_payment_method.called
