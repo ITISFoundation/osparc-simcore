@@ -18,6 +18,7 @@ def mock_webserver_service_environment(
     monkeypatch: pytest.MonkeyPatch, mock_webserver_service_environment: EnvVarsDict
 ) -> EnvVarsDict:
     monkeypatch.delenv("WEBSERVER_TRACING")
+
     return mock_webserver_service_environment | setenvs_from_dict(
         monkeypatch,
         {
@@ -27,7 +28,6 @@ def mock_webserver_service_environment(
     )
 
 
-@pytest.mark.skip(reason="Test fails almost always in CI pipelines")
 def test_middleware_restrictions_opentelemetry_is_second_middleware(
     mock_webserver_service_environment: EnvVarsDict,
 ):
