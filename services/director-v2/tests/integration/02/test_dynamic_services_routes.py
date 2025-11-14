@@ -216,8 +216,13 @@ async def ensure_services_stopped(
         for service_name in service_names:
             # if node_uuid is present in the service name it needs to be removed
             if project_id in service_name:
-                delete_result = await docker_client.services.delete(service_name)
-                assert delete_result is True
+                try:
+                    delete_result = await docker_client.services.delete(service_name)
+                    assert delete_result is True
+                except aiodocker.exceptions.DockerError as e:
+                    assert (
+                        e.status == 404
+                    ), f"Unexpected error when deleting service: {e}"
 
         scheduler_interval = (
             director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
