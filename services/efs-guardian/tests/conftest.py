@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -52,12 +53,12 @@ def installed_package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def env_devel_dict(
     env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
     if external_envfile_dict:
-        return external_envfile_dict
+        return deepcopy(external_envfile_dict)
     return env_devel_dict
 
 

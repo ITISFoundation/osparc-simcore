@@ -8,6 +8,7 @@
 
 import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -74,14 +75,14 @@ def package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def env_devel_dict(
     env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
     if external_envfile_dict:
         assert "CATALOG_DEV_FEATURES_ENABLED" in external_envfile_dict
         assert "CATALOG_SERVICES_DEFAULT_RESOURCES" in external_envfile_dict
-        return external_envfile_dict
+        return deepcopy(external_envfile_dict)
     return env_devel_dict
 
 
