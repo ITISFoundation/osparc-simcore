@@ -138,11 +138,13 @@ qx.Class.define("osparc.ui.window.Window", {
         modalFrame.style.backgroundColor = "black";
         modalFrame.style.opacity = 0.4;
       }
+
+      this.__appResized();
     },
 
     __windowMoved: function() {
       // enforce it stays within the screen
-      const bounds = this.getBounds(); // current window position/size
+      const bounds = this.getBounds() || this.getSizeHint(); // current window position/size
       const root = qx.core.Init.getApplication().getRoot();
       const rootBounds = root.getBounds(); // available screen area
       if (!bounds || !rootBounds) {
@@ -174,7 +176,7 @@ qx.Class.define("osparc.ui.window.Window", {
 
     __appResized: function() {
       // ensure it fits within the screen
-      const bounds = this.getBounds(); // current window position/size
+      const bounds = this.getBounds() || this.getSizeHint(); // current window position/size
       const root = qx.core.Init.getApplication().getRoot();
       const rootBounds = root.getBounds(); // available screen area
       if (!bounds || !rootBounds) {
