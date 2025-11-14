@@ -228,6 +228,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
         raise PaymentUnverifiedError(
             operation_id="rpc.pay_with_payment_method",
             internal_details=str(e),
+            error_code=error_code,  # keeps the same error code to trace logs across services
             payment_method_id=payment_method_id,
             wallet_id=wallet_id,
             user_id=user_id,

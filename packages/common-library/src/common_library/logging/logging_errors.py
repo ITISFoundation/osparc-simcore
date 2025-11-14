@@ -94,16 +94,16 @@ def create_troubleshooting_log_kwargs(
 
     """
     # error-context
-    context = error_context or {}
+    complete_error_context = error_context or {}
     if isinstance(error, OsparcErrorMixin):
-        context.update(error.error_context())
+        complete_error_context.update(error.error_context())
 
     # compose as log message
     log_msg = create_troubleshooting_log_message(
         user_error_msg,
         error=error,
         error_code=error_code,
-        error_context=context,
+        error_context=complete_error_context,
         tip=tip or getattr(error, "tip", None),
     )
 
@@ -111,6 +111,6 @@ def create_troubleshooting_log_kwargs(
         "msg": log_msg,
         "extra": get_log_record_extra(
             error_code=error_code,
-            user_id=context.get("user_id", None),
+            user_id=complete_error_context.get("user_id", None),
         ),
     }

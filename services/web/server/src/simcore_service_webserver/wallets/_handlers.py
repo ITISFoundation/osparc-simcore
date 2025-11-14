@@ -3,10 +3,12 @@ import logging
 from typing import Final
 
 from aiohttp import web
-from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
-from models_library.api_schemas_payments.errors import PaymentUnverifiedError
+from models_library.api_schemas_payments.errors import (
+    BaseRpcApiError,
+    PaymentUnverifiedError,
+)
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     PutWalletBodyParams,
@@ -67,12 +69,12 @@ _logger = logging.getLogger(__name__)
 
 def _create_error_response_with_support_id_and_logging(
     request: web.Request,
-    exception: Exception,
+    exception: BaseRpcApiError,
     user_msg: str,
     status_code: int,
 ) -> web.Response:
     """Helper function to create error response and produce traceable logs in the server."""
-    error_code = getattr(exception, "error_code", None) or create_error_code(exception)
+    error_code = exception.get_or_create_error_code()
 
     _logger.exception(
         **create_troubleshooting_log_kwargs(
@@ -114,7 +116,10 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
 
         except PaymentUnverifiedError as exc:
             return _create_error_response_with_support_id_and_logging(
-                request, exc, _MSG_PAYMENT_SERVICE_FAILURE, status.HTTP_502_BAD_GATEWAY
+                request,
+                exc,
+                _MSG_PAYMENT_SERVICE_FAILURE,
+                status.HTTP_502_BAD_GATEWAY,
             )
 
         except (
@@ -128,7 +133,10 @@ def handle_wallets_exceptions(handler: Handler):  # noqa: C901
 
         except PaymentServiceUnavailableError as exc:
             return _create_error_response_with_support_id_and_logging(
-                request, exc, _MSG_PAYMENT_SERVICE_FAILURE, status.HTTP_502_BAD_GATEWAY
+                request,
+                exc,
+                _MSG_PAYMENT_SERVICE_FAILURE,
+                status.HTTP_502_BAD_GATEWAY,
             )
 
         except WalletAccessForbiddenError as exc:
