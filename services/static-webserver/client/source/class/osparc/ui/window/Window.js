@@ -202,8 +202,6 @@ qx.Class.define("osparc.ui.window.Window", {
         resized = true;
       }
 
-      console.log(resized, width, height, left, top);
-
       // Clamp horizontal position
       left = Math.min(
         Math.max(left, 0),
@@ -218,6 +216,12 @@ qx.Class.define("osparc.ui.window.Window", {
 
       // Apply changes if any
       if (resized) {
+        if (width < this.getMinWidth()) {
+          this.setMinWidth(width);
+        }
+        if (height < this.getMinHeight()) {
+          this.setMinHeight(height);
+        }
         this.set({
           width,
           height
