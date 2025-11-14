@@ -547,7 +547,7 @@ jobs:
   unit-test-api-server:
     needs: changes
     if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[unit] api-server"
     runs-on: ${{ matrix.os }}
     strategy:
