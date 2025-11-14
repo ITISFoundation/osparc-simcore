@@ -144,8 +144,8 @@ qx.Class.define("osparc.ui.window.Window", {
       // enforce it stays within the screen
       const bounds = this.getBounds(); // current window position/size
       const root = qx.core.Init.getApplication().getRoot();
-      const parentBounds = root.getBounds(); // available screen area
-      if (!bounds || !parentBounds) {
+      const rootBounds = root.getBounds(); // available screen area
+      if (!bounds || !rootBounds) {
         return;
       }
 
@@ -157,13 +157,13 @@ qx.Class.define("osparc.ui.window.Window", {
       // Clamp horizontal position
       left = Math.min(
         Math.max(left, 0),
-        parentBounds.width - bounds.width
+        rootBounds.width - bounds.width
       );
 
       // Clamp vertical position
       top = Math.min(
         Math.max(top, 0),
-        parentBounds.height - bounds.height
+        rootBounds.height - bounds.height
       );
 
       // Only apply correction if needed
@@ -176,8 +176,8 @@ qx.Class.define("osparc.ui.window.Window", {
       // ensure it fits within the screen
       const bounds = this.getBounds(); // current window position/size
       const root = qx.core.Init.getApplication().getRoot();
-      const parentBounds = root.getBounds(); // available screen area
-      if (!bounds || !parentBounds) {
+      const rootBounds = root.getBounds(); // available screen area
+      if (!bounds || !rootBounds) {
         return;
       }
 
@@ -191,27 +191,29 @@ qx.Class.define("osparc.ui.window.Window", {
       let resized = false;
 
       // Adjust width if needed
-      if (width > parentBounds.width) {
-        width = parentBounds.width;
+      if (width > rootBounds.width) {
+        width = rootBounds.width;
         resized = true;
       }
 
       // Adjust height if needed
-      if (height > parentBounds.height) {
-        height = parentBounds.height;
+      if (height > rootBounds.height) {
+        height = rootBounds.height;
         resized = true;
       }
+
+      console.log(resized, width, height, left, top);
 
       // Clamp horizontal position
       left = Math.min(
         Math.max(left, 0),
-        parentBounds.width - width
+        rootBounds.width - width
       );
 
       // Clamp vertical position
       top = Math.min(
         Math.max(top, 0),
-        parentBounds.height - height
+        rootBounds.height - height
       );
 
       // Apply changes if any
