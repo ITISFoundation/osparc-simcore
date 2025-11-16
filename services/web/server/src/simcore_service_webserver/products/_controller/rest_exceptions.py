@@ -1,7 +1,7 @@
+from common_library.error_messages import MSG_TRY_AGAIN_OR_SUPPORT
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 
-from ...constants import MSG_TRY_AGAIN_OR_SUPPORT
 from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
