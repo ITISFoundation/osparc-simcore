@@ -33,7 +33,6 @@ async def ports(
         auto_update=True,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
-        aws_s3_cli_settings=aws_s3_cli_settings,
     )
 
 

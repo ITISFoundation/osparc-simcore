@@ -378,7 +378,6 @@ services:
         - *registry_settings
         - *s3_settings
         - *tracing_open_telemetry_environments
-      AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
 
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
@@ -847,15 +846,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.httpOnly=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver_sticky.loadbalancer.sticky.cookie.sameSite=lax
         # Single consolidated router for all sticky endpoints
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.rule=Path(`/v0/projects`) ||
-          Path(`/v0/projects:clone`) ||
-          PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:stop`) ||
-          PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:open`) ||
-          PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:close`) ||
-          PathRegexp(`^/v0/storage/locations/[0-9]+/paths/.+:size`) ||
-          PathRegexp(`^/v0/storage/locations/[0-9]+/-/paths:batchDelete`) ||
-          PathRegexp(`^/v0/storage/locations/[0-9]+:export-data`) ||
-          PathRegexp(`^/v0/tasks-legacy/.+`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.rule=Path(`/v0/projects`) || Path(`/v0/projects:clone`) || PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:stop`) || PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:open`) || PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:close`) || PathRegexp(`^/v0/storage/locations/[0-9]+/paths/.+:size`) || PathRegexp(`^/v0/storage/locations/[0-9]+/-/paths:batchDelete`) || PathRegexp(`^/v0/storage/locations/[0-9]+:export-data`) || PathRegexp(`^/v0/tasks-legacy/.+`)
         # NOTE: the sticky router must have a higher priority than the webserver router but below dy-proxies
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.priority=8
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.entrypoints=http
@@ -1319,15 +1310,7 @@ services:
       - default
       - interactive_services_subnet
     healthcheck:
-      test:
-        [
-          "CMD",
-          "pg_isready",
-          "--username",
-          "${POSTGRES_USER}",
-          "--dbname",
-          "${POSTGRES_DB}",
-        ]
+      test: [ "CMD", "pg_isready", "--username", "${POSTGRES_USER}", "--dbname", "${POSTGRES_DB}" ]
       interval: 5s
       retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
@@ -1341,7 +1324,8 @@ services:
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
     #
-    command: [
+    command:
+      [
         "postgres",
         "-c",
         "tcp_keepalives_idle=600",
@@ -1354,11 +1338,11 @@ services:
         "-c",
         "shared_buffers=256MB",
         # statement_timeout is set to 120 seconds (120_000 in ms), so that long running queries
-        # are killed after 2 minutes. Since simcore services have timeout of 1 minute, so longer
-        # queries will not be used. Setting >1 minutes to be safe
-        # https://github.com/ITISFoundation/osparc-simcore/issues/7682#issuecomment-2923048445
+      # are killed after 2 minutes. Since simcore services have timeout of 1 minute, so longer
+      # queries will not be used. Setting >1 minutes to be safe
+      # https://github.com/ITISFoundation/osparc-simcore/issues/7682#issuecomment-2923048445
         "-c",
-        "statement_timeout=120000",
+        "statement_timeout=120000"
       ]
 
   redis:
@@ -1370,19 +1354,7 @@ services:
       # also aof (append only) is also enabled such that we get full durability at the expense
       # of backup size. The backup is written into /data.
       # https://redis.io/topics/persistence
-      [
-        "redis-server",
-        "--save",
-        "60 1",
-        "--loglevel",
-        "verbose",
-        "--databases",
-        "11",
-        "--appendonly",
-        "yes",
-        "--requirepass",
-        "${REDIS_PASSWORD}",
-      ]
+      [ "redis-server", "--save", "60 1", "--loglevel", "verbose", "--databases", "11", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}" ]
     networks:
       - default
       - autoscaling_subnet
@@ -1390,7 +1362,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 5s
       timeout: 30s
       retries: 50

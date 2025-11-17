@@ -137,9 +137,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True}
     )
 
-    DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
     DYNAMIC_SIDECAR_EFS_SETTINGS: AwsEfsSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}
     )

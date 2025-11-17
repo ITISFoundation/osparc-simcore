@@ -120,7 +120,6 @@ async def _pull_legacy_archive(
                 io_log_redirect_cb=io_log_redirect_cb,
                 r_clone_settings=None,
                 progress_bar=sub_prog,
-                aws_s3_cli_settings=None,
             )
             _logger.info("completed pull of %s.", archive_path)
 
