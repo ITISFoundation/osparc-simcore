@@ -43,6 +43,14 @@ qx.Class.define("osparc.service.PricingUnitsList", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "intro-label":
+          control = new qx.ui.basic.Label(this.tr("Below is an overview of the available tiers, including their hourly credit cost and hardware specifications. The highlighted tier indicates the default configuration for new projects.")).set({
+            font: "text-14",
+            rich: true,
+            wrap: true,
+          });
+          this._addAt(control, 0);
+          break;
         case "pricing-units-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._addAt(control, 0, {
@@ -67,13 +75,16 @@ qx.Class.define("osparc.service.PricingUnitsList", {
     },
 
     __populateList: function(pricingUnitsData) {
+      const introLabel = this.getChildControl("intro-label");
       const container = this.getChildControl("pricing-units-container");
       container.removeAll();
 
       if (pricingUnitsData.length) {
+        introLabel.show();
         const pUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, null, false);
         container.add(pUnits);
       } else {
+        introLabel.exclude();
         const notFound = new qx.ui.basic.Label().set({
           value: this.tr("No Tiers found"),
           font: "text-14"
