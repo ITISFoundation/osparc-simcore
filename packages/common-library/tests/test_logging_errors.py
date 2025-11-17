@@ -22,7 +22,9 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
     error_code = create_error_code(exc)
 
     eoc1_fingerprint, eoc1_snapshot = parse_error_code_parts(error_code)
-    eoc2_fingerprint, eoc2_snapshot = parse_error_code_parts(exc.error_code())
+    eoc2_fingerprint, eoc2_snapshot = parse_error_code_parts(
+        exc.get_or_create_error_code()
+    )
 
     assert eoc1_fingerprint == eoc2_fingerprint
     assert eoc1_snapshot <= eoc2_snapshot
