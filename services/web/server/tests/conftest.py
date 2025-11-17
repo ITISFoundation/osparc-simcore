@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 
 import pytest
 import simcore_service_webserver
+import tenacity
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
@@ -493,8 +494,31 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
 
     # cleanup projects
     for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
+        # NOTE: delete does not wait for completion
         url = client.app.router["delete_project"].url_for(project_id=project_uuid)
         await client.delete(url.path)
+
+        url = client.app.router["get_project"].url_for(project_id=project_uuid)
+        # ensure deletion
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(10),
+            reraise=True,
+            retry=retry_if_exception_type(tenacity.TryAgain),
+        ):
+            with attempt:
+                logging.info(
+                    "--> waiting for deletion %s...", attempt.retry_state.attempt_number
+                )
+                resp = await client.get(url.path)
+                _, error = await assert_status(resp, status.HTTP_404_NOT_FOUND)
+                if error:
+                    raise tenacity.TryAgain
+
+                logging.info(
+                    "-- project deletion completed: %s",
+                    json.dumps(attempt.retry_state.retry_object.statistics, indent=2),
+                )
 
 
 @pytest.fixture
