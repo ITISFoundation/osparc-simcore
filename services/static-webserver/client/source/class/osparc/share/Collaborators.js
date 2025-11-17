@@ -282,11 +282,7 @@ qx.Class.define("osparc.share.Collaborators", {
     __buildLayout: function() {
       const introText = this._getIntroText();
       if (introText) {
-        const introLabel = new qx.ui.basic.Label(introText).set({
-          font: "text-14",
-          rich: true,
-          wrap: true,
-        });
+        const introLabel = osparc.dashboard.ResourceDetails.createIntroLabel(introText);
         this._add(introLabel);
       }
       if (this.__canIShare()) {

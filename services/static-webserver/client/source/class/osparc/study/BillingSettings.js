@@ -45,11 +45,7 @@ qx.Class.define("osparc.study.BillingSettings", {
       let control;
       switch (id) {
         case "intro-label":
-          control = new qx.ui.basic.Label(this.tr("This section lets you control how your project and apps are funded and powered. You can switch the Credit Account assigned to the project and choose the Tiers that best matches your workload.")).set({
-            font: "text-14",
-            rich: true,
-            wrap: true,
-          });
+          control = osparc.dashboard.ResourceDetails.createIntroLabel(this.tr("This section lets you control how your project and apps are funded and powered. You can switch the Credit Account assigned to the project and choose the Tiers that best matches your workload."));
           this._add(control);
           break;
         case "credit-account-box":
