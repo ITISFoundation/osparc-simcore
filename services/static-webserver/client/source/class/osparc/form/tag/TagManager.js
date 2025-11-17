@@ -61,11 +61,15 @@ qx.Class.define("osparc.form.tag.TagManager", {
   members: {
     __studyData: null,
     __resourceId: null,
+    __introLabel: null,
     __selectedTags: null,
     __tagsContainer: null,
     __addTagButton: null,
 
     __renderLayout: function() {
+      const introLabel = this.__introLabel = osparc.dashboard.ResourceDetails.createIntroLabel();
+      this._add(introLabel);
+
       const filter = new osparc.filter.TextFilter("name", "studyBrowserTagManager").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
@@ -122,6 +126,12 @@ qx.Class.define("osparc.form.tag.TagManager", {
     setStudyData: function(studyData) {
       this.__studyData = studyData;
       this.__resourceId = studyData["uuid"];
+
+      const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this.__studyData["resourceType"], {plural: true}) || "projects";
+      this.__introLabel.set({
+        value: this.tr("Manage and apply tags to better organize your " + resourceAlias + ". Select from existing tags or create new ones, then save your changes when ready."),
+      });
+
       this.__selectedTags.removeAll();
       this.__selectedTags.append(studyData["tags"]);
       this.__repopulateTags();

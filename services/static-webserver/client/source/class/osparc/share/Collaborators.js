@@ -280,7 +280,7 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __buildLayout: function() {
-      const introText = this._getIntroText();
+      const introText = this.__getIntroText();
       if (introText) {
         const introLabel = osparc.dashboard.ResourceDetails.createIntroLabel(introText);
         this._add(introLabel);
@@ -293,7 +293,7 @@ qx.Class.define("osparc.share.Collaborators", {
       this._createChildControlImpl("template-link");
     },
 
-    _getIntroText: function() {
+    __getIntroText: function() {
       switch (this._resourceType) {
         case "study":
         case "template":
