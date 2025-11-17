@@ -37,9 +37,11 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
 
   members: {
     _populateIntroText: function() {
-      const text = this.tr("Here you can select in which mode the services will be started:");
+      const text = this.tr("Here you can select in which mode the services will be started. You can also enable/disable Autostart services to automatically start all services when the project boots, ensuring a ready-to-use workspace without manual steps.");
       const introText = new qx.ui.basic.Label(text).set({
-        font: "text-14"
+        font: "text-14",
+        rich: true,
+        wrap: true,
       });
       this._introText.add(introText);
     },
