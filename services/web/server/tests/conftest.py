@@ -501,7 +501,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         url = client.app.router["delete_project"].url_for(project_id=project_uuid)
         resp = await client.delete(url.path)
 
-        assert resp.ok, "got {resp}"
+        assert resp.ok, f"got {resp}"
 
         # ensure deletion
         url = client.app.router["get_project"].url_for(project_id=project_uuid)
