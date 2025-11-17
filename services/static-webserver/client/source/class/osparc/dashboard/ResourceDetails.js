@@ -160,12 +160,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     createIntroLabel: function(text) {
-      const introLabel = new qx.ui.basic.Label(text).set({
+      return new qx.ui.basic.Label(text).set({
         font: "text-14",
         rich: true,
         wrap: true,
       });
-      return introLabel;
     },
 
     disableIfInUse: function(resourceData, widget) {
