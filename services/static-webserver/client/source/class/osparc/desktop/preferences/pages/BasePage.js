@@ -26,7 +26,6 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
 
     this.set({
       backgroundColor: "window-popup-background",
-      paddingTop: 5,
       paddingLeft: 15
     });
 
