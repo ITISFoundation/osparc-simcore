@@ -24,7 +24,7 @@ qx.Class.define("osparc.study.BillingSettings", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(20));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.__studyData = studyData;
 
@@ -44,6 +44,10 @@ qx.Class.define("osparc.study.BillingSettings", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "intro-label":
+          control = osparc.dashboard.ResourceDetails.createIntroLabel(this.tr("This section lets you control how your project and apps are funded and powered. You can switch the Credit Account assigned to the project and choose the Tiers that best matches your workload."));
+          this._add(control);
+          break;
         case "credit-account-box":
           control = osparc.study.StudyOptions.createGroupBox(this.tr("Credit Account"));
           this._add(control);
@@ -90,6 +94,7 @@ qx.Class.define("osparc.study.BillingSettings", {
     },
 
     __buildLayout: function() {
+      this.getChildControl("intro-label");
       if (osparc.study.Utils.isInDebt(this.__studyData)) {
         this.__buildDebtMessage();
       }
