@@ -6,7 +6,6 @@ from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
-from models_library.list_operations import OrderDirection
 from models_library.products import ProductName
 from models_library.users import UserID
 from notifications_library._email import create_email_session
@@ -16,7 +15,6 @@ from settings_library.email import SMTPSettings
 from ..db.plugin import get_asyncpg_engine
 from ..products._service import get_product
 from . import _accounts_repository, _users_repository
-from ._accounts_repository import OrderKeys
 from .exceptions import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
