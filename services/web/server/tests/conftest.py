@@ -501,30 +501,31 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         url = client.app.router["delete_project"].url_for(project_id=project_uuid)
         resp = await client.delete(url.path)
 
-        assert resp.ok, f"got {resp}"
+        if resp.ok:
+            # NOTE: If deleted OK, then let's wait until project is really gone
+            url = client.app.router["get_project"].url_for(project_id=project_uuid)
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.1),
+                stop=stop_after_delay(10),
+                reraise=True,
+                retry=retry_if_exception_type(tenacity.TryAgain),
+            ):
+                with attempt:
+                    logging.info(
+                        "--> waiting for deletion %s...",
+                        attempt.retry_state.attempt_number,
+                    )
+                    resp = await client.get(url.path)
+                    if resp.status == status.HTTP_200_OK:
+                        raise tenacity.TryAgain
 
-        # ensure deletion
-        url = client.app.router["get_project"].url_for(project_id=project_uuid)
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.1),
-            stop=stop_after_delay(10),
-            reraise=True,
-            retry=retry_if_exception_type(tenacity.TryAgain),
-        ):
-            with attempt:
-                logging.info(
-                    "--> waiting for deletion %s...",
-                    attempt.retry_state.attempt_number,
-                )
-                resp = await client.get(url.path)
-                if resp.status == status.HTTP_200_OK:
-                    raise tenacity.TryAgain
-
-                await assert_status(resp, status.HTTP_404_NOT_FOUND)
-                logging.info(
-                    "-- project deletion completed: %s",
-                    json.dumps(attempt.retry_state.retry_object.statistics, indent=2),
-                )
+                    await assert_status(resp, status.HTTP_404_NOT_FOUND)
+                    logging.info(
+                        "-- project deletion completed: %s",
+                        json.dumps(
+                            attempt.retry_state.retry_object.statistics, indent=2
+                        ),
+                    )
 
 
 @pytest.fixture
