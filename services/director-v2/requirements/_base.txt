@@ -67,7 +67,7 @@ aiormq==6.9.2
     # via aio-pika
 aiosignal==1.4.0
     # via aiohttp
-alembic==1.17.1
+alembic==1.17.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
@@ -148,7 +148,7 @@ certifi==2025.11.12
     #   sentry-sdk
 charset-normalizer==3.4.4
     # via requests
-click==8.3.0
+click==8.3.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -395,7 +395,7 @@ multidict==6.7.0
     #   yarl
 networkx==3.5
     # via -r requirements/_base.in
-numpy==2.3.4
+numpy==2.3.5
     # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 opentelemetry-api==1.38.0
     # via
@@ -587,7 +587,7 @@ psycopg2-binary==2.9.11
     # via sqlalchemy
 pycryptodome==3.23.0
     # via stream-zip
-pydantic==2.12.4
+pydantic==2.11.10
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -662,7 +662,7 @@ pydantic==2.12.4
     #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.41.5
+pydantic-core==2.33.2
     # via pydantic
 pydantic-extra-types==2.10.6
     # via
@@ -890,7 +890,7 @@ rich-toolkit==0.15.1
     #   fastapi-cloud-cli
 rignore==0.7.6
     # via fastapi-cloud-cli
-rpds-py==0.28.0
+rpds-py==0.29.0
     # via
     #   jsonschema
     #   referencing

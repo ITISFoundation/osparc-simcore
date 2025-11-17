@@ -29,7 +29,7 @@ aiosignal==1.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.17.1
+alembic==1.17.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -68,7 +68,7 @@ charset-normalizer==3.4.4
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.3.0
+click==8.3.1
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -184,7 +184,7 @@ mypy-extensions==1.1.0
     # via mypy
 narwhals==2.11.0
     # via bokeh
-numpy==2.3.4
+numpy==2.3.5
     # via
     #   -c requirements/_base.txt
     #   bokeh

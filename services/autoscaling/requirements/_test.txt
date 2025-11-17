@@ -35,7 +35,7 @@ botocore==1.40.61
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.40.73
+botocore-stubs==1.40.74
     # via
     #   -c requirements/_base.txt
     #   types-aiobotocore
@@ -54,7 +54,7 @@ charset-normalizer==3.4.4
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.3.0
+click==8.3.1
     # via
     #   -c requirements/_base.txt
     #   flask
@@ -189,12 +189,12 @@ py-partiql-parser==0.6.3
     # via moto
 pycparser==2.23
     # via cffi
-pydantic==2.12.4
+pydantic==2.11.10
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.41.5
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -268,7 +268,7 @@ respx==0.22.0
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.28.0
+rpds-py==0.29.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema

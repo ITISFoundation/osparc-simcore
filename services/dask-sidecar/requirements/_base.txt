@@ -92,7 +92,7 @@ certifi==2025.11.12
     #   requests
 charset-normalizer==3.4.4
     # via requests
-click==8.3.0
+click==8.3.1
     # via
     #   dask
     #   distributed
@@ -202,7 +202,7 @@ multidict==6.7.0
     #   yarl
 narwhals==2.11.0
     # via bokeh
-numpy==2.3.4
+numpy==2.3.5
     # via
     #   bokeh
     #   contourpy
@@ -328,7 +328,7 @@ psutil==7.1.3
     #   distributed
 pycryptodome==3.23.0
     # via stream-zip
-pydantic==2.12.4
+pydantic==2.11.10
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -369,7 +369,7 @@ pydantic==2.12.4
     #   fast-depends
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.41.5
+pydantic-core==2.33.2
     # via pydantic
 pydantic-extra-types==2.10.6
     # via
@@ -502,7 +502,7 @@ rich==14.2.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.28.0
+rpds-py==0.29.0
     # via
     #   jsonschema
     #   referencing
