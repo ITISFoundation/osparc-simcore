@@ -2,8 +2,8 @@ Dear Support team,
 
 We have received the following request form for an account in :
 - Product: **{{ product.display_name }}**
-- Host: **{{ host|rstrip('/') }}**
-- PO center: https://{{ host|rstrip('/') }}/#/review-users
+- Host: **{{ host }}**
+- PO center: https://{{ host }}/#/review-users
 {{ dumps(request_form) }}
 
 Some details about the requested product follow:

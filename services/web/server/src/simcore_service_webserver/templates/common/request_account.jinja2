@@ -1,7 +1,7 @@
-Request for an Account in {{ host|rstrip('/') }}
+Request for an Account in {{ host }}
 <!--
 NOTE: this header is only for testing purposes and removed automatically before sending
-TEST host:{{ host|rstrip('/') }}
+TEST host:{{ host }}
 TEST name:{{ name }}
 TEST product:{{ product }}
 TEST request_form:{{ request_form }}
@@ -14,8 +14,8 @@ Dear {{ name }},
   We have received the following request form for an account in :
 <ol>
   <li>Product: <b>{{ product.display_name }}</b></li>
-  <li>Host: <b>{{ host|rstrip('/') }}</b></li>
-  <li>PO center: <b>https://{{ host|rstrip('/') }}/#/review-users</b></li>
+  <li>Host: <b>{{ host }}</b></li>
+  <li>PO center: <b>https://{{ host }}/#/review-users</b></li>
 </ol>
 </p>
 
