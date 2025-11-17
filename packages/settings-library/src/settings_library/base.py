@@ -97,13 +97,16 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
 
 def _get_class_from_typing(typ: type) -> type:
     """Unwraps Annotated, Union, and other typing types to return the base class suitable for issubclass()."""
+    if isinstance(typ, type):
+        # It's already a class
+        return typ
     origin = get_origin(typ)
     if origin is Annotated:
         # For Annotated, the first argument is the real type
         return cast(type, get_args(typ)[0])
-    if isinstance(typ, type):
-        # It's already a class
-        return typ
+
+    if isinstance(origin, type):
+        return origin
     # Add more special cases if needed (Tuple, List, etc.) -- usually not suitable for issubclass
     msg = f"Cannot extract class from typing type: {typ}"
     raise ValueError(msg)
