@@ -49,6 +49,6 @@ class OsparcErrorMixin(PydanticErrorMixin):
         """Returns context in which error occurred and stored within the exception"""
         return dict(**self.__dict__)
 
-    def error_code(self) -> str:
+    def get_or_create_error_code(self) -> str:
         assert isinstance(self, Exception), "subclass must be exception"  # nosec
-        return create_error_code(self)
+        return self.error_context().get("error_code") or create_error_code(self)

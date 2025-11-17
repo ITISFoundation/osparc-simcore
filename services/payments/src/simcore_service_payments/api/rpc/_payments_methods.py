@@ -1,12 +1,15 @@
 import logging
 from decimal import Decimal
 
+from common_library.error_codes import create_error_code
 from common_library.logging.logging_base import get_log_record_extra
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from models_library.api_schemas_payments.errors import (
     PaymentsError,
     PaymentServiceUnavailableError,
     PaymentsMethodsError,
+    PaymentUnverifiedError,
 )
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
@@ -26,7 +29,7 @@ from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments, payments_methods
 from ...services.notifier import NotifierService
-from ...services.payments_gateway import PaymentsGatewayApi
+from ...services.payments_gateway import PaymentsGatewayApi, UnverifiedPaymentError
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
 
 _logger = logging.getLogger(__name__)
@@ -150,6 +153,7 @@ async def delete_payment_method(
     reraise_if_error_type=(
         PaymentsMethodsError,
         PaymentsError,
+        PaymentUnverifiedError,
         PaymentServiceUnavailableError,
     )
 )
@@ -170,31 +174,62 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ):
-    with log_context(
-        _logger,
-        logging.INFO,
-        "Pay w/ %s to %s",
-        f"{payment_method_id=}",
-        f"{wallet_id=}",
-        extra=get_log_record_extra(user_id=user_id),
-    ):
-        return await payments.pay_with_payment_method(
-            gateway=PaymentsGatewayApi.get_from_app_state(app),
-            rut=ResourceUsageTrackerApi.get_from_app_state(app),
-            repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
-            repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
-            notifier=NotifierService.get_from_app_state(app),
-            payment_method_id=payment_method_id,
-            amount_dollars=amount_dollars,
-            target_credits=target_credits,
-            product_name=product_name,
-            wallet_id=wallet_id,
-            wallet_name=wallet_name,
-            user_id=user_id,
-            user_name=user_name,
-            user_address=user_address,
-            user_email=user_email,
-            stripe_price_id=stripe_price_id,
-            stripe_tax_rate_id=stripe_tax_rate_id,
-            comment=comment,
+    try:
+
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Pay w/ %s to %s",
+            f"{payment_method_id=}",
+            f"{wallet_id=}",
+            extra=get_log_record_extra(user_id=user_id),
+        ):
+            return await payments.pay_with_payment_method(
+                gateway=PaymentsGatewayApi.get_from_app_state(app),
+                rut=ResourceUsageTrackerApi.get_from_app_state(app),
+                repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
+                repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
+                notifier=NotifierService.get_from_app_state(app),
+                payment_method_id=payment_method_id,
+                amount_dollars=amount_dollars,
+                target_credits=target_credits,
+                product_name=product_name,
+                wallet_id=wallet_id,
+                wallet_name=wallet_name,
+                user_id=user_id,
+                user_name=user_name,
+                user_address=user_address,
+                user_email=user_email,
+                stripe_price_id=stripe_price_id,
+                stripe_tax_rate_id=stripe_tax_rate_id,
+                comment=comment,
+            )
+
+    except UnverifiedPaymentError as e:
+        #
+        # NOTE: This logs on payment service and re-raises a PaymentUnverifiedError in
+        # the RCP client side (i.e. web-server) where it will be logged again
+        # with THE SAME error_code. This way we can connect tracebacks from both services in Graylog
+        #
+        error_code = create_error_code(e)
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Payment could not be verified",
+                error=e,
+                error_context={
+                    "payment_method_id": payment_method_id,
+                    "wallet_id": wallet_id,
+                    "user_id": user_id,
+                },
+                # NOTE: this will replicate
+                error_code=error_code,
+            )
         )
+        raise PaymentUnverifiedError(
+            operation_id="rpc.pay_with_payment_method",
+            internal_details=str(e),
+            error_code=error_code,  # keeps the same error code to trace logs across services
+            payment_method_id=payment_method_id,
+            wallet_id=wallet_id,
+            user_id=user_id,
+        ) from None  # UnverifiedPaymentError (unfortunately) does not serializes over RPC
