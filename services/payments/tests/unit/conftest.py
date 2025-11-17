@@ -395,6 +395,10 @@ def mock_payments_gateway_service_or_none(
     # OR tests against mock payments-gateway
     mock_payments_routes(mock_payments_gateway_service_api_base)
     mock_payments_methods_routes(mock_payments_gateway_service_api_base)
+
+    # NOTE: For timeout tests, the mock will be configured directly in the test
+    # since it needs to override the normal payment behavior
+
     return mock_payments_gateway_service_api_base
 
 

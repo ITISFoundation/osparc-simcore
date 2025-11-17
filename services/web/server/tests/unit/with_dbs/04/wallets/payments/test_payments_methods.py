@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from aiohttp.test_utils import TestClient
-from faker import Faker
+from models_library.api_schemas_payments.errors import PaymentUnverifiedError
 from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodGet,
@@ -352,26 +352,14 @@ async def wallet_payment_method_id(
     return await _add_payment_method(client, wallet_id=logged_user_wallet.wallet_id)
 
 
-@pytest.mark.parametrize(
-    "amount_usd,expected_status",
-    [
-        (1, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (26, status.HTTP_202_ACCEPTED),
-    ],
-)
-async def test_one_time_payment_with_payment_method(
-    latest_osparc_price: Decimal,
-    client: TestClient,
-    logged_user_wallet: WalletGet,
-    mock_rpc_payments_service_api: dict[str, MagicMock],
-    wallet_payment_method_id: PaymentMethodID,
+@pytest.fixture
+def mock_payment_dependencies(
     mocker: MockerFixture,
-    faker: Faker,
-    amount_usd: int,
-    expected_status: int,
-    setup_user_pre_registration_details_db: None,
+    latest_osparc_price: Decimal,  # product is billable
+    setup_user_pre_registration_details_db: None,  # user is pre-registered to have billable information
 ):
-    assert client.app
+    """Fixture that mocks common payment dependencies; ensures that product is billable and user pre-registered with billable information"""
+
     assert latest_osparc_price > 0, "current product should be billable"
 
     send_message = mocker.patch(
@@ -382,16 +370,29 @@ async def test_one_time_payment_with_payment_method(
         "simcore_service_webserver.payments._onetime_api.add_credits_to_wallet",
         autospec=True,
     )
+    return {
+        "send_message": send_message,
+        "add_credits_to_wallet": mock_rut_add_credits_to_wallet,
+    }
 
-    assert (
-        client.app.router["pay_with_payment_method"]
-        .url_for(
-            wallet_id=f"{logged_user_wallet.wallet_id}",
-            payment_method_id=wallet_payment_method_id,
-        )
-        .path
-        == f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}:pay"
-    )
+
+@pytest.mark.parametrize(
+    "amount_usd,expected_status",
+    [
+        (1, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (26, status.HTTP_202_ACCEPTED),
+    ],
+)
+async def test_one_time_payment_with_payment_method(
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+    mock_rpc_payments_service_api: dict[str, MagicMock],
+    wallet_payment_method_id: PaymentMethodID,
+    mock_payment_dependencies: dict[str, MagicMock],
+    amount_usd: int,
+    expected_status: int,
+):
+    assert client.app
 
     # TEST add payment to wallet
     response = await client.post(
@@ -409,13 +410,13 @@ async def test_one_time_payment_with_payment_method(
         assert payment.payment_form_url is None
 
         # check notification to RUT (fake)
-        assert mock_rut_add_credits_to_wallet.called
-        mock_rut_add_credits_to_wallet.assert_called_once()
+        assert mock_payment_dependencies["add_credits_to_wallet"].called
+        mock_payment_dependencies["add_credits_to_wallet"].assert_called_once()
 
         # check notification after response
         await asyncio.sleep(0.1)
-        assert send_message.called
-        send_message.assert_called_once()
+        assert mock_payment_dependencies["send_message"].called
+        mock_payment_dependencies["send_message"].assert_called_once()
 
         # list all payment transactions in all my wallets
         response = await client.get("/v0/wallets/-/payments")
@@ -434,3 +435,45 @@ async def test_one_time_payment_with_payment_method(
         assert transaction.completed_at is not None
         assert transaction.created_at < transaction.completed_at
         assert transaction.invoice_url is not None
+
+
+async def test_pay_with_payment_method_handles_payment_unverified_error(
+    client: TestClient,
+    logged_user_wallet: WalletGet,  # user has a wallet
+    wallet_payment_method_id: PaymentMethodID,
+    mock_payment_dependencies: dict[str, MagicMock],
+    mocker: MockerFixture,
+):
+    """Test that pay_with_payment_method endpoint properly handles PaymentUnverifiedError"""
+    assert client.app
+    from simcore_service_webserver.payments._onetime_api import _rpc  # noqa: PLC0415
+
+    mock_pay_with_payment_method = mocker.patch.object(
+        _rpc,
+        "pay_with_payment_method",
+        side_effect=PaymentUnverifiedError(
+            internal_details="Payment verification failed and this is the internal log",
+            error_code="TEST12345",
+        ),
+    )
+
+    wallet = logged_user_wallet
+
+    # Make request to pay with payment method
+    response = await client.post(
+        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{wallet_payment_method_id}:pay",
+        json={
+            "priceDollars": 100.0,
+        },
+    )
+
+    # Verify that the error is properly handled and returns appropriate status
+    data, error = await assert_status(response, status.HTTP_502_BAD_GATEWAY)
+    assert not data
+
+    assert (
+        error["supportId"] == "TEST12345"
+    ), f"{error=} should provide support ID from exception"
+
+    # Verify the mocked function was called
+    assert mock_pay_with_payment_method.called
