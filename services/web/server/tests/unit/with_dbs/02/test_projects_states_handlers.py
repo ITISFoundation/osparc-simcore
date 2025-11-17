@@ -266,6 +266,7 @@ async def test_share_project_user_roles(
     rabbit_service: RabbitSettings,
     mock_dynamic_scheduler: None,
     client: TestClient,
+    other_client: TestClient,
     logged_user: dict,
     primary_group: dict[str, str],
     standard_groups: list[dict[str, str]],
@@ -305,9 +306,8 @@ async def test_share_project_user_roles(
     # get another user logged in now. We create a new client to avoid session conflicts with request_create_project
     # cleanup
     #
-    new_client = await aiohttp_client(client.app)
     await log_client_in(
-        new_client,
+        other_client,
         {"role": user_role.name},
         enable_check=user_role != UserRole.ANONYMOUS,
         exit_stack=exit_stack,
@@ -315,13 +315,13 @@ async def test_share_project_user_roles(
     if new_project:
         # user 2 can get the project if they have proper role permissions
         await assert_get_same_project(
-            new_client,
+            other_client,
             new_project,
             expected.ok,
         )
 
         # user 2 can list projects if they have proper role permissions
-        list_projects = await _list_projects(new_client, expected.ok)
+        list_projects = await _list_projects(other_client, expected.ok)
         expected_project_count = 1 if user_role != UserRole.ANONYMOUS else 0
         assert len(list_projects) == expected_project_count
 
@@ -330,13 +330,13 @@ async def test_share_project_user_roles(
         project_update["name"] = "my super name"
         project_update.pop("accessRights")
         await _replace_project(
-            new_client,
+            other_client,
             project_update,
             expected.no_content,
         )
 
         # user 2 can delete projects if they have proper role permissions
-        resp = await _delete_project(new_client, new_project)
+        resp = await _delete_project(other_client, new_project)
         await assert_status(
             resp,
             expected_status_code=expected.no_content,
