@@ -107,20 +107,7 @@ async def _subscribe_to_rabbitmq(app) -> str:
 
 
 async def _unsubscribe_from_rabbitmq(app) -> None:
-    # with (
-    #     log_context(
-    #         _logger,
-    #         logging.INFO,
-    #         msg=f"Unsubscribing from {WebserverChatbotRabbitMessage.get_channel_name()} channel",
-    #     ),
-    #     log_catch(_logger, reraise=False),
-    # ):
-    #     rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-    #     if app[_RABBITMQ_WEBSERVER_CHATBOT_CONSUMER_APPKEY]:
-    #         await rabbit_client.unsubscribe(
-    #             app[_RABBITMQ_WEBSERVER_CHATBOT_CONSUMER_APPKEY]
-    #         )
-    ...
+    assert app  # nosec
 
 
 async def on_cleanup_ctx_rabbitmq_consumer(
