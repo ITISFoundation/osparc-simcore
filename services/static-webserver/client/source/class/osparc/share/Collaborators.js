@@ -283,12 +283,25 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __buildLayout: function() {
+      const introText = this._getIntroText();
+      if (introText) {
+        const introLabel = new qx.ui.basic.Label(introText).set({
+          font: "text-14",
+          rich: true,
+          wrap: true,
+        });
+        this._add(introLabel);
+      }
       if (this.__canIShare()) {
         this.__addCollaborators = this._createChildControlImpl("add-collaborator");
       }
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
       this._createChildControlImpl("template-link");
+    },
+
+    _getIntroText: function() {
+      return null;
     },
 
     __createAddCollaboratorSection: function() {
