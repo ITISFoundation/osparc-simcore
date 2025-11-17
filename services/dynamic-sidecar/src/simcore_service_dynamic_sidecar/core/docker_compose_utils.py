@@ -1,4 +1,4 @@
-""" Wrapper around docker-compose CLI with pre-defined options
+"""Wrapper around docker-compose CLI with pre-defined options
 
 
 docker_compose_* coroutines are implemented such that they can only

@@ -140,7 +140,7 @@ async def _wait_for_completion(
     job_id: AsyncJobId,
     owner_metadata: OwnerMetadata,
     client_timeout: datetime.timedelta,
-) -> AsyncGenerator[AsyncJobStatus, None]:
+) -> AsyncGenerator[AsyncJobStatus]:
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(client_timeout.total_seconds()),
@@ -191,7 +191,7 @@ async def wait_and_get_result(
     job_id: AsyncJobId,
     owner_metadata: OwnerMetadata,
     client_timeout: datetime.timedelta,
-) -> AsyncGenerator[AsyncJobComposedResult, None]:
+) -> AsyncGenerator[AsyncJobComposedResult]:
     """when a job is already submitted this will wait for its completion
     and return the composed result"""
     try:
@@ -239,7 +239,7 @@ async def submit_and_wait(
     owner_metadata: OwnerMetadata,
     client_timeout: datetime.timedelta,
     **kwargs,
-) -> AsyncGenerator[AsyncJobComposedResult, None]:
+) -> AsyncGenerator[AsyncJobComposedResult]:
     async_job_rpc_get = None
     try:
         async_job_rpc_get = await submit(

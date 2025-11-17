@@ -118,7 +118,7 @@ async def with_api_server_celery_worker(
         tracing_settings=None,  # disable tracing in tests
         service_name="api-server-worker-test",
     )
-     # Signals must be explicitily connected
+    # Signals must be explicitily connected
     monkeypatch.setenv("API_SERVER_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
 

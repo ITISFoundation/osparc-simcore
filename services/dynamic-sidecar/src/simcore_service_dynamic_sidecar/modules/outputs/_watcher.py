@@ -103,7 +103,7 @@ async def enable_event_propagation(app: FastAPI) -> None:
 
 
 @asynccontextmanager
-async def event_propagation_disabled(app: FastAPI) -> AsyncGenerator[None, None]:
+async def event_propagation_disabled(app: FastAPI) -> AsyncGenerator[None]:
     try:
         await disable_event_propagation(app)
         yield None

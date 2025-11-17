@@ -1,5 +1,4 @@
-""" Helper script to generate OAS automatically
-"""
+"""Helper script to generate OAS automatically"""
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
@@ -49,40 +48,35 @@ router = APIRouter(
     response_model=Envelope[WalletGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_wallet(body: CreateWalletBodyParams):
-    ...
+async def create_wallet(body: CreateWalletBodyParams): ...
 
 
 @router.get(
     "/wallets",
     response_model=Envelope[list[WalletGetWithAvailableCredits]],
 )
-async def list_wallets():
-    ...
+async def list_wallets(): ...
 
 
 @router.get(
     "/wallets/default",
     response_model=Envelope[WalletGetWithAvailableCredits],
 )
-async def get_default_wallet():
-    ...
+async def get_default_wallet(): ...
 
 
 @router.get(
     "/wallets/{wallet_id}",
     response_model=Envelope[WalletGetWithAvailableCredits],
 )
-async def get_wallet(wallet_id: WalletID):
-    ...
+async def get_wallet(wallet_id: WalletID): ...
 
 
 @router.put(
     "/wallets/{wallet_id}",
     response_model=Envelope[WalletGet],
 )
-async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams):
-    ...
+async def update_wallet(wallet_id: WalletID, body: PutWalletBodyParams): ...
 
 
 ### Wallets payments
@@ -115,8 +109,7 @@ async def list_all_payments(params: Annotated[PageQueryParameters, Depends()]):
         }
     },
 )
-async def get_payment_invoice_link(wallet_id: WalletID, payment_id: PaymentID):
-    ...
+async def get_payment_invoice_link(wallet_id: WalletID, payment_id: PaymentID): ...
 
 
 @router.post(
@@ -124,8 +117,7 @@ async def get_payment_invoice_link(wallet_id: WalletID, payment_id: PaymentID):
     response_description="Successfully cancelled",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
-    ...
+async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID): ...
 
 
 ### Wallets payment-methods
@@ -137,8 +129,7 @@ async def cancel_payment(wallet_id: WalletID, payment_id: PaymentID):
     response_description="Successfully initialized",
     status_code=status.HTTP_202_ACCEPTED,
 )
-async def init_creation_of_payment_method(wallet_id: WalletID):
-    ...
+async def init_creation_of_payment_method(wallet_id: WalletID): ...
 
 
 @router.post(
@@ -148,8 +139,7 @@ async def init_creation_of_payment_method(wallet_id: WalletID):
 )
 async def cancel_creation_of_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID
-):
-    ...
+): ...
 
 
 @router.get(
@@ -164,8 +154,9 @@ async def list_payments_methods(wallet_id: WalletID):
     "/wallets/{wallet_id}/payments-methods/{payment_method_id}",
     response_model=Envelope[PaymentMethodGet],
 )
-async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMethodID):
-    ...
+async def get_payment_method(
+    wallet_id: WalletID, payment_method_id: PaymentMethodID
+): ...
 
 
 @router.delete(
@@ -175,8 +166,7 @@ async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMeth
 )
 async def delete_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID
-):
-    ...
+): ...
 
 
 @router.post(
@@ -187,8 +177,7 @@ async def delete_payment_method(
 )
 async def pay_with_payment_method(
     wallet_id: WalletID, payment_method_id: PaymentMethodID, _body: CreateWalletPayment
-):
-    ...
+): ...
 
 
 #
@@ -200,8 +189,7 @@ async def pay_with_payment_method(
     "/wallets/{wallet_id}/auto-recharge",
     response_model=Envelope[GetWalletAutoRecharge],
 )
-async def get_wallet_autorecharge(wallet_id: WalletID):
-    ...
+async def get_wallet_autorecharge(wallet_id: WalletID): ...
 
 
 @router.put(
@@ -210,8 +198,7 @@ async def get_wallet_autorecharge(wallet_id: WalletID):
 )
 async def replace_wallet_autorecharge(
     wallet_id: WalletID, _body: ReplaceWalletAutoRecharge
-):
-    ...
+): ...
 
 
 ### Wallets groups
@@ -226,8 +213,7 @@ _extra_tags: list[str | Enum] = ["groups"]
 )
 async def create_wallet_group(
     wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams
-):
-    ...
+): ...
 
 
 @router.get(
@@ -235,8 +221,7 @@ async def create_wallet_group(
     response_model=Envelope[list[WalletGroupGet]],
     tags=_extra_tags,
 )
-async def list_wallet_groups(wallet_id: WalletID):
-    ...
+async def list_wallet_groups(wallet_id: WalletID): ...
 
 
 @router.put(
@@ -246,8 +231,7 @@ async def list_wallet_groups(wallet_id: WalletID):
 )
 async def update_wallet_group(
     wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams
-):
-    ...
+): ...
 
 
 @router.delete(
@@ -255,5 +239,4 @@ async def update_wallet_group(
     status_code=status.HTTP_204_NO_CONTENT,
     tags=_extra_tags,
 )
-async def delete_wallet_group(wallet_id: WalletID, group_id: GroupID):
-    ...
+async def delete_wallet_group(wallet_id: WalletID, group_id: GroupID): ...

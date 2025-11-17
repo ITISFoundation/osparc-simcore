@@ -33,4 +33,4 @@ async def healthcheck(
 
     # NOTE: check also redis?/postgres connections
 
-    return f"{__name__}@{datetime.datetime.now(datetime.timezone.utc).isoformat()}"
+    return f"{__name__}@{datetime.datetime.now(datetime.UTC).isoformat()}"

@@ -69,9 +69,9 @@ def test_predicates_with_status():
     ]
 
 
-AIOHTTP_EXCEPTION_CLASSES_MAP: dict[
-    int, type[HTTPException]
-] = get_all_aiohttp_http_exceptions(HTTPException)
+AIOHTTP_EXCEPTION_CLASSES_MAP: dict[int, type[HTTPException]] = (
+    get_all_aiohttp_http_exceptions(HTTPException)
+)
 
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status))

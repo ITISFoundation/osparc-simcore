@@ -41,9 +41,9 @@ INVALID_IDENTIFIERS: list[str] = [
 ]
 
 
-_OSPARC_VARIABLE_IDENTIFIER_ADAPTER: TypeAdapter[
-    OsparcVariableIdentifier
-] = TypeAdapter(OsparcVariableIdentifier)
+_OSPARC_VARIABLE_IDENTIFIER_ADAPTER: TypeAdapter[OsparcVariableIdentifier] = (
+    TypeAdapter(OsparcVariableIdentifier)
+)
 
 
 @pytest.fixture(params=VALID_IDENTIFIERS)

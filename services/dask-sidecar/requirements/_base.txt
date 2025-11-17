@@ -1,6 +1,6 @@
 aio-pika==9.5.5
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiobotocore==2.22.0
+aiobotocore==2.25.0
     # via s3fs
 aiocache==0.12.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
@@ -67,7 +67,7 @@ blosc==1.11.3
     # via -r requirements/_base.in
 bokeh==3.7.3
     # via dask
-botocore==1.37.3
+botocore==1.40.49
     # via aiobotocore
 certifi==2025.4.26
     # via
@@ -143,9 +143,7 @@ idna==3.10
     #   requests
     #   yarl
 importlib-metadata==8.6.1
-    # via
-    #   dask
-    #   opentelemetry-api
+    # via opentelemetry-api
 jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -178,7 +176,7 @@ jsonref==1.1.0
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-jsonschema==4.23.0
+jsonschema==4.25.1
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -270,7 +268,7 @@ opentelemetry-semantic-conventions==0.55b1
     #   opentelemetry-sdk
 opentelemetry-util-http==0.55b1
     # via opentelemetry-instrumentation-requests
-orjson==3.10.18
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -314,7 +312,7 @@ pandas==2.2.3
     # via bokeh
 partd==1.4.2
     # via dask
-pillow==11.2.1
+pillow==12.0.0
     # via bokeh
 prometheus-client==0.22.0
     # via -r requirements/_base.in
@@ -417,7 +415,7 @@ pydantic-settings==2.7.0
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.19.1
     # via rich
-pyinstrument==5.0.1
+pyinstrument==5.1.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via
@@ -429,7 +427,7 @@ python-dotenv==1.1.0
     # via pydantic-settings
 pytz==2025.2
     # via pandas
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -506,7 +504,7 @@ rich==14.1.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-rpds-py==0.25.0
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing
@@ -548,8 +546,6 @@ types-python-dateutil==2.9.0.20250516
 typing-extensions==4.14.1
     # via
     #   aiodebug
-    #   anyio
-    #   exceptiongroup
     #   faststream
     #   opentelemetry-api
     #   opentelemetry-exporter-otlp-proto-grpc

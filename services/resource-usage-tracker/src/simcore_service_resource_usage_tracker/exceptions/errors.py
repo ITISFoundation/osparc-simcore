@@ -8,8 +8,7 @@ class ResourceUsageTrackerBaseError(OsparcErrorMixin, Exception):
     msg_template = "Resource usage Tracker Service Error"
 
 
-class ConfigurationError(ResourceUsageTrackerBaseError):
-    ...
+class ConfigurationError(ResourceUsageTrackerBaseError): ...
 
 
 ###  NotCreatedDBError
@@ -19,28 +18,22 @@ class NotCreatedDBError(ResourceUsageTrackerBaseError):
     msg_template = "Data was not inserted to the DB. Data: {data}"
 
 
-class ServiceRunNotCreatedDBError(NotCreatedDBError):
-    ...
+class ServiceRunNotCreatedDBError(NotCreatedDBError): ...
 
 
-class CreditTransactionNotCreatedDBError(NotCreatedDBError):
-    ...
+class CreditTransactionNotCreatedDBError(NotCreatedDBError): ...
 
 
-class PricingPlanNotCreatedDBError(NotCreatedDBError):
-    ...
+class PricingPlanNotCreatedDBError(NotCreatedDBError): ...
 
 
-class PricingUnitNotCreatedDBError(NotCreatedDBError):
-    ...
+class PricingUnitNotCreatedDBError(NotCreatedDBError): ...
 
 
-class PricingUnitCostNotCreatedDBError(NotCreatedDBError):
-    ...
+class PricingUnitCostNotCreatedDBError(NotCreatedDBError): ...
 
 
-class PricingPlanToServiceNotCreatedDBError(NotCreatedDBError):
-    ...
+class PricingPlanToServiceNotCreatedDBError(NotCreatedDBError): ...
 
 
 ### DoesNotExistsDBError
@@ -63,8 +56,7 @@ class PricingUnitCostDoesNotExistsDBError(ResourceUsageTrackerBaseError):
 ### NotFoundError
 
 
-class RutNotFoundError(ResourceUsageTrackerBaseError):
-    ...
+class RutNotFoundError(ResourceUsageTrackerBaseError): ...
 
 
 class PricingPlanNotFoundForServiceError(RutNotFoundError):

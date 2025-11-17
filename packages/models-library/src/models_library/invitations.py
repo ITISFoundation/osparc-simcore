@@ -50,7 +50,9 @@ class InvitationContent(InvitationInputs):
     created: datetime = Field(..., description="Timestamp for creation")
 
     def as_invitation_inputs(self) -> InvitationInputs:
-        return self.model_validate(self.model_dump(exclude={"created"}))    # copy excluding "created"
+        return self.model_validate(
+            self.model_dump(exclude={"created"})
+        )  # copy excluding "created"
 
     @classmethod
     def create_from_inputs(

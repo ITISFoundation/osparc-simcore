@@ -1,7 +1,5 @@
-""" Helpers to build settings for services with http API
+"""Helpers to build settings for services with http API"""
 
-
-"""
 from enum import Enum, auto
 
 from pydantic.networks import AnyUrl

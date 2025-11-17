@@ -1,10 +1,12 @@
 from math import ceil
-from typing import Any, Protocol, runtime_checkable
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Any,
+    Protocol,
+    TypedDict,
+    runtime_checkable,
+)
 
 from pydantic import AnyHttpUrl, TypeAdapter
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 

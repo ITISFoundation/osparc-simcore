@@ -112,11 +112,6 @@ types-awscrt==0.27.6
     # via botocore-stubs
 types-s3transfer==0.13.1
     # via boto3-stubs
-typing-extensions==4.14.1
-    # via
-    #   -c requirements/_base.txt
-    #   boto3-stubs
-    #   pytest-asyncio
 tzdata==2025.2
     # via faker
 urllib3==2.5.0

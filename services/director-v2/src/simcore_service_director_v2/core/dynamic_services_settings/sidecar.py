@@ -98,12 +98,14 @@ class PlacementSettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
-    DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: bool = Field(  # doc: https://docs.docker.com/engine/swarm/networking/#configure-service-discovery
-        default=False,
-        validation_alias=AliasChoices(
-            "DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED"
-        ),
-        description="dynamic-sidecar's service 'endpoint_spec' with {'Mode': 'dnsrr'}",
+    DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: bool = (
+        Field(  # doc: https://docs.docker.com/engine/swarm/networking/#configure-service-discovery
+            default=False,
+            validation_alias=AliasChoices(
+                "DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED"
+            ),
+            description="dynamic-sidecar's service 'endpoint_spec' with {'Mode': 'dnsrr'}",
+        )
     )
     DYNAMIC_SIDECAR_SC_BOOT_MODE: Annotated[
         BootModeEnum,

@@ -9,7 +9,7 @@
 import json
 import sys
 from copy import deepcopy
-from typing import Any
+from typing import Annotated, Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -19,7 +19,6 @@ from simcore_sdk.node_ports_v2.port_validation import (
     PortUnitError,
     validate_port_content,
 )
-from typing_extensions import Annotated
 
 
 def _replace_value_in_dict(item: Any, original_schema: dict[str, Any]):

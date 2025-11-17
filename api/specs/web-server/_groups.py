@@ -168,29 +168,25 @@ async def delete_group_user(
 async def get_group_classifiers(
     _path: Annotated[GroupsPathParams, Depends()],
     _query: Annotated[GroupsClassifiersQuery, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
     "/groups/sparc/classifiers/scicrunch-resources/{rrid}",
     response_model=Envelope[ResearchResource],
 )
-async def get_scicrunch_resource(rrid: str):
-    ...
+async def get_scicrunch_resource(rrid: str): ...
 
 
 @router.post(
     "/groups/sparc/classifiers/scicrunch-resources/{rrid}",
     response_model=Envelope[ResearchResource],
 )
-async def add_scicrunch_resource(rrid: str):
-    ...
+async def add_scicrunch_resource(rrid: str): ...
 
 
 @router.get(
     "/groups/sparc/classifiers/scicrunch-resources:search",
     response_model=Envelope[list[ResourceHit]],
 )
-async def search_scicrunch_resources(guess_name: str):
-    ...
+async def search_scicrunch_resources(guess_name: str): ...

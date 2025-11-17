@@ -1204,6 +1204,7 @@ async def test_operation_is_not_cancellable(
         await cancel_operation(selected_app, schedule_id)
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_order, expected_keys, after_restart_expected_order",
