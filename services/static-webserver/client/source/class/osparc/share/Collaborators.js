@@ -294,6 +294,17 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     _getIntroText: function() {
+      switch (this._resourceType) {
+        case "study":
+        case "template":
+        case "tutorial":
+        case "function":
+        case "hypertool":
+        case "service": {
+          const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this._resourceType);
+          return this.tr("This section provides an overview of all users and organizations who have access to the " + resourceAlias + " and their assigned roles. Depending on your permissions, you may be able to modify access or update roles.");
+        }
+      }
       return null;
     },
 
