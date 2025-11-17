@@ -40,8 +40,6 @@ qx.Class.define("osparc.service.PricingUnitsList", {
   },
 
   members: {
-    __serviceMetadata: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -56,7 +54,11 @@ qx.Class.define("osparc.service.PricingUnitsList", {
     },
 
     __fetchUnits: function() {
-      osparc.store.Services.getPricingPlan(this.__serviceMetadata["key"], this.__serviceMetadata["version"])
+      const serviceMetadata = this.getServiceMetadata();
+      if (!serviceMetadata) {
+        return;
+      }
+      osparc.store.Services.getPricingPlan(serviceMetadata["key"], serviceMetadata["version"])
         .then(data => this.__populateList(data["pricingUnits"]))
         .catch(err => {
           console.error(err);
@@ -78,6 +80,6 @@ qx.Class.define("osparc.service.PricingUnitsList", {
         });
         container.add(notFound);
       }
-    }
+    },
   }
 });
