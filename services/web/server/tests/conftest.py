@@ -499,10 +499,12 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
     for client, project_uuid in zip(used_clients, created_project_uuids, strict=True):
         # NOTE: delete does not wait for completion
         url = client.app.router["delete_project"].url_for(project_id=project_uuid)
-        await client.delete(url.path)
+        resp = await client.delete(url.path)
 
-        url = client.app.router["get_project"].url_for(project_id=project_uuid)
+        assert resp.ok, "got {resp}"
+
         # ensure deletion
+        url = client.app.router["get_project"].url_for(project_id=project_uuid)
         async for attempt in AsyncRetrying(
             wait=wait_fixed(0.1),
             stop=stop_after_delay(10),
@@ -511,7 +513,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         ):
             with attempt:
                 logging.info(
-                    "--> waiting for deletion %s...", attempt.retry_state.attempt_number
+                    "--> waiting for deletion %s...",
+                    attempt.retry_state.attempt_number,
                 )
                 resp = await client.get(url.path)
                 if resp.status == status.HTTP_200_OK:
