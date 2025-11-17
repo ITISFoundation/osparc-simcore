@@ -8,7 +8,7 @@
 import asyncio
 import logging
 import random
-from collections.abc import AsyncIterable, Callable, Iterable
+from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Final, Literal, cast
@@ -311,16 +311,6 @@ async def test_log_distributor_multiple_streams(
 
 
 @pytest.fixture
-def computation_done() -> Iterable[Callable[[], bool]]:
-    stop_time: Final[datetime] = datetime.now() + timedelta(seconds=2)
-
-    def _job_done() -> bool:
-        return datetime.now() >= stop_time
-
-    return _job_done
-
-
-@pytest.fixture
 async def create_log_streamer_with_distributor(
     client: httpx.AsyncClient,
     app: FastAPI,
@@ -368,6 +358,7 @@ async def test_log_streamer_with_distributor(
             msg: str = faker.text()
             await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
             published_logs.append(msg)
+            await asyncio.sleep(0.1)
 
     publish_task = asyncio.create_task(_log_publisher())
 
@@ -403,13 +394,7 @@ async def test_log_streamer_with_distributor(
             assert job_log.job_id == project_id
             collected_messages.append(job_log.messages[0])
 
-    if not publish_task.done():
-        publish_task.cancel()
-        try:
-            await publish_task
-        except asyncio.CancelledError:
-            pass
-
+    assert publish_task.done()
     assert len(published_logs) > 0
     assert published_logs == collected_messages
 
@@ -419,9 +404,9 @@ async def test_log_streamer_not_raise_with_distributor(
     project_id: ProjectID,
     node_id: NodeID,
     produce_logs: Callable,
-    create_log_streamer_with_distributor: LogStreamer,
-    faker: Faker,
-    computation_done: Callable[[], bool],
+    create_log_streamer_with_distributor: Callable[
+        [Callable[..., httpx.Response]], LogStreamer
+    ],
 ):
     class InvalidLoggerRabbitMessage(LoggerRabbitMessage):
         channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
@@ -444,8 +429,19 @@ async def test_log_streamer_not_raise_with_distributor(
 
     await produce_logs("expected", log_message=log_rabbit_message)
 
+    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+        task = ComputationTaskGet.model_validate(
+            ComputationTaskGet.model_json_schema()["examples"][0]
+        )
+        task.state = RunningState.SUCCESS
+        task.stopped = datetime.now()
+        return httpx.Response(
+            status_code=status.HTTP_200_OK, json=jsonable_encoder(task)
+        )
+
+    log_streamer = create_log_streamer_with_distributor(_get_computation)
     ii: int = 0
-    async for log in create_log_streamer_with_distributor.log_generator():
+    async for log in log_streamer.log_generator():
         _ = JobLog.model_validate_json(log)
         ii += 1
     assert ii == 0
