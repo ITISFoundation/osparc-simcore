@@ -862,7 +862,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               enabled: osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])
             });
             // eslint-disable-next-line no-underscore-dangle
-            servicesBootOpts._add(new qx.ui.core.Spacer(null, 15));
+            servicesBootOpts._add(new qx.ui.core.Spacer(null, 5));
             // eslint-disable-next-line no-underscore-dangle
             servicesBootOpts._add(autoStartButton);
           }
