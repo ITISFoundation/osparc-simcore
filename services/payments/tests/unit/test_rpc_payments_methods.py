@@ -6,9 +6,12 @@
 # pylint: disable=unused-variable
 
 
+import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from httpx import TimeoutException
+from models_library.api_schemas_payments.errors import PaymentUnverifiedError
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodInitiated,
     PaymentTransaction,
@@ -32,6 +35,7 @@ from simcore_service_payments.db.payments_transactions_repo import (
 )
 from simcore_service_payments.models.db import (
     InitPromptAckFlowState,
+    PaymentMethodID,
     PaymentTransactionState,
 )
 from simcore_service_payments.models.schemas.acknowledgements import AckPaymentMethod
@@ -257,3 +261,78 @@ async def test_webserver_pay_with_payment_method_workflow(
     assert payment.payment_id == transaction.payment_id
     assert payment.state == PaymentTransactionState.SUCCESS
     assert payment.comment == "Payment with stored credit-card"
+
+
+async def test_webserver_pay_with_payment_method_timeout_workflow(
+    is_pdb_enabled: bool,
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+    mock_resoruce_usage_tracker_service_api: None,
+    mock_payments_gateway_service_api_base: MockRouter,
+    faker: Faker,
+    product_name: ProductName,
+    product_price_stripe_price_id: StripePriceID,
+    product_price_stripe_tax_rate_id: StripeTaxRateID,
+    user_id: UserID,
+    user_name: IDStr,
+    user_email: EmailStr,
+    wallet_name: IDStr,
+    wallet_id: WalletID,
+    payments_clean_db: None,
+):
+    """Test that UnverifiedPaymentError is properly handled when payment gateway times out"""
+
+    assert app
+
+    # faking Payment method
+    created = await insert_payment_method(
+        repo=PaymentsMethodsRepo(app.state.engine),
+        payment_method_id=IDStr("a0b31d6f-8a64-42f7-842c-a65377790d44"),
+        user_id=user_id,
+        wallet_id=wallet_id,
+        ack=AckPaymentMethod(success=True, message="Faked ACK"),
+    )
+
+    # Mock the payment endpoint to raise a timeout
+    def _timeout_payment(request: httpx.Request, pm_id: PaymentMethodID):
+        # Simulate timeout by raising TimeoutException
+        msg = f"Request timed out for {pm_id}"
+        raise TimeoutException(msg, request=request)
+
+    mock_payments_gateway_service_api_base.post(
+        path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",
+        name="pay_with_payment_method_timeout",
+    ).mock(side_effect=_timeout_payment)
+
+    # Verify that PaymentUnverifiedError is raised from the RPC call
+    with pytest.raises(PaymentUnverifiedError) as exc_info:
+        await rpc_client.request(
+            PAYMENTS_RPC_NAMESPACE,
+            TypeAdapter(RPCMethodName).validate_python("pay_with_payment_method"),
+            payment_method_id=created.payment_method_id,
+            amount_dollars=faker.pyint(),
+            target_credits=faker.pyint(),
+            product_name=product_name,
+            wallet_id=wallet_id,
+            wallet_name=wallet_name,
+            user_id=user_id,
+            user_name=user_name,
+            user_email=user_email,
+            user_address=UserInvoiceAddress(country="CH"),
+            stripe_price_id=product_price_stripe_price_id,
+            stripe_tax_rate_id=product_price_stripe_tax_rate_id,
+            comment="Payment with stored credit-card that will timeout",
+            timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
+        )
+
+    # Verify error details
+    error = exc_info.value
+    assert error.payment_method_id == created.payment_method_id
+    assert error.wallet_id == wallet_id
+    assert error.user_id == user_id
+    assert "timeout" in error.internal_details.lower()
+
+    # Verify the mock was called
+    assert mock_payments_gateway_service_api_base.routes[
+        "pay_with_payment_method_timeout"
+    ].called
