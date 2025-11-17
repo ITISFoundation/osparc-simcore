@@ -13,25 +13,23 @@ Example:
     >>> my_acquire_script(keys=[...], args=[...])
 """
 
-from functools import lru_cache
-from importlib import resources
 from typing import Final
 
-
-@lru_cache
-def _load_script(script_name: str) -> str:
-    with resources.as_file(
-        resources.files("servicelib.redis.lua") / f"{script_name}.lua"
-    ) as script_file:
-        return script_file.read_text(encoding="utf-8").strip()
-
+from ..utils import load_script
 
 # fair semaphore scripts (token pool based)
-REGISTER_SEMAPHORE_TOKEN_SCRIPT: Final[str] = _load_script("register_semaphore_tokens")
-ACQUIRE_SEMAPHORE_SCRIPT: Final[str] = _load_script("acquire_semaphore")
-RELEASE_SEMAPHORE_SCRIPT: Final[str] = _load_script("release_semaphore")
-CLEANUP_SEMAPHORE_SCRIPT: Final[str] = _load_script("cleanup_semaphore")
-RENEW_SEMAPHORE_SCRIPT: Final[str] = _load_script("renew_semaphore")
+REGISTER_SEMAPHORE_TOKEN_SCRIPT: Final[str] = load_script(
+    "servicelib.redis.lua", "register_semaphore_tokens"
+)
+ACQUIRE_SEMAPHORE_SCRIPT: Final[str] = load_script(
+    "servicelib.redis.lua", "acquire_semaphore"
+)
+RELEASE_SEMAPHORE_SCRIPT: Final[str] = load_script(
+    "servicelib.redis.lua", "release_semaphore"
+)
+RENEW_SEMAPHORE_SCRIPT: Final[str] = load_script(
+    "servicelib.redis.lua", "renew_semaphore"
+)
 
 
 SCRIPT_OK_EXIT_CODE: Final[int] = 0
