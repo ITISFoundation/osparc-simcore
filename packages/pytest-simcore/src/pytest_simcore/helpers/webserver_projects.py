@@ -130,10 +130,13 @@ async def create_project(
 
 
 async def delete_all_projects(app: web.Application):
-    from simcore_postgres_database.webserver_models import projects
-    from simcore_service_webserver.db.plugin import get_asyncpg_engine
+    from simcore_postgres_database.webserver_models import projects  # noqa: PLC0415
+    from simcore_service_webserver.db.plugin import get_asyncpg_engine  # noqa: PLC0415
 
-    async with transaction_context(get_asyncpg_engine(app)) as conn:
+    engine = get_asyncpg_engine(app)
+    assert engine  # nosec
+
+    async with transaction_context(engine) as conn:
         query = projects.delete()
         await conn.execute(query)
 
