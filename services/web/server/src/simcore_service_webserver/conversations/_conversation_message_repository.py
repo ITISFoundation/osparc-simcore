@@ -101,7 +101,7 @@ async def list_(
         )
     list_query = list_query.offset(offset).limit(limit)
 
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)

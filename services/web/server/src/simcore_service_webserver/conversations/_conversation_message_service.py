@@ -264,9 +264,8 @@ async def create_support_message(
             "Support settings NOT available, so no need to create FogBugz case. Conversation ID: %s",
             conversation.conversation_id,
         )
-        return message
 
-    if is_first_message or conversation.fogbugz_case_id is None:
+    elif is_first_message or conversation.fogbugz_case_id is None:
         _logger.info(
             "Support settings available, this is first message, creating FogBugz case for Conversation ID: %s",
             conversation.conversation_id,
