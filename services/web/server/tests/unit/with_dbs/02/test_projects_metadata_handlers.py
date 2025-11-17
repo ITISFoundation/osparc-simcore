@@ -116,7 +116,6 @@ async def test_custom_metadata_handlers(
     await assert_status(response, expected_status_code=expected.not_found)
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_with_parent_project_node(
     rabbit_settings: RabbitSettings,
