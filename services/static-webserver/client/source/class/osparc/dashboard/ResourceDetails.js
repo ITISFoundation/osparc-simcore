@@ -655,30 +655,22 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         let collaboratorsView = null;
         if (osparc.utils.Resources.isService(resourceData)) {
           collaboratorsView = new osparc.share.CollaboratorsService(resourceData);
-          collaboratorsView.addListener("updateAccessRights", e => {
-            const updatedData = e.getData();
-            this.__fireUpdateEvent(resourceData, updatedData);
-          }, this);
         } else if (osparc.utils.Resources.isFunction(resourceData)) {
           collaboratorsView = new osparc.share.CollaboratorsFunction(resourceData);
-          collaboratorsView.addListener("updateAccessRights", e => {
-            const updatedData = e.getData();
-            this.__fireUpdateEvent(resourceData, updatedData);
-          }, this);
-        } else {
+        } else if (osparc.utils.Resources.isStudy(resourceData)) {
           collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
-          if (osparc.utils.Resources.isStudy(resourceData)) {
-            collaboratorsView.getChildControl("study-link").show();
-          } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-            collaboratorsView.getChildControl("template-link").show();
-          } else if (osparc.utils.Resources.isTutorial(resourceData)) {
-            collaboratorsView.getChildControl("template-link").show();
-          }
-          collaboratorsView.addListener("updateAccessRights", e => {
-            const updatedData = e.getData();
-            this.__fireUpdateEvent(resourceData, updatedData);
-          }, this);
+          collaboratorsView.getChildControl("study-link").show();
+        } else if (
+          osparc.utils.Resources.isTemplate(resourceData) ||
+          osparc.utils.Resources.isTutorial(resourceData)
+        ) {
+          collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
+          collaboratorsView.getChildControl("template-link").show();
         }
+        collaboratorsView.addListener("updateAccessRights", e => {
+          const updatedData = e.getData();
+          this.__fireUpdateEvent(resourceData, updatedData);
+        }, this);
         page.addToContent(collaboratorsView);
         this.__widgets.push(collaboratorsView);
       }
