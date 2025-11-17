@@ -44,16 +44,12 @@ qx.Class.define("osparc.service.PricingUnitsList", {
       let control;
       switch (id) {
         case "intro-label":
-          control = new qx.ui.basic.Label(this.tr("Below is an overview of the available tiers, including their hourly credit cost and hardware specifications. The highlighted tier indicates the default configuration for new projects.")).set({
-            font: "text-14",
-            rich: true,
-            wrap: true,
-          });
+          control = osparc.dashboard.ResourceDetails.createIntroLabel(this.tr("Below is an overview of the available tiers, including their hourly credit cost and hardware specifications. The highlighted tier indicates the default configuration for new projects."));
           this._addAt(control, 0);
           break;
         case "pricing-units-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          this._addAt(control, 0, {
+          this._addAt(control, 1, {
             flex: 1
           });
           break;
