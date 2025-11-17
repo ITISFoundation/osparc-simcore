@@ -18,16 +18,25 @@
 qx.Class.define("osparc.service.PricingUnitsList", {
   extend: qx.ui.core.Widget,
 
+  /**
+   * @param {Object} serviceMetadata
+   */
   construct: function(serviceMetadata) {
     this.base(arguments);
-
-    this.__serviceMetadata = serviceMetadata;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
     this.getChildControl("pricing-units-container");
 
-    this.__fetchUnits();
+    this.setServiceMetadata(serviceMetadata);
+  },
+
+  properties: {
+    serviceMetadata: {
+      check: "Object",
+      init: null,
+      apply: "__fetchUnits",
+    },
   },
 
   members: {
@@ -56,17 +65,18 @@ qx.Class.define("osparc.service.PricingUnitsList", {
     },
 
     __populateList: function(pricingUnitsData) {
-      this.getChildControl("pricing-units-container").removeAll();
+      const container = this.getChildControl("pricing-units-container");
+      container.removeAll();
 
       if (pricingUnitsData.length) {
         const pUnits = new osparc.study.PricingUnitTiers(pricingUnitsData, null, false);
-        this.getChildControl("pricing-units-container").add(pUnits);
+        container.add(pUnits);
       } else {
         const notFound = new qx.ui.basic.Label().set({
           value: this.tr("No Tiers found"),
           font: "text-14"
         });
-        this.getChildControl("pricing-units-container").add(notFound);
+        container.add(notFound);
       }
     }
   }
