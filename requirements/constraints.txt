@@ -48,7 +48,9 @@ httpx!=0.28.0  # Waiting for fix in respx: https://github.com/lundberg/respx/pul
 #
 # Compatibility/coordination -----------------------------------------------------------------------------------------
 #
-pydantic>=2.10.0    # Avoids inter-version compatibility serialization errors as: _pickle.UnpicklingError: NEWOBJ class argument must be a type, not _AnnotatedAlias
+# Needs to fix issubclass errors in packages/common-library/src/common_library/pydantic_fields_extension.py
+# https://github.com/ITISFoundation/osparc-simcore/issues/8596
+pydantic>=2.10.0,<2.12.0    # Avoids inter-version compatibility serialization errors as: _pickle.UnpicklingError: NEWOBJ class argument must be a type, not _AnnotatedAlias
 
 # See issue https://github.com/ITISFoundation/osparc-simcore/issues/7300
 pydantic-settings<2.7.1
