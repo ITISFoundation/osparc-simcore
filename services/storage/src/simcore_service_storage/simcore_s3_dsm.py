@@ -459,7 +459,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         if (
             not is_directory
-        ):  # NOTE: Delete is not needed for directories that are synced via an external tool (rclone/aws s3 cli).
+        ):  # NOTE: Delete is not needed for directories that are synced via an external tool (rclone).
             # ensure file is deleted first in case it already exists
             # https://github.com/ITISFoundation/osparc-simcore/pull/5108
             await self.delete_file(
