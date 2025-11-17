@@ -96,8 +96,8 @@ def _env_devel_dict_session(env_devel_file: Path) -> EnvVarsDict:
 
 @pytest.fixture
 def env_devel_dict(_env_devel_dict_session: EnvVarsDict) -> EnvVarsDict:
-    # Returns a copy of the session scoped env_devel_dict to avoid
-    # cross-test pollution
+    # NOTE: Returns a copy of the session scoped env_devel_dict on every
+    # test run to avoid cross-test pollution.
     return deepcopy(_env_devel_dict_session)
 
 
