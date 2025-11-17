@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Annotated, Any, Final, cast, get_args, get_origin
+from typing import Any, Final
 
 from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
 from pydantic import ValidationInfo, field_validator
@@ -95,23 +95,6 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
         return prepared_value
 
 
-def _get_class_from_typing(typ: type) -> type:
-    """Unwraps Annotated, Union, and other typing types to return the base class suitable for issubclass()."""
-    if isinstance(typ, type):
-        # It's already a class
-        return typ
-    origin = get_origin(typ)
-    if origin is Annotated:
-        # For Annotated, the first argument is the real type
-        return cast(type, get_args(typ)[0])
-
-    if isinstance(origin, type):
-        return origin
-    # Add more special cases if needed (Tuple, List, etc.) -- usually not suitable for issubclass
-    msg = f"Cannot extract class from typing type: {typ}"
-    raise ValueError(msg)
-
-
 class BaseCustomSettings(BaseSettings):
     """
     - Customized configuration for all settings
@@ -154,14 +137,13 @@ class BaseCustomSettings(BaseSettings):
             auto_default_from_env = _is_auto_default_from_env_enabled(field)
             field_type = get_type(field)
             is_not_literal = not is_literal(field)
-            class_type = _get_class_from_typing(field_type)
-            if is_not_literal and issubclass(class_type, BaseCustomSettings):
+            if is_not_literal and issubclass(field_type, BaseCustomSettings):
                 if auto_default_from_env:
                     # Builds a default factory `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = _create_settings_from_env(name, field)
                     field.default = None
 
-            elif is_not_literal and issubclass(class_type, BaseSettings):
+            elif is_not_literal and issubclass(field_type, BaseSettings):
                 msg = f"{cls}.{name} of type {field_type} must inherit from BaseCustomSettings"
                 raise ValueError(msg)
 
