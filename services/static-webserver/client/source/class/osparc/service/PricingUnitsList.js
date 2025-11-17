@@ -24,7 +24,7 @@ qx.Class.define("osparc.service.PricingUnitsList", {
   construct: function(serviceMetadata) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.getChildControl("pricing-units-container");
 
