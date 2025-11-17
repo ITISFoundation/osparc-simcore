@@ -93,9 +93,8 @@ qx.Class.define("osparc.share.Collaborators", {
     createStudyLinkSection: function(serializedData) {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const label = new qx.ui.basic.Label().set({
+      const label = osparc.dashboard.ResourceDetails.createIntroLabel().set({
         value: qx.locale.Manager.tr("Any logged-in user with access to the ") + osparc.product.Utils.getStudyAlias() + qx.locale.Manager.tr(" can open it"),
-        rich: true
       });
       vBox.add(label);
 
@@ -129,9 +128,7 @@ qx.Class.define("osparc.share.Collaborators", {
       if ("permalink" in serializedData) {
         const permalink = serializedData["permalink"];
 
-        const label = new qx.ui.basic.Label().set({
-          rich: true
-        });
+        const label = osparc.dashboard.ResourceDetails.createIntroLabel();
         if (permalink["is_public"]) {
           label.setValue(qx.locale.Manager.tr("Anyone on the internet with the link can open this ") + osparc.product.Utils.getTemplateAlias());
         } else {
@@ -283,12 +280,32 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __buildLayout: function() {
+      const introText = this.__getIntroText();
+      if (introText) {
+        const introLabel = osparc.dashboard.ResourceDetails.createIntroLabel(introText);
+        this._add(introLabel);
+      }
       if (this.__canIShare()) {
         this.__addCollaborators = this._createChildControlImpl("add-collaborator");
       }
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
       this._createChildControlImpl("template-link");
+    },
+
+    __getIntroText: function() {
+      switch (this._resourceType) {
+        case "study":
+        case "template":
+        case "tutorial":
+        case "function":
+        case "hypertool":
+        case "service": {
+          const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this._resourceType);
+          return this.tr("This section provides an overview of all users and organizations who have access to the " + resourceAlias + " and their assigned roles. Depending on your permissions, you may be able to modify access or update roles.");
+        }
+      }
+      return null;
     },
 
     __createAddCollaboratorSection: function() {
