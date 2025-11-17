@@ -42,7 +42,7 @@ class RedisStore:
     @classmethod
     def _register_scripts(cls, redis_client: RedisClientSDK) -> None:
         cls.hset_if_key_exists = redis_client.redis.register_script(
-            load_script("servicelib.long_running_tasks.lua", "hset_if_key_exists")
+            load_script("servicelib.long_running_tasks._lua", "hset_if_key_exists")
         )
 
     def __init__(self, redis_settings: RedisSettings, lrt_namespace: LRTNamespace):
