@@ -81,9 +81,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     // override
     _getIntroText: function() {
       const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this._resourceType);
-      let text = this.tr("This section provides an overview of all users and organizations who have access to the " + resourceAlias + " and their assigned roles. Depending on your permissions, you may be able to modify access or update roles.");
-      text += "<br>" + this.tr("You can also copy a shareable link that allows authorized users to open the " + resourceAlias + ".");
-      return text;
+      return this.tr("This section provides an overview of all users and organizations who have access to the " + resourceAlias + " and their assigned roles. Depending on your permissions, you may be able to modify access or update roles.");
     },
 
     _addEditors: function(gids, newAccessRights) {

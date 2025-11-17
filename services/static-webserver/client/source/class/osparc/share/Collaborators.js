@@ -93,9 +93,8 @@ qx.Class.define("osparc.share.Collaborators", {
     createStudyLinkSection: function(serializedData) {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const label = new qx.ui.basic.Label().set({
+      const label = osparc.dashboard.ResourceDetails.createIntroLabel().set({
         value: qx.locale.Manager.tr("Any logged-in user with access to the ") + osparc.product.Utils.getStudyAlias() + qx.locale.Manager.tr(" can open it"),
-        rich: true
       });
       vBox.add(label);
 
@@ -129,9 +128,7 @@ qx.Class.define("osparc.share.Collaborators", {
       if ("permalink" in serializedData) {
         const permalink = serializedData["permalink"];
 
-        const label = new qx.ui.basic.Label().set({
-          rich: true
-        });
+        const label = osparc.dashboard.ResourceDetails.createIntroLabel();
         if (permalink["is_public"]) {
           label.setValue(qx.locale.Manager.tr("Anyone on the internet with the link can open this ") + osparc.product.Utils.getTemplateAlias());
         } else {

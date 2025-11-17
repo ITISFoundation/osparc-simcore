@@ -159,6 +159,15 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       return toolbar;
     },
 
+    createIntroLabel: function(text) {
+      const introLabel = new qx.ui.basic.Label(text).set({
+        font: "text-14",
+        rich: true,
+        wrap: true,
+      });
+      return introLabel;
+    },
+
     disableIfInUse: function(resourceData, widget) {
       if (resourceData["resourceType"] === "study") {
         // disable if it's being used
