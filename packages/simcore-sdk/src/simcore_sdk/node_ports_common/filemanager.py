@@ -18,7 +18,6 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.progress_bar import ProgressBarData
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.node_ports import NodePortsSettings
 from settings_library.r_clone import RCloneSettings
 from tenacity import AsyncRetrying
@@ -30,7 +29,7 @@ from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ..node_ports_common.client_session_manager import ClientSessionContextManager
-from . import _filemanager_utils, aws_s3_cli, exceptions, r_clone, storage_client
+from . import _filemanager_utils, exceptions, r_clone, storage_client
 from .file_io_utils import (
     LogRedirectCB,
     UploadableFileObject,
@@ -129,7 +128,6 @@ async def download_path_from_s3(
     client_session: ClientSession | None = None,
     r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData,
-    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> Path:
     """Downloads a file from S3
 
@@ -159,19 +157,10 @@ async def download_path_from_s3(
             client_session=session,
         )
 
-        if (
-            file_meta_data.is_directory
-            and not aws_s3_cli_settings
-            and not await r_clone.is_r_clone_available(r_clone_settings)
+        if file_meta_data.is_directory and not await r_clone.is_r_clone_available(
+            r_clone_settings
         ):
             msg = f"Requested to download directory {s3_object}, but no rclone support was detected"
-            raise exceptions.NodeportsException(msg)
-        if (
-            file_meta_data.is_directory
-            and aws_s3_cli_settings
-            and not await aws_s3_cli.is_aws_s3_cli_available(aws_s3_cli_settings)
-        ):
-            msg = f"Requested to download directory {s3_object}, but no aws cli support was detected"
             raise exceptions.NodeportsException(msg)
 
         # get the s3 link
@@ -191,16 +180,7 @@ async def download_path_from_s3(
             raise exceptions.S3InvalidPathError(s3_object)
 
         if file_meta_data.is_directory:
-            if aws_s3_cli_settings:
-                await aws_s3_cli.sync_s3_to_local(
-                    aws_s3_cli_settings,
-                    progress_bar,
-                    local_directory_path=local_path,
-                    download_s3_link=TypeAdapter(AnyUrl).validate_python(
-                        f"{download_link}"
-                    ),
-                )
-            elif r_clone_settings:
+            if r_clone_settings:
                 await r_clone.sync_s3_to_local(
                     r_clone_settings,
                     progress_bar,
@@ -306,7 +286,6 @@ async def upload_path(  # pylint: disable=too-many-arguments
     r_clone_settings: RCloneSettings | None = None,
     progress_bar: ProgressBarData | None = None,
     exclude_patterns: set[str] | None = None,
-    aws_s3_cli_settings: AwsS3CliSettings | None = None,
 ) -> UploadedFile | UploadedFolder:
     """Uploads a file (potentially in parallel) or a file object (sequential in any case) to S3
 
@@ -339,7 +318,6 @@ async def upload_path(  # pylint: disable=too-many-arguments
                 r_clone_settings=r_clone_settings,
                 progress_bar=progress_bar,
                 exclude_patterns=exclude_patterns,
-                aws_s3_cli_settings=aws_s3_cli_settings,
             )
     return result
 
@@ -356,7 +334,6 @@ async def _upload_path(  # pylint: disable=too-many-arguments
     r_clone_settings: RCloneSettings | None,
     progress_bar: ProgressBarData | None,
     exclude_patterns: set[str] | None,
-    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> UploadedFile | UploadedFolder:
     _logger.debug(
         "Uploading %s to %s:%s@%s",
@@ -370,19 +347,8 @@ async def _upload_path(  # pylint: disable=too-many-arguments
         progress_bar = ProgressBarData(num_steps=1, description="uploading")
 
     is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
-    if (
-        is_directory
-        and not aws_s3_cli_settings
-        and not await r_clone.is_r_clone_available(r_clone_settings)
-    ):
+    if is_directory and not await r_clone.is_r_clone_available(r_clone_settings):
         msg = f"Requested to upload directory {path_to_upload}, but no rclone support was detected"
-        raise exceptions.NodeportsException(msg)
-    if (
-        is_directory
-        and aws_s3_cli_settings
-        and not await aws_s3_cli.is_aws_s3_cli_available(aws_s3_cli_settings)
-    ):
-        msg = f"Requested to upload directory {path_to_upload}, but no aws cli support was detected"
         raise exceptions.NodeportsException(msg)
 
     checksum: SHA256Str | None = await _generate_checksum(path_to_upload, is_directory)
@@ -419,11 +385,9 @@ async def _upload_path(  # pylint: disable=too-many-arguments
                 is_directory=is_directory,
                 session=session,
                 exclude_patterns=exclude_patterns,
-                aws_s3_cli_settings=aws_s3_cli_settings,
             )
         except (
             r_clone.RCloneFailedError,
-            aws_s3_cli.AwsS3CliFailedError,
             exceptions.S3TransferError,
         ) as exc:
             _logger.exception("The upload failed with an unexpected error:")
@@ -453,21 +417,12 @@ async def _upload_to_s3(
     is_directory: bool,
     session: ClientSession,
     exclude_patterns: set[str] | None,
-    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> tuple[ETag | None, FileUploadSchema]:
     uploaded_parts: list[UploadedPart] = []
     if is_directory:
         assert isinstance(path_to_upload, Path)  # nosec
         assert len(upload_links.urls) > 0  # nosec
-        if aws_s3_cli_settings:
-            await aws_s3_cli.sync_local_to_s3(
-                aws_s3_cli_settings,
-                progress_bar,
-                local_directory_path=path_to_upload,
-                upload_s3_link=upload_links.urls[0],
-                exclude_patterns=exclude_patterns,
-            )
-        elif r_clone_settings:
+        if r_clone_settings:
             await r_clone.sync_local_to_s3(
                 r_clone_settings,
                 progress_bar,

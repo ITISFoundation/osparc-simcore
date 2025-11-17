@@ -4,7 +4,6 @@ from models_library.api_schemas_storage.storage_schemas import LinkType as FileL
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common import exceptions
@@ -25,7 +24,6 @@ async def ports(
     db_manager: DBManager,
     r_clone_settings: RCloneSettings | None = None,
     io_log_redirect_cb: LogRedirectCB | None = None,
-    aws_s3_cli_settings: AwsS3CliSettings | None = None
 ) -> Nodeports:
     return await load(
         db_manager=db_manager,

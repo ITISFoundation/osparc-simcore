@@ -11,7 +11,6 @@ from models_library.utils.common_validators import (
     ensure_unique_list_values_validator,
 )
 from pydantic import AliasChoices, Field, PositiveInt, ValidationInfo, field_validator
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
