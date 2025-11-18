@@ -409,10 +409,10 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       }
 
       node.bind("outputs", this.__outputsBtn, "label", {
-        converter: outputsData => {
+        converter: outputs => {
           let outputCounter = 0;
-          Object.keys(outputsData).forEach(outKey => {
-            const outValue = osparc.data.model.Node.getOutput(outputsData, outKey);
+          outputs.forEach(output => {
+            const outValue = output.getValue()
             if (![null, undefined, ""].includes(outValue)) {
               outputCounter++;
             }

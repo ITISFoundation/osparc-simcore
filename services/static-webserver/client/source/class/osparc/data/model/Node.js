@@ -792,10 +792,6 @@ qx.Class.define("osparc.data.model.Node", {
         if (hasOutputs && (this.isFilePicker() || this.isParameter() || this.isDynamic())) {
           this.getStatus().setModified(false);
         }
-
-        // OM revisit this
-        // event was fired in the outputs setter
-        // this.fireDataEvent("changeOutputs", this.getOutputs());
       }
     },
 
@@ -1428,7 +1424,6 @@ qx.Class.define("osparc.data.model.Node", {
               this.addListener("changeOutputs", e => {
                 let data = e.getData();
                 if (this.isFilePicker()) {
-                  // OM revisit this
                   data = osparc.file.FilePicker.serializeOutput(this.getOutputs());
                 } else if (this.isParameter()) {
                   data = this.__getOutputValues();
@@ -1512,7 +1507,6 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           case "outputs": {
             const updatedPortKey = path.split("/")[4];
-            // OM revisit this
             const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
             currentOutputs[updatedPortKey] = value;
             this.setOutputData(currentOutputs);
@@ -1553,7 +1547,6 @@ qx.Class.define("osparc.data.model.Node", {
       };
 
       if (this.isFilePicker()) {
-        // OM revisit this
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       } else if (this.isParameter()) {
