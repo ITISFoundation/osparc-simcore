@@ -11,13 +11,14 @@
 #   - use vscode debugger "Python: Remote Attach *" config in  ''.vscode-template/launch.json'
 #
 x-common-environment: &common_environment
-  SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore_local}
+  SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
+
 
 services:
   api-server:
     environment:
       <<: *common_environment
-      API_SERVER_REMOTE_DEBUG_PORT: 3000
+      API_SERVER_REMOTE_DEBUG_PORT : 3000
     ports:
       - "8006:8000"
       - "3006:3000"
@@ -25,7 +26,7 @@ services:
   autoscaling:
     environment:
       <<: *common_environment
-      AUTOSCALING_REMOTE_DEBUGGING_PORT: 3000
+      AUTOSCALING_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8007:8000"
       - "3012:3000"
@@ -35,7 +36,7 @@ services:
   catalog:
     environment:
       <<: *common_environment
-      CATALOG_REMOTE_DEBUGGING_PORT: 3000
+      CATALOG_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8005:8000"
       - "3005:3000"
@@ -43,7 +44,7 @@ services:
   clusters-keeper:
     environment:
       <<: *common_environment
-      CLUSTERS_KEEPER_REMOTE_DEBUGGING_PORT: 3000
+      CLUSTERS_KEEPER_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8010:8000"
       - "3015:3000"
@@ -51,7 +52,7 @@ services:
   director:
     environment:
       <<: *common_environment
-      DIRECTOR_REMOTE_DEBUGGING_PORT: 3000
+      DIRECTOR_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8000"
       - "3004:3000"
@@ -59,8 +60,8 @@ services:
   director-v2:
     environment:
       <<: *common_environment
-      DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: "{}"
-      DIRECTOR_V2_REMOTE_DEBUGGING_PORT: 3000
+      DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS : "{}"
+      DIRECTOR_V2_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8000"
       - "3009:3000"
@@ -68,7 +69,7 @@ services:
   datcore-adapter:
     environment:
       <<: *common_environment
-      DATCORE_ADAPTER_REMOTE_DEBUG_PORT: 3000
+      DATCORE_ADAPTER_REMOTE_DEBUG_PORT : 3000
     ports:
       - "8000"
       - "3010:3000"
@@ -76,7 +77,7 @@ services:
   efs-guardian:
     environment:
       <<: *common_environment
-      EFS_GUARDIAN_REMOTE_DEBUGGING_PORT: 3000
+      EFS_GUARDIAN_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8013:8000"
       - "3020:3000"
@@ -84,7 +85,7 @@ services:
   invitations:
     environment:
       <<: *common_environment
-      INVITATIONS_REMOTE_DEBUGGING_PORT: 3000
+      INVITATIONS_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8008:8000"
       - "3017:3000"
@@ -92,7 +93,7 @@ services:
   notifications:
     environment:
       <<: *common_environment
-      NOTIFICATIONS_REMOTE_DEBUGGING_PORT: 3000
+      NOTIFICATIONS_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8015:8000"
       - "3023:3000"
@@ -100,7 +101,7 @@ services:
   payments:
     environment:
       <<: *common_environment
-      PAYMENTS_REMOTE_DEBUGGING_PORT: 3000
+      PAYMENTS_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8011:8000"
       - "3018:3000"
@@ -108,21 +109,21 @@ services:
   dynamic-schdlr:
     environment:
       <<: *common_environment
-      DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT: 3000
+      DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT : 3000
       DYNAMIC_SCHEDULER_UI_MOUNT_PATH: /
     ports:
-      - "8012:8000"
-      - "3016:3000"
+     - "8012:8000"
+     - "3016:3000"
     deploy:
       replicas: 2
 
   docker-api-proxy:
     ports:
-      - "8014:8888"
+     - "8014:8888"
 
   resource-usage-tracker:
     environment:
-      RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT: 3000
+      RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8009:8000"
       - "3014:3000"
@@ -130,7 +131,7 @@ services:
   storage:
     environment:
       <<: *common_environment
-      STORAGE_REMOTE_DEBUGGING_PORT: 3000
+      STORAGE_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8080"
       - "3003:3000"
@@ -138,7 +139,7 @@ services:
   sto-worker:
     environment:
       <<: *common_environment
-      STORAGE_REMOTE_DEBUGGING_PORT: 3000
+      STORAGE_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8080"
       - "3021:3000"
@@ -146,7 +147,7 @@ services:
   sto-worker-cpu-bound:
     environment:
       <<: *common_environment
-      STORAGE_REMOTE_DEBUGGING_PORT: 3000
+      STORAGE_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8080"
       - "3022:3000"
@@ -154,7 +155,7 @@ services:
   api-worker:
     environment:
       <<: *common_environment
-      API_SERVER_REMOTE_DEBUG_PORT: 3000
+      API_SERVER_REMOTE_DEBUG_PORT : 3000
     ports:
       - "8080"
       - "3025:3000"
@@ -210,7 +211,7 @@ services:
       - /var/lib/docker/volumes/:/var/lib/docker/volumes/
     environment:
       <<: *common_environment
-      AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore_local}
+      AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
 
   dask-sidecar:
     environment:
@@ -253,7 +254,7 @@ services:
         "-c",
         "max_connections=413",
         "-c",
-        "shared_buffers=256MB",
+        "shared_buffers=256MB"
       ]
 
   rabbit:
@@ -298,12 +299,3 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.rule=PathPrefix(`/whoami`)
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.entrypoints=traefikmonitor
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=${SWARM_STACK_NAME}_gzip@swarm
-
-# Override networks to use pre-created external networks for ops-first deployment
-networks:
-  default:
-    name: ${SWARM_STACK_NAME}_default
-    external: true
-  interactive_services_subnet:
-    name: ${SWARM_STACK_NAME}_interactive_services_subnet
-    external: true

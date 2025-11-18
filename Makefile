@@ -389,11 +389,10 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	# Start compile+watch front-end container [front-end]
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	@$(MAKE_C) services/dask-sidecar certificates
-	# Deploy ops and vendors stacks
-	@$(MAKE) .deploy-ops
-	@$(MAKE) .deploy-vendors
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-vendors
+	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
@@ -401,18 +400,16 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 	# Start compile+watch front-end container [front-end]
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	@$(MAKE_C) services/dask-sidecar certificates
-	# Deploy ops and vendors stacks
-	@$(MAKE) .deploy-ops
-	@$(MAKE) .deploy-vendors
 	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
-	# Deploy ops and vendors stacks
 	@$(MAKE) .deploy-ops
 	@$(MAKE) .deploy-vendors
 	@$(MAKE_C) services/dask-sidecar certificates
@@ -453,9 +450,6 @@ ifneq ($(wildcard .stack-*), )
 endif
 	# Removing local registry if any
 	-@docker ps --all --quiet --filter "name=$(LOCAL_REGISTRY_HOSTNAME)" | xargs --no-run-if-empty docker rm --force
-	# Removing pre-created networks used by ops stack
-	-@docker network rm ${SWARM_STACK_NAME}_default 2>/dev/null || true
-	-@docker network rm ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -465,9 +459,6 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 .init-swarm:
 	# Ensures swarm is initialized (careful we use a default pool of 172.20.0.0/14. Ensure you do not use private IPs in that range!)
 	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip) --default-addr-pool 172.20.0.0/14)
-	# Pre-create networks used by ops stack for ops-first deployment
-	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_default 2>/dev/null || true
-	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
 
 ## DOCKER TAGS  -------------------------------
