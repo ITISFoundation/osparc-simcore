@@ -458,27 +458,27 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     getInput: function(inputId) {
-      return this.getInputs()[inputId];
+      return this.getInputs().find(input => input.getPortKey() === inputId);
     },
 
     getOutput: function(outputId) {
-      return this.getOutputs()[outputId];
+      return this.getOutputs().find(output => output.getPortKey() === outputId);
     },
 
     getFirstOutput: function() {
       const outputs = this.getOutputs();
-      if (Object.keys(outputs).length) {
-        return outputs[Object.keys(outputs)[0]];
+      if (outputs.length) {
+        return outputs[0];
       }
       return null;
     },
 
     hasInputs: function() {
-      return Object.keys(this.getInputs()).length;
+      return this.getInputs().length;
     },
 
     hasOutputs: function() {
-      return Object.keys(this.getOutputs()).length;
+      return this.getOutputs().length;
     },
 
     fetchMetadataAndPopulate: function(nodeData, nodeUiData) {
@@ -508,7 +508,8 @@ qx.Class.define("osparc.data.model.Node", {
         }
         if (metadata.inputs) {
           Object.keys(metadata.inputs).forEach(inputKey => {
-            const inputPort = new osparc.data.model.NodePort(this.getNodeId(), inputKey, true);
+            const portData = metadata.inputs[inputKey];
+            const inputPort = new osparc.data.model.NodePort(this.getNodeId(), portData, inputKey);
             this.getInputs().push(inputPort);
           });
           if (Object.keys(metadata.inputs).length) {
@@ -520,7 +521,8 @@ qx.Class.define("osparc.data.model.Node", {
         }
         if (metadata.outputs) {
           Object.keys(metadata.outputs).forEach(outputKey => {
-            const outputPort = new osparc.data.model.NodePort(this.getNodeId(), outputKey, false);
+            const portData = metadata.outputs[outputKey];
+            const outputPort = new osparc.data.model.NodePort(this.getNodeId(), portData, false);
             this.getOutputs().push(outputPort);
           });
         }
@@ -876,16 +878,16 @@ qx.Class.define("osparc.data.model.Node", {
       const autoConnectPorts = async () => {
         // create automatic port connections
         let autoConnections = 0;
-        const outPorts = node1.getOutputs();
-        const inPorts = node2.getInputs();
-        for (const outPort in outPorts) {
-          for (const inPort in inPorts) {
-            if (await node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
+        const outputs = node1.getOutputs();
+        const inputs = node2.getInputs();
+        outputs.forEach(async output => {
+          inputs.forEach(async input => {
+            if (await node2.addPortLink(input.getPortKey(), node1.getNodeId(), output.getPortKey())) {
               autoConnections++;
-              break;
+              return;
             }
-          }
-        }
+          });
+        });
         if (autoConnections) {
           const flashMessenger = osparc.FlashMessenger.getInstance();
           flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
