@@ -507,11 +507,12 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(metadata.name);
         }
         if (metadata.inputs) {
+          const inputs = [];
           Object.keys(metadata.inputs).forEach(inputKey => {
             const portData = metadata.inputs[inputKey];
-            const inputPort = new osparc.data.model.NodePort(this.getNodeId(), portData, inputKey);
-            this.getInputs().push(inputPort);
+            inputs.push(new osparc.data.model.NodePort(this.getNodeId(), portData, true));
           });
+          this.setInputs(inputs);
           if (Object.keys(metadata.inputs).length) {
             this.__addSettings(metadata.inputs);
           }
@@ -519,13 +520,14 @@ qx.Class.define("osparc.data.model.Node", {
             this.getPropsForm().makeInputsDynamic();
           }
         }
+        const outputs = [];
         if (metadata.outputs) {
           Object.keys(metadata.outputs).forEach(outputKey => {
             const portData = metadata.outputs[outputKey];
-            const outputPort = new osparc.data.model.NodePort(this.getNodeId(), portData, false);
-            this.getOutputs().push(outputPort);
+            outputs.push(new osparc.data.model.NodePort(this.getNodeId(), portData, false));
           });
         }
+        this.setOutputs(outputs);
       }
     },
 
