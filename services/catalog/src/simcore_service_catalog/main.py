@@ -14,9 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
     "aiobotocore",
-    "aiormq",
     "botocore",
     "httpcore",
     "werkzeug",
