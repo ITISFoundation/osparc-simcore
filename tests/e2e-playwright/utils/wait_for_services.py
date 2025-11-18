@@ -219,7 +219,6 @@ async def _retrieve_started_services() -> list[dict[str, Any]]:
 async def _check_service_status(
     service: dict[str, Any],
     service_statuses: dict[str, dict[str, Any]],
-    start_times: dict[str, float],
 ) -> bool:
     """Check service status and update the status dict. Returns True if service is ready."""
     async with aiodocker.Docker() as client:
@@ -246,17 +245,29 @@ async def _check_service_status(
         # Determine overall service state
         if running_replicas == expected_replicas:
             state = _RUNNING_STATE
-            if service_name not in start_times:
-                start_times[service_name] = time.time()
         elif any(task["Status"]["State"] in _FAILED_STATES for task in service_tasks):
             state = "failed"
         else:
             state = "starting"
 
-        # Calculate start time
+        # Calculate start time from running tasks
         start_time = None
-        if service_name in start_times:
-            start_time = time.time() - start_times[service_name]
+        running_tasks = [
+            task for task in service_tasks if task["Status"]["State"] == _RUNNING_STATE
+        ]
+        if running_tasks:
+            # Calculate startup time from creation to running state
+            startup_times = []
+            for task in running_tasks:
+                if "Timestamp" in task["Status"] and "CreatedAt" in task:
+                    created_at = arrow.get(task["CreatedAt"]).datetime
+                    started_at = arrow.get(task["Status"]["Timestamp"]).datetime
+                    startup_time = (started_at - created_at).total_seconds()
+                    startup_times.append(startup_time)
+
+            if startup_times:
+                # Use the average startup time for services with multiple replicas
+                start_time = sum(startup_times) / len(startup_times)
 
         service_statuses[service_name] = {
             "state": state,
@@ -281,7 +292,6 @@ async def _wait_for_services() -> int:
     started_services: list[dict[str, Any]] = await _retrieve_started_services()
 
     service_statuses: dict[str, dict[str, Any]] = {}
-    start_times: dict[str, float] = {}
     global_start_time = time.time()
 
     # Initialize service statuses
@@ -313,9 +323,7 @@ async def _wait_for_services() -> int:
             # Check status of all services
             ready_services = []
             for service in started_services:
-                is_ready = await _check_service_status(
-                    service, service_statuses, start_times
-                )
+                is_ready = await _check_service_status(service, service_statuses)
                 if is_ready:
                     ready_services.append(service)
 
