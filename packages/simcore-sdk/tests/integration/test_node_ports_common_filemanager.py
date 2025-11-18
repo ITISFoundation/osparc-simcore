@@ -470,21 +470,6 @@ async def test_invalid_store(
             )
 
 
-@pytest.fixture(
-    params=[True, False],
-    ids=["with RClone", "with AwsS3Cli"],
-)
-def sync_settings(
-    r_clone_settings: RCloneSettings,
-    request: pytest.FixtureRequest,
-) -> _SyncSettings:
-    is_rclone_enabled = request.param
-
-    return _SyncSettings(
-        r_clone_settings=r_clone_settings if is_rclone_enabled else None,
-    )
-
-
 @pytest.mark.parametrize("is_directory", [False, True])
 async def test_valid_metadata(
     node_ports_config: None,
@@ -492,8 +477,8 @@ async def test_valid_metadata(
     user_id: int,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
-    sync_settings: _SyncSettings,
     is_directory: bool,
+    r_clone_settings: RCloneSettings,
 ):
     # first we go with a non-existing file
     file_path = Path(tmpdir) / "a-subdir" / "test.test"
@@ -524,7 +509,7 @@ async def test_valid_metadata(
         s3_object=file_id,
         path_to_upload=path_to_upload,
         io_log_redirect_cb=None,
-        r_clone_settings=sync_settings.r_clone_settings,
+        r_clone_settings=r_clone_settings,
     )
     if is_directory:
         assert isinstance(upload_result, UploadedFolder)
@@ -635,7 +620,7 @@ async def test_upload_path_source_is_a_folder(
     user_id: int,
     s3_simcore_location: LocationID,
     files_in_folder: int,
-    sync_settings: _SyncSettings,
+    r_clone_settings: RCloneSettings,
 ):
     source_dir = tmp_path / f"source-{faker.uuid4()}"
     source_dir.mkdir(parents=True, exist_ok=True)
@@ -658,7 +643,7 @@ async def test_upload_path_source_is_a_folder(
         s3_object=s3_object,
         path_to_upload=source_dir,
         io_log_redirect_cb=None,
-        r_clone_settings=sync_settings.r_clone_settings,
+        r_clone_settings=r_clone_settings,
     )
     assert isinstance(upload_result, UploadedFolder)
     assert source_dir.exists()
@@ -671,7 +656,7 @@ async def test_upload_path_source_is_a_folder(
             s3_object=s3_object,
             local_path=download_dir,
             io_log_redirect_cb=None,
-            r_clone_settings=sync_settings.r_clone_settings,
+            r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
     assert download_dir.exists()
