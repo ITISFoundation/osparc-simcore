@@ -2,9 +2,7 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page, Response
-from pytest_simcore.helpers.playwright import (
-    RobustWebSocket,
-)
+from pytest_simcore.helpers.playwright import RobustWebSocket
 
 
 @pytest.fixture
@@ -28,12 +26,13 @@ def response_collector(page: Page) -> list[dict[str, Any]]:
     return responses
 
 
-def test_profile_response(
+def test_all_endpoints_after_login(
     user_name: str,
     response_collector: list[dict[str, Any]],
     log_in_and_out: RobustWebSocket,
 ):
-    """Test profile endpoint response after logging in."""
+    """Checks all relevant endpoints after logging in, using a single fixture setup."""
+    # Profile
     response = next((r for r in response_collector if "/me" in r["url"]), None)
     assert response is not None
     response_dict = response["json"]
@@ -44,12 +43,7 @@ def test_profile_response(
         response_dict["data"]["login"] == user_name
     ), "Logged in username does not match"
 
-
-def test_tags_response(
-    response_collector: list[dict[str, Any]],
-    log_in_and_out: RobustWebSocket,
-):
-    """Test tags endpoint response after logging in."""
+    # Tags
     response = next((r for r in response_collector if "/tags" in r["url"]), None)
     assert response is not None
     response_dict = response["json"]
@@ -58,12 +52,7 @@ def test_tags_response(
     tags_data = response_dict["data"]
     assert isinstance(tags_data, list)
 
-
-def test_ui_config_response(
-    response_collector: list[dict[str, Any]],
-    log_in_and_out: RobustWebSocket,
-):
-    """Test UI config endpoint response after logging in."""
+    # UI config
     response = next((r for r in response_collector if "/ui" in r["url"]), None)
     assert response is not None
     response_dict = response["json"]
@@ -76,31 +65,24 @@ def test_ui_config_response(
     assert isinstance(ui_config, dict)
     assert ui_config is not None
 
+    # Studies (user and template)
+    for study_type in ["user", "template"]:
+        response = next(
+            (
+                r
+                for r in response_collector
+                if f"/projects?type={study_type}" in r["url"]
+            ),
+            None,
+        )
+        assert response is not None
+        response_dict = response["json"]
 
-@pytest.mark.parametrize("study_type", ["user", "template"])
-def test_studies_response(
-    response_collector: list[dict[str, Any]],
-    log_in_and_out: RobustWebSocket,
-    study_type: str,
-):
-    """Test studies endpoint response after logging in."""
-    response = next(
-        (r for r in response_collector if f"/projects?type={study_type}" in r["url"]),
-        None,
-    )
-    assert response is not None
-    response_dict = response["json"]
+        assert "data" in response_dict, "Expected 'data' in projects response"
+        studies_data = response_dict["data"]
+        assert isinstance(studies_data, list)
 
-    assert "data" in response_dict, "Expected 'data' in projects response"
-    studies_data = response_dict["data"]
-    assert isinstance(studies_data, list)
-
-
-def test_services_response(
-    response_collector: list[dict[str, Any]],
-    log_in_and_out: RobustWebSocket,
-):
-    """Test services catalog endpoint response after logging in."""
+    # Services
     response = next(
         (r for r in response_collector if "/catalog/services/-/latest" in r["url"]),
         None,
