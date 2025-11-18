@@ -99,7 +99,21 @@ def _create_services_table(service_statuses: dict[str, dict[str, Any]]) -> Table
     table.add_column("Start Time", justify="right", width=12)
     table.add_column("Tasks Summary", width=60)
 
+    # Separate services by type and sort alphabetically
+    ops_services = {}
+    simcore_services = {}
+
     for service_name, status in service_statuses.items():
+        if status.get("service_type") == "ops":
+            ops_services[service_name] = status
+        else:
+            simcore_services[service_name] = status
+
+    # Sort services alphabetically within each group
+    sorted_ops = dict(sorted(ops_services.items()))
+    sorted_simcore = dict(sorted(simcore_services.items()))
+
+    def _add_service_row(service_name: str, status: dict[str, Any]):
         emoji, color = _get_status_emoji_and_color(status["state"])
 
         replicas_text = f"{status['running_replicas']}/{status['expected_replicas']}"
@@ -138,6 +152,38 @@ def _create_services_table(service_statuses: dict[str, dict[str, Any]]) -> Table
             ),
             tasks_summary,
         )
+
+    # Add ops services
+    if sorted_ops:
+        # Add section header for ops services
+        table.add_row(
+            "[bold yellow]⚙️  Ops Services[/bold yellow]",
+            "",
+            "",
+            "",
+            "",
+            style="bold yellow",
+        )
+        for service_name, status in sorted_ops.items():
+            _add_service_row(service_name, status)
+
+    # Add simcore services first
+    if sorted_simcore:
+        # Add section header for simcore services
+        table.add_row(
+            "[bold blue]🔧 Simcore Services[/bold blue]",
+            "",
+            "",
+            "",
+            "",
+            style="bold blue",
+        )
+        for service_name, status in sorted_simcore.items():
+            _add_service_row(service_name, status)
+
+    # Add separator row if both sections have services
+    if sorted_simcore and sorted_ops:
+        table.add_row("", "", "", "", "", style="dim")
 
     return table
 
@@ -215,6 +261,7 @@ async def _retrieve_started_services() -> list[dict[str, Any]]:
 async def _check_service_status(
     service: dict[str, Any],
     service_statuses: dict[str, dict[str, Any]],
+    ops_services: list[str],
 ) -> bool:
     """Check service status and update the status dict. Returns True if service is ready."""
     async with aiodocker.Docker() as client:
@@ -265,12 +312,16 @@ async def _check_service_status(
                 # Use the average startup time for services with multiple replicas
                 start_time = sum(startup_times) / len(startup_times)
 
+        # Determine service type
+        service_type = "ops" if service_name in ops_services else "simcore"
+
         service_statuses[service_name] = {
             "state": state,
             "expected_replicas": expected_replicas,
             "running_replicas": running_replicas,
             "task_states": task_states,
             "start_time": start_time,
+            "service_type": service_type,
         }
 
         return running_replicas == expected_replicas
@@ -286,6 +337,7 @@ async def _wait_for_services() -> int:
     )
 
     started_services: list[dict[str, Any]] = await _retrieve_started_services()
+    ops_services = _ops_services()
 
     service_statuses: dict[str, dict[str, Any]] = {}
     global_start_time = time.time()
@@ -293,12 +345,14 @@ async def _wait_for_services() -> int:
     # Initialize service statuses
     for service in started_services:
         service_name = service["Spec"]["Name"].split("_")[-1]
+        service_type = "ops" if service_name in ops_services else "simcore"
         service_statuses[service_name] = {
             "state": "starting",
             "expected_replicas": 0,
             "running_replicas": 0,
             "task_states": [],
             "start_time": None,
+            "service_type": service_type,
         }
 
     # Create progress bar
@@ -324,7 +378,9 @@ async def _wait_for_services() -> int:
         # Check status of all services
         ready_services = []
         for service in started_services:
-            is_ready = await _check_service_status(service, service_statuses)
+            is_ready = await _check_service_status(
+                service, service_statuses, ops_services
+            )
             if is_ready:
                 ready_services.append(service)
 
