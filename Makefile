@@ -526,10 +526,10 @@ push-version: tag-version
 .venv: .check-uv-installed
 	@uv venv $@
 	@echo "# upgrading tools to latest version in" && $@/bin/python --version
-	@uv pip list
+	@uv pip list --python $@
 
 devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
-	@uv pip --quiet install -r requirements/devenv.txt
+	@uv pip --quiet install --python $< --requirements requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
