@@ -269,7 +269,7 @@ async def _check_service_status(
         return running_replicas == expected_replicas
 
 
-async def wait_for_services() -> int:
+async def _wait_for_services() -> int:
     """Wait for all services to start and display progress in a beautiful table."""
     _console.print(
         Panel.fit(
@@ -357,39 +357,13 @@ async def wait_for_services() -> int:
         f"\n🎉 [bold green]All services are ready![/bold green] Total time: [bold]{total_time:.1f}s[/bold]"
     )
 
-    # Create final summary table
-    final_table = Table(
-        title="🏁 Final Service Startup Summary",
-        show_header=True,
-        header_style="bold green",
-    )
-    final_table.add_column("Service", style="cyan")
-    final_table.add_column("Startup Time", justify="right", style="green")
-    final_table.add_column("Status", justify="center")
-
-    # Sort by startup time
-    sorted_services = sorted(
-        service_statuses.items(), key=lambda x: x[1]["start_time"] or 0
-    )
-
-    for service_name, status in sorted_services:
-        emoji, _ = _get_status_emoji_and_color(status["state"])
-        start_time_text = (
-            f"{status['start_time']:.1f}s"
-            if status["start_time"] is not None
-            else "N/A"
-        )
-        final_table.add_row(service_name, start_time_text, f"{emoji} {status['state']}")
-
-    _console.print(final_table)
-
     return os.EX_OK
 
 
 def main() -> int:
     """Main entry point for the script."""
     try:
-        return asyncio.run(wait_for_services())
+        return asyncio.run(_wait_for_services())
     except KeyboardInterrupt:
         _console.print("\n[red]❌ Operation cancelled by user[/red]")
         return 1
