@@ -510,7 +510,8 @@ qx.Class.define("osparc.data.model.Node", {
           const inputs = [];
           Object.keys(metadata.inputs).forEach(inputKey => {
             const portData = metadata.inputs[inputKey];
-            inputs.push(new osparc.data.model.NodePort(this.getNodeId(), portData, true));
+            const input = new osparc.data.model.NodePort(this.getNodeId(), portData, true);
+            inputs.push(input);
           });
           this.setInputs(inputs);
           if (Object.keys(metadata.inputs).length) {
@@ -524,7 +525,9 @@ qx.Class.define("osparc.data.model.Node", {
         if (metadata.outputs) {
           Object.keys(metadata.outputs).forEach(outputKey => {
             const portData = metadata.outputs[outputKey];
-            outputs.push(new osparc.data.model.NodePort(this.getNodeId(), portData, false));
+            const output = new osparc.data.model.NodePort(this.getNodeId(), portData, false);
+            outputs.push(output);
+            output.addListener("changeValue", () => this.fireDataEvent("changeOutputs", this.__getOutputValues()), this);
           });
         }
         this.setOutputs(outputs);

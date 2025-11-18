@@ -160,22 +160,19 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
     __outputsChanged: function() {
       const outputs = this.getNode().getOutputs();
-      const ports = this.getPorts();
-      const portKeys = Object.keys(ports);
-      for (let i=0; i<portKeys.length; i++) {
-        const portKey = portKeys[i];
-        const value = (portKey in outputs && "value" in outputs[portKey]) ? outputs[portKey]["value"] : null;
+      outputs.forEach((output, idx) => {
+        const value = output.getValue();
         if (value && typeof value === "object" && "store" in value && "eTag" in value) {
           // it's a file in storage.
           // check if the eTag changed before requesting the presigned link again
           const eTag = value["eTag"];
-          const valueWidget = this.__getValueWidget(i);
+          const valueWidget = this.__getValueWidget(idx);
           if (eTag && valueWidget && valueWidget.eTag && eTag === valueWidget.eTag) {
-            continue;
+            return;
           }
         }
-        this.__valueToGrid(value, i);
-      }
+        this.__valueToGrid(value, idx);
+      });
     },
 
     __getValueWidget: function(row) {

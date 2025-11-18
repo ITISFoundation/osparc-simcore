@@ -629,16 +629,17 @@ qx.Class.define("osparc.workbench.NodeUI", {
         paddingLeft: 4,
         font: "text-14"
       });
-      const outputToValue = outputs => {
-          if ("out_1" in outputs && "value" in outputs["out_1"]) {
-            const val = outputs["out_1"]["value"];
-            if (Array.isArray(val)) {
-              return "[" + val.join(",") + "]";
-            }
-            return String(val);
+      const outputToValue = () => {
+        const output = this.getNode().getOutput("out_1");
+        if (output && output.getValue()) {
+          const val = output.getValue();
+          if (Array.isArray(val)) {
+            return "[" + val.join(",") + "]";
           }
-          return "";
-      }
+          return String(val);
+        }
+        return "";
+      };
       this.getNode().bind("outputs", valueLabel, "value", {
         converter: outputs => outputToValue(outputs)
       });
