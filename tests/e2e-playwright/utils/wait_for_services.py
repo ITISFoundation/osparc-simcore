@@ -87,8 +87,8 @@ def _get_status_emoji_and_color(state: str) -> tuple[str, str]:
 
 def _create_services_table(
     service_statuses: dict[str, dict[str, Any]],
-) -> Table:  # noqa: C901
-    """Create a rich table showing service statuses."""
+) -> Table:
+    """Create a rich table showing service statuses, ops services first, then simcore."""
     table = Table(
         title="🐳 Docker Swarm Services Status",
         show_header=True,
@@ -101,20 +101,10 @@ def _create_services_table(
     table.add_column("Start Time", justify="right", width=12)
     table.add_column("Tasks Summary", width=60)
 
-    # Separate services by type and sort alphabetically
-    ops_services = {}
-    simcore_services = {}
+    ops_services = _ops_services()
+    core_services = _core_services()
 
-    for service_name, status in service_statuses.items():
-        if status.get("service_type") == "ops":
-            ops_services[service_name] = status
-        else:
-            simcore_services[service_name] = status
-
-    # Sort services alphabetically within each group
-    sorted_ops = dict(sorted(ops_services.items()))
-    sorted_simcore = dict(sorted(simcore_services.items()))
-
+    # Helper to add a row for a service
     def _add_service_row(service_name: str, status: dict[str, Any]):
         emoji, color = _get_status_emoji_and_color(status["state"])
 
@@ -130,7 +120,7 @@ def _create_services_table(
             f"{status['start_time']:.1f}s" if status["start_time"] is not None else "⏳"
         )
 
-        # Create a compact task summary
+        # Compact task summary
         tasks_summary = ""
         if status.get("task_states"):
             state_counts = {}
@@ -138,9 +128,9 @@ def _create_services_table(
                 state_counts[state] = state_counts.get(state, 0) + 1
 
             summary_parts = []
-            for state, count in state_counts.items():
+            for state in sorted(state_counts.keys()):
                 emoji, _ = _get_status_emoji_and_color(state)
-                summary_parts.append(f"{emoji} {state}: {count}")
+                summary_parts.append(f"{emoji} {state}: {state_counts[state]}")
             tasks_summary = " | ".join(summary_parts)
 
         table.add_row(
@@ -155,9 +145,8 @@ def _create_services_table(
             tasks_summary,
         )
 
-    # Add ops services
-    if sorted_ops:
-        # Add section header for ops services
+    # Add ops services first, in canonical order
+    if ops_services:
         table.add_row(
             "[bold yellow]⚙️  Ops Services[/bold yellow]",
             "",
@@ -166,12 +155,13 @@ def _create_services_table(
             "",
             style="bold yellow",
         )
-        for service_name, status in sorted_ops.items():
-            _add_service_row(service_name, status)
+        for service_name in ops_services:
+            status = service_statuses.get(service_name)
+            if status:
+                _add_service_row(service_name, status)
 
-    # Add simcore services first
-    if sorted_simcore:
-        # Add section header for simcore services
+    # Add simcore services, in canonical order
+    if core_services:
         table.add_row(
             "[bold blue]🔧 Simcore Services[/bold blue]",
             "",
@@ -180,11 +170,13 @@ def _create_services_table(
             "",
             style="bold blue",
         )
-        for service_name, status in sorted_simcore.items():
-            _add_service_row(service_name, status)
+        for service_name in core_services:
+            status = service_statuses.get(service_name)
+            if status:
+                _add_service_row(service_name, status)
 
     # Add separator row if both sections have services
-    if sorted_simcore and sorted_ops:
+    if ops_services and core_services:
         table.add_row("", "", "", "", "", style="dim")
 
     return table
@@ -270,13 +262,10 @@ async def _check_service_status(
         expected_replicas = (
             service["Spec"]["Mode"]["Replicated"]["Replicas"]
             if "Replicated" in service["Spec"]["Mode"]
-            else len(await client.nodes.list())  # we are in global mode
+            else len(await client.nodes.list())
         )
-        service_name = service["Spec"]["Name"].split("_")[
-            -1
-        ]  # Get the actual service name
+        service_name = service["Spec"]["Name"].split("_")[-1]
 
-        # Get tasks for the service
         service_tasks: list[dict[str, Any]] = await client.tasks.list(
             filters={"service": service["Spec"]["Name"]}
         )
@@ -284,16 +273,17 @@ async def _check_service_status(
         running_replicas = sum(
             task["Status"]["State"] == _RUNNING_STATE for task in service_tasks
         )
-
         task_states = [task["Status"]["State"] for task in service_tasks]
 
-        # Determine overall service state
-        if running_replicas == expected_replicas:
+        # Consistent status logic
+        if running_replicas == expected_replicas and expected_replicas > 0:
             state = _RUNNING_STATE
         elif any(task["Status"]["State"] in _FAILED_STATES for task in service_tasks):
             state = "failed"
-        else:
+        elif running_replicas > 0:
             state = "starting"
+        else:
+            state = "pending"
 
         # Calculate start time from running tasks
         start_time = None
@@ -301,7 +291,6 @@ async def _check_service_status(
             task for task in service_tasks if task["Status"]["State"] == _RUNNING_STATE
         ]
         if running_tasks:
-            # Calculate startup time from creation to running state
             startup_times = []
             for task in running_tasks:
                 if "Timestamp" in task["Status"] and "CreatedAt" in task:
@@ -309,12 +298,9 @@ async def _check_service_status(
                     started_at = arrow.get(task["Status"]["Timestamp"]).datetime
                     startup_time = (started_at - created_at).total_seconds()
                     startup_times.append(startup_time)
-
             if startup_times:
-                # Use the average startup time for services with multiple replicas
                 start_time = sum(startup_times) / len(startup_times)
 
-        # Determine service type
         service_type = "ops" if service_name in ops_services else "simcore"
 
         service_statuses[service_name] = {
@@ -326,7 +312,7 @@ async def _check_service_status(
             "service_type": service_type,
         }
 
-        return running_replicas == expected_replicas
+        return running_replicas == expected_replicas and expected_replicas > 0
 
 
 async def _wait_for_services() -> int:
