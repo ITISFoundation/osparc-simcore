@@ -15,6 +15,7 @@ install() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd tests/e2e-playwright
+  make pull-externals
   make install-ci-up-simcore
   popd
 }

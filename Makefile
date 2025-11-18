@@ -516,6 +516,17 @@ push-version: tag-version
 	@export BUILD_TARGET=undefined; \
 	docker compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push
 
+pull-externals: ## pulls non-simcore external images defined in docker-compose.yml
+	# Pulling external images
+	@grep 'image:' services/docker-compose.yml | \
+		awk '{print $$2}' | \
+		grep -v '\$${DOCKER_IMAGE_TAG}' | \
+		grep -v '\$${DOCKER_REGISTRY}' | \
+		grep -v '\$${' | \
+		grep -v '^$$' | \
+		sort | uniq | \
+		xargs -r -n 1 docker pull
+
 
 ## ENVIRONMENT -------------------------------
 
