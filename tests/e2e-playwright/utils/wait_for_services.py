@@ -128,10 +128,11 @@ def _create_services_table(
                 state_counts[state] = state_counts.get(state, 0) + 1
 
             # Sort states alphabetically for consistent alignment
-            for state in sorted(state_counts.keys()):
-                emoji, _ = _get_status_emoji_and_color(state)
-                tasks_summary += f"{emoji} {state}: {state_counts[state]} | "
-            tasks_summary = tasks_summary.rstrip(" | ")  # noqa: B005
+            summary_parts = [
+                f"{_get_status_emoji_and_color(state)[0]} {state}: {state_counts[state]}"
+                for state in sorted(state_counts.keys())
+            ]
+            tasks_summary = " | ".join(summary_parts)
 
         table.add_row(
             service_name,
