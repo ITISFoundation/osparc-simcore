@@ -13,7 +13,6 @@
 # ///
 
 import asyncio
-import json
 import logging
 import os
 import sys
@@ -27,7 +26,7 @@ import arrow
 import rich
 import typer
 import yaml
-from tenacity import AsyncRetrying, RetryError
+from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -68,7 +67,7 @@ def get_tasks_summary(service_tasks: Sequence[dict[str, Any]]) -> str:
     msg = ""
     for task in service_tasks:
         status: dict[str, Any] = task["Status"]
-        msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIRED_STATE: {task['DesiredState']}, STATE: {status['State']}"
+        msg += f"- image: {task['Spec']['ContainerSpec']['Image']} task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIRED_STATE: {task['DesiredState']}, STATE: {status['State']}"
         error = status.get("Err")
         if error:
             msg += f", ERROR: {error}"
@@ -116,85 +115,76 @@ def ops_services() -> list[str]:
 
 def _by_service_creation(service: dict[str, Any]) -> datetime:
     datetime_str = service["CreatedAt"]
+
     return arrow.get(datetime_str).datetime
 
 
-async def wait_for_services() -> int:
-    expected_services = (core_services()) + (ops_services())
+@retry(
+    stop=stop_after_delay(MAX_WAIT_TIME),
+    wait=wait_fixed(WAIT_BEFORE_RETRY),
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
+)
+async def _retrieve_started_services() -> list[dict[str, Any]]:
+    expected_services = core_services() + ops_services()
     started_services: list[dict[str, Any]] = []
-
     async with aiodocker.Docker() as client:
-        try:
-            async for attempt in AsyncRetrying(
-                stop=stop_after_delay(MAX_WAIT_TIME),
-                wait=wait_fixed(WAIT_BEFORE_RETRY),
-                before_sleep=before_sleep_log(_logger, logging.WARNING),
-            ):
-                with attempt:
-                    services_list = await client.services.list()
-                    started_services = sorted(
-                        (
-                            s
-                            for s in services_list
-                            if s["Spec"]["Name"].split("_")[-1] in expected_services
-                        ),
-                        key=_by_service_creation,
-                    )
+        services_list = await client.services.list()
 
-                    assert started_services, "no services started!"
-                    assert len(expected_services) == len(started_services), (
-                        "Some services are missing or unexpected:\n"
-                        f"expected: {len(expected_services)} {expected_services}\n"
-                        f"got: {len(started_services)} {[s['Spec']['Name'] for s in started_services]}"
-                    )
-        except RetryError:
-            rich.print(
-                f"found these services: {len(started_services)} {[s['Spec']['Name'] for s in started_services]}\nexpected services: {len(expected_services)} {expected_services}"
-            )
-            return os.EX_SOFTWARE
+        started_services = sorted(
+            (
+                s
+                for s in services_list
+                if s["Spec"]["Name"].split("_")[-1] in expected_services
+            ),
+            key=_by_service_creation,
+        )
+        assert started_services, "no services started!"
+        assert len(expected_services) == len(started_services), (
+            "Some services are missing or unexpected:\n"
+            f"expected: {len(expected_services)} {expected_services}\n"
+            f"got: {len(started_services)} {[s['Spec']['Name'] for s in started_services]}"
+        )
+    return started_services
 
-        for service in started_services:
-            assert service
-            expected_replicas = (
-                service["Spec"]["Mode"]["Replicated"]["Replicas"]
-                if "Replicated" in service["Spec"]["Mode"]
-                else len(await client.nodes.list())  # we are in global mode
-            )
-            service_name = service["Spec"]["Name"]
-            rich.print(
-                f"Service: {service_name} expects {expected_replicas} replicas",
-                "-" * 10,
-            )
 
-            try:
-                async for attempt in AsyncRetrying(
-                    stop=stop_after_delay(MAX_WAIT_TIME),
-                    wait=wait_fixed(WAIT_BEFORE_RETRY),
-                ):
-                    with attempt:
-                        # Get tasks for the service
-                        service_tasks: list[dict[str, Any]] = await client.tasks.list(
-                            filters={"service": service["Spec"]["Name"]}
-                        )
-                        rich.print(get_tasks_summary(service_tasks))
+@retry(
+    stop=stop_after_delay(MAX_WAIT_TIME),
+    wait=wait_fixed(WAIT_BEFORE_RETRY),
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
+)
+async def _wait_for_service(service: dict[str, Any]) -> None:
+    async with aiodocker.Docker() as client:
+        expected_replicas = (
+            service["Spec"]["Mode"]["Replicated"]["Replicas"]
+            if "Replicated" in service["Spec"]["Mode"]
+            else len(await client.nodes.list())  # we are in global mode
+        )
+        service_name = service["Spec"]["Name"]
+        rich.print(
+            f"Service: {service_name} expects {expected_replicas} replicas",
+            "-" * 10,
+        )
+        # Get tasks for the service
+        service_tasks: list[dict[str, Any]] = await client.tasks.list(
+            filters={"service": service["Spec"]["Name"]}
+        )
+        rich.print(get_tasks_summary(service_tasks))
 
-                        #
-                        # NOTE: a service could set 'ready' as desired-state instead of 'running' if
-                        # it constantly breaks and the swarm decides to "stop trying".
-                        #
-                        valid_replicas = sum(
-                            task["Status"]["State"] == RUNNING_STATE
-                            for task in service_tasks
-                        )
-                        assert valid_replicas == expected_replicas
-            except RetryError:
-                rich.print(
-                    f"ERROR: Service {service_name} failed to start {expected_replicas} replica/s"
-                )
-                rich.print(json.dumps(service, indent=1))
-                return os.EX_SOFTWARE
+        #
+        # NOTE: a service could set 'ready' as desired-state instead of 'running' if
+        # it constantly breaks and the swarm decides to "stop trying".
+        #
+        valid_replicas = sum(
+            task["Status"]["State"] == RUNNING_STATE for task in service_tasks
+        )
+        assert valid_replicas == expected_replicas
 
-        return os.EX_OK
+
+async def wait_for_services() -> int:
+    started_services: list[dict[str, Any]] = await _retrieve_started_services()
+
+    await asyncio.gather(*(_wait_for_service(service) for service in started_services))
+    return os.EX_OK
 
 
 def main() -> int:
