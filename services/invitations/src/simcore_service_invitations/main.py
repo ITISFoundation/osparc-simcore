@@ -12,10 +12,7 @@ from simcore_service_invitations.core.settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
-_NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
-    "aiormq",
-)
+_NOISY_LOGGERS: Final[tuple[str, ...]] = ()
 
 
 def app_factory() -> FastAPI:
