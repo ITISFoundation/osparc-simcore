@@ -683,22 +683,24 @@ rm-registry: ## remove the registry and changes to host/file
 	-@docker volume rm $(LOCAL_REGISTRY_VOLUME)
 
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
+	@command -v jq >/dev/null 2>&1 || { echo "jq missing; install jq first"; exit 1; }
 	@$(if $(shell grep "127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)" /etc/hosts),,\
-					echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
-					sudo echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts;\
-					echo done)
+		echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
+		echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts >/dev/null;\
+		echo done)
 	@$(if $(shell test -f /etc/docker/daemon.json),, \
-			sudo touch /etc/docker/daemon.json)
+		echo creating /etc/docker/daemon.json...; \
+		echo "{}" | sudo tee /etc/docker/daemon.json >/dev/null)
 	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),,\
-					echo configuring docker engine to use insecure local registry...; \
-					jq 'if .["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") then . else .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] end' /etc/docker/daemon.json > /tmp/daemon.json &&\
-					sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
-					echo restarting engine... &&\
-					sudo service docker restart &&\
-					sleep 5 &&\
-					echo done)
+		echo configuring docker engine to use insecure local registry...; \
+		jq 'if .["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") then . else .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] end' /etc/docker/daemon.json > /tmp/daemon.json &&\
+		sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
+		echo restarting engine... &&\
+		sudo service docker restart &&\
+		for i in $$(seq 1 10); do docker info >/dev/null 2>&1 && break || sleep 1; done &&\
+		echo done)
 
-	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
+	@$(if $(shell docker ps --format="{{.Names}}" | grep -x "$(LOCAL_REGISTRY_HOSTNAME)"),,\
 					echo starting registry on http://$(LOCAL_REGISTRY_HOSTNAME):5000...; \
 					docker run \
 							--detach \
@@ -710,16 +712,16 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 							registry:3)
 
 	# WARNING: environment file .env is now setup to use local registry on port 5000 without any security (take care!)...
-	@echo REGISTRY_AUTH=False >> .env
-	@echo REGISTRY_SSL=False >> .env
-	@echo REGISTRY_PATH=$(LOCAL_REGISTRY_HOSTNAME):5000 >> .env
-	@echo REGISTRY_URL=$(get_my_ip):5000 >> .env
-	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
-	@echo CATALOG_BACKGROUND_TASK_REST_TIME=1 >> .env
+	@grep -qxF 'REGISTRY_AUTH=False' .env || echo REGISTRY_AUTH=False >> .env
+	@grep -qxF 'REGISTRY_SSL=False' .env || echo REGISTRY_SSL=False >> .env
+	@grep -qxF 'REGISTRY_PATH=$(LOCAL_REGISTRY_HOSTNAME):5000' .env || echo REGISTRY_PATH=$(LOCAL_REGISTRY_HOSTNAME):5000 >> .env
+	@grep -qxF 'REGISTRY_URL=$(get_my_ip):5000' .env || echo REGISTRY_URL=$(get_my_ip):5000 >> .env
+	@grep -qxF 'DIRECTOR_REGISTRY_CACHING=False' .env || echo DIRECTOR_REGISTRY_CACHING=False >> .env
+	@grep -qxF 'CATALOG_BACKGROUND_TASK_REST_TIME=1' .env || echo CATALOG_BACKGROUND_TASK_REST_TIME=1 >> .env
+	@echo listing images currently in registry...
 	# local registry set in $(LOCAL_REGISTRY_HOSTNAME):5000
 	# images currently in registry:
-	@sleep 3
-	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq '.repositories'
+	@curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq '.repositories'
 
 info-registry: ## info on local registry (if any)
 	# ping API
