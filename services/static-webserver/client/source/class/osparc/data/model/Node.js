@@ -527,7 +527,7 @@ qx.Class.define("osparc.data.model.Node", {
             const portData = metadata.outputs[outputKey];
             const output = new osparc.data.model.NodePort(this.getNodeId(), portData, false);
             outputs.push(output);
-            output.addListener("changeValue", () => this.fireDataEvent("changeOutputs", this.__getOutputValues()), this);
+            output.addListener("changeValue", () => this.fireDataEvent("changeOutputs", this.getOutputs()), this);
           });
         }
         this.setOutputs(outputs);
@@ -1422,16 +1422,17 @@ qx.Class.define("osparc.data.model.Node", {
           case "outputs":
             if (this.isFilePicker() || this.isParameter()) {
               this.addListener("changeOutputs", e => {
-                let data = e.getData();
+                const outputs = e.getData();
+                let outputValues = {};
                 if (this.isFilePicker()) {
-                  data = osparc.file.FilePicker.serializeOutput(this.getOutputs());
-                } else if (this.isParameter()) {
-                  data = this.__getOutputValues();
+                  outputValues = osparc.file.FilePicker.serializeOutput(outputs);
+                } else {
+                  outputValues = this.__getOutputValues();
                 }
                 this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": `/workbench/${nodeId}/outputs`,
-                  "value": data,
+                  "value": outputValues,
                   "osparc-resource": "node",
                 });
               }, this);
