@@ -60,6 +60,13 @@ async def _nack_message(
     message: aio_pika.abc.AbstractIncomingMessage,
 ) -> None:
     count = _get_x_death_count(message)
+    _logger.debug(
+        "Nacking message '%s' from handler '%s', death count %s, max retries %s",
+        message.message_id,
+        message_handler,
+        count,
+        max_retries_upon_error,
+    )
     if count < max_retries_upon_error:
         _logger.warning(
             (
@@ -94,6 +101,11 @@ async def _on_message(
     }
     try:
         async with message.process(requeue=True, ignore_processed=True):
+            _logger.debug(
+                "Processing message '%s' from handler '%s'",
+                message.exchange,
+                message_handler,
+            )
             try:
                 with log_context(
                     _logger,
@@ -101,9 +113,14 @@ async def _on_message(
                     msg=f"Received message from {message.exchange=}, {message.routing_key=}",
                 ):
                     if not await message_handler(message.body):
-                        await _nack_message(
-                            message_handler, max_retries_upon_error, message
-                        )
+                        with log_context(
+                            _logger,
+                            logging.DEBUG,
+                            msg=f"Nack message {message.exchange=}, {message.routing_key=}",
+                        ):
+                            await _nack_message(
+                                message_handler, max_retries_upon_error, message
+                            )
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 _logger.exception(
                     **create_troubleshooting_log_kwargs(
@@ -117,6 +134,11 @@ async def _on_message(
                     await _nack_message(
                         message_handler, max_retries_upon_error, message
                     )
+            _logger.info(
+                "Finished processing message '%s' from handler '%s'",
+                message.exchange,
+                message_handler,
+            )
     except ChannelInvalidStateError as exc:
         # NOTE: this error can happen as can be seen in aio-pika code
         # see https://github.com/mosquito/aio-pika/blob/master/aio_pika/robust_queue.py
