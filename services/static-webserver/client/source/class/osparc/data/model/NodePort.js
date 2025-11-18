@@ -24,16 +24,20 @@ qx.Class.define("osparc.data.model.NodePort", {
 
   /**
     * @param nodeId {String} uuid of the service represented by the node (not needed for new Nodes)
-    * @param portKey {String} unique key of the port represented by the node
+    * @param portData {Object} port data
     * @param isInput {Boolean} whether the port is an input or output
   */
-  construct: function(nodeId, portKey, isInput) {
+  construct: function(nodeId, portData, isInput) {
     this.base(arguments);
 
     this.set({
-      nodeId: nodeId || osparc.utils.Utils.uuidV4(),
-      portKey,
-      portType: isInput ? "input" : "output",
+      nodeId,
+      portKey: portData.keyId,
+      label: portData.label || null,
+      description: portData.description || null,
+      type: portData.type || null,
+      displayOrder: portData.displayOrder || null,
+      portIO: isInput ? "input" : "output",
     });
   },
 
@@ -45,12 +49,6 @@ qx.Class.define("osparc.data.model.NodePort", {
 
     portKey: {
       check: "String",
-      nullable: false,
-    },
-
-    portType: {
-      check: ["input", "output"],
-      init: null,
       nullable: false,
     },
 
@@ -66,6 +64,33 @@ qx.Class.define("osparc.data.model.NodePort", {
       nullable: true,
       init: null,
       event: "changeDescription",
+    },
+
+    type: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeType",
+    },
+
+    displayOrder: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeDisplayOrder",
+    },
+
+    portIO: {
+      check: ["input", "output"],
+      init: null,
+      nullable: false,
+    },
+
+    input: {
+      check: "Object",
+      nullable: true,
+      init: null,
+      event: "changeInput"
     },
 
     status: {
@@ -88,13 +113,6 @@ qx.Class.define("osparc.data.model.NodePort", {
       check: "Boolean",
       init: false,
       event: "changeConnected",
-    },
-
-    input: {
-      check: "Object",
-      nullable: true,
-      init: null,
-      event: "changeInput"
     },
   },
 });
