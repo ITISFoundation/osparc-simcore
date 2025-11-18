@@ -47,7 +47,7 @@ lint.ignore = [
   "TRY300", # Checks for return statements in try blocks. SEE https://beta.ruff.rs/docs/rules/try-consider-else/
 ]
 
-target-version = "py311"
+target-version = "py313"
 
 
 [lint.per-file-ignores]
