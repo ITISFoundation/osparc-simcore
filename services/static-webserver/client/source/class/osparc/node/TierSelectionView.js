@@ -36,7 +36,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
         font: "text-14"
       }));
 
-      const tiersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const tiersLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       this._add(tiersLayout);
 
       const tierBox = new qx.ui.form.SelectBox().set({
@@ -76,6 +76,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
                 pricingUnits.forEach(pricingUnit => {
                   const pUnitUI = new osparc.study.PricingUnitTier(pricingUnit).set({
                     showEditButton: false,
+                    padding: 5,
                   });
                   pUnitUI.getChildControl("name").exclude();
                   pUnitUI.exclude();
