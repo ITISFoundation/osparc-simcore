@@ -285,21 +285,19 @@ async def _check_service_status(
         else:
             state = "pending"
 
-        # Calculate start time from running tasks
+        # Calculate start time: service CreatedAt -> latest running task Timestamp
         start_time = None
         running_tasks = [
             task for task in service_tasks if task["Status"]["State"] == _RUNNING_STATE
         ]
         if running_tasks:
-            startup_times = []
-            for task in running_tasks:
-                if "Timestamp" in task["Status"] and "CreatedAt" in task:
-                    created_at = arrow.get(task["CreatedAt"]).datetime
-                    started_at = arrow.get(task["Status"]["Timestamp"]).datetime
-                    startup_time = (started_at - created_at).total_seconds()
-                    startup_times.append(startup_time)
-            if startup_times:
-                start_time = sum(startup_times) / len(startup_times)
+            service_created_at = arrow.get(service["CreatedAt"]).datetime
+            latest_started_at = max(
+                arrow.get(task["Status"]["Timestamp"]).datetime
+                for task in running_tasks
+                if "Timestamp" in task["Status"]
+            )
+            start_time = (latest_started_at - service_created_at).total_seconds()
 
         service_type = "ops" if service_name in ops_services else "simcore"
 
