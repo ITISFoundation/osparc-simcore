@@ -1,3 +1,10 @@
+# pylint: disable=no-name-in-module
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 from typing import Any
 
 import pytest

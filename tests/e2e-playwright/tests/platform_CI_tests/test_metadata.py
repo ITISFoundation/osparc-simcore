@@ -1,3 +1,10 @@
+# pylint: disable=no-name-in-module
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import json
 import re
 from pathlib import Path
