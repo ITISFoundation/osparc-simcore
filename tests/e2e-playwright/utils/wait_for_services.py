@@ -1,14 +1,17 @@
+import asyncio
 import json
 import logging
 import os
 import sys
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
+import aiodocker
 import arrow
-import docker
 import yaml
-from tenacity import RetryError, Retrying
+from tenacity import AsyncRetrying, RetryError
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -43,10 +46,10 @@ FAILED_STATES = [
 ]
 
 
-def get_tasks_summary(service_tasks):
+def get_tasks_summary(service_tasks: Sequence[dict[str, Any]]) -> str:
     msg = ""
     for task in service_tasks:
-        status: dict = task["Status"]
+        status: dict[str, Any] = task["Status"]
         msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIRED_STATE: {task['DesiredState']}, STATE: {status['State']}"
         error = status.get("Err")
         if error:
@@ -77,7 +80,7 @@ def core_docker_compose_file() -> Path:
     return stack_files[0]
 
 
-def core_services() -> list[str]:
+async def core_services() -> list[str]:
     with core_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
         return list(dc_specs["services"].keys())
@@ -87,7 +90,7 @@ def ops_docker_compose_file() -> Path:
     return osparc_simcore_root_dir() / ".stack-ops.yml"
 
 
-def ops_services() -> list[str]:
+async def ops_services() -> list[str]:
     with ops_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
         return list(dc_specs["services"].keys())
@@ -104,81 +107,93 @@ def _to_datetime(docker_timestamp: str) -> datetime:
     return dt
 
 
-def _by_service_creation(service) -> datetime:
-    datetime_str = service.attrs["CreatedAt"]
+def _by_service_creation(service: dict[str, Any]) -> datetime:
+    datetime_str = service["CreatedAt"]
     return _to_datetime(datetime_str)
 
 
-def wait_for_services() -> int:
-    expected_services = core_services() + ops_services()
-    started_services = []
-    client = docker.from_env()
-    try:
-        for attempt in Retrying(
-            stop=stop_after_delay(MAX_WAIT_TIME),
-            wait=wait_fixed(WAIT_BEFORE_RETRY),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        ):
-            with attempt:
-                started_services = sorted(
-                    (
-                        s
-                        for s in client.services.list()
-                        if s.name.split("_")[-1] in expected_services
-                    ),
-                    key=_by_service_creation,
-                )
+async def wait_for_services() -> int:
+    expected_services = (await core_services()) + (await ops_services())
+    started_services: list[dict[str, Any]] = []
 
-                assert len(started_services), "no services started!"
-                assert len(expected_services) == len(started_services), (
-                    "Some services are missing or unexpected:\n"
-                    f"expected: {len(expected_services)} {expected_services}\n"
-                    f"got: {len(started_services)} {[s.name for s in started_services]}"
-                )
-    except RetryError:
-        print(
-            f"found these services: {len(started_services)} {[s.name for s in started_services]}\nexpected services: {len(expected_services)} {expected_services}"
-        )
-        return os.EX_SOFTWARE
-
-    for service in started_services:
-        assert service
-        assert service.attrs
-        expected_replicas = (
-            service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
-            if "Replicated" in service.attrs["Spec"]["Mode"]
-            else len(client.nodes.list())  # we are in global mode
-        )
-        assert hasattr(service, "name")
-        print(f"Service: {service.name} expects {expected_replicas} replicas", "-" * 10)
-
+    async with aiodocker.Docker() as client:
         try:
-            for attempt in Retrying(
+            async for attempt in AsyncRetrying(
                 stop=stop_after_delay(MAX_WAIT_TIME),
                 wait=wait_fixed(WAIT_BEFORE_RETRY),
+                before_sleep=before_sleep_log(logger, logging.WARNING),
             ):
                 with attempt:
-                    service_tasks: list[dict] = service.tasks()  #  freeze
-                    print(get_tasks_summary(service_tasks))
-
-                    #
-                    # NOTE: a service could set 'ready' as desired-state instead of 'running' if
-                    # it constantly breaks and the swarm desides to "stop trying".
-                    #
-                    valid_replicas = sum(
-                        task["Status"]["State"] == RUNNING_STATE
-                        for task in service_tasks
+                    services_list = await client.services.list()
+                    started_services = sorted(
+                        (
+                            s
+                            for s in services_list
+                            if s["Spec"]["Name"].split("_")[-1] in expected_services
+                        ),
+                        key=_by_service_creation,
                     )
-                    assert valid_replicas == expected_replicas
+
+                    assert started_services, "no services started!"
+                    assert len(expected_services) == len(started_services), (
+                        "Some services are missing or unexpected:\n"
+                        f"expected: {len(expected_services)} {expected_services}\n"
+                        f"got: {len(started_services)} {[s['Spec']['Name'] for s in started_services]}"
+                    )
         except RetryError:
             print(
-                f"ERROR: Service {service.name} failed to start {expected_replicas} replica/s"
+                f"found these services: {len(started_services)} {[s['Spec']['Name'] for s in started_services]}\nexpected services: {len(expected_services)} {expected_services}"
             )
-            print(json.dumps(service.attrs, indent=1))
             return os.EX_SOFTWARE
 
-    return os.EX_OK
+        for service in started_services:
+            assert service
+            expected_replicas = (
+                service["Spec"]["Mode"]["Replicated"]["Replicas"]
+                if "Replicated" in service["Spec"]["Mode"]
+                else len(await client.nodes.list())  # we are in global mode
+            )
+            service_name = service["Spec"]["Name"]
+            print(
+                f"Service: {service_name} expects {expected_replicas} replicas",
+                "-" * 10,
+            )
+
+            try:
+                async for attempt in AsyncRetrying(
+                    stop=stop_after_delay(MAX_WAIT_TIME),
+                    wait=wait_fixed(WAIT_BEFORE_RETRY),
+                ):
+                    with attempt:
+                        # Get tasks for the service
+                        service_tasks: list[dict[str, Any]] = await client.tasks.list(
+                            filters={"service": service["Spec"]["Name"]}
+                        )
+                        print(get_tasks_summary(service_tasks))
+
+                        #
+                        # NOTE: a service could set 'ready' as desired-state instead of 'running' if
+                        # it constantly breaks and the swarm decides to "stop trying".
+                        #
+                        valid_replicas = sum(
+                            task["Status"]["State"] == RUNNING_STATE
+                            for task in service_tasks
+                        )
+                        assert valid_replicas == expected_replicas
+            except RetryError:
+                print(
+                    f"ERROR: Service {service_name} failed to start {expected_replicas} replica/s"
+                )
+                print(json.dumps(service, indent=1))
+                return os.EX_SOFTWARE
+
+        return os.EX_OK
+
+
+def main() -> int:
+    """Main entry point for the script."""
+    return asyncio.run(wait_for_services())
 
 
 if __name__ == "__main__":
-    sys.exit(wait_for_services())
+    sys.exit(main())
