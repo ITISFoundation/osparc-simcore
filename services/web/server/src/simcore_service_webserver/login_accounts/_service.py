@@ -89,7 +89,7 @@ async def send_account_request_email_to_support(
             reply_to=user_email,  # So that issue-tracker system ACK email is sent to the user that requests the account
             template=email_template_path,
             context={
-                "host": request.host,
+                "host": request.host.rstrip("/"),
                 "name": "product-owners",
                 "product": product.model_dump(
                     include={
