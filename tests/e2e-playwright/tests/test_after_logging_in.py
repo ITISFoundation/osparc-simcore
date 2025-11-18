@@ -31,7 +31,7 @@ def test_all_endpoints_after_login(
     response_collector: list[dict[str, Any]],
     log_in_and_out: RobustWebSocket,
 ):
-    """Checks all relevant endpoints after logging in, using a single fixture setup."""
+    """This test mimicks what the old pupeteer tests were doing in tests/e2e/tests"""
     # Profile
     response = next((r for r in response_collector if "/me" in r["url"]), None)
     assert response is not None
