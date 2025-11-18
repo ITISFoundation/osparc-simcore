@@ -65,7 +65,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
   statics: {
     getOutput: function(outputs) {
-      const output = outputs.find(out => out.getKey() === "outFile");
+      const output = outputs.find(out => out.getPortKey() === "outFile");
       return output.getValue();
     },
 
