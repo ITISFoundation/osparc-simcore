@@ -35,10 +35,8 @@ from rich.progress import (
     TimeElapsedColumn,
 )
 from rich.table import Table
-from tenacity import retry
+from tenacity import retry, retry_if_result, stop_after_delay, wait_fixed
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 # Configure logging to be less verbose for prettier output
 logging.basicConfig(level=logging.ERROR)
@@ -282,7 +280,7 @@ async def _wait_for_services() -> int:
     """Wait for all services to start and display progress with rich components."""
     _console.print(
         Panel.fit(
-            "🚀 [bold blue]Waiting for osparc-simcore services to start[/bold blue]",
+            "🚀 [bold blue]Waiting for osparc-simcore services to start...[/bold blue]",
             border_style="blue",
         )
     )
@@ -313,9 +311,16 @@ async def _wait_for_services() -> int:
         console=_console,
     )
 
-    task = progress.add_task("Starting services...", total=len(started_services))
+    task = progress.add_task("Started services...", total=len(started_services))
 
-    while True:
+    @retry(
+        stop=stop_after_delay(_MAX_WAIT_TIME),
+        wait=wait_fixed(5),  # Wait 5 seconds between retries
+        retry=retry_if_result(lambda result: not result),  # Retry if result is False
+        before_sleep=before_sleep_log(_logger, logging.INFO),
+    )
+    async def _check_all_services_ready() -> bool:
+        """Check if all services are ready and print status."""
         # Check status of all services
         ready_services = []
         for service in started_services:
@@ -347,11 +352,11 @@ async def _wait_for_services() -> int:
             )
         )
 
-        # Check if all services are ready
-        if len(ready_services) == len(started_services):
-            break
+        # Return True if all services are ready, False otherwise
+        return len(ready_services) == len(started_services)
 
-        await asyncio.sleep(2)
+    # Wait for all services to be ready
+    await _check_all_services_ready()
 
     # Final summary
     total_time = time.time() - global_start_time
