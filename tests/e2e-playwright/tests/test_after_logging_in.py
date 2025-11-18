@@ -1,24 +1,43 @@
+from typing import Any
+
 import pytest
-from playwright.sync_api import Page
-from pydantic import AnyUrl
+from playwright.sync_api import Page, Response
 from pytest_simcore.helpers.playwright import (
     RobustWebSocket,
 )
 
 
+@pytest.fixture
+def response_collector(page: Page) -> list[dict[str, Any]]:
+    responses: list[dict[str, Any]] = []
+
+    def handle_response(response: Response) -> None:
+        if (
+            response.ok
+            and "application/json" in response.headers.get("content-type", "")
+            and response.body()
+        ):
+            responses.append(
+                {
+                    "url": response.url,
+                    "json": response.json(),
+                }
+            )
+
+    page.on("response", handle_response)
+    return responses
+
+
 def test_profile_response(
-    page: Page,
-    log_in_and_out: RobustWebSocket,
-    product_url: AnyUrl,
     user_name: str,
+    response_collector: list[dict[str, Any]],
+    log_in_and_out: RobustWebSocket,
 ):
     """Test profile endpoint response after logging in."""
-    # Navigate to trigger API calls
-    with page.expect_response("**/me") as response:
-        page.goto(f"{product_url}")
-    assert response
-    assert response.value.ok, response.value.body()
-    response_dict = response.value.json()
+    response = next((r for r in response_collector if "/me" in r["url"]), None)
+    assert response is not None
+    response_dict = response["json"]
+
     assert "data" in response_dict, "Expected 'data' in profile response"
     assert "login" in response_dict["data"], "Expected 'login' in profile data"
     assert (
@@ -27,36 +46,29 @@ def test_profile_response(
 
 
 def test_tags_response(
-    page: Page,
+    response_collector: list[dict[str, Any]],
     log_in_and_out: RobustWebSocket,
-    product_url: AnyUrl,
 ):
     """Test tags endpoint response after logging in."""
-    with page.expect_response("**/tags") as response:
-        page.goto(f"{product_url}")
-    assert response
-    assert response.value.ok, response.value.body()
+    response = next((r for r in response_collector if "/tags" in r["url"]), None)
+    assert response is not None
+    response_dict = response["json"]
 
-    response_dict = response.value.json()
     assert "data" in response_dict, "Expected 'data' in tags response"
     tags_data = response_dict["data"]
     assert isinstance(tags_data, list)
 
 
 def test_ui_config_response(
-    page: Page,
+    response_collector: list[dict[str, Any]],
     log_in_and_out: RobustWebSocket,
-    product_url: AnyUrl,
 ):
     """Test UI config endpoint response after logging in."""
-    with page.expect_response("**/ui") as response:
-        page.goto(f"{product_url}")
-    assert response
-    assert response.value.ok, response.value.body()
+    response = next((r for r in response_collector if "/ui" in r["url"]), None)
+    assert response is not None
+    response_dict = response["json"]
 
-    response_dict = response.value.json()
     assert "data" in response_dict, "Expected 'data' in ui response"
-
     ui_data = response_dict["data"]
     assert ui_data["productName"] == "osparc"
 
@@ -67,35 +79,34 @@ def test_ui_config_response(
 
 @pytest.mark.parametrize("study_type", ["user", "template"])
 def test_studies_response(
-    page: Page,
+    response_collector: list[dict[str, Any]],
     log_in_and_out: RobustWebSocket,
-    product_url: AnyUrl,
     study_type: str,
 ):
     """Test studies endpoint response after logging in."""
-    with page.expect_response(f"**/projects?type={study_type}*") as response:
-        page.goto(f"{product_url}")
-    assert response
-    assert response.value.ok, response.value.body()
+    response = next(
+        (r for r in response_collector if f"/projects?type={study_type}" in r["url"]),
+        None,
+    )
+    assert response is not None
+    response_dict = response["json"]
 
-    response_dict = response.value.json()
     assert "data" in response_dict, "Expected 'data' in projects response"
     studies_data = response_dict["data"]
     assert isinstance(studies_data, list)
 
 
 def test_services_response(
-    page: Page,
+    response_collector: list[dict[str, Any]],
     log_in_and_out: RobustWebSocket,
-    product_url: AnyUrl,
 ):
     """Test services catalog endpoint response after logging in."""
-    with page.expect_response("**/catalog/services/-/latest*") as response:
-        page.goto(f"{product_url}")
-    assert response
-    assert response.value.ok, response.value.body()
-
-    response_dict = response.value.json()
+    response = next(
+        (r for r in response_collector if "/catalog/services/-/latest" in r["url"]),
+        None,
+    )
+    assert response is not None
+    response_dict = response["json"]
 
     services_data = response_dict["data"]
     assert services_data["_meta"]["total"] > 0
