@@ -62,7 +62,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	# installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
 	# installing playwright dependencies
-	@playwright install
+	@playwright install --with-deps
 
 
 RETRY_DURATION_SECONDS := 30
