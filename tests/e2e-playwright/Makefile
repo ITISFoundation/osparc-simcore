@@ -73,7 +73,7 @@ install-ci-up-simcore: install-ci  ## run registry and simcore stack locally (pu
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_transfer-images-to-registry)
 	@$(_up_simcore)
-	@uv run utils/wait_for_services.py
+	@utils/wait_for_services.py
 
 	# giving access rights to images (this might take some time until the catalog is ready)
 	@for ((i=0; i<$(RETRY_DURATION_SECONDS); i+=$(RETRY_INTERVAL_SECONDS))); do \
