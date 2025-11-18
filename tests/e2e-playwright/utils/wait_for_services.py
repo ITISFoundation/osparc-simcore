@@ -46,18 +46,18 @@ from tenacity.wait import wait_fixed
 logging.basicConfig(level=logging.ERROR)
 _logger = logging.getLogger(__name__)
 
-console = Console()
+_console = Console()
 
 _current_dir = (
     Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 )
 
-WAIT_BEFORE_RETRY = 10
-MAX_WAIT_TIME = 5 * 60
+_WAIT_BEFORE_RETRY = 10
+_MAX_WAIT_TIME = 5 * 60
 
 # SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 
-PRE_STATES = [
+_PRE_STATES = [
     "new",  # The task was initialized.
     "pending",  # Resources for the task were allocated.
     "assigned",  # Docker assigned the task to nodes.
@@ -66,9 +66,9 @@ PRE_STATES = [
     "starting",  # Docker is starting the task.
 ]
 
-RUNNING_STATE = "running"  # The task is executing.
+_RUNNING_STATE = "running"  # The task is executing.
 
-FAILED_STATES = [
+_FAILED_STATES = [
     "complete",  # The task exited without an error code.
     "failed",  # The task exited with an error code.
     "shutdown",  # Docker requested the task to shut down.
@@ -78,18 +78,18 @@ FAILED_STATES = [
 ]
 
 
-def get_status_emoji_and_color(state: str) -> tuple[str, str]:
+def _get_status_emoji_and_color(state: str) -> tuple[str, str]:
     """Get emoji and color for service state."""
-    if state == RUNNING_STATE:
+    if state == _RUNNING_STATE:
         return "✅", "green"
-    if state in PRE_STATES:
+    if state in _PRE_STATES:
         return "🔄", "yellow"
-    if state in FAILED_STATES:
+    if state in _FAILED_STATES:
         return "❌", "red"
     return "❓", "white"
 
 
-def create_services_table(service_statuses: dict[str, dict[str, Any]]) -> Table:
+def _create_services_table(service_statuses: dict[str, dict[str, Any]]) -> Table:
     """Create a rich table showing service statuses."""
     table = Table(
         title="🐳 Docker Swarm Services Status",
@@ -104,7 +104,7 @@ def create_services_table(service_statuses: dict[str, dict[str, Any]]) -> Table:
     table.add_column("Tasks Summary", width=60)
 
     for service_name, status in service_statuses.items():
-        emoji, color = get_status_emoji_and_color(status["state"])
+        emoji, color = _get_status_emoji_and_color(status["state"])
 
         replicas_text = f"{status['running_replicas']}/{status['expected_replicas']}"
         if status["running_replicas"] == status["expected_replicas"]:
@@ -127,7 +127,7 @@ def create_services_table(service_statuses: dict[str, dict[str, Any]]) -> Table:
 
             summary_parts = []
             for state, count in state_counts.items():
-                emoji, _ = get_status_emoji_and_color(state)
+                emoji, _ = _get_status_emoji_and_color(state)
                 summary_parts.append(f"{emoji} {state}: {count}")
             tasks_summary = " | ".join(summary_parts)
 
@@ -146,7 +146,7 @@ def create_services_table(service_statuses: dict[str, dict[str, Any]]) -> Table:
     return table
 
 
-def osparc_simcore_root_dir() -> Path:
+def _osparc_simcore_root_dir() -> Path:
     WILDCARD = "services/web/server"
 
     root_dir = Path(_current_dir)
@@ -161,24 +161,24 @@ def osparc_simcore_root_dir() -> Path:
     return root_dir
 
 
-def core_docker_compose_file() -> Path:
-    stack_files = list(osparc_simcore_root_dir().glob(".stack-simcore*"))
+def _core_docker_compose_file() -> Path:
+    stack_files = list(_osparc_simcore_root_dir().glob(".stack-simcore*"))
     assert stack_files
     return stack_files[0]
 
 
-def core_services() -> list[str]:
-    with core_docker_compose_file().open() as fp:
+def _core_services() -> list[str]:
+    with _core_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
         return list(dc_specs["services"].keys())
 
 
-def ops_docker_compose_file() -> Path:
-    return osparc_simcore_root_dir() / ".stack-ops.yml"
+def _ops_docker_compose_file() -> Path:
+    return _osparc_simcore_root_dir() / ".stack-ops.yml"
 
 
-def ops_services() -> list[str]:
-    with ops_docker_compose_file().open() as fp:
+def _ops_services() -> list[str]:
+    with _ops_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
         return list(dc_specs["services"].keys())
 
@@ -189,12 +189,12 @@ def _by_service_creation(service: dict[str, Any]) -> datetime:
 
 
 @retry(
-    stop=stop_after_delay(MAX_WAIT_TIME),
-    wait=wait_fixed(WAIT_BEFORE_RETRY),
+    stop=stop_after_delay(_MAX_WAIT_TIME),
+    wait=wait_fixed(_WAIT_BEFORE_RETRY),
     before_sleep=before_sleep_log(_logger, logging.WARNING),
 )
 async def _retrieve_started_services() -> list[dict[str, Any]]:
-    expected_services = core_services() + ops_services()
+    expected_services = _core_services() + _ops_services()
     started_services: list[dict[str, Any]] = []
     async with aiodocker.Docker() as client:
         services_list = await client.services.list()
@@ -238,17 +238,17 @@ async def _check_service_status(
         )
 
         running_replicas = sum(
-            task["Status"]["State"] == RUNNING_STATE for task in service_tasks
+            task["Status"]["State"] == _RUNNING_STATE for task in service_tasks
         )
 
         task_states = [task["Status"]["State"] for task in service_tasks]
 
         # Determine overall service state
         if running_replicas == expected_replicas:
-            state = RUNNING_STATE
+            state = _RUNNING_STATE
             if service_name not in start_times:
                 start_times[service_name] = time.time()
-        elif any(task["Status"]["State"] in FAILED_STATES for task in service_tasks):
+        elif any(task["Status"]["State"] in _FAILED_STATES for task in service_tasks):
             state = "failed"
         else:
             state = "starting"
@@ -271,7 +271,7 @@ async def _check_service_status(
 
 async def wait_for_services() -> int:
     """Wait for all services to start and display progress in a beautiful table."""
-    console.print(
+    _console.print(
         Panel.fit(
             "🚀 [bold blue]Waiting for osparc-simcore services to start[/bold blue]",
             border_style="blue",
@@ -302,11 +302,11 @@ async def wait_for_services() -> int:
         BarColumn(complete_style="green"),
         TextColumn("{task.completed}/{task.total}"),
         TimeElapsedColumn(),
-        console=console,
+        console=_console,
         transient=False,
     )
 
-    with Live(console=console, refresh_per_second=2) as live:
+    with Live(console=_console, refresh_per_second=2) as live:
         task = progress.add_task("Starting services...", total=len(started_services))
 
         while True:
@@ -323,7 +323,7 @@ async def wait_for_services() -> int:
             progress.update(task, completed=len(ready_services))
 
             # Create the display elements
-            table = create_services_table(service_statuses)
+            table = _create_services_table(service_statuses)
 
             # Create overall progress panel
             overall_progress = Panel(
@@ -353,7 +353,7 @@ async def wait_for_services() -> int:
 
     # Final summary
     total_time = time.time() - global_start_time
-    console.print(
+    _console.print(
         f"\n🎉 [bold green]All services are ready![/bold green] Total time: [bold]{total_time:.1f}s[/bold]"
     )
 
@@ -373,7 +373,7 @@ async def wait_for_services() -> int:
     )
 
     for service_name, status in sorted_services:
-        emoji, _ = get_status_emoji_and_color(status["state"])
+        emoji, _ = _get_status_emoji_and_color(status["state"])
         start_time_text = (
             f"{status['start_time']:.1f}s"
             if status["start_time"] is not None
@@ -381,7 +381,7 @@ async def wait_for_services() -> int:
         )
         final_table.add_row(service_name, start_time_text, f"{emoji} {status['state']}")
 
-    console.print(final_table)
+    _console.print(final_table)
 
     return os.EX_OK
 
@@ -391,10 +391,10 @@ def main() -> int:
     try:
         return asyncio.run(wait_for_services())
     except KeyboardInterrupt:
-        console.print("\n[red]❌ Operation cancelled by user[/red]")
+        _console.print("\n[red]❌ Operation cancelled by user[/red]")
         return 1
     except Exception as exc:
-        console.print(f"\n[red]❌ Error: {exc}[/red]")
+        _console.print(f"\n[red]❌ Error: {exc}[/red]")
         return 1
 
 
