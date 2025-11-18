@@ -707,9 +707,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __checkTurnIntoIteratorUI: function() {
-      const outputs = this.getNode().getOutputs();
-      const portKey = "out_1";
-      if (portKey in outputs && "value" in outputs[portKey]) {
+      const output = this.getNode().getOutput("out_1");
+      if (output && output.getValue()) {
         this.__turnIntoIteratorIteratedUI();
       } else {
         this.__turnIntoIteratorUI();
