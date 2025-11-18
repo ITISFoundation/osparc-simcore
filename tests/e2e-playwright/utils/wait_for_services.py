@@ -26,6 +26,7 @@ import arrow
 import typer
 import yaml
 from rich.console import Console
+from rich.layout import Layout
 from rich.live import Live
 from rich.panel import Panel
 from rich.progress import (
@@ -321,21 +322,26 @@ async def wait_for_services() -> int:
             # Update progress
             progress.update(task, completed=len(ready_services))
 
-            # Create the display
+            # Create the display elements
             table = create_services_table(service_statuses)
 
-            # Add overall progress
+            # Create overall progress panel
             overall_progress = Panel(
                 progress,
                 title=f"⏱️  Overall Progress ({len(ready_services)}/{len(started_services)} services ready)",
                 border_style="blue",
             )
 
-            # Display both
+            # Create layout with proper rich composition
+            layout = Layout()
+            layout.split_column(Layout(overall_progress, size=6), Layout(table))
+
+            # Display the layout
             live.update(
                 Panel(
-                    f"{overall_progress}\n\n{table}",
-                    title="Docker Swarm Services Monitor",
+                    layout,
+                    title="🐳 Docker Swarm Services Monitor",
+                    border_style="magenta",
                 )
             )
 
