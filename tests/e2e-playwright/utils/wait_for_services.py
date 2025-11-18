@@ -49,7 +49,7 @@ _current_dir = (
 )
 
 _WAIT_BEFORE_RETRY = 10
-_MAX_WAIT_TIME = 5 * 60
+_MAX_WAIT_TIME = 10 * 60
 
 # SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 
@@ -85,7 +85,9 @@ def _get_status_emoji_and_color(state: str) -> tuple[str, str]:
     return "❓", "white"
 
 
-def _create_services_table(service_statuses: dict[str, dict[str, Any]]) -> Table:
+def _create_services_table(
+    service_statuses: dict[str, dict[str, Any]],
+) -> Table:  # noqa: C901
     """Create a rich table showing service statuses."""
     table = Table(
         title="🐳 Docker Swarm Services Status",
