@@ -105,7 +105,8 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
             )
 
         _logger.debug(
-            f"Process_chatbot_trigger_message all good, returning True for conversation ID {rabbit_message.conversation.conversation_id}",
+            "Process_chatbot_trigger_message all good, returning True for conversation ID %s",
+            rabbit_message.conversation.conversation_id,
         )
         return True
 
