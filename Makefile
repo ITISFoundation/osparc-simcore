@@ -670,14 +670,18 @@ rm-registry: ## remove the registry and changes to host/file
 		echo removing entry in /etc/hosts...;\
 		sudo sed -i "/127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)/d" /etc/hosts,\
 		echo /etc/hosts is already cleaned)
-	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),\
+	@$(if $(shell jq -e '."insecure-registries"? // [] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") // empty' /etc/docker/daemon.json 2>/dev/null),\
 		echo removing entry in /etc/docker/daemon.json...;\
-		jq 'if .["insecure-registries"] then .["insecure-registries"] |= map(select(. != "http://$(LOCAL_REGISTRY_HOSTNAME):5000")) else . end' /etc/docker/daemon.json > /tmp/daemon.json && \
-		sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
+		sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.backup-removal-$(shell date +%Y%m%d-%H%M%S) &&\
+		jq 'if .["insecure-registries"] then .["insecure-registries"] |= map(select(. != "http://$(LOCAL_REGISTRY_HOSTNAME):5000")) else . end' /etc/docker/daemon.json > /tmp/daemon.json.removal 2>/dev/null &&\
+		(jq empty /tmp/daemon.json.removal 2>/dev/null || (echo "ERROR: Generated invalid JSON during removal" && exit 1)) &&\
+		sudo mv /tmp/daemon.json.removal /etc/docker/daemon.json &&\
 		echo restarting engine... &&\
 		sudo service docker restart &&\
 		echo done,\
 		echo /etc/docker/daemon.json already cleaned)
+	# Clean up old backup files (optional)
+	@echo "Backup files available: $(shell ls -la /etc/docker/daemon.json.backup-* 2>/dev/null || echo 'none')"
 	# removing container and volume
 	-@docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
 	-@docker volume rm $(LOCAL_REGISTRY_VOLUME)
@@ -688,17 +692,25 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 		echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
 		echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts >/dev/null;\
 		echo done)
-	@$(if $(shell test -f /etc/docker/daemon.json),, \
-		echo creating /etc/docker/daemon.json...; \
-		echo "{}" | sudo tee /etc/docker/daemon.json >/dev/null)
-	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),,\
-		echo configuring docker engine to use insecure local registry...; \
-		jq 'if .["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") then . else .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] end' /etc/docker/daemon.json > /tmp/daemon.json &&\
-		sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
-		echo restarting engine... &&\
-		sudo service docker restart &&\
-		for i in $$(seq 1 10); do docker info >/dev/null 2>&1 && break || sleep 1; done &&\
-		echo done)
+	@if [ ! -f /etc/docker/daemon.json ]; then \
+		echo "creating /etc/docker/daemon.json..."; \
+		echo "{}" | sudo tee /etc/docker/daemon.json >/dev/null; \
+	fi
+	# Create backup of existing daemon.json
+	@sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.backup-$(shell date +%Y%m%d-%H%M%S)
+	@if jq -e '.["insecure-registries"]? // [] | map(select(. == "http://$(LOCAL_REGISTRY_HOSTNAME):5000")) | length > 0' /etc/docker/daemon.json >/dev/null 2>&1; then \
+		echo "Registry already configured in daemon.json"; \
+	else \
+		echo "configuring docker engine to use insecure local registry..."; \
+		jq 'if .["insecure-registries"] == null then .["insecure-registries"] = ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] elif (.["insecure-registries"] | type) == "array" and ((.["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")) == null) then .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] else . end' /etc/docker/daemon.json > /tmp/daemon.json.new 2>/dev/null && \
+		(jq empty /tmp/daemon.json.new 2>/dev/null || (echo "ERROR: Generated invalid JSON, restoring backup" && sudo cp /etc/docker/daemon.json.backup-* /etc/docker/daemon.json && rm -f /tmp/daemon.json.new && exit 1)) && \
+		sudo mv /tmp/daemon.json.new /etc/docker/daemon.json && \
+		echo "Successfully updated daemon.json (backup saved as daemon.json.backup-*)" && \
+		echo "restarting engine..." && \
+		sudo service docker restart && \
+		for i in $$(seq 1 10); do docker info >/dev/null 2>&1 && break || sleep 1; done && \
+		echo "done"; \
+	fi
 
 	@$(if $(shell docker ps --format="{{.Names}}" | grep -x "$(LOCAL_REGISTRY_HOSTNAME)"),,\
 					echo starting registry on http://$(LOCAL_REGISTRY_HOSTNAME):5000...; \
@@ -721,7 +733,8 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 	@echo listing images currently in registry...
 	# local registry set in $(LOCAL_REGISTRY_HOSTNAME):5000
 	# images currently in registry:
-	@curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq '.repositories'
+	@sleep 3  # Wait for registry to fully start
+	@curl --silent --retry 3 --retry-delay 2 $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq '.repositories' 2>/dev/null || echo "Registry starting up..."
 
 info-registry: ## info on local registry (if any)
 	# ping API
