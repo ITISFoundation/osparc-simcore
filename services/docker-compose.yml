@@ -1152,7 +1152,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
 
-    environment:
+    environment: &notifications_environment
       <<:
         - *common_logging_environments
         - *postgres_settings
@@ -1161,6 +1161,19 @@ services:
 
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
+
+  not-worker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-master-github-latest}
+    init: true
+    hostname: "not-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<: *notifications_environment
+      STORAGE_TRACING: "null"
+      NOTIFICATIONS_WORKER_NAME: "not-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      NOTIFICATIONS_WORKER_MODE: "true"
+      CELERY_CONCURRENCY: 100
+      CELERY_POOL: threads
+      CELERY_QUEUES: default
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
