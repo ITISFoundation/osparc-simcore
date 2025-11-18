@@ -185,12 +185,12 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         const description = input.getDescription();
         if (description) {
           const label = input.getLabel();
-          this._getLabelFieldChild(idx).child.set({
+          const portKey = input.getPortKey();
+          this._getLabelFieldChild(portKey).child.set({
             value: extendedVersion ? label + ". " + description + ":" : label,
             toolTipText: extendedVersion ? label + "<br>" + description : label,
           });
 
-          const portKey = input.getPortKey();
           if (grid.getRowHeight(idx) === 0) {
             // the port might be hidden
             this._getInfoFieldChild(portKey).child.setVisibility("hidden");
