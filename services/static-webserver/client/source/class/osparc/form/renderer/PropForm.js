@@ -109,13 +109,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           icon = this.getRetrievedEmpty();
           break;
         case this.RETRIEVE_STATUS.retrieving:
-          icon = this.getRetrievingAtom();
-          break;
         case this.RETRIEVE_STATUS.downloading:
-          icon = this.getDownloadingAtom();
-          break;
         case this.RETRIEVE_STATUS.uploading:
-          icon = this.getUploadingAtom();
+          icon = this.getRetrievingAtom();
           break;
         case this.RETRIEVE_STATUS.succeed:
           icon = this.getSucceededAtom();
