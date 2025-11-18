@@ -410,11 +410,12 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
+	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@$(MAKE) .deploy-ops
-	@$(MAKE) .deploy-vendors
+
 else
 	# deploys ONLY $(target) service
 	@docker compose --file $< up --detach $(target)
