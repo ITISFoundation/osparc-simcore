@@ -7,6 +7,7 @@ from models_library.api_schemas_invitations.invitations import ApiInvitationInpu
 from models_library.api_schemas_webserver.users import (
     UserAccountApprove,
     UserAccountGet,
+    UserAccountOrderFields,
     UserAccountReject,
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
@@ -21,6 +22,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task
+from simcore_service_webserver.users._accounts_repository import OrderKeys
 
 from ...._meta import API_VTAG
 from ....constants import APP_FIRE_AND_FORGET_TASKS_KEY
@@ -63,9 +65,14 @@ async def list_users_accounts(request: web.Request) -> web.Response:
             AccountRequestStatus.APPROVED,
             AccountRequestStatus.REJECTED,
         ]
-    else:
-        # ALL
+    else:  # ALL
         filter_any_account_request_status = None
+
+    # Map API field names to service/repository field names
+    api_to_service_field_mapping: dict[UserAccountOrderFields, OrderKeys] = {
+        "email": "email",
+        "created_at": "current_status_created",
+    }
 
     user_accounts, total_count = await _accounts_service.list_user_accounts(
         request.app,
@@ -73,6 +80,14 @@ async def list_users_accounts(request: web.Request) -> web.Response:
         filter_any_account_request_status=filter_any_account_request_status,
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
+        order_by=(
+            [
+                (api_to_service_field_mapping[clause.field], clause.direction)
+                for clause in query_params.order_by
+            ]
+            if query_params.order_by
+            else None
+        ),
     )
 
     def _to_domain_model(account_details: dict[str, Any]) -> UserAccountGet:
@@ -201,6 +216,8 @@ async def approve_user_account(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
         invitation_extras=(
+            # TODO: remove invitation link
+            # TODO: use created as a reference to check whether it is expired or not
             {"invitation": invitation_result.model_dump(mode="json")}
             if invitation_result
             else None

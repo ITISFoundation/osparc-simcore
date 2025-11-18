@@ -1724,11 +1724,25 @@ paths:
       summary: List Users Accounts
       operationId: list_users_accounts
       parameters:
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          title: Order By
+          description: Comma-separated list of fields for ordering (prefix with '-'
+            for descending).
+          default: ''
+        description: Comma-separated list of fields for ordering (prefix with '-'
+          for descending).
+        example: -created_at,name
       - name: limit
         in: query
         required: false
         schema:
           type: integer
+          maximum: 50
+          minimum: 1
           default: 20
           title: Limit
       - name: offset
@@ -1736,6 +1750,7 @@ paths:
         required: false
         schema:
           type: integer
+          minimum: 0
           default: 0
           title: Offset
       - name: review_status

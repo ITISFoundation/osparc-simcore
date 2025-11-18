@@ -13,6 +13,7 @@ from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import ValidationError
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
@@ -959,3 +960,207 @@ async def test_search_merged_users_by_primary_group_id(
         assert found_user is not None
         assert found_user.first_name == product_owner_user["first_name"]
         assert found_user.last_name == product_owner_user["last_name"]
+
+
+async def test_list_merged_users_default_ordering(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test default ordering behavior (email asc, is_pre_registered desc, current_status_created desc)."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act - Get all users with default ordering (order_by=None)
+    users_list, total_count = (
+        await _accounts_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            filter_include_deleted=False,
+            order_by=None,  # Explicit None to test default
+        )
+    )
+
+    # Assert
+    assert total_count >= 3, "Should have at least 3 users"
+    assert len(users_list) >= 3, "Should return at least 3 users"
+
+    # Extract emails in order they were returned
+    returned_emails = [user["email"] for user in users_list]
+
+    # Verify emails are sorted in ascending order (default behavior)
+    expected_test_emails = sorted(
+        [
+            mixed_user_data.pre_reg_email,
+            mixed_user_data.product_owner_email,
+            mixed_user_data.approved_email,
+        ]
+    )
+
+    # Find positions of our test emails in the result
+    test_email_positions = []
+    for email in expected_test_emails:
+        try:
+            pos = returned_emails.index(email)
+            test_email_positions.append(pos)
+        except ValueError:
+            pytest.fail(f"Expected email {email} not found in results")
+
+    # Verify our test emails appear in ascending alphabetical order
+    assert test_email_positions == sorted(test_email_positions), (
+        f"Test emails should be in ascending order. "
+        f"Expected: {expected_test_emails}, Got: {[returned_emails[pos] for pos in test_email_positions]}"
+    )
+
+
+async def test_list_merged_users_custom_ordering(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test custom ordering behavior (email desc) vs default (email asc)."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act 1 - Get users with default ordering
+    default_users, count1 = (
+        await _accounts_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            filter_include_deleted=False,
+            order_by=None,
+        )
+    )
+
+    # Act 2 - Get users with custom ordering (email desc)
+    custom_users, count2 = (
+        await _accounts_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            filter_include_deleted=False,
+            order_by=[("email", "desc")],
+        )
+    )
+
+    # Assert
+    assert count1 == count2, "Total counts should match"
+    assert len(default_users) == len(custom_users), "Should return same number of users"
+
+    # Extract test emails from both results
+    default_test_emails = [
+        user["email"]
+        for user in default_users
+        if user["email"]
+        in {
+            mixed_user_data.pre_reg_email,
+            mixed_user_data.product_owner_email,
+            mixed_user_data.approved_email,
+        }
+    ]
+
+    custom_test_emails = [
+        user["email"]
+        for user in custom_users
+        if user["email"]
+        in {
+            mixed_user_data.pre_reg_email,
+            mixed_user_data.product_owner_email,
+            mixed_user_data.approved_email,
+        }
+    ]
+
+    # Verify we have the same emails in both results
+    assert set(default_test_emails) == set(
+        custom_test_emails
+    ), "Should have same emails in both results"
+
+    # Verify the ordering is different (ascending vs descending)
+    assert default_test_emails == sorted(
+        default_test_emails
+    ), "Default should be ascending order"
+    assert custom_test_emails == sorted(
+        custom_test_emails, reverse=True
+    ), "Custom should be descending order"
+
+    # Verify they are actually different (unless all emails are the same, which they're not)
+    if (
+        len(set(default_test_emails)) > 1
+    ):  # Only test if we have multiple distinct emails
+        assert (
+            default_test_emails != custom_test_emails
+        ), "Default and custom ordering should produce different results"
+
+
+async def test_list_merged_users_custom_ordering_with_current_status_created(
+    app: web.Application,
+    product_name: ProductName,
+    mixed_user_data: MixedUserTestData,
+):
+    """Test ordering by current_status_created field."""
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act - Get users ordered by current_status_created descending
+    users_list, _ = await _accounts_repository.list_merged_pre_and_registered_users(
+        asyncpg_engine,
+        product_name=product_name,
+        filter_include_deleted=False,
+        order_by=[("current_status_created", "desc")],
+    )
+
+    # Assert
+    assert len(users_list) >= 3, "Should have at least 3 users"
+
+    # Verify all users have current_status_created field
+    for user in users_list:
+        assert (
+            "current_status_created" in user
+        ), "All users should have current_status_created field"
+        assert (
+            user["current_status_created"] is not None
+        ), "current_status_created should not be None"
+
+    # Verify that current_status_created values are in descending order (newest first)
+    current_status_dates = [user["current_status_created"] for user in users_list]
+    sorted_dates = sorted(current_status_dates, reverse=True)
+    assert (
+        current_status_dates == sorted_dates
+    ), "Users should be ordered by current_status_created desc"
+
+
+@pytest.mark.parametrize(
+    "invalid_order_by,expected_error_pattern",
+    [
+        # Invalid field name
+        (
+            [("invalid_field", "asc")],
+            r"Input should be 'email' or 'current_status_created'",
+        ),
+        # Invalid direction
+        ([("email", "invalid_direction")], r"Input should be 'asc' or 'desc'"),
+        # Multiple invalid values
+        (
+            [("invalid_field", "invalid_direction")],
+            r"Input should be 'email' or 'current_status_created'",
+        ),
+        # Mixed valid and invalid
+        (
+            [("email", "asc"), ("invalid_field", "desc")],
+            r"Input should be 'email' or 'current_status_created'",
+        ),
+    ],
+)
+async def test_list_merged_users_invalid_order_by_validation(
+    app: web.Application,
+    product_name: ProductName,
+    invalid_order_by: list[tuple[str, str]],
+    expected_error_pattern: str,
+):
+    """Test that invalid order_by parameters are rejected by Pydantic validation."""
+
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    # Act & Assert - Should raise ValidationError
+    with pytest.raises(ValidationError, match=expected_error_pattern):
+        await _accounts_repository.list_merged_pre_and_registered_users(
+            asyncpg_engine,
+            product_name=product_name,
+            order_by=invalid_order_by,
+        )

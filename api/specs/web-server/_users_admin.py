@@ -7,14 +7,14 @@
 from enum import Enum
 from typing import Annotated
 
-from _common import as_query
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_webserver.users import (
+    PageQueryParameters,
     UserAccountApprove,
     UserAccountGet,
     UserAccountReject,
     UserAccountSearchQueryParams,
-    UsersAccountListQueryParams,
+    UsersForAdminListFilter,
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
@@ -26,13 +26,26 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
 _extra_tags: list[str | Enum] = ["admin"]
 
 
+# NOTE: I still do not have a clean solution for this
+#
+class _Q(UsersForAdminListFilter, PageQueryParameters): ...
+
+
 @router.get(
     "/admin/user-accounts",
     response_model=Page[UserAccountGet],
     tags=_extra_tags,
 )
 async def list_users_accounts(
-    _query: Annotated[as_query(UsersAccountListQueryParams), Depends()],
+    _query: Annotated[_Q, Depends()],
+    order_by: Annotated[
+        str,
+        Query(
+            title="Order By",
+            description="Comma-separated list of fields for ordering (prefix with '-' for descending).",
+            example="-created_at,name",
+        ),
+    ] = "",
 ): ...
 
 
