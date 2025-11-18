@@ -249,7 +249,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
         case "node-type-chip": {
           control = new osparc.ui.basic.Chip();
           let nodeType = this.getNode().getMetadata().type;
-          if (this.getNode().isIterator()) {
+          // frontend services
+          if (this.getNode().isFilePicker()) {
+            nodeType = "file";
+          } else if (this.getNode().isIterator()) {
             nodeType = "iterator";
           } else if (this.getNode().isParameter()) {
             nodeType = "parameter";
