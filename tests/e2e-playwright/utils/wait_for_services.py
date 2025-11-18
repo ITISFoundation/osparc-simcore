@@ -120,18 +120,18 @@ def _create_services_table(
             f"{status['start_time']:.1f}s" if status["start_time"] is not None else "⏳"
         )
 
-        # Compact task summary
+        # Compact task summary, sorted alphabetically by state
         tasks_summary = ""
         if status.get("task_states"):
             state_counts = {}
             for state in status["task_states"]:
                 state_counts[state] = state_counts.get(state, 0) + 1
 
-            summary_parts = []
+            # Sort states alphabetically for consistent alignment
             for state in sorted(state_counts.keys()):
                 emoji, _ = _get_status_emoji_and_color(state)
-                summary_parts.append(f"{emoji} {state}: {state_counts[state]}")
-            tasks_summary = " | ".join(summary_parts)
+                tasks_summary += f"{emoji} {state}: {state_counts[state]} | "
+            tasks_summary = tasks_summary.rstrip(" | ")  # noqa: B005
 
         table.add_row(
             service_name,
