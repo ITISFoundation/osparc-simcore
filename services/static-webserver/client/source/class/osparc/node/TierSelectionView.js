@@ -24,6 +24,11 @@ qx.Class.define("osparc.node.TierSelectionView", {
 
   members: {
     _applyNode: function(node) {
+      if (osparc.data.model.Node.isFrontend(node.getMetadata())) {
+        // Frontend services do not have tiers
+        return;
+      }
+
       this.__populateLayout();
 
       this.base(arguments, node);

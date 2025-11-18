@@ -115,18 +115,20 @@ qx.Class.define("osparc.node.ParameterEditor", {
       }
 
       const valueField = this.getChildControl(type);
-      const outputs = node.getOutputs();
+      const output = node.getOutput("out_1");
       if (type === "ref_contentSchema") {
-        valueField.setContentSchema(outputs["out_1"]["contentSchema"]);
+        valueField.setContentSchema(output["contentSchema"]);
       }
-      if ("value" in outputs["out_1"]) {
+      if (output.getValue()) {
+        const value = output.getValue();
         if (["integer", "boolean"].includes(type)) {
-          valueField.setValue(outputs["out_1"]["value"]);
+          valueField.setValue(value);
         } else {
-          valueField.setValue(String(outputs["out_1"]["value"]));
+          valueField.setValue(String(value));
         }
       }
       valueField.addListener("changeValue", e => osparc.node.ParameterEditor.setParameterOutputValue(node, e.getData()));
+      // OM revisit capital Value?
       this.__form.add(valueField, "Value", null, "value");
     }
   }

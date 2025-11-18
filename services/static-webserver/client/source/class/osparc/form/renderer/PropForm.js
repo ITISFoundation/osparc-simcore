@@ -355,7 +355,8 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         inputNodeIDs.forEach(inputNodeId => {
           const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
           if (inputNode && inputNode.getMetadata()) {
-            for (const outputKey in inputNode.getOutputs()) {
+            inputNode.getOutputs().forEach(output => {
+              const outputKey = output.getPortKey();
               const paramButton = new qx.ui.menu.Button();
               inputNode.bind("label", paramButton, "label", {
                 converter: val => val + " : " + inputNode.getOutput(outputKey).label
@@ -368,7 +369,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
                     paramButton.exclude();
                   }
                 });
-            }
+            });
           }
         });
       }
@@ -397,7 +398,8 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
       const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
       if (inputNode && inputNode.getMetadata()) {
-        for (const outputKey in inputNode.getOutputs()) {
+        inputNode.getOutputs().forEach(output => {
+          const outputKey = output.getPortKey();
           osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
             .then(compatible => {
               if (compatible) {
@@ -407,7 +409,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
                 menuBtn.show();
               }
             });
-        }
+        });
       }
     },
 

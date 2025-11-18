@@ -33,6 +33,7 @@ qx.Class.define("osparc.service.StatusUI", {
           return "@FontAwesome5Solid/file/12";
         },
         onUpdate: (source, target) => {
+          // OM revisit this
           if (osparc.file.FilePicker.getOutput(source.getOutputs())) {
             target.setTextColor("ready-green");
           } else {

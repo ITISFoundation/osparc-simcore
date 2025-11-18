@@ -772,57 +772,46 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setOutputData: function(outputs) {
-      if (outputs) {
+    setOutputData: function(outputsData) {
+      if (outputsData) {
         let hasOutputs = false;
-        Object.keys(this.getOutputs()).forEach(outputKey => {
-          if (outputKey in outputs) {
-            this.setOutputs({
-              ...this.getOutputs(),
-              [outputKey]: {
-                ...this.getOutputs()[outputKey],
-                value: outputs[outputKey]
-              }
-            });
+        Object.keys(outputsData).forEach(outputKey => {
+          const output = this.getOutput(outputKey);
+          if (output) {
+            output.setValue(outputsData[outputKey]);
             hasOutputs = true;
-          } else {
-            this.setOutputs({
-              ...this.getOutputs(),
-              [outputKey]: {
-                ...this.getOutputs()[outputKey],
-                value: ""
-              }
-            });
           }
-        })
+        });
         this.getStatus().setHasOutputs(hasOutputs);
 
         if (hasOutputs && (this.isFilePicker() || this.isParameter() || this.isDynamic())) {
           this.getStatus().setModified(false);
         }
 
+        // OM revisit this
         // event was fired in the outputs setter
         // this.fireDataEvent("changeOutputs", this.getOutputs());
       }
     },
 
-    __getOutputData: function(outputKey) {
-      const outputs = this.getOutputs();
-      if (outputKey in outputs && "value" in outputs[outputKey]) {
-        return outputs[outputKey]["value"];
+    __getOutputValue: function(outputKey) {
+      const output = this.getOutput(outputKey);
+      if (output) {
+        return output.getValue();
       }
       return null;
     },
 
-    __getOutputsData: function() {
-      const outputsData = {};
-      Object.keys(this.getOutputs()).forEach(outKey => {
-        const outData = this.__getOutputData(outKey);
-        if (outData !== null) {
-          outputsData[outKey] = outData;
+    __getOutputValues: function() {
+      const outputValues = {};
+      this.getOutputs().forEach(output => {
+        const portKey = output.getPortKey();
+        const outputValue = this.__getOutputValue(portKey);
+        if (outputValue !== null) {
+          outputValues[portKey] = outputValue;
         }
       });
-      return outputsData;
+      return outputValues;
     },
 
     requestFileUploadAbort: function() {
@@ -1072,7 +1061,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initParameter: function() {
-      if (this.isParameter() && this.__getOutputData("out_1") === null) {
+      if (this.isParameter() && this.__getOutputValue("out_1") === null) {
         const type = osparc.node.ParameterEditor.getParameterOutputType(this);
         // set default values if none
         let val = null;
@@ -1334,7 +1323,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
       const newMetadata = osparc.store.Services.getLatest("simcore/services/frontend/data-iterator/int-range")
       if (newMetadata) {
-        const value = this.__getOutputData("out_1");
+        const value = this.__getOutputValue("out_1");
         const label = this.getLabel();
         this.set({
           key: newMetadata["key"],
@@ -1434,9 +1423,10 @@ qx.Class.define("osparc.data.model.Node", {
               this.addListener("changeOutputs", e => {
                 let data = e.getData();
                 if (this.isFilePicker()) {
+                  // OM revisit this
                   data = osparc.file.FilePicker.serializeOutput(this.getOutputs());
                 } else if (this.isParameter()) {
-                  data = this.__getOutputsData();
+                  data = this.__getOutputValues();
                 }
                 this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
@@ -1517,7 +1507,8 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           case "outputs": {
             const updatedPortKey = path.split("/")[4];
-            const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputsData();
+            // OM revisit this
+            const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
             currentOutputs[updatedPortKey] = value;
             this.setOutputData(currentOutputs);
             break;
@@ -1557,10 +1548,11 @@ qx.Class.define("osparc.data.model.Node", {
       };
 
       if (this.isFilePicker()) {
+        // OM revisit this
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       } else if (this.isParameter()) {
-        nodeEntry.outputs = this.__getOutputsData();
+        nodeEntry.outputs = this.__getOutputValues();
       }
 
       // remove null entries from the payload
