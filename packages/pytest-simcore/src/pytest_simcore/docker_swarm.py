@@ -14,6 +14,8 @@ from typing import Any
 
 import aiodocker
 import docker
+import docker.errors
+import docker.models.networks
 import pytest
 import pytest_asyncio
 import yaml
@@ -246,10 +248,74 @@ def _make_dask_sidecar_certificates(simcore_service_folder: Path) -> None:
     )
 
 
+@pytest.fixture(scope="module")
+def simcore_docker_network(
+    docker_swarm: None,
+    docker_client: docker.client.DockerClient,
+    simcore_docker_compose: dict,
+    keep_docker_up,
+) -> Iterator[docker.models.networks.Network]:
+    # get network name from docker-compose
+    network_name = simcore_docker_compose["networks"]["default"]["name"]
+    created_new = False
+    try:
+        network = docker_client.networks.get(network_name)
+    except docker.errors.NotFound:
+        network = docker_client.networks.create(
+            name=network_name,
+            driver="overlay",
+            attachable=True,
+            labels={
+                "com.docker.stack.namespace": "simcore",
+                "created_by": "pytest-simcore",
+            },
+        )
+        created_new = True
+
+    yield network
+
+    if created_new and not keep_docker_up:
+        with suppress(docker.errors.NotFound):
+            network.remove()
+
+
+@pytest.fixture(scope="module")
+def interactive_services_subnet_docker_network(
+    docker_swarm: None,
+    docker_client: docker.client.DockerClient,
+    simcore_docker_compose: dict,
+    keep_docker_up: bool,
+) -> Iterator[docker.models.networks.Network]:
+    # get network name from docker-compose
+    network_name = simcore_docker_compose["networks"]["interactive_services_subnet"][
+        "name"
+    ]
+    created_new = False
+    try:
+        network = docker_client.networks.get(network_name)
+    except docker.errors.NotFound:
+        network = docker_client.networks.create(
+            name=network_name,
+            driver="overlay",
+            attachable=True,
+            labels={
+                "com.docker.stack.namespace": "simcore",
+                "created_by": "pytest-simcore",
+            },
+        )
+        created_new = True
+    yield network
+
+    if created_new and not keep_docker_up:
+        with suppress(docker.errors.NotFound):
+            network.remove()
+
+
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def docker_stack(
     osparc_simcore_services_dir: Path,
-    docker_swarm: None,
+    simcore_docker_network: docker.models.networks.Network,
+    interactive_services_subnet_docker_network: docker.models.networks.Network,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,

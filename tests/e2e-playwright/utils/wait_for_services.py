@@ -334,21 +334,21 @@ async def _wait_for_services() -> int:
         # Create and print the display elements
         table = _create_services_table(service_statuses)
 
-        # Print overall progress
-        _console.print(
-            Panel(
-                progress,
-                title=f"⏱️  Overall Progress ({len(ready_services)}/{len(started_services)} services ready)",
-                border_style="blue",
-            )
-        )
-
         # Print services table
         _console.print(
             Panel(
                 table,
                 title="🐳 Docker Swarm Services Monitor",
                 border_style="magenta",
+            )
+        )
+
+        # Print overall progress
+        _console.print(
+            Panel(
+                progress,
+                title=f"⏱️  Overall Progress ({len(ready_services)}/{len(started_services)} services ready)",
+                border_style="blue",
             )
         )
 
