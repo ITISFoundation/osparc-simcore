@@ -6,7 +6,6 @@ arrow
 faker
 httpx
 pydantic[email]
-pytest-playwright-asyncio
 pytest-html
 pytest-instafail
 pytest-runner
