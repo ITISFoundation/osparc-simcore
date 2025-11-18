@@ -264,6 +264,20 @@ async def client(
 
 
 @pytest.fixture
+async def other_client(
+    client: TestClient, aiohttp_client: Callable, web_server: TestServer
+) -> TestClient:
+    """Creates another client connected to the same app as 'client' fixture
+    This is convenient to login with multiple users in the same app instance
+    without interfering with each other's session cookies
+    """
+    assert client.app
+    client2 = await aiohttp_client(web_server)
+    assert client2 != client
+    return client2
+
+
+@pytest.fixture
 async def webserver_rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     client: TestClient,  # app started
