@@ -26,8 +26,6 @@ import arrow
 import typer
 import yaml
 from rich.console import Console
-from rich.layout import Layout
-from rich.live import Live
 from rich.panel import Panel
 from rich.progress import (
     BarColumn,
@@ -281,7 +279,7 @@ async def _check_service_status(
 
 
 async def _wait_for_services() -> int:
-    """Wait for all services to start and display progress in a beautiful table."""
+    """Wait for all services to start and display progress with rich components."""
     _console.print(
         Panel.fit(
             "🚀 [bold blue]Waiting for osparc-simcore services to start[/bold blue]",
@@ -313,51 +311,47 @@ async def _wait_for_services() -> int:
         TextColumn("{task.completed}/{task.total}"),
         TimeElapsedColumn(),
         console=_console,
-        transient=False,
     )
 
-    with Live(console=_console, refresh_per_second=2) as live:
-        task = progress.add_task("Starting services...", total=len(started_services))
+    task = progress.add_task("Starting services...", total=len(started_services))
 
-        while True:
-            # Check status of all services
-            ready_services = []
-            for service in started_services:
-                is_ready = await _check_service_status(service, service_statuses)
-                if is_ready:
-                    ready_services.append(service)
+    while True:
+        # Check status of all services
+        ready_services = []
+        for service in started_services:
+            is_ready = await _check_service_status(service, service_statuses)
+            if is_ready:
+                ready_services.append(service)
 
-            # Update progress
-            progress.update(task, completed=len(ready_services))
+        # Update progress
+        progress.update(task, completed=len(ready_services))
 
-            # Create the display elements
-            table = _create_services_table(service_statuses)
+        # Create and print the display elements
+        table = _create_services_table(service_statuses)
 
-            # Create overall progress panel
-            overall_progress = Panel(
+        # Print overall progress
+        _console.print(
+            Panel(
                 progress,
                 title=f"⏱️  Overall Progress ({len(ready_services)}/{len(started_services)} services ready)",
                 border_style="blue",
             )
+        )
 
-            # Create layout with proper rich composition
-            layout = Layout()
-            layout.split_column(Layout(overall_progress, size=6), Layout(table))
-
-            # Display the layout
-            live.update(
-                Panel(
-                    layout,
-                    title="🐳 Docker Swarm Services Monitor",
-                    border_style="magenta",
-                )
+        # Print services table
+        _console.print(
+            Panel(
+                table,
+                title="🐳 Docker Swarm Services Monitor",
+                border_style="magenta",
             )
+        )
 
-            # Check if all services are ready
-            if len(ready_services) == len(started_services):
-                break
+        # Check if all services are ready
+        if len(ready_services) == len(started_services):
+            break
 
-            await asyncio.sleep(2)
+        await asyncio.sleep(2)
 
     # Final summary
     total_time = time.time() - global_start_time
@@ -368,16 +362,15 @@ async def _wait_for_services() -> int:
     return os.EX_OK
 
 
-def main() -> int:
-    """Main entry point for the script."""
+def main() -> None:
     try:
-        return asyncio.run(_wait_for_services())
-    except KeyboardInterrupt:
+        asyncio.run(_wait_for_services())
+    except KeyboardInterrupt as exc:
         _console.print("\n[red]❌ Operation cancelled by user[/red]")
-        return 1
+        raise typer.Abort from exc
     except Exception as exc:
         _console.print(f"\n[red]❌ Error: {exc}[/red]")
-        return 1
+        raise typer.Abort from exc
 
 
 if __name__ == "__main__":
