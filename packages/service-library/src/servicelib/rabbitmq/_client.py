@@ -101,44 +101,40 @@ async def _on_message(
     }
     try:
         async with message.process(requeue=True, ignore_processed=True):
-            _logger.debug(
-                "Processing message '%s' from handler '%s'",
-                message.exchange,
-                message_handler,
-            )
-            try:
-                with log_context(
-                    _logger,
-                    logging.DEBUG,
-                    msg=f"Received message from {message.exchange=}, {message.routing_key=}",
-                ):
-                    if not await message_handler(message.body):
-                        with log_context(
-                            _logger,
-                            logging.DEBUG,
-                            msg=f"Nack message {message.exchange=}, {message.routing_key=}",
-                        ):
-                            await _nack_message(
-                                message_handler, max_retries_upon_error, message
-                            )
-            except Exception as exc:  # pylint: disable=broad-exception-caught
-                _logger.exception(
-                    **create_troubleshooting_log_kwargs(
-                        "Unhandled exception raised in message handler or when nacking message",
-                        error=exc,
-                        error_context=log_error_context,
-                        tip="This could indicate an error in the message handler, please check the message handler code",
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                msg=f"Processing message {message.exchange=}, {message.routing_key=}",
+            ):
+                try:
+                    with log_context(
+                        _logger,
+                        logging.DEBUG,
+                        msg=f"Received message from {message.exchange=}, {message.routing_key=}",
+                    ):
+                        if not await message_handler(message.body):
+                            with log_context(
+                                _logger,
+                                logging.DEBUG,
+                                msg=f"Nack message {message.exchange=}, {message.routing_key=}",
+                            ):
+                                await _nack_message(
+                                    message_handler, max_retries_upon_error, message
+                                )
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    _logger.exception(
+                        **create_troubleshooting_log_kwargs(
+                            "Unhandled exception raised in message handler or when nacking message",
+                            error=exc,
+                            error_context=log_error_context,
+                            tip="This could indicate an error in the message handler, please check the message handler code",
+                        )
                     )
-                )
-                with log_catch(_logger, reraise=False):
-                    await _nack_message(
-                        message_handler, max_retries_upon_error, message
-                    )
-            _logger.info(
-                "Finished processing message '%s' from handler '%s'",
-                message.exchange,
-                message_handler,
-            )
+                    with log_catch(_logger, reraise=False):
+                        await _nack_message(
+                            message_handler, max_retries_upon_error, message
+                        )
+
     except ChannelInvalidStateError as exc:
         # NOTE: this error can happen as can be seen in aio-pika code
         # see https://github.com/mosquito/aio-pika/blob/master/aio_pika/robust_queue.py
