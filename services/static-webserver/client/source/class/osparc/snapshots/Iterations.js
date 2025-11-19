@@ -70,8 +70,8 @@ qx.Class.define("osparc.snapshots.Iterations", {
     },
 
     extractIteratorOutput: function(iterator) {
-      if ("outputs" in iterator && "out_1" in iterator["outputs"]) {
-        return iterator["outputs"]["out_1"];
+      if ("outputs" in iterator && osparc.data.model.NodePort.PARAM_PORT_KEY in iterator["outputs"]) {
+        return iterator["outputs"][osparc.data.model.NodePort.PARAM_PORT_KEY];
       }
       return null;
     },
