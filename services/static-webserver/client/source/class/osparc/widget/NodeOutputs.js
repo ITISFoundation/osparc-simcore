@@ -118,7 +118,6 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           column: this.self().POS.ICON
         });
 
-        // OM units!
         const unit = new qx.ui.basic.Label(output["unitShort"] || "");
         this.__gridLayout.add(unit, {
           row: i,
