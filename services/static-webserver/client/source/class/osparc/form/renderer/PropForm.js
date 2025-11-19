@@ -446,14 +446,13 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       const params = this.getStudy().getParameters();
       params.forEach(paramNode => {
         const inputNodeId = paramNode.getNodeId();
-        const outputKey = "out_1";
-        osparc.utils.Ports.arePortsCompatible(paramNode, outputKey, this.getNode(), targetPortId)
+        osparc.utils.Ports.arePortsCompatible(paramNode, osparc.data.model.NodePort.PARAM_PORT_KEY, this.getNode(), targetPortId)
           .then(compatible => {
             if (compatible) {
               const paramButton = new qx.ui.menu.Button();
               paramButton.nodeId = inputNodeId;
               paramNode.bind("label", paramButton, "label");
-              paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
+              paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, osparc.data.model.NodePort.PARAM_PORT_KEY), this);
               if (!menu.getChildren().some(child => child.nodeId === paramButton.nodeId)) {
                 menu.add(paramButton);
                 menuBtn.show();

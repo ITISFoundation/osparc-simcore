@@ -67,7 +67,7 @@ qx.Class.define("osparc.file.FilePicker", {
     PORT_KEY: "outFile",
 
     getOutput: function(outputs) {
-      const output = outputs.find(out => out.getPortKey() === osparc.file.FilePicker.PORT_KEY);
+      const output = outputs.find(out => out.getPortKey() === osparc.data.model.NodePort.FP_PORT_KEY);
       return output.getValue();
     },
 
@@ -116,7 +116,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __setOutputValue: function(node, outputValue) {
       node.setOutputData({
-        [osparc.file.FilePicker.PORT_KEY]: outputValue
+        [osparc.data.model.NodePort.FP_PORT_KEY]: outputValue
       });
       const outputs = node.getOutputs();
       const outLabel = osparc.file.FilePicker.getOutputLabel(outputs);
@@ -243,7 +243,7 @@ qx.Class.define("osparc.file.FilePicker", {
       let output = {};
       const outFileValue = osparc.file.FilePicker.getOutput(outputs);
       if (outFileValue) {
-        output[osparc.file.FilePicker.PORT_KEY] = outFileValue;
+        output[osparc.data.model.NodePort.FP_PORT_KEY] = outFileValue;
       }
       return output;
     },
@@ -641,7 +641,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __getOutputFile: function() {
       const outputs = this.getNode().getOutputs();
-      return outputs[osparc.file.FilePicker.PORT_KEY];
+      return outputs[osparc.data.model.NodePort.FP_PORT_KEY];
     },
 
     __checkSelectedFileIsListed: function() {

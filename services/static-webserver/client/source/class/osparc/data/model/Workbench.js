@@ -426,7 +426,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         downstreamNodes.forEach(downstreamNode => {
           downstreamNode.getPortIds().forEach(portId => {
             const link = downstreamNode.getLink(portId);
-            if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === osparc.file.FilePicker.PORT_KEY) {
+            if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === osparc.data.model.NodePort.FP_PORT_KEY) {
               // connected to file picker's output
               setTimeout(() => {
                 // start retrieving state after 2"
@@ -498,7 +498,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         requesterNode.addInputNode(filePickerId);
         // reload also before port connection happens
         this.fireEvent("reloadModel");
-        requesterNode.addPortLink(portId, filePickerId, osparc.file.FilePicker.PORT_KEY)
+        requesterNode.addPortLink(portId, filePickerId, osparc.data.model.NodePort.FP_PORT_KEY)
           .then(success => {
             if (success) {
               if (file) {
@@ -548,7 +548,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           const pmId = parameterNode.getNodeId();
           requesterNode.addInputNode(pmId);
           // bypass the compatibility check
-          if (requesterNode.getPropsForm().addPortLink(portId, pmId, "out_1") !== true) {
+          if (requesterNode.getPropsForm().addPortLink(portId, pmId, osparc.data.model.NodePort.PARAM_PORT_KEY) !== true) {
             this.removeNode(pmId);
             const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
             osparc.FlashMessenger.logError(msg);

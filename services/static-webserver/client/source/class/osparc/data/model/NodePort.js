@@ -49,6 +49,11 @@ qx.Class.define("osparc.data.model.NodePort", {
     Object.assign(this, portDataCopy);
   },
 
+  statics: {
+    FP_PORT_KEY: "outFile",
+    PARAM_PORT_KEY: "out_1",
+  },
+
   properties: {
     nodeId: {
       check: "String",

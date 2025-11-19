@@ -1062,7 +1062,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initParameter: function() {
-      if (this.isParameter() && this.__getOutputValue("out_1") === null) {
+      if (this.isParameter() && this.__getOutputValue(osparc.data.model.NodePort.PARAM_PORT_KEY) === null) {
         const type = osparc.node.ParameterEditor.getParameterOutputType(this);
         // set default values if none
         let val = null;
@@ -1324,7 +1324,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
       const newMetadata = osparc.store.Services.getLatest("simcore/services/frontend/data-iterator/int-range")
       if (newMetadata) {
-        const value = this.__getOutputValue("out_1");
+        const value = this.__getOutputValue(osparc.data.model.NodePort.PARAM_PORT_KEY);
         const label = this.getLabel();
         this.set({
           key: newMetadata["key"],

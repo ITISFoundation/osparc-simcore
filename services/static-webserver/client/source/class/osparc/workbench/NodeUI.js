@@ -633,7 +633,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
         font: "text-14"
       });
       const outputToValue = () => {
-        const output = this.getNode().getOutput("out_1");
+        const output = this.getNode().getOutput(osparc.data.model.NodePort.PARAM_PORT_KEY);
         if (output && output.getValue()) {
           const val = output.getValue();
           if (Array.isArray(val)) {
@@ -710,7 +710,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __checkTurnIntoIteratorUI: function() {
-      const output = this.getNode().getOutput("out_1");
+      const output = this.getNode().getOutput(osparc.data.model.NodePort.PARAM_PORT_KEY);
       if (output && output.getValue()) {
         this.__turnIntoIteratorIteratedUI();
       } else {
