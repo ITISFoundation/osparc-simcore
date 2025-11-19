@@ -15,7 +15,6 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic_core import InitErrorDetails
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common.dbmanager import DBManager
@@ -84,7 +83,6 @@ class Nodeports(BaseModel):
     auto_update: bool = False
     r_clone_settings: RCloneSettings | None = None
     io_log_redirect_cb: LogRedirectCB | None
-    aws_s3_cli_settings: AwsS3CliSettings | None = None
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
