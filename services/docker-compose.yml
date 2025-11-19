@@ -378,7 +378,6 @@ services:
         - *registry_settings
         - *s3_settings
         - *tracing_open_telemetry_environments
-      AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
 
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
