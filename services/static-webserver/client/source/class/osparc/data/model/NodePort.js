@@ -36,9 +36,17 @@ qx.Class.define("osparc.data.model.NodePort", {
       label: portData.label || null,
       description: portData.description || null,
       type: portData.type || null,
-      displayOrder: portData.displayOrder || null,
       portIO: isInput ? "input" : "output",
     });
+
+    const portDataCopy = osparc.utils.Utils.deepCloneObject(portData);
+    // delete keys that are already set as properties...
+    delete portDataCopy.keyId;
+    delete portDataCopy.label;
+    delete portDataCopy.description;
+    delete portDataCopy.type;
+    // ...extend the current object with the rest of the data
+    Object.assign(this, portDataCopy);
   },
 
   properties: {
@@ -66,12 +74,6 @@ qx.Class.define("osparc.data.model.NodePort", {
       event: "changeDescription",
     },
 
-    value: {
-      nullable: true,
-      init: null,
-      event: "changeValue",
-    },
-
     type: {
       check: "String",
       nullable: true,
@@ -79,17 +81,16 @@ qx.Class.define("osparc.data.model.NodePort", {
       event: "changeType",
     },
 
-    displayOrder: {
-      check: "Number",
-      nullable: true,
-      init: null,
-      event: "changeDisplayOrder",
-    },
-
     portIO: {
       check: ["input", "output"],
       init: null,
       nullable: false,
+    },
+
+    value: {
+      nullable: true,
+      init: null,
+      event: "changeValue",
     },
 
     input: {

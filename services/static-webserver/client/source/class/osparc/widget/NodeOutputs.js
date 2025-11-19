@@ -119,7 +119,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         });
 
         // OM units!
-        const unit = new qx.ui.basic.Label(output.unitShort || "");
+        const unit = new qx.ui.basic.Label(output["unitShort"] || "");
         this.__gridLayout.add(unit, {
           row: i,
           column: this.self().POS.UNIT
