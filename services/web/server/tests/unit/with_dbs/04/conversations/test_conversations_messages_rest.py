@@ -500,6 +500,13 @@ def mocked_get_current_product(mocker: MockerFixture) -> MockType:
     return mock
 
 
+@pytest.fixture
+def mocked_trigger_chatbot_processing(mocker: MockerFixture) -> MockType:
+    return mocker.patch.object(
+        _conversation_message_service, "_trigger_chatbot_processing"
+    )
+
+
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_conversation_messages_with_database(
     app_environment: EnvVarsDict,
@@ -507,6 +514,7 @@ async def test_conversation_messages_with_database(
     mocked_fogbugz_client: MockType,
     mocked_list_users_in_group: MockType,
     mocked_get_current_product: MockType,
+    mocked_trigger_chatbot_processing: MockType,
     logged_user: UserInfoDict,
 ):
     """Test conversation messages with direct database interaction"""
@@ -558,3 +566,13 @@ async def test_conversation_messages_with_database(
     assert mocked_fogbugz_client.reopen_case.called
     assert second_message_data["type"] == "MESSAGE"
     assert second_message_data["conversationId"] == conversation_id
+
+    # Trigger a chatbot processing on the second message via API
+    trigger_chatbot_processing_url = client.app.router[
+        "trigger_chatbot_processing"
+    ].url_for(conversation_id=conversation_id)
+    resp = await client.post(f"{trigger_chatbot_processing_url}")
+    second_message_data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Verify chatbot processing was triggered
+    assert mocked_trigger_chatbot_processing.call_count == 1
