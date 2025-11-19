@@ -562,7 +562,6 @@ async def test_search_directories(
     ]
 
     # Create the directories
-    created_directories = []
     for dir_name, subdir_count, file_count in test_directories:
         directory_file_id = await create_empty_directory(dir_name, project_id, node_id)
         await populate_directory(
@@ -573,7 +572,6 @@ async def test_search_directories(
             subdir_count,
             file_count,
         )
-        created_directories.append(directory_file_id)
         cleanup_files_closure(directory_file_id)
 
     # Also upload some regular files with similar patterns for contrast
