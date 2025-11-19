@@ -523,8 +523,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         else:
             task_data = await self._tasks_data.get_task_data(task_id)
             if (
-                task_data.marked_for_removal_at is not None
-                and task_data.marked_for_removal_at
+                task_data.marked_for_removal_at is not None  # type: ignore[union-attr]
+                and task_data.marked_for_removal_at  # type: ignore[union-attr]
                 - datetime.datetime.now(tz=datetime.UTC)
                 > datetime.timedelta(seconds=_TASK_REMOVAL_MAX_WAIT)
             ):
