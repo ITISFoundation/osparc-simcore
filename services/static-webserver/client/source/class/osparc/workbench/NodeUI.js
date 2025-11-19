@@ -755,7 +755,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
               const output = outputs.find(out => out.getPortKey() === portKey);
               if (output.getValue()) {
                 const val = output.getValue();
-                if (this.getNode().getMetadata()["key"].includes("probe/array")) {
+                if (this.getNode().getMetadata()["key"].includes("probe/array") && Array.isArray(val)) {
                   return "[" + val.join(",") + "]";
                 } else if (this.getNode().getMetadata()["key"].includes("probe/file")) {
                   const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
