@@ -583,17 +583,17 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         status = this.self().RETRIEVE_STATUS.empty;
       }
       if (portId) {
-        let data = this._getCtrlFieldChild(portId);
+        const data = this._getCtrlFieldChild(portId);
         if (data) {
-          let child = data.child;
-          let idx = data.idx;
+          const child = data.child;
+          const idx = data.idx;
           const layoutProps = child.getLayoutProperties();
           this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
         }
       } else {
-        let children = this._getChildren();
+        const children = this._getChildren();
         for (let i=0; i<children.length; i++) {
-          let child = children[i];
+          const child = children[i];
           const layoutProps = child.getLayoutProperties();
           if (layoutProps.column === this.self().GRID_POS.RETRIEVE_STATUS) {
             this.__setRetrievingStatus(status, portId, i, layoutProps.row);
@@ -604,14 +604,19 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
     __setRetrievingStatus: function(status, portId, idx, row) {
       // remove first if any
-      let children = this._getChildren();
+      const children = this._getChildren();
       for (let i=0; i<children.length; i++) {
-        let child = children[i];
+        const child = children[i];
         const layoutProps = child.getLayoutProperties();
         if (layoutProps.row === row &&
           layoutProps.column === this.self().GRID_POS.RETRIEVE_STATUS) {
           this._remove(child);
         }
+      }
+
+      const input = this.getNode().getInput(portId);
+      if (input) {
+        input.setStatus(status);
       }
 
       const label = this._getLabelFieldChild(portId).child;
