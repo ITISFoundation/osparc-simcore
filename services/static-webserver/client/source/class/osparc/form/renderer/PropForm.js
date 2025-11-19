@@ -109,13 +109,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           icon = this.getRetrievedEmpty();
           break;
         case this.RETRIEVE_STATUS.retrieving:
-          icon = this.getRetrievingAtom();
-          break;
         case this.RETRIEVE_STATUS.downloading:
-          icon = this.getDownloadingAtom();
-          break;
         case this.RETRIEVE_STATUS.uploading:
-          icon = this.getUploadingAtom();
+          icon = this.getRetrievingAtom();
           break;
         case this.RETRIEVE_STATUS.succeed:
           icon = this.getSucceededAtom();
@@ -359,10 +355,11 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         inputNodeIDs.forEach(inputNodeId => {
           const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
           if (inputNode && inputNode.getMetadata()) {
-            for (const outputKey in inputNode.getOutputs()) {
+            inputNode.getOutputs().forEach(output => {
+              const outputKey = output.getPortKey();
               const paramButton = new qx.ui.menu.Button();
               inputNode.bind("label", paramButton, "label", {
-                converter: val => val + " : " + inputNode.getOutput(outputKey).label
+                converter: val => val + " : " + inputNode.getOutput(outputKey).getLabel()
               });
               paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
               menu.add(paramButton);
@@ -372,7 +369,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
                     paramButton.exclude();
                   }
                 });
-            }
+            });
           }
         });
       }
@@ -401,17 +398,19 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
       const inputNode = this.getStudy().getWorkbench().getNode(inputNodeId);
       if (inputNode && inputNode.getMetadata()) {
-        for (const outputKey in inputNode.getOutputs()) {
+        inputNode.getOutputs().forEach(output => {
+          const outputKey = output.getPortKey();
           osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
             .then(compatible => {
+              const port = inputNode.getOutput(outputKey);
               if (compatible) {
-                const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
+                const paramButton = new qx.ui.menu.Button(port.getLabel());
                 paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
                 menu.add(paramButton);
                 menuBtn.show();
               }
             });
-        }
+        });
       }
     },
 
@@ -447,14 +446,13 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       const params = this.getStudy().getParameters();
       params.forEach(paramNode => {
         const inputNodeId = paramNode.getNodeId();
-        const outputKey = "out_1";
-        osparc.utils.Ports.arePortsCompatible(paramNode, outputKey, this.getNode(), targetPortId)
+        osparc.utils.Ports.arePortsCompatible(paramNode, osparc.data.model.NodePort.PARAM_PORT_KEY, this.getNode(), targetPortId)
           .then(compatible => {
             if (compatible) {
               const paramButton = new qx.ui.menu.Button();
               paramButton.nodeId = inputNodeId;
               paramNode.bind("label", paramButton, "label");
-              paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
+              paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, osparc.data.model.NodePort.PARAM_PORT_KEY), this);
               if (!menu.getChildren().some(child => child.nodeId === paramButton.nodeId)) {
                 menu.add(paramButton);
                 menuBtn.show();
@@ -934,7 +932,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       ctrlLink.addListener("mouseout", () => highlightEdgeUI(false));
       const prettifyLinkString = () => {
         const port = fromNode.getOutput(fromPortId);
-        const fromPortLabel = port ? port.label : null;
+        const fromPortLabel = port ? port.getLabel() : null;
         fromNode.bind("label", ctrlLink, "value", {
           converter: label => label + ": " + fromPortLabel
         });
