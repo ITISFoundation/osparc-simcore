@@ -117,7 +117,6 @@ qx.Class.define("osparc.node.ParameterEditor", {
       const valueField = this.getChildControl(type);
       const output = node.getOutput(osparc.data.model.NodePort.PARAM_PORT_KEY);
       if (type === "ref_contentSchema") {
-        // OM revisit
         valueField.setContentSchema(output["contentSchema"]);
       }
       if (output.getValue()) {
@@ -129,7 +128,6 @@ qx.Class.define("osparc.node.ParameterEditor", {
         }
       }
       valueField.addListener("changeValue", e => osparc.node.ParameterEditor.setParameterOutputValue(node, e.getData()));
-      // OM revisit capital Value?
       this.__form.add(valueField, "Value", null, "value");
     }
   }
