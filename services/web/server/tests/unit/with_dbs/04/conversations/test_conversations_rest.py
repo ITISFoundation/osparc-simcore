@@ -144,7 +144,7 @@ async def test_conversations_create_and_list(
     assert ConversationRestGet.model_validate(data)
     second_conversation_id = data["conversationId"]
 
-    assert mocks.notify_conversation_created.call_count == 1
+    assert mocks.notify_conversation_created.call_count == 2
 
     # Test creating conversation with invalid type should fail
     body = {"name": "Invalid Type", "type": "PROJECT_STATIC"}
