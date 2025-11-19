@@ -1,12 +1,14 @@
 import asyncio
 import logging
 from collections import deque
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
+from faststream import context
 
 from . import tracing
 
@@ -32,10 +34,25 @@ else:
 
 @dataclass
 class Context:
-    in_queue: asyncio.Queue
-    out_queue: asyncio.Queue
+    _in_queue: asyncio.Queue
+    _out_queue: asyncio.Queue
     initialized: bool
     task: asyncio.Task | None = None
+    _task_counter: int = 0
+
+    async def put(self, item: Any) -> None:
+        await self._in_queue.put(item)
+        self._task_counter += 1
+
+    async def get(self) -> Any:
+        item = await self._in_queue.get()
+        self._in_queue.task_done()
+        self._task_counter -= 1
+        return item
+
+    @property
+    def task_idle(self) -> bool:
+        return self._task_counter == 0
 
 
 @dataclass
@@ -49,9 +66,97 @@ class QueueElement:
 _sequential_jobs_contexts: dict[str, Context] = {}
 
 
+@asynccontextmanager
+async def _managed_context(
+    function: Callable[[Any], Any | None],
+    target_args: list[str],
+    args: Any,
+    kwargs: dict,
+) -> AsyncIterator[Context]:
+    arg_names = function.__code__.co_varnames[: function.__code__.co_argcount]
+    search_args = dict(zip(arg_names, args, strict=False))
+    search_args.update(kwargs)
+
+    key_parts: deque[str] = deque()
+    for arg in target_args:
+        sub_args = arg.split(".")
+        main_arg = sub_args[0]
+        if main_arg not in search_args:
+            msg = (
+                f"Expected '{main_arg}' in '{function.__name__}'"
+                f" arguments. Got '{search_args}'"
+            )
+            raise ValueError(msg)
+        context_key = search_args[main_arg]
+        for attribute in sub_args[1:]:
+            potential_key = getattr(context_key, attribute)
+            if not potential_key:
+                msg = f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
+                raise ValueError(msg)
+            context_key = potential_key
+
+        key_parts.append(f"{function.__name__}_{context_key}")
+
+    key = ":".join(map(str, key_parts))
+
+    if key not in _sequential_jobs_contexts:
+        _sequential_jobs_contexts[key] = Context(
+            _in_queue=asyncio.Queue(),
+            _out_queue=asyncio.Queue(),
+            initialized=False,
+        )
+    context = _sequential_jobs_contexts[key]
+
+    if not context.initialized:
+        context.initialized = True
+
+        async def worker(in_q: Queue[QueueElement], out_q: Queue) -> None:
+            try:
+                while True:
+                    try:
+                        element = await asyncio.wait_for(in_q.get(), timeout=1.0)
+                        in_q.task_done()
+                        with tracing.use_tracing_context(element.tracing_context):
+                            # check if requested to shutdown
+                            try:
+                                awaitable = element.input
+                                if awaitable is None:
+                                    break
+                                result = await awaitable
+                            except Exception as e:  # pylint: disable=broad-except
+                                result = e
+                        await out_q.put(result)
+                    except TimeoutError:
+                        continue
+
+                logging.info(
+                    "Closed worker for @run_sequentially_in_context applied to '%s' with target_args=%s",
+                    function.__name__,
+                    target_args,
+                )
+            except asyncio.CancelledError:
+                raise
+
+        context.task = asyncio.create_task(
+            worker(context._in_queue, context._out_queue)
+        )
+    try:
+        yield context
+    finally:
+        if (
+            context._in_queue.empty()
+            and context._out_queue.empty()
+            and context.task_idle
+        ):
+            if context.task is not None:
+                await cancel_wait_task(context.task, max_delay=None)
+            if key in _sequential_jobs_contexts:
+                del _sequential_jobs_contexts[key]
+
+
 async def _safe_cancel(context: Context) -> None:
     try:
-        await context.in_queue.put(None)
+        await context._in_queue.put(None)
         if context.task is not None:
             await cancel_wait_task(context.task, max_delay=None)
     except RuntimeError as e:
@@ -116,88 +221,28 @@ def run_sequentially_in_context(
     target_args = [] if target_args is None else target_args
 
     def decorator(decorated_function: Callable[[Any], Any | None]):
-        def _get_context(args: Any, kwargs: dict) -> Context:
-            arg_names = decorated_function.__code__.co_varnames[
-                : decorated_function.__code__.co_argcount
-            ]
-            search_args = dict(zip(arg_names, args, strict=False))
-            search_args.update(kwargs)
 
-            key_parts: deque[str] = deque()
-            for arg in target_args:
-                sub_args = arg.split(".")
-                main_arg = sub_args[0]
-                if main_arg not in search_args:
-                    msg = (
-                        f"Expected '{main_arg}' in '{decorated_function.__name__}'"
-                        f" arguments. Got '{search_args}'"
-                    )
-                    raise ValueError(msg)
-                context_key = search_args[main_arg]
-                for attribute in sub_args[1:]:
-                    potential_key = getattr(context_key, attribute)
-                    if not potential_key:
-                        msg = f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
-                        raise ValueError(msg)
-                    context_key = potential_key
-
-                key_parts.append(f"{decorated_function.__name__}_{context_key}")
-
-            key = ":".join(map(str, key_parts))
-
-            if key not in _sequential_jobs_contexts:
-                _sequential_jobs_contexts[key] = Context(
-                    in_queue=asyncio.Queue(),
-                    out_queue=asyncio.Queue(),
-                    initialized=False,
-                )
-
-            return _sequential_jobs_contexts[key]
-
-        # --------------------
         @wraps(decorated_function)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
-            context: Context = _get_context(args, kwargs)
 
-            if not context.initialized:
-                context.initialized = True
+            async with _managed_context(
+                function=decorated_function,
+                target_args=target_args,
+                args=args,
+                kwargs=kwargs,
+            ) as context:
 
-                async def worker(in_q: Queue[QueueElement], out_q: Queue) -> None:
-                    while True:
-                        element = await in_q.get()
-                        in_q.task_done()
-                        with tracing.use_tracing_context(element.tracing_context):
-                            # check if requested to shutdown
-                            try:
-                                awaitable = element.input
-                                if awaitable is None:
-                                    break
-                                result = await awaitable
-                            except Exception as e:  # pylint: disable=broad-except
-                                result = e
-                        await out_q.put(result)
-
-                    logging.info(
-                        "Closed worker for @run_sequentially_in_context applied to '%s' with target_args=%s",
-                        decorated_function.__name__,
-                        target_args,
-                    )
-
-                context.task = asyncio.create_task(
-                    worker(context.in_queue, context.out_queue)
+                queue_input = QueueElement(
+                    input=decorated_function(*args, **kwargs),
+                    tracing_context=tracing.get_context(),
                 )
+                await context.put(queue_input)
+                wrapped_result = await context.get()
 
-            queue_input = QueueElement(
-                input=decorated_function(*args, **kwargs),
-                tracing_context=tracing.get_context(),
-            )
-            await context.in_queue.put(queue_input)
-            wrapped_result = await context.out_queue.get()
+                if isinstance(wrapped_result, Exception):
+                    raise wrapped_result
 
-            if isinstance(wrapped_result, Exception):
-                raise wrapped_result
-
-            return wrapped_result
+                return wrapped_result
 
         return wrapper
 
