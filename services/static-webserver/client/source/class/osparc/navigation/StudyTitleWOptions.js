@@ -51,7 +51,6 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           control = new qx.ui.menu.Button().set({
             label: this.tr("Information..."),
             icon: "@MaterialIcons/info_outline/14",
-            ...this.self().BUTTON_OPTIONS
           });
           control.addListener("execute", () => this.__openStudyDetails(), this);
           break;
@@ -59,7 +58,6 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           control = new qx.ui.menu.Button().set({
             label: this.tr("Share..."),
             icon: "@FontAwesome5Solid/share-alt/14",
-            ...this.self().BUTTON_OPTIONS
           });
           control.addListener("execute", () => this.__openAccessRights(), this);
           break;

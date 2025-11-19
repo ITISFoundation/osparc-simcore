@@ -79,7 +79,7 @@ qx.Class.define("osparc.info.StudyMedium", {
 
     __createMenuButton: function() {
       const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
+        appearance: "menu-wider",
       });
 
       const menuButton = new qx.ui.form.MenuButton().set({
@@ -91,11 +91,11 @@ qx.Class.define("osparc.info.StudyMedium", {
         allowGrowY: false
       });
 
-      const infoButton = new qx.ui.menu.Button(this.tr("Information..."));
+      const infoButton = new qx.ui.menu.Button(this.tr("Information..."), "@MaterialIcons/info_outline/14");
       infoButton.addListener("execute", () => this.__openStudyDetails(), this);
       menu.add(infoButton);
 
-      const shareButton = new qx.ui.menu.Button(this.tr("Share..."));
+      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/14");
       shareButton.addListener("execute", () => this.__openAccessRights(), this);
       menu.add(shareButton);
 
