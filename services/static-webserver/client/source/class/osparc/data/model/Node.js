@@ -870,14 +870,14 @@ qx.Class.define("osparc.data.model.Node", {
         let autoConnections = 0;
         const outputs = node1.getOutputs();
         const inputs = node2.getInputs();
-        outputs.forEach(async output => {
-          inputs.forEach(async input => {
+        for (const output of outputs) {
+          for (const input of inputs) {
             if (await node2.addPortLink(input.getPortKey(), node1.getNodeId(), output.getPortKey())) {
               autoConnections++;
-              return;
+              break; // stop checking more inputs for this output
             }
-          });
-        });
+          }
+        }
         if (autoConnections) {
           const flashMessenger = osparc.FlashMessenger.getInstance();
           flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
