@@ -426,7 +426,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         downstreamNodes.forEach(downstreamNode => {
           downstreamNode.getPortIds().forEach(portId => {
             const link = downstreamNode.getLink(portId);
-            if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === "outFile") {
+            if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === osparc.file.FilePicker.PORT_KEY) {
               // connected to file picker's output
               setTimeout(() => {
                 // start retrieving state after 2"
@@ -498,7 +498,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         requesterNode.addInputNode(filePickerId);
         // reload also before port connection happens
         this.fireEvent("reloadModel");
-        requesterNode.addPortLink(portId, filePickerId, "outFile")
+        requesterNode.addPortLink(portId, filePickerId, osparc.file.FilePicker.PORT_KEY)
           .then(success => {
             if (success) {
               if (file) {
