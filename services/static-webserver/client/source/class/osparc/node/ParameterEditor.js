@@ -117,6 +117,7 @@ qx.Class.define("osparc.node.ParameterEditor", {
       const valueField = this.getChildControl(type);
       const output = node.getOutput("out_1");
       if (type === "ref_contentSchema") {
+        // OM revisit
         valueField.setContentSchema(output["contentSchema"]);
       }
       if (output.getValue()) {

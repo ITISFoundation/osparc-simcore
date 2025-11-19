@@ -402,8 +402,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           const outputKey = output.getPortKey();
           osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
             .then(compatible => {
+              const port = inputNode.getOutput(outputKey);
               if (compatible) {
-                const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
+                const paramButton = new qx.ui.menu.Button(port.getLabel());
                 paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
                 menu.add(paramButton);
                 menuBtn.show();
