@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 from common_library.async_tools import cancel_wait_task
 
 from . import tracing
-from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
 _logger = logging.getLogger(__name__)
 
@@ -42,7 +41,6 @@ class Context:
 @dataclass
 class QueueElement:
     tracing_context: tracing.TracingContext
-    do_profile: bool = False
     input: Awaitable | None = None
     output: Any | None = None
 
@@ -171,12 +169,10 @@ def run_sequentially_in_context(
                         with tracing.use_tracing_context(element.tracing_context):
                             # check if requested to shutdown
                             try:
-                                do_profile = element.do_profile
                                 awaitable = element.input
                                 if awaitable is None:
                                     break
-                                with profile_context(do_profile):
-                                    result = await awaitable
+                                result = await awaitable
                             except Exception as e:  # pylint: disable=broad-except
                                 result = e
                         await out_q.put(result)
@@ -191,15 +187,12 @@ def run_sequentially_in_context(
                     worker(context.in_queue, context.out_queue)
                 )
 
-            with dont_profile():
-                # ensure profiler is disabled in order to capture profile of endpoint code
-                queue_input = QueueElement(
-                    input=decorated_function(*args, **kwargs),
-                    do_profile=is_profiling(),
-                    tracing_context=tracing.get_context(),
-                )
-                await context.in_queue.put(queue_input)
-                wrapped_result = await context.out_queue.get()
+            queue_input = QueueElement(
+                input=decorated_function(*args, **kwargs),
+                tracing_context=tracing.get_context(),
+            )
+            await context.in_queue.put(queue_input)
+            wrapped_result = await context.out_queue.get()
 
             if isinstance(wrapped_result, Exception):
                 raise wrapped_result
