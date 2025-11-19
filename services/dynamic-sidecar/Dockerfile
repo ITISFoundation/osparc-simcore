@@ -73,20 +73,6 @@ RUN \
   --mount=type=bind,source=scripts/install_7zip.bash,target=install_7zip.bash \
   ./install_7zip.bash
 
-RUN AWS_CLI_VERSION="2.11.11" \
-  && case "${TARGETARCH}" in \
-  "amd64") ARCH="x86_64" ;; \
-  "arm64") ARCH="aarch64" ;; \
-  *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
-  esac \
-  && curl "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
-  && apt-get update && apt-get install -y unzip \
-  && unzip awscliv2.zip \
-  && ./aws/install \
-  && apt-get remove --purge -y unzip \
-  && rm awscliv2.zip \
-  && rm -rf awscliv2 \
-  && aws --version
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \

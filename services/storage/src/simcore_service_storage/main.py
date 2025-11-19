@@ -14,9 +14,7 @@ from simcore_service_storage.core.settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
     "aiobotocore",
-    "aiormq",
     "botocore",
     "httpcore",
     "urllib3",

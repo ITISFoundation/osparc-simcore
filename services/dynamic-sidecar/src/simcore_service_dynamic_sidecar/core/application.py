@@ -43,11 +43,7 @@ from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import volumes_fix_permissions
 
-_NOISY_LOGGERS = (
-    "aio_pika",
-    "aiormq",
-    "httpcore",
-)
+_NOISY_LOGGERS = ("httpcore",)
 
 _logger = logging.getLogger(__name__)
 

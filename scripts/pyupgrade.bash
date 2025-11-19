@@ -24,7 +24,7 @@ RUN uv pip install \
   pyupgrade
 
 ENTRYPOINT ["pyupgrade", \
-  "--py311-plus" ]
+  "--py313-plus" ]
 EOF
 }
 
