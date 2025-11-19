@@ -950,6 +950,12 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         fromNode.addListenerOnce("changeMetadata", () => prettifyLinkString(), this);
       }
 
+      const inputPort = this.getNode().getInput(portId);
+      const outputPort = fromNode.getOutput(fromPortId);
+      if (inputPort && outputPort) {
+        inputPort.setInput(outputPort);
+      }
+
       this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
 
       this.makeInputsDynamic();
@@ -969,6 +975,11 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       this.getControlLink(toPortId).setEnabled(false);
       if ("link" in this._form.getControl(toPortId)) {
         delete this._form.getControl(toPortId)["link"];
+      }
+
+      const inputPort = this.getNode().getInput(toPortId);
+      if (inputPort) {
+        inputPort.setInput(null);
       }
 
       this.__portLinkRemoved(toPortId);
