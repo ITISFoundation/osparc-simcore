@@ -171,7 +171,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       });
       tabView.add(templatesListPage);
 
-      const servicesListPage = this.self().createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
+      const servicesListPage = this.self().createTabPage(this.tr("Apps"), "@FontAwesome5Solid/cogs/14");
       const servicesList = this.__servicesList = new osparc.desktop.organizations.ServicesList();
       servicesListPage.add(servicesList, {
         flex: 1
