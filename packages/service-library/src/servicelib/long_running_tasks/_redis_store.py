@@ -15,6 +15,7 @@ from .models import LRTNamespace, TaskData, TaskId
 _STORE_TYPE_TASK_DATA: Final[str] = "TD"
 _LIST_CONCURRENCY: Final[int] = 3
 _MARKED_FOR_REMOVAL_FIELD: Final[str] = "marked_for_removal"
+_MARKED_FOR_REMOVAL_AT_FIELD: Final[str] = "marked_for_removal_at"
 
 
 def _to_redis_hash_mapping(data: dict[str, Any]) -> dict[str, str]:
@@ -138,7 +139,9 @@ class RedisStore:
                 mapping=_to_redis_hash_mapping(
                     {
                         _MARKED_FOR_REMOVAL_FIELD: True,
-                        "marked_for_removal_at": datetime.datetime.now(tz=datetime.UTC),
+                        _MARKED_FOR_REMOVAL_AT_FIELD: datetime.datetime.now(
+                            tz=datetime.UTC
+                        ),
                     }
                 ),
             )
