@@ -36,7 +36,6 @@ async def task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     yield {}
 
-    redis_client_sdk: RedisClientSDK | None = app.state.celery_tasks_redis_client_sdk
     if redis_client_sdk:
         await redis_client_sdk.shutdown()
 
