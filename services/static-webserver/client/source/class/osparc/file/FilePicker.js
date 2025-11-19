@@ -64,8 +64,6 @@ qx.Class.define("osparc.file.FilePicker", {
   },
 
   statics: {
-    PORT_KEY: "outFile",
-
     getOutput: function(outputs) {
       const output = outputs.find(out => out.getPortKey() === osparc.data.model.NodePort.FP_PORT_KEY);
       return output.getValue();
