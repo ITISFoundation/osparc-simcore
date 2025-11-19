@@ -534,19 +534,17 @@ async def test_create_s3_export_abort_upload_upon_error(
 )
 async def test_search_directories(
     simcore_s3_dsm: SimcoreS3DataManager,
-    create_empty_directory: Callable[
-        [str, ProjectID, NodeID], Awaitable[SimcoreS3FileID]
-    ],
-    populate_directory: Callable[
-        [ByteSize, str, ProjectID, NodeID, int, int],
-        Awaitable[tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]],
+    create_directory_with_files: Callable[
+        [str, ByteSize, int, int, ProjectID, NodeID],
+        Awaitable[
+            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
     ],
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    cleanup_files_closure: Callable[[SimcoreS3FileID], None],
     faker: Faker,
 ):
     """Test that search functionality can find directories."""
@@ -563,16 +561,14 @@ async def test_search_directories(
 
     # Create the directories
     for dir_name, subdir_count, file_count in test_directories:
-        directory_file_id = await create_empty_directory(dir_name, project_id, node_id)
-        await populate_directory(
-            file_size,
+        await create_directory_with_files(
             dir_name,
-            project_id,
-            node_id,
+            file_size,
             subdir_count,
             file_count,
+            project_id,
+            node_id,
         )
-        cleanup_files_closure(directory_file_id)
 
     # Also upload some regular files with similar patterns for contrast
     regular_files = [
