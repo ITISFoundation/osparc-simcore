@@ -249,7 +249,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
         case "node-type-chip": {
           control = new osparc.ui.basic.Chip();
           let nodeType = this.getNode().getMetadata().type;
-          if (this.getNode().isIterator()) {
+          // frontend services
+          if (this.getNode().isFilePicker()) {
+            nodeType = "file";
+          } else if (this.getNode().isIterator()) {
             nodeType = "iterator";
           } else if (this.getNode().isParameter()) {
             nodeType = "parameter";
@@ -629,16 +632,17 @@ qx.Class.define("osparc.workbench.NodeUI", {
         paddingLeft: 4,
         font: "text-14"
       });
-      const outputToValue = outputs => {
-          if ("out_1" in outputs && "value" in outputs["out_1"]) {
-            const val = outputs["out_1"]["value"];
-            if (Array.isArray(val)) {
-              return "[" + val.join(",") + "]";
-            }
-            return String(val);
+      const outputToValue = () => {
+        const output = this.getNode().getOutput(osparc.data.model.NodePort.PARAM_PORT_KEY);
+        if (output && output.getValue()) {
+          const val = output.getValue();
+          if (Array.isArray(val)) {
+            return "[" + val.join(",") + "]";
           }
-          return "";
-      }
+          return String(val);
+        }
+        return "";
+      };
       this.getNode().bind("outputs", valueLabel, "value", {
         converter: outputs => outputToValue(outputs)
       });
@@ -706,9 +710,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __checkTurnIntoIteratorUI: function() {
-      const outputs = this.getNode().getOutputs();
-      const portKey = "out_1";
-      if (portKey in outputs && "value" in outputs[portKey]) {
+      const output = this.getNode().getOutput(osparc.data.model.NodePort.PARAM_PORT_KEY);
+      if (output && output.getValue()) {
         this.__turnIntoIteratorIteratedUI();
       } else {
         this.__turnIntoIteratorUI();
@@ -749,9 +752,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
         if (inputNode) {
           inputNode.bind("outputs", linkLabel, "value", {
             converter: outputs => {
-              if (portKey in outputs && "value" in outputs[portKey] && outputs[portKey]["value"]) {
-                const val = outputs[portKey]["value"];
-                if (this.getNode().getMetadata()["key"].includes("probe/array")) {
+              const output = outputs.find(out => out.getPortKey() === portKey);
+              if (output && output.getValue()) {
+                const val = output.getValue();
+                if (this.getNode().getMetadata()["key"].includes("probe/array") && Array.isArray(val)) {
                   return "[" + val.join(",") + "]";
                 } else if (this.getNode().getMetadata()["key"].includes("probe/file")) {
                   const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);

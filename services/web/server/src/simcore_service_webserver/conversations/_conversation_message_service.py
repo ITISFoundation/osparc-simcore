@@ -22,13 +22,10 @@ from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
-from servicelib.redis import exclusive
 
 from ..application_keys import APP_SETTINGS_APPKEY
-from ..groups import api as group_service
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
-from ..redis import get_redis_lock_manager_client_sdk
 from ..users import users_service
 from . import (
     _conversation_message_repository,
@@ -46,19 +43,6 @@ _logger = logging.getLogger(__name__)
 
 # Redis lock key for conversation message operations
 CONVERSATION_MESSAGE_REDIS_LOCK_KEY = "conversation_message_update:{}"
-
-
-async def _get_recipients_from_product_support_group(
-    app: web.Application, product_name: ProductName
-) -> set[UserID]:
-    product = products_service.get_product(app, product_name=product_name)
-    _support_standard_group_id = product.support_standard_group_id
-    if _support_standard_group_id:
-        users = await group_service.list_group_members(
-            app, group_id=_support_standard_group_id
-        )
-        return {user.id for user in users}
-    return set()
 
 
 async def create_message(
@@ -98,8 +82,10 @@ async def create_message(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = await _get_recipients_from_product_support_group(
-            app, product_name=product_name
+        _product_group_users = (
+            await _conversation_service.get_recipients_from_product_support_group(
+                app, product_name=product_name
+            )
         )
         await notify_conversation_message_created(
             app,
@@ -139,12 +125,12 @@ async def _create_support_message_with_first_check(
         Tuple containing the created message and whether it's the first message
     """
 
-    @exclusive(
-        get_redis_lock_manager_client_sdk(app),
-        lock_key=CONVERSATION_MESSAGE_REDIS_LOCK_KEY.format(conversation_id),
-        blocking=True,
-        blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
-    )
+    # @exclusive(
+    #     get_redis_lock_manager_client_sdk(app),
+    #     lock_key=CONVERSATION_MESSAGE_REDIS_LOCK_KEY.format(conversation_id),
+    #     blocking=True,
+    #     blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
+    # )
     async def _create_support_message_and_check_if_it_is_first_message() -> (
         tuple[ConversationMessageGetDB, bool]
     ):
@@ -386,8 +372,10 @@ async def update_message(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = await _get_recipients_from_product_support_group(
-            app, product_name=product_name
+        _product_group_users = (
+            await _conversation_service.get_recipients_from_product_support_group(
+                app, product_name=product_name
+            )
         )
         await notify_conversation_message_updated(
             app,
@@ -434,8 +422,10 @@ async def delete_message(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = await _get_recipients_from_product_support_group(
-            app, product_name=product_name
+        _product_group_users = (
+            await _conversation_service.get_recipients_from_product_support_group(
+                app, product_name=product_name
+            )
         )
         await notify_conversation_message_deleted(
             app,

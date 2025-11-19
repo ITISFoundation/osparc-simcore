@@ -58,10 +58,10 @@ qx.Class.define("osparc.info.StudyMedium", {
       const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
+      nameAndMenuButton.add(this.__createMenuButton());
       nameAndMenuButton.add(osparc.info.StudyUtils.createTitle(this.getStudy()), {
         flex: 1
       });
-      nameAndMenuButton.add(this.__createMenuButton());
       this._add(nameAndMenuButton);
 
       const thumbnail = this.__createThumbnail(160, 100);
@@ -79,7 +79,7 @@ qx.Class.define("osparc.info.StudyMedium", {
 
     __createMenuButton: function() {
       const menu = new qx.ui.menu.Menu().set({
-        position: "bottom-right"
+        appearance: "menu-wider",
       });
 
       const menuButton = new qx.ui.form.MenuButton().set({
@@ -91,18 +91,15 @@ qx.Class.define("osparc.info.StudyMedium", {
         allowGrowY: false
       });
 
-      const moreInfoButton = this.__getMoreInfoMenuButton();
-      if (moreInfoButton) {
-        menu.add(moreInfoButton);
-      }
+      const infoButton = new qx.ui.menu.Button(this.tr("Information..."), "@MaterialIcons/info_outline/14");
+      infoButton.addListener("execute", () => this.__openStudyDetails(), this);
+      menu.add(infoButton);
+
+      const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/14");
+      shareButton.addListener("execute", () => this.__openAccessRights(), this);
+      menu.add(shareButton);
 
       return menuButton;
-    },
-
-    __getMoreInfoMenuButton: function() {
-      const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
-      moreInfoButton.addListener("execute", () => this.__openStudyDetails(), this);
-      return moreInfoButton;
     },
 
     __extraInfo: function() {
@@ -164,6 +161,17 @@ qx.Class.define("osparc.info.StudyMedium", {
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height).set({
         maxHeight: height
       });
-    }
+    },
+
+    __openAccessRights: function() {
+      const studyData = this.getStudy().serialize();
+      studyData["resourceType"] = this.getStudy().getTemplateType() ? "template" : "study";
+      const collaboratorsView = osparc.info.StudyUtils.openAccessRights(studyData);
+      collaboratorsView.addListener("updateAccessRights", e => {
+        const updatedData = e.getData();
+        this.getStudy().setAccessRights(updatedData["accessRights"]);
+        this.fireDataEvent("updateStudy", updatedData);
+      }, this);
+    },
   }
 });

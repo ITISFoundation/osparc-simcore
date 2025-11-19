@@ -42,11 +42,9 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getStudyAlias: function(options = {}) {
-      let alias = null;
+      let alias = qx.locale.Manager.tr("project");
       if (options.plural) {
         alias = qx.locale.Manager.tr("projects");
-      } else {
-        alias = qx.locale.Manager.tr("project");
       }
 
       if (options.firstUpperCase) {
@@ -59,11 +57,9 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getTemplateAlias: function(options = {}) {
-      let alias = null;
+      let alias = qx.locale.Manager.tr("template");
       if (options.plural) {
         alias = qx.locale.Manager.tr("templates");
-      } else {
-        alias = qx.locale.Manager.tr("template");
       }
 
       if (options.firstUpperCase) {
