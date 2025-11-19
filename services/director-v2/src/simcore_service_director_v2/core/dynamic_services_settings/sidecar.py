@@ -11,7 +11,6 @@ from models_library.utils.common_validators import (
     ensure_unique_list_values_validator,
 )
 from pydantic import AliasChoices, Field, PositiveInt, ValidationInfo, field_validator
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
@@ -138,9 +137,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True}
     )
 
-    DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
     DYNAMIC_SIDECAR_EFS_SETTINGS: AwsEfsSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
