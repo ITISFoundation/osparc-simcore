@@ -19,7 +19,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let nodeOutputs = new osparc.widget.NodeOutputs(node, port);
+ *   let nodeOutputs = new osparc.widget.NodeOutputs(node);
  *   this.getRoot().add(nodeOutputs);
  * </pre>
  */
@@ -46,7 +46,6 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
     this.set({
       node,
-      ports: node.getMetadata().outputs
     });
 
     node.addListener("changeOutputs", () => this.__outputsChanged(), this);
@@ -58,10 +57,6 @@ qx.Class.define("osparc.widget.NodeOutputs", {
   properties: {
     node: {
       check: "osparc.data.model.Node",
-      nullable: false
-    },
-
-    ports: {
       nullable: false,
       apply: "__populateGrid"
     },
@@ -92,19 +87,14 @@ qx.Class.define("osparc.widget.NodeOutputs", {
   members: {
     __gridLayout: null,
 
-    __populateGrid: function() {
+    __populateGrid: function(node) {
       this.__gridLayout.removeAll();
 
-      const ports = this.getPorts();
-      const portKeys = Object.keys(ports);
-      for (let i=0; i<portKeys.length; i++) {
-        const portKey = portKeys[i];
-        const port = ports[portKey];
-
+      node.getOutputs().forEach((output, i) => {
         const label = new qx.ui.basic.Label().set({
           rich: true,
-          value: port.label,
-          toolTipText: port.label
+          value: output.getLabel(),
+          toolTipText: output.getLabel()
         });
         // leave ``rich`` set to true. Ellipsis will be handled here:
         label.getContentElement().setStyles({
@@ -116,20 +106,20 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           column: this.self().POS.LABEL
         });
 
-        const infoButton = new osparc.ui.hint.InfoHint(port.description);
+        const infoButton = new osparc.ui.hint.InfoHint(output.getDescription());
         this.__gridLayout.add(infoButton, {
           row: i,
           column: this.self().POS.INFO
         });
 
-        const icon = new qx.ui.basic.Image(osparc.data.Converters.fromTypeToIcon(port.type));
+        const icon = new qx.ui.basic.Image(osparc.data.Converters.fromTypeToIcon(output.getType()));
         this.__gridLayout.add(icon, {
           row: i,
           column: this.self().POS.ICON
         });
 
-
-        const unit = new qx.ui.basic.Label(port.unitShort || "");
+        // OM units!
+        const unit = new qx.ui.basic.Label(output.unitShort || "");
         this.__gridLayout.add(unit, {
           row: i,
           column: this.self().POS.UNIT
@@ -141,6 +131,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           focusable: false,
           toolTipText: this.tr("Connects a Probe to this output")
         });
+        const portKey = output.getPortKey();
         osparc.utils.Utils.setIdToWidget(probeBtn, "connect_probe_btn_" + portKey);
         this.bind("offerProbes", probeBtn, "visibility", {
           converter: val => val ? "visible" : "excluded"
@@ -155,7 +146,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         });
 
         this.__gridLayout.getLayout().setRowHeight(i, 23);
-      }
+      });
     },
 
     __outputsChanged: function() {
@@ -245,20 +236,19 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       }
       const extendedVersion = firstColumnWidth > 300;
 
-      const ports = this.getPorts();
-      const portKeys = Object.keys(ports);
-      for (let i=0; i<portKeys.length; i++) {
-        const portKey = portKeys[i];
-        const port = ports[portKey];
+      const outputs = this.getNode().getOutputs();
+      outputs.forEach((output, i) => {
         const label = grid.getCellWidget(i, this.self().POS.LABEL);
         const infoButton = grid.getCellWidget(i, this.self().POS.INFO);
+        const title = output.getLabel();
+        const description = output.getDescription();
         label.set({
-          value: (extendedVersion ? port.label + port.description : port.label) + " :",
-          toolTipText: extendedVersion ? port.label + "<br>" + port.description: port.label
+          value: (extendedVersion ? title + description : title) + " :",
+          toolTipText: extendedVersion ? title + "<br>" + description: title
         });
         infoButton.setVisibility(extendedVersion ? "hidden" : "visible");
         grid.setColumnMinWidth(this.self().POS.VALUE, extendedVersion ? 150 : 50);
-      }
+      });
     },
 
     __removeEntry: function(row, column) {
@@ -277,9 +267,8 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     },
 
     setRetrievingStatus: function(portId, status) {
-      const ports = this.getPorts();
-      const portKeys = Object.keys(ports);
-      const idx = portKeys.indexOf(portId);
+      const outputs = this.getNode().getOutputs();
+      const idx = outputs.findIndex(output => output.getPortKey() === portId);
       if (idx === -1) {
         return;
       }

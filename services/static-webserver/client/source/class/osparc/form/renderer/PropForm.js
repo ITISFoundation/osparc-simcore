@@ -359,7 +359,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
               const outputKey = output.getPortKey();
               const paramButton = new qx.ui.menu.Button();
               inputNode.bind("label", paramButton, "label", {
-                converter: val => val + " : " + inputNode.getOutput(outputKey).label
+                converter: val => val + " : " + inputNode.getOutput(outputKey).getLabel()
               });
               paramButton.addListener("execute", () => this.__connectToInputNode(targetPortId, inputNodeId, outputKey), this);
               menu.add(paramButton);
@@ -932,7 +932,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       ctrlLink.addListener("mouseout", () => highlightEdgeUI(false));
       const prettifyLinkString = () => {
         const port = fromNode.getOutput(fromPortId);
-        const fromPortLabel = port ? port.label : null;
+        const fromPortLabel = port ? port.getLabel() : null;
         fromNode.bind("label", ctrlLink, "value", {
           converter: label => label + ": " + fromPortLabel
         });
