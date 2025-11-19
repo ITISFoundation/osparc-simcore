@@ -66,6 +66,12 @@ qx.Class.define("osparc.data.model.NodePort", {
       event: "changeDescription",
     },
 
+    value: {
+      nullable: true,
+      init: null,
+      event: "changeValue",
+    },
+
     type: {
       check: "String",
       nullable: true,
@@ -115,23 +121,4 @@ qx.Class.define("osparc.data.model.NodePort", {
       event: "changeConnected",
     },
   },
-
-  events: {
-    "changeValue": "qx.event.type.Data",
-  },
-
-  members: {
-    __value: null,
-
-    setValue: function(value) {
-      if (value !== this.__value) {
-        this.__value = value;
-        this.fireDataEvent("changeValue", value);
-      }
-    },
-
-    getValue: function() {
-      return this.__value;
-    },
-  }
 });
