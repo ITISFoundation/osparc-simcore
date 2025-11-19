@@ -6105,12 +6105,8 @@ paths:
           format: uuid
           title: Message Id
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
   /v0/projects/{project_id}/folders/{folder_id}:
     put:
       tags:
