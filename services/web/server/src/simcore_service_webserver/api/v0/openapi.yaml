@@ -772,6 +772,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+  /v0/conversations/{conversation_id}/messages/{message_id}:trigger-chatbot:
+    post:
+      tags:
+      - conversations
+      summary: Trigger Chatbot Processing
+      operationId: trigger_chatbot_processing
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '204':
+          description: Successful Response
   /v0/groups:
     get:
       tags:
@@ -6075,38 +6099,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
-  /v0/projects/{project_id}/conversations/{conversation_id}/messages/{message_id}:trigger-chatbot:
-    post:
-      tags:
-      - projects
-      - conversations
-      summary: Trigger Chatbot Processing
-      operationId: trigger_chatbot_processing
-      parameters:
-      - name: project_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Id
-      - name: conversation_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Conversation Id
-      - name: message_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Message Id
-      responses:
-        '204':
-          description: Successful Response
   /v0/projects/{project_id}/folders/{folder_id}:
     put:
       tags:

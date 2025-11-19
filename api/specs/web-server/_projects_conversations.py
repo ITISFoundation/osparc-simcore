@@ -146,12 +146,3 @@ async def delete_project_conversation_message(
 async def get_project_conversation_message(
     _params: Annotated[_ProjectConversationsMessagesPathParams, Depends()],
 ): ...
-
-
-@router.post(
-    "/projects/{project_id}/conversations/{conversation_id}/messages/{message_id}:trigger-chatbot",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def trigger_chatbot_processing(
-    _params: Annotated[_ProjectConversationsMessagesPathParams, Depends()],
-): ...
