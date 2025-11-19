@@ -92,6 +92,16 @@ class TaskData(BaseModel):
         bool,
         Field(description=("if True, indicates the task is marked for removal")),
     ] = False
+    marked_for_removal_at: Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "In some cases we have an entry in Redis but no task to remove, to ensure "
+                "proper cleanup, wait some time after the marke_for_remval and then remove "
+                "the entry form Redis"
+            )
+        ),
+    ] = None
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

@@ -1,3 +1,4 @@
+import datetime
 from typing import Any, ClassVar, Final
 
 import redis.asyncio as aioredis
@@ -134,7 +135,12 @@ class RedisStore:
         await handle_redis_returns_union_types(
             self._redis.hset(
                 self._get_redis_task_data_key(task_id),
-                mapping=_to_redis_hash_mapping({_MARKED_FOR_REMOVAL_FIELD: True}),
+                mapping=_to_redis_hash_mapping(
+                    {
+                        _MARKED_FOR_REMOVAL_FIELD: True,
+                        "marked_for_removal_at": datetime.datetime.now(tz=datetime.UTC),
+                    }
+                ),
             )
         )
 

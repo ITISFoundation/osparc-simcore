@@ -517,8 +517,23 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         task_to_cancel = self._created_tasks.pop(task_id, None)
         if task_to_cancel is not None:
+            _logger.info("Removing asyncio task related to  task_id='%s'", task_id)
             await cancel_wait_task(task_to_cancel)
             await self._tasks_data.delete_task_data(task_id)
+        else:
+            task_data = await self._tasks_data.get_task_data(task_id)
+            if (
+                task_data.marked_for_removal_at is not None
+                and task_data.marked_for_removal_at
+                - datetime.datetime.now(tz=datetime.UTC)
+                > datetime.timedelta(seconds=_TASK_REMOVAL_MAX_WAIT)
+            ):
+                _logger.info(
+                    "Force removing task_id='%s' from Redis after waiting for %s seconds",
+                    task_id,
+                    _TASK_REMOVAL_MAX_WAIT,
+                )
+                await self._tasks_data.delete_task_data(task_id)
 
     async def remove_task(
         self,
