@@ -53,20 +53,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             icon: "@MaterialIcons/info_outline/14",
             ...this.self().BUTTON_OPTIONS
           });
-          control.addListener("execute", () => {
-            let widget = null;
-            if (this.getStudy().isPipelineMononode()) {
-              widget = new osparc.info.MergedLarge(this.getStudy());
-            } else {
-              widget = new osparc.info.StudyLarge(this.getStudy());
-            }
-            const title = this.tr("Information");
-            const width = osparc.info.CardLarge.WIDTH;
-            const height = osparc.info.CardLarge.HEIGHT;
-            osparc.ui.window.Window.popUpInWindow(widget, title, width, height).set({
-              maxHeight: height
-            });
-          });
+          control.addListener("execute", () => this.__openStudyDetails(), this);
           break;
         case "study-menu-share":
           control = new qx.ui.menu.Button().set({
@@ -74,7 +61,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             icon: "@FontAwesome5Solid/share-alt/14",
             ...this.self().BUTTON_OPTIONS
           });
-          control.addListener("execute", () => this.__openAccessRights());
+          control.addListener("execute", () => this.__openAccessRights(), this);
           break;
         case "study-menu-reload":
           control = new qx.ui.menu.Button().set({
@@ -140,6 +127,21 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __openStudyDetails: function() {
+      let widget = null;
+      if (this.getStudy().isPipelineMononode()) {
+        widget = new osparc.info.MergedLarge(this.getStudy());
+      } else {
+        widget = new osparc.info.StudyLarge(this.getStudy());
+      }
+      const title = this.tr("Information");
+      const width = osparc.info.CardLarge.WIDTH;
+      const height = osparc.info.CardLarge.HEIGHT;
+      osparc.ui.window.Window.popUpInWindow(widget, title, width, height).set({
+        maxHeight: height
+      });
     },
 
     __openAccessRights: function() {
