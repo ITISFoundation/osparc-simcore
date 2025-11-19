@@ -412,7 +412,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         converter: outputs => {
           let outputCounter = 0;
           outputs.forEach(output => {
-            const outValue = output.getValue()
+            const outValue = output.getValue();
             if (![null, undefined, ""].includes(outValue)) {
               outputCounter++;
             }
