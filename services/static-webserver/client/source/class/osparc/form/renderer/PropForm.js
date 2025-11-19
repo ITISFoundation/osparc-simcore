@@ -950,7 +950,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         fromNode.addListenerOnce("changeMetadata", () => prettifyLinkString(), this);
       }
 
-      const inputPort = this.getNode().getInput(portId);
+      const inputPort = this.getNode().getInput(toPortId);
       const outputPort = fromNode.getOutput(fromPortId);
       if (inputPort && outputPort) {
         inputPort.setInput(outputPort);

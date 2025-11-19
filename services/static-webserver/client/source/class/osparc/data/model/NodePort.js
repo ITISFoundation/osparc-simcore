@@ -99,10 +99,10 @@ qx.Class.define("osparc.data.model.NodePort", {
     },
 
     input: {
-      check: "Object",
+      check: "osparc.data.model.NodePort",
       nullable: true,
       init: null,
-      event: "changeInput"
+      event: "changeInput",
     },
 
     status: {
@@ -119,12 +119,6 @@ qx.Class.define("osparc.data.model.NodePort", {
       nullable: true,
       init: null,
       event: "changeStatus",
-    },
-
-    connected: {
-      check: "Boolean",
-      init: false,
-      event: "changeConnected",
     },
   },
 });
