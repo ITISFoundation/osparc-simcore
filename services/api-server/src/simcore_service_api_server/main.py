@@ -14,8 +14,6 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
-    "aiormq",
     "httpcore",
     "httpx",
 )

@@ -22,13 +22,11 @@ from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
-from servicelib.redis import exclusive
 
 from ..application_keys import APP_SETTINGS_APPKEY
 from ..groups import api as group_service
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
-from ..redis import get_redis_lock_manager_client_sdk
 from ..users import users_service
 from . import (
     _conversation_message_repository,
@@ -139,12 +137,12 @@ async def _create_support_message_with_first_check(
         Tuple containing the created message and whether it's the first message
     """
 
-    @exclusive(
-        get_redis_lock_manager_client_sdk(app),
-        lock_key=CONVERSATION_MESSAGE_REDIS_LOCK_KEY.format(conversation_id),
-        blocking=True,
-        blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
-    )
+    # @exclusive(
+    #     get_redis_lock_manager_client_sdk(app),
+    #     lock_key=CONVERSATION_MESSAGE_REDIS_LOCK_KEY.format(conversation_id),
+    #     blocking=True,
+    #     blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
+    # )
     async def _create_support_message_and_check_if_it_is_first_message() -> (
         tuple[ConversationMessageGetDB, bool]
     ):
