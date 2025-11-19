@@ -96,7 +96,7 @@ async def create_conversation(
         _product_group_users = await get_recipients_from_product_support_group(
             app, product_name=product_name
         )
-        await notify_conversation_created(
+        await notify_via_socket_conversation_created(
             app,
             recipients=_product_group_users | {user_id},
             project_id=None,
@@ -163,7 +163,7 @@ async def update_conversation(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=updated_conversation.user_group_id
         )
-        await notify_conversation_updated(
+        await notify_via_socket_conversation_updated(
             app,
             recipients=_product_group_users | {_conversation_creator_user},
             project_id=None,
@@ -201,7 +201,7 @@ async def delete_conversation(
         _product_group_users = await get_recipients_from_product_support_group(
             app, product_name=product_name
         )
-        await notify_conversation_deleted(
+        await notify_via_socket_conversation_deleted(
             app,
             recipients=_product_group_users | {user_id},
             product_name=product_name,

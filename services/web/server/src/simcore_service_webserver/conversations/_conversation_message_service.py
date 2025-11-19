@@ -41,7 +41,7 @@ from .errors import ConversationError
 _logger = logging.getLogger(__name__)
 
 
-async def notify_conversation_message_created(
+async def _notify_conversation_message_created(
     app: web.Application,
     *,
     project_id_or_none: ProjectID | None,
@@ -95,7 +95,7 @@ async def create_message_and_notify(
         content=content,
         type_=type_,
     )
-    await notify_conversation_message_created(
+    await _notify_conversation_message_created(
         app,
         project_id_or_none=project_id_or_none,
         conversation_message=message,
@@ -188,7 +188,7 @@ async def create_support_message(
         ),
     )
 
-    await notify_conversation_message_created(
+    await _notify_conversation_message_created(
         app,
         project_id_or_none=None,  # Support conversations don't use project_id,
         conversation_message=message,
@@ -310,9 +310,10 @@ async def trigger_chatbot_processing(
     )
     if not messages or messages[0].message_id != message_id:
         _logger.warning(
-            "Chatbot processing can only be triggered for the last message in the conversation. Conversation ID: %s, Message ID: %s",
+            "Chatbot processing can only be triggered for the last message in the conversation. Conversation ID: %s, Message ID: %s, Last Message ID: %s",
             conversation.conversation_id,
             message_id,
+            messages[0].message_id if messages else "N/A",
         )
         return
 
