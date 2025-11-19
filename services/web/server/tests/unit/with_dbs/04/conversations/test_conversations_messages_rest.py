@@ -570,7 +570,9 @@ async def test_conversation_messages_with_database(
     # Trigger a chatbot processing on the second message via API
     trigger_chatbot_processing_url = client.app.router[
         "trigger_chatbot_processing"
-    ].url_for(conversation_id=conversation_id)
+    ].url_for(
+        conversation_id=conversation_id, message_id=second_message_data["messageId"]
+    )
     resp = await client.post(f"{trigger_chatbot_processing_url}")
     second_message_data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
