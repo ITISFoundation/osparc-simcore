@@ -23,7 +23,6 @@ from pydantic import (
     field_validator,
 )
 from settings_library.application import BaseApplicationSettings
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.node_ports import StorageAuthSettings
 from settings_library.postgres import PostgresSettings
@@ -176,10 +175,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     )
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(
         json_schema_extra={"auto_default_from_env": True}
-    )
-    DY_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings | None = Field(
-        None,
-        description="AWS S3 settings are used for the AWS S3 CLI. If these settings are filled, the AWS S3 CLI is used instead of RClone.",
     )
     POSTGRES_SETTINGS: PostgresSettings = Field(
         json_schema_extra={"auto_default_from_env": True}

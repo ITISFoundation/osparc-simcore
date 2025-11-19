@@ -97,17 +97,6 @@ def _get_environment_variables(
     r_clone_settings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
-    dy_sidecar_aws_s3_cli_settings = None
-    if (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS
-        and app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.AWS_S3_CLI_S3
-    ):
-        dy_sidecar_aws_s3_cli_settings = json_dumps(
-            model_dump_with_secrets(
-                app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS,
-                show_secrets=True,
-            )
-        )
 
     state_exclude = set()
     if scheduler_data.paths_mapping.state_exclude is not None:
@@ -147,7 +136,6 @@ def _get_environment_variables(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
-        "DY_SIDECAR_AWS_S3_CLI_SETTINGS": dy_sidecar_aws_s3_cli_settings or "null",
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
         "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",
