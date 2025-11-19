@@ -26,6 +26,7 @@ from ..conversations._socketio import (
     notify_conversation_updated,
 )
 from ..fogbugz import FogbugzCaseCreate, get_fogbugz_rest_client
+from ..groups import api as group_service
 from ..groups.api import list_user_groups_ids_with_read_access
 from ..products import products_service
 from ..projects._groups_repository import list_project_groups
@@ -46,6 +47,19 @@ async def get_recipients_from_project(
         if group.read
         for user in await get_users_in_group(app, gid=group.gid)
     }
+
+
+async def get_recipients_from_product_support_group(
+    app: web.Application, product_name: ProductName
+) -> set[UserID]:
+    product = products_service.get_product(app, product_name=product_name)
+    _support_standard_group_id = product.support_standard_group_id
+    if _support_standard_group_id:
+        users = await group_service.list_group_members(
+            app, group_id=_support_standard_group_id
+        )
+        return {user.id for user in users}
+    return set()
 
 
 async def create_conversation(
@@ -76,6 +90,16 @@ async def create_conversation(
             app,
             recipients=await get_recipients_from_project(app, project_uuid),
             project_id=project_uuid,
+            conversation=created_conversation,
+        )
+    else:
+        _product_group_users = await get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_conversation_created(
+            app,
+            recipients=_product_group_users | {user_id},
+            project_id=None,
             conversation=created_conversation,
         )
 
@@ -132,6 +156,19 @@ async def update_conversation(
             project_id=project_id,
             conversation=updated_conversation,
         )
+    else:
+        _product_group_users = await get_recipients_from_product_support_group(
+            app, product_name=updated_conversation.product_name
+        )
+        _conversation_creator_user = await users_service.get_user_id_from_gid(
+            app, primary_gid=updated_conversation.user_group_id
+        )
+        await notify_conversation_updated(
+            app,
+            recipients=_product_group_users | {_conversation_creator_user},
+            project_id=None,
+            conversation=updated_conversation,
+        )
 
     return updated_conversation
 
@@ -158,6 +195,18 @@ async def delete_conversation(
             product_name=product_name,
             user_group_id=_user_group_id,
             project_id=project_id,
+            conversation_id=conversation_id,
+        )
+    else:
+        _product_group_users = await get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_conversation_deleted(
+            app,
+            recipients=_product_group_users | {user_id},
+            product_name=product_name,
+            user_group_id=_user_group_id,
+            project_id=None,
             conversation_id=conversation_id,
         )
 

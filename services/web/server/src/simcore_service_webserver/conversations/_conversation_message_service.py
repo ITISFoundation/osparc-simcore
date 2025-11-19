@@ -24,7 +24,6 @@ from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
 from ..application_keys import APP_SETTINGS_APPKEY
-from ..groups import api as group_service
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
 from ..users import users_service
@@ -44,19 +43,6 @@ _logger = logging.getLogger(__name__)
 
 # Redis lock key for conversation message operations
 CONVERSATION_MESSAGE_REDIS_LOCK_KEY = "conversation_message_update:{}"
-
-
-async def _get_recipients_from_product_support_group(
-    app: web.Application, product_name: ProductName
-) -> set[UserID]:
-    product = products_service.get_product(app, product_name=product_name)
-    _support_standard_group_id = product.support_standard_group_id
-    if _support_standard_group_id:
-        users = await group_service.list_group_members(
-            app, group_id=_support_standard_group_id
-        )
-        return {user.id for user in users}
-    return set()
 
 
 async def create_message(
@@ -96,8 +82,10 @@ async def create_message(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = await _get_recipients_from_product_support_group(
-            app, product_name=product_name
+        _product_group_users = (
+            await _conversation_service.get_recipients_from_product_support_group(
+                app, product_name=product_name
+            )
         )
         await notify_conversation_message_created(
             app,
@@ -384,8 +372,10 @@ async def update_message(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = await _get_recipients_from_product_support_group(
-            app, product_name=product_name
+        _product_group_users = (
+            await _conversation_service.get_recipients_from_product_support_group(
+                app, product_name=product_name
+            )
         )
         await notify_conversation_message_updated(
             app,
@@ -432,8 +422,10 @@ async def delete_message(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = await _get_recipients_from_product_support_group(
-            app, product_name=product_name
+        _product_group_users = (
+            await _conversation_service.get_recipients_from_product_support_group(
+                app, product_name=product_name
+            )
         )
         await notify_conversation_message_deleted(
             app,
