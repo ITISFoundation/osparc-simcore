@@ -753,7 +753,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           inputNode.bind("outputs", linkLabel, "value", {
             converter: outputs => {
               const output = outputs.find(out => out.getPortKey() === portKey);
-              if (output.getValue()) {
+              if (output && output.getValue()) {
                 const val = output.getValue();
                 if (this.getNode().getMetadata()["key"].includes("probe/array") && Array.isArray(val)) {
                   return "[" + val.join(",") + "]";
