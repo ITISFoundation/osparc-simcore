@@ -57,8 +57,6 @@ from .settings import AppSettings
 _logger = logging.getLogger(__name__)
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
-    "aiormq",
     "httpcore",
     "httpx",
 )

@@ -13,8 +13,6 @@ from servicelib.tracing import TracingConfig
 from simcore_service_webserver.application_settings import ApplicationSettings
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
-    "aiormq",
     "engineio",
     "engineio.server",
     "inotify.adapters",
