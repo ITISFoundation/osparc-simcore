@@ -58,7 +58,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
             conversationsData.sort((a, b) => new Date(b["created"]) - new Date(a["created"]));
           }
           conversationsData.forEach(conversationData => {
-            const conversation = this.__addToCache(conversationData);
+            const conversation = this.addToCache(conversationData);
             conversations.push(conversation);
           });
           return conversations;
@@ -78,7 +78,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "getConversation", params)
         .then(conversationData => {
-          const conversation = this.__addToCache(conversationData);
+          const conversation = this.addToCache(conversationData);
           return conversation;
         });
     },
@@ -96,7 +96,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "postConversation", params)
         .then(conversationData => {
-          const conversation = this.__addToCache(conversationData);
+          const conversation = this.addToCache(conversationData);
           this.fireDataEvent("conversationCreated", conversation);
           return conversationData;
         })
@@ -227,7 +227,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __addToCache: function(conversationData) {
+    addToCache: function(conversationData) {
       // check if already cached
       if (conversationData["conversationId"] in this.__conversationsCached) {
         return this.__conversationsCached[conversationData["conversationId"]];

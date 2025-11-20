@@ -196,26 +196,27 @@ qx.Class.define("osparc.support.Conversations", {
     __listenToConversationWS: function() {
       this.__wsHandlers = [];
 
+      const types = Object.values(osparc.store.ConversationsSupport.TYPES);
       const socket = osparc.wrapper.WebSocket.getInstance();
-
       [
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED,
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED,
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
       ].forEach(eventName => {
-        const eventHandler = conversation => {
-          if (conversation && osparc.store.ConversationsSupport.TYPES.includes(conversation["type"])) {
+        const eventHandler = conversationData => {
+          if (conversationData && types.includes(conversationData["type"])) {
             switch (eventName) {
-              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
-                if (conversation["projectId"] === this.getStudyData()["uuid"]) {
-                  this.__addConversation(conversation);
-                }
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED: {
+                const conversation = osparc.store.ConversationsSupport.getInstance().addToCache(conversationData);
+                this.__addConversation(conversation);
+                this.__sortConversations();
                 break;
+              }
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
-                this.__updateConversationName(conversation);
+                this.__updateConversationName(conversationData);
                 break;
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
-                this.__removeConversationPage(conversation["conversationId"]);
+                this.__removeConversationPage(conversationData["conversationId"]);
                 break;
             }
           }
