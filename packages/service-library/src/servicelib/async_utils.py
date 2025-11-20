@@ -60,7 +60,7 @@ _sequential_jobs_contexts: dict[str, Context] = {}
 
 
 def _generate_context_key(
-    function: Callable[[Any], Any | None],
+    function: Callable[P, Awaitable[R]],
     target_args: list[str],
     args: Any,
     kwargs: dict,
@@ -159,7 +159,7 @@ async def _sequential_worker(
 #
 def run_sequentially_in_context(
     target_args: list[str] | None = None,
-) -> Callable:
+) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
     """All request to function with same calling context will be run sequentially.
 
     Example:
@@ -197,10 +197,12 @@ def run_sequentially_in_context(
     """
     target_args = [] if target_args is None else target_args
 
-    def decorator(decorated_function: Callable[[Any], Any | None]):
+    def decorator(
+        decorated_function: Callable[P, Awaitable[R]],
+    ) -> Callable[P, Awaitable[R]]:
 
         @wraps(decorated_function)
-        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
 
             async with _sequential_worker(
                 _generate_context_key(
