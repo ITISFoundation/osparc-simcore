@@ -34,7 +34,6 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       fogbugzCaseId: conversationData.fogbugz_case_id || null,
       readByUser: Boolean(conversationData.isReadByUser),
       readBySupport: Boolean(conversationData.isReadBySupport),
-      resolved: null,
     });
 
     this.__fetchFirstAndLastMessages();
@@ -96,13 +95,6 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       nullable: false,
       init: null,
       event: "changeReadBySupport",
-    },
-
-    resolved: {
-      check: "Boolean",
-      nullable: true,
-      init: null,
-      event: "changeResolved",
     },
   },
 
@@ -172,15 +164,6 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     markAsRead: function() {
       osparc.store.ConversationsSupport.getInstance().markAsRead(this.getConversationId())
         .then(() => this.setReadBy(true));
-    },
-
-    markAsResolved: function() {
-      osparc.store.ConversationsSupport.getInstance().markAsResolved(this.getConversationId())
-        .then(() => {
-          this.setResolved(true);
-          osparc.FlashMessenger.logAs(qx.locale.Manager.tr("The case has been marked as resolved"), "INFO");
-        })
-        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     // overriden

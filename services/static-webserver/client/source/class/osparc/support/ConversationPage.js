@@ -133,18 +133,6 @@ qx.Class.define("osparc.support.ConversationPage", {
           this.getChildControl("buttons-layout").addAt(control, 2);
           break;
         }
-        case "resolve-case-button": {
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/check/12",
-            toolTipText: this.tr("Resolve Case"),
-            appearance: "strong-button",
-            alignX: "center",
-            alignY: "middle",
-          });
-          control.addListener("execute", () => this.__resolveCase());
-          this.getChildControl("buttons-layout").addAt(control, 3);
-          break;
-        }
         case "main-stack":
           control = new qx.ui.container.Stack();
           this._add(control, {
@@ -280,13 +268,6 @@ qx.Class.define("osparc.support.ConversationPage", {
         }
 
         this.getChildControl("copy-ticket-id-button");
-
-        if (amISupporter) {
-          const resolveCaseButton = this.getChildControl("resolve-case-button");
-          conversation.bind("resolved", resolveCaseButton, "visibility", {
-            converter: val => val === false ? "visible" : "excluded"
-          });
-        }
       }
 
       this.getChildControl("buttons-layout").setVisibility(conversation ? "visible" : "excluded");
@@ -311,12 +292,6 @@ qx.Class.define("osparc.support.ConversationPage", {
       if (this.getConversation()) {
         const conversationId = this.getConversation().getConversationId();
         osparc.utils.Utils.copyTextToClipboard(conversationId);
-      }
-    },
-
-    __resolveCase: function() {
-      if (this.getConversation()) {
-        this.getConversation().markAsResolved();
       }
     },
 
