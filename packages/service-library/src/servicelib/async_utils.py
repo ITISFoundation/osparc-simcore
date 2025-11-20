@@ -53,7 +53,7 @@ class Context:
     @property
     def is_being_used(self) -> bool:
         # Indicates if there are pending tasks in this context
-        return self._task_counter > 0
+        return self._task_counter != 0
 
 
 @dataclass
@@ -156,27 +156,6 @@ async def _managed_context(
             if context.task is not None:
                 with log_catch(_logger, reraise=False):
                     await cancel_wait_task(context.task, max_delay=None)
-
-
-async def _safe_cancel(context: Context) -> None:
-    try:
-        await context._in_queue.put(None)
-        if context.task is not None:
-            await cancel_wait_task(context.task, max_delay=None)
-    except RuntimeError as e:
-        if "Event loop is closed" in f"{e}":
-            _logger.warning("event loop is closed and could not cancel %s", context)
-        else:
-            raise
-
-
-async def cancel_sequential_workers() -> None:
-    """Signals all workers to close thus avoiding errors on shutdown"""
-    for context in _sequential_jobs_contexts.values():
-        await _safe_cancel(context)
-
-    _sequential_jobs_contexts.clear()
-    _logger.info("All run_sequentially_in_context pending workers stopped")
 
 
 # NOTE: If you get funny mismatches with mypy in returned values it might be due to this decorator.
