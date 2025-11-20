@@ -14,6 +14,7 @@ from prometheus_client.openmetrics.exposition import (
     generate_latest,
 )
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.routing import Match, Route
 from starlette.types import ASGIApp
 
 from ..common_headers import (
@@ -32,6 +33,40 @@ _logger = logging.getLogger(__name__)
 _PROMETHEUS_METRICS = "prometheus_metrics"
 
 
+def _get_route_details(scope):
+    """
+    Function to retrieve Starlette route from scope.
+
+    TODO: there is currently no way to retrieve http.route from
+    a starlette application from scope.
+    See: https://github.com/encode/starlette/pull/804
+
+    Args:
+        scope: A Starlette scope
+    Returns:
+        A string containing the route or None
+    """
+    app = scope["app"]
+    route = None
+
+    for starlette_route in app.routes:
+        match, _ = (
+            Route.matches(starlette_route, scope)
+            if isinstance(starlette_route, Route)
+            else starlette_route.matches(scope)
+        )
+        if match == Match.FULL:
+            try:
+                route = starlette_route.path
+            except AttributeError:
+                # routes added via host routing won't have a path attribute
+                route = scope.get("path")
+            break
+        if match == Match.PARTIAL:
+            route = starlette_route.path
+    return route
+
+
 class PrometheusMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp, metrics: PrometheusMetrics):
         super().__init__(app)
@@ -40,7 +75,8 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        canonical_endpoint = request.url.path
+        canonical_endpoint = _get_route_details(request.scope)
+        canonical_endpoint = canonical_endpoint or request.url.path
 
         user_agent = request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -57,11 +93,6 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
                 response = await call_next(request)
                 status_code = response.status_code
 
-                # path_params are not available before calling call_next
-                # https://github.com/encode/starlette/issues/685#issuecomment-550240999
-                for k, v in request.path_params.items():
-                    key = "{" + k + "}"
-                    canonical_endpoint = canonical_endpoint.replace(f"/{v}", f"/{key}")
         except Exception:  # pylint: disable=broad-except
             # NOTE: The prometheus metrics middleware should be "outside" exception handling
             # middleware. See https://fastapi.tiangolo.com/advanced/middleware/#adding-asgi-middlewares
