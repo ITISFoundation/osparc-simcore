@@ -28,15 +28,11 @@ qx.Class.define("osparc.support.Conversations", {
     this.__filterButtons = [];
     this.__filterButtons.push(this.getChildControl("filter-all-button"));
     this.__filterButtons.push(this.getChildControl("filter-unread-button"));
-    /*
-    if (osparc.store.Groups.getInstance().amIASupportUser()) {
-      this.__filterButtons.push(this.getChildControl("filter-open-button"));
-    }
-    */
 
     this.__fetchConversations();
 
     this.__listenToNewConversations();
+    this.__listenToConversationWS();
   },
 
   properties: {
@@ -66,6 +62,7 @@ qx.Class.define("osparc.support.Conversations", {
 
   members: {
     __conversationListItems: null,
+    __wsHandlers: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -96,18 +93,6 @@ qx.Class.define("osparc.support.Conversations", {
           control.addListener("execute", () => {
             this.setCurrentFilter("unread");
             this.__applyCurrentFilter("unread");
-          });
-          this.getChildControl("filters-layout").add(control);
-          break;
-        case "filter-open-button":
-          control = new qx.ui.form.ToggleButton(this.tr("Open"));
-          control.set({
-            toolTipText: this.tr("Show only open conversations"),
-            ...this.self().FILTER_BUTTON_AESTHETIC,
-          });
-          control.addListener("execute", () => {
-            this.setCurrentFilter("open");
-            this.__applyCurrentFilter("open");
           });
           this.getChildControl("filters-layout").add(control);
           break;
@@ -146,9 +131,6 @@ qx.Class.define("osparc.support.Conversations", {
         case "unread":
           this.getChildControl("filter-unread-button").setValue(true);
           break;
-        case "open":
-          this.getChildControl("filter-open-button").setValue(true);
-          break;
       }
 
       this.__conversationListItems.forEach(conversationItem => {
@@ -159,13 +141,6 @@ qx.Class.define("osparc.support.Conversations", {
             break;
           case "unread":
             conversation.getReadBy() ? conversationItem.exclude() : conversationItem.show();
-            break;
-          case "open":
-            if (conversation.getResolved() === false) {
-              conversationItem.show();
-            } else {
-              conversationItem.exclude();
-            }
             break;
         }
       });
@@ -179,9 +154,6 @@ qx.Class.define("osparc.support.Conversations", {
             break;
           case "unread":
             msg = this.tr("No unread conversations");
-            break;
-          case "open":
-            msg = this.tr("No open conversations");
             break;
         }
         this.getChildControl("no-messages-label").set({
@@ -218,6 +190,41 @@ qx.Class.define("osparc.support.Conversations", {
         const conversation = e.getData();
         this.__addConversation(conversation);
         this.__sortConversations();
+      });
+    },
+
+    __listenToConversationWS: function() {
+      this.__wsHandlers = [];
+
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      [
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
+      ].forEach(eventName => {
+        const eventHandler = conversation => {
+          console.log(`WS Conversation event received: ${eventName} for conversation`, conversation);
+          /*
+          if (conversation) {
+            switch (eventName) {
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
+                if (conversation["projectId"] === this.getStudyData()["uuid"]) {
+                  this.__addConversationPage(conversation);
+                }
+                break;
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
+                this.__updateConversationName(conversation);
+                break;
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
+                this.__removeConversationPage(conversation["conversationId"]);
+                break;
+            }
+          }
+          */
+        };
+        socket.on(eventName, eventHandler, this);
+        this.__wsHandlers.push({ eventName, handler: eventHandler });
       });
     },
 
