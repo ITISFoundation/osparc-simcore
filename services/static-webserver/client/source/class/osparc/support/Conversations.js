@@ -204,13 +204,11 @@ qx.Class.define("osparc.support.Conversations", {
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
       ].forEach(eventName => {
         const eventHandler = conversation => {
-          console.log(`WS Conversation event received: ${eventName} for conversation`, conversation);
-          /*
-          if (conversation) {
+          if (conversation && osparc.store.ConversationsSupport.TYPES.includes(conversation["type"])) {
             switch (eventName) {
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
                 if (conversation["projectId"] === this.getStudyData()["uuid"]) {
-                  this.__addConversationPage(conversation);
+                  this.__addConversation(conversation);
                 }
                 break;
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
@@ -221,7 +219,6 @@ qx.Class.define("osparc.support.Conversations", {
                 break;
             }
           }
-          */
         };
         socket.on(eventName, eventHandler, this);
         this.__wsHandlers.push({ eventName, handler: eventHandler });

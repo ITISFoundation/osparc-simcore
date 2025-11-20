@@ -108,7 +108,7 @@ qx.Class.define("osparc.study.Conversations", {
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
       ].forEach(eventName => {
         const eventHandler = conversation => {
-          if (conversation) {
+          if (conversation && osparc.store.ConversationsProject.TYPES.includes(conversation["type"])) {
             switch (eventName) {
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
                 if (conversation["projectId"] === this.getStudyData()["uuid"]) {
