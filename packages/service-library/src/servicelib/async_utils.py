@@ -134,7 +134,7 @@ async def _managed_context(
 
                 logging.info(
                     "Closed worker for @run_sequentially_in_context applied to '%s'",
-                    awaitable.__qualname__,
+                    key,
                 )
             except asyncio.CancelledError:
                 raise
