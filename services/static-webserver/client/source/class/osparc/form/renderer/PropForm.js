@@ -528,7 +528,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       this.getNode().addListener("changeInputsRequired", () => evalRequired());
       evalRequired();
 
-      // add port button
+      // add visible input port button
       const addPortButton = this.__addInputPortButton = new qx.ui.form.Button().set({
         label: this.tr("Input"),
         icon: "@FontAwesome5Solid/plus/14",
@@ -539,7 +539,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       addPortButton.addListener("execute", () => this.__addInputPortButtonClicked());
       this._add(addPortButton, {
         row,
-        column: this.self().GRID_POS.LABEL
+        column: 0
       });
     },
 
