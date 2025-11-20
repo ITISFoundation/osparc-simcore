@@ -520,7 +520,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
                 case "DOWNLOAD_STARTED":
                   retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading;
                   break;
-                case "DOWNLOAD_STARTED_EMPTY":
+                case "DOWNLOAD_FINISHED_EMPTY":
                   retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.empty;
                   break;
                 case "DOWNLOAD_FINISHED_SUCCESSFULLY":
