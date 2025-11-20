@@ -8,10 +8,9 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
-from faststream import context
-from servicelib.logging_utils import log_catch
 
 from . import tracing
+from .logging_utils import log_catch
 
 _logger = logging.getLogger(__name__)
 
