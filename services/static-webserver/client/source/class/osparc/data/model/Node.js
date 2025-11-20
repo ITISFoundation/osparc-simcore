@@ -1120,9 +1120,13 @@ qx.Class.define("osparc.data.model.Node", {
             const {
               data
             } = resp;
-            if (portKey) {
+            if (portKey && this.getInput(portKey)) {
               const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
-              this.getPropsForm().retrievedPortData(portKey, true, sizeBytes);
+              if (sizeBytes === 0) {
+                this.getInput(portKey).setStatus("DOWNLOAD_FINISHED_EMPTY");
+              } else {
+                this.getInput(portKey).setStatus("DOWNLOAD_FINISHED_SUCCESSFULLY");
+              }
             }
           }, this);
           [
@@ -1133,8 +1137,8 @@ qx.Class.define("osparc.data.model.Node", {
               const {
                 error
               } = e.getTarget().getResponse();
-              if (portKey) {
-                this.getPropsForm().retrievedPortData(portKey, false);
+              if (portKey && this.getInput(portKey)) {
+                this.getInput(portKey).setStatus("DOWNLOAD_FINISHED_WITH_ERROR");
               }
               console.error(failure, error);
               const errorMsgData = {
@@ -1147,8 +1151,8 @@ qx.Class.define("osparc.data.model.Node", {
           });
           updReq.send();
 
-          if (portKey) {
-            this.getPropsForm().retrievingPortData(portKey);
+          if (portKey && this.getInput(portKey)) {
+            this.getInput(portKey).setStatus("DOWNLOAD_STARTED");
           }
         }
       }
