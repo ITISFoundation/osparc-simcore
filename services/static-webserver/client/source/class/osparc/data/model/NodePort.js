@@ -112,6 +112,7 @@ qx.Class.define("osparc.data.model.NodePort", {
         "UPLOAD_FINISHED_SUCCESSFULLY",   // OutputStatus
         "UPLOAD_FINISHED_WITH_ERROR",     // OutputStatus
         "DOWNLOAD_STARTED",               // InputStatus
+        "DOWNLOAD_SUCCEEDED_EMPTY",       // InputStatus
         "DOWNLOAD_WAS_ABORTED",           // InputStatus
         "DOWNLOAD_FINISHED_SUCCESSFULLY", // InputStatus
         "DOWNLOAD_FINISHED_WITH_ERROR",   // InputStatus

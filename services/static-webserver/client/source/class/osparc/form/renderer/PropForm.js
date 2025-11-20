@@ -52,28 +52,28 @@ qx.Class.define("osparc.form.renderer.PropForm", {
   },
 
   statics: {
-    getRetrievingAtom: function() {
-      return new qx.ui.basic.Atom("", "osparc/loading.gif");
+    getRetrievingIcon: function() {
+      return "osparc/loading.gif";
     },
 
-    getDownloadingAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/cloud-download-alt/12");
+    getDownloadingIcon: function() {
+      return "@FontAwesome5Solid/cloud-download-alt/12";
     },
 
-    getUploadingAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/cloud-upload-alt/12");
+    getUploadingIcon: function() {
+      return "@FontAwesome5Solid/cloud-upload-alt/12";
     },
 
-    getFailedAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/times/12");
+    getFailedIcon: function() {
+      return "@FontAwesome5Solid/times/12";
     },
 
-    getSucceededAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/check/12");
+    getSucceededIcon: function() {
+      return "@FontAwesome5Solid/check/12";
     },
 
     getRetrievedEmpty: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/dot-circle/10");
+      return "@FontAwesome5Solid/dot-circle/10";
     },
 
     GRID_POS: {
@@ -103,7 +103,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       let icon;
       switch (status) {
         case this.RETRIEVE_STATUS.failed:
-          icon = this.getFailedAtom();
+          icon = this.getFailedIcon();
           break;
         case this.RETRIEVE_STATUS.empty:
           icon = this.getRetrievedEmpty();
@@ -111,10 +111,10 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         case this.RETRIEVE_STATUS.retrieving:
         case this.RETRIEVE_STATUS.downloading:
         case this.RETRIEVE_STATUS.uploading:
-          icon = this.getRetrievingAtom();
+          icon = this.getRetrievingIcon();
           break;
         case this.RETRIEVE_STATUS.succeed:
-          icon = this.getSucceededAtom();
+          icon = this.getSucceededIcon();
           break;
       }
       return icon;
@@ -501,6 +501,44 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           });
         }
 
+        const statusIcon = new qx.ui.basic.Atom().set({
+          visibility: "excluded"
+        });
+        this._add(statusIcon, {
+          row,
+          column: this.self().GRID_POS.PORT_STATUS_ICON
+        });
+        const input = this.getNode().getInput(portId);
+        if (input) {
+          input.bind("status", statusIcon, "visibility", {
+            converter: status => status ? "visible" : "excluded"
+          });
+          input.bind("status", statusIcon, "icon", {
+            converter: status => {
+              let retrievingStatus = null;
+              switch (status) {
+                case "DOWNLOAD_STARTED":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading;
+                  break;
+                case "DOWNLOAD_STARTED_EMPTY":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.empty;
+                  break;
+                case "DOWNLOAD_FINISHED_SUCCESSFULLY":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.succeed;
+                  break;
+                case "DOWNLOAD_WAS_ABORTED":
+                case "DOWNLOAD_FINISHED_WITH_ERROR":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.failed;
+                  break;
+              }
+              if (retrievingStatus !== null) {
+                return osparc.form.renderer.PropForm.getPortStatusIcon(retrievingStatus);
+              }
+              return null;
+            }
+          });
+        }
+
         this.__createDropMechanism(item, portId);
 
         // Notify focus and focus out
@@ -548,85 +586,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (infoButton && "child" in infoButton) {
         const infoHint = infoButton.child;
         infoHint.setPortErrorMsg(msg);
-      }
-    },
-
-    retrievingPortData: function(portId, status) {
-      if (status === undefined) {
-        status = this.self().RETRIEVE_STATUS.retrieving;
-      }
-      if (portId) {
-        const data = this._getCtrlFieldChild(portId);
-        if (data) {
-          const child = data.child;
-          const idx = data.idx;
-          const layoutProps = child.getLayoutProperties();
-          this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
-        }
-      } else {
-        for (let i = this._getChildren().length; i--;) {
-          const child = this._getChildren()[i];
-          const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this.self().GRID_POS.CTRL_FIELD) {
-            const ctrl = this._form.getControl(child.key);
-            if (ctrl && ctrl["link"]) {
-              this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
-            }
-          }
-        }
-      }
-    },
-
-    retrievedPortData: function(portId, succeed, dataSize = -1) {
-      let status = succeed ? this.self().RETRIEVE_STATUS.succeed : this.self().RETRIEVE_STATUS.failed;
-      if (parseInt(dataSize) === 0) {
-        status = this.self().RETRIEVE_STATUS.empty;
-      }
-      if (portId) {
-        const data = this._getCtrlFieldChild(portId);
-        if (data) {
-          const child = data.child;
-          const idx = data.idx;
-          const layoutProps = child.getLayoutProperties();
-          this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
-        }
-      } else {
-        const children = this._getChildren();
-        for (let i=0; i<children.length; i++) {
-          const child = children[i];
-          const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this.self().GRID_POS.PORT_STATUS_ICON) {
-            this.__setRetrievingStatus(status, portId, i, layoutProps.row);
-          }
-        }
-      }
-    },
-
-    __setRetrievingStatus: function(status, portId, idx, row) {
-      // remove first if any
-      const children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        const child = children[i];
-        const layoutProps = child.getLayoutProperties();
-        if (layoutProps.row === row &&
-          layoutProps.column === this.self().GRID_POS.PORT_STATUS_ICON) {
-          this._remove(child);
-        }
-      }
-
-      const input = this.getNode().getInput(portId);
-      if (input) {
-        input.setStatus(status);
-      }
-
-      const label = this._getLabelFieldChild(portId).child;
-      if (label && label.isVisible()) {
-        const icon = this.self().getPortStatusIcon(status);
-        icon.key = portId;
-        this._addAt(icon, idx, {
-          row,
-          column: this.self().GRID_POS.PORT_STATUS_ICON
-        });
       }
     },
 
