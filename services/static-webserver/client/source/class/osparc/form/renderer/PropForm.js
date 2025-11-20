@@ -543,6 +543,30 @@ qx.Class.define("osparc.form.renderer.PropForm", {
               return null;
             }
           });
+          input.bind("status", statusIcon, "toolTipText", {
+            converter: status => {
+              let toolTipText = null;
+              switch (status) {
+                case "DOWNLOAD_STARTED":
+                  toolTipText = this.tr("Downloading...");
+                  break;
+                case "UPSTREAM_PORT_UPLOADING":
+                  toolTipText = this.tr("Waiting for upstream port to finish uploading...");
+                  break;
+                case "DOWNLOAD_FINISHED_EMPTY":
+                  toolTipText = this.tr("No data downloaded");
+                  break;
+                case "DOWNLOAD_FINISHED_SUCCESSFULLY":
+                  toolTipText = this.tr("Download finished successfully");
+                  break;
+                case "DOWNLOAD_WAS_ABORTED":
+                case "DOWNLOAD_FINISHED_WITH_ERROR":
+                  toolTipText = this.tr("Download failed");
+                  break;
+              }
+              return toolTipText;
+            }
+          });
         }
 
         this.__createDropMechanism(item, portId);
