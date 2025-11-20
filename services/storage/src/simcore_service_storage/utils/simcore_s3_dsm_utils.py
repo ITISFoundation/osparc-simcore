@@ -34,6 +34,8 @@ from .utils import convert_db_to_model
 
 _logger = logging.getLogger(__name__)
 
+_ROOT_LEVEL_COMPONENTS = 2
+
 
 async def _list_all_files_in_folder(
     *,
@@ -142,6 +144,11 @@ async def get_directory_file_id(
 def compute_file_id_prefix(file_id: str, levels: int):
     components = file_id.strip("/").split("/")
     return "/".join(components[:levels])
+
+
+def is_root_level_file(file_id: str) -> bool:
+    components = file_id.strip("/").split("/")
+    return len(components) == _ROOT_LEVEL_COMPONENTS
 
 
 def create_random_export_name(user_id: UserID) -> StorageFileID:

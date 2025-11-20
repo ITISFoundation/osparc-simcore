@@ -91,6 +91,7 @@ from .utils.simcore_s3_dsm_utils import (
     expand_directory,
     get_accessible_project_ids,
     get_directory_file_id,
+    is_root_level_file,
     list_child_paths_from_repository,
     list_child_paths_from_s3,
 )
@@ -731,15 +732,18 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     connection=connection, file_ids=[file_id]
                 )
 
-                if parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
-                    connection=connection,
-                    user_or_project_filter=UserOrProjectFilter(
-                        user_id=user_id, project_ids=[]
-                    ),
-                    file_id_prefix=compute_file_id_prefix(file_id, 2),
-                    partial_file_id=None,
-                    is_directory=True,
-                    sha256_checksum=None,
+                # NOTE: for root level files we don't track the parent directory
+                if (not is_root_level_file(file_id)) and (
+                    parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
+                        connection=connection,
+                        user_or_project_filter=UserOrProjectFilter(
+                            user_id=user_id, project_ids=[]
+                        ),
+                        file_id_prefix=compute_file_id_prefix(file_id, 2),
+                        partial_file_id=None,
+                        is_directory=True,
+                        sha256_checksum=None,
+                    )
                 ):
                     parent_dir_fmd = max(
                         parent_dir_fmds, key=lambda fmd: len(fmd.file_id)
