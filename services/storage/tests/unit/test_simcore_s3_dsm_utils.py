@@ -168,7 +168,7 @@ def test__replace_node_id_project_id_in_path(path: str, expected: str):
         ("/project_id/node_id/", 2),
         ("//project_id/node_id//", 2),
         ("/project_id/node_id/file.txt/", 3),
-        # Edge cases wicth multiple consecutive slashes
+        # Edge cases with multiple consecutive slashes
         ("project_id//node_id", 3),  # Splits to ["project_id", "", "node_id"]
         ("project_id///node_id", 4),  # Splits to ["project_id", "", "", "node_id"]
         (
