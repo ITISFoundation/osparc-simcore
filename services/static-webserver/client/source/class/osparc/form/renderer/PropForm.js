@@ -607,7 +607,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       addPortButton.addListener("execute", () => this.__addInputPortButtonClicked());
       this._add(addPortButton, {
         row,
-        column: 0
+        column: this.self().GRID_POS.LABEL
       });
     },
 
