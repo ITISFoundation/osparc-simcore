@@ -217,12 +217,12 @@ def run_sequentially_in_context(
                     tracing_context=tracing.get_context(),
                 )
                 await context.put(queue_input)
-                wrapped_result: R = await context.get()
+                wrapped_result = await context.get()
 
                 if isinstance(wrapped_result, Exception):
                     raise wrapped_result
-
-                return wrapped_result
+                result: R = wrapped_result
+                return result
 
         return wrapper
 
