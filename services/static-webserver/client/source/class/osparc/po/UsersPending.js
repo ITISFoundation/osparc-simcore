@@ -35,6 +35,7 @@ qx.Class.define("osparc.po.UsersPending", {
         minimum: 0,
         maximum: 1000,
         value: osparc.product.Utils.getDefaultWelcomeCredits(),
+        visibility: osparc.store.StaticInfo.isBillableProduct() ? "visible" : "excluded",
       });
       form.add(extraCreditsInUsd, qx.locale.Manager.tr("Welcome Credits (USD)"), null, "credits");
 
