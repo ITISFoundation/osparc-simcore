@@ -94,7 +94,7 @@ def _generate_context_key(
 
 
 @asynccontextmanager
-async def _managed_context(
+async def _sequential_worker(
     context_key: str,
 ) -> AsyncIterator[Context]:
 
@@ -202,7 +202,7 @@ def run_sequentially_in_context(
         @wraps(decorated_function)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
 
-            async with _managed_context(
+            async with _sequential_worker(
                 _generate_context_key(
                     function=decorated_function,
                     target_args=target_args,
