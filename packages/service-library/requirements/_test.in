@@ -23,6 +23,7 @@ numpy
 openapi-spec-validator
 pillow
 pip
+pyleak
 pytest
 pytest-aiohttp
 pytest-asyncio
