@@ -129,8 +129,9 @@ async def _sequential_worker(
 
         _context.task = asyncio.create_task(
             worker(
-                _context._in_queue, _context._out_queue
-            )  # pylint: disable=protected-access
+                _context._in_queue,  # pylint: disable=protected-access
+                _context._out_queue,  # pylint: disable=protected-access
+            )
         )
         _sequential_jobs_contexts[key] = _context
 
