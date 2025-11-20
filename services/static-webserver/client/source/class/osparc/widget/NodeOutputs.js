@@ -151,33 +151,30 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           row: i,
           column: this.self().POS.PORT_STATUS_ICON
         });
-        const output = this.getNode().getOutput(portKey);
-        if (output) {
-          output.bind("status", statusIcon, "visibility", {
-            converter: status => status ? "visible" : "excluded"
-          });
-          output.bind("status", statusIcon, "icon", {
-            converter: status => {
-              let retrievingStatus = null;
-              switch (status) {
-                case "UPLOAD_STARTED":
-                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.uploading;
-                  break;
-                case "UPLOAD_FINISHED_SUCCESSFULLY":
-                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.succeed;
-                  break;
-                case "UPLOAD_WAS_ABORTED":
-                case "UPLOAD_FINISHED_WITH_ERROR":
-                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.failed;
-                  break;
-              }
-              if (retrievingStatus !== null) {
-                return osparc.form.renderer.PropForm.getPortStatusIcon(retrievingStatus);
-              }
-              return null;
+        output.bind("status", statusIcon, "visibility", {
+          converter: status => status ? "visible" : "excluded"
+        });
+        output.bind("status", statusIcon, "icon", {
+          converter: status => {
+            let retrievingStatus = null;
+            switch (status) {
+              case "UPLOAD_STARTED":
+                retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.uploading;
+                break;
+              case "UPLOAD_FINISHED_SUCCESSFULLY":
+                retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.succeed;
+                break;
+              case "UPLOAD_WAS_ABORTED":
+              case "UPLOAD_FINISHED_WITH_ERROR":
+                retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.failed;
+                break;
             }
-          });
-        }
+            if (retrievingStatus !== null) {
+              return osparc.form.renderer.PropForm.getPortStatusIcon(retrievingStatus);
+            }
+            return null;
+          }
+        });
 
         this.__gridLayout.getLayout().setRowHeight(i, 23);
       });
