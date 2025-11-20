@@ -38,22 +38,15 @@ class Context:
     _in_queue: asyncio.Queue
     _out_queue: asyncio.Queue
     task: asyncio.Task | None = None
-    _task_counter: int = 0
+    _n_users: int = 0
 
     async def put(self, item: Any) -> None:
-        self._task_counter += 1
         await self._in_queue.put(item)
 
     async def get(self) -> Any:
         item = await self._out_queue.get()
         self._out_queue.task_done()
-        self._task_counter -= 1
         return item
-
-    @property
-    def is_being_used(self) -> bool:
-        # Indicates if there are pending tasks in this context
-        return self._task_counter != 0
 
 
 @dataclass
@@ -147,11 +140,13 @@ async def _managed_context(
     context = _sequential_jobs_contexts[key]
 
     try:
+        context._n_users += 1
         yield context
     finally:
         # NOTE: Popping the context from _sequential_jobs_contexts must be done synchronously after it is checked that the context is not in use
         # to avoid new tasks being added to the context before it is removed.
-        if not context.is_being_used:
+        context._n_users -= 1
+        if context._n_users == 0:
             if key in _sequential_jobs_contexts:
                 context = _sequential_jobs_contexts.pop(key)
             if context.task is not None:
