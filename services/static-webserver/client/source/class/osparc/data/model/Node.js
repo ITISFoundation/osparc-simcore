@@ -517,9 +517,8 @@ qx.Class.define("osparc.data.model.Node", {
           if (Object.keys(metadata.inputs).length) {
             this.__addSettings(metadata.inputs);
           }
-          const propsForm = this.getPropsForm();
-          if (propsForm) {
-            propsForm.makeInputsDynamic();
+          if (this.getPropsForm()) {
+            this.getPropsForm().makeInputsDynamic();
           }
         }
         const outputs = [];
