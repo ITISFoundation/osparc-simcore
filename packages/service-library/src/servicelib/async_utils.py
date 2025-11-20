@@ -112,7 +112,6 @@ async def _managed_context(
                         element = await asyncio.wait_for(in_q.get(), timeout=1.0)
                         in_q.task_done()
                         with tracing.use_tracing_context(element.tracing_context):
-                            # check if requested to shutdown
                             try:
                                 awaitable = element.input
                                 if awaitable is None:
@@ -124,7 +123,7 @@ async def _managed_context(
                     except TimeoutError:
                         continue
 
-                logging.info(
+                logging.debug(
                     "Closed worker for @run_sequentially_in_context applied to '%s'",
                     key,
                 )
