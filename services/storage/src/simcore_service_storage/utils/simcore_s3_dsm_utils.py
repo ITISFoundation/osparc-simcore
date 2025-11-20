@@ -1,11 +1,11 @@
 import logging
 from contextlib import suppress
 from pathlib import Path
-from typing import TypeAlias
+from typing import Final, TypeAlias
 from uuid import uuid4
 
 from aws_library.s3 import S3MetaData, SimcoreS3API
-from aws_library.s3._constants import STREAM_READER_CHUNK_SIZE
+from aws_library.s3._constants import S3_OBJECT_DELIMITER, STREAM_READER_CHUNK_SIZE
 from aws_library.s3._models import S3ObjectKey
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
@@ -34,7 +34,7 @@ from .utils import convert_db_to_model
 
 _logger = logging.getLogger(__name__)
 
-_ROOT_LEVEL_COMPONENTS = 2
+ROOT_FILE_ID_LEVELS: Final[int] = 3
 
 
 async def _list_all_files_in_folder(
@@ -142,13 +142,17 @@ async def get_directory_file_id(
 
 
 def compute_file_id_prefix(file_id: str, levels: int):
-    components = file_id.strip("/").split("/")
-    return "/".join(components[:levels])
+    components = file_id.strip(S3_OBJECT_DELIMITER).split(S3_OBJECT_DELIMITER)
+    return S3_OBJECT_DELIMITER.join(components[:levels])
 
 
-def is_root_level_file(file_id: str) -> bool:
-    components = file_id.strip("/").split("/")
-    return len(components) == _ROOT_LEVEL_COMPONENTS
+def get_file_id_level(file_id: str) -> int:
+    components = file_id.strip(S3_OBJECT_DELIMITER).split(S3_OBJECT_DELIMITER)
+    return len(components)
+
+
+def is_nested_level_file_id(file_id: str) -> bool:
+    return get_file_id_level(file_id) > ROOT_FILE_ID_LEVELS
 
 
 def create_random_export_name(user_id: UserID) -> StorageFileID:
