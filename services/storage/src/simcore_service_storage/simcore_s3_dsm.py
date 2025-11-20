@@ -91,6 +91,7 @@ from .utils.simcore_s3_dsm_utils import (
     expand_directory,
     get_accessible_project_ids,
     get_directory_file_id,
+    is_nested_level_file_id,
     list_child_paths_from_repository,
     list_child_paths_from_s3,
 )
@@ -103,6 +104,7 @@ from .utils.utils import (
 
 _NO_CONCURRENCY: Final[int] = 1
 _MAX_PARALLEL_S3_CALLS: Final[NonNegativeInt] = 10
+
 
 _logger = logging.getLogger(__name__)
 
@@ -731,15 +733,18 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     connection=connection, file_ids=[file_id]
                 )
 
-                if parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
-                    connection=connection,
-                    user_or_project_filter=UserOrProjectFilter(
-                        user_id=user_id, project_ids=[]
-                    ),
-                    file_id_prefix=compute_file_id_prefix(file_id, 2),
-                    partial_file_id=None,
-                    is_directory=True,
-                    sha256_checksum=None,
+                # NOTE: if the file was at root level, we do not have to update the parent (not tracked in the DB)
+                if is_nested_level_file_id(file_id) and (
+                    parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
+                        connection=connection,
+                        user_or_project_filter=UserOrProjectFilter(
+                            user_id=user_id, project_ids=[]
+                        ),
+                        file_id_prefix=compute_file_id_prefix(file_id, 2),
+                        partial_file_id=None,
+                        is_directory=True,
+                        sha256_checksum=None,
+                    )
                 ):
                     parent_dir_fmd = max(
                         parent_dir_fmds, key=lambda fmd: len(fmd.file_id)
