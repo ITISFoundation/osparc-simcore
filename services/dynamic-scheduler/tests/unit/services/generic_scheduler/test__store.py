@@ -355,6 +355,9 @@ async def test_operation_context_proxy(
 
     assert await proxy.read(*provided_context.keys()) == provided_context
 
+    # if a keys is missing the value is always None
+    assert await proxy.read("missing-key") == {"missing-key": None}
+
 
 async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
     await _assert_keys(store, set())
