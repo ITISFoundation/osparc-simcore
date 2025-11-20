@@ -33,9 +33,16 @@ else:
 
 
 @dataclass
+class QueueElement:
+    tracing_context: tracing.TracingContext
+    input: Awaitable | None = None
+    output: Any | None = None
+
+
+@dataclass
 class Context:
-    _in_queue: asyncio.Queue
-    _out_queue: asyncio.Queue
+    _in_queue: asyncio.Queue[QueueElement]
+    _out_queue: asyncio.Queue[Any]
     task: asyncio.Task | None = None
     _n_users: int = 0
 
@@ -46,13 +53,6 @@ class Context:
         item = await self._out_queue.get()
         self._out_queue.task_done()
         return item
-
-
-@dataclass
-class QueueElement:
-    tracing_context: tracing.TracingContext
-    input: Awaitable | None = None
-    output: Any | None = None
 
 
 # NOTE: If you get issues with event loop already closed error use ensure_run_in_sequence_context_is_empty fixture in your tests
@@ -217,7 +217,7 @@ def run_sequentially_in_context(
                     tracing_context=tracing.get_context(),
                 )
                 await context.put(queue_input)
-                wrapped_result = await context.get()
+                wrapped_result: R = await context.get()
 
                 if isinstance(wrapped_result, Exception):
                     raise wrapped_result
