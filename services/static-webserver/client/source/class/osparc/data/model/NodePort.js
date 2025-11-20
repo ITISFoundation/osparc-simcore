@@ -129,12 +129,19 @@ qx.Class.define("osparc.data.model.NodePort", {
 
   members: {
     __applyConnectedOutput: function(connectedOutput, oldConnectedOutput) {
-      // avoid circular references
-      if (oldConnectedOutput && oldConnectedOutput.getConnectedOutput() === this) {
-        oldConnectedOutput.setConnectedOutput(null);
+      const connectedOutputStatusChanged = e => {
+        const newStatus = e.getData();
+        if (newStatus === "UPLOAD_STARTED") {
+          this.setStatus("UPSTREAM_PORT_UPLOADING");
+        }
+      };
+
+      // Remove listener from old connected output
+      if (oldConnectedOutput) {
+        oldConnectedOutput.removeListener("changeStatus", connectedOutputStatusChanged);
       }
-      if (connectedOutput && connectedOutput.getConnectedOutput() !== this) {
-        connectedOutput.setConnectedOutput(this);
+      if (connectedOutput) {
+        connectedOutput.addListener("changeStatus", connectedOutputStatusChanged);
       }
     }
   }
