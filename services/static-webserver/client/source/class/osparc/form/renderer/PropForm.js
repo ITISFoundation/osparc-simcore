@@ -511,7 +511,10 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const input = this.getNode().getInput(portId);
         if (input) {
           input.bind("status", statusIcon, "visibility", {
-            converter: status => status ? "visible" : "excluded"
+            converter: status => {
+              const label = this._getLabelFieldChild(portId).child;
+              return status && label && label.isVisible() ? "visible" : "excluded"
+            }
           });
           input.bind("status", statusIcon, "icon", {
             converter: status => {
