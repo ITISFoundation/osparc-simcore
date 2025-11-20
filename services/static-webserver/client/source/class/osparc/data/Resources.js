@@ -1551,6 +1551,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/conversations/{conversationId}/messages?offset={offset}&limit={limit}"
           },
+          triggerChatbot: {
+            method: "POST",
+            url: statics.API + "/conversations/{conversationId}/messages/{messageId}:trigger-chatbot",
+          },
         }
       },
     };
