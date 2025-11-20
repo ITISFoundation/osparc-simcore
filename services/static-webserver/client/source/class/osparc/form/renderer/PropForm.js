@@ -523,6 +523,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
                 case "DOWNLOAD_STARTED":
                   retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading;
                   break;
+                case "UPSTREAM_PORT_UPLOADING":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.retrieving;
+                  break;
                 case "DOWNLOAD_FINISHED_EMPTY":
                   retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.empty;
                   break;
@@ -920,7 +923,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       const inputPort = this.getNode().getInput(toPortId);
       const outputPort = fromNode.getOutput(fromPortId);
       if (inputPort && outputPort) {
-        inputPort.setConnectedToOutput(outputPort);
+        inputPort.setConnectedOutput(outputPort);
       }
 
       this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
@@ -946,7 +949,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
       const inputPort = this.getNode().getInput(toPortId);
       if (inputPort) {
-        inputPort.setConnectedToOutput(null);
+        inputPort.setConnectedOutput(null);
       }
 
       this.__portLinkRemoved(toPortId);

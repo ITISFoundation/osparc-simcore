@@ -100,6 +100,7 @@ qx.Class.define("osparc.data.model.NodePort", {
 
     status: {
       check: [
+        // backend defined statuses
         "UPLOAD_STARTED",                 // OutputStatus
         "UPLOAD_WAS_ABORTED",             // OutputStatus
         "UPLOAD_FINISHED_SUCCESSFULLY",   // OutputStatus
@@ -107,19 +108,34 @@ qx.Class.define("osparc.data.model.NodePort", {
         "DOWNLOAD_STARTED",               // InputStatus
         "DOWNLOAD_WAS_ABORTED",           // InputStatus
         "DOWNLOAD_FINISHED_SUCCESSFULLY", // InputStatus
-        "DOWNLOAD_FINISHED_EMPTY",        // InputStatus
         "DOWNLOAD_FINISHED_WITH_ERROR",   // InputStatus
+        // frontend defined statuses
+        "DOWNLOAD_FINISHED_EMPTY",        // InputStatus
+        "UPSTREAM_PORT_UPLOADING",        // InputStatus
       ],
       nullable: true,
       init: null,
       event: "changeStatus",
     },
 
-    connectedToOutput: {
+    connectedOutput: {
       check: "osparc.data.model.NodePort",
       nullable: true,
       init: null,
-      event: "changeInput",
+      event: "changeConnectedOutput",
+      apply: "__applyConnectedOutput",
     },
   },
+
+  members: {
+    __applyConnectedOutput: function(connectedOutput, oldConnectedOutput) {
+      // avoid circular references
+      if (oldConnectedOutput && oldConnectedOutput.getConnectedOutput() === this) {
+        oldConnectedOutput.setConnectedOutput(null);
+      }
+      if (connectedOutput && connectedOutput.getConnectedOutput() !== this) {
+        connectedOutput.setConnectedOutput(this);
+      }
+    }
+  }
 });
