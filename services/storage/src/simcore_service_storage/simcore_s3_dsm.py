@@ -732,7 +732,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     connection=connection, file_ids=[file_id]
                 )
 
-                # NOTE: for root level files we don't track the parent directory
+                # NOTE: if the file was at root level, we do not have to invalidate the parent (not tracked in the DB)
                 if (not is_root_level_file(file_id)) and (
                     parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
                         connection=connection,
