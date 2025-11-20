@@ -128,6 +128,8 @@ qx.Class.define("osparc.data.model.NodePort", {
   },
 
   members: {
+    __connectedOutputStatusListenerId: null,
+
     __applyConnectedOutput: function(connectedOutput, oldConnectedOutput) {
       const connectedOutputStatusChanged = e => {
         const newStatus = e.getData();
@@ -137,11 +139,14 @@ qx.Class.define("osparc.data.model.NodePort", {
       };
 
       // Remove listener from old connected output
-      if (oldConnectedOutput) {
-        oldConnectedOutput.removeListener("changeStatus", connectedOutputStatusChanged);
+      if (this.__connectedOutputStatusListenerId && oldConnectedOutput) {
+        oldConnectedOutput.removeListenerById(this.__connectedOutputStatusListenerId);
+        this.__connectedOutputStatusListenerId = null;
       }
+
+      // Add listener to new connected output
       if (connectedOutput) {
-        connectedOutput.addListener("changeStatus", connectedOutputStatusChanged);
+        this.__connectedOutputStatusListenerId = connectedOutput.addListener("changeStatus", connectedOutputStatusChanged, this);
       }
     }
   }
