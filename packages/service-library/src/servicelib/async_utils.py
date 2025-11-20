@@ -148,7 +148,7 @@ async def _managed_context(
     try:
         yield context
     finally:
-        # NOTE: Popping the context must be done synchronously after it is checked that the context is not in use
+        # NOTE: Popping the context from _sequential_jobs_contexts must be done synchronously after it is checked that the context is not in use
         # to avoid new tasks being added to the context before it is removed.
         if not context.is_being_used:
             if key in _sequential_jobs_contexts:
