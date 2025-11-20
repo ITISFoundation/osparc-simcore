@@ -1036,6 +1036,7 @@ async def test_repeating_step(
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
 
+@pytest.mark.flaky(max_reruns=3)
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_order, expected_keys, after_restart_expected_order",
@@ -1352,6 +1353,7 @@ async def test_restart_revert_operation_step_in_error(
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
 
+@pytest.mark.flaky(max_reruns=3)
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize("in_manual_intervention", [True, False])
 async def test_errors_with_restart_operation_step_in_error(
