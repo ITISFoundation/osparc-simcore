@@ -1125,7 +1125,7 @@ qx.Class.define("osparc.data.model.Node", {
               if (sizeBytes === 0) {
                 this.getInput(portKey).setStatus("DOWNLOAD_SUCCEEDED_EMPTY");
               } else {
-                this.getInput(portKey).setStatus("DOWNLOAD_SUCCEEDED");
+                this.getInput(portKey).setStatus("DOWNLOAD_FINISHED_SUCCESSFULLY");
               }
             }
           }, this);
