@@ -98,15 +98,9 @@ qx.Class.define("osparc.data.model.NodePort", {
       event: "changeValue",
     },
 
-    input: {
-      check: "Object",
-      nullable: true,
-      init: null,
-      event: "changeInput"
-    },
-
     status: {
       check: [
+        // backend defined statuses
         "UPLOAD_STARTED",                 // OutputStatus
         "UPLOAD_WAS_ABORTED",             // OutputStatus
         "UPLOAD_FINISHED_SUCCESSFULLY",   // OutputStatus
@@ -115,16 +109,45 @@ qx.Class.define("osparc.data.model.NodePort", {
         "DOWNLOAD_WAS_ABORTED",           // InputStatus
         "DOWNLOAD_FINISHED_SUCCESSFULLY", // InputStatus
         "DOWNLOAD_FINISHED_WITH_ERROR",   // InputStatus
+        // frontend defined statuses
+        "DOWNLOAD_FINISHED_EMPTY",        // InputStatus
+        "UPSTREAM_PORT_UPLOADING",        // InputStatus
       ],
       nullable: true,
       init: null,
       event: "changeStatus",
     },
 
-    connected: {
-      check: "Boolean",
-      init: false,
-      event: "changeConnected",
+    connectedOutput: {
+      check: "osparc.data.model.NodePort",
+      nullable: true,
+      init: null,
+      event: "changeConnectedOutput",
+      apply: "__applyConnectedOutput",
     },
   },
+
+  members: {
+    __connectedOutputStatusListenerId: null,
+
+    __applyConnectedOutput: function(connectedOutput, oldConnectedOutput) {
+      const connectedOutputStatusChanged = e => {
+        const newStatus = e.getData();
+        if (newStatus === "UPLOAD_STARTED") {
+          this.setStatus("UPSTREAM_PORT_UPLOADING");
+        }
+      };
+
+      // Remove listener from old connected output
+      if (this.__connectedOutputStatusListenerId && oldConnectedOutput) {
+        oldConnectedOutput.removeListenerById(this.__connectedOutputStatusListenerId);
+        this.__connectedOutputStatusListenerId = null;
+      }
+
+      // Add listener to new connected output
+      if (connectedOutput) {
+        this.__connectedOutputStatusListenerId = connectedOutput.addListener("changeStatus", connectedOutputStatusChanged, this);
+      }
+    }
+  }
 });

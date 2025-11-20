@@ -39,7 +39,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     grid.setColumnFlex(this.self().POS.LABEL, 1);
     grid.setColumnFlex(this.self().POS.VALUE, 1);
     grid.setColumnMinWidth(this.self().POS.VALUE, 50);
-    grid.setColumnMaxWidth(this.self().POS.RETRIEVE_STATUS, 25);
+    grid.setColumnMaxWidth(this.self().POS.PORT_STATUS_ICON, 25);
     Object.keys(this.self().POS).forEach((_, idx) => grid.setColumnAlign(idx, "left", "middle"));
     const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid);
     this._add(gridLayout);
@@ -80,7 +80,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       VALUE: 3,
       UNIT: 4,
       PROBE: 5,
-      RETRIEVE_STATUS: 6,
+      PORT_STATUS_ICON: 6,
     }
   },
 
@@ -142,6 +142,38 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         this.__gridLayout.add(probeBtn, {
           row: i,
           column: this.self().POS.PROBE
+        });
+
+        const statusIcon = new qx.ui.basic.Atom().set({
+          visibility: "excluded"
+        });
+        this.__gridLayout.add(statusIcon, {
+          row: i,
+          column: this.self().POS.PORT_STATUS_ICON
+        });
+        output.bind("status", statusIcon, "visibility", {
+          converter: status => status ? "visible" : "excluded"
+        });
+        output.bind("status", statusIcon, "icon", {
+          converter: status => {
+            let retrievingStatus = null;
+            switch (status) {
+              case "UPLOAD_STARTED":
+                retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.uploading;
+                break;
+              case "UPLOAD_FINISHED_SUCCESSFULLY":
+                retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.succeed;
+                break;
+              case "UPLOAD_WAS_ABORTED":
+              case "UPLOAD_FINISHED_WITH_ERROR":
+                retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.failed;
+                break;
+            }
+            if (retrievingStatus !== null) {
+              return osparc.form.renderer.PropForm.getPortStatusIcon(retrievingStatus);
+            }
+            return null;
+          }
         });
 
         this.__gridLayout.getLayout().setRowHeight(i, 23);
@@ -264,22 +296,5 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         }
       }
     },
-
-    setRetrievingStatus: function(portId, status) {
-      const outputs = this.getNode().getOutputs();
-      const idx = outputs.findIndex(output => output.getPortKey() === portId);
-      if (idx === -1) {
-        return;
-      }
-
-      // remove first if any
-      this.__removeEntry(idx, this.self().POS.RETRIEVE_STATUS);
-
-      const icon = osparc.form.renderer.PropForm.getIconForStatus(status);
-      this.__gridLayout.add(icon, {
-        row: idx,
-        column: this.self().POS.RETRIEVE_STATUS
-      });
-    }
   }
 });

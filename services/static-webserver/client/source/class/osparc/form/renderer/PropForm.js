@@ -52,33 +52,33 @@ qx.Class.define("osparc.form.renderer.PropForm", {
   },
 
   statics: {
-    getRetrievingAtom: function() {
-      return new qx.ui.basic.Atom("", "osparc/loading.gif");
+    getRetrievingIcon: function() {
+      return "osparc/loading.gif";
     },
 
-    getDownloadingAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/cloud-download-alt/12");
+    getDownloadingIcon: function() {
+      return "@FontAwesome5Solid/cloud-download-alt/12";
     },
 
-    getUploadingAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/cloud-upload-alt/12");
+    getUploadingIcon: function() {
+      return "@FontAwesome5Solid/cloud-upload-alt/12";
     },
 
-    getFailedAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/times/12");
+    getFailedIcon: function() {
+      return "@FontAwesome5Solid/times/12";
     },
 
-    getSucceededAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/check/12");
+    getSucceededIcon: function() {
+      return "@FontAwesome5Solid/check/12";
     },
 
     getRetrievedEmpty: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/dot-circle/10");
+      return "@FontAwesome5Solid/dot-circle/10";
     },
 
     GRID_POS: {
       ...osparc.form.renderer.PropFormBase.GRID_POS,
-      RETRIEVE_STATUS: Object.keys(osparc.form.renderer.PropFormBase.GRID_POS).length
+      PORT_STATUS_ICON: Object.keys(osparc.form.renderer.PropFormBase.GRID_POS).length
     },
 
     isFieldParametrizable: function(field) {
@@ -99,11 +99,11 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       succeed: 4
     },
 
-    getIconForStatus: function(status) {
+    getPortStatusIcon: function(status) {
       let icon;
       switch (status) {
         case this.RETRIEVE_STATUS.failed:
-          icon = this.getFailedAtom();
+          icon = this.getFailedIcon();
           break;
         case this.RETRIEVE_STATUS.empty:
           icon = this.getRetrievedEmpty();
@@ -111,10 +111,10 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         case this.RETRIEVE_STATUS.retrieving:
         case this.RETRIEVE_STATUS.downloading:
         case this.RETRIEVE_STATUS.uploading:
-          icon = this.getRetrievingAtom();
+          icon = this.getRetrievingIcon();
           break;
         case this.RETRIEVE_STATUS.succeed:
-          icon = this.getSucceededAtom();
+          icon = this.getSucceededIcon();
           break;
       }
       return icon;
@@ -501,6 +501,74 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           });
         }
 
+        const statusIcon = new qx.ui.basic.Atom().set({
+          visibility: "excluded"
+        });
+        this._add(statusIcon, {
+          row,
+          column: this.self().GRID_POS.PORT_STATUS_ICON
+        });
+        const input = this.getNode().getInput(portId);
+        if (input) {
+          input.bind("status", statusIcon, "visibility", {
+            converter: status => {
+              const label = this._getLabelFieldChild(portId).child;
+              return status && label && label.isVisible() ? "visible" : "excluded"
+            }
+          });
+          input.bind("status", statusIcon, "icon", {
+            converter: status => {
+              let retrievingStatus = null;
+              switch (status) {
+                case "DOWNLOAD_STARTED":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading;
+                  break;
+                case "UPSTREAM_PORT_UPLOADING":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.retrieving;
+                  break;
+                case "DOWNLOAD_FINISHED_EMPTY":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.empty;
+                  break;
+                case "DOWNLOAD_FINISHED_SUCCESSFULLY":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.succeed;
+                  break;
+                case "DOWNLOAD_WAS_ABORTED":
+                case "DOWNLOAD_FINISHED_WITH_ERROR":
+                  retrievingStatus = osparc.form.renderer.PropForm.RETRIEVE_STATUS.failed;
+                  break;
+              }
+              if (retrievingStatus !== null) {
+                return osparc.form.renderer.PropForm.getPortStatusIcon(retrievingStatus);
+              }
+              return null;
+            }
+          });
+          input.bind("status", statusIcon, "toolTipText", {
+            converter: status => {
+              let toolTipText = null;
+              switch (status) {
+                case "DOWNLOAD_STARTED":
+                  toolTipText = this.tr("Downloading...");
+                  break;
+                case "UPSTREAM_PORT_UPLOADING":
+                  toolTipText = this.tr("Waiting for upstream port to finish uploading...");
+                  break;
+                case "DOWNLOAD_FINISHED_EMPTY":
+                  toolTipText = this.tr("No data downloaded");
+                  break;
+                case "DOWNLOAD_FINISHED_SUCCESSFULLY":
+                  toolTipText = this.tr("Download finished successfully");
+                  break;
+                case "DOWNLOAD_WAS_ABORTED":
+                case "DOWNLOAD_FINISHED_WITH_ERROR":
+                  toolTipText = this.tr("Download failed");
+                  break;
+              }
+              return toolTipText;
+            }
+          });
+        }
+
         this.__createDropMechanism(item, portId);
 
         // Notify focus and focus out
@@ -528,7 +596,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       this.getNode().addListener("changeInputsRequired", () => evalRequired());
       evalRequired();
 
-      // add port button
+      // add visible input port button
       const addPortButton = this.__addInputPortButton = new qx.ui.form.Button().set({
         label: this.tr("Input"),
         icon: "@FontAwesome5Solid/plus/14",
@@ -548,80 +616,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (infoButton && "child" in infoButton) {
         const infoHint = infoButton.child;
         infoHint.setPortErrorMsg(msg);
-      }
-    },
-
-    retrievingPortData: function(portId, status) {
-      if (status === undefined) {
-        status = this.self().RETRIEVE_STATUS.retrieving;
-      }
-      if (portId) {
-        let data = this._getCtrlFieldChild(portId);
-        if (data) {
-          let child = data.child;
-          let idx = data.idx;
-          const layoutProps = child.getLayoutProperties();
-          this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
-        }
-      } else {
-        for (let i = this._getChildren().length; i--;) {
-          let child = this._getChildren()[i];
-          const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this.self().GRID_POS.CTRL_FIELD) {
-            const ctrl = this._form.getControl(child.key);
-            if (ctrl && ctrl["link"]) {
-              this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
-            }
-          }
-        }
-      }
-    },
-
-    retrievedPortData: function(portId, succeed, dataSize = -1) {
-      let status = succeed ? this.self().RETRIEVE_STATUS.succeed : this.self().RETRIEVE_STATUS.failed;
-      if (parseInt(dataSize) === 0) {
-        status = this.self().RETRIEVE_STATUS.empty;
-      }
-      if (portId) {
-        let data = this._getCtrlFieldChild(portId);
-        if (data) {
-          let child = data.child;
-          let idx = data.idx;
-          const layoutProps = child.getLayoutProperties();
-          this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
-        }
-      } else {
-        let children = this._getChildren();
-        for (let i=0; i<children.length; i++) {
-          let child = children[i];
-          const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this.self().GRID_POS.RETRIEVE_STATUS) {
-            this.__setRetrievingStatus(status, portId, i, layoutProps.row);
-          }
-        }
-      }
-    },
-
-    __setRetrievingStatus: function(status, portId, idx, row) {
-      // remove first if any
-      let children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        let child = children[i];
-        const layoutProps = child.getLayoutProperties();
-        if (layoutProps.row === row &&
-          layoutProps.column === this.self().GRID_POS.RETRIEVE_STATUS) {
-          this._remove(child);
-        }
-      }
-
-      const label = this._getLabelFieldChild(portId).child;
-      if (label && label.isVisible()) {
-        const icon = this.self().getIconForStatus(status);
-        icon.key = portId;
-        this._addAt(icon, idx, {
-          row,
-          column: this.self().GRID_POS.RETRIEVE_STATUS
-        });
       }
     },
 
@@ -950,6 +944,12 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         fromNode.addListenerOnce("changeMetadata", () => prettifyLinkString(), this);
       }
 
+      const inputPort = this.getNode().getInput(toPortId);
+      const outputPort = fromNode.getOutput(fromPortId);
+      if (inputPort && outputPort) {
+        inputPort.setConnectedOutput(outputPort);
+      }
+
       this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
 
       this.makeInputsDynamic();
@@ -969,6 +969,11 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       this.getControlLink(toPortId).setEnabled(false);
       if ("link" in this._form.getControl(toPortId)) {
         delete this._form.getControl(toPortId)["link"];
+      }
+
+      const inputPort = this.getNode().getInput(toPortId);
+      if (inputPort) {
+        inputPort.setConnectedOutput(null);
       }
 
       this.__portLinkRemoved(toPortId);
