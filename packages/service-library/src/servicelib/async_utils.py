@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 
 from common_library.async_tools import cancel_wait_task
 from faststream import context
+from servicelib.logging_utils import log_catch
 
 from . import tracing
 
@@ -36,23 +37,23 @@ else:
 class Context:
     _in_queue: asyncio.Queue
     _out_queue: asyncio.Queue
-    initialized: bool
     task: asyncio.Task | None = None
     _task_counter: int = 0
 
     async def put(self, item: Any) -> None:
-        await self._in_queue.put(item)
         self._task_counter += 1
+        await self._in_queue.put(item)
 
     async def get(self) -> Any:
-        item = await self._in_queue.get()
-        self._in_queue.task_done()
+        item = await self._out_queue.get()
+        self._out_queue.task_done()
         self._task_counter -= 1
         return item
 
     @property
-    def task_idle(self) -> bool:
-        return self._task_counter == 0
+    def is_being_used(self) -> bool:
+        # Indicates if there are pending tasks in this context
+        return self._task_counter > 0
 
 
 @dataclass
@@ -66,13 +67,12 @@ class QueueElement:
 _sequential_jobs_contexts: dict[str, Context] = {}
 
 
-@asynccontextmanager
-async def _managed_context(
+def _generate_context_key(
     function: Callable[[Any], Any | None],
     target_args: list[str],
     args: Any,
     kwargs: dict,
-) -> AsyncIterator[Context]:
+) -> str:
     arg_names = function.__code__.co_varnames[: function.__code__.co_argcount]
     search_args = dict(zip(arg_names, args, strict=False))
     search_args.update(kwargs)
@@ -98,17 +98,23 @@ async def _managed_context(
         key_parts.append(f"{function.__name__}_{context_key}")
 
     key = ":".join(map(str, key_parts))
+    return key
 
+
+@asynccontextmanager
+async def _managed_context(
+    context_key: str,
+) -> AsyncIterator[Context]:
+
+    key = context_key
     if key not in _sequential_jobs_contexts:
         _sequential_jobs_contexts[key] = Context(
             _in_queue=asyncio.Queue(),
             _out_queue=asyncio.Queue(),
-            initialized=False,
         )
     context = _sequential_jobs_contexts[key]
 
-    if not context.initialized:
-        context.initialized = True
+    if context.task is None:
 
         async def worker(in_q: Queue[QueueElement], out_q: Queue) -> None:
             try:
@@ -130,9 +136,8 @@ async def _managed_context(
                         continue
 
                 logging.info(
-                    "Closed worker for @run_sequentially_in_context applied to '%s' with target_args=%s",
-                    function.__name__,
-                    target_args,
+                    "Closed worker for @run_sequentially_in_context applied to '%s'",
+                    awaitable.__qualname__,
                 )
             except asyncio.CancelledError:
                 raise
@@ -143,15 +148,14 @@ async def _managed_context(
     try:
         yield context
     finally:
-        if (
-            context._in_queue.empty()
-            and context._out_queue.empty()
-            and context.task_idle
-        ):
-            if context.task is not None:
-                await cancel_wait_task(context.task, max_delay=None)
+        # NOTE: Popping the context must be done synchronously after it is checked that the context is not in use
+        # to avoid new tasks being added to the context before it is removed.
+        if not context.is_being_used:
             if key in _sequential_jobs_contexts:
-                del _sequential_jobs_contexts[key]
+                context = _sequential_jobs_contexts.pop(key)
+            if context.task is not None:
+                with log_catch(_logger, reraise=False):
+                    await cancel_wait_task(context.task, max_delay=None)
 
 
 async def _safe_cancel(context: Context) -> None:
@@ -226,10 +230,12 @@ def run_sequentially_in_context(
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
 
             async with _managed_context(
-                function=decorated_function,
-                target_args=target_args,
-                args=args,
-                kwargs=kwargs,
+                _generate_context_key(
+                    function=decorated_function,
+                    target_args=target_args,
+                    args=args,
+                    kwargs=kwargs,
+                )
             ) as context:
 
                 queue_input = QueueElement(

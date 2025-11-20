@@ -237,4 +237,4 @@ async def test_different_contexts(
             for i in range(DIFFERENT_CONTEXTS_COUNT):
                 assert i == await test_multiple_context_calls(i)
 
-        assert len(_sequential_jobs_contexts) == RETRIES
+        assert len(_sequential_jobs_contexts) == 0, "Not all contexts were cleaned up"
