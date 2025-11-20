@@ -88,7 +88,7 @@ async def create_message_and_notify(
     content: str,
     type_: ConversationMessageType,
 ) -> ConversationMessageGetDB:
-    message = await create_message(
+    message = await _create_message(
         app,
         user_id=user_id,
         conversation_id=conversation_id,
@@ -104,7 +104,7 @@ async def create_message_and_notify(
     return message
 
 
-async def create_message(
+async def _create_message(
     app: web.Application,
     *,
     user_id: UserID,
@@ -170,7 +170,7 @@ async def create_support_message(
             msg = f"Unknown conversation user type: {conversation_user_type}"
             raise ConversationError(msg)
 
-    message = await create_message(
+    message = await _create_message(
         app,
         user_id=user_id,
         conversation_id=conversation.conversation_id,
