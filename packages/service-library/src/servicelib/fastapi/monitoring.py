@@ -8,13 +8,13 @@ from typing import Final
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi_lifespan_manager import State
+from opentelemetry.instrumentation.fastapi import _get_route_details
 from prometheus_client import CollectorRegistry
 from prometheus_client.openmetrics.exposition import (
     CONTENT_TYPE_LATEST,
     generate_latest,
 )
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.routing import Match, Route
 from starlette.types import ASGIApp
 
 from ..common_headers import (
@@ -31,40 +31,6 @@ from ..prometheus_metrics import (
 
 _logger = logging.getLogger(__name__)
 _PROMETHEUS_METRICS = "prometheus_metrics"
-
-
-def _get_route_details(scope):
-    """
-    Function to retrieve Starlette route from scope.
-
-    TODO: there is currently no way to retrieve http.route from
-    a starlette application from scope.
-    See: https://github.com/encode/starlette/pull/804
-
-    Args:
-        scope: A Starlette scope
-    Returns:
-        A string containing the route or None
-    """
-    app = scope["app"]
-    route = None
-
-    for starlette_route in app.routes:
-        match, _ = (
-            Route.matches(starlette_route, scope)
-            if isinstance(starlette_route, Route)
-            else starlette_route.matches(scope)
-        )
-        if match == Match.FULL:
-            try:
-                route = starlette_route.path
-            except AttributeError:
-                # routes added via host routing won't have a path attribute
-                route = scope.get("path")
-            break
-        if match == Match.PARTIAL:
-            route = starlette_route.path
-    return route
 
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
