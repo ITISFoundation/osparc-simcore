@@ -58,7 +58,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
             conversationsData.sort((a, b) => new Date(b["created"]) - new Date(a["created"]));
           }
           conversationsData.forEach(conversationData => {
-            const conversation = this.addToCache(conversationData);
+            const conversation = this.__addToCache(conversationData);
             conversations.push(conversation);
           });
           return conversations;
@@ -78,7 +78,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "getConversation", params)
         .then(conversationData => {
-          const conversation = this.addToCache(conversationData);
+          const conversation = this.__addToCache(conversationData);
           return conversation;
         });
     },
@@ -96,11 +96,15 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "postConversation", params)
         .then(conversationData => {
-          const conversation = this.addToCache(conversationData);
-          this.fireDataEvent("conversationCreated", conversation);
+          this.conversationCreated(conversationData);
           return conversationData;
         })
         .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    conversationCreated: function(conversationData) {
+      const conversation = this.__addToCache(conversationData);
+      this.fireDataEvent("conversationCreated", conversation);
     },
 
     deleteConversation: function(conversationId) {
@@ -227,7 +231,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    addToCache: function(conversationData) {
+    __addToCache: function(conversationData) {
       // check if already cached
       if (conversationData["conversationId"] in this.__conversationsCached) {
         return this.__conversationsCached[conversationData["conversationId"]];

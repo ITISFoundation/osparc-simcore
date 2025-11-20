@@ -206,12 +206,9 @@ qx.Class.define("osparc.support.Conversations", {
         const eventHandler = conversationData => {
           if (conversationData && types.includes(conversationData["type"])) {
             switch (eventName) {
-              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED: {
-                const conversation = osparc.store.ConversationsSupport.getInstance().addToCache(conversationData);
-                this.__addConversation(conversation);
-                this.__sortConversations();
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
+                osparc.store.ConversationsSupport.getInstance().conversationCreated(conversationData);
                 break;
-              }
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
                 this.__updateConversationName(conversationData);
                 break;
