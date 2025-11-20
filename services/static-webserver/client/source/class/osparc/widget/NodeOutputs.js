@@ -275,7 +275,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       // remove first if any
       this.__removeEntry(idx, this.self().POS.RETRIEVE_STATUS);
 
-      const icon = osparc.form.renderer.PropForm.getIconForStatus(status);
+      const icon = osparc.form.renderer.PropForm.getPortStatusIcon(status);
       this.__gridLayout.add(icon, {
         row: idx,
         column: this.self().POS.RETRIEVE_STATUS

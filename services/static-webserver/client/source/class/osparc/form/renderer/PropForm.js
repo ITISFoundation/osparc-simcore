@@ -99,7 +99,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       succeed: 4
     },
 
-    getIconForStatus: function(status) {
+    getPortStatusIcon: function(status) {
       let icon;
       switch (status) {
         case this.RETRIEVE_STATUS.failed:
@@ -621,7 +621,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
       const label = this._getLabelFieldChild(portId).child;
       if (label && label.isVisible()) {
-        const icon = this.self().getIconForStatus(status);
+        const icon = this.self().getPortStatusIcon(status);
         icon.key = portId;
         this._addAt(icon, idx, {
           row,
