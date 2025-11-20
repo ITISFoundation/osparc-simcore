@@ -556,16 +556,16 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         status = this.self().RETRIEVE_STATUS.retrieving;
       }
       if (portId) {
-        let data = this._getCtrlFieldChild(portId);
+        const data = this._getCtrlFieldChild(portId);
         if (data) {
-          let child = data.child;
-          let idx = data.idx;
+          const child = data.child;
+          const idx = data.idx;
           const layoutProps = child.getLayoutProperties();
           this.__setRetrievingStatus(status, portId, idx+1, layoutProps.row);
         }
       } else {
         for (let i = this._getChildren().length; i--;) {
-          let child = this._getChildren()[i];
+          const child = this._getChildren()[i];
           const layoutProps = child.getLayoutProperties();
           if (layoutProps.column === this.self().GRID_POS.CTRL_FIELD) {
             const ctrl = this._form.getControl(child.key);
