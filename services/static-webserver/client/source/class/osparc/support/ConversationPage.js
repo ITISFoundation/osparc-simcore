@@ -94,43 +94,60 @@ qx.Class.define("osparc.support.ConversationPage", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
           this.getChildControl("conversation-header-center-layout").addAt(control, 1);
           break;
-        case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        case "options-button":{
+          const buttonSize = 22;
+          control = new qx.ui.menu.Button().set({
+            appearance: "form-button-outlined",
+            width: buttonSize,
+            height: buttonSize,
+            padding: [0, 8, 0, 8],
+            allowGrowX: false,
+            allowGrowY: false,
+            alignX: "center",
             alignY: "middle",
-          })).set({
-            maxHeight: 24,
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            focusable: false
           });
           this.getChildControl("conversation-header-layout").addAt(control, 2);
           break;
+        }
+        case "options-menu":
+          control = new qx.ui.menu.Menu().set({
+            appearance: "menu-wider",
+            position: "bottom-left",
+          });
+          this.getChildControl("options-button").setMenu(control);
+          break;
         case "rename-conversation-button": {
-          control = new qx.ui.form.Button().set({
+          control = new qx.ui.menu.Button().set({
             icon: "@FontAwesome5Solid/i-cursor/12",
-            toolTipText: this.tr("Rename"),
+            label: this.tr("Rename"),
             alignX: "center",
             alignY: "middle",
           });
           control.addListener("execute", () => this.__renameConversation());
-          this.getChildControl("buttons-layout").addAt(control, 0);
+          this.getChildControl("options-menu").addAt(control, 0);
           break;
         }
         case "open-project-button":
-          control = new qx.ui.form.Button().set({
+          control = new qx.ui.menu.Button().set({
             icon: "@FontAwesome5Solid/external-link-alt/12",
+            label: this.tr("Open Project"),
             alignX: "center",
             alignY: "middle",
           });
           control.addListener("execute", () => this.__openProjectDetails());
-          this.getChildControl("buttons-layout").addAt(control, 1);
+          this.getChildControl("options-menu").addAt(control, 1);
           break;
         case "copy-ticket-id-button": {
-          control = new qx.ui.form.Button().set({
+          control = new qx.ui.menu.Button().set({
             icon: "@FontAwesome5Solid/copy/12",
-            toolTipText: this.tr("Copy Ticket ID"),
+            label: this.tr("Copy Ticket ID"),
             alignX: "center",
             alignY: "middle",
           });
           control.addListener("execute", () => this.__copyTicketId());
-          this.getChildControl("buttons-layout").addAt(control, 2);
+          this.getChildControl("options-menu").addAt(control, 2);
           break;
         }
         case "main-stack":
@@ -270,7 +287,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         this.getChildControl("copy-ticket-id-button");
       }
 
-      this.getChildControl("buttons-layout").setVisibility(conversation ? "visible" : "excluded");
+      this.getChildControl("options-button").setVisibility(conversation ? "visible" : "excluded");
     },
 
     __openProjectDetails: function() {
