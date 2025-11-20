@@ -183,9 +183,7 @@ class RobustWebSocket:
                     )
                     self._attempt_reconnect(ctx.logger)
                 else:
-                    ctx.logger.warning(
-                        "%s⚠️ WebSocket closed.", _WEBSOCKET_MESSAGE_PREFIX
-                    )
+                    ctx.logger.info("%s WebSocket closed.", _WEBSOCKET_MESSAGE_PREFIX)
 
             def on_socketerror(error_msg: str) -> None:
                 ctx.logger.error(
