@@ -39,8 +39,48 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   members: {
+    __conversationsCached: null,
+
+    init: function() {
+      this.fetchConversations();
+      this.listenToWS();
+    },
+
     getConversations: function() {
       return Object.values(this.__conversationsCached);
+    },
+
+    listenToWS: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const types = Object.values(osparc.store.ConversationsSupport.TYPES);
+      [
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
+      ].forEach(eventName => {
+        const eventHandler = conversationData => {
+          if (conversationData && types.includes(conversationData["type"])) {
+            switch (eventName) {
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
+                const conversation = this.__addToCache(conversationData);
+                this.fireDataEvent("conversationCreated", conversation);
+                break;
+              /*
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
+                this.__conversationsCached[conversationData["conversationId"]]?.setProperties(conversationData);
+                break;
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
+                delete this.__conversationsCached[conversationData["conversationId"]];
+                this.fireDataEvent("conversationDeleted", {
+                  conversationId: conversationData["conversationId"],
+                });
+                break;
+              */
+            }
+          }
+        };
+        socket.on(eventName, eventHandler, this);
+      });
     },
 
     fetchConversations: function() {
@@ -96,15 +136,11 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "postConversation", params)
         .then(conversationData => {
-          this.conversationCreated(conversationData);
+          const conversation = this.__addToCache(conversationData);
+          this.fireDataEvent("conversationCreated", conversation);
           return conversationData;
         })
         .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    conversationCreated: function(conversationData) {
-      const conversation = this.__addToCache(conversationData);
-      this.fireDataEvent("conversationCreated", conversation);
     },
 
     deleteConversation: function(conversationId) {
