@@ -78,7 +78,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
     GRID_POS: {
       ...osparc.form.renderer.PropFormBase.GRID_POS,
-      RETRIEVE_ICON: Object.keys(osparc.form.renderer.PropFormBase.GRID_POS).length
+      PORT_STATUS_ICON: Object.keys(osparc.form.renderer.PropFormBase.GRID_POS).length
     },
 
     isFieldParametrizable: function(field) {
@@ -595,7 +595,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         for (let i=0; i<children.length; i++) {
           const child = children[i];
           const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this.self().GRID_POS.RETRIEVE_ICON) {
+          if (layoutProps.column === this.self().GRID_POS.PORT_STATUS_ICON) {
             this.__setRetrievingStatus(status, portId, i, layoutProps.row);
           }
         }
@@ -609,7 +609,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         const child = children[i];
         const layoutProps = child.getLayoutProperties();
         if (layoutProps.row === row &&
-          layoutProps.column === this.self().GRID_POS.RETRIEVE_ICON) {
+          layoutProps.column === this.self().GRID_POS.PORT_STATUS_ICON) {
           this._remove(child);
         }
       }
@@ -625,7 +625,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         icon.key = portId;
         this._addAt(icon, idx, {
           row,
-          column: this.self().GRID_POS.RETRIEVE_ICON
+          column: this.self().GRID_POS.PORT_STATUS_ICON
         });
       }
     },
