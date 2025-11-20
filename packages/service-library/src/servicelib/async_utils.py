@@ -106,45 +106,44 @@ async def _sequential_worker(
         )
 
         async def worker(in_q: Queue[QueueElement], out_q: Queue) -> None:
-            try:
-                while True:
-                    try:
-                        element = await asyncio.wait_for(in_q.get(), timeout=1.0)
-                        in_q.task_done()
-                        with tracing.use_tracing_context(element.tracing_context):
-                            try:
-                                awaitable = element.input
-                                if awaitable is None:
-                                    break
-                                result = await awaitable
-                            except Exception as e:  # pylint: disable=broad-except
-                                result = e
-                        await out_q.put(result)
-                    except TimeoutError:
-                        continue
+            while True:
+                try:
+                    element = await asyncio.wait_for(in_q.get(), timeout=1.0)
+                    in_q.task_done()
+                    with tracing.use_tracing_context(element.tracing_context):
+                        try:
+                            awaitable = element.input
+                            if awaitable is None:
+                                break
+                            result = await awaitable
+                        except Exception as e:  # pylint: disable=broad-except
+                            result = e
+                    await out_q.put(result)
+                except TimeoutError:
+                    continue
 
-                logging.debug(
-                    "Closed worker for @run_sequentially_in_context applied to '%s'",
-                    key,
-                )
-            except asyncio.CancelledError:
-                raise
+            logging.debug(
+                "Closed worker for @run_sequentially_in_context applied to '%s'",
+                key,
+            )
 
         _context.task = asyncio.create_task(
-            worker(_context._in_queue, _context._out_queue)
+            worker(
+                _context._in_queue, _context._out_queue
+            )  # pylint: disable=protected-access
         )
         _sequential_jobs_contexts[key] = _context
 
     context = _sequential_jobs_contexts[key]
 
     try:
-        context._n_users += 1
+        context._n_users += 1  # pylint: disable=protected-access
         yield context
     finally:
         # NOTE: Popping the context from _sequential_jobs_contexts must be done synchronously after it is checked that the context is not in use
         # to avoid new tasks being added to the context before it is removed.
-        context._n_users -= 1
-        if context._n_users == 0:
+        context._n_users -= 1  # pylint: disable=protected-access
+        if context._n_users == 0:  # pylint: disable=protected-access
             if key in _sequential_jobs_contexts:
                 context = _sequential_jobs_contexts.pop(key)
             if context.task is not None:
