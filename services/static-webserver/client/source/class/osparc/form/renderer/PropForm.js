@@ -920,7 +920,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       const inputPort = this.getNode().getInput(toPortId);
       const outputPort = fromNode.getOutput(fromPortId);
       if (inputPort && outputPort) {
-        inputPort.setInput(outputPort);
+        inputPort.setConnectedToOutput(outputPort);
       }
 
       this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
@@ -946,7 +946,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
       const inputPort = this.getNode().getInput(toPortId);
       if (inputPort) {
-        inputPort.setInput(null);
+        inputPort.setConnectedToOutput(null);
       }
 
       this.__portLinkRemoved(toPortId);
