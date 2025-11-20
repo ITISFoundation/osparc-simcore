@@ -12,6 +12,7 @@ export DOCKER_IMAGE_TAG
 
 install() {
   make devenv
+  make pull-externals
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd tests/e2e-playwright

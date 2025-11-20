@@ -1,5 +1,3 @@
-from servicelib.async_utils import cancel_sequential_workers
-
 from .._meta import __version__, info
 
 #
@@ -25,5 +23,4 @@ async def on_startup() -> None:
 
 
 async def on_shutdown() -> None:
-    await cancel_sequential_workers()
     print(APP_FINISHED_BANNER_MSG, flush=True)

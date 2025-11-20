@@ -1791,64 +1791,6 @@ jobs:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
 
-  system-test-e2e:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[sys] e2e"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.13"]
-        node: [14]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v5
-      - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v6.0.0
-        with:
-          node-version: ${{ matrix.node }}
-          cache: "npm"
-          cache-dependency-path: "tests/e2e/package-lock.json"
-      - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
-        with:
-          artifact-name-pattern: "*"
-      - name: setup
-        run: ./ci/github/system-testing/e2e.bash install
-      - name: test
-        run: ./ci/github/system-testing/e2e.bash test
-      - name: wait before dumping logs
-        if: ${{ failure() }}
-        run: sleep 5
-      - name: dump docker logs
-        if: ${{ failure() }}
-        id: docker_logs_dump
-        run: ./ci/github/system-testing/e2e.bash dump_docker_logs
-      - name: upload docker logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./tests/e2e/test_failures
-      - name: upload screenshots
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ github.job }}_screenshots
-          path: tests/e2e/screenshots
-      - name: upload e2e logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ github.job }}_logs
-          path: tests/e2e/logs
-
   system-test-e2e-playwright:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
@@ -1928,7 +1870,6 @@ jobs:
     if: ${{ always() }}
     needs:
       [
-        system-test-e2e,
         system-test-e2e-playwright,
         system-test-environment-setup,
         system-test-public-api,

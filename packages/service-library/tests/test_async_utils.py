@@ -58,6 +58,7 @@ def _compensate_for_slow_systems(number: float) -> float:
     return number * 10
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_dispatch(
     sleep_duration: float, ensure_run_in_sequence_context_is_empty: None, faker: Faker
 ) -> None:
@@ -108,9 +109,11 @@ async def test_context_aware_dispatch(
         assert list(expected_outcomes[key]) == await locked_stores[key].get_all()
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_function_sometimes_fails(
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
+
     class DidFailException(Exception):
         pass
 
@@ -131,6 +134,7 @@ async def test_context_aware_function_sometimes_fails(
             assert await sometimes_failing(raise_error) is True
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_wrong_target_args_name(
     expected_param_name: str,
     ensure_run_in_sequence_context_is_empty: None,  # pylint: disable=unused-argument
@@ -150,10 +154,12 @@ async def test_context_aware_wrong_target_args_name(
     assert str(excinfo.value).startswith(message) is True
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_measure_parallelism(
     sleep_duration: float,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
+
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
         await asyncio.sleep(sleep_interval)
@@ -170,10 +176,12 @@ async def test_context_aware_measure_parallelism(
     assert elapsed < _compensate_for_slow_systems(sleep_duration)
 
 
+@pytest.mark.no_leaks
 async def test_context_aware_measure_serialization(
     sleep_duration: float,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
+
     # expected duration 1 second
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
@@ -192,10 +200,12 @@ async def test_context_aware_measure_serialization(
     assert control_sequence == result
 
 
+@pytest.mark.no_leaks
 async def test_nested_object_attribute(
     payload: str,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
+
     @dataclass
     class ObjectWithPropos:
         attr1: str = payload
@@ -210,10 +220,12 @@ async def test_nested_object_attribute(
         assert payload == await test_attribute(ObjectWithPropos())
 
 
+@pytest.mark.no_leaks
 async def test_different_contexts(
     payload: str,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
+
     @run_sequentially_in_context(target_args=["context_param"])
     async def test_multiple_context_calls(context_param: int) -> int:
         return context_param
@@ -222,4 +234,4 @@ async def test_different_contexts(
         for i in range(DIFFERENT_CONTEXTS_COUNT):
             assert i == await test_multiple_context_calls(i)
 
-    assert len(_sequential_jobs_contexts) == RETRIES
+    assert len(_sequential_jobs_contexts) == 0, "Not all contexts were cleaned up"

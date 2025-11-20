@@ -251,7 +251,11 @@ qx.Class.define("osparc.support.Conversations", {
         const bDate = bConversation.getLastMessageCreatedAt() || bConversation.getModified();
         return bDate - aDate;
       });
-      this.__conversationListItems.forEach(item => conversationsLayout.add(item));
+      this.__conversationListItems.forEach(item => {
+        if (item.getContentElement()) {
+          conversationsLayout.add(item);
+        }
+      });
     },
   },
 });
