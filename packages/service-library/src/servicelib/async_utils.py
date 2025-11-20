@@ -108,13 +108,10 @@ async def _managed_context(
 
     key = context_key
     if key not in _sequential_jobs_contexts:
-        _sequential_jobs_contexts[key] = Context(
+        _context = Context(
             _in_queue=asyncio.Queue(),
             _out_queue=asyncio.Queue(),
         )
-    context = _sequential_jobs_contexts[key]
-
-    if context.task is None:
 
         async def worker(in_q: Queue[QueueElement], out_q: Queue) -> None:
             try:
@@ -142,9 +139,13 @@ async def _managed_context(
             except asyncio.CancelledError:
                 raise
 
-        context.task = asyncio.create_task(
-            worker(context._in_queue, context._out_queue)
+        _context.task = asyncio.create_task(
+            worker(_context._in_queue, _context._out_queue)
         )
+        _sequential_jobs_contexts[key] = _context
+
+    context = _sequential_jobs_contexts[key]
+
     try:
         yield context
     finally:
