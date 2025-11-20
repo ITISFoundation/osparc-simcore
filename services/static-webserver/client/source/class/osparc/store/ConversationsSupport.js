@@ -69,13 +69,13 @@ qx.Class.define("osparc.store.ConversationsSupport", {
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
                 this.__conversationsCached[conversationData["conversationId"]]?.setProperties(conversationData);
                 break;
+              */
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
                 delete this.__conversationsCached[conversationData["conversationId"]];
                 this.fireDataEvent("conversationDeleted", {
                   conversationId: conversationData["conversationId"],
                 });
                 break;
-              */
             }
           }
         };
@@ -153,7 +153,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .then(() => {
           this.fireDataEvent("conversationDeleted", {
             conversationId,
-          })
+          });
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },

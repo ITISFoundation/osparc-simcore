@@ -32,7 +32,7 @@ qx.Class.define("osparc.support.Conversations", {
     this.__fetchConversations();
 
     this.__listenToNewConversations();
-    this.__listenToConversationWS();
+    this.__listenToConversationDeleted();
   },
 
   properties: {
@@ -62,7 +62,6 @@ qx.Class.define("osparc.support.Conversations", {
 
   members: {
     __conversationListItems: null,
-    __wsHandlers: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -193,30 +192,10 @@ qx.Class.define("osparc.support.Conversations", {
       });
     },
 
-    __listenToConversationWS: function() {
-      this.__wsHandlers = [];
-
-      const types = Object.values(osparc.store.ConversationsSupport.TYPES);
-      const socket = osparc.wrapper.WebSocket.getInstance();
-      [
-        osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED,
-        osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED,
-        osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
-      ].forEach(eventName => {
-        const eventHandler = conversationData => {
-          if (conversationData && types.includes(conversationData["type"])) {
-            switch (eventName) {
-              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
-                this.__updateConversationName(conversationData);
-                break;
-              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
-                this.__removeConversationPage(conversationData["conversationId"]);
-                break;
-            }
-          }
-        };
-        socket.on(eventName, eventHandler, this);
-        this.__wsHandlers.push({ eventName, handler: eventHandler });
+    __listenToConversationDeleted: function() {
+      osparc.store.ConversationsSupport.getInstance().addListener("conversationDeleted", e => {
+        const conversationId = e.getData()["conversationId"];
+        this.__removeConversationPage(conversationId);
       });
     },
 
@@ -255,6 +234,14 @@ qx.Class.define("osparc.support.Conversations", {
           conversationsLayout.add(item);
         }
       });
+    },
+
+    __removeConversationPage: function(conversationId) {
+      const conversationItem = this.__getConversationItem(conversationId);
+      if (conversationItem) {
+        this.getChildControl("conversations-layout").remove(conversationItem);
+        this.__conversationListItems = this.__conversationListItems.filter(item => item !== conversationItem);
+      }
     },
   },
 });
