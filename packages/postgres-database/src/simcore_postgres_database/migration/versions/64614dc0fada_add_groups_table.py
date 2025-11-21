@@ -22,7 +22,7 @@ def upgrade():
         """
 CREATE OR REPLACE FUNCTION check_group_uniqueness(name text, type text) RETURNS INT AS $$
 BEGIN
-    IF type = 'EVERYONE' AND (SELECT COUNT(*) FROM groups WHERE groups.type = 'EVERYONE') = 1 THEN
+    IF type = 'EVERYONE' AND (SELECT COUNT(*) FROM public.groups WHERE groups.type = 'EVERYONE') = 1 THEN
         RETURN 127;
     END IF;
     RETURN 0;
