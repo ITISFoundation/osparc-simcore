@@ -260,7 +260,7 @@ async def limited_as_completed(
 
     except asyncio.CancelledError:
         for future in pending_futures:
-            future.cancel()
+            future.cancel("limited_as_completed cancelled, cancelling pending tasks")
         await asyncio.gather(*pending_futures, return_exceptions=True)
         raise
 
