@@ -98,8 +98,6 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
     env_devel["DIRECTOR_LOGLEVEL"] = "DEBUG"
     env_devel["REGISTRY_PATH"] = "127.0.0.1:5000"
 
-    env_devel.setdefault("DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS", "")
-
     env_devel["API_SERVER_DEV_FEATURES_ENABLED"] = "1"
 
     if "DOCKER_REGISTRY" not in os.environ:

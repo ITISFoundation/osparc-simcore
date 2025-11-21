@@ -6,6 +6,7 @@ from typing import cast
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
+from models_library.docker import DockerPlacementConstraint
 from pydantic import AliasChoices, Field, NonNegativeInt, PositiveInt, field_validator
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
@@ -61,7 +62,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ..., description="cache time to live value (defaults to 15 minutes)"
     )
 
-    DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str | None
+    DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
+        default_factory=list,
+        examples=['["node.labels.region==east", "one!=yes"]'],
+    )
 
     DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[str, str]
 
