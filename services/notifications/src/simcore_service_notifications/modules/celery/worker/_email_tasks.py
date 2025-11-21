@@ -8,7 +8,11 @@ from celery import Task  # type: ignore[import-untyped]
 from jinja2 import StrictUndefined
 from models_library.api_schemas_notifications import NotificationRequest
 from models_library.api_schemas_notifications.channels import EmailChannel
-from notifications_library._email import compose_email, create_email_session
+from notifications_library._email import (
+    add_attachments,
+    compose_email,
+    create_email_session,
+)
 from notifications_library._email_render import render_email_parts
 from notifications_library._render import (
     create_render_environment_from_notifications_library,
@@ -54,7 +58,9 @@ async def send_email_notification(
 
     msg = _create_email_message(notification)
 
-    # if event_attachments:
-    #     add_attachments(msg, event_attachments)
+    if notification.channel.attachments:
+        add_attachments(
+            msg, [(a.content, a.filename) for a in notification.channel.attachments]
+        )
 
     await _send_email(msg)
