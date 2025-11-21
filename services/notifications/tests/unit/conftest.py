@@ -37,6 +37,7 @@ from simcore_service_notifications.modules.celery.worker.tasks import (
 )
 
 pytest_plugins = [
+    "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
 ]
 
@@ -44,16 +45,19 @@ pytest_plugins = [
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
+    mock_env_devel_environment: EnvVarsDict,
     mock_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,  # waiting for postgres service to start
     postgres_env_vars_dict: EnvVarsDict,
+    external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             **mock_environment,
+            **mock_env_devel_environment,
             "NOTIFICATIONS_TRACING": "null",
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
@@ -68,9 +72,8 @@ def app_environment(
                 if redis_service.REDIS_PASSWORD
                 else "null"
             ),
-            "SMTP_HOST": "smtp.foo.com",
-            "SMTP_PORT": "25",
             **postgres_env_vars_dict,
+            **external_envfile_dict,
         },
     )
 
@@ -139,7 +142,7 @@ def mock_celery_worker(
         concurrency=1,
         loglevel="info",
         perform_ping_check=False,
-        queues="default,cpu_bound",
+        queues="default",
     ) as worker:
         yield worker
 

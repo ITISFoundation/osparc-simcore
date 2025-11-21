@@ -62,10 +62,11 @@ def create_app_lifespan(
         # - rabbitmq
         app_lifespan.add(rabbitmq_lifespan)
 
-        app_lifespan.add(task_manager_lifespan)
-
         # - rpc api routes
         app_lifespan.add(rpc_api_routes_lifespan)
+
+    # - celery task manager
+    app_lifespan.add(task_manager_lifespan)
 
     # - prometheus instrumentation
     app_lifespan.add(prometheus_instrumentation_lifespan)

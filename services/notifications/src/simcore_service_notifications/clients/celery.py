@@ -32,7 +32,6 @@ async def task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
     )
 
     register_celery_types()
-    # TODO: register custom pydantic types
 
     yield {}
 
