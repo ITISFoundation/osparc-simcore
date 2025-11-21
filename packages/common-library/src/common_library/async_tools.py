@@ -114,7 +114,7 @@ async def cancel_wait_task(
             current_task.cancelling(),
         )
 
-        await asyncio.wait(task, timeout=max_delay)
+        await asyncio.wait((task,), timeout=max_delay)
         _logger.debug(
             "Finished cancellation of task: %s, current_task is canelling: %d",
             task.get_name(),
