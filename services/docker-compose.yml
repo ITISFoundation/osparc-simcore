@@ -1167,7 +1167,9 @@ services:
     init: true
     hostname: "not-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
-      <<: *notifications_environment
+      <<:
+        - *notifications_environment
+        - *smtp_settings
       STORAGE_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "not-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"

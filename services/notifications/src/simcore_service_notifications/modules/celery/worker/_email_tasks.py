@@ -21,10 +21,12 @@ EMAIL_CHANNEL_NAME = "email"
 
 
 async def send_email_notification(
-    _task: Task,
-    _task_key: TaskKey,
+    task: Task,
+    task_key: TaskKey,
     notification: NotificationRequest,
 ) -> None:
+    _ = task
+    _ = task_key
 
     #
     # NOTE: task can be used to provide progress
