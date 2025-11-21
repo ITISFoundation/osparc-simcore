@@ -5,37 +5,27 @@ import enum
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
-from ._common import NUMERIC_KWARGS, RefActions, column_modified_datetime
+from ._common import NUMERIC_KWARGS, column_modified_datetime
 from .base import metadata
 
 
-class ResourceTrackerServiceType(str, enum.Enum):
+class ResourceTrackerServiceTypeOsparcIoHistory(str, enum.Enum):
     COMPUTATIONAL_SERVICE = "COMPUTATIONAL_SERVICE"
     DYNAMIC_SERVICE = "DYNAMIC_SERVICE"
 
 
-class ResourceTrackerServiceRunStatus(str, enum.Enum):
+class ResourceTrackerServiceRunStatusOsparcIoHistory(str, enum.Enum):
     RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
     ERROR = "ERROR"
 
 
-resource_tracker_service_runs = sa.Table(
-    "resource_tracker_service_runs",
+zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1 = sa.Table(
+    "zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1",
     metadata,
     # Primary keys
     sa.Column(
-        "product_name",
-        sa.String,
-        sa.ForeignKey(
-            "products.name",
-            onupdate=RefActions.CASCADE,
-            ondelete=RefActions.CASCADE,
-            name="fk_service_runs_to_product_name",
-        ),
-        nullable=False,
-        doc="Product name",
-        primary_key=True,
+        "product_name", sa.String, nullable=False, doc="Product name", primary_key=True
     ),
     sa.Column(
         "service_run_id",
@@ -176,7 +166,7 @@ resource_tracker_service_runs = sa.Table(
     ),
     sa.Column(
         "service_type",
-        sa.Enum(ResourceTrackerServiceType),
+        sa.Enum(ResourceTrackerServiceTypeOsparcIoHistory),
         nullable=False,
         doc="Service type, ex. COMPUTATIONAL, DYNAMIC",
     ),
@@ -211,7 +201,7 @@ resource_tracker_service_runs = sa.Table(
     # Run status
     sa.Column(
         "service_run_status",  # Partial index was defined bellow
-        sa.Enum(ResourceTrackerServiceRunStatus),
+        sa.Enum(ResourceTrackerServiceRunStatusOsparcIoHistory),
         nullable=False,
     ),
     column_modified_datetime(timezone=True),
@@ -234,15 +224,5 @@ resource_tracker_service_runs = sa.Table(
         nullable=False,
         default=0,
         doc="How many heartbeat checks have been missed",
-    ),
-)
-
-# We define the partial index
-sa.Index(
-    "ix_resource_tracker_credit_transactions_status_running",
-    resource_tracker_service_runs.c.service_run_status,
-    postgresql_where=(
-        resource_tracker_service_runs.c.service_run_status
-        == ResourceTrackerServiceRunStatus.RUNNING
     ),
 )
