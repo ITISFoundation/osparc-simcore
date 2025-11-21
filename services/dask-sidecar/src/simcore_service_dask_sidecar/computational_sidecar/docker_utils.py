@@ -437,7 +437,9 @@ def cancel_parent_on_child_exception(func: Callable[P, T]) -> Callable[P, T]:
         except Exception as exc:
             # Cancel parent task when child task fails (same as TaskGroup behavior)
             if parent_task and not parent_task.done():
-                parent_task.cancel()
+                parent_task.cancel(
+                    "child task raised an exception, cancelling parent task"
+                )
             raise exc from None
 
     return wrapper

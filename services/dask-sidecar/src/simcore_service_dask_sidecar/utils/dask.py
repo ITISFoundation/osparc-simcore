@@ -136,7 +136,7 @@ async def monitor_task_abortion(
             await task_publishers.publish_logs(
                 message="[sidecar] cancelling task...", log_level=logging.INFO
             )
-            task.cancel()
+            task.cancel("task aborted by client")
 
     async def periodicaly_check_if_aborted(task_name: str) -> None:
         while await asyncio.sleep(_TASK_ABORTION_INTERVAL_CHECK_S, result=True):
@@ -164,7 +164,9 @@ async def monitor_task_abortion(
                 "cancelling task cancellation checker for task '%s'",
                 task_name,
             )
-            periodically_checking_task.cancel()
+            periodically_checking_task.cancel(
+                "task finished, stopping abortion checker"
+            )
             with contextlib.suppress(asyncio.CancelledError):
                 await periodically_checking_task
 
