@@ -4,7 +4,7 @@
 import datetime
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import sqlalchemy as sa
@@ -31,9 +31,14 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.main import app_factory
+from simcore_service_notifications.modules.celery.worker import _email_tasks
 from simcore_service_notifications.modules.celery.worker.tasks import (
     register_worker_tasks,
 )
+
+pytest_plugins = [
+    "pytest_simcore.faker_users_data",
+]
 
 
 @pytest.fixture
@@ -178,6 +183,11 @@ def smtp_mock_or_none(
     mocker: MockerFixture, is_external_user_email: EmailStr | None, user_email: EmailStr
 ) -> MagicMock | None:
     if not is_external_user_email:
-        return mocker.patch("notifications_library._email.SMTP")
+        mock_smtp = AsyncMock()
+        mock_create_email_session = mocker.patch.object(
+            _email_tasks, "create_email_session"
+        )
+        mock_create_email_session.return_value.__aenter__.return_value = mock_smtp
+        return mock_smtp
     print("🚨 Emails might be sent to", f"{user_email=}")
     return None

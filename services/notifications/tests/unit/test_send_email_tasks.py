@@ -12,10 +12,8 @@ from models_library.api_schemas_notifications.events import (
     UserData,
 )
 from pydantic import HttpUrl
-from pytest_mock import MockFixture
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskState
 from servicelib.celery.task_manager import TaskManager
-from simcore_service_notifications.modules.celery.worker import _email_tasks
 from simcore_service_notifications.modules.celery.worker.tasks import (
     send_email_notification,
 )
@@ -46,15 +44,9 @@ _TENACITY_RETRY_PARAMS = {
 async def test_account_requested(
     task_manager: TaskManager,
     fake_ipinfo: dict[str, Any],
-    mocker: MockFixture,
+    smtp_mock_or_none: AsyncMock | None,
     faker: Faker,
 ):
-    mock_smtp = AsyncMock()
-    mock_create_email_session = mocker.patch.object(
-        _email_tasks, "create_email_session"
-    )
-    mock_create_email_session.return_value.__aenter__.return_value = mock_smtp
-
     owner_metadata = OwnerMetadata(
         owner="test_service",
     )
@@ -102,6 +94,6 @@ async def test_account_requested(
             status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
 
-    # check email was sent
-    mock_create_email_session.assert_called_once()
-    mock_smtp.send_message.assert_called_once()
+    # if mocked, check email was sent
+    if smtp_mock_or_none:
+        smtp_mock_or_none.send_message.assert_called_once()
