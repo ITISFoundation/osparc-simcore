@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_service_notifications.core.application import create_app
 
 
@@ -18,6 +19,7 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     mock_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,  # waiting for postgres service to start
     postgres_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
@@ -25,11 +27,20 @@ def app_environment(
         monkeypatch,
         {
             **mock_environment,
+            "NOTIFICATIONS_TRACING": "null",
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
             "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
             "RABBIT_USER": rabbit_service.RABBIT_USER,
+            "REDIS_SECURE": redis_service.REDIS_SECURE,
+            "REDIS_HOST": redis_service.REDIS_HOST,
+            "REDIS_PORT": f"{redis_service.REDIS_PORT}",
+            "REDIS_PASSWORD": (
+                redis_service.REDIS_PASSWORD.get_secret_value()
+                if redis_service.REDIS_PASSWORD
+                else "null"
+            ),
             **postgres_env_vars_dict,
         },
     )
