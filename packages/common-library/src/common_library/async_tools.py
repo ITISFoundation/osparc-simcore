@@ -92,6 +92,10 @@ async def cancel_wait_task(
         TimeoutError: raised if cannot cancel the task.
         CancelledError: raised ONLY if owner is being cancelled.
     """
+
+    # NOTE: if this function is cancelled, all the sync methods will still be called
+    # before propagating the CancelledError, therefore the task will still be properly cancelled
+
     if task.done():
         # nothing to do here
         return
