@@ -473,6 +473,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             scheduler_data.callbacks_mapping,
         )
         | standard_simcore_docker_labels
+        | app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_CUSTOM_LABELS
     )
 
     placement_settings = (
@@ -523,7 +524,8 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
                 "Init": True,
-                "Labels": standard_simcore_docker_labels,
+                "Labels": standard_simcore_docker_labels
+                | app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_CUSTOM_LABELS,
                 "Mounts": mounts,
                 "Secrets": (
                     [
