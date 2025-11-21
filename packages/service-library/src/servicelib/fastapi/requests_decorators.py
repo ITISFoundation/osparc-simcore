@@ -83,9 +83,8 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
                 await cancel_wait_task(t, max_delay=10)
             except BaseException:  # pylint: disable=broad-except
                 if t is handler_task:
+                    assert t.done()  # nosec
                     raise
-            finally:
-                assert t.done()  # nosec
 
         # Return the result if the handler finished first
         if handler_task in done:
