@@ -123,6 +123,15 @@ async def cancel_wait_task(
             task.get_name(),
             current_task.cancelling(),
         )
+        if not task.cancelled() and (task_exception := task.exception()):
+            assert task_exception  # nosec
+            _logger.debug(
+                "Task %s raised exception after cancellation: %s",
+                task.get_name(),
+                task_exception,
+            )
+
+            raise task_exception
     except TimeoutError as exc:
         _logger.exception(
             **create_troubleshooting_log_kwargs(

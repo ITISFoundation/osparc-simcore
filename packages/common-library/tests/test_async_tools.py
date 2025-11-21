@@ -203,6 +203,26 @@ async def test_cancel_and_wait_timeout_on_slow_cleanup():
     assert not task.cancelled()
 
 
+async def test_cancel_and_wait_with_raising_during_cleanup():
+    async def raising_cleanup_coro():
+        try:
+            await asyncio.sleep(10)  # Long running task
+        except asyncio.CancelledError:
+            # Simulate cleanup that raises an exception
+            msg = "Error during cleanup"
+            raise RuntimeError(msg)
+
+    task = asyncio.create_task(raising_cleanup_coro())
+    await asyncio.sleep(0.1)  # Let the task start
+
+    # Cancel and wait, expecting the RuntimeError to be logged but not propagated
+    with pytest.raises(RuntimeError):
+        await cancel_wait_task(task, max_delay=None)  # 1 second timeout
+
+    assert task.cancelling() == 1
+    assert not task.cancelled()
+
+
 async def test_with_delay():
     @delayed_start(timedelta(seconds=0.2))
     async def decorated_awaitable() -> int:
