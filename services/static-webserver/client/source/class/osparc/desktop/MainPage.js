@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     navBarPromises.push(osparc.store.Groups.getInstance().fetchGroups());
     navBarPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
     navBarPromises.push(osparc.store.Jobs.getInstance().fetchJobsLatest());
-    navBarPromises.push(osparc.store.ConversationsSupport.getInstance().fetchConversations());
+    navBarPromises.push(osparc.store.ConversationsSupport.getInstance().init());
     Promise.all(navBarPromises)
       .finally(() => navBar.populateLayout());
 

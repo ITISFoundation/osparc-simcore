@@ -114,7 +114,7 @@ qx.Class.define("osparc.support.Conversation", {
                 })
                 .then(() => {
                   if (
-                    osparc.store.Groups.getInstance().getChatbot() === null ||
+                    !osparc.store.Groups.getInstance().isChatbotEnabled() ||
                     type === osparc.store.ConversationsSupport.TYPES.SUPPORT_CALL
                   ) {
                     // only add follow up message if there is no chatbot support
